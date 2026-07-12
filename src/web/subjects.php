@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB subjects.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -48,12 +48,12 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$subjectid = GetVariable("subjectid");
-	$selectedid = GetVariable("selectedid");
-	$projectid = GetVariable("projectid");
-	$newprojectid = GetVariable("newprojectid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$id = (int)GetVariable("id");
+	$subjectid = (int)GetVariable("subjectid");
+	$selectedid = (int)GetVariable("selectedid");
+	$projectid = (int)GetVariable("projectid");
+	$newprojectid = (int)GetVariable("newprojectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$encrypt = GetVariable("encrypt");
 	$name = GetVariable("name");
 	$lastname = GetVariable("lastname");
@@ -88,8 +88,8 @@
 	$ids = GetVariable("ids");
 	$modality = GetVariable("modality");
 	$returnpage = GetVariable("returnpage");
-	$templateid = GetVariable("templateid");
-	$grouptemplateid = GetVariable("grouptemplateid");
+	$templateid = (int)GetVariable("templateid");
+	$grouptemplateid = (int)GetVariable("grouptemplateid");
 
 	/* fix the 'active' search */
 	if (($searchactive == '') && ($action != '')) {
@@ -99,7 +99,7 @@
 		$searchactive = 1;
 	}
 	
-	if ($id == "") $id = $subjectid;
+	if ($id == 0) $id = $subjectid;
 	
 	/* determine action */
 	switch ($action) {
@@ -108,43 +108,47 @@
 			break;
 		case 'addrelation':
 			AddRelation($id, $uid2, $relation, $makesymmetric);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'changeproject':
 			ChangeProject($id, $enrollmentid, $newprojectid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
+			break;
+		case 'setcurrentproject':
+			SetCurrentSubjectProject($id, $projectid);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'addform':
 			DisplaySubjectForm("add", "");
 			break;
 		case 'display':
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'print':
 			PrintEnrollment($id, $enrollmentid);
 			break;
 		case 'newstudy':
 			CreateNewStudy($modality, $enrollmentid, $id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'newstudyfromtemplate':
 			CreateStudyFromTemplate($modality, $enrollmentid, $id, $templateid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'newstudygroupfromtemplate':
 			CreateStudyGroupFromTemplate($modality, $enrollmentid, $id, $grouptemplateid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($id);
 			break;
 		case 'delete':
 			Delete($id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'undelete':
 			UnDelete($id);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'obliterate':
 			Obliterate($ids);
@@ -152,7 +156,7 @@
 			break;
 		case 'enroll':
 			EnrollSubject($id, $projectid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'confirmupdate':
 			Confirm("update", $id, $encrypt, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
@@ -162,24 +166,142 @@
 			break;
 		case 'update':
 			UpdateSubject($id, $lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $uid, $altuids, $enrollmentids, $guid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		case 'add':
 			$id = AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email,$maritalstatus,$smokingstatus, $cancontact, $tags, $altuid, $guid);
-			DisplaySubject($id);
+			DisplaySubject($id, $projectid);
 			break;
 		default:
-			if ($id == "") {
+			if ($id == 0) {
 				DisplaySubjectList($searchuid, $searchaltuid, $searchname, $searchgender, $searchdob, $searchactive);
 			}
 			else {
-				DisplaySubject($id);
+				DisplaySubject($id, $projectid);
 			}
 	}
 	
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetCurrentSubjectProject ----------- */
+	/* -------------------------------------------- */
+	function GetCurrentSubjectProject($subjectRowID, $projectRowID="") {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		$project = array("projectRowID" => "", "project_name" => "");
+
+		if ($projectRowID > 0) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? and a.project_id = ? limit 1");
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row) {
+				$_SESSION['currentProjectID'] = $projectRowID;
+				$project["projectRowID"] = $row['project_id'];
+				$project["project_name"] = $row['project_name'];
+				return $project;
+			}
+		}
+
+		if (isset($_SESSION['currentProjectID'])) {
+			$projectRowID = (int)$_SESSION['currentProjectID'];
+			if ($projectRowID > 0) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? and a.project_id = ? limit 1");
+				mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
+				if ($row) {
+					$project["projectRowID"] = $row['project_id'];
+					$project["project_name"] = $row['project_name'];
+					return $project;
+				}
+			}
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.project_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'i', $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($row) {
+			$_SESSION['currentProjectID'] = $row['project_id'];
+			$project["projectRowID"] = $row['project_id'];
+			$project["project_name"] = $row['project_name'];
+			return $project;
+		}
+
+		return $project;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetCurrentSubjectProject ----------- */
+	/* -------------------------------------------- */
+	function SetCurrentSubjectProject($subjectRowID, $projectRowID) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+
+		if (($subjectRowID < 1) || ($projectRowID < 1)) {
+			Error("Invalid subject or project ID");
+			return;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select project_id from enrollment where subject_id = ? and project_id = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$row) {
+			Error("Subject is not enrolled in the selected project");
+			return;
+		}
+
+		$_SESSION['currentProjectID'] = $projectRowID;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAdjacentSubjectInProject -------- */
+	/* -------------------------------------------- */
+	function GetAdjacentSubjectInProject($subjectRowID, $projectRowID, $direction) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		$direction = strtolower(trim($direction));
+
+		if (($subjectRowID < 1) || ($projectRowID < 1)) {
+			return false;
+		}
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select uid from subjects where subject_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			return false;
+		}
+
+		$uid = $row['uid'];
+		if ($direction == "previous") {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.subject_id 'subjectRowID', a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? and (a.uid < ? or (a.uid = ? and a.subject_id < ?)) order by a.uid desc, a.subject_id desc limit 1");
+		}
+		else {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.subject_id 'subjectRowID', a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? and (a.uid > ? or (a.uid = ? and a.subject_id > ?)) order by a.uid asc, a.subject_id asc limit 1");
+		}
+		mysqli_stmt_bind_param($stmt, 'issi', $projectRowID, $uid, $uid, $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return $row;
+	}
 
 
 	/* -------------------------------------------- */
@@ -198,7 +320,8 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = (bool)mysqli_real_escape_string($GLOBALS['linki'], $cancontact);
+		$cancontact = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $cancontact));
+		
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuidlist = $altuids;
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -256,7 +379,7 @@
 	function AddSubject($lastname, $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $tags, $altuid, $guid) {
 	
 		if ($GLOBALS['debug']) {
-			print "$fullname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
+			print "$lastname $firstname, $dob, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $phone, $email, $maritalstatus, $smokingstatus, $cancontact, $altuid, $guid";
 		}
 		/* perform data checks */
 		$name = mysqli_real_escape_string($GLOBALS['linki'], "$lastname^$firstname");
@@ -270,7 +393,7 @@
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$maritalstatus = mysqli_real_escape_string($GLOBALS['linki'], $maritalstatus);
 		$smokingstatus = mysqli_real_escape_string($GLOBALS['linki'], $smokingstatus);
-		$cancontact = mysqli_real_escape_string($GLOBALS['linki'], $cancontact) + 0;
+		$cancontact = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $cancontact));
 		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
 		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
 		$guid = mysqli_real_escape_string($GLOBALS['linki'], $guid);
@@ -318,7 +441,7 @@
 		}
 
 		
-		Notice("$subjectname added $uid");
+		Notice("$firstname $lastname added $uid");
 		
 		return $SubjectRowID;
 	}
@@ -576,7 +699,7 @@
 	/* ------- EnrollSubject ---------------------- */
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectid, $projectid) {
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project not specified");
 			return;
 		}
@@ -730,12 +853,14 @@
 		$tags = GetTags('subject', $id);
 		$altuids = GetAlternateUIDs($id,0);
 		
-		list($lastname, $firstname) = explode("^",$name);
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lastname  = $nameparts[0] ?? '';
+		$firstname = $nameparts[1] ?? '';
+		$lname = $lastname; $fname = $firstname;
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
-		
+
 		?>
-		
+
 		<div class="ui text container">
 			<div class="ui inverted red segment">
 				<h2 class="ui header">
@@ -922,7 +1047,7 @@
 		if (($encrypt) && ($type != 'update')) {
 			$fullname = strtolower(preg_replace('/[^A-Za-z0-9]/', '', $lastname) . '^' . preg_replace('/[^A-Za-z0-9]/', '', $firstname));
 			$encname = strtoupper(sha1($fullname));
-			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', explode(',', $altuid));
+			$altuids = preg_replace('/[^A-Za-z0-9\_\-]/', '', explode(',', $altuid ?? ''));
 			foreach ($altuids as $alt) {
 				$encids[] = strtoupper(sha1($alt));
 				$encuids[$alt] = strtoupper(sha1($alt));
@@ -1069,7 +1194,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySubject --------------------- */
 	/* -------------------------------------------- */
-	function DisplaySubject($id) {
+	function DisplaySubject($id, $projectRowID) {
 		if (!ValidID($id,'Subject ID')) { return; }
 
 		$userid = $_SESSION['userid'];
@@ -1085,8 +1210,11 @@
 		}
 		
 		$perms = GetCurrentUserProjectPermissions($projectids);
-		//$urllist['Subjects'] = "subjects.php";
 		DisplayPermissions($perms);
+		$currentproject = GetCurrentSubjectProject($id, $projectRowID);
+		$currentprojectid = $currentproject['projectRowID'];
+		$currentprojectname = $currentproject['project_name'];
+		$projectid = $currentprojectid;
 
 		/* update the mostrecent table */
 		UpdateMostRecent($id, '', '');
@@ -1120,6 +1248,8 @@
 		$guid = $row['guid'];
 		$cancontact = $row['cancontact'];
 		$isactive = $row['isactive'];
+		$previoussubject = GetAdjacentSubjectInProject($id, $currentprojectid, "previous");
+		$nextsubject = GetAdjacentSubjectInProject($id, $currentprojectid, "next");
 
 		$tags = GetTags('subject', $id);
 		
@@ -1133,8 +1263,10 @@
 		/* get list of alternate subject UIDs */
 		$altuids = GetAlternateUIDs($id,0);
 
-		list($lastname, $firstname) = explode("^",$name);
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lastname  = $nameparts[0] ?? '';
+		$firstname = $nameparts[1] ?? '';
+		$lname = $lastname; $fname = $firstname;
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
 
 		switch ($gender) {
@@ -1198,7 +1330,25 @@
 		<div class="ui grid">
 			<div class="four wide column">
 				<h1 class="ui top attached header center aligned black segment" style="background-color: #ffffaa">
-					<span class="tt"><?=$uid?></span>
+					<div class="ui three column grid">
+						<div class="left aligned column">
+							<? if ($previoussubject) { ?>
+							<a class="ui compact basic yellow icon button" href="subjects.php?id=<?=$previoussubject['subjectRowID']?>&projectid=<?=$currentprojectid?>" title="Previous subject <?=$previoussubject['uid']?> in <?=$currentprojectname?>"><i class="chevron left icon"></i></a>
+							<? } else { ?>
+							<div class="ui compact basic yellow disabled icon button" title="No previous subject in <?=$currentprojectname?>"><i class="chevron left icon"></i></div>
+							<? } ?>
+						</div>
+						<div class="center aligned column">
+							<span class="tt"><?=$uid?></span>
+						</div>
+						<div class="right aligned column">
+							<? if ($nextsubject) { ?>
+							<a class="ui compact basic yellow icon button" href="subjects.php?id=<?=$nextsubject['subjectRowID']?>&projectid=<?=$currentprojectid?>" title="Next subject <?=$nextsubject['uid']?> in <?=$currentprojectname?>"><i class="chevron right icon"></i></a>
+							<? } else { ?>
+							<div class="ui compact basic yellow disabled icon button" title="No next subject in <?=$currentprojectname?>"><i class="chevron right icon"></i></div>
+							<? } ?>
+						</div>
+					</div>
 				</h1>
 				<div class="ui bottom attached styled segment">
 					<div class="ui accordion">
@@ -1364,7 +1514,7 @@
 							<h2 class="ui header">Enrollments</h2>
 						</div>
 						<div class="right aligned column">
-							<form class="ui" action="subjects.php" method="post">
+							<form class="ui" action="subjects.php" method="post" style="margin: 0px">
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="action" value="enroll">
 							<div class="ui labeled action input">
@@ -1418,7 +1568,7 @@
 						if (GetPerm($perms, 'modifydata', $projectid)) { $modifydata = 1; } else { $modifydata = 0; }
 						if (GetPerm($perms, 'viewdata', $projectid)) { $viewdata = 1; } else { $viewdata = 0; }
 
-						$enrolldate = date('M j, Y g:ia',strtotime($enroll_startdate));
+						$ts = strtotime($enroll_startdate); $enrolldate = $ts !== false ? date('M j, Y g:ia', $ts) : '';
 						
 						if ($row['irb_consent'] != "") { $irb = "Y"; }
 						else { $irb = "N"; }
@@ -1438,31 +1588,28 @@
 						
 						?>
 						<div class="ui attached styled grey segment">
-							<script type="text/javascript">
-								$(document).ready(function(){
-									$(".edit_inline<? echo $enrollmentid; ?>").editInPlace({
-										url: "group_inlineupdate.php",
-										params: "action=editinplace&id=<? echo $enrollmentid; ?>",
-										default_text: "<i style='color:#AAAAAA'>Edit group name...</i>",
-										bg_over: "white",
-										bg_out: "lightyellow",
-									});
-								});
-							</script>
-
+							<div class="ui large inverted center aligned segment" style="padding:6px">
+								<a href="projects.php?id=<?=$projectid?>" style="color: #fff"><i class="external alternate icon"></i><?=$project_name?> (<?=$costcenter?>)</a>
+								&nbsp;
+								<? if ($projectid == $currentprojectid) { ?>
+								<i class="large yellow check circle icon" title="Current project for subject navigation"></i>
+								<? } else { ?>
+								<a href="subjects.php?action=setcurrentproject&id=<?=$id?>&projectid=<?=$projectid?>" title="Use this project for subject navigation"><i class="large inverted check circle outline icon"></i></a>
+								<? } ?>
+								
+							</div>
+							
 							<div class="ui grid">
 								<div class="three wide column">
-									<? if ($viewdata) { ?>
-									<a class="ui large black labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
-									<? } else { ?>
-									<a class="ui large grey labeled icon button" href="projects.php?id=<?=$projectid?>"><i class="external alternate icon"></i> <?=$project_name?> (<?=$costcenter?>)</a>
-									<? } ?>
-									<br>
 									<div style="padding: 10px;">
 										<table class="ui very basic celled compact table">
 											<tr>
 												<td class="right aligned"><b>ID(s)</b></td>
-												<td><div class="ui yellow label"><?=$subjectaltids?></div></td>
+												<td>
+													<? if ($subjectaltids != "") { ?>
+													<div class="ui basic yellow label"><?=$subjectaltids?></div>
+													<? } ?>
+												</td>
 											</tr>
 											<tr>
 												<td class="right aligned"><b>Group</b></td>
@@ -1484,7 +1631,7 @@
 											<? } ?>
 										</table>
 										
-										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>"><i class="newspaper icon"></i> Edit Enrollment</a>
+										<a class="ui fluid primary button" href="enrollment.php?enrollmentid=<?=$enrollmentid?>">View Enrollment</a>
 										<br>
 										<a href="packages.php?action=addobject&objecttype=enrollment&objectids[]=<?=$enrollmentid?>" class="ui basic fluid brown button"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
 										<a class="ui fluid basic button" href="timeline.php?enrollmentid=<?=$enrollmentid?>"><i class="clock icon"></i> View Timeline</a>
@@ -1550,7 +1697,7 @@
 											<div class="ui top attached blue segment">
 												<div class="ui two column grid">
 													<div class="column">
-														<h3 class="header"><i class="file image icon"></i> Imaging Studies</h3>
+														<h3 class="header"><i class="grey file image icon"></i> Imaging Studies</h3>
 													</div>
 													<div class="right aligned column">
 														<? if (!$enrolled) { ?>
@@ -1746,211 +1893,94 @@
 											}
 											?>
 											
-											
-											<!-- -------------------------------------------------------------- -->
-											<!-- -------- Observation (Assessment, observation, vitals) section --- -->
-											<!-- -------------------------------------------------------------- -->
-											<!--<div class="ui top attached blue segment">
-												<div class="ui two column grid">
-													<div class="column">
-														<h3 class="header"><i class="clipboard outline icon"></i> Assessments</h3>
-													</div>
-													<div class="right aligned column">
-														<? //if (!$enrolled) { ?>
-														<span style="color: #666">Subject is un-enrolled. Cannot create new studies</span>
-														<? //} else { ?>
-
-														<div class="ui accordion">
-															<div class="title">
-																<i class="dropdown icon"></i>
-																Create new assessment
-															</div>
-															<div class="content">
-																<? //if (!$enrolled) { $disabled = "disabled"; } else { $disabled = ""; } ?>
-																<form action="assessments.php" method="post">
-																<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-																<input type="hidden" name="projectid" value="<?=$projectid?>">
-																<input type="hidden" name="action" value="create">
-																
-																<div class="ui small labeled action input">
-																	<label for="formid" class="ui label grey" style="width: 150px">Add Assessment</label>
-																	<select class="ui selection dropdown" name="formid" <?=$disabled?> required>
-																		<option value="">(Select assessment)</option>
-																		<?
-																			//$sqlstringB = "select * from assessment_forms where form_ispublished = 1 and project_id = $projectid order by form_title";
-																			//$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-																			//while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-																				//$form_id = $rowB['form_id'];
-																				//$form_title = $rowB['form_title'];
-																				//$projectid = $rowB['project_id'];
-																				?>
-																				<option value="<?=$form_id?>" style="<?=$style?>"><?=$form_title?></option>
-																				<?
-																			//}
-																		?>
-																	</select>
-																	<button class="ui small primary button" type="submit" value="Enroll" <?=$disabled?>>Create</button>
-																</div>
-																</form>
-															</div>
-														</div>
-														<? //} ?>
-													</div>
-												</div>
-											</div>
-											<?
-												//$sqlstring3 = "select a.*, b.form_title from assessments a left join assessment_forms b on a.form_id = b.form_id where a.enrollment_id = $enrollmentid and b.project_id = $projectid";
-												//$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-											
-												//if (mysqli_num_rows($result3) > 0) {
-												?>
-													<table width="100%" class="ui bottom attached very compact small selectable celled table" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-														<thead>
-															<th>Instrument</th>
-															<th>Date</th>
-															<th>Experimentor</th>
-															<th>Rater</th>
-															<th>Complete?</th>
-														</thead>
-														<tbody>
-														<?
-														//while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-															//$experiment_id = $row3['experiment_id'];
-															//$form_title = $row3['form_title'];
-															//$exp_admindate = $row3['exp_admindate'];
-															//$experimentor = $row3['experimentor'];
-															//$rater_username = $row3['rater_username'];
-															//$iscomplete = $row3['iscomplete'];
-															//if ($iscomplete) { $action = "view"; } else { $action = "edit"; }
-															?>
-															<tr>
-																<td><a href="assessments.php?action=<?=$action?>&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>"><?=$form_title?></a></td>
-																<td><?=$exp_admindate?></td>
-																<td><?=$experimentor?></td>
-																<td><?=$rater_username?></td>
-																<td>
-																	<?
-																	//if ($iscomplete) { echo "&#10004;"; }
-																	//else {
-																		?>
-																		<a href="assessments.php?action=completed&experimentid=<?=$experiment_id?>&projectid=<?=$projectid?>">Mark as complete</a>
-																		<?
-																	//}
-																	?>
-																</td>
-															</tr>
-															<?
-														//}
-														?>
-														</tbody>
-													</table>
-												<?
-												//}
-												//else {
-													?>
-													<div class="ui bottom attached center aligned segment">
-														No assessments
-													</div>
-													<?
-												//}
-											?>
-											-->
-											
 											<!-- ----------------------------------------------------- -->
 											<!-- -------------------- Observations ------------------- -->
 											<!-- ----------------------------------------------------- -->
-											<div class="ui top attached blue segment">
-												<h3 class="header"><i class="clipboard list icon"></i> Observations (observations, vitals, assessments)</h3>
-											</div>
-											<div class="ui bottom attached center aligned segment">
-												<div class="ui two column grid">
-													<div class="right aligned column">
-													<?
-														$sqlstring3 = "select count(*) 'count' from observations where enrollment_id = $enrollmentid";
-														$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-														$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-														$numrows = $row3['count'];
-														if ($numrows > 0) {
-															?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
-														}
-														else {
-															?>
-															No observations
-															<?
-														}
-													?>
+											<div class="ui blue segment">
+												<div class="ui three column grid">
+													<div class="column">
+														<h3 class="header"><i class="grey clipboard list icon"></i> Observations</h3>
 													</div>
-													<div class="left aligned column">
-														<a class="ui basic button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
+													<div class="center aligned column">
+														<?
+															$sqlstring3 = "select count(*) 'count' from observations where enrollment_id = $enrollmentid";
+															$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+															$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+															$numrows = $row3['count'];
+															if ($numrows > 0) {
+																?><span style="font-size: larger;"><b><?=$numrows?></b> observations</span><?
+															}
+															else {
+																?>
+																No observations
+																<?
+															}
+														?>
+													</div>
+													<div class="right aligned column">
+														<a class="ui basic compact button" href="observations.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit observations</a>
 													</div>
 												</div>
 											</div>
-											
+
 											<!-- ----------------------------------------------------- -->
 											<!-- -------------------- Interventions ------------------ -->
 											<!-- ----------------------------------------------------- -->
-											<div class="ui top attached blue segment">
-												<div class="ui two column grid">
+											<div class="ui blue segment">
+												<div class="ui three column grid">
 													<div class="column">
-														<h3 class="header"><i class="pills icon"></i> Interventions</h3>
+														<h3 class="header"><i class="grey file prescription icon"></i> Interventions</h3>
+													</div>
+													<div class="center aligned column">
+														<?
+															$sqlstring3 = "select count(*) 'count' from interventions where enrollment_id = $enrollmentid";
+															$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+															$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+															$numrows = $row3['count'];
+															if ($numrows > 0) {
+																?><span style="font-size: larger;"><b><?=$numrows?></b> interventions</span><?
+															}
+															else {
+																?>
+																No interventions
+																<?
+															}
+														?>
 													</div>
 													<div class="right aligned column">
-														<a class="ui basic button" href="interventions.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Interventions</a>
+														<a class="ui basic compact button" href="interventions.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit interventions</a>
 													</div>
 												</div>
 											</div>
-											<div class="ui bottom attached center aligned segment">
-												<?
-													$sqlstring3 = "select *, date_format(startdate,'%m-%d-%Y; %r') 'startdate', date_format(enddate,'%m-%d-%Y; %r') 'enddate' from interventions where enrollment_id = $enrollmentid";
-													$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-													$numrows = mysqli_num_rows($result3);
-													if ($numrows > 0) {
-													?>
-													<table width="100%" class="smalldisplaytable" style="background-color: #FFFFFF; border-radius: 8px; width: 100%; padding:5px">
-														<thead align="left">
-															<th>Interventions</th>
-															<th>Type</th>
-															<th>Route</th>
-															<th>Amount</th>
-															<th>Dates (mm/dd/yyyy; hh:mm:ss AM/PM)</th>
-														</thead>
-														<tbody>
-														<?
-														while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-															$intervention_id = $row3['intervention_id'];
-															$startdate = $row3['startdate'];
-															$enddate = $row3['enddate'];
-															$dose = $row3['doseamount'];
-															$dosefreq = $row3['dosefrequency'];
-															$administration_route = $row3['administration_route'];
-															$intervention_name = $row3['intervention_name'];
-															$intervention_type = $row3['intervention_type'];
 
-															if ($enddate=='')  {
-																$enddate = 'TO-DATE';
+											<!-- ----------------------------------------------------- -->
+											<!-- -------------------- Diagnosis ---------------------- -->
+											<!-- ----------------------------------------------------- -->
+											<div class="ui blue segment">
+												<div class="ui three column grid">
+													<div class="column">
+														<h3 class="header"><i class="grey clipboard list icon"></i> Diagnosis</h3>
+													</div>
+													<div class="center aligned column">
+														<?
+															$sqlstring3 = "select count(*) 'count' from diagnosis where enrollment_id = $enrollmentid";
+															$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+															$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
+															$numrows = $row3['count'];
+															if ($numrows > 0) {
+																?><span style="font-size: larger;"><b><?=$numrows?></b> diagnoses</span><?
 															}
-
-															?>
-															<tr>
-																<td><?=$intervention_name?></td>
-																<td><?=$intervention_type?></td>
-																<td><?=$administration_route?></td>
-																<td><?=$dose?> / <?=$dosefreq?></td>
-																<td><?=$startdate?> - <?=$enddate?></td>
-															</tr>
-															<?
-														}
+															else {
+																?>
+																No diagnosis
+																<?
+															}
 														?>
-														</tbody>
-													</table>
-														<?
-													}
-													else {
-														?>
-														No interventions
-														<?
-													}
-												?>
+													</div>
+													<div class="right aligned column">
+														<a class="ui basic compact button" href="diagnosis.php?enrollmentid=<?=$enrollmentid?>"><i class="edit icon"></i> Edit diagnosis</a>
+													</div>
+												</div>
 											</div>
 											
 										</div>
@@ -1999,14 +2029,17 @@
 		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result2) > 0) {
 		?>
-		<table border="1">
+		<table class="ui very compact celled small table">
 			<thead>
-				<th>#</th>
-				<th>Modality</th>
-				<th>Date</th>
-				<th>Age<span class="tiny">&nbsp;y</span></th>
-				<th>Site</th>
-				<th>Visit</th>
+				<tr>
+					<th>#</th>
+					<th>Modality</th>
+					<th>Date</th>
+					<th>Age (y)</th>
+					<th>Site</th>
+					<th>Visit</th>
+					<th>Series</th>
+				</tr>
 			</thead>
 			<tbody>
 			<?
@@ -2017,35 +2050,24 @@
 				$study_datetime = $row2['study_datetime'];
 				$study_ageatscan = $row2['study_ageatscan'];
 				$calcage = number_format($row2['ageatscan']/365.25,1);
-				$study_operator = $row2['study_operator'];
-				$study_performingphysician = $row2['study_performingphysician'];
 				$study_site = $row2['study_site'];
 				$study_type = $row2['study_type'];
-				$study_status = $row2['study_status'];
-				$study_doradread = $row2['study_doradread'];
-				
-				if (trim($study_ageatscan) != 0) {
-					$age = $study_ageatscan;
-				}
-				else {
-					$age = $calcage;
-				}
-				
+
+				$age = (trim($study_ageatscan) != 0) ? $study_ageatscan : $calcage;
 				?>
 				<tr>
 					<td><b><?=$study_num?></b></td>
-					<td><?
-					 if ($study_modality == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
-					 else { echo $study_modality; }
-					?></td>
+					<td>
+						<? if ($study_modality == "") { ?>
+						<div class="ui red label">blank</div>
+						<? } else { echo htmlspecialchars($study_modality); } ?>
+					</td>
 					<td><?=$study_datetime?></td>
 					<td><?=number_format($age,1)?></td>
-					<td><?=$study_site?></td>
-					<td><?=$study_type?></td>
-				</tr>
-				<tr>
-					<td colspan="6" style="padding-left: 15px">
-				<?
+					<td><?=htmlspecialchars($study_site)?></td>
+					<td><?=htmlspecialchars($study_type)?></td>
+					<td>
+					<?
 					if ($study_modality != "") {
 						$sqlstring4 = "show tables like '" . strtolower($study_modality) . "_series'";
 						$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
@@ -2053,32 +2075,27 @@
 							$sqlstring3 = "select * from " . strtolower($study_modality) . "_series where study_id = $study_id order by series_num asc";
 							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 							while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-								if ($row3['series_desc'] == "") {
-									$protocol = $row3['series_protocol'];
-								}
-								else {
-									$protocol = $row3['series_desc'];
-								}
-								$seriesnum = $row3['series_num'];
-								echo "$seriesnum - $protocol<br>";
+								$protocol = ($row3['series_desc'] != "") ? $row3['series_desc'] : $row3['series_protocol'];
+								echo htmlspecialchars($row3['series_num'] . " - " . $protocol) . "<br>";
 							}
 						}
 						else {
-							echo "<span style='color:red'>Invalid modality [$study_modality]</span><br>";
+							?><span class="ui red text">Invalid modality [<?=htmlspecialchars($study_modality)?>]</span><?
 						}
 					}
-				?>
+					?>
 					</td>
 				</tr>
 				<?
 			}
 			?>
+			</tbody>
 		</table>
 		<?
 		}
 		else {
 			?>
-			<div style="font-size: 9pt; background-color:white; text-align: center; border: 1px solid #888; border-radius:8px; padding:3px">No imaging studies</div>
+			<div class="ui message">No imaging studies</div>
 			<?
 		}
 	}
@@ -2113,7 +2130,9 @@
 			$cancontact = $row['cancontact'];
 			
 			$tags = GetTags('subject', $id);
-			list($lastname, $firstname) = explode("^",$name);
+			$nameparts = explode("^", $name);
+			$lastname  = $nameparts[0] ?? '';
+			$firstname = $nameparts[1] ?? '';
 		
 			/* get privacy information */
 			$userid = $_SESSION['userid'];
@@ -2245,7 +2264,7 @@
 							<input type="hidden" name="enrollmentids[]" value="">
 						</tr>
 						<?
-						if ($id != "") {
+						if ($id != 0) {
 							$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = '$id'";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2537,7 +2556,7 @@
 							$gender = $row['gender'];
 							$uid = $row['uid'];
 							$isactive = $row['isactive'];
-							$lastupdate = date('M j, Y g:ia',strtotime($row['lastupdate']));
+							$ts = strtotime($row['lastupdate']); $lastupdate = $ts !== false ? date('M j, Y g:ia', $ts) : '';
 							$viewphi = $row['view_phi'];
 
 							if (!$viewphi) {
@@ -2563,7 +2582,7 @@
 									$projectid = $rowA['project_id'];
 									$projectname = $rowA['project_name'];
 									$projectcostcenter = $rowA['project_costcenter'];
-									if ($projectid != "") {
+									if ($projectid != 0) {
 										$enrolllist[$projectid] = "$projectname ($projectcostcenter)";
 									}
 								}

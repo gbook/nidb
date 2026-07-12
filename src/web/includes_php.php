@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB phpincludes.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -96,6 +96,7 @@
 		$username = $_SESSION['username'];
 		if (($_SESSION['validlogin'] != "true") || ($_SESSION['userid'] == '') ) {
 			header("Location: login.php");
+			exit(0);
 		}
 		if (trim($username) == "") {
 			Error("username is blank. Contact NiDB administrator");

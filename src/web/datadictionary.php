@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB datadictionary.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -51,8 +51,8 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$datadictid = GetVariable("datadictid");
+	$projectid = (int)GetVariable("projectid");
+	$datadictid = (int)GetVariable("datadictid");
 	$varname = GetVariable("varname");
 	$desc = GetVariable("desc");
 	$type = GetVariable("type");
@@ -61,6 +61,7 @@
 	$rangehigh = GetVariable("rangehigh");
 	$itemids = GetVariable("itemids");
 	$deleteids = GetVariable("deleteids");
+	if (!is_array($deleteids)) $deleteids = array();
 	$csv = GetVariable("csv");
 	
 	/* determine action */
@@ -155,12 +156,9 @@
 				$rangelow = $rangelows[$id];
 				$rangehigh = $rangehighs[$id];
 				
-				if (trim($expectedcount) == "")
-					$expectedcount = "null";
-				if (trim($rangelow) == "")
-					$rangelow = "null";
-				if (trim($rangehigh) == "")
-					$rangehigh = "null";
+				$expectedcount = (trim($expectedcount) === "" || !is_numeric($expectedcount)) ? "null" : ($expectedcount + 0);
+				$rangelow      = (trim($rangelow) === ""      || !is_numeric($rangelow))      ? "null" : ($rangelow + 0);
+				$rangehigh     = (trim($rangehigh) === ""     || !is_numeric($rangehigh))     ? "null" : ($rangehigh + 0);
 				
 				/* update the variable */
 				$sqlstring = "update ignore data_dictionary set datadict_desc = '$desc', datadict_type = '$type', datadict_expectedtimepoints = $expectedcount, datadict_rangelow = $rangelow, datadict_rangehigh = $rangehigh where datadict_id = $id";

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB search.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -104,66 +104,67 @@
     $searchvars['s_qcvariableid'] = GetVariable("s_qcvariableid");
 
 	/* data request variables */
-	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
-	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
-	$requestvars['downloadqc'] = GetVariable("downloadqc");
-	$requestvars['downloadexperiments'] = GetVariable("downloadexperiments");
-	$requestvars['downloadresults'] = GetVariable("downloadresults");
-	$requestvars['downloadpipelines'] = GetVariable("downloadpipelines");
-	$requestvars['downloadvariables'] = GetVariable("downloadvariables");
-	$requestvars['downloadminipipelines'] = GetVariable("downloadminipipelines");
-	$requestvars['destination'] = GetVariable("destination");
-	$requestvars['modality'] = GetVariable("modality");
-	$requestvars['dirformat'] = GetVariable("dirformat");
-	$requestvars['seriesid'] = GetVariable("seriesid");
-	$requestvars['enrollmentid'] = GetVariable("enrollmentid");
+	$requestvars['allsubject'] = GetVariable("allsubject");
 	$requestvars['anonymize'] = GetVariable("anonymize");
-	$requestvars['nfsdir'] = GetVariable("nfsdir");
-	$requestvars['filetype'] = GetVariable("filetype");
-	$requestvars['gzip'] = GetVariable("gzip");
-	$requestvars['niftijson'] = GetVariable("niftijson");
-	$requestvars['niftibids'] = GetVariable("niftibids");
-	$requestvars['preserveseries'] = GetVariable("preserveseries");
-	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
-	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
-	$requestvars['remoteftpusername'] = GetVariable("remoteftpusername");
-	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
-	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
-	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
-	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
-	$requestvars['publicdownloadname'] = GetVariable("publicdownloadname");
-	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
-	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
-	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
-	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
-	$requestvars['publicdownloadregisterrequired'] = GetVariable("publicdownloadregisterrequired");
-	$requestvars['publicdownloadexpire'] = GetVariable("publicdownloadexpire");
-	$requestvars['publicdatasetid'] = GetVariable("publicdatasetid");
-	$requestvars['dicomtags'] = GetVariable("dicomtags");
-	$requestvars['timepoints'] = GetVariable("timepoints");
-	$requestvars['behformat'] = GetVariable("behformat");
 	$requestvars['behdirnameroot'] = GetVariable("behdirnameroot");
 	$requestvars['behdirnameseries'] = GetVariable("behdirnameseries");
-    $requestvars['subjectmeta'] = GetVariable("subjectmeta");
-    $requestvars['subjectdata'] = GetVariable("subjectdata");
-    $requestvars['subjectphenotype'] = GetVariable("subjectphenotype");
-    $requestvars['subjectforms'] = GetVariable("subjectforms");
-    $requestvars['studymeta'] = GetVariable("studymeta");
-    $requestvars['studydata'] = GetVariable("studydata");
-    $requestvars['seriesmeta'] = GetVariable("seriesmeta");
-    $requestvars['seriesdata'] = GetVariable("seriesdata");
-    $requestvars['allsubject'] = GetVariable("allsubject");
-    $requestvars['bidsreadme'] = GetVariable("bidsreadme");
-    $requestvars['bidsflag_study'] = GetVariable("bidsflag_study");
-    $requestvars['bidsflag_subject'] = GetVariable("bidsflag_subject");
-    //$requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
-    //$requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
-    $requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
-    $requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
-    $requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
-    $requestvars['squirrelflag_incseries'] = GetVariable("squirrelflag_incseries");
-    $requestvars['squirreltitle'] = GetVariable("squirreltitle");
-    $requestvars['squirreldesc'] = GetVariable("squirreldesc");
+	$requestvars['behformat'] = GetVariable("behformat");
+	$requestvars['bidsflag_study'] = GetVariable("bidsflag_study");
+	$requestvars['bidsflag_subject'] = GetVariable("bidsflag_subject");
+	$requestvars['bidsreadme'] = GetVariable("bidsreadme");
+	$requestvars['destination'] = GetVariable("destination");
+	$requestvars['dicomtags'] = GetVariable("dicomtags");
+	$requestvars['dirformat'] = GetVariable("dirformat");
+	$requestvars['downloadbeh'] = GetVariable("downloadbeh");
+	$requestvars['downloadexperiments'] = GetVariable("downloadexperiments");
+	$requestvars['downloadimaging'] = GetVariable("downloadimaging");
+	$requestvars['downloadminipipelines'] = GetVariable("downloadminipipelines");
+	$requestvars['downloadpipelines'] = GetVariable("downloadpipelines");
+	$requestvars['downloadqc'] = GetVariable("downloadqc");
+	$requestvars['downloadresults'] = GetVariable("downloadresults");
+	$requestvars['downloadvariables'] = GetVariable("downloadvariables");
+	$requestvars['enrollmentid'] = GetVariable("enrollmentid");
+	$requestvars['filetype'] = GetVariable("filetype");
+	$requestvars['gzip'] = GetVariable("gzip");
+	$requestvars['modality'] = GetVariable("modality");
+	$requestvars['ndadownloadtype'] = GetVariable("ndadownloadtype");
+	$requestvars['nfsdir'] = GetVariable("nfsdir");
+	$requestvars['niftibids'] = GetVariable("niftibids");
+	$requestvars['niftijson'] = GetVariable("niftijson");
+	$requestvars['preserveseries'] = GetVariable("preserveseries");
+	$requestvars['publicdatasetid'] = GetVariable("publicdatasetid");
+	$requestvars['publicdownloaddesc'] = GetVariable("publicdownloaddesc");
+	$requestvars['publicdownloadexpire'] = GetVariable("publicdownloadexpire");
+	$requestvars['publicdownloadname'] = GetVariable("publicdownloadname");
+	$requestvars['publicdownloadpassword'] = GetVariable("publicdownloadpassword");
+	$requestvars['publicdownloadregisterrequired'] = GetVariable("publicdownloadregisterrequired");
+	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
+	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
+	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
+	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
+	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
+	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
+	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
+	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
+	$requestvars['remoteftpusername'] = GetVariable("remoteftpusername");
+	$requestvars['seriesdata'] = GetVariable("seriesdata");
+	$requestvars['seriesid'] = GetVariable("seriesid");
+	$requestvars['seriesmeta'] = GetVariable("seriesmeta");
+	$requestvars['squirreldesc'] = GetVariable("squirreldesc");
+	$requestvars['squirrelflag_dataformat'] = GetVariable("squirrelflag_dataformat");
+	$requestvars['squirrelflag_incseries'] = GetVariable("squirrelflag_incseries");
+	$requestvars['squirrelflag_incstudy'] = GetVariable("squirrelflag_incstudy");
+	$requestvars['squirrelflag_incsubject'] = GetVariable("squirrelflag_incsubject");
+	$requestvars['squirreltitle'] = GetVariable("squirreltitle");
+	$requestvars['studydata'] = GetVariable("studydata");
+	$requestvars['studymeta'] = GetVariable("studymeta");
+	$requestvars['subjectdata'] = GetVariable("subjectdata");
+	$requestvars['subjectforms'] = GetVariable("subjectforms");
+	$requestvars['subjectmeta'] = GetVariable("subjectmeta");
+	$requestvars['subjectphenotype'] = GetVariable("subjectphenotype");
+	$requestvars['timepoints'] = GetVariable("timepoints");
+	//$requestvars['bidsflag_usestudyid'] = GetVariable("bidsflag_usestudyid");
+	//$requestvars['bidsflag_useuid'] = GetVariable("bidsflag_useuid");
 
 	$numpostvars = count($_POST);
 	$maxnumvars = ini_get('max_input_vars');
@@ -433,8 +434,7 @@
 										$groupname = $row['group_name'];
 										$groupowner = $row['group_owner'];
 										
-										echo "[[$groupid -- [" . $s['s_subjectgroupid'] . "]]]";
-										if ($groupid == $s['s_subjectgroupid']) {
+											if ($groupid == $s['s_subjectgroupid']) {
 											$selected = "selected";
 										}
 										else {
@@ -1549,7 +1549,7 @@
 
 			/* get list of UIDs from the list of alternate UIDs */
 			if (count($subjectids) > 0) {
-				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode2(',',$subjectids) . ")";
+				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode(',', array_map('intval', (array)$subjectids)) . ")";
 				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 					$altuids[] = $rowX['altuid'];
@@ -1560,8 +1560,8 @@
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingstudies) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+			if (count($missingsubjects) > 0) {
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
@@ -1572,7 +1572,7 @@
 			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
 			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
@@ -1705,7 +1705,8 @@
 	/* ------- ValidateSearchVariables ------------ */
 	/* -------------------------------------------- */
 	function ValidateSearchVariables($s) {
-		
+		$msg = "";
+
 		/* check which resultorder (type of result display) was selected */
 		switch ($s['s_resultoutput']) {
 			case 'pipeline':
@@ -1905,7 +1906,7 @@
 			$displayid = $uid;
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
-				if ($displayids[$subject_id] != "") {
+				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
 					$displayid = $displayids[$subject_id];
 					$displayidcolor = "";
 				}
@@ -1935,11 +1936,12 @@
 			$name = GetFixedName($name);
 			
 			$study_desc = str_replace("^"," ",$study_desc);
+			$ts = strtotime($study_datetime);
 			if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
-				$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
+				$study_datetime = $ts !== false ? date("M j, Y g:ia", $ts) : '';
 			}
 			else {
-				$study_datetime = date("Y-m-d H:i",strtotime($study_datetime));
+				$study_datetime = $ts !== false ? date("Y-m-d H:i", $ts) : '';
 			}
 
 			/* gather series specific info based on modality */
@@ -1993,7 +1995,7 @@
 				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				$series_size = HumanReadableFilesize($series_size);
 				$beh_size = HumanReadableFilesize($beh_size);
 				
@@ -2109,7 +2111,7 @@
 				$series_size = $row['series_size'];
 				$series_notes = $row['series_notes'];
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				if ($series_numfiles < 1) { $series_numfiles = "-"; }
 				if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
@@ -2163,7 +2165,7 @@
 									<td class="two wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$project_name?> (<?=$project_costcenter?>)</span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger; white-space: nowrap;"><?=$study_datetime?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$enrollsubgroup?></span></td>
-									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=number_format($studyAge,1)?>Y , <?=number_format($calcStudyAge,1)?>Y</span></td>
+									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? if (is_numeric($studyAge)) { echo number_format($studyAge, 1) . "Y"; } else { echo "-"; } ?> , <? if (is_numeric($calcStudyAge)) { echo number_format($calcStudyAge, 1) . "Y"; } else { echo "-"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$gender?></span></td>
 									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_type?></span></td>
@@ -2245,7 +2247,7 @@
 						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
 							<td class="<?=$rowstyle?>"><?=$gender?></td>
-							<td class="<?=$rowstyle?>"><?=number_format($ageatscan,1)?>Y</td>
+							<td class="<?=$rowstyle?>"><?=$ageatscan?>Y</td>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt><? if (count($altuids) > 0) { echo implode2(', ',$altuids); } ?></tt></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$newstudyid?></a></td>
 							<td class="<?=$rowstyle?>"><a href="studies.php?id=<?=$study_id?>"><?=$study_alternateid?></a></td>
@@ -2283,13 +2285,13 @@
 						</td>
 						<? } ?>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxpvsnrcolor?>;">
-							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 						</td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxiosnrcolor?>;">
-							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 						</td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxmotioncolor?>; font-size:8pt">
-							<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
 						</td>
 						<td class="<?=$rowstyle?>"><?=$img_cols?>&times;<?=$img_rows?></td>
 						<td class="<?=$rowstyle?>">
@@ -2532,7 +2534,7 @@
 			$displayid = $uid;
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
-				if ($displayids[$subject_id] != "") {
+				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
 					$displayid = $displayids[$subject_id];
 					$displayidcolor = "";
 				}
@@ -2609,7 +2611,7 @@
 				$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 				$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				//$series_size = HumanReadableFilesize($series_size);
 				//$beh_size = HumanReadableFilesize($beh_size);
 
@@ -2653,7 +2655,7 @@
 				$series_size = $row['series_size'];
 				$series_notes = $row['series_notes'];
 				
-				$series_datetime = date("g:ia",strtotime($series_datetime));
+				$ts = strtotime($series_datetime); $series_datetime = $ts !== false ? date("g:ia", $ts) : '';
 				if ($series_numfiles < 1) { $series_numfiles = "-"; }
 				//if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
 			}
@@ -2741,7 +2743,9 @@
 	/* ------- GetFixedName ----------------------- */
 	/* -------------------------------------------- */
 	function GetFixedName($name) {
-		list($lname, $fname) = explode("^",$name);
+		$nameparts = explode("^", $name);
+		$lname = $nameparts[0] ?? '';
+		$fname = $nameparts[1] ?? '';
 		$name = strtoupper(substr($fname,0,1)) . strtoupper(substr($lname,0,1));
 		return $name;
 	}
@@ -2764,13 +2768,14 @@
 	/* ------- GetStudyDateTime ------------------- */
 	/* -------------------------------------------- */
 	function GetStudyDateTime($s_resultoutput, $study_datetime) {
+		$ts = strtotime($study_datetime);
 		if (($s_resultoutput == "study") || ($s_resultoutput == "export")) {
-			$study_datetime = date("M j, Y g:ia",strtotime($study_datetime));
+			$study_datetime = $ts !== false ? date("M j, Y g:ia", $ts) : '';
 		}
 		else {
-			$study_datetime = date("Y-m-d H:i",strtotime($study_datetime));
+			$study_datetime = $ts !== false ? date("Y-m-d H:i", $ts) : '';
 		}
-		
+
 		return $study_datetime;
 	}
 
@@ -2781,6 +2786,8 @@
 	function GetStudySearchResultsAge($dob, $studyage, $studydate) {
 		
 		//echo "dob [$dob]  studyage [$studyage]  studydate [$studydate]<br>";
+		
+		$calculatedStudyAge = "";
 		
 		# calculate study age
 		if (($dobUnix = strtotime($dob)) === false) {
@@ -2799,8 +2806,9 @@
 			}
 				
 		}
-		
-		$calculatedStudyAge = number_format($calculatedStudyAge,1);
+		if (is_numeric($calculatedStudyAge)) {
+			$calculatedStudyAge = number_format($calculatedStudyAge,1);
+		}
 		
 		return array($studyage, $calculatedStudyAge);
 	}
@@ -3097,7 +3105,7 @@
 				}
 				$csv .= "\n";
 				foreach ($tables as $uid => $valuepair) {
-					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['altuids'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+					$csv .= $uid . ',' . $tables[$uid]['studynum'] . ',' . $tables[$uid]['altuids'] . ',' . $tables[$uid]['studydate'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['studyAge'];
 					foreach ($names2 as $name2 => $blah) {
 						$csv .= ',' . $tables[$uid][$name2];
 					}
@@ -3146,12 +3154,12 @@
 							<td><a href="studies.php?id=<?=$tables[$uid]['studyid']?>"><b><?=$uid?></b></a></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studydate']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['gender']?></td>
-							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['age']?></td>
+							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['studyAge']?></td>
 							<td style="border-left: 1px solid #AAAAAA; border-top: 1px solid #AAAAAA; font-size:9pt; padding:2px;"><?=$tables[$uid]['visittype']?></td>
 							<?
 							$stats[0][$tables[$uid]['gender']]++;
-							$stats[1][] = $tables[$uid]['age'];
-							$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['age'];
+							$stats[1][] = $tables[$uid]['studyAge'];
+							$csv .= $tables[$uid]['studyid'] . ',' . $tables[$uid]['gender'] . ',' . $tables[$uid]['studyAge'];
 							$i=2;
 							foreach ($names as $name => $blah) {
 								$val = $tables[$uid][$name];
@@ -3263,7 +3271,7 @@
 			<?
 				foreach ($names as $name => $blah) {
 					foreach ($tables as $uid => $valuepair) {
-						$lists['age'][] = $tables[$uid]['age'];
+						$lists['age'][] = $tables[$uid]['studyAge'];
 						
 						/* this loop gets the data into an array */
 						foreach ($names as $name => $blah) {
@@ -3433,8 +3441,8 @@
 		if ($s['s_subjectgroupid'] != "") {
 			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
 			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingstudies) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',',$missingsubjects) . ")";
+			if (count($missingsubjects) > 0) {
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
@@ -3445,7 +3453,7 @@
 			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
 			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
 			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',',$missingstudies) . ")";
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
 				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
@@ -3646,12 +3654,12 @@
 			/* get list of alternate subject UIDs */
 			$altuids = GetAlternateUIDs($subject_id,'');
 			
-			$enroll_startdate = date("Y-m-d",strtotime($enroll_startdate));
-			if ($enroll_enddate = '0000-00-00 00:00:00') {
+			$ts = strtotime($enroll_startdate); $enroll_startdate = $ts !== false ? date("Y-m-d", $ts) : '';
+			if ($enroll_enddate == '0000-00-00 00:00:00') {
 				$enroll_enddate = 'present';
 			}
 			else {
-				$enroll_enddate = date("Y-m-d",strtotime($enroll_enddate));
+				$ts = strtotime($enroll_enddate); $enroll_enddate = $ts !== false ? date("Y-m-d", $ts) : '';
 			}
 			
 			if ($gender == '') { $gender = '-'; }
@@ -3810,7 +3818,10 @@
 					$numcolsdisplayed = 0;
 					/* loop through the studies */
 					foreach ($longs[$uid][$seriesdesc] as $studydate => $seriesids) {
-						list($seriesid1,$studyid,$studynum) = explode(',',$seriesids[0]);
+						$seriesparts = explode(',', $seriesids[0]);
+					$seriesid1 = $seriesparts[0] ?? '';
+					$studyid    = $seriesparts[1] ?? '';
+					$studynum   = $seriesparts[2] ?? '';
 						//echo "seriesID $seriesid<br>";
 						if ($lastdate != "") {
 							$tspan = (strtotime($studydate) - strtotime($lastdate))/60/60/24/365;
@@ -3824,7 +3835,7 @@
 						}
 						$csv1 .= ",$studydate";
 						$csv2 .= ",$uid$studynum";
-						$studydate = date("M j, Y", strtotime($studydate));
+						$ts = strtotime($studydate); $studydate = $ts !== false ? date("M j, Y", $ts) : '';
 							if ($tspan != "") {
 								$numcolsdisplayed++;
 						?>
@@ -3837,12 +3848,15 @@
 						<a href="studies.php?id=<?=$studyid?>"><?=$studydate?></a> [<?=$studynum?>]
 						<?
 						foreach ($seriesids as $ser) {
-							list($seriesid,$studyid,$studynum) = explode(',',$ser);
+							$seriesparts = explode(',', $ser);
+						$seriesid = $seriesparts[0] ?? '';
+						$studyid  = $seriesparts[1] ?? '';
+						$studynum = $seriesparts[2] ?? '';
 							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = '$seriesid'";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$seriesnum = $row['series_num'];
-							$seriesdate = date("M j, Y h:m:s a", strtotime($row['series_datetime']));
+							$ts = strtotime($row['series_datetime']); $seriesdate = $ts !== false ? date("M j, Y h:m:s a", $ts) : '';
 							$protocol = $row['series_desc'];
 							$sequence = $row['series_sequencename'];
 							$series_num = $row['series_num'];
@@ -4928,7 +4942,7 @@
 										<div class="header">
 											FTP download
 										</div>
-										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code></p>
+										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code></p>
 									</div>
 								</div>
 							</div>
@@ -4940,8 +4954,23 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p><b>FTP</b> A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p><b>Web</b> A zipped directory containing all NDA data will be available to download from the <b>Search</b> &rarr; <b>Export Status</b> page. This must be unzipped before it can uploaded to NDA</p>
 									</div>
+								</div>
+								<div class="field">
+									Download type <i class="small blue question circle outline icon" title="Format and location for the NDA download/export"></i>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="ndadownloadtype" value="ftp" checked>
+										<label>FTP</label>
+									</div>
+									<br>
+									<div class="ui radio checkbox">
+										<input type="radio" name="ndadownloadtype" value="web">
+										<label>Web</label>
+									</div>
+									<br>
 								</div>
 							</div>
 							
@@ -4952,7 +4981,7 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['ftpdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
 									</div>
 								</div>
 							</div>
@@ -4980,9 +5009,9 @@
 							</div>
 							
 							<!-- Remote XNAT tab -->
-							<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
+							<!--<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
 								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
-							</div>
+							</div>-->
 							
 							<!-- Remote FTP tab -->
 							<div class="ui <? if ($activeTab == "remoteftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
@@ -5572,7 +5601,7 @@
 		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
 		//PrintVariable($s_projectids);
 		if (isset($s_projectids) && (!in_array("all", $s_projectids) && (count($s_projectids) > 0))) {
-			$sqlwhere .= " and `projects`.project_id in (" . implode2(",", $s_projectids) . ")";
+			$sqlwhere .= " and `projects`.project_id in (" . implode(",", array_map('intval', (array)$s_projectids)) . ")";
 		}
 		else {
 			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		
@@ -6157,7 +6186,7 @@
 		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $r['filetype']);
 		$gzip = ($r['gzip'] == 1) ? 1 : 0;
 		$niftijson = ($r['niftijson'] == 1) ? 1 : 0;
-		$anonymize = ($r['anonymize'] == 1) ? 1 : 0;
+		$anonymize = $r['anonymize'];
 		$dirformat = $r['dirformat'];
 		$timepoints = $r['timepoints'];
 		$behformat = $r['behformat'];
@@ -6181,7 +6210,9 @@
 		$downloadvariables = ($r['downloadvariables'] == 1) ? 1 : 0;
 		$downloadminipipelines = ($r['downloadminipipelines'] == 1) ? 1 : 0;
 
-		//echo "$downloadbeh";
+		$ndadownloadtype = $r['ndadownloadtype'];
+
+		if ($anonymize == "") { $anonymize = 0; }
 		
 		if (!$downloadbeh) { $behformat = "behnone"; }
 		
@@ -6194,7 +6225,7 @@
 				echo "NFS destination directory was blank! go back and enter a destination directory<br>";
 				exit(0);
 			}
-			if (strpos($nfsdir," ") != false) {
+			if (strpos($nfsdir," ") !== false) {
 				echo "Destination directory cannot contain spaces. You must choose a different destination directory that does not have spaces<br>";
 				exit(0);
 			}
@@ -6263,6 +6294,14 @@
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
 		}
+
+		/* collect the download flags */
+		$ndaflags = array();
+		if ($ndadownloadtype == "web") { $ndaflags[] = "NDA_WEBDOWNLOAD"; } else { $ndaflags[] = "NDA_FTPDOWNLOAD"; }
+		if (count($ndaflags) > 0)
+			$ndaflagstr = "('" . implode2(",",$ndaflags) . "')";
+		else
+			$ndaflagstr = "null";
 		
 		/* collect the download flags */
 		$downloadflags = array();
@@ -6347,7 +6386,7 @@
 		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
 		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
 
-		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, nda_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, $ndaflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
@@ -6505,9 +6544,10 @@
 				$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
 			} else { $pstats[$sequence]['maxstdmotion'] = 0; }
 		}
+		return $pstats ?? [];
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- remove_outliers -------------------- */
 	/* -------------------------------------------- */

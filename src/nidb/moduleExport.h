@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleExport.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -26,11 +26,6 @@
 #include "archiveio.h"
 #include "imageio.h"
 #include "remotenidbconnection.h"
-#include "gdcmReader.h"
-#include "gdcmWriter.h"
-#include "gdcmAttribute.h"
-#include "gdcmStringFilter.h"
-#include "gdcmAnonymizer.h"
 #include "squirrel.h"
 
 /**
@@ -45,11 +40,12 @@ public:
 
     QString GetExportStatus(int exportid);
     bool SetExportStatus(int exportid, QString status, QString msg = "");
+    bool SetExportedPath(int exportRowID, QString path);
 
     bool GetExportSeriesList(int exportid);
 
     bool ExportLocal(int exportid, QString exporttype, QString nfsdir, int publicdownloadid, int publicdatasetdownloadid, QStringList downloadflags, QString filetype, QString dirformat, int preserveseries, bool gzip, int anonymize, QString behformat, QString behdirrootname, QString behdirseriesname, QString bidsreadme, QStringList niftiflags, QStringList bidsflags, QString squirreltitle, QString squirreldesc, QStringList squirrelflags, QString &status, QString &msg);
-    bool ExportNDAR(int exportid, bool csvonly, QString &exportstatus, QString &msg);
+    bool ExportNDA(int exportid, bool csvonly, QStringList ndaflags, QString &exportstatus, QString &msg);
     bool ExportBIDS(int exportid, QString bidsreadme, QStringList bidsflags, QString &outdir, QString &exportstatus, QString &msg);
     bool ExportToRemoteNiDB(int exportid, remoteNiDBConnection &conn, QString &exportstatus, QString &msg);
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
@@ -62,6 +58,8 @@ public:
 
     int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m);
     void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m);
+
+    int GetNDAMapping(int projectRowID, QString protocol, QString modality);
 
     /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
     QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > > s;

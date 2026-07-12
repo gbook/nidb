@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB filesio.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
 ?>
 
@@ -42,25 +42,22 @@
 
 	/* get variables */
 	$action = GetVariable("action");
-	$page = GetVariable("page");
-	$fileioid = GetVariable("fileioid");
-	$requestid = GetVariable("requestid");
-	$viewall = GetVariable("viewall");
-	
+	$fileioid = (int)GetVariable("fileioid");
+
 	switch ($action) {
 		case 'cancelfileio':
 			CancelFileIO($fileioid);
-			ShowList($viewall);
+			ShowList();
 			break;
 		case 'deletefileio':
 			DeleteFileIO($fileioid);
-			ShowList($viewall);
+			ShowList();
 			break;
 		default:
-			ShowList($viewall);
+			ShowList();
 	}
 
-	
+
 	/* --------------------------------------------------- */
 	/* ------- CancelFileIO ------------------------------ */
 	/* --------------------------------------------------- */
@@ -83,109 +80,187 @@
 	/* --------------------------------------------------- */
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
-	function ShowList($viewall) {
-		if ($viewall) {
-			?><a href="filesio.php?viewall=0" class="ui basic button">Show most recent</a>
-		<? } else { ?>
-			<a href="filesio.php?viewall=1" class="ui basic button">Show all</a>
-		<? } ?>
-		<br><br>
-		<SCRIPT LANGUAGE="Javascript">
-			function decision(message, url){
-					if(confirm(message)) location.href = url;
-			}
-		</SCRIPT>
-		<table class="ui very compact celled grey table">
-			<thead>
-				<!--<th align="left">I/O Id</th>-->
-				<th align="left">Requested By</th>
-				<th align="left">Request date</th>
-				<th align="left">Operation</th>
-				<th align="left">Status</th>
-				<th align="left">Message</th>
-				<th align="left">Complete date</th>
-				<th align="center">Action</th>
-			</thead>
-		<?	
-		
-		$completecolor = "66AAFF";
-		$processingcolor = "AAAAFF";
-		$errorcolor = "FF6666";
-		$othercolor = "EFEFFF";
-
+	function ShowList() {
 		if ($GLOBALS['issiteadmin']) {
-			if ($viewall) {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
-			}
-			else {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` order by fileiorequest_id desc limit 100";
-			}
+			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
+		} else {
+			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 1000";
 		}
-		else {
-			if ($viewall) {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 1000";
+
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$rows = [];
+		$pendingCount = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if ($row['request_status'] === 'pending') $pendingCount++;
+			$enddate = ($row['enddate'] === '0000-00-00 00:00:00' || $row['enddate'] === '') ? '' : $row['enddate'];
+
+			$duration = '';
+			$validStart = ($row['startdate'] !== '0000-00-00 00:00:00' && $row['startdate'] !== '');
+			$validEnd   = ($row['enddate']   !== '0000-00-00 00:00:00' && $row['enddate']   !== '');
+			if ($validStart && $validEnd) {
+				$diff = strtotime($row['enddate']) - strtotime($row['startdate']);
+				if ($diff > 0) {
+					$h = (int)floor($diff / 3600);
+					$m = (int)floor(($diff % 3600) / 60);
+					$s = (int)($diff % 60);
+					if ($h > 0)      $duration = "{$h}h {$m}m {$s}s";
+					elseif ($m > 0)  $duration = "{$m}m {$s}s";
+					else             $duration = "{$s}s";
+				}
 			}
-			else {
-				$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`,`data_type`,`request_status`, `request_message`, `username`,`requestdate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 100";
-			}
+
+			$rows[] = [
+				'fileiorequest_id' => (int)$row['fileiorequest_id'],
+				'username'         => $row['username'],
+				'requestdate'      => $row['requestdate'],
+				'fileio_operation' => $row['fileio_operation'],
+				'operation'        => ucfirst($row['fileio_operation']) . ' ' . $row['data_type'],
+				'request_status'   => $row['request_status'],
+				'request_message'  => $row['request_message'],
+				'enddate'          => $enddate,
+				'duration'         => $duration,
+			];
 		}
-			
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$fileioid = $row['fileiorequest_id'];
-				$rquser = $row['username'];
-				$rtime = $row['requestdate'];
-				$iooperation = $row['fileio_operation'];
-				$iotype = $row['data_type'];
-				$iostatus = $row['request_status'];
-				$iomessage = $row['request_message'];
-				
-				if ($iostatus == "error") { $color = "red"; }
-				elseif ($iostatus == "complete") { $color = "green"; }
-				else { $color = ""; }
-			?>                        
-
-			<tr>
-				<!--<td><?=$fileioid?></td>-->
-				<td><?=$rquser?></td>
-				<td><?=$rtime?></td>
-				<td><?=ucfirst($iooperation)?> <?=$iotype?></td>
-				<td class="ui <?=$color?> cell"><?=$iostatus?></td>
-				<td><?=$iomessage?></td>
-				<?
-				$now = strtotime($rtime);
-				$Five_minutes = $now + (5 * 60);
-				$startDate = date('Y-m-y H:i:s', $now);
-				$endDate = date('Y-m-y H:i:s', $Five_minutes);
-				   
-				if ($endDate > $startDate) {
-					$D2 = date('d',$endDate);
-					$D1 = date('d',$startDate);
-					$Ttime =$D2-$D1;
-				}
-				else {
-					$Ttime = 2;
-				}
-				?>
-				<td><?=$endDate?></td>
-				<? if ($iostatus=='pending'){ ?>
-				<td align="center" class="cancel">
-					<a class="ui small compact red button" href="filesio.php?action=cancelfileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Cancel Operation</a>
-				</td>
-				<? }?>
-				<? if ($iostatus=='error' || $iostatus=='cancelled'){ ?>
-				<td>
-					<a class="ui small compact red button" href="filesio.php?action=deletefileio&fileioid=<?=$fileioid?>" onclick="return confirm('Are you sure?')">Remove</a>
-				</td>
-				<? } ?>
-
-			</tr>
-			<?
-			}
 		?>
-		</table>
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
+		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+
+		<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+			<input type="text" id="filterInput" placeholder="Search..." oninput="gridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+			<span id="pendingLabel" class="ui <?= $pendingCount > 0 ? 'yellow' : 'green' ?> label" style="font-size:1em;min-width:160px"><?= $pendingCount > 0 ? '<i class="spinner loading icon"></i>' : '' ?><?= $pendingCount ?> pending operations</span>
+		</div>
+		<div id="fileioGrid" class="ag-theme-alpine" style="height:600px;width:100%"></div>
+
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
+		<script>
+		const rowData = <?= json_encode($rows) ?>;
+
+		const opIcons = {
+			'copy':                   'copy',
+			'delete':                 'trash',
+			'move':                   'exchange',
+			'detach':                 'unlink',
+			'anonymize':              'user secret',
+			'createlinks':            'linkify',
+			'rearchive':              'archive',
+			'rearchivesubject':       'archive',
+			'rearchiveidonly':        'archive',
+			'rearchivesubjectidonly': 'archive',
+			'rechecksuccess':         'check circle',
+			'merge':                  'compress',
+		};
+
+		const columnDefs = [
+			{ field: 'username',        headerName: 'Requested By',  sortable: true, filter: true, width: 140 },
+			{ field: 'requestdate',     headerName: 'Request Date',  sortable: true, filter: true, width: 170 },
+			{
+				field: 'operation', headerName: 'Operation', sortable: true, filter: true, width: 200,
+				cellRenderer: params => {
+					const icon = opIcons[params.data.fileio_operation] || 'file';
+					const span = document.createElement('span');
+					span.innerHTML = `<i class="${icon} icon"></i>${params.value}`;
+					return span;
+				}
+			},
+			{
+				field: 'request_status', headerName: 'Status', sortable: true, filter: true, width: 180,
+				cellStyle: params => {
+					if (params.value === 'complete') return { background: '#fcfff5', color: '#2c662d' };
+					if (params.value === 'error')    return { background: '#fff6f6', color: '#9f3a38' };
+					return {};
+				},
+				cellRenderer: params => {
+					const icons = { complete: 'check circle', error: 'exclamation circle' };
+					const icon = icons[params.value] || null;
+					const duration = params.data.duration ? ` <span style="opacity:0.7;font-size:0.9em">(${params.data.duration})</span>` : '';
+					const span = document.createElement('span');
+					span.innerHTML = (icon ? `<i class="${icon} icon"></i>` : '') + params.value + duration;
+					return span;
+				}
+			},
+			{ field: 'request_message', headerName: 'Message',       sortable: true, filter: true, flex: 2 },
+			{ field: 'enddate',         headerName: 'Complete Date',  sortable: true, filter: true, width: 170 },
+			{
+				headerName: 'Action', sortable: false, filter: false, width: 140,
+				cellRenderer: params => {
+					const { fileiorequest_id, request_status } = params.data;
+					const div = document.createElement('div');
+					div.style.paddingTop = '3px';
+					if (request_status === 'pending') {
+						const btn = document.createElement('a');
+						btn.href = `filesio.php?action=cancelfileio&fileioid=${fileiorequest_id}`;
+						btn.className = 'ui small compact red button';
+						btn.textContent = 'Cancel';
+						btn.onclick = e => { if (!confirm('Are you sure?')) e.preventDefault(); };
+						div.appendChild(btn);
+					} else if (request_status === 'error' || request_status === 'cancelled') {
+						const btn = document.createElement('a');
+						btn.href = `filesio.php?action=deletefileio&fileioid=${fileiorequest_id}`;
+						btn.className = 'ui small compact red button';
+						btn.textContent = 'Remove';
+						btn.onclick = e => { if (!confirm('Are you sure?')) e.preventDefault(); };
+						div.appendChild(btn);
+					}
+					return div;
+				}
+			}
+		];
+
+		const gridOptions = {
+			columnDefs,
+			rowData,
+			defaultColDef: { resizable: true },
+		};
+
+		const gridDiv = document.getElementById('fileioGrid');
+		const gridApi = agGrid.createGrid(gridDiv, gridOptions);
+
+		// Poll pending rows every second; stop when none remain
+		const pendingIds = new Set(
+			rowData.filter(r => r.request_status === 'pending').map(r => r.fileiorequest_id)
+		);
+
+		function updatePendingLabel() {
+			const label = document.getElementById('pendingLabel');
+			const n = pendingIds.size;
+			label.className = 'ui ' + (n > 0 ? 'yellow' : 'green') + ' label';
+			label.innerHTML = (n > 0 ? '<i class="spinner loading icon"></i>' : '') + n + ' pending operations';
+		}
+
+		function pollPendingStatus() {
+			if (pendingIds.size === 0) return;
+			fetch('ajaxapi.php', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'action=getfileiostatus&ids=' + encodeURIComponent(JSON.stringify([...pendingIds]))
+			})
+				.then(r => {
+					if (!r.ok) throw new Error('HTTP ' + r.status);
+					return r.json();
+				})
+				.then(data => {
+					if (!Array.isArray(data)) return;
+					data.forEach(item => {
+						if (item.request_status !== 'pending') {
+							gridApi.forEachNode(node => {
+								if (node.data && node.data.fileiorequest_id === item.fileiorequest_id) {
+									const enddate = (item.enddate === '0000-00-00 00:00:00' || item.enddate === '') ? '' : item.enddate;
+									node.setData({ ...node.data, request_status: item.request_status, request_message: item.request_message, enddate, duration: item.duration || '' });
+								}
+							});
+							pendingIds.delete(item.fileiorequest_id);
+						}
+					});
+					updatePendingLabel();
+					if (pendingIds.size === 0) clearInterval(pollTimer);
+				})
+				.catch(e => console.error('FileIO poll error:', e));
+		}
+
+		const pollTimer = pendingIds.size > 0 ? setInterval(pollPendingStatus, 1000) : null;
+		</script>
 		<?
 	}
-	
+
 require "footer.php";
 ?>

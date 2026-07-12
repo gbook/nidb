@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB pipeline.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -43,6 +43,7 @@ public:
     QDateTime lastStart;
     QList<int> groupIDs;
     QList<int> parentIDs;
+    QList<int> projectIDs;
     QString BIDSoutputDir;
     QString dataCopyMethod;
     QString depDir;
@@ -52,7 +53,7 @@ public:
     QString dirStructure;
     QString directory;
     QString group;
-    QString groupType;
+    //QString groupType;
     QString name;
     QString notes;
     QString pipelineRootDir;
@@ -77,7 +78,6 @@ public:
     int ownerID;
     int submitDelay;
     int version;
-
     QString clusterQueue;
     QString clusterSubmitHost;
     QString clusterSubmitHostUser;
@@ -87,6 +87,7 @@ public:
     int clusterMaxWallTime;
     int clusterNumCores;
 
+    QString PrintPipelineVariables() const;
     squirrelPipeline GetSquirrelObject(QString databaseUUID);
 
 private:

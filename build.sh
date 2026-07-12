@@ -3,13 +3,14 @@
 if grep -q -i "release 8" /etc/redhat-release
 then
 	echo "RHEL 8 detected. Enabling gcc 10"
+	#scl enable gcc-toolset-10 bash
 	#scl enable gcc-toolset-10 bash || true
 	source /opt/rh/gcc-toolset-10/enable
 fi
 
 # global build variables
 if [ -z "$1" ]; then
-	QMAKEBIN=~/Qt/6.9.1/gcc_64/bin/qmake
+	QMAKEBIN=~/Qt/6.9.3/gcc_64/bin/qmake
 else
 	QMAKEBIN=$1
 fi
@@ -43,20 +44,20 @@ mkdir -p $BUILDDIR
 # ----- build pre-requisites -----
 
 # build gdcm (make sure cmake 3 is installed)
-if [ ! -d "$BUILDDIR/gdcm" ]; then
+#if [ ! -d "$BUILDDIR/gdcm" ]; then
 
 	#command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake' or 'apt-get cmake'.\n"; exit 1; }
 
-	echo -e "\ngdcm not built. Building gdcm now\n"
+#	echo -e "\ngdcm not built. Building gdcm now\n"
 
-	mkdir -p $BUILDDIR/gdcm
-	mkdir -p $BUILDDIR/gdcm
-	cd $BUILDDIR/gdcm
-	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
-	make -j 16
-else
-	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
-fi
+#	mkdir -p $BUILDDIR/gdcm
+#	mkdir -p $BUILDDIR/gdcm
+#	cd $BUILDDIR/gdcm
+#	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
+#	make -j 16
+#else
+#	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
+#fi
 
 # ----- build bit7z library -----
 #echo -e "\n ----- Building bit7z -----\n"
@@ -90,18 +91,18 @@ cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
 #cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/bit7z/
 
 # ----- build smtp module -----
-if [ ! -d "$BUILDDIR/smtp" ]; then
+#if [ ! -d "$BUILDDIR/smtp" ]; then
 
-	echo -e "\nsmtp module not built. Building smtp module now\n"
+#	echo -e "\nsmtp module not built. Building smtp module now\n"
 
-	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
 	
-	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-	cd $BUILDDIR/smtp
-	make -j 16
-else
-	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
-fi
+#	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
+#	cd $BUILDDIR/smtp
+#	make -j 16
+#else
+#	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
+#fi
 
 # ----- build squirrel library -----
 echo -e "\nBuilding squirrel library\n"
@@ -121,12 +122,12 @@ make -B -j 16
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
-sudo cp -uv bin/squirrel/libsquirrel* /lib/
-sudo cp -uv bin/squirrel/libsquirrel* /lib/x86_64-linux-gnu/
-sudo cp -uv bin/gdcm/bin/libgdcm* /lib/
-sudo cp -uv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
-sudo cp -uv bin/smtp/libSMTPEmail* /lib/
-sudo cp -uv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
+sudo cp -uv bin/squirrel/libsquirrel.a /lib64/
+sudo cp -uv bin/squirrel/libsquirrel.a /lib/x86_64-linux-gnu/
+#sudo cp -auv bin/gdcm/bin/libgdcm* /lib64/
+#sudo cp -auv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
+#sudo cp -auv bin/smtp/libSMTPEmail* /lib/
+#sudo cp -auv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 
 echo -e "\nCopying nidb to /nidb/bin"
 sudo cp -uv bin/nidb/nidb /nidb/bin/

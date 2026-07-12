@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleCluster.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ public:
     moduleCluster(nidb *n);
     ~moduleCluster();
 
-    bool PipelineCheckin(QString analysisid, QString status, QString message, QString command, QString &m);
+    bool PipelineCheckin(QString analysisid, QString status, QString step, QString message, QString command, QString &m);
     bool ResultInsert(QString paramAnalysisID, QString paramResultText, QString paramResultNumber, QString paramResultFile, QString paramResultImage, QString paramResultDesc, QString paramResultUnit, QString &m);
     bool UpdateAnalysis(QString analysisid, QString &m);
     bool CheckCompleteAnalysis(QString analysisid, QString &m);

@@ -26,12 +26,19 @@
 #include <QFile>
 #include <QString>
 #include <QDir>
-#include "gdcmReader.h"
-#include "gdcmWriter.h"
-#include "gdcmAttribute.h"
-#include "gdcmStringFilter.h"
-#include "gdcmAnonymizer.h"
+#include "dcmtk/config/osconfig.h"
+#include "dcmtk/dcmdata/dcfilefo.h"
+#include "dcmtk/dcmdata/dcdatset.h"
+#include "dcmtk/dcmdata/dcdeftag.h"
+#include "dcmtk/dcmdata/dcdict.h"
 #include "utils.h"
+
+struct CsaElement
+{
+    QString name;
+    QString vr;
+    QList<QByteArray> values;
+};
 
 /**
  * @brief The squirrelImageIO class
@@ -47,11 +54,27 @@ public:
     /* DICOM & image functions */
     bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, QString uid, QString studynum, QString seriesnum, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool IsDICOMFile(QString f);
-    bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2, QString &msg);
-    bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);
+
+    bool AnonymizeDicomDirInPlace(QString dir, int anonlevel, QString &msg);
+    bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
+
+    //bool AnonymizeDir(QString dir, int anonlevel, QString randstr1, QString randstr2, QString &msg);
+    //bool AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg);
+
     QString GetDicomModality(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
-    bool GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg);
+    bool GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg);
+    bool GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags);
+
+private:
+    /* exiftool helper */
+    QString Exiftool(QString arg);
+
+    /* Siemens CSA header parser functions */
+    QMap<QString, CsaElement> ParseSiemensCSA(const QByteArray& csa);
+    QString csaToString(const QByteArray& v);
+    double csaToDouble(const QByteArray& v);
+    int csaToInteger(const QByteArray& v);
 
 };
 

@@ -58,9 +58,9 @@ bool squirrelDataDictionary::Get() {
 
         /* get the data */
         objectID = q.value("DataDictionaryRowID").toLongLong();
+        DataDictionaryName = q.value("DataDictionaryName").toString();
         FileCount = q.value("FileCount").toLongLong();
         Size = q.value("Size").toLongLong();
-        //virtualPath = q.value("VirtualPath").toString();
 
         /* get the DataDictionaryItems */
         dictItems.clear();
@@ -72,7 +72,7 @@ bool squirrelDataDictionary::Get() {
             dataDictionaryItem d;
             d.VariableType = q.value("VariableType").toString();
             d.VariableName = q.value("VariableName").toString();
-            d.Description = q.value("VariableDescription").toString();
+            d.VariableDescription = q.value("VariableDescription").toString();
             d.KeyValueMapping = q.value("KeyValueMapping").toString();
             d.ExpectedTimepoints = q.value("ExpectedTimepoints").toInt();
             d.RangeLow = q.value("RangeLow").toDouble();
@@ -109,6 +109,7 @@ bool squirrelDataDictionary::Get() {
 bool squirrelDataDictionary::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert into DataDictionary (FileCount, Size, VirtualPath) values (:FileCount, :Size, :VirtualPath)");
@@ -138,7 +139,7 @@ bool squirrelDataDictionary::Store() {
         q.bindValue(":DataDictionaryRowID", objectID);
         q.bindValue(":VariableType", dic.VariableType);
         q.bindValue(":VariableName", dic.VariableName);
-        q.bindValue(":VariableDescription", dic.Description);
+        q.bindValue(":VariableDescription", dic.VariableDescription);
         q.bindValue(":KeyValue", dic.KeyValueMapping);
         q.bindValue(":ExpectedTimepoints", dic.ExpectedTimepoints);
         q.bindValue(":RangeLow", dic.RangeLow);
@@ -147,7 +148,8 @@ bool squirrelDataDictionary::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, DataDictionary, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, DataDictionary, stagedFiles);
 
     return true;
 }
@@ -156,6 +158,10 @@ bool squirrelDataDictionary::Store() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this data dictionary and all its items
+ * @return QJsonObject containing all data dictionary fields and item array
+ */
 QJsonObject squirrelDataDictionary::ToJSON() {
 
     QJsonObject json;
@@ -164,8 +170,8 @@ QJsonObject squirrelDataDictionary::ToJSON() {
     foreach (dataDictionaryItem item, dictItems) {
         QJsonObject jsonItem;
         jsonItem["VariableType"] = item.VariableType;
-        jsonItem["variableName"] = item.VariableName;
-        jsonItem["Description"] = item.Description;
+        jsonItem["VariableName"] = item.VariableName;
+        jsonItem["VariableDescription"] = item.VariableDescription;
         jsonItem["KeyValueMapping"] = item.KeyValueMapping;
         jsonItem["ExpectedTimepoints"] = item.ExpectedTimepoints;
         jsonItem["RangeLow"] = item.RangeLow;
@@ -198,7 +204,7 @@ QString squirrelDataDictionary::PrintDataDictionary() {
 
     int i = 0;
     foreach (dataDictionaryItem item, dictItems) {
-        str += utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.Description).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
+        str += utils::Print(QString("\tItem [%1]\ttype [%2]\tvariableName [%3]\ttype [%4]\ttype [%5]\ttype [%6]\ttype [%7]\ttype [%8]").arg(i).arg(item.VariableType).arg(item.VariableName).arg(item.VariableDescription).arg(item.KeyValueMapping).arg(item.ExpectedTimepoints).arg(item.RangeLow).arg(item.RangeHigh));
         i++;
     }
 
@@ -209,6 +215,10 @@ QString squirrelDataDictionary::PrintDataDictionary() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the data dictionary's virtual path within the squirrel package
+ * @return virtual path string (e.g. "data-dictionary/DataDictionaryName")
+ */
 QString squirrelDataDictionary::VirtualPath() {
     QString vPath = QString("data-dictionary/%1").arg(utils::CleanString(DataDictionaryName));
 
@@ -219,6 +229,10 @@ QString squirrelDataDictionary::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelDataDictionary::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

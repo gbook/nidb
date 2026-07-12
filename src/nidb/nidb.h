@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB nidb.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -33,7 +33,7 @@
 #include <QMetaType>
 #include <QVariant>
 #include "version.h"
-#include "SmtpMime"
+//#include "SmtpMime"
 #include "utils.h"
 
 typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudySeriesContainer;
@@ -43,6 +43,43 @@ typedef QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> subjectStudy
 #pragma warning(disable : 4866)
 #pragma warning(disable : 4711)
 #endif
+
+enum class LogStatus {
+    error,
+    neutral,
+    success,
+    warning
+};
+enum class AnalysisEvent {
+    ClusterCheckinStep,
+    ManageCopy,
+    ManageCreateLink,
+    ManageDelete,
+    SetupCheckIfOkToRun,
+    SetupDependencyCheck,
+    SetupDependencyCopy,
+    SetupCreateAnalysis,
+    SetupCreateDirectory,
+    SetupDataStepCheck,
+    SetupDataStepDownload,
+    SetupDataCheckSummary,
+    SetupDataDownloadSummary,
+    SetupStudyPrecheck,
+    SetupSubmitToCluster,
+    SetupSummary,
+    SetupWriteJobScript,
+    StatusAnalysisComplete,
+    StatusAnalysisStarted,
+    StatusAnalysisStepCheckin,
+    StatusCheckSuccessFiles,
+    StatusRecheckComplete,
+    StatusRerunComplete,
+    StatusRerunStarted,
+    StatusResultScript,
+    StatusSupplementComplete,
+    StatusSupplementStarted,
+    StatusUpdateFileList
+};
 
 /**
  * @brief The nidb class
@@ -78,9 +115,10 @@ public:
     bool IsRunningFromCluster();
 
     /* logging */
-    void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message);
+    void InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString status, QString message);
     void InsertSubjectChangeLog(QString username, QString uid, QString newuid, QString changetype, QString log);
     bool SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 seriesid, QString modality, QString status, QString msg = "");
+    QString LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname);
 
     /* generic nidb functions */
     QString CreateUID(QString prefix, int numletters=3);
@@ -96,6 +134,9 @@ public:
     bool GetSQLComparison(QString c, QString &comp, int &num);
     //bool SubmitClusterJob(QString f, QString submithost, QString qsub, QString user, QString queue, QString &msg, int &jobid, QString &result);
     bool SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result);
+
+    /* debug functions */
+    QString GetSubjectStudySeriesMapString(const QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> &data);
 
 private:
     void FatalError(QString err);

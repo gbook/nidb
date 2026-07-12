@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB projectchecklist.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -44,13 +44,14 @@
 	$action = GetVariable("action");
 	$projectid = GetVariable("projectid");
 	$itemid = GetVariable("itemid");
-	$itemorder = GetVariable("itemorder");
+	//$itemorder = GetVariable("itemorder");
 	$itemname = GetVariable("itemname");
+	$itemtype = GetVariable("itemtype");
 	$modality = GetVariable("modality");
-	$protocol = GetVariable("protocol");
-	$itemcount = GetVariable("itemcount");
-	$frequency = GetVariable("frequency");
-	$frequencyunit = GetVariable("frequencyunit");
+	$mappedname = GetVariable("mappedname");
+	$expectedcount = GetVariable("expectedcount");
+	$deleteitem = GetVariable("deleteitem");
+	$instrumentid = GetVariable("instrumentid");
 	$enrollmentid = GetVariable("enrollmentid");
 	$projectchecklistid = GetVariable("projectchecklistid");
 	$reason = GetVariable("reason");
@@ -71,7 +72,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'updateprojectchecklist':
-			UpdateProjectChecklist($projectid, $itemid, $itemorder, $itemname, $modality, $protocol, $itemcount, $frequency, $frequencyunit);
+			UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem, $instrumentid);
 			DisplayEditChecklist($projectid);
 			break;
 		case 'setmissingdatareasonform':
@@ -102,52 +103,127 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateProjectChecklist ------------- */
 	/* -------------------------------------------- */
-	function UpdateProjectChecklist($projectid, $itemid, $itemorder, $itemname, $modality, $protocol, $itemcount, $frequency, $frequencyunit) {
+	function UpdateProjectChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem, $instrumentid) {
 
 		/* perform data checks */
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
+		$projectid = trim($projectid);
 		
-		$itemid = mysqli_real_escape_array($GLOBALS['linki'], $itemid);
-		$itemorder = mysqli_real_escape_array($GLOBALS['linki'], $itemorder);
-		$itemname = mysqli_real_escape_array($GLOBALS['linki'], $itemname);
-		$modality = mysqli_real_escape_array($GLOBALS['linki'], $modality);
-		$protocol = mysqli_real_escape_array($GLOBALS['linki'], $protocol);
-		$itemcount = mysqli_real_escape_array($GLOBALS['linki'], $itemcount);
-		$frequency = mysqli_real_escape_array($GLOBALS['linki'], $frequency);
-		$frequencyunit = mysqli_real_escape_array($GLOBALS['linki'], $frequencyunit);
+		if (!isInteger($projectid)) {
+			Error("Invalid project ID [$projectid]");
+			return;
+		}
+		$projectid = (int)$projectid;
 		
-		if (!isInteger($projectid)) { echo "Invalid project ID [$projectid]"; return; }
+		$itemids = $itemid;
+		$itemnames = $itemname;
+		$itemtypes = $itemtype;
+		$modalities = $modality;
+		$mappednames = $mappedname;
+		$expectedcounts = $expectedcount;
+		$deleteitems = $deleteitem;
+		
+		if (!is_array($itemids)) { $itemids = array(); }
+		if (!is_array($itemnames)) { $itemnames = array(); }
+		if (!is_array($itemtypes)) { $itemtypes = array(); }
+		if (!is_array($modalities)) { $modalities = array(); }
+		if (!is_array($mappednames)) { $mappednames = array(); }
+		if (!is_array($expectedcounts)) { $expectedcounts = array(); }
+		if (!is_array($deleteitems)) { $deleteitems = array(); }
+		$instrumentids = is_array($instrumentid) ? $instrumentid : array();
 
-		/* update the checklist */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$i=1;
+		$allindices = array_unique(array_merge(
+			array_keys($itemids),
+			array_keys($itemnames),
+			array_keys($itemtypes),
+			array_keys($modalities),
+			array_keys($mappednames),
+			array_keys($expectedcounts),
+			array_keys($deleteitems),
+			array_keys($instrumentids)
+		));
+		sort($allindices, SORT_NUMERIC);
+		
+		mysqli_begin_transaction($GLOBALS['linki']);
+		
+		$deleteRowID = 0;
+		$deleteStmt = mysqli_prepare($GLOBALS['linki'], "delete from project_checklist where project_id = ? and projectchecklist_id = ?");
+		mysqli_stmt_bind_param($deleteStmt, 'ii', $projectid, $deleteRowID);
+		
+		$insertItemOrder = 0;
+		$insertName = "";
+		$insertType = "";
+		$insertModality = "";
+		$insertMappedName = "";
+		$insertExpectedCount = null;
+		$insertInstrumentId = null;
+		$insertStmt = mysqli_prepare($GLOBALS['linki'], "insert into project_checklist (project_id, item_order, item_name, item_type, imaging_modality, mapped_name, expected_count, instrument_id) values (?, ?, ?, ?, ?, ?, ?, ?)");
+		mysqli_stmt_bind_param($insertStmt, 'iissssii', $projectid, $insertItemOrder, $insertName, $insertType, $insertModality, $insertMappedName, $insertExpectedCount, $insertInstrumentId);
 
-		foreach ($itemorder as $order) {
+		$updateItemOrder = 0;
+		$updateName = "";
+		$updateType = "";
+		$updateModality = "";
+		$updateMappedName = "";
+		$updateExpectedCount = null;
+		$updateInstrumentId = null;
+		$updateRowID = 0;
+		$updateStmt = mysqli_prepare($GLOBALS['linki'], "update project_checklist set item_order = ?, item_name = ?, item_type = ?, imaging_modality = ?, mapped_name = ?, expected_count = ?, instrument_id = ? where project_id = ? and projectchecklist_id = ?");
+		mysqli_stmt_bind_param($updateStmt, 'issssiiii', $updateItemOrder, $updateName, $updateType, $updateModality, $updateMappedName, $updateExpectedCount, $updateInstrumentId, $projectid, $updateRowID);
+		
+		$itemorder = 1;
+		foreach ($allindices as $i) {
+			$rowid = isset($itemids[$i]) ? trim($itemids[$i]) : "";
+			$name = isset($itemnames[$i]) ? trim($itemnames[$i]) : "";
+			$type = isset($itemtypes[$i]) ? trim($itemtypes[$i]) : "Checkbox";
+			$itemmodality = isset($modalities[$i]) ? trim($modalities[$i]) : "";
+			$itemmappedname = isset($mappednames[$i]) ? trim($mappednames[$i]) : "";
+			$itemexpectedcount = isset($expectedcounts[$i]) ? trim($expectedcounts[$i]) : "";
+			$delete = isset($deleteitems[$i]) ? trim($deleteitems[$i]) : "0";
+			$iteminstrumentid = isset($instrumentids[$i]) ? (int)$instrumentids[$i] : null;
+			if ($iteminstrumentid < 1) $iteminstrumentid = null;
 
-			if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) != "")) {
-				if (trim($itemid[$i] == "")) {
-					$sqlstring = "insert into project_checklist (project_id, item_name, item_order, modality, protocol_name, count, frequency, frequency_unit) values ($projectid, '$itemname[$i]', '$itemorder[$i]', '$modality[$i]', '$protocol[$i]', '$itemcount[$i]', '$frequency[$i]', '$frequencyunit[$i]')";
+			if (($rowid != "") && (!isInteger($rowid))) { continue; }
+			if (!in_array($type, array("Checkbox", "Imaging", "Intervention", "Observation", "Diagnosis", "Instrument"))) { $type = "Checkbox"; }
+			if (($itemexpectedcount == "") || (!isInteger($itemexpectedcount)) || ($itemexpectedcount < 1)) { $itemexpectedcount = "null"; }
+			else { $itemexpectedcount = intval($itemexpectedcount); }
+			
+			if (($delete == "1") && ($rowid != "")) {
+				$deleteRowID = (int)$rowid;
+				$result = MySQLiBoundQuery($deleteStmt, __FILE__, __LINE__);
+			}
+			else if ($name != "") {
+				if ($rowid == "") {
+					$insertItemOrder = $itemorder;
+					$insertName = $name;
+					$insertType = $type;
+					$insertModality = $itemmodality;
+					$insertMappedName = $itemmappedname;
+					$insertExpectedCount = ($itemexpectedcount == "null") ? null : $itemexpectedcount;
+					$insertInstrumentId = $iteminstrumentid;
+					$result = MySQLiBoundQuery($insertStmt, __FILE__, __LINE__);
 				}
 				else {
-					$sqlstring = "update project_checklist set item_name = '$itemname[$i]', item_order = '$itemorder[$i]', modality = '$modality[$i]', protocol_name = '$protocol[$i]', count = '$itemcount[$i]', frequency = '$frequency[$i]', frequency_unit = '$frequencyunit[$i]' where projectchecklist_id = $itemid[$i]";
+					$updateItemOrder = $itemorder;
+					$updateName = $name;
+					$updateType = $type;
+					$updateModality = $itemmodality;
+					$updateMappedName = $itemmappedname;
+					$updateExpectedCount = ($itemexpectedcount == "null") ? null : $itemexpectedcount;
+					$updateInstrumentId = $iteminstrumentid;
+					$updateRowID = (int)$rowid;
+					$result = MySQLiBoundQuery($updateStmt, __FILE__, __LINE__);
 				}
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$itemorder++;
 			}
-			else if ((trim($itemorder[$i]) != "") && (trim($itemname[$i]) == "")) {
-				//delete
-				$sqlstring = "delete from project_checklist where item_order = '$itemorder[$i]'  AND projectchecklist_id = '$itemid[$i]'";
-
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			}
-
-			$i++;
 		}
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
-		Notice("Checklist updated");		
+		mysqli_stmt_close($deleteStmt);
+		mysqli_stmt_close($insertStmt);
+		mysqli_stmt_close($updateStmt);
+		
+		mysqli_commit($GLOBALS['linki']);
+		
+		Notice("Checklist updated");
 	}
 
 	/* -------------------------------------------- */
@@ -224,102 +300,364 @@
 	/* -------------------------------------------- */
 	function DisplayEditChecklist($projectid) {
 	
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$projectid = trim($projectid);
 	
-		if (($projectid == '') || ($projectid == 0)) {
+		if (($projectid == '') || ($projectid == 0) || (!isInteger($projectid))) {
 			Error("Project ID blank");
 			return;
 		}
+		$projectid = (int)$projectid;
 		
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select project_name from projects where project_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectname = $row['project_name'];
+		mysqli_stmt_close($stmt);
+		$projectname = htmlspecialchars($row['project_name'], ENT_QUOTES);
 		
-		$neworder = 1;
+		$modalityoptions = "<option value=\"\"></option>";
+		$modalitycodes = [];
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select mod_code from modalities order by mod_code");
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modcode = htmlspecialchars($row['mod_code'], ENT_QUOTES);
+			$modalityoptions .= "<option value=\"$modcode\">$modcode</option>";
+			$modalitycodes[] = $row['mod_code'];
+		}
+		mysqli_stmt_close($stmt);
 
-	?>
-	<!--<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>-->
+		$instrumentoptions = "<option value=\"\">Select instrument...</option>";
+		$instruments = [];
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? order by instrument_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$iid  = (int)$row['instrument_id'];
+			$iname = htmlspecialchars($row['instrument_name'], ENT_QUOTES);
+			$instrumentoptions .= "<option value=\"$iid\">$iname</option>";
+			$instruments[$iid] = $iname;
+		}
+		mysqli_stmt_close($stmt);
 
-	<datalist id="modalitylist">
-		<?
-			$sqlstring = "select * from modalities";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$modcode = $row['mod_code'];
-				?><option value="<?=$modcode?>"><?
+		/* show return button if the user navigated here from an enrollment page */
+		$lastenrollmentid = isset($_COOKIE['lastenrollmentid']) ? (int)$_COOKIE['lastenrollmentid'] : 0;
+		if ($lastenrollmentid > 0) {
+			list($returnuid, $returnsubjectid, $returnaltuid, $returnprojectname, $returnprojectid) = GetEnrollmentInfo($lastenrollmentid);
+			if ($returnsubjectid > 0) {
+				?>
+				<div style="margin-bottom: 1em">
+					<a href="enrollment.php?enrollmentid=<?=$lastenrollmentid?>" class="ui basic blue button"><i class="arrow left icon"></i> Return to enrollment &mdash; <?=htmlspecialchars($returnuid)?></a>
+				</div>
+				<?
 			}
+		}
 		?>
-	</datalist>
-	
-	<div class="ui container">
-		<h2 class="ui header">List of expected <u>imaging</u> items for this project</h2>
-		<form method="POST" action="projectchecklist.php">
-		<input type="hidden" name="action" value="updateprojectchecklist">
-		<input type="hidden" name="projectid" value="<?=$projectid?>">
-		<table class="ui small very compact table">
-			<thead>
-				<tr>
-					<th>Order</th>
-					<th>Name</th>
-					<th>Modality<br><span class="tiny">Leave blank to use a checkbox</span></th>
-					<th>Protocol<br><span class="tiny">comma separated for multiple protocols</span></th>
-					<th>Count</th>
-					<!--<th colspan="2">Frequency</th>-->
-				</tr>
-			</thead>
-			<tbody>
-				<?
-					$sqlstring = "select * from project_checklist where project_id = $projectid order by item_order";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$id = $row['projectchecklist_id'];
-						$itemname = $row['item_name'];
-						$itemorder = $row['item_order'];
-						$modality = $row['modality'];
-						$protocol = $row['protocol_name'];
-						$itemcount = $row['count'];
-						$frequency = $row['frequency'];
-						$frequencyunit = $row['frequency_unit'];
-						//frequency_unit	enum('hour', 'day', 'week', 'month', 'year')					
+		<div class="ui container">
+			<link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/css/select2.min.css" rel="stylesheet">
+			<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-rc.0/js/select2.min.js"></script>
+			<style>
+				.checklist-select {
+					width: 100%;
+				}
+				.select2-container {
+					width: 100% !important;
+				}
+				.select2-container--default .select2-selection--single {
+					border: 1px solid rgba(34,36,38,.15);
+					border-radius: .28571429rem;
+					height: 38px;
+				}
+				.select2-container--default .select2-selection--single .select2-selection__rendered {
+					line-height: 38px;
+					padding-left: 14px;
+					color: rgba(0,0,0,.87);
+				}
+				.select2-container--default .select2-selection--single .select2-selection__arrow {
+					height: 36px;
+				}
+				.checklist-name-column {
+					width: 32%;
+				}
+				.checklist-count-column {
+					width: 100px;
+				}
+				.checklist-count-input {
+					max-width: 80px;
+				}
+			</style>
+			<div class="ui two column grid">
+				<div class="column">
+					<h2 class="ui header"><?=$projectname?> Checklist Items</h2>
+				</div>
+				<div class="right aligned column">
+					<a href="projectchecklist.php?projectid=<?=$projectid?>" class="ui basic blue button">Back to checklist</a>
+				</div>
+			</div>
+		</div>
+		
+			<form method="post" action="projectchecklist.php" id="checklistform" onSubmit="RenumberChecklistRows()">
+				<input type="hidden" name="action" value="updateprojectchecklist">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				
+				<script type="text/javascript">
+					/* Assign indexed field names so PHP receives each row as an array entry. */
+					function SetChecklistInputNames(row, rownum) {
+						row.querySelector("input.checklist-itemid").name = "itemid[" + rownum + "]";
+						row.querySelector("input.checklist-itemname").name = "itemname[" + rownum + "]";
+						row.querySelector("select.checklist-itemtype").name = "itemtype[" + rownum + "]";
+						row.querySelector("select.checklist-modality").name = "modality[" + rownum + "]";
+						row.querySelector("input.checklist-mappedname").name = "mappedname[" + rownum + "]";
+						row.querySelector("input.checklist-expectedcount").name = "expectedcount[" + rownum + "]";
+						row.querySelector("input.checklist-deleteitem").name = "deleteitem[" + rownum + "]";
+						row.querySelector("select.checklist-instrument").name = "instrumentid[" + rownum + "]";
+						row.querySelector(".checklist-itemorder-display").textContent = rownum;
+					}
+					
+					/* Keep submitted row order contiguous after client-side add/delete actions. */
+					function RenumberChecklistRows() {
+						var rownum = 1;
+						document.querySelectorAll("#checklistitems tr.checklist-row:not(.checklist-template):not(.checklist-deleted)").forEach(function(row) {
+							SetChecklistInputNames(row, rownum);
+							rownum++;
+						});
+						document.querySelectorAll("#checklistitems tr.checklist-row.checklist-deleted:not(.checklist-template)").forEach(function(row) {
+							SetChecklistInputNames(row, rownum);
+							rownum++;
+						});
+					}
+					
+					/* Clone the hidden template, make its required fields active, then initialize Select2. */
+					function AddChecklistRow() {
+						var template = document.getElementById("checklistrowtemplate");
+						var row = template.cloneNode(true);
+						row.removeAttribute("id");
+						row.classList.remove("checklist-template");
+						row.style.display = "";
+						ResetChecklistDropdowns(row);
+						row.querySelector(".checklist-itemname").required = true;
+						row.querySelector(".checklist-itemtype").required = true;
+						document.getElementById("checklistitems").appendChild(row);
+						RenumberChecklistRows();
+						InitializeChecklistDropdowns(row);
+						UpdateChecklistRowRequirements(row);
+						row.querySelector(".checklist-itemname").focus();
+					}
+					
+					/* New unsaved rows can be removed; existing DB rows are hidden and marked for deletion. */
+					function DeleteChecklistRow(button) {
+						var row = button.closest("tr");
+						if (row.querySelector(".checklist-itemid").value == "") {
+							row.remove();
+						}
+						else {
+							row.classList.add("checklist-deleted");
+							row.style.display = "none";
+							row.querySelector(".checklist-deleteitem").value = "1";
+						}
+						RenumberChecklistRows();
+					}
+					
+					/* Cloned rows can inherit Select2 metadata from the template; strip it before reinitializing. */
+					function ResetChecklistDropdowns(context) {
+						jQuery(context).find(".select2-container").remove();
+						jQuery(context).find("select.checklist-select").add(jQuery(context).filter("select.checklist-select")).each(function() {
+							jQuery(this)
+								.removeClass("select2-hidden-accessible")
+								.removeAttr("data-select2-id")
+								.removeAttr("aria-hidden")
+								.removeAttr("tabindex");
+							jQuery(this).find("option").removeAttr("data-select2-id");
+						});
+					}
+					
+					/* Initialize Select2 only for real checklist rows, never the hidden template. */
+					function InitializeChecklistDropdowns(context) {
+						if (!window.jQuery || !jQuery.fn.select2) {
+							return;
+						}
 						
-				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="<?=$id?>">
-				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:40px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" value="<?=$itemname?>" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" value="<?=$modality?>" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" value="<?=$protocol?>" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" value="<?=$itemcount?>" style="width:40px"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]" value="<?=$frequency?>"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]" value="<?=$frequencyunit?>"></td>-->
-				</tr>
-				<? 
-						$neworder++;
+						jQuery(context).find("tr.checklist-template select.checklist-select").add(jQuery(context).filter("tr.checklist-template select.checklist-select")).each(function() {
+							if (jQuery(this).hasClass("select2-hidden-accessible")) {
+								jQuery(this).select2("destroy");
+							}
+						});
+						
+						jQuery(context).find("select.checklist-select").add(jQuery(context).filter("select.checklist-select")).filter(function() {
+							return jQuery(this).closest("tr.checklist-template").length == 0;
+						}).each(function() {
+							if (jQuery(this).hasClass("select2-hidden-accessible")) {
+								return;
+							}
+								
+							jQuery(this).select2({
+								minimumResultsForSearch: Infinity,
+								width: "style"
+							});
+						});
 					}
-					for ($i=0;$i<5;$i++) {
-				?>
-				<input type="hidden" name="itemid[<?=$neworder?>]" value="">
-				<tr>
-					<td><div class="ui input"><input type="number" name="itemorder[<?=$neworder?>]" value="<?=$neworder?>" style="width:80px"></div></td>
-					<td><div class="ui input"><input type="text" name="itemname[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="text" name="modality[<?=$neworder?>]" list="modalitylist"></div></td>
-					<td><div class="ui input"><input type="text" name="protocol[<?=$neworder?>]" size="50"></div></td>
-					<td><div class="ui input"><input type="number" name="itemcount[<?=$neworder?>]" style="width:80px" value="1"></div></td>
-					<!--<td><input type="text" name="frequency[<?=$neworder?>]"></td>-->
-					<!--<td><input type="text" name="frequencyunit[<?=$neworder?>]"></td>-->
-				</tr>
-				<?
-						$neworder++;
+					
+					/* Show/hide modality, mappedname, and instrument cells based on the selected type. */
+					function UpdateChecklistRowRequirements(row) {
+						var typeVal          = row.querySelector("select.checklist-itemtype").value;
+						var modalitySelect   = row.querySelector("select.checklist-modality");
+						var mappedInput      = row.querySelector("input.checklist-mappedname");
+						var instrumentSelect = row.querySelector("select.checklist-instrument");
+						var modalityDiv      = row.querySelector(".checklist-modality-container");
+						var instrumentDiv    = row.querySelector(".checklist-instrument-container");
+						var isImaging        = (typeVal === "Imaging");
+						var isInstrument     = (typeVal === "Instrument");
+						modalitySelect.required   = isImaging;
+						mappedInput.required      = (typeVal === "Imaging" || typeVal === "Intervention" || typeVal === "Observation");
+						instrumentSelect.required = isInstrument;
+						modalityDiv.style.display   = isImaging    ? "" : "none";
+						instrumentDiv.style.display = isInstrument ? "" : "none";
 					}
-				?>
-				<tr>
-					<td colspan="5" align="right" style="padding-right: 20px"><input class="ui primary button" type="submit" value="Save/Update"></td>
-				</tr>
-			</tbody>
-		</table>
-	</div>
-	<?
+
+					/* Existing rows are present on page load and need Select2 setup once. */
+					jQuery(document).ready(function() {
+						InitializeChecklistDropdowns(document);
+						/* Initialize required state for all existing rows. */
+						document.querySelectorAll("#checklistitems tr.checklist-row:not(.checklist-template)").forEach(function(row) {
+							UpdateChecklistRowRequirements(row);
+						});
+						/* React to type changes (works for both existing and newly-added rows). */
+						jQuery("#checklistitems").on("change", "select.checklist-itemtype", function() {
+							UpdateChecklistRowRequirements(this.closest("tr"));
+						});
+					});
+				</script>
+				
+				<table class="ui small very compact selectable table">
+					<thead>
+						<tr>
+							<th>Order</th>
+							<th class="checklist-name-column">Name</th>
+							<th>Type</th>
+							<th>Modality</th>
+							<th>Mapped name<br><span class="tiny">comma separated for multiple protocol or variable names</span></th>
+							<th>Instrument</th>
+							<th class="checklist-count-column">Expected count</th>
+							<th></th>
+						</tr>
+					</thead>
+					<tbody id="checklistitems">
+						<tr id="checklistrowtemplate" class="checklist-row checklist-template" style="display: none">
+							<td class="center aligned"><span class="checklist-itemorder-display"></span></td>
+							<td>
+								<input type="hidden" class="checklist-itemid" value="">
+								<input type="hidden" class="checklist-deleteitem" value="0">
+								<div class="ui fluid input">
+									<input type="text" class="checklist-itemname" value="">
+								</div>
+							</td>
+							<td>
+								<select class="checklist-select checklist-itemtype">
+									<option value="">Select item type...</option>
+									<option value="Checkbox">Checkbox</option>
+									<option value="Imaging">Imaging</option>
+									<option value="Intervention">Intervention</option>
+									<option value="Observation">Observation</option>
+									<option value="Diagnosis">Diagnosis</option>
+									<option value="Instrument">Instrument</option>
+								</select>
+							</td>
+							<td>
+								<div class="checklist-modality-container" style="display:none">
+									<select class="checklist-select checklist-modality">
+										<?=$modalityoptions?>
+									</select>
+								</div>
+							</td>
+							<td><div class="ui fluid input"><input type="text" class="checklist-mappedname" value=""></div></td>
+							<td>
+								<div class="checklist-instrument-container" style="display:none">
+									<select class="checklist-select checklist-instrument">
+										<?=$instrumentoptions?>
+									</select>
+								</div>
+							</td>
+							<td><div class="ui input checklist-count-input"><input type="number" class="checklist-expectedcount" min="1" value=""></div></td>
+							<td><button type="button" class="ui red icon button" onClick="DeleteChecklistRow(this)" title="Delete checklist item"><i class="trash alternate icon"></i></button></td>
+						</tr>
+						<?
+							$itemorder = 1;
+							$stmt = mysqli_prepare($GLOBALS['linki'], "select * from project_checklist where project_id = ? order by item_order asc, projectchecklist_id asc");
+							mysqli_stmt_bind_param($stmt, 'i', $projectid);
+							$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$checklistrowid = $row['projectchecklist_id'];
+								$itemname = htmlspecialchars($row['item_name'], ENT_QUOTES);
+								$itemtype = $row['item_type'];
+								$imagingmodality = htmlspecialchars($row['imaging_modality'] ?? "", ENT_QUOTES);
+								$mappedname = htmlspecialchars($row['mapped_name'] ?? "", ENT_QUOTES);
+								$expectedcount = htmlspecialchars($row['expected_count'] ?? "", ENT_QUOTES);
+								$rowinstrumentid = (int)($row['instrument_id'] ?? 0);
+								$rawmodality = $row['imaging_modality'] ?? "";
+							?>
+								<tr class="checklist-row">
+									<td class="center aligned"><span class="checklist-itemorder-display"><?=$itemorder?></span></td>
+									<td>
+										<input type="hidden" class="checklist-itemid" name="itemid[<?=$itemorder?>]" value="<?=$checklistrowid?>">
+										<input type="hidden" class="checklist-deleteitem" name="deleteitem[<?=$itemorder?>]" value="0">
+										<div class="ui fluid input">
+											<input type="text" class="checklist-itemname" name="itemname[<?=$itemorder?>]" value="<?=$itemname?>" required>
+										</div>
+									</td>
+									<td>
+										<select name="itemtype[<?=$itemorder?>]" class="checklist-select checklist-itemtype" required>
+											<option value="">Select item type...</option>
+											<option value="Checkbox" <? if ($itemtype == "Checkbox") { echo "selected"; } ?>>Checkbox</option>
+											<option value="Imaging" <? if ($itemtype == "Imaging") { echo "selected"; } ?>>Imaging</option>
+											<option value="Intervention" <? if ($itemtype == "Intervention") { echo "selected"; } ?>>Intervention</option>
+											<option value="Observation" <? if ($itemtype == "Observation") { echo "selected"; } ?>>Observation</option>
+											<option value="Diagnosis" <? if ($itemtype == "Diagnosis") { echo "selected"; } ?>>Diagnosis</option>
+											<option value="Instrument" <? if ($itemtype == "Instrument") { echo "selected"; } ?>>Instrument</option>
+										</select>
+									</td>
+									<td>
+										<div class="checklist-modality-container" <? if ($itemtype != "Imaging") { echo 'style="display:none"'; } ?>>
+											<select name="modality[<?=$itemorder?>]" class="checklist-select checklist-modality">
+												<option value=""></option>
+												<? foreach ($modalitycodes as $mc) {
+													$esc = htmlspecialchars($mc, ENT_QUOTES);
+													$sel = (strcasecmp($mc, $rawmodality) === 0) ? " selected" : "";
+													echo "<option value=\"$esc\"$sel>$esc</option>";
+												} ?>
+											</select>
+										</div>
+									</td>
+									<td><div class="ui fluid input"><input type="text" class="checklist-mappedname" name="mappedname[<?=$itemorder?>]" value="<?=$mappedname?>"></div></td>
+									<td>
+										<div class="checklist-instrument-container" <? if ($itemtype != "Instrument") { echo 'style="display:none"'; } ?>>
+											<select name="instrumentid[<?=$itemorder?>]" class="checklist-select checklist-instrument">
+												<option value="">Select instrument...</option>
+												<? foreach ($instruments as $iid => $iname) {
+													$sel = ($iid === $rowinstrumentid && $rowinstrumentid > 0) ? " selected" : "";
+													echo "<option value=\"$iid\"$sel>" . htmlspecialchars($iname, ENT_QUOTES) . "</option>";
+												} ?>
+											</select>
+										</div>
+									</td>
+									<td><div class="ui input checklist-count-input"><input type="number" class="checklist-expectedcount" name="expectedcount[<?=$itemorder?>]" min="1" value="<?=$expectedcount?>"></div></td>
+									<td><button type="button" class="ui red icon button" onClick="DeleteChecklistRow(this)" title="Delete checklist item"><i class="trash alternate icon"></i></button></td>
+								</tr>
+								<?
+								$itemorder++;
+							}
+							mysqli_stmt_close($stmt);
+						?>
+					</tbody>
+					<tfoot>
+						<tr>
+							<td colspan="7" align="right" style="padding-right: 20px">
+							<button class="ui button" type="button" onClick="AddChecklistRow()"><i class="plus square outline icon"></i> Add checklist item</button>
+							<input class="ui primary button" type="submit" value="Update">
+							</td>
+						</tr>
+					</tfoot>
+				</table>
+			</form>
+		<?
 	}
 	
 	
@@ -328,39 +666,42 @@
 	/* -------------------------------------------- */
 	function DisplayProjectChecklist($projectid) {
 	
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$projectid = trim($projectid);
 	
-		if (($projectid == '') || ($projectid == 0)) {
+		if (($projectid == '') || ($projectid == 0) || (!isInteger($projectid))) {
 			Error("Project ID blank");
 			return;
 		}
+		$projectid = (int)$projectid;
 		
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectname = $row['project_name'];
-		$usecustomid = $row['project_usecustomid'];
+		/* get project information */
+		$p = GetProjectInfo($projectid);
+		$projectname = $p['projectName'];
+		$usecustomid = $p['projectUseCustomID'];
 	
 		/* get the main checklist items */
+		$checklist = array();
 		$i = 0;
-		$sqlstring = "select * from project_checklist where project_id = $projectid order by item_order asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from project_checklist where project_id = ? order by item_order asc");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$checklist[$i]['id'] = $row['projectchecklist_id'];
 			$checklist[$i]['name'] = $row['item_name'];
 			$checklist[$i]['desc'] = $row['item_desc'];
 			$checklist[$i]['order'] = $row['item_order'];
-			$checklist[$i]['modality'] = $row['modality'];
-			$checklist[$i]['protocol'] = $row['protocol_name'];
-			$checklist[$i]['count'] = $row['count'];
-			$checklist[$i]['frequency'] = $row['frequency'];
-			$checklist[$i]['frequencyunit'] = $row['frequency_unit'];
+			$checklist[$i]['modality'] = $row['imaging_modality'];
+			$checklist[$i]['protocol'] = $row['mapped_name'];
+			$checklist[$i]['count'] = $row['expected_count'];
 			$i++;
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* get the project enrollment data */
-		$sqlstring = "select a.*, b.subject_id, b.uid, b.guid, b.isactive, c.study_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join studies c on a.enrollment_id = c.enrollment_id where a.project_id = $projectid and b.isactive = 1 order by b.uid asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$enrollment = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.subject_id, b.uid, b.guid, b.isactive, c.study_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join studies c on a.enrollment_id = c.enrollment_id where a.project_id = ? and b.isactive = 1 order by b.uid asc");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		//PrintSQL($sqlstring);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
@@ -375,41 +716,20 @@
 			$enrollment[$uid]['enroll_subgroup'] = $row['enroll_subgroup'];
 
 		}
-		if (is_null($enrollment))
-			$numenrollments = 0;
-		else
-			$numenrollments = count($enrollment);
+		mysqli_stmt_close($stmt);
+		$numenrollments = count($enrollment);
 
-		?>
-		<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.css"/>
-		<script type="text/javascript" src="https://cdn.datatables.net/v/se/dt-1.10.24/datatables.min.js"></script>
+		/* start to create the ag-grid columns */
+		$columnDefs = array(
+			array('headerName' => 'Primary ID', 'field' => 'primaryid', 'minWidth' => 130, 'flex' => 1),
+			array('headerName' => 'UID', 'field' => 'uid', 'minWidth' => 120, 'flex' => 1, 'pinned' => 'left'),
+			array('headerName' => 'GUID', 'field' => 'guid', 'minWidth' => 170, 'flex' => 1.2),
+			array('headerName' => 'Enroll date', 'field' => 'enrolldate', 'minWidth' => 130, 'flex' => 1),
+			array('headerName' => '# studies', 'field' => 'numstudies', 'minWidth' => 110, 'maxWidth' => 120, 'flex' => 0.7),
+			array('headerName' => 'Group', 'field' => 'group', 'minWidth' => 120, 'flex' => 1)
+		);
 		
-		<script>
-			$(document).ready(function() {
-				$('#maintable').DataTable();
-			} );		
-		</script>
-		
-		<div class="ui two column grid">
-			<div class="column">
-				<h2 class="ui header"><?=$projectname?> Checklist</h2>
-				Displaying <b><?=$numenrollments?> enrollments</b>
-			</div>
-			<div class="right aligned column">
-				<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
-			</div>
-		</div>
-		<table class="ui celled very compact selectable black table" id="maintable">
-			<thead>
-			<tr>
-				<!--<th>Merge</th>-->
-				<th class="ui inverted attached header">Primary ID</th>
-				<th class="ui inverted attached header">UID</th>
-				<th class="ui inverted attached header">GUID</th>
-				<th class="ui inverted attached header">Enroll date</th>
-				<th class="ui inverted attached header"># studies</th>
-				<th class="ui inverted attached header">Group</th>
-		<?
+		/* get the checklist items (each will appear as a column) and add them to the ag-grid columns */
 		$totals = array(0,0,0,0,0);
 		$ii = 5;
 		foreach ($checklist as $i => $item) {
@@ -417,22 +737,22 @@
 			$desc = $item['desc'];
 			$modality = $item['modality'];
 			$protocol = $item['protocol'];
-			?>
-			<th data-sort="string-ins" title="<b>Modality</b> <?=$modality?><br><b>Protocol</b> <?=$protocol?><br><b>Description</b> <?=$desc?>"  style="background-color: #444; color: #fff"><?=$name?><br><span class="tiny" style="color: #fff"><?=$modality?></span></th>
-			<?
+			$columnDefs[] = array(
+				'headerName' => $name,
+				'field' => 'checklist_' . $item['id'],
+				'minWidth' => 120,
+				'flex' => 1,
+				'headerTooltip' => "Modality: $modality\nProtocol: $protocol\nDescription: $desc"
+			);
 			$totals[$ii] = 0;
 			$ii++;
 		}
-		?>
-				<th class="ui inverted attached header">Complete data?</th>
-			</tr>
-			</thead>
-			<tbody>
-		<?
+		$columnDefs[] = array('headerName' => 'Complete data?', 'field' => 'complete', 'minWidth' => 150, 'flex' => 1.2);
 		
+		$rowdata = array();
 		$c = 0;
-		/* loop through the subjects */
-		foreach ($enrollment as $uid => $subject) {
+		/* loop through the subjects - each subject will have its own row in the rendered table */
+		if (is_array($enrollment)) foreach ($enrollment as $uid => $subject) {
 			$guid = $subject['guid'];
 			$enrolldate = $subject['enroll_startdate'];
 			$enrollsubgroup = $subject['enroll_subgroup'];
@@ -446,18 +766,15 @@
 				echo "ENROLLMENT ID blank for [$uid]...<br>";
 				continue;
 			}
-			/* get studies associated with this enrollment */
-			$studyids = array();
-			$sqlstring = "select study_id from studies where enrollment_id = $enrollmentid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyids[] = "'" . $row['study_id'] . "'";
-			}
+			
+			$studyids = GetStudiesByEnrollment($projectid);
 			
 			/* get project specific altuid */
-			$sqlstring = "select altuid from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid and isprimary = 1";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select altuid from subject_altuid where subject_id = ? and enrollment_id = ? and isprimary = 1");
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $enrollmentid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$altuid = $row['altuid'];
 			
 			if (!$isactive) { $deleted = "Deleted"; }
@@ -478,16 +795,17 @@
 				$customidtext = $altuid;
 			}
 			
-			?>
-			<tr>
-				<!--<td><input type="checkbox" name="uids[]" value="<?=$uid?>"></td>-->
-				<td style="<?=$customidstyle?>" class="tt"><?=$customidtext?></td>
-				<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a> <?=$deleted?></td>
-				<td><?=$guid?></td>
-				<td><a href="enrollment.php?id=<?=$enrollmentid?>"><?=$enrolldate?></a></td>
-				<td><?=count($studyids)?></td>
-				<td><?=$enrollsubgroup?></td>
-			<?
+			/* start building the grid row */
+			$gridrow = array(
+				'primaryid' => $customidtext,
+				'primaryid_style' => $customidstyle,
+				'uid' => "<a href=\"subjects.php?id=$subjectid\">$uid</a> $deleted",
+				'guid' => $guid,
+				'enrolldate' => "<a href=\"enrollment.php?id=$enrollmentid\">$enrolldate</a>",
+				'numstudies' => count($studyids),
+				'group' => $enrollsubgroup
+			);
+			
 			$ii = 5;
 			/* check if they have any studies */
 			if ((count($studyids) > 0) && ($studyids != '')) {
@@ -496,23 +814,30 @@
 					$modality = strtolower($item['modality']);
 					$protocol = $item['protocol'];
 					$count = $item['count'];
-					$frequency = $item['frequency'];
-					$frequencyunit = $item['frequencyunit'];
 					
 					$c++;
 					
 					$protocols = explode(',', $protocol);
-					foreach ($protocols as $i => $p) { $protocols[$i] = "'" . trim($protocols[$i]) . "'"; }
+					foreach ($protocols as $i => $p) { $protocols[$i] = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($protocols[$i])) . "'"; }
 					
 					$msg = "";
 					/* check for valid modality */
-					$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "_series'";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					if (mysqli_num_rows($result) > 0) {
+					if (!preg_match('/^[a-z0-9]+$/', $modality)) {
+						$modality = "";
+					}
+					$seriestable = GetSeriesTableName($modality);
+					
+					$tablelike = $seriestable;
+					$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like ?";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 's', $tablelike);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+					mysqli_stmt_close($stmt);
+					if (($seriestable != "") && (mysqli_num_rows($result) > 0)) {
 						
 						if (strtolower($modality) == "mr") { $numfilesfield = "numfiles"; } else { $numfilesfield = "series_numfiles"; }
 						/* valid modality */
-						$sqlstring = "select study_id from $modality" . "_series where study_id in (" . implode(',',$studyids) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . ")) and $numfilesfield > 0";
+						$sqlstring = "select study_id from $seriestable where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") and (trim(series_desc) in (" . implode(',',$protocols) . ") or trim(series_protocol) in (" . implode(',',$protocols) . ")) and $numfilesfield > 0";
 						//PrintVariable($sqlstring);
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						if (mysqli_num_rows($result) > 0) {
@@ -528,8 +853,9 @@
 					}
 					else {
 						/* invalid modality */
-						$sqlstring = "select * from enrollment_checklist where enrollment_id = $enrollmentid and projectchecklist_id = $itemid";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?");
+						mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $itemid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 						if (mysqli_num_rows($result) > 0) {
 							$msg = "&#10004;";
 							$totals[$ii]++;
@@ -538,487 +864,208 @@
 						else {
 							$msg = "";
 						}
+						mysqli_stmt_close($stmt);
 					}
 					
 					/* done checking, display if it was found or not */
 					if ($msg == "") {
-						$sqlstring = "select * from enrollment_missingdata where enrollment_id = '$enrollmentid' and projectchecklist_id = '$itemid'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$stmt = mysqli_prepare($GLOBALS['linki'], "select * from enrollment_missingdata where enrollment_id = ? and projectchecklist_id = ?");
+						mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $itemid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 						if (mysqli_num_rows($result) > 0) {
 							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 							$missingdataid = $row['missingdata_id'];
 							$reason = $row['missing_reason'];
 							$date = $row['missingreason_date'];
-							?><td style="background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);" title="<b><?=$reason?></b> - <?=$date?>"><a href="projectchecklist.php?action=setmissingdatareasonform&missingdataid=<?=$missingdataid?>&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>&reason=<?=$reason?>">&#10006;</a></td><?
+							$gridrow["checklist_$itemid"] = "<a href=\"projectchecklist.php?action=setmissingdatareasonform&missingdataid=$missingdataid&projectid=$projectid&enrollmentid=$enrollmentid&projectchecklistid=$itemid&reason=$reason\">&#10006;</a>";
+							$gridrow["checklist_$itemid" . "_style"] = "background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);";
+							$gridrow["checklist_$itemid" . "_tooltip"] = "<b>$reason</b> - $date";
 						}
 						else {
-							?><td style="border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);" title="Click to set reason for missing data"><a href="projectchecklist.php?action=setmissingdatareasonform&projectid=<?=$projectid?>&enrollmentid=<?=$enrollmentid?>&projectchecklistid=<?=$itemid?>">?</a></td><?
+							$gridrow["checklist_$itemid"] = "<a href=\"projectchecklist.php?action=setmissingdatareasonform&projectid=$projectid&enrollmentid=$enrollmentid&projectchecklistid=$itemid\">?</a>";
+							$gridrow["checklist_$itemid" . "_style"] = "border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);";
+							$gridrow["checklist_$itemid" . "_tooltip"] = "Click to set reason for missing data";
 						}
+						mysqli_stmt_close($stmt);
 					}
 					else {
-						?><td><?=$msg?></td><?
+						$gridrow["checklist_$itemid"] = $msg;
 					}
 					$ii++;
 				}
 				
 				if ($rowtotal == count($checklist)) {
-					?><td>&#10004;</td><?
+					$gridrow['complete'] = "&#10004;";
 					$totals[$ii]++;
 				}
 				else {
-					?><td style="border-left: 1px solid #ccc; text-align: center; font-size:8pt">Nope. Only <?=$rowtotal?> of <?=count($checklist)?></td><?
+					$gridrow['complete'] = "Nope. Only $rowtotal of " . count($checklist);
+					$gridrow['complete_style'] = "text-align: center; font-size:8pt;";
 				}
 			}
 			else {
-				?><td colspan="<?=count($checklist)?>" align="center" style="border-left: 1px solid #ccc">No studies</td><?
-			}
-			?>
-			</tr>
-			<?
-		}
-		?>
-			</tbody>
-			<tfoot>
-			<tr>
-				<th>Totals </th>
-				<?
-				foreach ($totals as $i => $num) {
-					?><th><?=$num?></th><?
+				foreach ($checklist as $i => $item) {
+					$gridrow['checklist_' . $item['id']] = "";
 				}
-				?>
-			</tr>
-			</tfoot>
-		</table>
-		<?
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayAnalysisSummaryBuilder ------ */
-	/* -------------------------------------------- */
-	function DisplayAnalysisSummaryBuilder($projectid, $a) {
-		
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-	
-		if (($projectid == '') || ($projectid == 0)) {
-			Error("Project ID blank");
-			return;
+				$gridrow['complete'] = "No studies";
+				$gridrow['complete_style'] = "text-align: center;";
+			}
+			$rowdata[] = $gridrow;
 		}
-
+		
+		$pinnedrow = array(
+			'primaryid' => 'Totals',
+			'uid' => $totals[0],
+			'guid' => $totals[1],
+			'enrolldate' => $totals[3],
+			'numstudies' => '',
+			'group' => $totals[4]
+		);
+		$ii = 5;
+		foreach ($checklist as $i => $item) {
+			$pinnedrow['checklist_' . $item['id']] = $totals[$ii];
+			$ii++;
+		}
+		$pinnedrow['complete'] = $totals[$ii];
+		
+		$columnData = json_encode($columnDefs, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$rowData = json_encode($rowdata, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$pinnedData = json_encode(array($pinnedrow), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 		?>
-		<b>Options:</b> <a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" style="font-weight: normal">Edit checklist</a>
-		<br><br>
-		<span style="font-size: 16pt; font-weight: bold">Analysis Summary Builder</span>
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<style>
+			#projectchecklistgrid {
+				width: 100%;
+				height: 64vh;
+			}
+			.projectchecklist-html-cell {
+				width: 100%;
+				height: 100%;
+				display: flex;
+				align-items: center;
+			}
+			.projectchecklist-html-cell.centered {
+				justify-content: center;
+			}
+		</style>
 		
-		<table style="width: 100%; height: 100%">
-			<tr>
-				<td width="15%" valign="top">
-					<form method="post" action="projectchecklist.php">
-					<input type="hidden" name="action" value="viewanalysissummary">
-					<input type="hidden" name="projectid" value="<?=$projectid?>">
-					<table width="100%">
-						<tr>
-							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Protocols
-							</td>
-						</tr>
-						<tr>
-							<td style="padding-left: 15px">
-								<b>MR</b><br>
-								<input type="checkbox" name="includeprotocolparms" <? if ($a['includeprotocolparms']) { echo "checked"; } ?> value="1">Include protocol parameters<br>
-								<input type="checkbox" name="includemrqa" <? if ($a['includerqa']) { echo "checked"; } ?> value="1">Include QA
-								<br>
-								<select name="mr_protocols[]" multiple style="width: 450px" size="6">
-									<option value="NONE" <? if (in_array("NONE", $a['mr_protocols']) || ($a['mr_protocols'] == "")) echo "selected"; ?>>(None)
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of MR protocols from this project */
-									$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = trim($row['series_desc']);
-										
-										if (in_array($seriesdesc, $a['mr_protocols']))
-											$selected = "selected";
-										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
-								<br><br>
-								<b>EEG</b><br>
-								<select name="eeg_protocols[]" multiple style="width: 450px" size="6">
-									<option value="NONE" <? if (in_array("NONE", $a['eeg_protocols']) || ($a['eeg_protocols'] == "")) echo "selected"; ?>>(None)
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of EEG protocols from this project */
-									$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = $row['series_desc'];
-										
-										if (in_array($seriesdesc, $a['eeg_protocols']))
-											$selected = "selected";
-										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
-								<b>ET</b><br>
-								<select name="et_protocols[]" multiple style="width: 450px" size="6">
-									<option value="NONE" <? if (in_array("NONE", $a['et_protocols']) || ($a['et_protocols'] == "")) echo "selected"; ?>>(None)
-									<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
-									<?
-									/* get unique list of ET protocols from this project */
-									$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$seriesdesc = $row['series_desc'];
-										
-										if (in_array($seriesdesc, $a['et_protocols']))
-											$selected = "selected";
-										else
-											$selected = "";
-										
-										$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-										$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-										?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
-									}
-									?>
-								</select>
-							</td>
-						</tr>
-						<tr>
-							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Measures (key/value pairs)
-							</td>
-						</tr>
-						<tr>
-							<td style="padding-left: 15px">
-								<input type="checkbox" name="includeallobservations" value="1" <? if ($a['includeallobservations']) echo "checked"; ?>>Include all observations<br>
-							</td>
-						</tr>
-						<!--<tr>
-							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Vitals
-							</td>
-						</tr>
-						<tr>
-							<td style="padding-left: 15px">
-								<input type="checkbox" name="includeallvitals" value="1" <? if ($a['includeallvitals']) echo "checked"; ?>>Include all vitals<br>
-							</td>
-						</tr>-->
-						<tr>
-							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Interventions/dosing
-							</td>
-						</tr>
-						<tr>
-							<td style="padding-left: 15px">
-								<input type="checkbox" name="includeallinterventions" value="1" <? if ($a['includeallinterventions']) echo "checked"; ?>>Include all interventions/dosing<br>
-							</td>
-						</tr>
-						<tr>
-							<td style="background-color: #526FAA; font-weight: bold; color: #fff; padding: 5px" align="center">
-								Options
-							</td>
-						</tr>
-						<tr>
-							<td style="padding-left: 15px">
-								<input type="checkbox" name="includeemptysubjects" value="1" <? if ($a['includeemptysubjects']) echo "checked"; ?>>Include subjects without data<br>
-								<br>
-								Group by<br>
-								<input type="radio" name="grouprowsby" value="subject" <? if (($a['grouprowsby'] == "subject") || ($a['grouprowsby'] == "")) echo "checked"; ?>>Subject<br>
-								<input type="radio" name="grouprowsby" value="study" <? if ($a['grouprowsby'] == "study") echo "checked"; ?>>Study<br>
-							</td>
-						</tr>
-					</table>
-					<div align="center">
-						<input type="submit" value="Update Summary">
-					</div>
-					</form>
-				</td>
-				<td valign="top">
-					<div style="overflow: auto; height: 100%; width: 100%">
-					<?=DisplayAnalysisTable($projectid, $a)?>
-					</div>
-				</td>
-			</tr>
-		</table>
-		<?
-	}
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayAnalysisTable --------------- */
-	/* -------------------------------------------- */
-	function DisplayAnalysisTable($projectid, $a) {
+		<div class="ui two column grid">
+			<div class="column">
+				<h2 class="ui header"><?=$projectname?> Checklist</h2>
+				Displaying <b><?=$numenrollments?> enrollments</b>
+			</div>
+			<div class="right aligned column">
+				<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui primary basic button">Edit checklist</a>
+			</div>
+		</div>
+		<div id="projectchecklistgrid"></div>
+		<div class="ui bottom attached secondary segment">Displaying <span id="projectchecklistrowcount">0</span> rows</div>
 		
-		/* create the table */
-		$t;
-		if ($a['grouprowsby'] == "study")
-			$sqlstring = "select a.*, b.*, c.study_num, c.study_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where b.project_id = $projectid order by a.uid, c.study_num";
-		else
-			$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
-
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentid = $row['enrollment_id'];
-			$uid = $row['uid'];
-			$studynum = $row['study_num'];
-			$subjectid = $row['subject_id'];
+		<script>
+			const projectChecklistColumnDefs = <?=$columnData?>;
+			const projectChecklistRowData = <?=$rowData?>;
+			const projectChecklistPinnedData = <?=$pinnedData?>;
+			let projectChecklistGridApi;
 			
-			if ($a['grouprowsby'] == "study") {
-				$studyid = trim($row['study_id']);
-				$id = "$uid$studynum";
-				$t[$id]['IDs']['UIDStudyNum'] = "$uid$studynum";
-			}
-			else {
-				$id = $uid;
-				$t[$id]['IDs']['UID'] = $uid;
-			}
-			
-			$t[$id]['Demographics']['DOB'] = $row['birthdate'];
-			$t[$id]['Demographics']['Sex'] = $row['gender'];
-			$subjectheight = $row['height'];
-			$subjectweight = $row['weight'];
-			$t[$id]['Demographics']['Group'] = $row['enroll_subgroup'];
-			
-			$altuids = GetAlternateUIDs($subjectid, $enrollmentid);
-			$t[$id]['IDs']['AltUIDs'] = implode2(",", $altuids);
-			
-			/* add observations (key/value) if necessary */
-			if ($a['includeallobservations']) {
-				$sqlstringA = "select * from observations where enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$observationname = $rowA['observation_name'];
-					//if ($rowA['observation_type'] == "n")
-					//	$value = $rowA['observation_valuenum'];
-					//else
-					//	$value = $rowA['observation_valuestring'];
-					
-					$value = $rowA['observation_value'];
-					
-					$t[$id]['Measures'][$observationname] = $value;
-				}
-			}
-			
-			/* add vitals if necessary */
-			//if ($a['includeallobservations']) {
-			//	$sqlstringA = "select a.*, b.vital_name from vitals a left join vitalnames b on a.vitalname_id = b.vitalname_id where a.enrollment_id = $enrollmentid";
-			//	$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-			//	while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-			//		$vitalname = $rowA['vital_name'];
-			//		$value = $rowA['vital_value'];
-					
-			//		$t[$id]['Vitals'][$vitalname] = $value;
-			//	}
-			//}
-			
-			if (($a['grouprowsby'] == "study") && ($studyid == "")) {
-				continue;
-			}
-			
-			/* include MR protocols */
-			if (!empty($a['mr_protocols'])) {
+			/* Render stored HTML links/checkmarks while applying per-cell styles and tooltips. */
+			function projectChecklistHtmlRenderer(params) {
+				const field = params.colDef.field;
+				const wrapper = document.createElement('span');
+				wrapper.className = 'projectchecklist-html-cell';
 				
-				if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
-					if ($a['grouprowsby'] == "study") {
-						$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.study_id = $studyid";
-					}
-					else {
-						$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
-					}
+				if (field == 'numstudies' || field == 'complete' || field.indexOf('checklist_') == 0) {
+					wrapper.className += ' centered';
 				}
-				else {
-					$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
-					if ($a['grouprowsby'] == "study") {
-						if ($studyid == "") {
-							continue;
-						}
-						
-						$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where a.study_id = $studyid and a.series_desc in ($mrprotocollist) group by a.series_desc";
-					}
-					else {
-						$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
-					}
+				
+				if (params.data && params.data[field + '_style']) {
+					wrapper.setAttribute('style', params.data[field + '_style']);
 				}
+				if (params.data && params.data[field + '_tooltip']) {
+					wrapper.className += ' projectchecklist-html-tooltip';
+					wrapper.setAttribute('data-html', params.data[field + '_tooltip']);
+				}
+				
+				wrapper.innerHTML = (params.value == null) ? '' : params.value;
+				return wrapper;
+			}
 			
-				/* add in the protocols */
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$seriesdesc = $rowA['series_desc'];
-					$seriesid = $rowA['mrseries_id'];
-					
-					$pixdimX = $rowA['series_spacingx'];
-					$pixdimY = $rowA['series_spacingy'];
-					$pixdimZ = $rowA['series_spacingz'];
-					$dimX = $rowA['dimX'];
-					$dimY = $rowA['dimY'];
-					$dimZ = $rowA['dimZ'];
-					$dimT = $rowA['dimT'];
-					$tr = $rowA['series_tr'];
-					$te = $rowA['series_te'];
-					$ti = $rowA['series_ti'];
-					$flip = $rowA['series_flip'];
-					$seriesnum = $rowA['series_num'];
-					$studynum = $rowA['study_num'];
-					$numseries = $rowA['seriescount'];
-					$studyheight = $rowA['study_height'];
-					$studyweight = $rowA['study_weight'];
-					$studydatetime = $rowA['study_datetime'];
-					$studyage = $rowA['study_ageatscan'];
-					$studynotes = $rowA['study_notes'];
-					
-					//if (($studyage == "") || ($studyage == "null") || ($studyage == 0))
-					//	$age = strtotime($studydate) - strtotime($t[$id]['Demographics']['DOB']);
-					//else
-					//	$age = $studyage;
-					
-					list($studyAge, $calcStudyAge) = GetStudyAge($t[$id]['Demographics']['DOB'], $studyage, $studydate);
-					
-					if ($studyAge == null)
-						$studyAge = "-";
-					else
-						$studyAge = number_format($studyAge,1);
-
-					if ($calcStudyAge == null)
-						$calcStudyAge = "-";
-					else
-						$calcStudyAge = number_format($calcStudyAge,1);
-					
-					
-					if (($studyheight == "") || ($studyheight == "null") || ($studyheight == 0))
-						$height = $subjectheight;
-					else
-						$height = $studyheight;
-					
-					if (($studyweight == "") || ($studyweight == "null") || ($studyweight == 0))
-						$weight = $subjectweight;
-					else
-						$weight = $studyweight;
-					
-					$t[$id][$seriesdesc]['SeriesNum'] = $seriesnum;
-					$t[$id][$seriesdesc]['StudyDateTime'] = $studydatetime;
-					$t[$id][$seriesdesc]['StudyNum'] = $studynum;
-					$t[$id][$seriesdesc]['NumSeries'] = $numseries;
-					$t[$id][$seriesdesc]['AgeAtScan'] = $studyAge;
-					$t[$id][$seriesdesc]['CalcAgeAtScan'] = $calcStudyAge;
-					$t[$id][$seriesdesc]['Height'] = $height;
-					$t[$id][$seriesdesc]['Weight'] = $weight;
-					$t[$id][$seriesdesc]['Notes'] = $studynotes;
-					
-					if ($a['includeprotocolparms']) {
-						$t[$id][$seriesdesc]['voxX'] = $pixdimX;
-						$t[$id][$seriesdesc]['voxY'] = $pixdimY;
-						$t[$id][$seriesdesc]['voxZ'] = $pixdimZ;
-						$t[$id][$seriesdesc]['dimX'] = $dimX;
-						$t[$id][$seriesdesc]['dimY'] = $dimY;
-						$t[$id][$seriesdesc]['dimZ'] = $dimZ;
-						$t[$id][$seriesdesc]['dimT'] = $dimT;
-						$t[$id][$seriesdesc]['TR'] = $tr;
-						$t[$id][$seriesdesc]['TE'] = $te;
-						$t[$id][$seriesdesc]['TI'] = $ti;
-						$t[$id][$seriesdesc]['flip'] = $flip;
-					}
-					
-					if ($a['includemrqa']) {
-						$sqlstringC = "select * from mr_qa where mrseries_id = $seriesid";
-						$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-						$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-						
-						$t[$id][$seriesdesc]['io_snr'] = $rowC['io_snr'];
-						$t[$id][$seriesdesc]['pv_snr'] = $rowC['pv_snr'];
-						$t[$id][$seriesdesc]['move_minx'] = $rowC['move_minx'];
-						$t[$id][$seriesdesc]['move_miny'] = $rowC['move_miny'];
-						$t[$id][$seriesdesc]['move_minz'] = $rowC['move_minz'];
-						$t[$id][$seriesdesc]['move_maxx'] = $rowC['move_maxx'];
-						$t[$id][$seriesdesc]['move_maxy'] = $rowC['move_maxy'];
-						$t[$id][$seriesdesc]['move_maxz'] = $rowC['move_maxz'];
-						$t[$id][$seriesdesc]['acc_minx'] = $rowC['acc_minx'];
-						$t[$id][$seriesdesc]['acc_miny'] = $rowC['acc_miny'];
-						$t[$id][$seriesdesc]['acc_minz'] = $rowC['acc_minz'];
-						$t[$id][$seriesdesc]['acc_maxx'] = $rowC['acc_maxx'];
-						$t[$id][$seriesdesc]['acc_maxy'] = $rowC['acc_maxy'];
-						$t[$id][$seriesdesc]['acc_maxz'] = $rowC['acc_maxz'];
-						$t[$id][$seriesdesc]['rot_minp'] = $rowC['rot_minp'];
-						$t[$id][$seriesdesc]['rot_minr'] = $rowC['rot_minr'];
-						$t[$id][$seriesdesc]['rot_miny'] = $rowC['rot_miny'];
-						$t[$id][$seriesdesc]['rot_maxp'] = $rowC['rot_maxp'];
-						$t[$id][$seriesdesc]['rot_maxr'] = $rowC['rot_maxr'];
-						$t[$id][$seriesdesc]['rot_maxy'] = $rowC['rot_maxy'];
-					}
+			/* Keep the pinned totals row visually distinct from enrollment rows. */
+			function projectChecklistCellStyle(params) {
+				if (params.node.rowPinned) {
+					return { 'font-weight': 'bold', 'background-color': '#f7f7f7' };
+				}
+				return null;
+			}
+			
+			/* Reflect the current filtered row count below the grid. */
+			function updateProjectChecklistRowCount() {
+				if (projectChecklistGridApi) {
+					document.getElementById('projectchecklistrowcount').textContent = projectChecklistGridApi.getDisplayedRowCount();
 				}
 			}
-		}
-
-		/* create table header */
-		foreach ($t as $id => $subject) {
-			$h['IDs']['UID'] = "";
-			$h['IDs']['AltUIDs'] = "";
 			
-			foreach ($subject as $header => $section) {
-				foreach ($section as $col => $vals) {
-					$h[$header][$col] = "";
-				}
-			}
-		}
-		?>
-		<table class="summarytable">
-			<thead>
-				<tr>
-				<?
-				foreach ($h as $header => $section) {
-					$ncols = count($section);
-					?>
-					<th colspan="<?=$ncols?>"><?=$header?></th>
-					<?
-				}
-				?>
-				</tr>
-				<tr>
-				<?
-				foreach ($h as $header => $section) {
-					foreach ($section as $col => $vals) {
-						?><th><?=$col?></th><?
+			/* Apply common rendering behavior to the PHP-generated column definitions. */
+			projectChecklistColumnDefs.forEach(function(columnDef) {
+				columnDef.cellRenderer = projectChecklistHtmlRenderer;
+				columnDef.cellStyle = projectChecklistCellStyle;
+				columnDef.wrapHeaderText = true;
+				columnDef.autoHeaderHeight = true;
+			});
+
+			const myTheme = agGrid.themeBalham.withParams({
+				headerTextColor: 'white',
+				headerBackgroundColor: '#333',
+				headerFontSize: '16px',
+				columnBorder: { style: 'solid', color: '#ddd' },
+			});
+			
+			const projectChecklistGridOptions = {
+				theme: myTheme,
+				columnDefs: projectChecklistColumnDefs,
+				rowData: projectChecklistRowData,
+				pinnedBottomRowData: projectChecklistPinnedData,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				animateRows: false,
+				suppressMovableColumns: true,
+				onFirstDataRendered: updateProjectChecklistRowCount,
+				onFilterChanged: updateProjectChecklistRowCount,
+				onModelUpdated: updateProjectChecklistRowCount
+			};
+			
+			/* Create the grid and attach jQuery UI HTML tooltips after the DOM is ready. */
+			$(document).ready(function() {
+				projectChecklistGridApi = agGrid.createGrid(document.getElementById('projectchecklistgrid'), projectChecklistGridOptions);
+				$('#projectchecklistgrid').tooltip({
+					items: ".projectchecklist-html-tooltip",
+					content: function() {
+						return $(this).attr("data-html");
 					}
-				}
-				?>
-				</tr>
-			</thead>
-			<tbody>
-				<?
-				foreach ($t as $id => $subject) {
-					?>
-					<tr>
-					<?
-					foreach ($h as $header => $section) {
-						foreach ($section as $col => $vals) {
-							if (is_numeric($t[$id][$header][$col]) && (strpos($t[$id][$header][$col], '.') !== false))
-								$disp = number_format($t[$id][$header][$col], 3);
-							else
-								$disp = $t[$id][$header][$col];
-							?><td><?=$disp?></td><?
-						}
-					}
-					?>
-					</tr>
-				<? } ?>
-			</tbody>
-		</table>
+				});
+				updateProjectChecklistRowCount();
+			});
+		</script>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudiesByEnrollment ------------- */
+	/* -------------------------------------------- */
+	function GetStudiesByEnrollment($projectid) {
+		/* get studies associated with this enrollment */
+		$studyids = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select study_id from studies where enrollment_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyids[] = (int)$row['study_id'];
+		}
+		mysqli_stmt_close($stmt);
+		
+		return $studyids;
+	}
+	
 	
 ?>
-
 
 <? include("footer.php") ?>

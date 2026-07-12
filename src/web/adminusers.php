@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminusers.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -62,12 +62,19 @@
 		$email = GetVariable("email");
 		$enabled = GetVariable("enabled");
 		$isadmin = GetVariable("isadmin");
+		$apiaccess = GetVariable("apiaccess");
 		$instanceid = GetVariable("instanceid");
+		if (!is_array($instanceid)) $instanceid = array();
 		$projectadmin = GetVariable("projectadmin");
+		if (!is_array($projectadmin)) $projectadmin = array();
 		$modifydata = GetVariable("modifydata");
+		if (!is_array($modifydata)) $modifydata = array();
 		$viewdata = GetVariable("viewdata");
+		if (!is_array($viewdata)) $viewdata = array();
 		$modifyphi = GetVariable("modifyphi");
+		if (!is_array($modifyphi)) $modifyphi = array();
 		$viewphi = GetVariable("viewphi");
+		if (!is_array($viewphi)) $viewphi = array();
 		
 		/* determine action */
 		switch ($action) {
@@ -86,7 +93,7 @@
 				DisplayUserList();
 				break;
 			case 'update':
-				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
+				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
 				DisplayUserList();
 				break;
 			case 'add':
@@ -108,14 +115,14 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateUser ------------------------- */
 	/* -------------------------------------------- */
-	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
+	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
 		/* perform data checks */
 		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$isadmin = (int)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
-		$enabled = (int)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
+		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
+		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
 
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -150,89 +157,125 @@
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* update/insert modify data rows */
-		if (count($projectadmin) > 0) {
-			foreach ($projectadmin as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($projectadmin)) {
+			if (count($projectadmin) > 0) {
+				foreach ($projectadmin as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert modify data rows */
-		if (count($modifydata) > 0) {
-			foreach ($modifydata as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($modifydata)) {
+			if (count($modifydata) > 0) {
+				foreach ($modifydata as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert view data rows */
-		if (count($viewdata) > 0) {
-			foreach ($viewdata as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($viewdata)) {
+			if (count($viewdata) > 0) {
+				foreach ($viewdata as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert modify phi rows */
-		if (count($modifyphi) > 0) {
-			foreach ($modifyphi as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($modifyphi)) {
+			if (count($modifyphi) > 0) {
+				foreach ($modifyphi as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
 		/* update/insert view phi rows */
-		if (count($viewphi) > 0) {
-			foreach ($viewphi as $projectid) {
-				$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+		if (!is_null($viewphi)) {
+			if (count($viewphi) > 0) {
+				foreach ($viewphi as $projectid) {
+					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					if (mysqli_num_rows($result) > 0) {
+						$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
+					else {
+						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
+						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					}
 				}
 			}
 		}
 		
+		/* manage api_users access */
+		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		mysqli_stmt_close($stmt);
+		$hasApiUser = (mysqli_num_rows($result) > 0);
+
+		if ($apiaccess == '1' && !$hasApiUser) {
+			$apiKey = bin2hex(random_bytes(32));
+			$algo = defined('PASSWORD_ARGON2ID') ? PASSWORD_ARGON2ID : (defined('PASSWORD_ARGON2I') ? PASSWORD_ARGON2I : PASSWORD_BCRYPT);
+			$hash = password_hash($apiKey, $algo);
+			$sqlstring = "insert into api_users (username, credential) values (?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ss', $username, $hash);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $hash]);
+			mysqli_stmt_close($stmt);
+			Notice("API access enabled for $username. API key (save this — it will not be shown again): <tt>$apiKey</tt>");
+		} elseif ($apiaccess != '1' && $hasApiUser) {
+			$sqlstring = "delete from api_users where username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+			mysqli_stmt_close($stmt);
+		}
+
 		/* commit transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
+
 		Notice("$username updated");
 	}
 
@@ -246,14 +289,14 @@
 		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
 		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$enabled = (bool)mysqli_real_escape_string($GLOBALS['linki'], $enabled);
-		$isadmin = (bool)mysqli_real_escape_string($GLOBALS['linki'], $isadmin);
+		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
+		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
 		
 		/* determine their current login type */
 		$logintype = "Standard";
 		
 		/* insert the new user */
-		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, '$isadmin', 0)";
+		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, $isadmin, 0)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$id = mysqli_insert_id($GLOBALS['linki']);
 		
@@ -263,7 +306,7 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		//}
 		
-		/* don't assign any permissions to a new user by default, it must be done manually */
+		/* don't assign any project permissions to a new user by default, it must be done manually */
 
 		Notice("$username added");
 	}
@@ -348,6 +391,13 @@
 			$isadmin = $row['user_isadmin'];
 			if ($enabled == 1) $enabledcheck = "checked";
 			if ($isadmin == 1) $isadmincheck = "checked";
+
+			$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+			mysqli_stmt_close($stmt);
+			if (mysqli_num_rows($result) > 0) $apiaccesscheck = "checked";
 		
 			$formaction = "update";
 			$formtitle = "Updating $username";
@@ -443,6 +493,12 @@
 				<div class="ui checkbox">
 					<input type="checkbox" name="isadmin" value="1" <?=$isadmincheck?>>
 					<label>NiDB admin</label>
+				</div>
+			</div>
+			<div class="field">
+				<div class="ui checkbox">
+					<input type="checkbox" name="apiaccess" value="1" <?=$apiaccesscheck?>>
+					<label>API access</label>
 				</div>
 			</div>
 
@@ -654,19 +710,55 @@
 			$('.menu .item').tab();
 			$('.tabular.menu .item').tab();
 		});
+
+		function filterUsers() {
+			var term = document.getElementById('userSearch').value.toLowerCase().trim();
+			var tabs = [
+				{ tableId: 'table-first',  badgeId: 'badge-first'  },
+				{ tableId: 'table-second', badgeId: 'badge-second' },
+				{ tableId: 'table-third',  badgeId: 'badge-third'  },
+			];
+			tabs.forEach(function(tab) {
+				var table = document.getElementById(tab.tableId);
+				var rows  = table.querySelectorAll('tbody tr');
+				var count = 0;
+				rows.forEach(function(row) {
+					if (term === '') {
+						row.style.display = '';
+					} else {
+						var u = (row.dataset.username || '').toLowerCase();
+						var f = (row.dataset.fullname  || '').toLowerCase();
+						var e = (row.dataset.email     || '').toLowerCase();
+						var match = u.indexOf(term) !== -1 || f.indexOf(term) !== -1 || e.indexOf(term) !== -1;
+						row.style.display = match ? '' : 'none';
+						if (match) count++;
+					}
+				});
+				var badge = document.getElementById(tab.badgeId);
+				if (term === '') {
+					badge.style.display = 'none';
+				} else {
+					badge.className    = count > 0 ? 'ui red label' : 'ui grey label';
+					badge.textContent  = count;
+					badge.style.display = '';
+				}
+			});
+		}
 	</script>
 
 	<div style="padding: 0px 50px">
-	<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
-	<br><br>
-	
+	<div style="display:flex; align-items:center; gap:12px; margin-bottom:16px">
+		<button class="ui primary large button" onClick="window.location.href='adminusers.php?action=addform'; return false;"><i class="plus square outline icon"></i>Add User</button>
+		<input type="text" id="userSearch" oninput="filterUsers()" placeholder="Search by username, name, or email..." style="padding:8px 12px; font-size:14px; border:1px solid #ccc; border-radius:4px; width:320px">
+	</div>
+
 	<div class="ui top attached tabular menu large">
-		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance</a>
-		<a class="item" data-tab="second">All Other Users</a>
-		<a class="item" data-tab="third">Deleted Users</a>
+		<a class="item active" data-tab="first">Users in the <?=$_SESSION['instancename']?> Instance &nbsp;<span id="badge-first" class="ui label" style="display:none"></span></a>
+		<a class="item" data-tab="second">All Other Users &nbsp;<span id="badge-second" class="ui label" style="display:none"></span></a>
+		<a class="item" data-tab="third">Deleted Users &nbsp;<span id="badge-third" class="ui label" style="display:none"></span></a>
 	</div>
 	<div class="ui bottom attached tab segment active" data-tab="first">
-		<table class="ui celled selectable compact table">
+		<table id="table-first" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -689,11 +781,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>
@@ -716,7 +808,7 @@
 		</table>
 	</div>
 	<div class="ui bottom attached tab segment" data-tab="second">
-		<table class="ui celled selectable compact table">
+		<table id="table-second" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -739,11 +831,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>
@@ -766,7 +858,7 @@
 		</table>
 	</div>
 	<div class="ui bottom attached tab segment" data-tab="third">
-		<table class="ui celled selectable compact table">
+		<table id="table-third" class="ui celled selectable compact table">
 			<thead>
 				<th align="left">Username</th>
 				<th>Full name</th>
@@ -789,11 +881,11 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
-						
+
 						if ($username == "")
 							$username = "(blank)";
 				?>
-				<tr>
+				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
 					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
 					<td><?=$fullname?></td>
 					<td><?=$email?></td>

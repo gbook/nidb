@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB minipipeline.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -40,7 +40,7 @@
 	if (is_array(GetVariable("seriesid")))
 		$seriesids = GetVariable("seriesid");
 	else
-		$seriesid = GetVariable("seriesid");
+		$seriesid = (int)GetVariable("seriesid");
 	$modality = GetVariable("modality");
 	
 	//PrintVariable($_POST);
@@ -127,6 +127,7 @@
 			<input name="action" type="hidden" value="displayseries">
 			<?
 				foreach ($seriesids as $seriesid) {
+					$seriesid = (int)$seriesid;
 				?>
 				<input name="seriesid[]" type="hidden" value="<?=$seriesid?>">
 				<?
@@ -159,7 +160,7 @@
 			</thead>
 			<tbody>
 			<?
-				$seriesidlist = implode2(",", $seriesids);
+				$seriesidlist = implode(",", array_map('intval', (array)$seriesids));
 				if ($seriesidlist != "") {
 					$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
 					//PrintSQL($sqlstring);

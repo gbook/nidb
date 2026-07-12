@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleFileIO.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -195,7 +195,26 @@ QString moduleFileIO::GetIORequestStatus(int requestid) {
 /* ---------------------------------------------------------- */
 bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg) {
 
-    if (((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) && (requestid > 0)) {
+    if (requestid < 1)
+        return false;
+
+    if ((status == "pending") || (status == "deleting") || (status == "complete") || (status == "error") || (status == "processing") || (status == "cancelled") || (status == "canceled")) {
+
+        if (status == "pending") {
+            QSqlQuery q;
+            q.prepare("update fileio_requests set startdate = now() where fileiorequest_id = :id");
+            q.bindValue(":id", requestid);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            //n->Log("Updated startdate to now()");
+        }
+        if ((status == "complete") || (status == "error") || (status.startsWith("cancel"))) {
+            QSqlQuery q;
+            q.prepare("update fileio_requests set enddate = now() where fileiorequest_id = :id");
+            q.bindValue(":id", requestid);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            //n->Log("Updated enddate to now()");
+        }
+
         if (msg.trimmed() == "") {
             QSqlQuery q;
             q.prepare("update fileio_requests set request_status = :status where fileiorequest_id = :id");
@@ -253,12 +272,19 @@ bool moduleFileIO::RecheckSuccess(qint64 analysisid, QString &msg) {
         }
     }
 
-    q.prepare("update analysis set analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
+    qint64 c;
+    qint64 b;
+    GetDirSizeAndFileCount(a.analysispath, c, b, true);
+
+    q.prepare("update analysis set analysis_disksize = :disksize, analysis_numfiles = :numfiles, analysis_iscomplete = :iscomplete where analysis_id = :analysisid");
+    q.bindValue(":disksize", b);
+    q.bindValue(":numfiles", c);
     q.bindValue(":iscomplete", iscomplete);
     q.bindValue(":analysisid", analysisid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisrecheck", "Analysis success recheck finished");
+    //n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisrecheck", "success", "Analysis success recheck finished");
+    n->LogAnalysisEvent(analysisid, AnalysisEvent::StatusRecheckComplete, LogStatus::success,0,"","");
 
     return true;
 }
@@ -285,7 +311,8 @@ bool moduleFileIO::CreateLinks(qint64 analysisid, QString destination, QString &
     if (MakePath(destination, msg)) {
         QString systemstring = QString("cd %1; ln -s %2 %3%4; chmod 777 %5%6").arg(destination).arg(a.analysispath).arg(a.uid).arg(a.studynum).arg(a.uid).arg(a.studynum);
         n->Log(SystemCommand(systemstring));
-        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "Analysis links created");
+        //n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscreatelink", "success", "Analysis links created");
+        n->LogAnalysisEvent(analysisid, AnalysisEvent::ManageCreateLink, LogStatus::success, 0, "", "");
         return true;
     }
     else {
@@ -315,7 +342,8 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
         QString systemstring = QString("rsync -az --stats %1/* %2").arg(a.analysispath).arg(destination);
         n->Log(QString("About to run the following command[" + systemstring + "]"));
         n->Log(SystemCommand(systemstring));
-        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "Analysis copied");
+        //n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscopy", "success", "Analysis copied");
+        n->LogAnalysisEvent(analysisid, AnalysisEvent::ManageCopy, LogStatus::success, 0, "", "");
         return true;
     }
     else {
@@ -386,7 +414,8 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
                     q.bindValue(":analysisid", analysisid);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-                    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+                    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "error", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
+                    n->LogAnalysisEvent(analysisid, AnalysisEvent::ManageDelete, LogStatus::success, 0, "", "");
                     return false;
                 }
                 else {

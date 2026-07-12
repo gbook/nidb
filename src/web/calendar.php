@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB calendar.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -86,9 +86,6 @@
 		DisplayMenu($year, $month, $day, "day");
 		DisplayDay($year, $month, $day, $holidays, $currentcal);
 	}
-	elseif ($action == "manage") {
-		DisplayManagementMenu();
-	}
 	elseif (($action == "") || ($action == "week")) {
 		setcookie("currentview", "week");
 		DisplayMenu($year, $month, $day, "week");
@@ -112,78 +109,94 @@
 			.timerequest { font-size: 8pt; background-color: darkred; color: #FFFFFF; font-variant: small-caps; }
 		</style>
 
-		<div class="ui container">
-			<div class="ui top attached center aligned segment">
-				Viewing <h2 class="ui header"><?=$currentcalname?></h2>
-				
-				<form name="pageform" action="calendar_select.php" method="post" class="ui form">
-				<input type="hidden" name="action" value="set">
-					<div class="ui mini labeled input">
-						<div class="ui label">
-							Change
-						</div>
-						<select name="currentcal" onChange="document.pageform.submit()" class="ui dropdown">
-						<?
-						$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$id = $row['calendar_id'];
-							$name = $row['calendar_name'];
-							$description = $row['calendar_description'];
-							$location = $row['calendar_location'];
-							?>
-							<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+		<div class="ui raised segment">
+			<div class="ui three column grid">
+				<div class="column">
+					<div class="ui blue image label">
+						<i class="calendar check icon"></i>
+						Today
+						<div class="ui detail"><?=date('D M j, Y')?></div>
+					</div>
+					&nbsp; &nbsp; &nbsp; &nbsp; 
+					<div class="ui image label">
+						<i class="calendar alternate outline icon"></i>
+						Calendar date
+						<div class="ui detail"><?=date('D M j, Y',$caldate)?></div>
+					</div>
+				</div>
+				<div class="center aligned column">
+					<form name="pageform" action="calendar_select.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="set">
+						<div class="ui labeled input">
+							<div class="ui label">
+								View
+							</div>
+							<select name="currentcal" onChange="document.pageform.submit()" class="ui dropdown">
 							<?
-						}
-						?>
-						<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>View All Calendars
-						</select>
-					</div>
-				</form>
-			</div>
-			<div class="ui bottom attached segment">
-				<div class="ui two column grid">
-					<div class="column">
-						<div class="ui image label">
-							<i class="calendar check icon"></i>
-							Today
-							<div class="ui detail"><?=date('D M j, Y')?></div>
+							$sqlstring = "select * from calendars where calendar_deletedate > now() order by calendar_name";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$id = $row['calendar_id'];
+								$name = $row['calendar_name'];
+								$description = $row['calendar_description'];
+								$location = $row['calendar_location'];
+								?>
+								<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+								<?
+							}
+							?>
+							<option value="0" <? if ($currentcal == 0) { echo "selected"; } ?>>All Calendars
+							</select>
 						</div>
-						&nbsp; &nbsp; &nbsp; &nbsp; 
-						<div class="ui image label">
-							<i class="calendar alternate outline icon"></i>
-							Calendar date
-							<div class="ui detail"><?=date('D M j, Y',$caldate)?></div>
-						</div>
-					</div>
-					<div class="right aligned column">
-						<? if ($menuitem == "day") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar icon"></i>Day</a>
-						<? if ($menuitem == "week") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
-						<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
-						<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
-					</div>
+					</form>
+				</div>
+				<div class="right aligned column">
+					<? if ($menuitem == "day") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=day&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar icon"></i>Day</a>
+					<? if ($menuitem == "week") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
+					<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
+					<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
 				</div>
 			</div>
 		</div>
-		
-		<br><br>
 		<?
 	}
 
 
 	/* ----------------------------------------------- */
-	/* --------- DisplayManagementMenu --------------- */
+	/* --------- CalendarAppointmentOverlapWhere ------ */
 	/* ----------------------------------------------- */
-	function DisplayManagementMenu() {
-		?>
-		<b>Manage...</b><br><br>
-		<a href="calendar_calendars.php">Calendars</a><br>
-		<a href="calendar_projects.php">Projects</a><br>
-		Project Resource <a href="calendar_allocations.php">Allocations</a><br>
-		<br><br>
-		<?
+	function CalendarAppointmentOverlapWhere($startdatetime, $enddatetime) {
+		return "a.appt_startdate <= '$enddatetime' and a.appt_enddate >= '$startdatetime'";
+	}
+
+
+	/* ----------------------------------------------- */
+	/* --------- CalendarAppointmentTimeLabel --------- */
+	/* ----------------------------------------------- */
+	function CalendarAppointmentTimeLabel($displaydatetime, $apptstartdate, $apptenddate, $isallday) {
+		$displaydate = date('Y-m-d', strtotime($displaydatetime));
+		$startdate = date('Y-m-d', strtotime($apptstartdate));
+		$enddate = date('Y-m-d', strtotime($apptenddate));
+
+		if ($startdate == $enddate) {
+			if ($isallday) {
+				return "";
+			}
+			return date('g:ia', strtotime($apptstartdate)) . " - " . date('g:ia', strtotime($apptenddate));
+		}
+
+		if ($isallday) {
+			return "Multi-day appt";
+		}
+		if ($displaydate == $startdate) {
+			return date('g:ia', strtotime($apptstartdate)) . " ...";
+		}
+		if ($displaydate == $enddate) {
+			return "... " . date('g:ia', strtotime($apptenddate));
+		}
+		return "Multi-day appt";
 	}
 	
 
@@ -232,70 +245,156 @@
 		
 		$today = date('D M j, Y',mktime(0,0,0,$month, $day, $year));
 		?>
-		<div class="ui text container">
-			<div class="ui center aligned top attached grey inverted segment">
-				<div class="ui three column grid">
-					<div class="column">
-						<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="ui inverted big arrow alternate circle left icon"></i></a>
-					</div>
-					<div class="column">
-						<span style="color: white; font-size:16pt"><?=$today?></span>
-					</div>
-					<div class="column">
-						<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="ui inverted big arrow alternate circle right icon"></i></a>
-					</div>
+		<?
+		$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
+		$enddatetime   = date('Y-m-d 23:59:59',  mktime(0,0,0,$month, $day, $year));
+		$slotheight  = 30;
+		$dayheight   = $slotheight * 48;
+		$scrolltop   = $slotheight * 16;
+		$nowlinetop  = ((date('G')*60) + date('i')) * ($slotheight/30);
+		?>
+		<style>
+			.daycal { display: grid; grid-template-columns: 56px 1fr; border: 1px solid #dadce0; border-radius: 6px; background: white; max-width: 900px; margin: 0 auto; }
+			.daycalhead { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid #dadce0; background: #fff; }
+			.daycalheaddate { font-size: 15pt; font-weight: bold; }
+			.daycalheadday  { color: #5f6368; font-size: 10pt; text-transform: uppercase; margin-right: 8px; }
+			.daycalalldays  { display: flex; flex-wrap: wrap; gap: 4px; padding: 6px 14px 6px 70px; border-bottom: 1px solid #dadce0; background: #fff; min-height: 0; }
+			.daycalbody     { grid-column: 1 / -1; display: grid; grid-template-columns: 56px 1fr; max-height: 62vh; overflow-y: auto; position: relative; }
+			.daycaltimes    { position: relative; height: <?=$dayheight?>px; border-right: 1px solid #dadce0; background: #fff; }
+			.daycaltime     { position: absolute; right: 6px; transform: translateY(-50%); color: #70757a; font-size: 8pt; white-space: nowrap; }
+			.daycalcol      { position: relative; height: <?=$dayheight?>px; background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, transparent 1px, transparent <?=$slotheight?>px); }
+			.daycalappt     { position: absolute; z-index: 2; overflow: hidden; box-sizing: border-box; padding: 3px 5px; border-radius: 4px; background: #386eaf; color: white; font-size: 8pt; line-height: 1.2; box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+			.daycalappt a, .daycalappt a:visited { color: white; text-decoration: none; }
+			.daycalappt .meta { opacity: 0.9; font-size: 7pt; }
+			.daycaprequest  { background: #bf4a4a; border: 1px dashed #fff; }
+			.daycalnowline  { position: absolute; left: 0; right: 0; height: 2px; background: #87db8c; z-index: 3; pointer-events: none; }
+		</style>
+		<script>$(document).ready(function() { $('.daycalbody').scrollTop(<?=$scrolltop?>); });</script>
+
+		<div class="daycal">
+			<!-- Header: nav + date + add button -->
+			<div class="daycalhead">
+				<div style="display:flex;align-items:center;gap:10px">
+					<a href="calendar.php?action=day&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon"></i></a>
+					<span class="daycalheadday"><?=date('l', mktime(0,0,0,$month,$day,$year))?></span>
+					<span class="daycalheaddate"><?=$today?></span>
+				</div>
+				<div style="display:flex;align-items:center;gap:10px">
+					<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><i class="orange calendar plus icon"></i> Add appointment</a>
+					<a href="calendar.php?action=day&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big black arrow alternate circle right icon"></i></a>
 				</div>
 			</div>
-			<div class="ui attached segment">
-				<?
-				$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
-				$enddatetime = date('Y-m-d 23:59:59', mktime(0,0,0,$month, $day, $year));
-				?>
-				<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($startdatetime))?>"><i class="orange calendar plus icon" title="Create appointment"></i> Create Appointment</a>
-			</div>
-			<div class="ui bottom attached segment">
-				<?
-				if ($currentcal == 0) {
-					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+
+			<!-- All-day appointments -->
+			<?
+			$alldayWhere = "appt_startdate <= '$enddatetime' and appt_enddate >= '$startdatetime'";
+			if ($currentcal == 0) {
+				$alldaySql = "select appt_id, appt_title from calendar_appointments where appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and $alldayWhere order by appt_startdate";
+			} else {
+				$alldaySql = "select appt_id, appt_title from calendar_appointments where appt_calendarid = $currentcal and appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and $alldayWhere order by appt_startdate";
+			}
+			$alldayResult = MySQLiQuery($alldaySql, __FILE__, __LINE__);
+			$alldayRows = [];
+			while ($r = mysqli_fetch_array($alldayResult, MYSQLI_ASSOC)) $alldayRows[] = $r;
+			if (!empty($alldayRows)) {
+				?><div class="daycalalldays"><?
+				foreach ($alldayRows as $r) {
+					?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=$r['appt_id']?>"><?=htmlspecialchars($r['appt_title'])?></a><?
 				}
-				else {
-					$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
-				}
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$id = $row['appt_id'];
-					$username = $row['appt_username'];
-					$projectname = $row['project_name'];
-					$calendarname = $row['calendar_name'];
-					$title = $row['appt_title'];
-					$details = $row['appt_details'];
-					$starttime = date('g:i a', strtotime($row['appt_startdate']));
-					$endtime = date('g:i a', strtotime($row['appt_enddate']));
-					$isallday = $row['appt_isalldayevent'];
-					$isrequest = $row['appt_istimerequest'];
-					?>
-					<div class="ui blue segment">
-						<?if (!$isallday) { ?>
-							<span class="ui small yellow label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span> &nbsp;
-						<? } ?>
-						<? if ($isrequest) { ?>
-							<span class="ui small red label">&nbsp;Time request&nbsp;</span>
-						<? } ?>
-						
-						<? /*if ($_COOKIE['username'] == $username) { */?>
-						<a href="calendar_appointments.php?action=editform&id=<?=$id?>">
-						<span class="appttitle"><u><?=$title?></u></span></a>
-						<? /* } else { */ ?>
-						<!--<span class="appttitle"><?=$title?></span>-->
-						<? /*}*/ ?>
-						&nbsp;
-						<span class="apptowner"><?=$calendarname?> - <b><?=$username?></b></span>
-						<br>
-						<?=$details;?>
-					</div>
+				?></div><?
+			}
+			?>
+
+			<!-- Timed grid -->
+			<div class="daycalbody">
+				<div class="daycalnowline" style="top: <?=$nowlinetop?>px"></div>
+				<div class="daycaltimes">
 					<?
-				}
-				?>
+					for ($i = 0; $i <= 48; $i++) {
+						$minutes = $i * 30;
+						$timelabel = ($minutes == 1440) ? 'Midnight' : date('g:ia', strtotime("midnight +$minutes minutes"));
+						$top = $i * $slotheight;
+						?><div class="daycaltime" style="top: <?=$top?>px"><?=$timelabel?></div><?
+					}
+					?>
+				</div>
+				<div class="daycalcol">
+					<?
+					$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
+					if ($currentcal == 0) {
+						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
+					} else {
+						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
+					}
+					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$appts = array();
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
+						$visibleEnd   = min(strtotime($row['appt_enddate']),   strtotime($enddatetime) + 1);
+						$top    = floor(($visibleStart - strtotime($startdatetime)) / 60);
+						$height = max(20, floor(($visibleEnd - $visibleStart) / 60));
+						$apptclass = $row['appt_istimerequest'] ? ' daycaprequest' : '';
+						$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], 0);
+						$appts[] = array(
+							'id'           => $row['appt_id'],
+							'title'        => $row['appt_title'],
+							'calendarname' => $row['calendar_name'],
+							'username'     => $row['appt_username'],
+							'timelabel'    => $timelabel,
+							'top'          => $top,
+							'height'       => $height,
+							'start'        => $top,
+							'end'          => $top + $height,
+							'class'        => $apptclass,
+							'column'       => 0,
+							'columns'      => 1,
+						);
+					}
+
+					/* side-by-side column layout — same algorithm as week view */
+					$group = array(); $groupend = -1;
+					for ($n = 0; $n < count($appts); $n++) {
+						if (count($group) > 0 && $appts[$n]['start'] >= $groupend) {
+							$columnends = array(); $groupcolumns = 0;
+							foreach ($group as $gn) {
+								$col = 0;
+								while (array_key_exists($col, $columnends) && $columnends[$col] > $appts[$gn]['start']) $col++;
+								$appts[$gn]['column'] = $col;
+								$columnends[$col] = $appts[$gn]['end'];
+								if ($col + 1 > $groupcolumns) $groupcolumns = $col + 1;
+							}
+							foreach ($group as $gn) $appts[$gn]['columns'] = $groupcolumns;
+							$group = array(); $groupend = -1;
+						}
+						$group[] = $n;
+						if ($appts[$n]['end'] > $groupend) $groupend = $appts[$n]['end'];
+					}
+					if (count($group) > 0) {
+						$columnends = array(); $groupcolumns = 0;
+						foreach ($group as $gn) {
+							$col = 0;
+							while (array_key_exists($col, $columnends) && $columnends[$col] > $appts[$gn]['start']) $col++;
+							$appts[$gn]['column'] = $col;
+							$columnends[$col] = $appts[$gn]['end'];
+							if ($col + 1 > $groupcolumns) $groupcolumns = $col + 1;
+						}
+						foreach ($group as $gn) $appts[$gn]['columns'] = $groupcolumns;
+					}
+
+					foreach ($appts as $appt) {
+						$width = 100 / $appt['columns'];
+						$left  = $appt['column'] * $width;
+						$width = $width - 1;
+						?>
+						<div class="daycalappt<?=$appt['class']?>" style="top:<?=$appt['top']?>px;height:<?=$appt['height']?>px;left:<?=$left?>%;width:<?=$width?>%">
+							<a href="calendar_appointments.php?action=editform&id=<?=$appt['id']?>"><b><?=htmlspecialchars($appt['title'])?></b></a>
+							<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>
+							<div class="meta"><?=htmlspecialchars($appt['calendarname'])?> - <?=htmlspecialchars($appt['username'])?></div>
+						</div>
+						<?
+					}
+					?>
+				</div>
 			</div>
 		</div>
 		<?
@@ -363,6 +462,7 @@
 		$nextmonth = date('m', strtotime(date('Y-m-d',$first_day) . " +7 days"));
 		$nextday = date('d', strtotime(date('Y-m-d',$first_day) . " +7 days"));
 		
+		$sun_holidays = $mon_holidays = $tue_holidays = $wed_holidays = $thu_holidays = $fri_holidays = $sat_holidays = "";
 		if (array_key_exists($sun_hol_date, $holidays)) { $sun_holidays = implode("<br>", $holidays[$sun_hol_date]); }
 		if (array_key_exists($mon_hol_date, $holidays)) { $mon_holidays = implode("<br>", $holidays[$mon_hol_date]); }
 		if (array_key_exists($tue_hol_date, $holidays)) { $tue_holidays = implode("<br>", $holidays[$tue_hol_date]); }
@@ -371,236 +471,217 @@
 		if (array_key_exists($fri_hol_date, $holidays)) { $fri_holidays = implode("<br>", $holidays[$fri_hol_date]); }
 		if (array_key_exists($sat_hol_date, $holidays)) { $sat_holidays = implode("<br>", $holidays[$sat_hol_date]); }
 	
+		$weekdays = array(
+			array('name' => 'Sunday', 'date' => $sun_hol_date, 'label' => $sun_date, 'parts' => $sun, 'holidays' => $sun_holidays),
+			array('name' => 'Monday', 'date' => $mon_hol_date, 'label' => $mon_date, 'parts' => $mon, 'holidays' => $mon_holidays),
+			array('name' => 'Tuesday', 'date' => $tue_hol_date, 'label' => $tue_date, 'parts' => $tue, 'holidays' => $tue_holidays),
+			array('name' => 'Wednesday', 'date' => $wed_hol_date, 'label' => $wed_date, 'parts' => $wed, 'holidays' => $wed_holidays),
+			array('name' => 'Thursday', 'date' => $thu_hol_date, 'label' => $thu_date, 'parts' => $thu, 'holidays' => $thu_holidays),
+			array('name' => 'Friday', 'date' => $fri_hol_date, 'label' => $fri_date, 'parts' => $fri, 'holidays' => $fri_holidays),
+			array('name' => 'Saturday', 'date' => $sat_hol_date, 'label' => $sat_date, 'parts' => $sat, 'holidays' => $sat_holidays)
+		);
+		$slotheight = 30;
+		$dayheight = $slotheight * 48;
+		$weekscrolltop = $slotheight * 16;
+		$nowlinetop = ((date('G')*60) + date('i')) * ($slotheight/30);
+	
 		?>
-			<div class="ui very compact grid">
-				<!-- main day/date row -->
-				<div class="row">
-					<div class="one wide center aligned column">
-						<br>
-						<a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon" title="Previous week"></i></a>
-					</div>
-					<div class="two wide column">
-						<? if ($sun_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Sunday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sun['y']?>&month=<?=$sun['m']?>&day=<?=$sun['d']?>"><?=$sun_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sun_hol_date))?>"><i class="blue plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($sun_holidays != "") { ?><br><div class="ui red label"><?=$sun_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($mon_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Monday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$mon['y']?>&month=<?=$mon['m']?>&day=<?=$mon['d']?>"><?=$mon_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($mon_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($mon_holidays != "") { ?><br><div class="ui small fluid red label"><?=$mon_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($tue_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Tuesday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$tue['y']?>&month=<?=$tue['m']?>&day=<?=$tue['d']?>"><?=$tue_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($tue_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($tue_holidays != "") { ?><br><div class="ui small fluid red label"><?=$tue_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($wed_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Wednesday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$wed['y']?>&month=<?=$wed['m']?>&day=<?=$wed['d']?>"><?=$wed_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($wed_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($wed_holidays != "") { ?><br><div class="ui small fluid red label"><?=$wed_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($thu_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Thursday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$thu['y']?>&month=<?=$thu['m']?>&day=<?=$thu['d']?>"><?=$thu_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($thu_hol_date))?>"><i class="plus square <?=$inverted?> icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($thu_holidays != "") { ?><br><div class="ui small fluid red label"><?=$thu_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($fri_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Friday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$fri['y']?>&month=<?=$fri['m']?>&day=<?=$fri['d']?>"><?=$fri_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($fri_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($fri_holidays != "") { ?><br><div class="ui small fluid red label"><?=$fri_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="two wide column">
-						<? if ($sat_hol_date == date('Y-m-d')) { $inverted = "inverted"; $style="color: #ddd"; } else { $inverted = ""; $style=""; } ?>
-						<div class="ui grey <?=$inverted?> segment" style="height:100%;">
-							<div class="ui two column grid">
-								<div class="column">
-									<h3 class="ui <?=$inverted?> header">
-										Saturday
-										<div class="<?=$inverted?> sub header">
-											<a style="<?=$style?>" href="calendar.php?action=day&year=<?=$sat['y']?>&month=<?=$sat['m']?>&day=<?=$sat['d']?>"><?=$sat_date?></a>
-										</div>
-									</h3>
-								</div>
-								<div class="right aligned column">
-									<a href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($sat_hol_date))?>"><i class="plus square icon" title="Create appointment"></i></a>
-								</div>
-							</div>
-							<? if ($sat_holidays != "") { ?><br><div class="ui small fluid red label"><?=$sat_holidays?></div><? } ?>
-						</div>
-					</div>
-					<div class="one wide center aligned column">
-						<br>
-						<a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big black arrow alternate circle right icon" title="Next week"></i></a>
-					</div>
+			<style>
+				.weekcal { --weekcal-scrollbar-width: 17px; display: grid; grid-template-columns: 56px repeat(7, minmax(110px, 1fr)) 56px; border: 1px solid #dadce0; border-radius: 6px; background: white; }
+				.weekcalbody { grid-column: 1 / -1; display: grid; grid-template-columns: 56px repeat(7, minmax(110px, 1fr)) calc(56px - var(--weekcal-scrollbar-width)); max-height: 58vh; overflow-y: auto; overflow-x: hidden; position: relative; }
+				.weekcalnav { display: flex; justify-content: center; align-items: center; min-height: 78px; border-right: 1px solid #dadce0; border-bottom: 1px solid #dadce0; background: #fff; }
+				.weekcalhead { min-height: 78px; padding: 8px; border-right: 1px solid #dadce0; border-bottom: 1px solid #dadce0; background: #fff; position: relative; }
+				.weekcalhead.today { background: #fcf8cc; }
+				.weekcaldayname { color: #5f6368; font-size: 9pt; text-transform: uppercase; }
+				.weekcaldate { font-size: 14pt; font-weight: bold; margin-top: 2px; }
+				.weekcaladd { position: absolute; top: 8px; right: 8px; }
+				.weekcalholiday { margin-top: 4px; font-size: 8pt; color: #9f3a38; line-height: 1.2; }
+				.weekcaltimes { grid-column: 1; position: relative; height: <?=$dayheight?>px; border-right: 1px solid #dadce0; background: #fff; }
+				.weekcaltime { position: absolute; right: 6px; transform: translateY(-50%); color: #70757a; font-size: 8pt; white-space: nowrap; }
+				.weekcalcol { position: relative; height: <?=$dayheight?>px; border-right: 1px solid #dadce0; background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, transparent 1px, transparent <?=$slotheight?>px); }
+				.weekcalcol.today { background: repeating-linear-gradient(to bottom, #e8eaed 0, #e8eaed 1px, #fcf8cc 1px, #fcf8cc <?=$slotheight?>px); }
+				.weekcalappt { position: absolute; z-index: 2; overflow: hidden; box-sizing: border-box; padding: 3px 5px; border-radius: 4px; background: #386eaf; color: white; font-size: 8pt; line-height: 1.2; box-shadow: 0 2px 8px rgba(0,0,0,0.35); }
+				.weekcalappt a, .weekcalappt a:visited { color: white; text-decoration: none; }
+				.weekcalappt .meta { opacity: 0.9; font-size: 7pt; }
+				.weekcalrequest { background: #bf4a4a; border: 1px dashed #fff; }
+				.weekcalallday { background: #f2711c; }
+				.weekcalheadallday { display: block; margin-top: 3px; padding: 2px 5px; border-radius: 3px; background: #f2711c; color: white; font-size: 7.5pt; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+				.weekcalheadallday a, .weekcalheadallday a:visited { color: white; text-decoration: none; }
+				.weekcalbodyspacer { height: <?=$dayheight?>px; border-left: 1px solid #dadce0; background: #fff; }
+				.weekcalnowline { position: absolute; left: 56px; right: calc(56px - var(--weekcal-scrollbar-width)); height: 2px; background: #87db8c; z-index: 2; pointer-events: none; }
+			</style>
+			<script type="text/javascript">
+				$(document).ready(function() {
+					var weekbody = $(".weekcalbody");
+					var scrollbarwidth = weekbody[0].offsetWidth - weekbody[0].clientWidth;
+					$(".weekcal").css("--weekcal-scrollbar-width", scrollbarwidth + "px");
+					weekbody.scrollTop(<?=$weekscrolltop?>);
+				});
+			</script>
+			<div class="weekcal">
+				<div class="weekcalnav">
+					<a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon" title="Previous week"></i></a>
 				</div>
-
-				<!-- appointments row -->
-				<div class="row">
-					<div class="one wide center aligned column"></div>
 				<?
-					/* loop through each day of the week. The first <div...> segment is setup inside the switch statement */
-					for ($i=0;$i<7;$i++) {
-						switch ($i) {
-							case 0:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($sun_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($sun_hol_date));
-								if ($sun_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 1:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($mon_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($mon_hol_date));
-								if ($mon_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 2:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($tue_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($tue_hol_date));
-								if ($tue_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 3:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($wed_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($wed_hol_date));
-								if ($wed_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 4:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($thu_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($thu_hol_date));
-								if ($thu_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 5:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($fri_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($fri_hol_date));
-								if ($fri_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-							case 6:
-								$startdatetime = date('Y-m-d 00:00:00', strtotime($sat_hol_date));
-								$enddatetime = date('Y-m-d 23:59:59', strtotime($sat_hol_date));
-								if ($sat_hol_date == date('Y-m-d')) { $bgcolor = "yellow"; } else { $bgcolor = ""; }
-								?><div class="two wide column"><div class="ui <?=$bgcolor?> segment" style="height:100%;"><?
-								break;
-						}
-						
+				foreach ($weekdays as $weekday) {
+					$todayclass = ($weekday['date'] == date('Y-m-d')) ? "today" : "";
+					?>
+					<div class="weekcalhead <?=$todayclass?>">
+						<a class="weekcaladd" href="calendar_appointments.php?action=addform&currentcal=<?=$currentcal?>&startdate=<?=date('YmdHi', strtotime($weekday['date']))?>"><i class="plus square icon" title="Create appointment"></i></a>
+						<div class="weekcaldayname"><?=$weekday['name']?></div>
+						<div class="weekcaldate"><a href="calendar.php?action=day&year=<?=$weekday['parts']['y']?>&month=<?=$weekday['parts']['m']?>&day=<?=$weekday['parts']['d']?>"><?=$weekday['label']?></a></div>
+						<? if ($weekday['holidays'] != "") { ?><div class="weekcalholiday"><?=$weekday['holidays']?></div><? } ?>
+						<?
+						$hdStartdt = date('Y-m-d 00:00:00', strtotime($weekday['date']));
+						$hdEnddt   = date('Y-m-d 23:59:59', strtotime($weekday['date']));
 						if ($currentcal == 0) {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+							$hdSql = "select appt_id, appt_title from calendar_appointments where appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and appt_startdate <= '$hdEnddt' and appt_enddate >= '$hdStartdt' order by appt_startdate";
+						} else {
+							$hdSql = "select appt_id, appt_title from calendar_appointments where appt_calendarid = $currentcal and appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and appt_startdate <= '$hdEnddt' and appt_enddate >= '$hdStartdt' order by appt_startdate";
+						}
+						$hdResult = MySQLiQuery($hdSql, __FILE__, __LINE__);
+						while ($hdRow = mysqli_fetch_array($hdResult, MYSQLI_ASSOC)) {
+							?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=$hdRow['appt_id']?>"><?=htmlspecialchars($hdRow['appt_title'])?></a><?
+						}
+						?>
+					</div>
+					<?
+				}
+				?>
+				<div class="weekcalnav">
+					<a href="calendar.php?action=week&year=<?=$nextyear?>&month=<?=$nextmonth?>&day=<?=$nextday?>"><i class="big black arrow alternate circle right icon" title="Next week"></i></a>
+				</div>
+				<div class="weekcalbody">
+				<div class="weekcalnowline" style="top: <?=$nowlinetop?>px"></div>
+				<div class="weekcaltimes">
+					<?
+					for ($i=0;$i<=48;$i++) {
+						$minutes = $i * 30;
+						if ($minutes == 1440) {
+							$timelabel = "Midnight";
 						}
 						else {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+							$timelabel = date('g:ia', strtotime("midnight +$minutes minutes"));
+						}
+						$top = $i * $slotheight;
+						?><div class="weekcaltime" style="top: <?=$top?>px"><?=$timelabel?></div><?
+					}
+					?>
+				</div>
+				<?
+				foreach ($weekdays as $weekday) {
+					$startdatetime = date('Y-m-d 00:00:00', strtotime($weekday['date']));
+					$enddatetime = date('Y-m-d 23:59:59', strtotime($weekday['date']));
+					$todayclass = ($weekday['date'] == date('Y-m-d')) ? "today" : "";
+					?>
+					<div class="weekcalcol <?=$todayclass?>">
+					<?
+						$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
+						if ($currentcal == 0) {
+							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
+						}
+						else {
+							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
 						}
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$appts = array();
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$id = $row['appt_id'];
 							$username = $row['appt_username'];
 							$projectname = $row['project_name'];
 							$calendarname = $row['calendar_name'];
 							$title = $row['appt_title'];
-							$starttime = date('g:i a', strtotime($row['appt_startdate']));
-							$endtime = date('g:i a', strtotime($row['appt_enddate']));
 							$isallday = $row['appt_isalldayevent'];
 							$isrequest = $row['appt_istimerequest'];
+							$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
+							if ($isallday) {
+								$visibleStart = strtotime($startdatetime);
+								$visibleEnd = strtotime($enddatetime) + 1;
+							}
+							else {
+								$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
+								$visibleEnd = min(strtotime($row['appt_enddate']), strtotime($enddatetime) + 1);
+							}
+							$top = floor(($visibleStart - strtotime($startdatetime))/60);
+							$height = max(20, floor(($visibleEnd - $visibleStart)/60));
+							$apptclass = "";
+							if ($isrequest) { $apptclass .= " weekcalrequest"; }
+							if ($isallday) { $apptclass .= " weekcalallday"; }
+							$appts[] = array(
+								'id' => $id,
+								'username' => $username,
+								'calendarname' => $calendarname,
+								'title' => $title,
+								'timelabel' => $timelabel,
+								'top' => $top,
+								'height' => $height,
+								'start' => $top,
+								'end' => $top + $height,
+								'class' => $apptclass,
+								'column' => 0,
+								'columns' => 1
+							);
+						}
+
+						$group = array();
+						$groupend = -1;
+						for ($apptnum=0;$apptnum<count($appts);$apptnum++) {
+							if ((count($group) > 0) && ($appts[$apptnum]['start'] >= $groupend)) {
+								$columnends = array();
+								$groupcolumns = 0;
+								foreach ($group as $groupapptnum) {
+									$column = 0;
+									while ((array_key_exists($column, $columnends)) && ($columnends[$column] > $appts[$groupapptnum]['start'])) {
+										$column++;
+									}
+									$appts[$groupapptnum]['column'] = $column;
+									$columnends[$column] = $appts[$groupapptnum]['end'];
+									if ($column + 1 > $groupcolumns) { $groupcolumns = $column + 1; }
+								}
+								foreach ($group as $groupapptnum) {
+									$appts[$groupapptnum]['columns'] = $groupcolumns;
+								}
+								$group = array();
+								$groupend = -1;
+							}
+							$group[] = $apptnum;
+							if ($appts[$apptnum]['end'] > $groupend) { $groupend = $appts[$apptnum]['end']; }
+						}
+						if (count($group) > 0) {
+							$columnends = array();
+							$groupcolumns = 0;
+							foreach ($group as $groupapptnum) {
+								$column = 0;
+								while ((array_key_exists($column, $columnends)) && ($columnends[$column] > $appts[$groupapptnum]['start'])) {
+									$column++;
+								}
+								$appts[$groupapptnum]['column'] = $column;
+								$columnends[$column] = $appts[$groupapptnum]['end'];
+								if ($column + 1 > $groupcolumns) { $groupcolumns = $column + 1; }
+							}
+							foreach ($group as $groupapptnum) {
+								$appts[$groupapptnum]['columns'] = $groupcolumns;
+							}
+						}
+
+						foreach ($appts as $appt) {
+							$width = 100/$appt['columns'];
+							$left = $appt['column']*$width;
+							$width = $width - 1;
 							?>
-							<?if (!$isallday) { ?>
-								<span class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</span><br>
-							<? } ?>
-							<? if ($isrequest) { ?>
-								<span class="ui red label">&nbsp;Time request&nbsp;</span>
-							<? } ?>
-							<a href="calendar_appointments.php?action=editform&id=<?=$id?>"><span class="appttitle"><u><?=$title?></u></span></a><br>
-							<span class="apptowner"><?=$calendarname?> - <b><?=$username?></b></span>
-							<br><br>
+							<div class="weekcalappt<?=$appt['class']?>" style="top: <?=$appt['top']?>px; height: <?=$appt['height']?>px; left: <?=$left?>%; width: <?=$width?>%">
+								<a href="calendar_appointments.php?action=editform&id=<?=$appt['id']?>"><b><?=$appt['title']?></b></a>
+								<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>
+								<div class="meta"><?=$appt['calendarname']?> - <?=$appt['username']?></div>
+							</div>
 							<?
 						}
-						?></div></div><?
-					}				
+					?>
+					</div>
+					<?
+				}
 				?>
+				<div class="weekcalbodyspacer"></div>
 				</div>
 			</div>
 		<?
@@ -757,11 +838,12 @@
 					</h3>
 							<br>
 							<?
+							$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
 							if ($currentcal == 0) {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 							}
 							else {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and a.appt_startdate >= '$startdatetime' and a.appt_enddate <= '$enddatetime' order by appt_isalldayevent, appt_startdate";
+								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
 							}
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -770,13 +852,12 @@
 								$projectname = $row['project_name'];
 								$calendarname = $row['calendar_name'];
 								$title = $row['appt_title'];
-								$starttime = date('g:i a', strtotime($row['appt_startdate']));
-								$endtime = date('g:i a', strtotime($row['appt_enddate']));
 								$isallday = $row['appt_isalldayevent'];
 								$isrequest = $row['appt_istimerequest'];
+								$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
 								?>
-								<?if (!$isallday) { ?>
-									<div class="ui orange label">&nbsp;<?=$starttime?> - <?=$endtime?>&nbsp;</div><br>
+								<?if ($timelabel != "") { ?>
+									<div class="ui orange label">&nbsp;<?=$timelabel?>&nbsp;</div><br>
 								<? } ?>
 								<? if ($isrequest) { ?>
 									<span class="timerequest">&nbsp;Time request&nbsp;</span>

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB api.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -355,14 +355,14 @@
 		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob);
 		$age = mysqli_real_escape_string($GLOBALS['linki'], $age);
 		$sex = mysqli_real_escape_string($GLOBALS['linki'], $sex);
-		$anonymize = (bool)mysqli_real_escape_string($GLOBALS['linki'], $anonymize);
+		$anonymize = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $anonymize));
 		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
 		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
 		$equipmentid = mysqli_real_escape_string($GLOBALS['linki'], $equipmentid);
 		$siteid = mysqli_real_escape_string($GLOBALS['linki'], $siteid);
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
 		$instanceid = mysqli_real_escape_string($GLOBALS['linki'], $instanceid);
-		$matchidonly = (bool)mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
+		$matchidonly = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $matchidonly));
 		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
 		$seriesnotes = mysqli_real_escape_string($GLOBALS['linki'], $seriesnotes);
 		$altuids = mysqli_real_escape_string($GLOBALS['linki'], $altuids);

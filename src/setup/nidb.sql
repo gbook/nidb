@@ -1,9 +1,9 @@
 -- phpMyAdmin SQL Dump
--- version 5.0.2
+-- version 5.2.3
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 09, 2025 at 03:44 PM
+-- Generation Time: Jul 10, 2026 at 08:59 PM
 -- Server version: 10.3.39-MariaDB
 -- PHP Version: 7.2.24
 
@@ -54,8 +54,7 @@ CREATE TABLE `analysis` (
   `analysis_startdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
-  `analysis_enddate` timestamp NULL DEFAULT NULL,
-  `analysis_disksize2` double DEFAULT NULL
+  `analysis_enddate` timestamp NULL DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -92,31 +91,7 @@ CREATE TABLE `analysis_data` (
   `data_numboldreps` varchar(20) DEFAULT NULL,
   `data_found` tinyint(1) DEFAULT NULL,
   `data_path` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `analysis_group`
---
-
-CREATE TABLE `analysis_group` (
-  `analysisgroup_id` int(11) NOT NULL,
-  `pipeline_id` int(11) DEFAULT NULL,
-  `pipeline_version` int(11) DEFAULT 0,
-  `pipeline_dependency` int(11) DEFAULT NULL,
-  `analysisgroup_status` enum('complete','pending','processing') DEFAULT NULL,
-  `analysisgroup_statusmessage` varchar(255) DEFAULT NULL,
-  `analysisgroup_statusdatetime` timestamp NULL DEFAULT NULL,
-  `analysisgroup_iscomplete` tinyint(1) DEFAULT NULL,
-  `analysisgroup_result` varchar(50) DEFAULT NULL,
-  `analysisgroup_resultmessage` longtext DEFAULT NULL,
-  `analysisgroup_numstudies` int(11) DEFAULT NULL,
-  `analysisgroup_startdate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_clusterstartdate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_clusterenddate` timestamp NULL DEFAULT NULL,
-  `analysisgroup_enddate` timestamp NULL DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -133,19 +108,26 @@ CREATE TABLE `analysis_history` (
   `analysis_event` enum('','analysiscopy','analysiscopydata','analysiscopydataend','analysiscreated','analysiscreatelink','analysisdeleted','analysisdeleteerror','analysisdependencyid','analysismessage','analysispending','analysisrecheck','analysissetuperror','analysissubmiterror','analysissubmitted','complete','completesupplement','processing','started','startedsupplement') DEFAULT NULL,
   `analysis_hostname` varchar(255) DEFAULT NULL,
   `event_message` longtext DEFAULT NULL,
+  `event_status` enum('success','warning','error','') DEFAULT NULL,
   `event_datetime` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `analysis_parent`
+-- Table structure for table `analysis_log`
 --
 
-CREATE TABLE `analysis_parent` (
-  `analysis_id` int(11) NOT NULL,
-  `analysisparent_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+CREATE TABLE `analysis_log` (
+  `analysislog_id` bigint(20) NOT NULL,
+  `analysis_id` bigint(20) NOT NULL,
+  `analysislog_event` enum('','cluster_checkinStep','manage_copy','manage_createLink','manage_delete','setup_checkIfOkToRun','setup_dependencyCheck','setup_dependencyCopy','setup_createAnalysis','setup_createDirectory','setup_dataStepCheck','setup_dataStepDownload','setup_dataCheckSummary','setup_dataDownloadSummary','setup_studyPrecheck','setup_submitToCluster','setup_summary','setup_writeJobScript','status_analysisComplete','status_analysisStarted','status_rerunStarted','status_rerunComplete','status_checkSuccessFiles','status_recheckComplete','status_supplementComplete','status_supplementStarted','status_analysisStepCheckin','status_updateFileList','status_resultScript') NOT NULL,
+  `analysislog_eventstatus` enum('','success','warning','error','neutral') NOT NULL,
+  `step_number` int(11) DEFAULT NULL,
+  `analysislog_message` text DEFAULT NULL,
+  `analysislog_hostname` varchar(255) DEFAULT NULL,
+  `analysislog_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -156,7 +138,7 @@ CREATE TABLE `analysis_parent` (
 CREATE TABLE `analysis_resultnames` (
   `resultname_id` int(11) NOT NULL,
   `result_name` varchar(250) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci PACK_KEYS=0;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -186,7 +168,38 @@ CREATE TABLE `analysis_results` (
 CREATE TABLE `analysis_resultunit` (
   `resultunit_id` int(11) NOT NULL,
   `result_unit` varchar(25) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `api_sessions`
+--
+
+CREATE TABLE `api_sessions` (
+  `session_id` int(10) UNSIGNED NOT NULL,
+  `apiuser_id` int(10) UNSIGNED NOT NULL,
+  `session_hash` char(64) NOT NULL,
+  `ip_address` varchar(45) DEFAULT NULL,
+  `last_access` datetime NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `api_users`
+--
+
+CREATE TABLE `api_users` (
+  `apiuser_id` int(10) UNSIGNED NOT NULL,
+  `username` varchar(64) NOT NULL,
+  `credential` varchar(255) NOT NULL,
+  `login_count` int(10) UNSIGNED NOT NULL DEFAULT 0,
+  `last_access` datetime DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `is_active` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -206,7 +219,7 @@ CREATE TABLE `assessments` (
   `notes` longtext DEFAULT NULL,
   `iscomplete` tinyint(1) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -225,7 +238,7 @@ CREATE TABLE `assessment_data` (
   `value_date` date DEFAULT NULL,
   `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -244,7 +257,7 @@ CREATE TABLE `assessment_formfields` (
   `formfield_haslinebreak` tinyint(1) DEFAULT 0,
   `formfield_scored` tinyint(1) DEFAULT 0,
   `formfield_order` varchar(45) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -261,7 +274,7 @@ CREATE TABLE `assessment_forms` (
   `form_createdate` datetime DEFAULT NULL,
   `form_ispublished` tinyint(1) NOT NULL DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -275,15 +288,15 @@ CREATE TABLE `assessment_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -299,32 +312,15 @@ CREATE TABLE `audio_series` (
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
   `series_size` double DEFAULT 0,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_notes` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0,
   `audio_desc` longtext DEFAULT NULL,
   `audio_cputime` double DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_enrollment`
---
-
-CREATE TABLE `audit_enrollment` (
-  `auditenrollment_id` int(11) NOT NULL,
-  `enrollment_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -359,58 +355,6 @@ CREATE TABLE `audit_results` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `audit_series`
---
-
-CREATE TABLE `audit_series` (
-  `auditseries_id` int(11) NOT NULL,
-  `series_id` int(11) DEFAULT NULL,
-  `modality` varchar(50) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_study`
---
-
-CREATE TABLE `audit_study` (
-  `auditstudy_id` int(11) NOT NULL,
-  `study_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `audit_subject`
---
-
-CREATE TABLE `audit_subject` (
-  `auditsubject_id` int(11) NOT NULL,
-  `subject_id` int(11) DEFAULT NULL,
-  `audit_datetime` datetime DEFAULT NULL,
-  `audit_message` longtext DEFAULT NULL,
-  `audit_number` int(11) DEFAULT NULL,
-  `audit_fixed` tinyint(1) DEFAULT NULL,
-  `audit_fixeddate` datetime DEFAULT NULL,
-  `audit_fixedby` varchar(50) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `backups`
 --
 
@@ -441,7 +385,7 @@ CREATE TABLE `backups` (
 
 CREATE TABLE `bids_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this mapping applies to all projects',
   `protocolname` varchar(255) NOT NULL,
   `imagetype` varchar(255) NOT NULL,
   `modality` varchar(255) NOT NULL,
@@ -469,7 +413,6 @@ CREATE TABLE `binary_series` (
   `binaryseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_size` double DEFAULT 0,
@@ -477,8 +420,9 @@ CREATE TABLE `binary_series` (
   `series_description` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -493,7 +437,7 @@ CREATE TABLE `calendars` (
   `calendar_location` varchar(255) DEFAULT NULL COMMENT 'room #, etc',
   `calendar_createdate` datetime DEFAULT NULL,
   `calendar_deletedate` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -507,7 +451,7 @@ CREATE TABLE `calendar_allocations` (
   `alloc_calendarid` int(11) DEFAULT NULL,
   `alloc_projectid` int(11) DEFAULT NULL,
   `alloc_amount` int(11) DEFAULT NULL COMMENT 'number of allocations per time period'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -530,7 +474,7 @@ CREATE TABLE `calendar_appointments` (
   `appt_repeats` tinyint(1) DEFAULT NULL,
   `appt_deletedate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00',
   `appt_canceldate` datetime NOT NULL DEFAULT '3000-01-01 00:00:00'
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -542,19 +486,7 @@ CREATE TABLE `calendar_notifications` (
   `not_id` int(11) NOT NULL,
   `not_userid` int(11) DEFAULT NULL,
   `not_calendarid` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `calendar_projectnotifications`
---
-
-CREATE TABLE `calendar_projectnotifications` (
-  `not_id` int(11) NOT NULL,
-  `not_userid` int(11) DEFAULT NULL,
-  `not_projectid` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -569,7 +501,7 @@ CREATE TABLE `calendar_projects` (
   `project_description` varchar(255) DEFAULT NULL,
   `project_startdate` datetime DEFAULT NULL,
   `project_enddate` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -599,7 +531,7 @@ CREATE TABLE `changelog` (
   `change_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `change_event` varchar(255) DEFAULT NULL,
   `change_desc` longtext DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -615,7 +547,7 @@ CREATE TABLE `changelog_subject` (
   `uid` varchar(10) NOT NULL,
   `newuid` varchar(10) NOT NULL,
   `log` longtext NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -633,7 +565,7 @@ CREATE TABLE `common` (
   `common_text` longtext DEFAULT NULL,
   `common_file` varchar(255) DEFAULT NULL,
   `common_size` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -667,43 +599,15 @@ CREATE TABLE `consent_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `ishidden` tinyint(1) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `contacts`
---
-
-CREATE TABLE `contacts` (
-  `contact_id` int(11) NOT NULL,
-  `contact_fullname` varchar(255) DEFAULT NULL,
-  `contact_title` varchar(255) DEFAULT NULL,
-  `contact_address1` varchar(255) DEFAULT NULL,
-  `contact_address2` varchar(255) DEFAULT NULL,
-  `contact_address3` varchar(255) DEFAULT NULL,
-  `contact_city` varchar(255) DEFAULT NULL,
-  `contact_state` varchar(255) DEFAULT NULL,
-  `contact_zip` varchar(255) DEFAULT NULL,
-  `contact_country` varchar(255) DEFAULT NULL,
-  `contact_phone1` varchar(255) DEFAULT NULL,
-  `contact_phone2` varchar(255) DEFAULT NULL,
-  `contact_phone3` varchar(255) DEFAULT NULL,
-  `contact_email1` varchar(255) DEFAULT NULL,
-  `contact_email2` varchar(255) DEFAULT NULL,
-  `contact_email3` varchar(255) DEFAULT NULL,
-  `contact_website` varchar(255) DEFAULT NULL,
-  `contact_company` varchar(255) DEFAULT NULL,
-  `contact_department` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -717,7 +621,6 @@ CREATE TABLE `cr_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
@@ -725,132 +628,9 @@ CREATE TABLE `cr_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `cs_prefs`
---
-
-CREATE TABLE `cs_prefs` (
-  `csprefs_id` int(11) NOT NULL,
-  `userid` int(11) DEFAULT NULL,
-  `description` text DEFAULT NULL,
-  `shortname` varchar(255) DEFAULT NULL,
-  `extralines` text DEFAULT NULL,
-  `startdate` datetime DEFAULT NULL,
-  `enddate` datetime DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `do_dicomconvert` tinyint(1) DEFAULT NULL,
-  `do_reorient` tinyint(1) DEFAULT NULL,
-  `do_realign` tinyint(1) DEFAULT NULL,
-  `do_msdcalc` tinyint(1) DEFAULT NULL,
-  `do_coregister` tinyint(1) DEFAULT NULL,
-  `do_slicetime` tinyint(1) DEFAULT NULL,
-  `do_normalize` tinyint(1) DEFAULT NULL,
-  `do_smooth` tinyint(1) DEFAULT NULL,
-  `do_artrepair` tinyint(1) DEFAULT NULL,
-  `do_filter` tinyint(1) DEFAULT NULL,
-  `do_segment` tinyint(1) DEFAULT NULL,
-  `do_behmatchup` tinyint(1) DEFAULT NULL,
-  `do_stats` tinyint(1) DEFAULT NULL,
-  `do_censor` tinyint(1) DEFAULT NULL,
-  `do_autoslice` tinyint(1) DEFAULT NULL,
-  `do_db` tinyint(1) DEFAULT NULL,
-  `dicom_filepattern` varchar(255) DEFAULT NULL,
-  `dicom_format` varchar(255) DEFAULT NULL,
-  `dicom_writefileprefix` varchar(255) DEFAULT NULL,
-  `dicom_outputdir` text DEFAULT NULL,
-  `reorient_pattern` varchar(255) DEFAULT NULL,
-  `reorient_vector` varchar(255) DEFAULT NULL,
-  `reorient_write` tinyint(1) DEFAULT NULL,
-  `realign_coregister` tinyint(1) DEFAULT NULL,
-  `realign_reslice` tinyint(1) DEFAULT NULL,
-  `realign_useinrialign` tinyint(1) DEFAULT NULL,
-  `realign_pattern` varchar(255) DEFAULT NULL,
-  `realign_inri_rho` varchar(255) DEFAULT NULL,
-  `realign_inri_cutoff` double DEFAULT NULL,
-  `realign_inri_quality` double DEFAULT NULL,
-  `realign_fwhm` double DEFAULT NULL,
-  `realign_tomean` tinyint(1) DEFAULT NULL,
-  `realign_pathtoweight` varchar(255) DEFAULT NULL,
-  `realign_writeresliceimg` tinyint(1) DEFAULT NULL,
-  `realign_writemean` tinyint(1) DEFAULT NULL,
-  `coreg_run` tinyint(1) DEFAULT NULL,
-  `coreg_runreslice` tinyint(1) DEFAULT NULL,
-  `coreg_ref` varchar(255) DEFAULT NULL,
-  `coreg_source` varchar(255) DEFAULT NULL,
-  `coreg_otherpattern` varchar(255) DEFAULT NULL,
-  `coreg_writeref` varchar(255) DEFAULT NULL,
-  `slicetime_pattern` varchar(255) DEFAULT NULL,
-  `slicetime_sliceorder` varchar(255) DEFAULT NULL,
-  `slicetime_refslice` varchar(255) DEFAULT NULL,
-  `slicetime_ta` varchar(255) DEFAULT NULL,
-  `norm_determineparams` tinyint(1) DEFAULT NULL,
-  `norm_writeimages` tinyint(1) DEFAULT NULL,
-  `norm_paramstemplate` varchar(255) DEFAULT NULL,
-  `norm_paramspattern` varchar(255) DEFAULT NULL,
-  `norm_paramssourceweight` varchar(255) DEFAULT NULL,
-  `norm_paramsmatname` varchar(255) DEFAULT NULL,
-  `norm_writepattern` varchar(255) DEFAULT NULL,
-  `norm_writematname` varchar(255) DEFAULT NULL,
-  `smooth_kernel` varchar(255) DEFAULT NULL,
-  `smooth_pattern` varchar(255) DEFAULT NULL,
-  `art_pattern` varchar(255) DEFAULT NULL,
-  `filter_pattern` varchar(255) DEFAULT NULL,
-  `filter_cuttofffreq` double DEFAULT NULL,
-  `segment_pattern` varchar(255) DEFAULT NULL,
-  `segment_outputgm` varchar(255) DEFAULT NULL,
-  `segment_outputwm` varchar(255) DEFAULT NULL,
-  `segment_outputcsf` varchar(255) DEFAULT NULL,
-  `segment_outputbiascor` int(11) DEFAULT NULL,
-  `segment_outputcleanup` int(11) DEFAULT NULL,
-  `is_fulltext` tinyint(1) DEFAULT NULL,
-  `fulltext` text DEFAULT NULL,
-  `beh_queue` varchar(255) DEFAULT NULL,
-  `beh_digits` varchar(50) DEFAULT NULL,
-  `stats_makeasciis` tinyint(1) DEFAULT NULL,
-  `stats_asciiscriptpath` text DEFAULT NULL,
-  `stats_behdirname` varchar(255) DEFAULT NULL,
-  `stats_relativepath` tinyint(1) DEFAULT NULL,
-  `stats_dirname` varchar(255) DEFAULT NULL,
-  `stats_pattern` varchar(255) DEFAULT NULL,
-  `stats_behunits` varchar(255) DEFAULT NULL,
-  `stats_volterra` tinyint(1) DEFAULT NULL,
-  `stats_basisfunction` int(11) DEFAULT NULL,
-  `stats_onsetfiles` text DEFAULT NULL,
-  `stats_durationfiles` text DEFAULT NULL,
-  `stats_regressorfiles` text DEFAULT NULL,
-  `stats_regressornames` text DEFAULT NULL,
-  `stats_paramnames` text DEFAULT NULL,
-  `stats_paramorders` text DEFAULT NULL,
-  `stats_paramfiles` text DEFAULT NULL,
-  `stats_censorfiles` text DEFAULT NULL,
-  `stats_fit_xbflength` int(11) DEFAULT NULL,
-  `stats_fit_xbforder` int(11) DEFAULT NULL,
-  `stats_timemodulation` text DEFAULT NULL,
-  `stats_parametricmodulation` text DEFAULT NULL,
-  `stats_globalfx` tinyint(1) DEFAULT NULL,
-  `stats_highpasscutoff` int(11) DEFAULT NULL,
-  `stats_serialcorr` tinyint(1) DEFAULT NULL,
-  `stats_tcontrasts` text DEFAULT NULL,
-  `stats_tcon_columnlabels` text DEFAULT NULL,
-  `stats_tcontrastnames` text DEFAULT NULL,
-  `autoslice_cons` varchar(255) DEFAULT NULL,
-  `autoslice_p` double DEFAULT NULL,
-  `autoslice_background` varchar(255) DEFAULT NULL,
-  `autoslice_slices` varchar(255) DEFAULT NULL,
-  `autoslice_emailcons` varchar(255) DEFAULT NULL,
-  `db_overwritebeta` tinyint(1) DEFAULT NULL,
-  `db_fileprefix` varchar(255) DEFAULT NULL,
-  `db_betanums` text DEFAULT NULL,
-  `db_threshold` double DEFAULT NULL,
-  `db_smoothkernel` varchar(255) DEFAULT NULL,
-  `db_imcalcs` text DEFAULT NULL,
-  `db_imnames` text DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -864,7 +644,6 @@ CREATE TABLE `ct_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_contrastbolusagent` varchar(255) DEFAULT NULL,
   `series_bodypartexamined` varchar(255) DEFAULT NULL,
@@ -892,8 +671,9 @@ CREATE TABLE `ct_series` (
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -907,10 +687,10 @@ CREATE TABLE `dataset_requests` (
   `email` varchar(255) DEFAULT NULL,
   `institution` varchar(255) DEFAULT NULL,
   `shortname` varchar(255) NOT NULL,
-  `idlist` longtext NOT NULL,
-  `dataformat` longtext NOT NULL,
-  `deliverymethod` longtext NOT NULL,
-  `notes` longtext NOT NULL,
+  `idlist` longtext DEFAULT NULL,
+  `dataformat` longtext DEFAULT NULL,
+  `deliverymethod` longtext DEFAULT NULL,
+  `notes` longtext DEFAULT NULL,
   `dua_fileid` int(11) DEFAULT NULL,
   `request_submitdate` datetime NOT NULL,
   `request_startdate` datetime DEFAULT NULL,
@@ -928,11 +708,11 @@ CREATE TABLE `dataset_requests` (
 CREATE TABLE `data_dictionary` (
   `datadict_id` int(11) NOT NULL,
   `datadict_type` enum('drug','vital','measure','other') NOT NULL,
-  `project_id` int(11) NOT NULL,
+  `project_id` int(11) DEFAULT NULL,
   `datadict_varname` varchar(255) DEFAULT NULL,
   `datadict_desc` varchar(255) DEFAULT NULL,
   `datadict_valuekey` varchar(255) DEFAULT NULL,
-  `datadict_expectedtimepoints` int(11) DEFAULT NULL COMMENT 'expected number of time points',
+  `datadict_expectedtimepoints` int(11) DEFAULT NULL,
   `datadict_rangelow` double DEFAULT NULL,
   `datadict_rangehigh` double DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
@@ -986,7 +766,21 @@ CREATE TABLE `data_requests` (
   `req_status` varchar(25) DEFAULT NULL,
   `req_results` longtext DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `diagnosis`
+--
+
+CREATE TABLE `diagnosis` (
+  `diagnosis_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `icd10_id` int(11) NOT NULL,
+  `start_date` date DEFAULT NULL,
+  `end_date` date DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1020,38 +814,7 @@ CREATE TABLE `drugnames` (
   `drugname_id` int(11) NOT NULL,
   `drug_name` varchar(255) NOT NULL,
   `drug_group` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `drugs`
---
-
-CREATE TABLE `drugs` (
-  `drug_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `drug_startdate` datetime NOT NULL,
-  `drug_enddate` datetime DEFAULT NULL,
-  `drug_doseamount` varchar(255) DEFAULT NULL,
-  `drug_dosefrequency` varchar(255) DEFAULT NULL,
-  `drug_route` varchar(255) DEFAULT NULL,
-  `drugname_id` int(11) NOT NULL,
-  `drug_type` varchar(255) NOT NULL,
-  `drug_dosekey` varchar(255) DEFAULT NULL,
-  `drug_doseunit` varchar(255) DEFAULT NULL,
-  `drug_frequencymodifier` enum('every','times') DEFAULT NULL,
-  `drug_frequencyvalue` double DEFAULT NULL,
-  `drug_frequencyunit` enum('bolus','dose','second','minute','hour','day','week','month','year') DEFAULT NULL,
-  `drug_dosedesc` varchar(255) DEFAULT NULL,
-  `drug_rater` varchar(255) DEFAULT NULL,
-  `drug_notes` varchar(255) DEFAULT NULL,
-  `drug_entrydate` datetime DEFAULT NULL,
-  `drug_recordcreatedate` datetime DEFAULT NULL,
-  `drug_recordmodifydate` datetime DEFAULT NULL,
-  `drug_createdate` datetime DEFAULT NULL,
-  `drug_modifydate` datetime DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1068,13 +831,13 @@ CREATE TABLE `ecg_series` (
   `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(250) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1090,14 +853,14 @@ CREATE TABLE `eeg_series` (
   `series_altdesc` varchar(250) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
   `series_protocol` varchar(250) DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `series_status` varchar(250) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1113,7 +876,7 @@ CREATE TABLE `enrollment` (
   `enroll_subgroup` varchar(50) DEFAULT NULL,
   `enroll_startdate` datetime DEFAULT NULL,
   `enroll_enddate` datetime DEFAULT NULL,
-  `enroll_status` enum('enrolled','completed','excluded','') NOT NULL DEFAULT '',
+  `enroll_status` enum('consented','enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob DEFAULT NULL COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
@@ -1128,6 +891,7 @@ CREATE TABLE `enrollment_checklist` (
   `enrollmentchecklist_id` int(11) NOT NULL,
   `enrollment_id` int(11) DEFAULT NULL,
   `projectchecklist_id` int(11) DEFAULT NULL,
+  `iscomplete` tinyint(1) DEFAULT NULL,
   `notes` longtext DEFAULT NULL,
   `date_completed` datetime DEFAULT NULL,
   `completedby` varchar(255) DEFAULT NULL COMMENT 'username, not ID, in case the user_id is deleted'
@@ -1161,7 +925,7 @@ CREATE TABLE `error_log` (
   `error_module` varchar(255) DEFAULT NULL,
   `error_date` datetime DEFAULT NULL,
   `error_message` longtext DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1178,12 +942,12 @@ CREATE TABLE `et_series` (
   `series_datetime` datetime DEFAULT NULL,
   `series_protocol` varchar(250) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1244,9 +1008,6 @@ CREATE TABLE `exports` (
   `username` varchar(50) DEFAULT NULL,
   `ip` varchar(30) DEFAULT NULL,
   `download_flags` set('DOWNLOAD_IMAGING','DOWNLOAD_BEH','DOWNLOAD_QC','DOWNLOAD_EXPERIMENTS','DOWNLOAD_ANALYSIS','DOWNLOAD_PIPELINES','DOWNLOAD_VARIABLES','DOWNLOAD_MINIPIPELINES','DOWNLOAD_PACKAGE') DEFAULT NULL,
-  `download_imaging` tinyint(1) DEFAULT NULL,
-  `download_beh` tinyint(1) DEFAULT NULL,
-  `download_qc` tinyint(1) DEFAULT NULL,
   `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
   `filetype` varchar(20) DEFAULT NULL,
   `do_gzip` tinyint(1) DEFAULT NULL,
@@ -1277,6 +1038,7 @@ CREATE TABLE `exports` (
   `nifti_flags` set('NIFTI_3D','NIFTI_4D','NIFTI_GZIP','NIFTI_JSON','NIFTI_BIDS') DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID','BIDS_SUBJECTDIR_INCREMENT','BIDS_SUBJECTDIR_UID','BIDS_SUBJECTDIR_ALTUID','BIDS_STUDYDIR_INCREMENT','BIDS_STUDYDIR_STUDYNUM','BIDS_STUDYDIR_ALTSTUDYID','BIDS_STUDYDIR_DATE') DEFAULT NULL,
   `squirrel_flags` set('SQUIRREL_FORMAT_ANONYMIZE','SQUIRREL_FORMAT_ANONYMIZEFULL','SQUIRREL_FORMAT_NIFTI4D','SQUIRREL_FORMAT_NIFTI4DGZ','SQUIRREL_FORMAT_NIFTI3D','SQUIRREL_FORMAT_NIFTI3DGZ','SQUIRREL_INCSUBJECTNUM','SQUIRREL_INCSTUDYNUM','SQUIRREL_INCSERIESNUM') DEFAULT NULL,
+  `nda_flags` set('NDA_FTPDOWNLOAD','NDA_WEBDOWNLOAD') DEFAULT NULL,
   `squirrel_title` varchar(255) DEFAULT NULL,
   `squirrel_desc` text DEFAULT NULL,
   `submitdate` datetime DEFAULT NULL,
@@ -1285,8 +1047,9 @@ CREATE TABLE `exports` (
   `cputime` double DEFAULT NULL,
   `status` enum('submitted','pending','processing','complete','error','cancelled','') NOT NULL DEFAULT '',
   `log` longtext DEFAULT NULL,
+  `exported_path` text DEFAULT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1306,7 +1069,34 @@ CREATE TABLE `exportseries` (
   `timepoint_label` varchar(100) DEFAULT NULL,
   `status` enum('','error','processing','complete','submitted','cancelled') NOT NULL DEFAULT '',
   `statusmessage` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `export_nonimaging`
+--
+
+CREATE TABLE `export_nonimaging` (
+  `exportnonimaging_id` int(11) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `ip` varchar(40) DEFAULT NULL,
+  `export_type` enum('analysisresults','observations','interventions') NOT NULL,
+  `pipeline_id` int(11) DEFAULT NULL,
+  `project_id` int(11) DEFAULT NULL,
+  `export_destinationtype` enum('web','nfs') NOT NULL,
+  `export_destinationnfsdir` text DEFAULT NULL,
+  `export_status` enum('submitted','processing','complete','error','expired') NOT NULL,
+  `export_statusmessage` text DEFAULT NULL,
+  `export_startdate` datetime NOT NULL DEFAULT current_timestamp(),
+  `export_enddate` datetime DEFAULT NULL,
+  `export_deletedate` datetime DEFAULT NULL,
+  `export_numcols` bigint(20) NOT NULL DEFAULT 0,
+  `export_numrows` int(11) NOT NULL DEFAULT 0,
+  `export_size` bigint(20) DEFAULT NULL,
+  `export_filepath` text DEFAULT NULL,
+  `export_log` mediumtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1348,16 +1138,6 @@ CREATE TABLE `fileio_requests` (
   `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge') NOT NULL,
   `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
-  `merge_ids` varchar(255) DEFAULT NULL,
-  `merge_method` enum('sortbyseriesdate','concatbystudydateasc','concatbystudydatedesc','concatbystudynumasc','concatbystudynumdesc','sortbyseriesnum') DEFAULT NULL,
-  `merge_name` varchar(255) DEFAULT NULL,
-  `merge_dob` date DEFAULT NULL,
-  `merge_sex` char(1) DEFAULT NULL,
-  `merge_ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
-  `merge_ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
-  `merge_guid` varchar(50) DEFAULT NULL,
-  `merge_enrollgroup` longtext DEFAULT NULL,
-  `merge_altuids` longtext DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
   `rearchiveprojectid` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
@@ -1368,7 +1148,17 @@ CREATE TABLE `fileio_requests` (
   `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `startdate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
   `enddate` timestamp NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `merge_id` int(11) DEFAULT NULL
+  `merge_id` int(11) DEFAULT NULL,
+  `merge_ids` varchar(255) DEFAULT NULL,
+  `merge_method` enum('sortbyseriesdate','concatbystudydateasc','concatbystudydatedesc','concatbystudynumasc','concatbystudynumdesc','sortbyseriesnum') DEFAULT NULL,
+  `merge_name` varchar(255) DEFAULT NULL,
+  `merge_dob` date DEFAULT NULL,
+  `merge_sex` char(1) DEFAULT NULL,
+  `merge_ethnicity1` enum('hispanic','nothispanic','') DEFAULT NULL,
+  `merge_ethnicity2` set('asian','black','white','indian','islander','mixed','other','unknown') DEFAULT NULL,
+  `merge_guid` varchar(50) DEFAULT NULL,
+  `merge_enrollgroup` longtext DEFAULT NULL,
+  `merge_altuids` longtext DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1395,10 +1185,13 @@ CREATE TABLE `files` (
 CREATE TABLE `groups` (
   `group_id` int(11) NOT NULL,
   `group_name` varchar(255) DEFAULT NULL,
-  `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series',
+  `group_type` varchar(25) DEFAULT NULL COMMENT 'subject, study, series, NDA',
   `group_owner` int(11) DEFAULT NULL COMMENT 'user_id of the group owner',
-  `instance_id` int(11) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `instance_id` int(11) DEFAULT NULL,
+  `nda_collection` varchar(50) DEFAULT NULL,
+  `nda_csv` longblob DEFAULT NULL,
+  `nda_notes` text DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1426,14 +1219,27 @@ CREATE TABLE `gsr_series` (
   `series_num` int(11) DEFAULT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT NULL COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `icd10`
+--
+
+CREATE TABLE `icd10` (
+  `icd10_id` int(11) NOT NULL,
+  `icd10_code` varchar(20) NOT NULL,
+  `icd10_shortdesc` text NOT NULL,
+  `icd10_longdesc` text NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -1513,8 +1319,8 @@ CREATE TABLE `import_file_log` (
   `importfilelog_id` int(11) NOT NULL,
   `importfile_datetime` datetime NOT NULL,
   `filename` text NOT NULL,
-  `file_datetime` datetime NOT NULL,
-  `file_size` int(11) NOT NULL,
+  `file_datetime` datetime DEFAULT NULL,
+  `file_size` int(11) DEFAULT NULL,
   `file_type` varchar(255) DEFAULT NULL,
   `Modality` varchar(255) DEFAULT NULL,
   `PatientID` text DEFAULT NULL,
@@ -1523,7 +1329,7 @@ CREATE TABLE `import_file_log` (
   `StudyDateTime` datetime DEFAULT NULL,
   `SeriesUID` text DEFAULT NULL,
   `SeriesDescription` text DEFAULT NULL,
-  `SeriesDateTime` datetime DEFAULT NULL,
+  `SeriesDatetime` datetime DEFAULT NULL,
   `SeriesNumber` int(11) DEFAULT NULL,
   `AcquisitionNumber` int(11) DEFAULT NULL,
   `InstanceNumber` int(11) DEFAULT NULL
@@ -1540,7 +1346,7 @@ CREATE TABLE `import_requestdirs` (
   `importrequest_id` int(11) DEFAULT NULL,
   `dir_num` int(11) DEFAULT NULL,
   `dir_type` enum('modality','seriesdesc','seriesnum','studydesc','studydatetime','thefiles','beh','subjectid') NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1562,9 +1368,6 @@ CREATE TABLE `import_requests` (
   `import_siteid` int(11) DEFAULT NULL,
   `import_projectid` int(11) DEFAULT NULL,
   `import_instanceid` int(11) DEFAULT NULL,
-  `import_dob` date DEFAULT NULL,
-  `import_sex` char(1) DEFAULT NULL,
-  `import_age` double DEFAULT NULL,
   `import_uuid` varchar(255) DEFAULT NULL,
   `import_subjectid` varchar(255) DEFAULT NULL,
   `import_anonymize` tinyint(1) DEFAULT NULL,
@@ -1585,8 +1388,11 @@ CREATE TABLE `import_requests` (
   `numbehsuccess` int(11) DEFAULT NULL,
   `numbehfail` int(11) DEFAULT NULL,
   `uploadreport` longtext DEFAULT NULL,
-  `archivereport` longtext DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `archivereport` longtext DEFAULT NULL,
+  `import_dob` date DEFAULT NULL,
+  `import_sex` char(1) DEFAULT NULL,
+  `import_age` double DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1601,7 +1407,7 @@ CREATE TABLE `import_transactions` (
   `transaction_status` varchar(20) DEFAULT NULL,
   `transaction_source` varchar(255) DEFAULT NULL,
   `transaction_username` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1615,83 +1421,80 @@ CREATE TABLE `instance` (
   `instance_name` varchar(255) NOT NULL,
   `instance_ownerid` int(11) NOT NULL,
   `instance_default` tinyint(1) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `instance_billing`
+-- Table structure for table `instrumentitem_map`
 --
 
-CREATE TABLE `instance_billing` (
-  `billingitem_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `invoice_id` int(11) NOT NULL,
-  `pricing_id` int(11) NOT NULL,
-  `quantity` double NOT NULL,
-  `bill_datestart` datetime NOT NULL,
-  `bill_dateend` datetime NOT NULL,
-  `bill_notes` longtext NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+CREATE TABLE `instrumentitem_map` (
+  `itemmap_id` int(11) NOT NULL,
+  `instrumentitem_id` int(11) NOT NULL,
+  `int_val` int(11) DEFAULT NULL COMMENT 'example: 1, 2...',
+  `string_val` varchar(255) NOT NULL COMMENT 'example: female, male ...'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `instance_contact`
+-- Table structure for table `instruments`
 --
 
-CREATE TABLE `instance_contact` (
-  `instancecontact_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `contact_id` int(11) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+CREATE TABLE `instruments` (
+  `instrument_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `instrument_name` varchar(255) NOT NULL,
+  `instrument_notes` text DEFAULT NULL,
+  `createdate` datetime DEFAULT current_timestamp(),
+  `modifydate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `instance_invoice`
+-- Table structure for table `instrument_items`
 --
 
-CREATE TABLE `instance_invoice` (
-  `invoice_id` int(11) NOT NULL,
-  `invoice_number` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `invoice_date` datetime NOT NULL,
-  `invoice_paid` tinyint(1) NOT NULL,
-  `invoice_paiddate` datetime NOT NULL,
-  `invoice_paymethod` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+CREATE TABLE `instrument_items` (
+  `instrumentitem_id` int(11) NOT NULL,
+  `instrument_id` int(11) NOT NULL,
+  `item_name` varchar(255) NOT NULL,
+  `item_order` int(11) NOT NULL DEFAULT 0,
+  `item_notes` text DEFAULT NULL,
+  `item_type` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') NOT NULL DEFAULT 'string'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `instance_pricing`
+-- Table structure for table `interventions`
 --
 
-CREATE TABLE `instance_pricing` (
-  `pricing_id` int(11) NOT NULL,
-  `pricing_startdate` datetime NOT NULL,
-  `pricing_enddate` datetime NOT NULL,
-  `pricing_itemname` varchar(255) NOT NULL,
-  `pricing_unit` varchar(255) NOT NULL,
-  `pricing_price` double NOT NULL,
-  `pricing_comments` longtext NOT NULL,
-  `pricing_internal` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `instance_usage`
---
-
-CREATE TABLE `instance_usage` (
-  `instanceusage_id` int(11) NOT NULL,
-  `instance_id` int(11) NOT NULL,
-  `usage_date` date NOT NULL,
-  `pricing_id` int(11) NOT NULL,
-  `usage_amount` double NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+CREATE TABLE `interventions` (
+  `intervention_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `startdate` datetime NOT NULL,
+  `enddate` datetime DEFAULT NULL,
+  `doseamount` varchar(255) DEFAULT NULL,
+  `dosefrequency` varchar(255) DEFAULT NULL,
+  `administration_route` varchar(255) DEFAULT NULL COMMENT 'oral, iv, suppository, etc',
+  `drugname_id` int(11) DEFAULT NULL,
+  `intervention_name` varchar(255) NOT NULL,
+  `intervention_type` varchar(255) DEFAULT NULL,
+  `dosekey` varchar(255) DEFAULT NULL,
+  `doseunit` varchar(255) DEFAULT NULL,
+  `frequencymodifier` enum('every','times') DEFAULT NULL,
+  `frequencyvalue` double DEFAULT NULL,
+  `frequencyunit` enum('bolus','dose','second','minute','hour','day','week','month','year') DEFAULT NULL,
+  `dosedesc` varchar(255) DEFAULT NULL,
+  `rater` varchar(255) DEFAULT NULL,
+  `notes` varchar(255) DEFAULT NULL,
+  `entrydate` datetime DEFAULT NULL,
+  `recordcreatedate` datetime DEFAULT NULL,
+  `recordmodifydate` datetime DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1718,66 +1521,7 @@ CREATE TABLE `manual_qa` (
   `modality` varchar(10) NOT NULL,
   `rater_id` int(11) NOT NULL,
   `value` int(11) NOT NULL COMMENT '0,1, or 2'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `measureinstruments`
---
-
-CREATE TABLE `measureinstruments` (
-  `measureinstrument_id` int(11) NOT NULL,
-  `instrument_name` varchar(255) NOT NULL,
-  `instrument_group` varchar(255) NOT NULL,
-  `instrument_notes` longtext NOT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `measurenames`
---
-
-CREATE TABLE `measurenames` (
-  `measurename_id` int(11) NOT NULL,
-  `measure_name` varchar(255) DEFAULT NULL,
-  `measure_group` varchar(255) DEFAULT NULL,
-  `measure_multiple` tinyint(1) DEFAULT NULL COMMENT 'Indicates if a measure can have more than one entry',
-  `measure_notes` longtext DEFAULT NULL COMMENT 'mostly used for coding instructions (1=female, 2=male, etc)'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `measures`
---
-
-CREATE TABLE `measures` (
-  `measure_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `measure_dateentered` timestamp NULL DEFAULT NULL,
-  `study_id` int(11) DEFAULT NULL,
-  `series_id` int(11) DEFAULT NULL,
-  `measure_value` varchar(245) NOT NULL,
-  `instrumentname_id` int(11) DEFAULT NULL,
-  `measurename_id` int(11) NOT NULL,
-  `measure_type` enum('s','n') DEFAULT NULL,
-  `measure_valuestring` varchar(250) DEFAULT NULL,
-  `measure_valuenum` double DEFAULT NULL,
-  `measure_notes` mediumtext DEFAULT NULL,
-  `measure_instrument` varchar(250) DEFAULT NULL,
-  `measure_desc` varchar(250) DEFAULT NULL,
-  `measure_rater` varchar(50) DEFAULT NULL,
-  `measure_datecomplete` timestamp NULL DEFAULT NULL,
-  `measure_lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
-  `measure_startdate` datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-  `measure_enddate` datetime DEFAULT NULL,
-  `measure_duration` int(11) DEFAULT NULL,
-  `measure_entrydate` datetime DEFAULT NULL,
-  `measure_createdate` datetime DEFAULT NULL,
-  `measure_modifydate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1835,7 +1579,7 @@ CREATE TABLE `minipipeline_jobs` (
   `mp_queuedate` datetime DEFAULT NULL,
   `mp_startdate` datetime DEFAULT NULL,
   `mp_enddate` datetime DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1868,7 +1612,7 @@ CREATE TABLE `modalities` (
   `mod_code` varchar(15) NOT NULL,
   `mod_desc` varchar(255) NOT NULL,
   `mod_enabled` tinyint(1) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1879,7 +1623,7 @@ CREATE TABLE `modalities` (
 CREATE TABLE `modality_protocol` (
   `modality` varchar(10) NOT NULL,
   `protocol` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1895,21 +1639,9 @@ CREATE TABLE `modules` (
   `module_laststart` datetime NOT NULL,
   `module_laststop` datetime NOT NULL,
   `module_isactive` tinyint(1) NOT NULL,
-  `module_debug` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `module_prefs`
---
-
-CREATE TABLE `module_prefs` (
-  `mp_id` int(11) NOT NULL,
-  `mp_module` varchar(50) NOT NULL,
-  `mp_pref` varchar(255) NOT NULL,
-  `mp_value` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `module_debug` tinyint(1) NOT NULL DEFAULT 0,
+  `module_keeplog` tinyint(1) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1938,7 +1670,7 @@ CREATE TABLE `mostrecent` (
   `project_id` int(11) DEFAULT NULL,
   `pipeline_id` int(11) DEFAULT NULL,
   `mostrecent_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2048,9 +1780,6 @@ CREATE TABLE `mr_series` (
   `series_desc` varchar(250) DEFAULT NULL COMMENT 'MP Rage, AOD, etc(0018,1030)',
   `series_altdesc` varchar(250) DEFAULT NULL,
   `series_protocol` varchar(250) DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
-  `is_valid` tinyint(1) NOT NULL DEFAULT 1,
-  `message` text DEFAULT NULL,
   `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
   `series_tr` double DEFAULT NULL COMMENT '(0018,0080)',
@@ -2070,14 +1799,14 @@ CREATE TABLE `mr_series` (
   `img_rows` int(11) DEFAULT NULL COMMENT '(0028,0010)',
   `img_cols` int(11) DEFAULT NULL COMMENT '(0028,0011)',
   `img_slices` int(11) DEFAULT NULL COMMENT 'often derived from the number of dicom files',
-  `slicethickness` double NOT NULL DEFAULT 0,
+  `slicethickness` double DEFAULT 0,
   `slicespacing` double DEFAULT NULL,
   `dimN` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim0',
   `dimX` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim1',
   `dimY` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim2',
   `dimZ` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim3',
   `dimT` int(11) NOT NULL DEFAULT 0 COMMENT 'from fslval dim4',
-  `bandwidth` double NOT NULL DEFAULT 0,
+  `bandwidth` double DEFAULT 0,
   `image_type` varchar(250) DEFAULT NULL,
   `image_comments` varchar(250) DEFAULT NULL,
   `bold_reps` int(11) NOT NULL DEFAULT 0,
@@ -2092,8 +1821,11 @@ CREATE TABLE `mr_series` (
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
   `series_createdate` datetime DEFAULT NULL,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci PACK_KEYS=0;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL,
+  `is_valid` tinyint(1) NOT NULL DEFAULT 1,
+  `message` text DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2112,7 +1844,7 @@ CREATE TABLE `mr_studyqa` (
   `t1_snrremovethreshold` double NOT NULL,
   `cputime` double DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2122,11 +1854,25 @@ CREATE TABLE `mr_studyqa` (
 
 CREATE TABLE `nda_mapping` (
   `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
+  `project_id` int(11) NOT NULL,
   `protocolname` varchar(255) NOT NULL,
   `experiment_id` int(11) NOT NULL,
   `modality` varchar(255) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='this table maps long protocol name(s) to short names';
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `nda_project`
+--
+
+CREATE TABLE `nda_project` (
+  `ndaproject_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `nda_collectionid` int(11) NOT NULL,
+  `expected_data` text NOT NULL COMMENT 'This describes ''what'' should be sent to NDA',
+  `submission_dates` text NOT NULL COMMENT 'freeform: expected submission dates'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2141,7 +1887,7 @@ CREATE TABLE `nidb_sites` (
   `site_name` varchar(255) NOT NULL,
   `site_address` varchar(255) DEFAULT NULL,
   `site_contact` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2155,15 +1901,38 @@ CREATE TABLE `nm_series` (
   `series_num` int(11) DEFAULT 0,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` longtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `nonimagingimports`
+--
+
+CREATE TABLE `nonimagingimports` (
+  `nonimagingimport_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `importDatetime` datetime NOT NULL,
+  `numObservationsImported` int(11) NOT NULL,
+  `numObservationsSkipped` int(11) NOT NULL,
+  `numInterventionsImported` int(11) NOT NULL,
+  `numInterventionsSkipped` int(11) NOT NULL,
+  `flagIgnoreEmptyCells` tinyint(1) DEFAULT NULL,
+  `flagCreateMissingSubjects` tinyint(1) DEFAULT NULL,
+  `numSubjectsCreated` int(11) DEFAULT NULL,
+  `numSubjectsNotFound` int(11) DEFAULT NULL,
+  `numUniqueObservationVariables` int(11) DEFAULT NULL,
+  `numUniqueInterventionVariables` int(11) DEFAULT NULL,
+  `importMessage` text NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2190,7 +1959,70 @@ CREATE TABLE `notification_user` (
   `project_id` int(11) NOT NULL,
   `notiftype_id` int(11) NOT NULL,
   `notif_frequency` enum('daily','weekly','monthly','yearly') NOT NULL DEFAULT 'weekly'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `observations`
+--
+
+CREATE TABLE `observations` (
+  `observation_id` int(11) NOT NULL,
+  `enrollment_id` int(11) NOT NULL,
+  `instrumentitem_id` int(11) DEFAULT NULL,
+  `observationsurvey_id` int(11) DEFAULT NULL,
+  `remotebatch_id` int(11) DEFAULT NULL,
+  `observation_name` varchar(255) NOT NULL,
+  `observation_notes` mediumtext DEFAULT NULL,
+  `observation_instrument` varchar(250) DEFAULT NULL,
+  `observation_desc` varchar(250) DEFAULT NULL,
+  `observation_rater` varchar(50) DEFAULT NULL,
+  `observation_value` text NOT NULL,
+  `observation_fileid` int(11) DEFAULT NULL COMMENT 'fileRowID for item types: image, csv',
+  `observation_startdate` datetime DEFAULT '0000-00-00 00:00:00' COMMENT 'Stored as UTC',
+  `observation_enddate` datetime DEFAULT NULL,
+  `observation_tz_offset` varchar(6) DEFAULT NULL,
+  `observation_duration` int(11) DEFAULT NULL COMMENT 'duration in seconds',
+  `observation_entrydate` datetime DEFAULT NULL,
+  `observation_createdate` datetime DEFAULT NULL,
+  `observation_modifydate` timestamp NOT NULL DEFAULT current_timestamp()
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `observation_meta`
+--
+
+CREATE TABLE `observation_meta` (
+  `observationmeta_id` bigint(20) NOT NULL,
+  `observation_id` bigint(20) NOT NULL,
+  `variable` tinytext NOT NULL COMMENT 'variable name from imported source',
+  `value` text NOT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `observation_surveys`
+--
+
+CREATE TABLE `observation_surveys` (
+  `survey_id` bigint(20) NOT NULL,
+  `instrument_id` int(11) DEFAULT NULL,
+  `survey_startdate` datetime NOT NULL,
+  `survey_enddate` datetime DEFAULT NULL,
+  `survey_notes` text DEFAULT NULL,
+  `survey_visit` text DEFAULT NULL,
+  `survey_experimenter` text DEFAULT NULL,
+  `survey_rater` text DEFAULT NULL,
+  `survey_entrydate` datetime DEFAULT NULL COMMENT 'Database entry date',
+  `survey_opentime` datetime DEFAULT NULL COMMENT 'Time when a survey opens',
+  `survey_prompttime` datetime DEFAULT NULL COMMENT 'Time when a user is prompted to fill out the survey',
+  `survey_recordtime` datetime DEFAULT NULL COMMENT 'may be the same as the end time, unless they didn''t finish it... then it will be the end of the survey open-window time',
+  `survey_expirytime` datetime DEFAULT NULL COMMENT 'Time when the survey is no longer available'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2202,7 +2034,6 @@ CREATE TABLE `ot_series` (
   `otseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL COMMENT '(0008,0021) & (0008,0031)',
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_desc` varchar(100) DEFAULT NULL COMMENT 'MP Rage, AOD, etc\n(0018,1030)',
   `series_sequencename` varchar(45) DEFAULT NULL COMMENT 'epfid2d1_64, etc\n(0018,0024)',
   `series_num` int(11) DEFAULT NULL,
@@ -2222,8 +2053,9 @@ CREATE TABLE `ot_series` (
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2245,7 +2077,7 @@ CREATE TABLE `packages` (
   `package_readme` text DEFAULT NULL,
   `package_changes` text DEFAULT NULL,
   `package_notes` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2257,19 +2089,7 @@ CREATE TABLE `package_analyses` (
   `packageanalysis_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `analysis_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `package_drugs`
---
-
-CREATE TABLE `package_drugs` (
-  `packagedrug_id` int(11) NOT NULL,
-  `package_id` int(11) NOT NULL,
-  `drug_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2281,9 +2101,8 @@ CREATE TABLE `package_enrollments` (
   `packageenrollment_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
-  `package_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package',
-  `pkg_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `package_subjectid` varchar(255) DEFAULT NULL COMMENT 'UID or other ID specific to this subject within the package'
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2295,19 +2114,31 @@ CREATE TABLE `package_experiments` (
   `packageexperiment_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `experiment_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Table structure for table `package_measures`
+-- Table structure for table `package_interventions`
 --
 
-CREATE TABLE `package_measures` (
-  `packagemeasure_id` int(11) NOT NULL,
+CREATE TABLE `package_interventions` (
+  `packageintervention_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
-  `measure_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `intervention_id` int(11) NOT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `package_observations`
+--
+
+CREATE TABLE `package_observations` (
+  `packageobservation_id` int(11) NOT NULL,
+  `package_id` int(11) NOT NULL,
+  `observation_id` int(11) NOT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2320,7 +2151,7 @@ CREATE TABLE `package_pipelines` (
   `package_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `include_analyses` tinyint(1) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2345,7 +2176,7 @@ CREATE TABLE `package_studies` (
   `packagestudy_id` int(11) NOT NULL,
   `package_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2358,7 +2189,7 @@ CREATE TABLE `package_subjects` (
   `package_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `subjectPrimaryID` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2382,10 +2213,10 @@ CREATE TABLE `pipelines` (
   `pipeline_dependencylevel` varchar(255) DEFAULT NULL,
   `pipeline_dependencydir` enum('','root','subdir') DEFAULT NULL,
   `pipeline_deplinktype` varchar(25) DEFAULT NULL,
-  `pipeline_groupid` longtext DEFAULT NULL,
+  `pipeline_groupid` longtext DEFAULT NULL COMMENT 'comma separated list of groupids',
   `pipeline_grouptype` varchar(25) DEFAULT NULL,
   `pipeline_groupbysubject` tinyint(1) NOT NULL DEFAULT 0,
-  `pipeline_projectid` longtext DEFAULT NULL,
+  `pipeline_projectid` longtext DEFAULT NULL COMMENT 'comma separated list of projectRowIDs',
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
@@ -2417,7 +2248,7 @@ CREATE TABLE `pipelines` (
   `pipeline_ishidden` tinyint(1) DEFAULT NULL,
   `pipeline_version` int(11) DEFAULT 1,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2435,7 +2266,7 @@ CREATE TABLE `pipeline_data` (
   `pd_downloadpath` longtext DEFAULT NULL,
   `pd_step` int(11) DEFAULT NULL,
   `pd_msg` longtext DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2448,7 +2279,6 @@ CREATE TABLE `pipeline_data_def` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL DEFAULT 0,
   `pdd_order` int(11) NOT NULL,
-  `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL,
   `pdd_seriescriteria` enum('all','first','last','largestsize','smallestsize','highestiosnr','highestpvsnr','earliest','latest','usesizecriteria') NOT NULL DEFAULT 'all',
   `pdd_type` enum('primary','associated') NOT NULL DEFAULT 'primary',
   `pdd_level` enum('study','subject') NOT NULL,
@@ -2458,7 +2288,7 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_modality` varchar(255) NOT NULL,
   `pdd_dataformat` varchar(30) NOT NULL,
   `pdd_gzip` tinyint(1) NOT NULL DEFAULT 0,
-  `pdd_location` varchar(255) NOT NULL,
+  `pdd_location` varchar(255) NOT NULL COMMENT 'path to the data, relative to the root subject directory',
   `pdd_useseries` tinyint(1) NOT NULL,
   `pdd_preserveseries` tinyint(1) NOT NULL,
   `pdd_usephasedir` tinyint(1) NOT NULL,
@@ -2467,7 +2297,8 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_behdir` varchar(255) NOT NULL,
   `pdd_enabled` tinyint(1) NOT NULL,
   `pdd_optional` tinyint(1) NOT NULL,
-  `pdd_numboldreps` varchar(255) NOT NULL
+  `pdd_numboldreps` varchar(255) NOT NULL,
+  `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2480,46 +2311,7 @@ CREATE TABLE `pipeline_dependencies` (
   `pipelinedep_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `parent_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pipeline_download`
---
-
-CREATE TABLE `pipeline_download` (
-  `pipelinedownload_id` int(11) NOT NULL,
-  `pipeline_id` int(11) NOT NULL,
-  `pd_admin` int(11) NOT NULL,
-  `pd_protocol` varchar(255) NOT NULL,
-  `pd_dirformat` varchar(50) NOT NULL,
-  `pd_nfsdir` longtext NOT NULL,
-  `pd_anonymize` tinyint(1) NOT NULL,
-  `pd_gzip` tinyint(1) NOT NULL,
-  `pd_preserveseries` tinyint(1) NOT NULL,
-  `pd_groupbyprotocol` tinyint(1) NOT NULL COMMENT 'example: all GO1 series are in a group',
-  `pd_onlynew` tinyint(1) NOT NULL COMMENT 'only download data collected after this rule was created',
-  `pd_filetype` varchar(20) NOT NULL,
-  `pd_modality` varchar(20) NOT NULL,
-  `pd_behformat` varchar(25) NOT NULL,
-  `pd_behdirrootname` varchar(50) NOT NULL,
-  `pd_createdate` datetime NOT NULL,
-  `pd_status` varchar(25) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `pipeline_groups`
---
-
-CREATE TABLE `pipeline_groups` (
-  `pipelinegroup_id` int(11) NOT NULL,
-  `pipeline_id` int(11) NOT NULL,
-  `group_id` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2528,15 +2320,15 @@ CREATE TABLE `pipeline_groups` (
 --
 
 CREATE TABLE `pipeline_history` (
+  `pipelinehistory_id` bigint(20) NOT NULL,
+  `run_num` bigint(20) DEFAULT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `analysis_id` bigint(11) DEFAULT NULL,
   `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps') NOT NULL,
   `event_datetime` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
-  `event_message` longtext DEFAULT NULL,
-  `pipelinehistory_id` bigint(20) NOT NULL,
-  `run_num` bigint(20) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `event_message` longtext DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2561,7 +2353,7 @@ CREATE TABLE `pipeline_options` (
   `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
   `pipeline_completefiles` longtext DEFAULT NULL,
   `pipeline_resultsscript` longtext DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2577,7 +2369,7 @@ CREATE TABLE `pipeline_procs` (
   `pp_currentpipeline` int(11) NOT NULL,
   `pp_currentsubject` int(11) NOT NULL,
   `pp_currentstudy` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2629,7 +2421,7 @@ CREATE TABLE `pipeline_version` (
   `version` int(11) NOT NULL,
   `version_datetime` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `version_notes` varchar(255) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2643,46 +2435,15 @@ CREATE TABLE `ppi_series` (
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) NOT NULL,
   `series_datetime` datetime NOT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` varchar(255) NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `prescriptionnames`
---
-
-CREATE TABLE `prescriptionnames` (
-  `rxname_id` int(11) NOT NULL,
-  `rx_name` varchar(255) NOT NULL,
-  `rx_group` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `prescriptions`
---
-
-CREATE TABLE `prescriptions` (
-  `rx_id` int(11) NOT NULL,
-  `enrollment_id` int(11) NOT NULL,
-  `rx_startdate` datetime NOT NULL,
-  `rx_enddate` datetime NOT NULL,
-  `rx_doseamount` double NOT NULL,
-  `rx_doseitem` varchar(255) NOT NULL,
-  `rx_dosefrequency` varchar(255) NOT NULL,
-  `rx_route` varchar(255) NOT NULL COMMENT 'oral, iv, suppository, etc',
-  `rxname_id` int(11) NOT NULL,
-  `rx_group` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2696,6 +2457,7 @@ CREATE TABLE `projects` (
   `project_uid` varchar(20) DEFAULT NULL,
   `project_usecustomid` tinyint(1) DEFAULT 0 COMMENT '1 - uses custom IDs, 2 - uses NiDB UIDs',
   `project_name` varchar(60) NOT NULL,
+  `project_desc` text DEFAULT NULL,
   `project_admin` int(11) DEFAULT NULL,
   `project_pi` int(11) DEFAULT NULL,
   `project_sharing` char(1) DEFAULT NULL COMMENT 'F = full sharing, access to data\nV = view subjects, experiments, studies only\nP = private, no data seen by others',
@@ -2710,7 +2472,7 @@ CREATE TABLE `projects` (
   `redcapid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
   `redcapnidbid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
   `xnat_hostname` text DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2721,15 +2483,14 @@ CREATE TABLE `projects` (
 CREATE TABLE `project_checklist` (
   `projectchecklist_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL,
-  `item_name` varchar(50) NOT NULL,
-  `item_desc` longtext NOT NULL,
   `item_order` int(11) NOT NULL,
-  `modality` varchar(25) NOT NULL COMMENT 'MR, CT, assessment, measure, etc',
-  `protocol_name` longtext NOT NULL COMMENT 'for a specific modality, this specifies the protocol name',
-  `count` int(11) NOT NULL COMMENT 'total number of this item',
-  `frequency` int(11) NOT NULL COMMENT 'spacing between the items',
-  `frequency_unit` enum('hour','day','week','month','year') NOT NULL,
-  `rdocexperiment_id` int(11) DEFAULT NULL
+  `item_name` varchar(100) NOT NULL,
+  `item_desc` longtext DEFAULT NULL,
+  `item_type` enum('Checkbox','Imaging','Intervention','Observation','Diagnosis','Instrument') NOT NULL DEFAULT 'Checkbox',
+  `imaging_modality` varchar(35) DEFAULT NULL COMMENT 'Any of the standard NiDB modalities',
+  `mapped_name` longtext NOT NULL COMMENT 'Comma separate list for ''OR'', ampersand separated list for AND (all must exist). ProtocolName for modality, variable name for intervention/obervation',
+  `expected_count` int(11) DEFAULT NULL COMMENT 'Expected number of items. Success if greater than or equal to this number',
+  `instrument_id` int(11) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -2761,7 +2522,7 @@ CREATE TABLE `project_protocol` (
   `pp_criteria` enum('required','recommended','conditional','') NOT NULL,
   `pp_perstudyquantity` int(11) NOT NULL,
   `pp_perprojectquantity` int(11) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2775,7 +2536,7 @@ CREATE TABLE `project_template` (
   `template_name` varchar(255) DEFAULT NULL,
   `template_createdate` datetime DEFAULT NULL,
   `template_modifydate` datetime DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2794,7 +2555,7 @@ CREATE TABLE `project_templatestudies` (
   `pts_physician` varchar(255) DEFAULT NULL,
   `pts_site` varchar(255) DEFAULT NULL,
   `pts_notes` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2807,7 +2568,7 @@ CREATE TABLE `project_templatestudyitems` (
   `pts_id` int(11) DEFAULT NULL,
   `ptsitem_order` int(11) DEFAULT NULL,
   `ptsitem_protocol` varchar(255) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2819,7 +2580,7 @@ CREATE TABLE `protocolgroup_items` (
   `pgitem_id` int(11) NOT NULL,
   `protocolgroup_id` int(11) NOT NULL,
   `pgitem_protocol` varchar(250) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2831,21 +2592,7 @@ CREATE TABLE `protocol_group` (
   `protocolgroup_id` int(11) NOT NULL,
   `protocolgroup_name` varchar(50) NOT NULL,
   `protocolgroup_modality` varchar(40) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='specifies the protocol group name and modality';
-
--- --------------------------------------------------------
-
---
--- Table structure for table `protocol_mapping`
---
-
-CREATE TABLE `protocol_mapping` (
-  `protocolmapping_id` int(11) NOT NULL,
-  `project_id` int(11) DEFAULT NULL COMMENT 'if project_id is null, then this alt name applies to all projects',
-  `protocolname` varchar(255) NOT NULL,
-  `shortname` int(11) DEFAULT NULL,
-  `modality` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='this table maps long protocol name(s) to short names';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='specifies the protocol group name and modality' ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2856,18 +2603,18 @@ CREATE TABLE `protocol_mapping` (
 CREATE TABLE `pr_series` (
   `prseries_id` int(11) NOT NULL,
   `study_id` int(11) DEFAULT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
-  `series_protocol` varchar(255) NOT NULL,
-  `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
-  `series_notes` longtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `series_num` int(11) NOT NULL DEFAULT 1,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` longtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2942,33 +2689,6 @@ CREATE TABLE `public_downloads` (
   `download_filelist` text DEFAULT NULL,
   `download_packageformat` varchar(255) DEFAULT NULL,
   `download_imageformat` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `public_downloads2`
---
-
-CREATE TABLE `public_downloads2` (
-  `pd_id` int(11) NOT NULL,
-  `pd_createdate` datetime DEFAULT NULL,
-  `pd_expiredate` datetime DEFAULT NULL,
-  `pd_expiredays` int(11) DEFAULT NULL,
-  `pd_createdby` varchar(50) NOT NULL COMMENT 'userid of the owner',
-  `pd_zippedsize` double DEFAULT 0,
-  `pd_unzippedsize` double DEFAULT 0,
-  `pd_filename` varchar(255) DEFAULT NULL,
-  `pd_desc` varchar(255) DEFAULT NULL,
-  `pd_notes` longtext DEFAULT NULL,
-  `pd_filecontents` longtext DEFAULT NULL,
-  `pd_shareinternal` tinyint(1) DEFAULT NULL,
-  `pd_ispublic` tinyint(1) DEFAULT NULL,
-  `pd_registerrequired` tinyint(1) DEFAULT NULL,
-  `pd_password` varchar(255) DEFAULT NULL,
-  `pd_status` varchar(50) DEFAULT NULL,
-  `pd_key` varchar(255) DEFAULT NULL,
-  `pd_numdownloads` bigint(20) NOT NULL DEFAULT 0
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -2984,11 +2704,8 @@ CREATE TABLE `qc_modules` (
   `cluster_id` int(11) DEFAULT NULL,
   `entrypoint` text DEFAULT NULL,
   `datatype` varchar(255) NOT NULL DEFAULT 'dicom',
-  `isenabled` tinyint(1) NOT NULL DEFAULT 1,
-  `qcm_modality` varchar(20) NOT NULL,
-  `qcm_name` varchar(250) NOT NULL COMMENT 'full name of the module in the qcmodules directory',
-  `qcm_isenabled` tinyint(1) NOT NULL DEFAULT 1
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `isenabled` tinyint(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3002,7 +2719,7 @@ CREATE TABLE `qc_moduleseries` (
   `series_id` int(11) NOT NULL,
   `modality` varchar(25) NOT NULL,
   `cpu_time` double NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3016,7 +2733,7 @@ CREATE TABLE `qc_resultnames` (
   `qcresult_type` enum('graph','image','histogram','minmax','number','textfile','text') NOT NULL DEFAULT 'number',
   `qcresult_units` varchar(255) NOT NULL DEFAULT 'nounit',
   `qcresult_labels` varchar(255) NOT NULL DEFAULT ''
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3050,22 +2767,6 @@ CREATE TABLE `ratings` (
   `rating_value` int(11) NOT NULL,
   `rating_notes` longtext NOT NULL,
   `rating_date` datetime NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `rdoc_uploads`
---
-
-CREATE TABLE `rdoc_uploads` (
-  `rdocupload_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `modality` varchar(20) NOT NULL,
-  `series_id` int(11) NOT NULL,
-  `dateuploaded` datetime NOT NULL,
-  `label` varchar(255) NOT NULL,
-  `iscomplete` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
@@ -3077,7 +2778,7 @@ CREATE TABLE `rdoc_uploads` (
 CREATE TABLE `redcap_import_fields` (
   `redcap_fieldgroupid` int(11) NOT NULL,
   `redcap_fieldname` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3094,10 +2795,71 @@ CREATE TABLE `redcap_import_mapping` (
   `redcap_fieldtype` varchar(250) DEFAULT NULL,
   `redcapfield_desc` varchar(250) DEFAULT NULL,
   `redcap_fieldgroupid` int(11) NOT NULL,
-  `nidb_datatype` enum('m','v','d') NOT NULL,
+  `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
   `nidb_variablename` varchar(250) DEFAULT NULL,
   `nidb_instrumentname` varchar(250) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=COMPACT;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remoteimport_batch`
+--
+
+CREATE TABLE `remoteimport_batch` (
+  `remoteimportbatch_id` bigint(20) NOT NULL,
+  `remoteimport_id` int(11) NOT NULL,
+  `remote_exportid` int(11) DEFAULT NULL COMMENT 'avicenna provides an ID for each of their exports',
+  `start_date` datetime DEFAULT NULL COMMENT 'Datetime the batch started',
+  `end_date` datetime DEFAULT NULL COMMENT 'Datetime the batch finished',
+  `status` enum('started','running','complete','waiting','pending','error','cancelled') NOT NULL COMMENT 'Status of this batch',
+  `next_state` enum('run','pause','terminate','') NOT NULL COMMENT 'The next state of this batch import. The default is blank, which allows scheduled imports to run normally. ''run'' allows an ondemand import to start',
+  `datafile_path` text DEFAULT NULL COMMENT 'If the remote_import type is *csv, then this will be populated when creating a new remote import batch'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remoteimport_logs`
+--
+
+CREATE TABLE `remoteimport_logs` (
+  `remoteimportlog_id` bigint(20) NOT NULL,
+  `remoteimportbatch_id` bigint(11) NOT NULL,
+  `event` enum('ImportStart','ConnectionStart','ImportSubject','ImportStudy','ImportSeries','ImportPipeline','ImportAnalysis','ImportIntervention','ImportObservation','ConnectionEnd','ImportEnd','FileEvent') DEFAULT NULL,
+  `result` enum('Success','Error','Warning','Neutral') NOT NULL DEFAULT 'Neutral',
+  `message` text DEFAULT NULL,
+  `event_date` timestamp NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `remoteimport_mapping`
+--
+
+CREATE TABLE `remoteimport_mapping` (
+  `remoteimportmapping_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `source_type` enum('redcap','avicenna') NOT NULL,
+  `avicenna_survey` int(11) DEFAULT NULL COMMENT 'survey ID',
+  `avicenna_datasource` varchar(255) DEFAULT NULL COMMENT 'corresponds to the avicenna datasources: light, fitbit-activity, etc',
+  `avicenna_question` int(11) DEFAULT NULL COMMENT 'Avicenna question number',
+  `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
+  `avicenna_datatype` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') DEFAULT NULL,
+  `avicenna_variablecount` varchar(255) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
+  `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
+  `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
+  `redcap_form` tinytext DEFAULT NULL COMMENT 'Redcap form (instrument)',
+  `redcap_field` text DEFAULT NULL,
+  `redcap_datatype` enum('text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file') DEFAULT NULL,
+  `redcap_datefield` tinytext DEFAULT NULL COMMENT 'the field from which the NiDB date will be taken',
+  `nidb_instrument` int(11) DEFAULT NULL COMMENT 'links to the instrument table',
+  `nidb_variable` int(11) DEFAULT NULL COMMENT 'links to the instrument_item table',
+  `flag_date_from_field` tinyint(1) DEFAULT NULL,
+  `flag_can_repeat` tinyint(1) DEFAULT NULL,
+  `flag_import_meta` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3120,6 +2882,32 @@ CREATE TABLE `remote_connections` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `remote_imports`
+--
+
+CREATE TABLE `remote_imports` (
+  `remoteimport_id` int(11) NOT NULL,
+  `import_name` text NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `remote_type` enum('redcap','url','csv','avicenna_csv_survey','avicenna_csv_datasource','avicenna_api_survey','avicenna_api_datasource') NOT NULL,
+  `remote_url` text DEFAULT NULL,
+  `remote_token` text DEFAULT NULL,
+  `remote_username` varchar(255) DEFAULT NULL,
+  `remote_projectid` int(11) DEFAULT NULL,
+  `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
+  `remote_datasource` varchar(255) DEFAULT NULL COMMENT 'Avicenna datasource',
+  `flag_import_unmapped` tinyint(1) DEFAULT NULL,
+  `import_schedule` enum('ondemand','hourly','daily','weekly','monthly','') DEFAULT NULL,
+  `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
+  `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
+  `import_days` set('Sun','Mon','Tue','Wed','Thu','Fri','Sat') NOT NULL DEFAULT 'Sun',
+  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `create_date` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `remote_logins`
 --
 
@@ -3129,7 +2917,7 @@ CREATE TABLE `remote_logins` (
   `ip` varchar(100) NOT NULL,
   `login_date` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `login_result` enum('success','failure') NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3156,9 +2944,9 @@ CREATE TABLE `saved_search` (
   `search_includeallmeasures` tinyint(1) DEFAULT NULL,
   `search_vitalname` longtext DEFAULT NULL,
   `search_includeallvitals` tinyint(1) DEFAULT NULL,
-  `search_drugname` longtext DEFAULT NULL,
-  `search_includealldrugs` tinyint(1) DEFAULT NULL,
-  `search_includedrugdetails` tinyint(1) DEFAULT NULL,
+  `search_interventionname` longtext DEFAULT NULL,
+  `search_includeallinterventions` tinyint(1) DEFAULT NULL,
+  `search_includeinterventiondetails` tinyint(1) DEFAULT NULL,
   `search_includetimesincedose` tinyint(1) DEFAULT NULL,
   `search_dosevariable` longtext DEFAULT NULL,
   `search_groupdosetime` varchar(25) DEFAULT NULL,
@@ -3199,8 +2987,8 @@ CREATE TABLE `search_history` (
   `subjectgroupid` int(11) DEFAULT NULL,
   `projectids` longtext DEFAULT NULL,
   `enrollsubgroup` varchar(250) DEFAULT NULL,
-  `measuresearch` longtext DEFAULT NULL,
-  `measurelist` longtext DEFAULT NULL,
+  `observationsearch` longtext DEFAULT NULL,
+  `observationlist` longtext DEFAULT NULL,
   `studyinstitution` varchar(250) DEFAULT NULL,
   `studyequipment` varchar(250) DEFAULT NULL,
   `studyid` longtext DEFAULT NULL,
@@ -3240,7 +3028,7 @@ CREATE TABLE `search_history` (
   `audit` tinyint(1) DEFAULT NULL,
   `qcbuiltinvariable` longtext DEFAULT NULL,
   `qcvariableid` int(11) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3255,7 +3043,7 @@ CREATE TABLE `snps` (
   `chromosome` tinyint(3) UNSIGNED NOT NULL,
   `reference_allele` char(2) NOT NULL,
   `genetic_distance` int(11) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3289,7 +3077,7 @@ CREATE TABLE `snp_series` (
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3300,19 +3088,19 @@ CREATE TABLE `snp_series` (
 CREATE TABLE `sr_series` (
   `srseries_id` int(11) NOT NULL,
   `study_id` int(11) NOT NULL,
-  `series_num` int(11) NOT NULL,
-  `series_desc` varchar(255) NOT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
-  `series_protocol` varchar(255) NOT NULL,
-  `numfiles` int(11) NOT NULL COMMENT 'total number of files',
-  `series_size` double NOT NULL COMMENT 'size of all the files',
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
   `series_numfiles` bigint(20) DEFAULT 0,
-  `series_notes` mediumtext NOT NULL,
-  `series_createdby` varchar(50) NOT NULL,
-  `ishidden` tinyint(1) NOT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `series_notes` mediumtext DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3356,7 +3144,7 @@ CREATE TABLE `studies` (
   `study_createdby` varchar(50) DEFAULT NULL,
   `study_createdate` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3461,7 +3249,7 @@ CREATE TABLE `subject_relation` (
   `subjectid1` int(11) NOT NULL,
   `subjectid2` int(11) NOT NULL,
   `relation` varchar(10) NOT NULL COMMENT 'siblingm, siblingf, sibling, child, parent [subject1 is the ''relation'' of subject2]'
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3475,15 +3263,15 @@ CREATE TABLE `surgery_series` (
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) NOT NULL,
   `series_datetime` datetime NOT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) NOT NULL,
   `series_numfiles` int(11) NOT NULL COMMENT 'total number of files',
   `series_size` double NOT NULL COMMENT 'size of all the files',
   `series_notes` mediumtext NOT NULL,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3497,20 +3285,6 @@ CREATE TABLE `system_messages` (
   `message_date` datetime NOT NULL,
   `message_status` enum('active','deleted','pending') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `system_status`
---
-
-CREATE TABLE `system_status` (
-  `systemstatus_id` int(11) NOT NULL,
-  `status_variable` varchar(255) NOT NULL,
-  `status_value` varchar(255) NOT NULL,
-  `status_desc` longtext NOT NULL,
-  `status_datetime` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3529,7 +3303,7 @@ CREATE TABLE `tags` (
   `pipeline_id` int(11) DEFAULT NULL,
   `modality` varchar(20) DEFAULT NULL,
   `tag` varchar(255) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3542,15 +3316,30 @@ CREATE TABLE `task_series` (
   `study_id` int(11) DEFAULT NULL,
   `series_num` int(11) NOT NULL,
   `series_desc` varchar(255) DEFAULT NULL,
-  `series_datetime` datetime NOT NULL,
-  `series_protocol` varchar(255) NOT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
   `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` varchar(255) DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
-  `ishidden` tinyint(1) DEFAULT NULL
+  `ishidden` tinyint(1) DEFAULT NULL,
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `timeseries`
+--
+
+CREATE TABLE `timeseries` (
+  `timeseries_id` bigint(11) NOT NULL,
+  `observation_id` int(11) NOT NULL,
+  `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `value_int` int(11) DEFAULT NULL,
+  `value_double` double DEFAULT NULL,
+  `value_string` varchar(255) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -3574,8 +3363,7 @@ CREATE TABLE `tms_series` (
   `series_status` varchar(255) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `series_duration` bigint(20) DEFAULT NULL,
-  `eegseries_id` int(11) NOT NULL
+  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds'
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -3616,7 +3404,7 @@ CREATE TABLE `upload_logs` (
   `upload_id` int(11) NOT NULL,
   `log_date` timestamp NOT NULL DEFAULT current_timestamp(),
   `log_msg` longtext NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3629,7 +3417,7 @@ CREATE TABLE `upload_series` (
   `uploadstudy_id` int(11) NOT NULL,
   `uploadseries_status` enum('','import','ignore','archiving','archived') NOT NULL DEFAULT '',
   `uploadseries_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadseries_desc` varchar(255) NOT NULL,
+  `uploadseries_desc` varchar(255) DEFAULT NULL,
   `uploadseries_protocol` varchar(255) DEFAULT NULL,
   `uploadseries_num` int(11) DEFAULT NULL,
   `uploadseries_date` datetime DEFAULT NULL,
@@ -3642,7 +3430,7 @@ CREATE TABLE `upload_series` (
   `uploadseries_cols` int(11) DEFAULT NULL,
   `uploadseries_filelist` longtext DEFAULT NULL,
   `matchingseriesid` int(11) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3655,14 +3443,14 @@ CREATE TABLE `upload_studies` (
   `uploadsubject_id` int(11) NOT NULL,
   `uploadstudy_number` int(11) DEFAULT NULL,
   `uploadstudy_instanceuid` varchar(255) DEFAULT NULL,
-  `uploadstudy_desc` varchar(255) NOT NULL,
+  `uploadstudy_desc` varchar(255) DEFAULT NULL,
   `uploadstudy_date` datetime DEFAULT NULL,
   `uploadstudy_modality` varchar(255) DEFAULT NULL,
   `uploadstudy_datatype` varchar(255) DEFAULT NULL COMMENT 'dicom, parrec, etc',
   `uploadstudy_equipment` varchar(255) DEFAULT NULL COMMENT 'aka, site',
   `uploadstudy_operator` varchar(255) DEFAULT NULL,
   `matchingstudyid` int(11) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3678,7 +3466,7 @@ CREATE TABLE `upload_subjects` (
   `uploadsubject_sex` varchar(1) DEFAULT NULL,
   `uploadsubject_dob` date DEFAULT NULL,
   `matchingsubjectid` int(11) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3712,14 +3500,14 @@ CREATE TABLE `users` (
   `user_lastlogin` timestamp NULL DEFAULT NULL,
   `user_logincount` int(11) DEFAULT 0,
   `user_enabled` tinyint(1) DEFAULT 0,
-  `user_deleted` tinyint(1) DEFAULT NULL,
   `user_isadmin` tinyint(1) DEFAULT 0,
   `user_issiteadmin` tinyint(1) DEFAULT 0,
   `user_canimport` tinyint(1) DEFAULT 0,
   `sendmail_dailysummary` tinyint(1) DEFAULT NULL,
   `user_enablebeta` tinyint(1) DEFAULT 0,
-  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `user_deleted` tinyint(1) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3741,20 +3529,7 @@ CREATE TABLE `users_pending` (
   `user_firstname` varchar(255) NOT NULL,
   `user_midname` varchar(255) NOT NULL,
   `user_lastname` varchar(255) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `user_favorites`
---
-
-CREATE TABLE `user_favorites` (
-  `favorite_id` int(11) NOT NULL,
-  `favorite_type` set('project','subject') NOT NULL,
-  `favorite_objectid` int(11) NOT NULL,
-  `favorite_user` int(11) NOT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3768,7 +3543,7 @@ CREATE TABLE `user_instance` (
   `instance_id` int(11) NOT NULL,
   `isdefaultinstance` tinyint(1) DEFAULT NULL,
   `instance_joinrequest` tinyint(1) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=FIXED;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3788,7 +3563,7 @@ CREATE TABLE `user_project` (
   `lastview_cleardate` datetime DEFAULT NULL COMMENT 'Last time the user viewed this project',
   `favorite` tinyint(1) DEFAULT 0,
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3802,15 +3577,15 @@ CREATE TABLE `us_series` (
   `series_num` int(11) DEFAULT 0,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3832,9 +3607,9 @@ CREATE TABLE `video_series` (
   `video_cputime` double NOT NULL DEFAULT 0,
   `series_createdby` varchar(50) NOT NULL,
   `ishidden` tinyint(1) NOT NULL DEFAULT 0,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3847,7 +3622,7 @@ CREATE TABLE `vitalnames` (
   `vital_name` varchar(250) NOT NULL,
   `vital_desc` varchar(250) DEFAULT NULL,
   `normal_range` varchar(255) DEFAULT NULL
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3859,20 +3634,18 @@ CREATE TABLE `vitals` (
   `vital_id` int(11) NOT NULL,
   `enrollment_id` int(11) NOT NULL,
   `vital_date` datetime NOT NULL,
-  `vital_startdate` datetime NOT NULL,
-  `vital_enddate` datetime DEFAULT NULL,
-  `vital_duration` bigint(20) DEFAULT NULL,
-  `vital_entrydate` datetime DEFAULT NULL,
-  `vital_recordcreatedate` datetime DEFAULT NULL,
-  `vital_recordmodifydate` datetime DEFAULT NULL,
   `vital_value` varchar(20) NOT NULL,
   `vital_notes` varchar(255) DEFAULT NULL,
   `vital_desc` varchar(255) DEFAULT NULL,
   `vital_rater` varchar(255) DEFAULT NULL,
   `vitalname_id` int(11) NOT NULL,
   `vital_type` varchar(255) NOT NULL,
-  `vital_createdate` datetime DEFAULT NULL,
-  `vital_modifydate` datetime DEFAULT NULL
+  `vital_startdate` datetime DEFAULT NULL,
+  `vital_enddate` datetime DEFAULT NULL,
+  `vital_duration` bigint(20) DEFAULT NULL,
+  `vital_entrydate` datetime DEFAULT NULL,
+  `vital_recordcreatedate` datetime DEFAULT NULL,
+  `vital_recordmodifydate` datetime DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -3888,7 +3661,7 @@ CREATE TABLE `weather` (
   `obsv_type` enum('','clouds','presentweather','temp','dewpoint','humidity','windspeed','winddirection','windgust','pressure','pressuretendency','precip','dailysunrise','dailysunset') NOT NULL,
   `obsv_value` double NOT NULL,
   `presentweather` varchar(255) NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -3902,15 +3675,15 @@ CREATE TABLE `xa_series` (
   `series_num` int(11) DEFAULT 0,
   `series_desc` varchar(255) DEFAULT NULL,
   `series_datetime` datetime DEFAULT NULL,
-  `series_duration` bigint(20) DEFAULT NULL COMMENT 'duration in seconds',
   `series_protocol` varchar(255) DEFAULT NULL,
   `series_numfiles` int(11) DEFAULT 0 COMMENT 'total number of files',
   `series_size` double DEFAULT 0 COMMENT 'size of all the files',
   `series_notes` mediumtext DEFAULT NULL,
   `series_createdby` varchar(50) DEFAULT NULL,
   `ishidden` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=MyISAM DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 --
 -- Indexes for dumped tables
@@ -3922,13 +3695,13 @@ CREATE TABLE `xa_series` (
 ALTER TABLE `analysis`
   ADD PRIMARY KEY (`analysis_id`),
   ADD UNIQUE KEY `pipeline_id_2` (`pipeline_id`,`pipeline_version`,`study_id`),
-  ADD KEY `study_id` (`study_id`),
-  ADD KEY `pipeline_id` (`pipeline_id`),
-  ADD KEY `pipeline_dependency` (`pipeline_dependency`),
+  ADD KEY `analysis_disksize` (`analysis_disksize`),
+  ADD KEY `analysis_isbad` (`analysis_isbad`),
   ADD KEY `analysis_runsupplement` (`analysis_runsupplement`),
   ADD KEY `analysis_status` (`analysis_status`),
-  ADD KEY `analysis_isbad` (`analysis_isbad`),
-  ADD KEY `analysis_disksize` (`analysis_disksize`);
+  ADD KEY `pipeline_dependency` (`pipeline_dependency`),
+  ADD KEY `pipeline_id` (`pipeline_id`),
+  ADD KEY `study_id` (`study_id`);
 
 --
 -- Indexes for table `analysisdirs`
@@ -3945,20 +3718,19 @@ ALTER TABLE `analysis_data`
   ADD KEY `idx_analysis_data` (`analysis_id`);
 
 --
--- Indexes for table `analysis_group`
---
-ALTER TABLE `analysis_group`
-  ADD PRIMARY KEY (`analysisgroup_id`),
-  ADD UNIQUE KEY `pipeline_id_2` (`pipeline_id`,`pipeline_version`),
-  ADD KEY `pipeline_id` (`pipeline_id`);
-
---
 -- Indexes for table `analysis_history`
 --
 ALTER TABLE `analysis_history`
   ADD PRIMARY KEY (`analysishistory_id`),
-  ADD KEY `analysis_id` (`analysis_id`,`pipeline_id`,`pipeline_version`,`study_id`),
-  ADD KEY `analysis_event` (`analysis_event`);
+  ADD KEY `analysis_event` (`analysis_event`),
+  ADD KEY `analysis_id` (`analysis_id`,`pipeline_id`,`pipeline_version`,`study_id`);
+
+--
+-- Indexes for table `analysis_log`
+--
+ALTER TABLE `analysis_log`
+  ADD PRIMARY KEY (`analysislog_id`),
+  ADD KEY `analysislog_event` (`analysislog_event`);
 
 --
 -- Indexes for table `analysis_resultnames`
@@ -3983,6 +3755,21 @@ ALTER TABLE `analysis_results`
 ALTER TABLE `analysis_resultunit`
   ADD PRIMARY KEY (`resultunit_id`),
   ADD UNIQUE KEY `units` (`result_unit`);
+
+--
+-- Indexes for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  ADD PRIMARY KEY (`session_id`),
+  ADD UNIQUE KEY `uq_session_hash` (`session_hash`),
+  ADD KEY `idx_apiuser_last_access` (`apiuser_id`,`last_access`);
+
+--
+-- Indexes for table `api_users`
+--
+ALTER TABLE `api_users`
+  ADD PRIMARY KEY (`apiuser_id`),
+  ADD UNIQUE KEY `uq_username` (`username`);
 
 --
 -- Indexes for table `assessments`
@@ -4026,38 +3813,10 @@ ALTER TABLE `audio_series`
   ADD PRIMARY KEY (`audioseries_id`);
 
 --
--- Indexes for table `audit_enrollment`
---
-ALTER TABLE `audit_enrollment`
-  ADD PRIMARY KEY (`auditenrollment_id`),
-  ADD KEY `subject_id` (`enrollment_id`);
-
---
 -- Indexes for table `audit_results`
 --
 ALTER TABLE `audit_results`
   ADD PRIMARY KEY (`auditresult_id`);
-
---
--- Indexes for table `audit_series`
---
-ALTER TABLE `audit_series`
-  ADD PRIMARY KEY (`auditseries_id`),
-  ADD KEY `subject_id` (`series_id`);
-
---
--- Indexes for table `audit_study`
---
-ALTER TABLE `audit_study`
-  ADD PRIMARY KEY (`auditstudy_id`),
-  ADD KEY `subject_id` (`study_id`);
-
---
--- Indexes for table `audit_subject`
---
-ALTER TABLE `audit_subject`
-  ADD PRIMARY KEY (`auditsubject_id`),
-  ADD KEY `subject_id` (`subject_id`);
 
 --
 -- Indexes for table `backups`
@@ -4105,12 +3864,6 @@ ALTER TABLE `calendar_notifications`
   ADD PRIMARY KEY (`not_id`);
 
 --
--- Indexes for table `calendar_projectnotifications`
---
-ALTER TABLE `calendar_projectnotifications`
-  ADD PRIMARY KEY (`not_id`);
-
---
 -- Indexes for table `calendar_projects`
 --
 ALTER TABLE `calendar_projects`
@@ -4149,25 +3902,11 @@ ALTER TABLE `consent_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
--- Indexes for table `contacts`
---
-ALTER TABLE `contacts`
-  ADD PRIMARY KEY (`contact_id`);
-
---
 -- Indexes for table `cr_series`
 --
 ALTER TABLE `cr_series`
   ADD PRIMARY KEY (`crseries_id`),
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
-
---
--- Indexes for table `cs_prefs`
---
-ALTER TABLE `cs_prefs`
-  ADD PRIMARY KEY (`csprefs_id`),
-  ADD UNIQUE KEY `shortname` (`shortname`),
-  ADD KEY `idx_cs_prefs` (`userid`);
 
 --
 -- Indexes for table `ct_series`
@@ -4187,8 +3926,7 @@ ALTER TABLE `dataset_requests`
 -- Indexes for table `data_dictionary`
 --
 ALTER TABLE `data_dictionary`
-  ADD PRIMARY KEY (`datadict_id`),
-  ADD UNIQUE KEY `datadict_projectid` (`project_id`,`datadict_varname`);
+  ADD PRIMARY KEY (`datadict_id`);
 
 --
 -- Indexes for table `data_requests`
@@ -4196,9 +3934,16 @@ ALTER TABLE `data_dictionary`
 ALTER TABLE `data_requests`
   ADD PRIMARY KEY (`request_id`),
   ADD KEY `idx_data_requests` (`req_username`),
+  ADD KEY `req_date` (`req_date`),
   ADD KEY `req_groupid` (`req_groupid`),
-  ADD KEY `req_status` (`req_status`),
-  ADD KEY `req_date` (`req_date`);
+  ADD KEY `req_status` (`req_status`);
+
+--
+-- Indexes for table `diagnosis`
+--
+ALTER TABLE `diagnosis`
+  ADD PRIMARY KEY (`diagnosis_id`),
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`icd10_id`);
 
 --
 -- Indexes for table `doc_series`
@@ -4213,12 +3958,6 @@ ALTER TABLE `doc_series`
 ALTER TABLE `drugnames`
   ADD PRIMARY KEY (`drugname_id`),
   ADD UNIQUE KEY `measure_name` (`drug_name`);
-
---
--- Indexes for table `drugs`
---
-ALTER TABLE `drugs`
-  ADD PRIMARY KEY (`drug_id`);
 
 --
 -- Indexes for table `ecg_series`
@@ -4253,7 +3992,8 @@ ALTER TABLE `enrollment`
 -- Indexes for table `enrollment_checklist`
 --
 ALTER TABLE `enrollment_checklist`
-  ADD PRIMARY KEY (`enrollmentchecklist_id`);
+  ADD PRIMARY KEY (`enrollmentchecklist_id`),
+  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`projectchecklist_id`);
 
 --
 -- Indexes for table `enrollment_missingdata`
@@ -4300,13 +4040,21 @@ ALTER TABLE `experiment_mapping`
 -- Indexes for table `exports`
 --
 ALTER TABLE `exports`
-  ADD PRIMARY KEY (`export_id`);
+  ADD PRIMARY KEY (`export_id`),
+  ADD KEY `idx_destinationtype` (`destinationtype`);
 
 --
 -- Indexes for table `exportseries`
 --
 ALTER TABLE `exportseries`
-  ADD PRIMARY KEY (`exportseries_id`);
+  ADD PRIMARY KEY (`exportseries_id`),
+  ADD KEY `idx_export_id` (`export_id`);
+
+--
+-- Indexes for table `export_nonimaging`
+--
+ALTER TABLE `export_nonimaging`
+  ADD PRIMARY KEY (`exportnonimaging_id`);
 
 --
 -- Indexes for table `families`
@@ -4357,6 +4105,13 @@ ALTER TABLE `gsr_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `icd10`
+--
+ALTER TABLE `icd10`
+  ADD PRIMARY KEY (`icd10_id`);
+ALTER TABLE `icd10` ADD FULLTEXT KEY `icd10_code` (`icd10_code`,`icd10_shortdesc`,`icd10_longdesc`);
+
+--
 -- Indexes for table `importlogs`
 --
 ALTER TABLE `importlogs`
@@ -4400,34 +4155,31 @@ ALTER TABLE `instance`
   ADD UNIQUE KEY `instance_name` (`instance_name`);
 
 --
--- Indexes for table `instance_billing`
+-- Indexes for table `instrumentitem_map`
 --
-ALTER TABLE `instance_billing`
-  ADD PRIMARY KEY (`billingitem_id`);
+ALTER TABLE `instrumentitem_map`
+  ADD PRIMARY KEY (`itemmap_id`),
+  ADD UNIQUE KEY `instrumentitem_id` (`instrumentitem_id`,`int_val`,`string_val`);
 
 --
--- Indexes for table `instance_contact`
+-- Indexes for table `instruments`
 --
-ALTER TABLE `instance_contact`
-  ADD PRIMARY KEY (`instancecontact_id`);
+ALTER TABLE `instruments`
+  ADD PRIMARY KEY (`instrument_id`),
+  ADD KEY `project_id` (`project_id`);
 
 --
--- Indexes for table `instance_invoice`
+-- Indexes for table `instrument_items`
 --
-ALTER TABLE `instance_invoice`
-  ADD PRIMARY KEY (`invoice_id`);
+ALTER TABLE `instrument_items`
+  ADD PRIMARY KEY (`instrumentitem_id`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
--- Indexes for table `instance_pricing`
+-- Indexes for table `interventions`
 --
-ALTER TABLE `instance_pricing`
-  ADD PRIMARY KEY (`pricing_id`);
-
---
--- Indexes for table `instance_usage`
---
-ALTER TABLE `instance_usage`
-  ADD PRIMARY KEY (`instanceusage_id`);
+ALTER TABLE `interventions`
+  ADD PRIMARY KEY (`intervention_id`);
 
 --
 -- Indexes for table `links`
@@ -4441,27 +4193,6 @@ ALTER TABLE `links`
 ALTER TABLE `manual_qa`
   ADD PRIMARY KEY (`manualqa_id`),
   ADD UNIQUE KEY `series_id` (`series_id`,`modality`,`rater_id`);
-
---
--- Indexes for table `measureinstruments`
---
-ALTER TABLE `measureinstruments`
-  ADD PRIMARY KEY (`measureinstrument_id`),
-  ADD UNIQUE KEY `measure_name` (`instrument_name`);
-
---
--- Indexes for table `measurenames`
---
-ALTER TABLE `measurenames`
-  ADD PRIMARY KEY (`measurename_id`),
-  ADD UNIQUE KEY `measure_name` (`measure_name`);
-
---
--- Indexes for table `measures`
---
-ALTER TABLE `measures`
-  ADD PRIMARY KEY (`measure_id`),
-  ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`measurename_id`,`measure_value`,`measure_startdate`);
 
 --
 -- Indexes for table `meg_series`
@@ -4511,12 +4242,6 @@ ALTER TABLE `modality_protocol`
 --
 ALTER TABLE `modules`
   ADD PRIMARY KEY (`module_id`);
-
---
--- Indexes for table `module_prefs`
---
-ALTER TABLE `module_prefs`
-  ADD PRIMARY KEY (`mp_id`);
 
 --
 -- Indexes for table `module_procs`
@@ -4582,6 +4307,13 @@ ALTER TABLE `nda_mapping`
   ADD KEY `project_id` (`project_id`,`protocolname`,`experiment_id`,`modality`);
 
 --
+-- Indexes for table `nda_project`
+--
+ALTER TABLE `nda_project`
+  ADD PRIMARY KEY (`ndaproject_id`),
+  ADD KEY `idx_project_id` (`project_id`);
+
+--
 -- Indexes for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
@@ -4596,6 +4328,12 @@ ALTER TABLE `nm_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
+-- Indexes for table `nonimagingimports`
+--
+ALTER TABLE `nonimagingimports`
+  ADD PRIMARY KEY (`nonimagingimport_id`);
+
+--
 -- Indexes for table `notifications`
 --
 ALTER TABLE `notifications`
@@ -4607,6 +4345,34 @@ ALTER TABLE `notifications`
 ALTER TABLE `notification_user`
   ADD PRIMARY KEY (`notif_id`),
   ADD KEY `idx_notifications` (`user_id`);
+
+--
+-- Indexes for table `observations`
+--
+ALTER TABLE `observations`
+  ADD PRIMARY KEY (`observation_id`),
+  ADD KEY `observation_name` (`observation_name`),
+  ADD KEY `observation_startdate` (`observation_startdate`),
+  ADD KEY `instrumentitem_id` (`instrumentitem_id`),
+  ADD KEY `observationsurvey_id` (`observationsurvey_id`),
+  ADD KEY `instrumentitem_id_2` (`instrumentitem_id`,`observation_instrument`),
+  ADD KEY `enrollment_id` (`enrollment_id`) USING BTREE,
+  ADD KEY `remotebatch_id` (`remotebatch_id`);
+
+--
+-- Indexes for table `observation_meta`
+--
+ALTER TABLE `observation_meta`
+  ADD PRIMARY KEY (`observationmeta_id`),
+  ADD KEY `observation_id` (`observation_id`);
+
+--
+-- Indexes for table `observation_surveys`
+--
+ALTER TABLE `observation_surveys`
+  ADD PRIMARY KEY (`survey_id`),
+  ADD UNIQUE KEY `instrument_id_2` (`instrument_id`,`survey_startdate`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
 -- Indexes for table `ot_series`
@@ -4632,13 +4398,6 @@ ALTER TABLE `package_analyses`
   ADD UNIQUE KEY `package_id` (`package_id`,`analysis_id`);
 
 --
--- Indexes for table `package_drugs`
---
-ALTER TABLE `package_drugs`
-  ADD PRIMARY KEY (`packagedrug_id`),
-  ADD UNIQUE KEY `package_id` (`package_id`,`drug_id`);
-
---
 -- Indexes for table `package_enrollments`
 --
 ALTER TABLE `package_enrollments`
@@ -4653,11 +4412,19 @@ ALTER TABLE `package_experiments`
   ADD UNIQUE KEY `package_id` (`package_id`,`experiment_id`);
 
 --
--- Indexes for table `package_measures`
+-- Indexes for table `package_interventions`
 --
-ALTER TABLE `package_measures`
-  ADD PRIMARY KEY (`packagemeasure_id`),
-  ADD UNIQUE KEY `package_id` (`package_id`,`measure_id`);
+ALTER TABLE `package_interventions`
+  ADD PRIMARY KEY (`packageintervention_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`intervention_id`);
+
+--
+-- Indexes for table `package_observations`
+--
+ALTER TABLE `package_observations`
+  ADD PRIMARY KEY (`packageobservation_id`),
+  ADD UNIQUE KEY `package_id` (`package_id`,`observation_id`),
+  ADD KEY `package_id_2` (`package_id`);
 
 --
 -- Indexes for table `package_pipelines`
@@ -4705,8 +4472,7 @@ ALTER TABLE `pipeline_data`
 -- Indexes for table `pipeline_data_def`
 --
 ALTER TABLE `pipeline_data_def`
-  ADD PRIMARY KEY (`pipelinedatadef_id`),
-  ADD KEY `pdd_order` (`pdd_order`);
+  ADD PRIMARY KEY (`pipelinedatadef_id`);
 
 --
 -- Indexes for table `pipeline_dependencies`
@@ -4716,34 +4482,19 @@ ALTER TABLE `pipeline_dependencies`
   ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`parent_id`);
 
 --
--- Indexes for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  ADD PRIMARY KEY (`pipelinedownload_id`);
-
---
--- Indexes for table `pipeline_groups`
---
-ALTER TABLE `pipeline_groups`
-  ADD PRIMARY KEY (`pipelinegroup_id`),
-  ADD UNIQUE KEY `pipeline_id` (`pipeline_id`,`group_id`);
-
---
 -- Indexes for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
   ADD PRIMARY KEY (`pipelinehistory_id`),
   ADD KEY `event_datetime` (`event_datetime`),
   ADD KEY `pipeline_id` (`pipeline_id`),
-  ADD KEY `pipeline_event` (`pipeline_event`),
-  ADD KEY `pipeline_id_2` (`pipeline_id`,`pipeline_version`);
+  ADD KEY `pipeline_event` (`pipeline_event`);
 
 --
 -- Indexes for table `pipeline_options`
 --
 ALTER TABLE `pipeline_options`
-  ADD PRIMARY KEY (`pipelineoptions_id`),
-  ADD KEY `pipeline_id` (`pipeline_id`);
+  ADD PRIMARY KEY (`pipelineoptions_id`);
 
 --
 -- Indexes for table `pipeline_procs`
@@ -4762,9 +4513,7 @@ ALTER TABLE `pipeline_status`
 --
 ALTER TABLE `pipeline_steps`
   ADD PRIMARY KEY (`pipelinestep_id`),
-  ADD KEY `fk_pipeline_steps_pipelines1` (`pipeline_id`),
-  ADD KEY `ps_order` (`ps_order`),
-  ADD KEY `ps_supplement` (`ps_supplement`);
+  ADD KEY `fk_pipeline_steps_pipelines1` (`pipeline_id`);
 
 --
 -- Indexes for table `pipeline_version`
@@ -4781,19 +4530,6 @@ ALTER TABLE `ppi_series`
   ADD KEY `ppi_series` (`ishidden`);
 
 --
--- Indexes for table `prescriptionnames`
---
-ALTER TABLE `prescriptionnames`
-  ADD PRIMARY KEY (`rxname_id`),
-  ADD UNIQUE KEY `measure_name` (`rx_name`);
-
---
--- Indexes for table `prescriptions`
---
-ALTER TABLE `prescriptions`
-  ADD PRIMARY KEY (`rx_id`);
-
---
 -- Indexes for table `projects`
 --
 ALTER TABLE `projects`
@@ -4806,13 +4542,15 @@ ALTER TABLE `projects`
 -- Indexes for table `project_checklist`
 --
 ALTER TABLE `project_checklist`
-  ADD PRIMARY KEY (`projectchecklist_id`);
+  ADD PRIMARY KEY (`projectchecklist_id`),
+  ADD KEY `instrument_id` (`instrument_id`);
 
 --
 -- Indexes for table `project_nda_uploads`
 --
 ALTER TABLE `project_nda_uploads`
-  ADD PRIMARY KEY (`projectndaupload_id`);
+  ADD PRIMARY KEY (`projectndaupload_id`),
+  ADD KEY `idx_project_export` (`project_id`,`export_id`);
 
 --
 -- Indexes for table `project_protocol`
@@ -4852,13 +4590,6 @@ ALTER TABLE `protocol_group`
   ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
 
 --
--- Indexes for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  ADD PRIMARY KEY (`protocolmapping_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`protocolname`,`shortname`,`modality`);
-
---
 -- Indexes for table `pr_series`
 --
 ALTER TABLE `pr_series`
@@ -4882,12 +4613,6 @@ ALTER TABLE `public_datasets`
 -- Indexes for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  ADD PRIMARY KEY (`pd_id`);
-
---
--- Indexes for table `public_downloads2`
---
-ALTER TABLE `public_downloads2`
   ADD PRIMARY KEY (`pd_id`);
 
 --
@@ -4928,12 +4653,6 @@ ALTER TABLE `ratings`
   ADD KEY `idx_ratings` (`rater_id`);
 
 --
--- Indexes for table `rdoc_uploads`
---
-ALTER TABLE `rdoc_uploads`
-  ADD PRIMARY KEY (`rdocupload_id`);
-
---
 -- Indexes for table `redcap_import_fields`
 --
 ALTER TABLE `redcap_import_fields`
@@ -4944,13 +4663,37 @@ ALTER TABLE `redcap_import_fields`
 --
 ALTER TABLE `redcap_import_mapping`
   ADD PRIMARY KEY (`formmap_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255));
+  ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255)) USING BTREE;
+
+--
+-- Indexes for table `remoteimport_batch`
+--
+ALTER TABLE `remoteimport_batch`
+  ADD PRIMARY KEY (`remoteimportbatch_id`);
+
+--
+-- Indexes for table `remoteimport_logs`
+--
+ALTER TABLE `remoteimport_logs`
+  ADD PRIMARY KEY (`remoteimportlog_id`);
+
+--
+-- Indexes for table `remoteimport_mapping`
+--
+ALTER TABLE `remoteimport_mapping`
+  ADD PRIMARY KEY (`remoteimportmapping_id`);
 
 --
 -- Indexes for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
   ADD PRIMARY KEY (`remoteconn_id`);
+
+--
+-- Indexes for table `remote_imports`
+--
+ALTER TABLE `remote_imports`
+  ADD PRIMARY KEY (`remoteimport_id`);
 
 --
 -- Indexes for table `remote_logins`
@@ -5032,7 +4775,8 @@ ALTER TABLE `subjects`
   ADD PRIMARY KEY (`subject_id`),
   ADD UNIQUE KEY `uid` (`uid`),
   ADD KEY `isactive` (`isactive`),
-  ADD KEY `name` (`name`,`birthdate`,`gender`,`isactive`);
+  ADD KEY `name` (`name`,`birthdate`,`gender`,`isactive`),
+  ADD KEY `uid_2` (`uid`);
 
 --
 -- Indexes for table `subjectsimport_pending`
@@ -5071,12 +4815,6 @@ ALTER TABLE `system_messages`
   ADD PRIMARY KEY (`message_id`);
 
 --
--- Indexes for table `system_status`
---
-ALTER TABLE `system_status`
-  ADD PRIMARY KEY (`systemstatus_id`);
-
---
 -- Indexes for table `tags`
 --
 ALTER TABLE `tags`
@@ -5089,20 +4827,28 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   ADD PRIMARY KEY (`taskseries_id`),
-  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE,
-  ADD KEY `fk_eeg_series_studies1` (`study_id`);
+  ADD KEY `fk_eeg_series_studies1` (`study_id`),
+  ADD KEY `fk_task_series_studies1` (`study_id`) USING BTREE;
+
+--
+-- Indexes for table `timeseries`
+--
+ALTER TABLE `timeseries`
+  ADD PRIMARY KEY (`timeseries_id`),
+  ADD UNIQUE KEY `observation_id_2` (`observation_id`,`time`,`value_int`,`value_double`,`value_string`),
+  ADD KEY `observation_id` (`observation_id`);
 
 --
 -- Indexes for table `tms_series`
 --
 ALTER TABLE `tms_series`
   ADD PRIMARY KEY (`tmsseries_id`),
-  ADD KEY `fk_eeg_series_studies1` (`study_id`),
   ADD KEY `ishidden` (`ishidden`),
   ADD KEY `series_altdesc` (`series_altdesc`),
   ADD KEY `series_desc` (`series_desc`),
   ADD KEY `series_protocol` (`series_protocol`),
-  ADD KEY `fk_tms_series_studies1` (`study_id`) USING BTREE;
+  ADD KEY `fk_tms_series_studies1` (`study_id`) USING BTREE,
+  ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
 -- Indexes for table `uploads`
@@ -5116,7 +4862,6 @@ ALTER TABLE `uploads`
 ALTER TABLE `upload_logs`
   ADD PRIMARY KEY (`uploadlog_id`),
   ADD KEY `upload_id` (`upload_id`,`log_date`);
-ALTER TABLE `upload_logs` ADD FULLTEXT KEY `log_msg` (`log_msg`);
 
 --
 -- Indexes for table `upload_series`
@@ -5150,12 +4895,6 @@ ALTER TABLE `users_pending`
   ADD PRIMARY KEY (`user_id`),
   ADD UNIQUE KEY `user_email` (`user_email`),
   ADD UNIQUE KEY `username` (`username`);
-
---
--- Indexes for table `user_favorites`
---
-ALTER TABLE `user_favorites`
-  ADD PRIMARY KEY (`favorite_id`);
 
 --
 -- Indexes for table `user_instance`
@@ -5204,8 +4943,7 @@ ALTER TABLE `vitals`
 -- Indexes for table `weather`
 --
 ALTER TABLE `weather`
-  ADD PRIMARY KEY (`observation_id`),
-  ADD KEY `obsv_location` (`obsv_datetime`,`obsv_type`) USING BTREE;
+  ADD PRIMARY KEY (`observation_id`);
 
 --
 -- Indexes for table `xa_series`
@@ -5237,16 +4975,16 @@ ALTER TABLE `analysis_data`
   MODIFY `analysisdata_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `analysis_group`
---
-ALTER TABLE `analysis_group`
-  MODIFY `analysisgroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `analysis_history`
 --
 ALTER TABLE `analysis_history`
   MODIFY `analysishistory_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `analysis_log`
+--
+ALTER TABLE `analysis_log`
+  MODIFY `analysislog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `analysis_resultnames`
@@ -5265,6 +5003,18 @@ ALTER TABLE `analysis_results`
 --
 ALTER TABLE `analysis_resultunit`
   MODIFY `resultunit_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  MODIFY `session_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `api_users`
+--
+ALTER TABLE `api_users`
+  MODIFY `apiuser_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `assessments`
@@ -5303,34 +5053,10 @@ ALTER TABLE `audio_series`
   MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `audit_enrollment`
---
-ALTER TABLE `audit_enrollment`
-  MODIFY `auditenrollment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `audit_results`
 --
 ALTER TABLE `audit_results`
   MODIFY `auditresult_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_series`
---
-ALTER TABLE `audit_series`
-  MODIFY `auditseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_study`
---
-ALTER TABLE `audit_study`
-  MODIFY `auditstudy_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `audit_subject`
---
-ALTER TABLE `audit_subject`
-  MODIFY `auditsubject_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `backups`
@@ -5375,12 +5101,6 @@ ALTER TABLE `calendar_notifications`
   MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `calendar_projectnotifications`
---
-ALTER TABLE `calendar_projectnotifications`
-  MODIFY `not_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `calendar_projects`
 --
 ALTER TABLE `calendar_projects`
@@ -5417,22 +5137,10 @@ ALTER TABLE `consent_series`
   MODIFY `consentseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `contacts`
---
-ALTER TABLE `contacts`
-  MODIFY `contact_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `cr_series`
 --
 ALTER TABLE `cr_series`
   MODIFY `crseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `cs_prefs`
---
-ALTER TABLE `cs_prefs`
-  MODIFY `csprefs_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ct_series`
@@ -5459,6 +5167,12 @@ ALTER TABLE `data_requests`
   MODIFY `request_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `diagnosis`
+--
+ALTER TABLE `diagnosis`
+  MODIFY `diagnosis_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `doc_series`
 --
 ALTER TABLE `doc_series`
@@ -5469,12 +5183,6 @@ ALTER TABLE `doc_series`
 --
 ALTER TABLE `drugnames`
   MODIFY `drugname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `drugs`
---
-ALTER TABLE `drugs`
-  MODIFY `drug_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ecg_series`
@@ -5549,6 +5257,12 @@ ALTER TABLE `exportseries`
   MODIFY `exportseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `export_nonimaging`
+--
+ALTER TABLE `export_nonimaging`
+  MODIFY `exportnonimaging_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `families`
 --
 ALTER TABLE `families`
@@ -5591,6 +5305,12 @@ ALTER TABLE `gsr_series`
   MODIFY `gsrseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `icd10`
+--
+ALTER TABLE `icd10`
+  MODIFY `icd10_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `importlogs`
 --
 ALTER TABLE `importlogs`
@@ -5601,12 +5321,6 @@ ALTER TABLE `importlogs`
 --
 ALTER TABLE `import_file_log`
   MODIFY `importfilelog_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `import_requestdirs`
---
-ALTER TABLE `import_requestdirs`
-  MODIFY `importrequestdir_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `import_requests`
@@ -5627,34 +5341,28 @@ ALTER TABLE `instance`
   MODIFY `instance_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `instance_billing`
+-- AUTO_INCREMENT for table `instrumentitem_map`
 --
-ALTER TABLE `instance_billing`
-  MODIFY `billingitem_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `instrumentitem_map`
+  MODIFY `itemmap_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `instance_contact`
+-- AUTO_INCREMENT for table `instruments`
 --
-ALTER TABLE `instance_contact`
-  MODIFY `instancecontact_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `instruments`
+  MODIFY `instrument_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `instance_invoice`
+-- AUTO_INCREMENT for table `instrument_items`
 --
-ALTER TABLE `instance_invoice`
-  MODIFY `invoice_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `instrument_items`
+  MODIFY `instrumentitem_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `instance_pricing`
+-- AUTO_INCREMENT for table `interventions`
 --
-ALTER TABLE `instance_pricing`
-  MODIFY `pricing_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `instance_usage`
---
-ALTER TABLE `instance_usage`
-  MODIFY `instanceusage_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `interventions`
+  MODIFY `intervention_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `links`
@@ -5667,24 +5375,6 @@ ALTER TABLE `links`
 --
 ALTER TABLE `manual_qa`
   MODIFY `manualqa_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measureinstruments`
---
-ALTER TABLE `measureinstruments`
-  MODIFY `measureinstrument_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measurenames`
---
-ALTER TABLE `measurenames`
-  MODIFY `measurename_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `measures`
---
-ALTER TABLE `measures`
-  MODIFY `measure_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `meg_series`
@@ -5721,12 +5411,6 @@ ALTER TABLE `modalities`
 --
 ALTER TABLE `modules`
   MODIFY `module_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `module_prefs`
---
-ALTER TABLE `module_prefs`
-  MODIFY `mp_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `module_procs`
@@ -5777,6 +5461,12 @@ ALTER TABLE `nda_mapping`
   MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `nda_project`
+--
+ALTER TABLE `nda_project`
+  MODIFY `ndaproject_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `nidb_sites`
 --
 ALTER TABLE `nidb_sites`
@@ -5789,10 +5479,34 @@ ALTER TABLE `nm_series`
   MODIFY `nmseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `nonimagingimports`
+--
+ALTER TABLE `nonimagingimports`
+  MODIFY `nonimagingimport_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `notification_user`
 --
 ALTER TABLE `notification_user`
   MODIFY `notif_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `observations`
+--
+ALTER TABLE `observations`
+  MODIFY `observation_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `observation_meta`
+--
+ALTER TABLE `observation_meta`
+  MODIFY `observationmeta_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `observation_surveys`
+--
+ALTER TABLE `observation_surveys`
+  MODIFY `survey_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `ot_series`
@@ -5813,12 +5527,6 @@ ALTER TABLE `package_analyses`
   MODIFY `packageanalysis_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `package_drugs`
---
-ALTER TABLE `package_drugs`
-  MODIFY `packagedrug_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `package_enrollments`
 --
 ALTER TABLE `package_enrollments`
@@ -5831,10 +5539,16 @@ ALTER TABLE `package_experiments`
   MODIFY `packageexperiment_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `package_measures`
+-- AUTO_INCREMENT for table `package_interventions`
 --
-ALTER TABLE `package_measures`
-  MODIFY `packagemeasure_id` int(11) NOT NULL AUTO_INCREMENT;
+ALTER TABLE `package_interventions`
+  MODIFY `packageintervention_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `package_observations`
+--
+ALTER TABLE `package_observations`
+  MODIFY `packageobservation_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `package_pipelines`
@@ -5885,18 +5599,6 @@ ALTER TABLE `pipeline_dependencies`
   MODIFY `pipelinedep_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `pipeline_download`
---
-ALTER TABLE `pipeline_download`
-  MODIFY `pipelinedownload_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `pipeline_groups`
---
-ALTER TABLE `pipeline_groups`
-  MODIFY `pipelinegroup_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `pipeline_history`
 --
 ALTER TABLE `pipeline_history`
@@ -5931,18 +5633,6 @@ ALTER TABLE `pipeline_version`
 --
 ALTER TABLE `ppi_series`
   MODIFY `ppiseries_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `prescriptionnames`
---
-ALTER TABLE `prescriptionnames`
-  MODIFY `rxname_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `prescriptions`
---
-ALTER TABLE `prescriptions`
-  MODIFY `rx_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `projects`
@@ -5999,12 +5689,6 @@ ALTER TABLE `protocol_group`
   MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `protocol_mapping`
---
-ALTER TABLE `protocol_mapping`
-  MODIFY `protocolmapping_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `pr_series`
 --
 ALTER TABLE `pr_series`
@@ -6026,12 +5710,6 @@ ALTER TABLE `public_datasets`
 -- AUTO_INCREMENT for table `public_downloads`
 --
 ALTER TABLE `public_downloads`
-  MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `public_downloads2`
---
-ALTER TABLE `public_downloads2`
   MODIFY `pd_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
@@ -6071,10 +5749,34 @@ ALTER TABLE `redcap_import_mapping`
   MODIFY `formmap_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `remoteimport_batch`
+--
+ALTER TABLE `remoteimport_batch`
+  MODIFY `remoteimportbatch_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remoteimport_logs`
+--
+ALTER TABLE `remoteimport_logs`
+  MODIFY `remoteimportlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remoteimport_mapping`
+--
+ALTER TABLE `remoteimport_mapping`
+  MODIFY `remoteimportmapping_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `remote_connections`
 --
 ALTER TABLE `remote_connections`
   MODIFY `remoteconn_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `remote_imports`
+--
+ALTER TABLE `remote_imports`
+  MODIFY `remoteimport_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remote_logins`
@@ -6173,12 +5875,6 @@ ALTER TABLE `system_messages`
   MODIFY `message_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `system_status`
---
-ALTER TABLE `system_status`
-  MODIFY `systemstatus_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `tags`
 --
 ALTER TABLE `tags`
@@ -6189,6 +5885,12 @@ ALTER TABLE `tags`
 --
 ALTER TABLE `task_series`
   MODIFY `taskseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `timeseries`
+--
+ALTER TABLE `timeseries`
+  MODIFY `timeseries_id` bigint(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tms_series`
@@ -6239,12 +5941,6 @@ ALTER TABLE `users_pending`
   MODIFY `user_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `user_favorites`
---
-ALTER TABLE `user_favorites`
-  MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `user_instance`
 --
 ALTER TABLE `user_instance`
@@ -6291,6 +5987,16 @@ ALTER TABLE `weather`
 --
 ALTER TABLE `xa_series`
   MODIFY `xaseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for dumped tables
+--
+
+--
+-- Constraints for table `api_sessions`
+--
+ALTER TABLE `api_sessions`
+  ADD CONSTRAINT `fk_sessions_user` FOREIGN KEY (`apiuser_id`) REFERENCES `api_users` (`apiuser_id`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

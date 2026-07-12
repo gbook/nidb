@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB ajaxapi.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -22,7 +22,8 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
+	ob_start();
 	session_start();
 	require "functions.php";
 	require "includes_php.php";
@@ -41,12 +42,51 @@
 	$username = GetVariable("username");
 	$clustertype = GetVariable("clustertype");
 	$submithostuser = GetVariable("submithostuser");
+	$term = GetVariable("term");
+	$instrumentname = GetVariable("instrumentname");
+	$instrumentid = GetVariable("instrumentid");
+	$itemname = GetVariable("itemname");
+	$itemtype = GetVariable("itemtype");
+	$itemnotes = GetVariable("itemnotes");
+	$instrumentnotes = GetVariable("instrumentnotes");
+	$originalname = GetVariable("originalname");
+	$itemnamesJson = GetVariable("itemnames");
 
 	$projectid = GetVariable("projectid");
+	$enrollmentid = GetVariable("enrollmentid");
+	$observationid = GetVariable("observationid");
 	$subjectid = GetVariable("subjectid");
 	$studyid = GetVariable("studyid");
 	$column = GetVariable("column");
 	$value = GetVariable("value");
+	$tz_offset = GetVariable("tz_offset");
+	$surveyid = GetVariable("surveyid");
+	$observationids = GetVariable("observationids");
+	$fileioIds = GetVariable("ids");
+	$mappingid  = GetVariable("mappingid");
+	$flagname   = GetVariable("flagname");
+	$source_type          = GetVariable("source_type");
+	$avicenna_question    = GetVariable("avicenna_question");
+	$avicenna_variable    = GetVariable("avicenna_variable");
+	$avicenna_survey      = GetVariable("avicenna_survey");
+	$avicenna_datasource  = GetVariable("avicenna_datasource");
+	$avicenna_datatype    = GetVariable("avicenna_datatype");
+	$redcap_arm           = GetVariable("redcap_arm");
+	$redcap_event         = GetVariable("redcap_event");
+	$redcap_form          = GetVariable("redcap_form");
+	$redcap_field         = GetVariable("redcap_field");
+	$redcap_datatype      = GetVariable("redcap_datatype");
+	$redcap_datefield     = GetVariable("redcap_datefield");
+	$nidb_instrument      = GetVariable("nidb_instrument");
+	$nidb_variable        = GetVariable("nidb_variable");
+	$flag_date_from_field = GetVariable("flag_date_from_field");
+	$flag_can_repeat      = GetVariable("flag_can_repeat");
+	$flag_import_meta        = GetVariable("flag_import_meta");
+	$avicenna_variablecount  = GetVariable("avicenna_variablecount");
+	$startdate = GetVariable("startdate");
+	$enddate = GetVariable("enddate");
+	$rater = GetVariable("rater");
+	$notes = GetVariable("notes");
 	
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
@@ -73,21 +113,27 @@
 		case 'searchsubject':
 			SearchSubject($uid);
 			break;
+		case 'searchicd10':
+			SearchICD10($term);
+			break;
+		case 'searchobservationnames':
+			SearchObservationNames($term, $instrumentname);
+			break;
 		case 'validatepath':
 			ValidatePath($nfspath);
 			break;
 		case 'checkuser':
 			CheckUsername($username);
 			break;
-		case 'sgejobstatus':
-			DisplaySGEJobStatus($jobid);
-			break;
+		//case 'sgejobstatus':
+		//	DisplaySGEJobStatus($jobid);
+		//	break;
 		case 'remoteexportstatus':
 			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
 			break;
-		case 'checkhost':
-			CheckHostStatus($hostname);
-			break;
+		//case 'checkhost':
+		//	CheckHostStatus($hostname);
+		//	break;
 		case 'checksgehost':
 			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;
@@ -97,10 +143,164 @@
 		case 'updatestudydetails':
 			UpdateStudyDetails($subjectid, $studyid, $column, $value);
 			break;
+		case 'updateobservationdetails':
+			UpdateObservationDetails($observationid, $column, $value, $tz_offset);
+			break;
+		case 'updateseriesdetails':
+			UpdateSeriesDetails(GetVariable("id"), GetVariable("modality"), GetVariable("element_id"), GetVariable("update_value"));
+			break;
+		case 'checkseriesobject':
+			CheckSeriesObject(GetVariable("seriesid"), GetVariable("modality"), GetVariable("datatype"));
+			break;
+		case 'getseriesthumbnail':
+			GetSeriesThumbnail(GetVariable("seriesid"), GetVariable("modality"));
+			break;
+		case 'downloadfile':
+			DownloadFile(GetVariable("fileid"));
+			break;
+		case 'horizontalchart':
+			HorizontalChart(GetVariable("w"), GetVariable("h"), GetVariable("v"), GetVariable("c"), GetVariable("b"));
+			break;
+		case 'stddevchart':
+			StdDevChart(GetVariable("w"), GetVariable("h"), GetVariable("min"), GetVariable("max"), GetVariable("mean"), GetVariable("std"), GetVariable("i"), GetVariable("b"));
+			break;
+		case 'getobservationmeta':
+			GetObservationMeta($observationid);
+			break;
+		case 'bulkupdateobservations':
+			BulkUpdateObservations($observationids, $column, $value, $tz_offset);
+			break;
+		case 'bulkdeleteobservations':
+			BulkDeleteObservations($observationids);
+			break;
+		case 'bulkconvertvaluetometa':
+			BulkConvertValueToMeta($observationids);
+			break;
+		case 'bulkmovenewsurvey':
+			BulkMoveToNewSurvey($observationids);
+			break;
+		case 'searchinstruments':
+			SearchInstruments($term, $projectid);
+			break;
+		case 'searchinstrumentitems':
+			SearchInstrumentItems($term, $instrumentid);
+			break;
+		case 'addinstrument':
+			AddInstrumentAjax($instrumentname, $instrumentnotes, $projectid);
+			break;
+		case 'addinstrumentitem':
+			AddInstrumentItemAjax($itemname, $itemtype, $itemnotes, $instrumentid);
+			break;
+		case 'formalizeinstrument':
+			FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
+			break;
+		case 'getsurveys':
+			GetSurveys((int)$enrollmentid, (int)$instrumentid);
+			break;
+		case 'assigntosurvey':
+			AssignToSurvey((int)$surveyid, $observationids);
+			break;
+		case 'createandassignsurvey':
+			CreateAndAssignSurvey((int)$enrollmentid, (int)$instrumentid, $startdate, $enddate, $rater, $notes, $observationids);
+			break;
+		case 'updatesurvey':
+			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes);
+			break;
+		case 'getfileiostatus':
+			GetFileIOStatus($fileioIds);
+			break;
+		case 'getinstrumentitems':
+			GetInstrumentItems((int)$instrumentid);
+			break;
+		case 'updatemappingflag':
+			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
+			break;
+		case 'savemapping':
+			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
+			break;
+		case 'deletemapping':
+			DeleteMapping((int)$mappingid);
+			break;
+		case 'bulkdeletemappings':
+			BulkDeleteMappings(GetVariable('ids'));
+			break;
+		case 'bulkdeleteitems':
+			BulkDeleteItems(GetVariable('ids'));
+			break;
 	}
 	
 
 	/* ------------------------------------ functions ------------------------------------ */
+
+	/* Discard all buffered output (debug HTML, notices, etc.) and set JSON content-type.
+	   Call at the top of every function that returns JSON. */
+	function JsonHeader() {
+		while (ob_get_level() > 0) ob_end_clean();
+		header('Content-Type: application/json');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchICD10 ------------------------ */
+	/* -------------------------------------------- */
+	function SearchICD10($term) {
+		JsonHeader();
+
+		$term = trim($term);
+		if ($term == '') {
+			echo json_encode(array());
+			return;
+		}
+
+		$search = '%' . $term . '%';
+		$results = array();
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select icd10_id, icd10_code, icd10_longdesc from icd10 where icd10_code like ? or icd10_longdesc like ? order by icd10_code limit 50");
+		mysqli_stmt_bind_param($stmt, 'ss', $search, $search);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = array(
+				'label' => $row['icd10_code'] . ' - ' . $row['icd10_longdesc'],
+				'value' => $row['icd10_code'] . ' - ' . $row['icd10_longdesc'],
+				'icd10_id' => $row['icd10_id'],
+				'code' => $row['icd10_code'],
+				'longdesc' => $row['icd10_longdesc']
+			);
+		}
+		mysqli_stmt_close($stmt);
+
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchObservationNames ------------ */
+	/* -------------------------------------------- */
+	function SearchObservationNames($term, $instrumentname) {
+		JsonHeader();
+
+		$term = trim($term);
+		if ($term == '') {
+			echo json_encode([]);
+			return;
+		}
+
+		$search = '%' . $term . '%';
+		$results = array();
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select distinct observation_name, if(observation_instrument = ?, 0, 1) as priority from observations where observation_name like ? order by priority, observation_name limit 50");
+		mysqli_stmt_bind_param($stmt, 'ss', $instrumentname, $search);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = [
+				'label' => $row['observation_name'],
+				'value' => $row['observation_name'],
+			];
+		}
+		mysqli_stmt_close($stmt);
+
+		echo json_encode($results);
+	}
 
 
 	/* -------------------------------------------- */
@@ -133,18 +333,15 @@
 	/* -------------------------------------------- */
 	/* ------- CheckHostStatus -------------------- */
 	/* -------------------------------------------- */
-	function CheckHostStatus($hostname) {
-		
-		$hostname = trim($hostname);
-		$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
-
-		exec("ping -c 1 '$hostname'", $output, $result);
-		
-		if ($result == 0)
-			echo "1";
-		else
-			echo "0";
-	}
+	//function CheckHostStatus($hostname) {
+	//	$hostname = trim($hostname);
+	//	$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
+	//	exec("ping -c 1 '$hostname'", $output, $result);
+	//	if ($result == 0)
+	//		echo "1";
+	//	else
+	//		echo "0";
+	//}
 
 
 	/* -------------------------------------------- */
@@ -396,9 +593,9 @@
 
 			?>
 			<span style="font-size: 11pt">
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
 			<br>
-			<img src="horizontalchart.php?b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
 			</span>
 			<?
 		}
@@ -408,9 +605,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySGEJobStatus ---------------- */
 	/* -------------------------------------------- */
+	/*
 	function DisplaySGEJobStatus($jobid) {
 		if (($jobid == "") || (!IsInteger($jobid))) { return; }
-		
 		?><body style="margin: 0px: padding: 0px; overflow:hidden;"><?
 		$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $analysis_qsubid";
 		$out = shell_exec($systemstring);
@@ -419,6 +616,7 @@
 		}
 		?></body><?
 	}
+	*/
 	
 	
 	/* -------------------------------------------- */
@@ -785,13 +983,13 @@
 	/* ------- UpdateSubjectDetails --------------- */
 	/* -------------------------------------------- */
 	function UpdateSubjectDetails($subjectid, $projectid, $column, $value) {
-		
-		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
-		$projectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $projectid));
+
+		$subjectid = (int)$subjectid;
+		$projectid = (int)$projectid;
 		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
 		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		
-		if ($subjectid == "") {
+
+		if ($subjectid < 1) {
 			echo "error, subjectID blank";
 			return;
 		}
@@ -802,8 +1000,7 @@
 			$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$enrollmentid = $row['enrollment_id'];
-			if ($enrollmentid == "") { $enrollmentid = 0; }
+			$enrollmentid = (int)$row['enrollment_id'];
 
 			/* delete entries for this subject from the altuid table ... */
 			$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
@@ -830,7 +1027,10 @@
 		}
 		elseif ($column == "enrollgroup") {
 			$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
-			//PrintVariable($sqlstring);
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		}
+		elseif ($column == "enrollstatus") {
+			$sqlstring = "update enrollment set enroll_status = '$value' where project_id = $projectid and subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
 		else {
@@ -878,17 +1078,17 @@
 	/* ------- UpdateStudyDetails ----------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyDetails($subjectid, $studyid, $column, $value) {
-		
-		$subjectid = trim(mysqli_real_escape_string($GLOBALS['linki'], $subjectid));
-		$studyid = trim(mysqli_real_escape_string($GLOBALS['linki'], $studyid));
+
+		$subjectid = (int)$subjectid;
+		$studyid = (int)$studyid;
 		$column = trim(mysqli_real_escape_string($GLOBALS['linki'], $column));
 		$value = trim(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		
-		if ($subjectid == "") {
+
+		if ($subjectid < 1) {
 			echo "error, subjectid blank";
 			return;
 		}
-		if ($studyid == "") {
+		if ($studyid < 1) {
 			echo "error, studyid blank";
 			return;
 		}
@@ -897,7 +1097,8 @@
 			StartSQLTransaction();
 			
 			list($path2, $uid2, $studynum2, $studyid2, $subjectid2, $modality2, $type2, $studydatetime2, $enrollmentid, $projectname2, $projectid2) = GetStudyInfo($studyid);
-			
+			$enrollmentid = (int)$enrollmentid;
+
 			/* delete entries for this subject from the altuid table ... */
 			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -950,5 +1151,950 @@
 		
 		echo "success";
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateObservationDetails ----------- */
+	/* -------------------------------------------- */
+	function UpdateObservationDetails($observationid, $column, $value, $tz_offset = '') {
+		$observationid = (int)$observationid;
+		if ($observationid < 1) { echo "error - invalid observation ID"; return; }
+
+		$allowedColumns = [
+			'name'          => 'observation_name',
+			'value'         => 'observation_value',
+			'rater'         => 'observation_rater',
+			'startdate'     => 'observation_startdate',
+			'enddate'       => 'observation_enddate',
+			'duration'      => 'observation_duration',
+			'obsInstrument' => 'observation_instrument',
+		];
+
+		if (!array_key_exists($column, $allowedColumns)) {
+			echo "error - column [$column] not recognized";
+			return;
+		}
+
+		$dbColumn = $allowedColumns[$column];
+		$notNullColumns = ['name', 'value'];
+		$intColumns = ['duration'];
+		$dateColumns = ['startdate', 'enddate'];
+
+		if (in_array($column, $intColumns)) {
+			$castValue = (trim($value) === '') ? null : (int)$value;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $castValue, $observationid);
+		} elseif (in_array($column, $notNullColumns)) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $value, $observationid);
+		} elseif (in_array($column, $dateColumns)) {
+			$nullableValue  = (trim($value) === '') ? null : $value;
+			$nullableTzOff  = (trim($tz_offset) === '') ? null : $tz_offset;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $observationid);
+		} else {
+			$nullableValue = (trim($value) === '') ? null : $value;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $observationid);
+		}
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSeriesDetails ---------------- */
+	/* -------------------------------------------- */
+	/* inline edit of a single series field (folded in from the former series_inlineupdate.php) */
+	function UpdateSeriesDetails($seriesid, $modality, $column, $value) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { echo "error - invalid series ID"; return; }
+
+		/* validate modality -> table and primary-key identifiers (these cannot be bound as parameters) */
+		$table = GetSeriesTableName($modality);
+		if ($table === '') { echo "error - invalid modality"; return; }
+		$pkColumn = strtolower($modality) . "series_id";
+
+		/* only these columns may be edited inline */
+		$allowedColumns = ['series_notes', 'series_protocol', 'series_datetime'];
+		if (!in_array($column, $allowedColumns, true)) {
+			echo "error - column [$column] not recognized";
+			return;
+		}
+
+		$nullableValue = (trim($value) === '') ? null : $value;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update $table set $column = ? where $pkColumn = ?");
+		mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $seriesid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		/* echo the value back so the in-place editor can display it */
+		echo str_replace('\n', "<br>", ($nullableValue === null) ? ' ' : $value);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckSeriesObject ------------------ */
+	/* -------------------------------------------- */
+	/* check whether a series' data files exist on disk (folded in from the former objectexists.php) */
+	function CheckSeriesObject($seriesid, $modality, $datatype) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { return; }
+		if (GetSeriesTableName($modality) === '') { return; }
+
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+
+		if ($datatype == "dicom") {
+			$files = glob("$path/*.dcm");
+		}
+		elseif ($datatype == "parrec") {
+			$files = glob("$path/*.par");
+		}
+		else {
+			return;
+		}
+
+		/* only report the problem case; when files are present the original emitted no visible output */
+		if (empty($files) || !file_exists($files[0])) {
+			echo '<i class="red exclamation circle icon" title="Files missing from disk"></i>';
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSeriesThumbnail ----------------- */
+	/* -------------------------------------------- */
+	/* return the thumbnail preview link for a series (folded in from the former objectexists.php) */
+	function GetSeriesThumbnail($seriesid, $modality) {
+		$seriesid = (int)$seriesid;
+		if ($seriesid < 1) { return; }
+		if (GetSeriesTableName($modality) === '') { return; }
+
+		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+		$thumbpath = "$seriespath/thumb.png";
+		if (file_exists($thumbpath)) {
+			?><a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="photo video icon"></i></a><?
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DownloadFile ----------------------- */
+	/* -------------------------------------------- */
+	function DownloadFile($fileid) {
+		$fileid = (int)$fileid;
+		if ($fileid < 1) { return; }
+
+		list($filename, $filecontenttype, $fileblob, $filesize, $filedate) = GetFileFromSQL($fileid);
+		if ($filename == "") { return; }
+
+		/* discard any buffered output so the binary blob is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		header("Pragma: public");
+		header("Expires: 0");
+		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+		header("Cache-Control: public");
+		header("Content-Description: File Transfer");
+		header("Content-type: $filecontenttype");
+		header("Content-Disposition: attachment; filename=\"$filename\"");
+		header("Content-Transfer-Encoding: binary");
+		header("Content-Length: $filesize");
+
+		echo $fileblob;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- HorizontalChart -------------------- */
+	/* -------------------------------------------- */
+	function HorizontalChart($w, $h, $v, $c, $b) {
+		/* clamp dimensions to sane bounds to prevent memory-exhaustion DoS */
+		$w = (int)$w;
+		$h = (int)$h;
+		if ($w < 1) { $w = 1; }
+		if ($h < 1) { $h = 1; }
+		if ($w > 2000) { $w = 2000; }
+		if ($h > 2000) { $h = 2000; }
+
+		/* create the canvas */
+		$im = imagecreatetruecolor($w, $h);
+
+		/* set background to white */
+		$bg = imagecolorallocate($im, 255, 255, 255);
+		imagefilledrectangle($im, 0, 0, $w, $h, $bg);
+
+		/* get the pixel sizes of the blocks */
+		$values = explode(',', $v);
+		$colors = explode(',', $c);
+		$sum = array_sum($values);
+
+		if ($sum > 0) {
+			$x1 = $x2 = 0;
+			$y1 = 0;
+			$y2 = $h;
+			$i = 0;
+			foreach ($values as $val) {
+				list($red, $green, $blue) = HexToRGBArray($colors[$i]);
+				$x1 = $x2;
+				$x2 = $x1 + $w*($val/$sum);
+				$color = imagecolorallocate($im, $red, $green, $blue);
+				imagefilledrectangle($im, $x1, $y1, $x2, $y2, $color);
+				$i++;
+			}
+		}
+
+		if ($b == "yes") {
+			/* draw a gray border */
+			$gray = imagecolorallocate($im, 120, 120, 120);
+			imagepolygon($im, array(0,0, 0,$h-1, $w-1,$h-1, $w-1,0), 4, $gray);
+		}
+
+		/* discard any buffered output so the PNG is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		/* send the image to the browser */
+		header('Content-type: image/png');
+		imagepng($im);
+		imagedestroy($im);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- HexToRGBArray ---------------------- */
+	/* -------------------------------------------- */
+	function HexToRGBArray($rgb) {
+		/* convert 6 digit HEX string to 3 decimals */
+		$rgb = str_replace("#", "", $rgb);
+		return array(
+			base_convert(substr($rgb, 0, 2), 16, 10),
+			base_convert(substr($rgb, 2, 2), 16, 10),
+			base_convert(substr($rgb, 4, 2), 16, 10),
+		);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- StdDevChart ------------------------ */
+	/* -------------------------------------------- */
+	function StdDevChart($w, $h, $min, $max, $mean, $std, $ind, $b) {
+		/* clamp dimensions to sane bounds to prevent memory-exhaustion DoS */
+		$w = (int)$w;
+		$h = (int)$h;
+		if ($w < 1) { $w = 1; }
+		if ($h < 1) { $h = 1; }
+		if ($w > 2000) { $w = 2000; }
+		if ($h > 2000) { $h = 2000; }
+
+		/* create the canvas */
+		$im = imagecreatetruecolor($w, $h);
+
+		/* set background to white */
+		$bg = imagecolorallocate($im, 255, 255, 255);
+		imagefilledrectangle($im, 0, 0, $w, $h, $bg);
+
+		/* draw the standard deviations */
+		if (($max-$min) > 0 ) {
+			$meanx = $w*(($mean-$min)/($max-$min)); /* calculate the mean line position, on which std devs are based */
+		}
+		else {
+			$meanx = $w/2;
+		}
+		$x1 = $x2 = $meanx;
+		$y1 = 0;
+		$y2 = $h;
+		foreach (array(4,3,2,1) as $i) {
+			$x1 = $meanx - ($std*$i)/2;
+			$x2 = $meanx + ($std*$i)/2;
+			$color[$i] = imagecolorallocate($im, 255, 255-(255/$i), 255-(255/$i));
+			imagefilledrectangle($im, $x1, $y1, $x2, $y2, $color[$i]);
+		}
+		if (($max-$min) > 0 ) {
+			$meanx = $w*(($mean-$min)/($max-$min));
+			imageline($im, $meanx, 0, $meanx, $h, $linecolor);
+		}
+
+		/* setup text color */
+		$txtcolor = imagecolorallocate($im, 0, 0, 0);
+		$linecolor = imagecolorallocate($im, 0, 0, 0);
+		$txtheight = imagefontheight(1);
+
+		/* draw a semi-transparent white box to put text into */
+		$color = imagecolorallocatealpha($im, 255, 255, 255, 16);
+		imagefilledrectangle($im, 0, $h-$txtheight-2, $w, $h, $color);
+
+		/* draw min text */
+		$str = number_format($min, 1);
+		imagestring($im, 1, 1, $h-$txtheight-1, $str, $txtcolor);
+
+		/* draw max text */
+		$str = number_format($max, 1);
+		$txtwidth = imagefontwidth(1)*strlen($str);
+		imagestring($im, 1, $w-$txtwidth-1, $h-$txtheight-1, $str, $txtcolor);
+
+		/* draw mean line and text */
+		if (($max-$min) > 0 ) {
+			$str = number_format($mean, 1);
+			$txtwidth = imagefontwidth(1)*strlen($str);
+			imagestring($im, 1, $meanx-$txtwidth/2, $h-$txtheight-1, $str, $txtcolor);
+		}
+
+		if ($ind != "") {
+			if (($max-$min) > 0) {
+				$indcolor = imagecolorallocate($im, 0, 0, 255);
+				$indx = $w*(($ind-$min)/($max-$min));
+				imageline($im, $indx, 0, $indx, $h, $indcolor);
+			}
+		}
+
+		if ($b == "yes") {
+			/* draw a gray border */
+			$gray = imagecolorallocate($im, 120, 120, 120);
+			imagepolygon($im, array(0,0, 0,$h-1, $w-1,$h-1, $w-1,0), 4, $gray);
+		}
+
+		/* discard any buffered output so the PNG is not corrupted */
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		/* send the image to the browser */
+		header('Content-type: image/png');
+		imagepng($im);
+		imagedestroy($im);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetObservationMeta ---------------- */
+	/* -------------------------------------------- */
+	function GetObservationMeta($observationid) {
+		JsonHeader();
+		$observationid = (int)$observationid;
+		if ($observationid < 1) { echo json_encode(['error' => 'Invalid ID']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select variable, value from observation_meta where observation_id = ? order by variable");
+		mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$rows = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = ['variable' => $row['variable'], 'value' => $row['value']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($rows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkUpdateObservations ------------ */
+	/* -------------------------------------------- */
+	function BulkUpdateObservations($observationidsJson, $column, $value, $tz_offset = '') {
+		JsonHeader();
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$allowedColumns = [
+			'value'         => 'observation_value',
+			'rater'         => 'observation_rater',
+			'startdate'     => 'observation_startdate',
+			'enddate'       => 'observation_enddate',
+			'obsInstrument' => 'observation_instrument',
+		];
+		if (!array_key_exists($column, $allowedColumns)) {
+			echo json_encode(['error' => "Column [$column] not recognized"]);
+			return;
+		}
+		$dbColumn      = $allowedColumns[$column];
+		$isDate        = ($column === 'startdate' || $column === 'enddate');
+		$nullableValue = (trim($value) === '') ? null : $value;
+		$nullableTzOff = (trim($tz_offset) === '') ? null : $tz_offset;
+		$updated = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			if ($isDate) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $id);
+			} else {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ? where observation_id = ?");
+				mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $id);
+			}
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$updated++;
+		}
+		echo json_encode(['updated' => $updated]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkDeleteObservations ------------ */
+	/* -------------------------------------------- */
+	function BulkDeleteObservations($observationidsJson) {
+		JsonHeader();
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from observations where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['deleted' => $deleted]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkMoveToNewSurvey --------------- */
+	/* -------------------------------------------- */
+	/* Creates a new survey whose startdate is the oldest observation_startdate among the
+	   selected observations, then assigns all selected observations to it. */
+	function BulkMoveToNewSurvey($observationidsJson) {
+		JsonHeader();
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$intIds = array_values(array_filter(array_map('intval', $ids), function($id) { return $id > 0; }));
+		if (empty($intIds)) { echo json_encode(['error' => 'No valid IDs']); return; }
+
+		$idList = implode(',', $intIds);
+
+		/* derive survey startdate from the earliest non-zero observation_startdate */
+		$row = mysqli_fetch_array(MySQLiQuery(
+			"select min(case when observation_startdate = '0000-01-01 00:00:00' or observation_startdate is null then null else observation_startdate end) as min_date from observations where observation_id in ($idList)",
+			__FILE__, __LINE__
+		), MYSQLI_ASSOC);
+		$startdate_sql = (!empty($row['min_date'])) ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $row['min_date']) . "'" : "null";
+
+		/* create the new survey (no instrument affiliation — observations may span instruments) */
+		MySQLiQuery("insert into observation_surveys (instrument_id, survey_startdate, survey_entrydate) values (null, $startdate_sql, now())", __FILE__, __LINE__);
+		$surveyid = (int)mysqli_insert_id($GLOBALS['linki']);
+
+		/* reassign all selected observations to the new survey regardless of prior assignment */
+		MySQLiQuery("update observations set observationsurvey_id = $surveyid where observation_id in ($idList)", __FILE__, __LINE__);
+
+		echo json_encode(['survey_id' => $surveyid, 'moved' => count($intIds)]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkConvertValueToMeta ------------ */
+	/* -------------------------------------------- */
+	/* Flattens a nested array into dot-joined key paths using underscore as separator.
+	   e.g. ['var_1' => ['subvar1' => 'x']] → ['var_1_subvar1' => 'x'] */
+	function FlattenJsonArray($data, $prefix) {
+		$result = [];
+		foreach ($data as $key => $value) {
+			$fullKey = $prefix !== '' ? $prefix . '_' . $key : (string)$key;
+			if (is_array($value)) {
+				$result = array_merge($result, FlattenJsonArray($value, $fullKey));
+			} else {
+				$result[$fullKey] = ($value === null) ? '' : (string)$value;
+			}
+		}
+		return $result;
+	}
+
+	function BulkConvertValueToMeta($observationidsJson) {
+		JsonHeader();
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$converted = 0;
+		$skipped   = 0;
+
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+
+			/* fetch current value */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select observation_value from observations where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) continue;
+
+			$jsonStr = trim($row['observation_value']);
+			if ($jsonStr === '') { $skipped++; continue; }
+
+			$decoded = json_decode($jsonStr, true);
+			if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+				$skipped++;
+				continue;
+			}
+
+			/* flatten and insert each key-value pair */
+			$flat = FlattenJsonArray($decoded, '');
+			foreach ($flat as $variable => $value) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into observation_meta (observation_id, variable, value) values (?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iss', $id, $variable, $value);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+			}
+
+			/* clear the raw JSON value now that meta rows are written */
+			$empty = '';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set observation_value = ? where observation_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $empty, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+
+			$converted++;
+		}
+
+		echo json_encode(['converted' => $converted, 'skipped' => $skipped]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchInstruments ------------------ */
+	/* -------------------------------------------- */
+	function SearchInstruments($term, $projectid) {
+		JsonHeader();
+		if ($projectid < 1) { echo json_encode([]); return; }
+		$term = trim($term);
+		$results = array();
+		if ($term === '') {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? order by instrument_name limit 100");
+			mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		} else {
+			$search = '%' . $term . '%';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id, instrument_name from instruments where project_id = ? and instrument_name like ? order by instrument_name limit 50");
+			mysqli_stmt_bind_param($stmt, 'is', $projectid, $search);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = ['label' => $row['instrument_name'], 'value' => $row['instrument_name'], 'id' => (int)$row['instrument_id']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchInstrumentItems -------------- */
+	/* -------------------------------------------- */
+	function SearchInstrumentItems($term, $instrumentid) {
+		JsonHeader();
+		if ($instrumentid < 1) { echo json_encode([]); return; }
+		$term = trim($term);
+		$results = array();
+		if ($term === '') {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrumentitem_id, item_name from instrument_items where instrument_id = ? order by item_order, item_name limit 100");
+			mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		} else {
+			$search = '%' . $term . '%';
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrumentitem_id, item_name from instrument_items where instrument_id = ? and item_name like ? order by item_order, item_name limit 50");
+			mysqli_stmt_bind_param($stmt, 'is', $instrumentid, $search);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$results[] = ['label' => $row['item_name'], 'value' => $row['item_name'], 'id' => (int)$row['instrumentitem_id']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($results);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddInstrumentAjax ------------------ */
+	/* -------------------------------------------- */
+	function AddInstrumentAjax($name, $notes, $projectid) {
+		JsonHeader();
+		$name = trim($name);
+		if ($name == '' || $projectid < 1) { echo json_encode(['error' => 'Invalid name or project']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name, instrument_notes) values (?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'iss', $projectid, $name, $notes);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$newid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['instrument_id' => $newid, 'instrument_name' => $name]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddInstrumentItemAjax -------------- */
+	/* -------------------------------------------- */
+	function AddInstrumentItemAjax($name, $type, $notes, $instrumentid) {
+		JsonHeader();
+		$name = trim($name);
+		if ($name == '' || $instrumentid < 1) { echo json_encode(['error' => 'Invalid name or instrument']); return; }
+		$validTypes = ['int', 'double', 'string', 'timeseries'];
+		if (!in_array($type, $validTypes)) $type = 'string';
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instrument_items (instrument_id, item_name, item_type, item_notes) values (?, ?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'isss', $instrumentid, $name, $type, $notes);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$newid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['instrumentitem_id' => $newid, 'item_name' => $name]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FormalizeInstrument ---------------- */
+	/* -------------------------------------------- */
+	function FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson) {
+		JsonHeader();
+		$instrumentname = trim($instrumentname);
+		$originalname   = trim($originalname);
+		if ($instrumentname === '' || $projectid < 1) { echo json_encode(['error' => 'Invalid instrument name or project']); return; }
+
+		/* check for duplicate */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $instrumentname);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) > 0) { echo json_encode(['error' => 'An instrument with this name already exists in the project']); return; }
+		mysqli_stmt_close($stmt);
+
+		$itemnames = json_decode($itemnamesJson, true);
+		if (!is_array($itemnames)) $itemnames = array();
+
+		/* create instrument */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name) values (?, ?)");
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $instrumentname);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$instrumentId = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+
+		if (!$instrumentId) { echo json_encode(['error' => 'Failed to create instrument']); return; }
+
+		/* create items and convert observations project-wide */
+		$totalConverted = 0;
+		foreach ($itemnames as $itemname) {
+			$itemname = trim($itemname);
+			if ($itemname === '') continue;
+
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instrument_items (instrument_id, item_name, item_type) values (?, ?, 'string')");
+			mysqli_stmt_bind_param($stmt, 'is', $instrumentId, $itemname);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$itemId = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+
+			/* match on original legacy instrument name and observation name */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations o join enrollment e on o.enrollment_id = e.enrollment_id set o.instrumentitem_id = ? where e.project_id = ? and o.observation_instrument = ? and o.observation_name = ? and o.instrumentitem_id is null");
+			mysqli_stmt_bind_param($stmt, 'iiss', $itemId, $projectid, $originalname, $itemname);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$totalConverted += mysqli_affected_rows($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+		}
+
+		echo json_encode(['instrument_id' => $instrumentId, 'converted' => $totalConverted]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSurveys ------------------------- */
+	/* -------------------------------------------- */
+	/* returns JSON array of surveys for a given enrollment + instrument, most recent first */
+	function GetSurveys($enrollmentid, $instrumentid) {
+		JsonHeader();
+		if ($enrollmentid <= 0 || $instrumentid <= 0) {
+			echo json_encode(array());
+			return;
+		}
+		/* find surveys that have at least one observation from this enrollment */
+		$sqlstring = "select s.survey_id, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observation_surveys s join observations o on o.observationsurvey_id = s.survey_id where o.enrollment_id = $enrollmentid and s.instrument_id = $instrumentid group by s.survey_id order by s.survey_startdate desc";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$surveys = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$surveys[] = array(
+				'survey_id' => (int)$row['survey_id'],
+				'startdate' => $row['survey_startdate'],
+				'enddate'   => $row['survey_enddate'],
+				'rater'     => $row['survey_rater'],
+				'notes'     => $row['survey_notes'],
+				'visit'     => $row['survey_visit'],
+			);
+		}
+		echo json_encode($surveys);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AssignToSurvey --------------------- */
+	/* -------------------------------------------- */
+	/* assigns a list of observation IDs to an existing survey */
+	function AssignToSurvey($surveyid, $observationidsJson) {
+		JsonHeader();
+		if ($surveyid <= 0) {
+			echo json_encode(array('error' => 'invalid survey_id'));
+			return;
+		}
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('error' => 'no observation IDs provided'));
+			return;
+		}
+		$idList = implode(',', array_map('intval', $ids));
+		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		echo json_encode(array('success' => true));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateAndAssignSurvey -------------- */
+	/* -------------------------------------------- */
+	/* creates a new observation_surveys record and assigns a list of observations to it */
+	function CreateAndAssignSurvey($enrollmentid, $instrumentid, $startdate, $enddate, $rater, $notes, $observationidsJson) {
+		JsonHeader();
+		if ($enrollmentid <= 0) {
+			echo json_encode(array('error' => 'invalid enrollment_id'));
+			return;
+		}
+		$ids = json_decode($observationidsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('error' => 'no observation IDs provided'));
+			return;
+		}
+		$startdate_sql    = !empty(trim($startdate))    ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $startdate) . "'" : "null";
+		$enddate_sql      = !empty(trim($enddate))      ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $enddate) . "'"   : "null";
+		$rater_sql        = !empty(trim($rater))        ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $rater) . "'"     : "null";
+		$notes_sql        = !empty(trim($notes))        ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $notes) . "'"     : "null";
+		$instrumentid_sql = ($instrumentid > 0)         ? $instrumentid : "null";
+
+		$sqlstring = "insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_rater, survey_notes, survey_entrydate) values ($instrumentid_sql, $startdate_sql, $enddate_sql, $rater_sql, $notes_sql, now())";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$surveyid = mysqli_insert_id($GLOBALS['linki']);
+
+		$idList = implode(',', array_map('intval', $ids));
+		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo json_encode(array('success' => true, 'survey_id' => (int)$surveyid));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSurvey ----------------------- */
+	/* -------------------------------------------- */
+	/* updates metadata fields on an existing observation_surveys record */
+	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes) {
+		JsonHeader();
+		if ($surveyid <= 0) {
+			echo json_encode(array('error' => 'invalid survey_id'));
+			return;
+		}
+		$startdate_sql = !empty(trim($startdate)) ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $startdate) . "'" : "null";
+		$enddate_sql   = !empty(trim($enddate))   ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $enddate) . "'"   : "null";
+		$rater_sql     = !empty(trim($rater))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $rater) . "'"     : "null";
+		$notes_sql     = !empty(trim($notes))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $notes) . "'"     : "null";
+
+		$sqlstring = "update observation_surveys set survey_startdate = $startdate_sql, survey_enddate = $enddate_sql, survey_rater = $rater_sql, survey_notes = $notes_sql where survey_id = $surveyid";
+		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo json_encode(array('success' => true));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileIOStatus -------------------- */
+	/* -------------------------------------------- */
+	/* -------------------------------------------- */
+	/* ------- GetInstrumentItems ---------------- */
+	/* -------------------------------------------- */
+	function GetInstrumentItems($instrumentid) {
+		JsonHeader();
+		if ($instrumentid < 1) { echo json_encode([]); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id, item_name FROM instrument_items WHERE instrument_id = ? ORDER BY item_order, item_name");
+		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$items = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$items[] = ['id' => (int)$row['instrumentitem_id'], 'name' => $row['item_name']];
+		}
+		mysqli_stmt_close($stmt);
+		echo json_encode($items);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateMappingFlag ----------------- */
+	/* -------------------------------------------- */
+	function UpdateMappingFlag($mappingid, $flagname, $value) {
+		JsonHeader();
+		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
+		$allowed = ['flag_date_from_field', 'flag_can_repeat', 'flag_import_meta'];
+		if (!in_array($flagname, $allowed, true)) {
+			echo json_encode(['ok' => false, 'error' => 'invalid flag name']);
+			return;
+		}
+		$v = $value ? 1 : 0;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE remoteimport_mapping SET $flagname = ? WHERE remoteimportmapping_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $v, $mappingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['ok' => true]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SaveMapping ----------------------- */
+	/* -------------------------------------------- */
+	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_arm, $redcap_event, $redcap_form, $redcap_field, $redcap_datatype, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
+		JsonHeader();
+		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
+		$allowed_types = ['avicenna', 'redcap'];
+		if (!in_array($source_type, $allowed_types, true)) {
+			echo json_encode(['ok' => false, 'error' => 'invalid source_type']);
+			return;
+		}
+		$nidb_instrument_val   = $nidb_instrument   > 0 ? $nidb_instrument   : null;
+		$nidb_variable_val     = $nidb_variable     > 0 ? $nidb_variable     : null;
+		$avicenna_question_val      = $avicenna_question      > 0  ? $avicenna_question      : null;
+		$avicenna_variable_val      = $avicenna_variable     !== '' ? $avicenna_variable      : null;
+		$avicenna_variablecount_val = $avicenna_variablecount !== '' ? $avicenna_variablecount : null;
+		$avicenna_survey_val        = $avicenna_survey       !== '' ? $avicenna_survey        : null;
+		$avicenna_datasource_val    = $avicenna_datasource   !== '' ? $avicenna_datasource    : null;
+		$avicenna_datatype_val      = $avicenna_datatype     !== '' ? $avicenna_datatype      : null;
+
+		// For an Avicenna mapping, exactly one of survey / datasource is required.
+		if ($source_type === 'avicenna') {
+			$hasSurvey     = $avicenna_survey_val     !== null;
+			$hasDatasource = $avicenna_datasource_val !== null;
+			if ($hasSurvey === $hasDatasource) {
+				echo json_encode(['ok' => false, 'error' => $hasSurvey
+					? 'Enter a survey OR a datasource, not both'
+					: 'A survey or datasource is required']);
+				return;
+			}
+		}
+		$redcap_arm_val        = $redcap_arm        !== '' ? $redcap_arm        : null;
+		$redcap_event_val      = $redcap_event      !== '' ? $redcap_event      : null;
+		$redcap_form_val       = $redcap_form       !== '' ? $redcap_form       : null;
+		$redcap_field_val      = $redcap_field      !== '' ? $redcap_field      : null;
+		$allowed_dt = ['text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file'];
+		$redcap_datatype_val   = in_array($redcap_datatype, $allowed_dt, true) ? $redcap_datatype : null;
+		$redcap_datefield_val  = $redcap_datefield  !== '' ? $redcap_datefield  : null;
+		$fdf = $flag_date_from_field ? 1 : 0;
+		$fcr = $flag_can_repeat      ? 1 : 0;
+		$fim = $flag_import_meta     ? 1 : 0;
+
+		if ($mappingid > 0) {
+			// Update existing
+			$stmt = mysqli_prepare($GLOBALS['linki'],
+				"UPDATE remoteimport_mapping SET avicenna_question=?, avicenna_variable=?, avicenna_variablecount=?, avicenna_survey=?, avicenna_datasource=?, avicenna_datatype=?, redcap_arm=?, redcap_event=?, redcap_form=?, redcap_field=?, redcap_datatype=?, redcap_datefield=?, nidb_instrument=?, nidb_variable=?, flag_date_from_field=?, flag_can_repeat=?, flag_import_meta=? WHERE remoteimportmapping_id=? AND project_id=?");
+			mysqli_stmt_bind_param($stmt, 'iss' . 'sss' . 'ssssss' . 'iiiiiii',
+				$avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datasource_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim, $mappingid, $projectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			echo json_encode(['ok' => true, 'mappingid' => $mappingid]);
+		} else {
+			// Insert new
+			$stmt = mysqli_prepare($GLOBALS['linki'],
+				"INSERT INTO remoteimport_mapping (project_id, source_type, avicenna_question, avicenna_variable, avicenna_variablecount, avicenna_survey, avicenna_datasource, avicenna_datatype, redcap_arm, redcap_event, redcap_form, redcap_field, redcap_datatype, redcap_datefield, nidb_instrument, nidb_variable, flag_date_from_field, flag_can_repeat, flag_import_meta) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+			mysqli_stmt_bind_param($stmt, 'isiss' . 'sss' . 'ssssss' . 'iiiii',
+				$projectid, $source_type, $avicenna_question_val, $avicenna_variable_val, $avicenna_variablecount_val, $avicenna_survey_val, $avicenna_datasource_val, $avicenna_datatype_val, $redcap_arm_val, $redcap_event_val, $redcap_form_val, $redcap_field_val, $redcap_datatype_val, $redcap_datefield_val,
+				$nidb_instrument_val, $nidb_variable_val, $fdf, $fcr, $fim);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$newid = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+			echo json_encode(['ok' => true, 'mappingid' => (int)$newid]);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteMapping --------------------- */
+	/* -------------------------------------------- */
+	function DeleteMapping($mappingid) {
+		JsonHeader();
+		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $mappingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['ok' => true]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkDeleteMappings ---------------- */
+	/* -------------------------------------------- */
+	function BulkDeleteMappings($idsJson) {
+		JsonHeader();
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	/* ------- BulkDeleteItems ------------------- */
+	/* -------------------------------------------- */
+	function BulkDeleteItems($idsJson) {
+		JsonHeader();
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$deleted = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM instrument_items WHERE instrumentitem_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	function GetFileIOStatus($idsJson) {
+		JsonHeader();
+		$idArray = json_decode($idsJson, true);
+		if (!is_array($idArray) || count($idArray) === 0) {
+			echo json_encode([]);
+			return;
+		}
+		$cleanIds = array_filter(array_map('intval', $idArray), function($id) { return $id > 0; });
+		if (count($cleanIds) === 0) {
+			echo json_encode([]);
+			return;
+		}
+		$idList = implode(',', $cleanIds);
+		$sqlstring = "SELECT fileiorequest_id, request_status, request_message, startdate, enddate FROM fileio_requests WHERE fileiorequest_id IN ($idList)";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$rows = [];
+		if ($result && !is_array($result)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$duration = '';
+				$validStart = ($row['startdate'] !== '0000-00-00 00:00:00' && $row['startdate'] !== '');
+				$validEnd   = ($row['enddate']   !== '0000-00-00 00:00:00' && $row['enddate']   !== '');
+				if ($validStart && $validEnd) {
+					$diff = strtotime($row['enddate']) - strtotime($row['startdate']);
+					if ($diff > 0) {
+						$h = (int)floor($diff / 3600);
+						$m = (int)floor(($diff % 3600) / 60);
+						$s = (int)($diff % 60);
+						if ($h > 0)     $duration = "{$h}h {$m}m {$s}s";
+						elseif ($m > 0) $duration = "{$m}m {$s}s";
+						else            $duration = "{$s}s";
+					}
+				}
+				$rows[] = [
+					'fileiorequest_id' => (int)$row['fileiorequest_id'],
+					'request_status'   => $row['request_status'],
+					'request_message'  => $row['request_message'],
+					'enddate'          => $row['enddate'],
+					'duration'         => $duration,
+				];
+			}
+		}
+		echo json_encode($rows);
+	}
+
 ?>

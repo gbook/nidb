@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleManager.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -26,6 +26,10 @@
 /* ---------------------------------------------------------- */
 /* --------- moduleManager ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Initialize the module manager with the shared NiDB context.
+ * @param a NiDB application context used by Run() for logging and SQL access
+ */
 moduleManager::moduleManager(nidb *a)
 {
     n = a;
@@ -35,6 +39,9 @@ moduleManager::moduleManager(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- ~moduleManager --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Destroy the module manager.
+ */
 moduleManager::~moduleManager()
 {
 
@@ -44,12 +51,22 @@ moduleManager::~moduleManager()
 /* ---------------------------------------------------------- */
 /* --------- Run -------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find and clear module processes that have not checked in recently.
+ *
+ * The manager looks for module_procs rows whose last_checkin is older than
+ * three hours, skipping the backup and export modules because they can run
+ * for a long time. For each stale row it removes the corresponding lock file
+ * from the configured lock directory and deletes the database record.
+ *
+ * @return 1 when one or more stale modules were handled, or 0 if none were found
+ */
 int moduleManager::Run() {
     n->Log("Entering the fileio module");
 
     /* get list of modules with a last checkin older than 3 hours, ignore the backup module because writing tapes can take days, and ignore the export module because large exports can take many hours with no checkin */
     QSqlQuery q;
-    q.prepare("select * from module_procs where last_checkin < date_sub(now(), interval 3 hour) or last_checkin is null and module_name not in ('backup', 'export')");
+    q.prepare("select * from module_procs where (last_checkin < date_sub(now(), interval 3 hour) or last_checkin is null) and module_name not in ('backup', 'export')");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     if (q.size() > 0) {
@@ -73,6 +90,9 @@ int moduleManager::Run() {
             q2.bindValue(":modulename", modulename);
             q2.bindValue(":pid", pid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+
+            //QString message = QString("The %1 module was listed as running for more than 3 hours, and the following lock file was removed\n\n%2").arg(modulename).arg(lockfile);
+            //n->SendEmail(n->cfg["adminemail"], "NiDB module manager (terminated module)", message);
         }
     }
     else {

@@ -33,7 +33,7 @@ class dicom
 public:
     dicom();
 
-    bool LoadToSquirrel(QString dir, QString binpath, squirrel *sqrl);
+    bool LoadToSquirrel(QString dir, squirrel *sqrl);
 
     qint64 FileCount() { return numFiles; }
 

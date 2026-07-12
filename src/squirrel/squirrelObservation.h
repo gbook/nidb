@@ -42,8 +42,10 @@ public:
     QString Error() { return err; }
     QString GetDatabaseUUID() { return databaseUUID; }
     QString PrintObservation();
-    bool Get();             /* gets the object data from the database */
-    bool Store();           /* saves the object data from this object into the database */
+    bool Get();               /* gets the object data from the database */
+    bool Store();             /* saves the object data from this object into the database */
+    bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
     bool isValid() { return valid; }
     qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
@@ -60,6 +62,7 @@ public:
     QString Description;        /*!< extended observationment description */
     QString InstrumentName;     /*!< name of the instrument (test, assessment, etc) from which this observation came */
     QString ObservationName;    /*!< observation name (required) */
+    QString ObservationType;    /*!< type hint for the value: 'int', 'double', 'string', or 'timeseries' */
     QString Notes;              /*!< notes about the observation */
     QString Rater;              /*!< name or username of the person who rated the observation */
     QString Value;              /*!< value, in string or number stored as a string */

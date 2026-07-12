@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB importnonimaging.php
- // Copyright (C) 2004 - 2025
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -20,6 +20,9 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
+
+	/* these operations could take a long time, so extend the execution timeout */
+	set_time_limit(600);
 
 	define("LEGIT_REQUEST", true);
 
@@ -51,7 +54,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$projectid = GetVariable("projectid");
+	$projectid = (int)GetVariable("projectid");
 	$csv = GetVariable("csv");
 	$skipblankvalue = GetVariable("skipblankvalue");
 	$createmissingsubject = GetVariable("createmissingsubject");
@@ -94,6 +97,12 @@
 				<input type="hidden" name="action" value="newimport">
 				<div class="ui grid">
 
+					<div class="three wide column"><h3 class="ui grey right aligned header">CSV file(s)</h3></div>
+					<div class="thirteen wide column">
+						<div class="ui file input">
+							<input type="file" name="files[]" multiple>
+						</div>
+					</div>
 					<div class="three wide column"><h3 class="ui grey right aligned header">CSV formatted text</h3></div>
 					<div class="thirteen wide column">
 						<textarea name="csv"></textarea>
@@ -176,7 +185,7 @@
 		$skipblankvalue = mysqli_real_escape_string($GLOBALS['linki'], $skipblankvalue);
 		$createmissingsubject = mysqli_real_escape_string($GLOBALS['linki'], $createmissingsubject);
 
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project was blank. Please go back and select a project");
 			return;
 		}
@@ -184,76 +193,97 @@
 		if ($skipblankvalue == 1) { $skipblankvalue = true; } else { $skipblankvalue = false; }
 		if ($createmissingsubject == 1) { $createmissingsubject = true; } else { $createmissingsubject = false; }
 		
-		$csvdata = ParseCSV(trim($csv));
-		//PrintVariable($csvdata);
-		//return;
-		$rows = count($csvdata);
-		$cols = count(array_keys($csvdata[0]));
-		$cells = count($csvdata, COUNT_RECURSIVE);
-		?>
-		<div class="ui segment">
-			<p>Original csv contains <?=$rows?> rows x <?=$cols?> columns = <?=$cells?> cells</p>
-		<?
-		$colsAsVariables = false;
+		$csvs = array();
+		if ($csv != "") {
+			$csvs['Pasted'] = $csv;
+		}
+		foreach ($_FILES['files']['name'] as $i => $name) {
+			$csvs[$name] = file_get_contents($_FILES['files']['tmp_name'][$i]);
+		}
 		
-		foreach ($csvdata as $line) {
-			//PrintVariable($line);
-			/* reset all variables for this row */
-			$keys = array();
-			$id = "";
-			$name = "";
-			$value = "";
-			$type = "";
-			$instrument = "";
-			$notes = "";
-			$description = "";
-			$rater = "";
-			$startdate = "";
-			$enddate = "";
-			$duration = "";
-			$entrydate = "";
-			$createdate = "";
-			$modifydate = "";
-			foreach ($line as $key => $val) {
-				if (strtolower($key) == "id") { $id = $val; }
-				elseif (strtolower($key) == "name") { $name = $val; }
-				elseif (strtolower($key) == "value") { $value = $val; }
-				elseif (strtolower($key) == "type") { $type = $val; }
-				elseif (strtolower($key) == "instrument") { $instrument = $val; }
-				elseif (strtolower($key) == "notes") { $notes = $val; }
-				elseif (strtolower($key) == "description") { $description = $val; }
-				elseif (strtolower($key) == "rater") { $rater = $val; }
-				elseif (strtolower($key) == "startdate") {
-					$startdate = date('Y-m-d H:i:s', strtotime($val));
-				}
-				elseif (strtolower($key) == "enddate") {
-					$enddate = date('Y-m-d H:i:s', strtotime($val));
-				}
-				elseif (strtolower($key) == "duration") { $duration = $val; }
-				elseif (strtolower($key) == "entrydate") {
-					$entrydate = date('Y-m-d H:i:s', strtotime($val));
-				}
-				elseif (strtolower($key) == "createdate") {
-					$createdate = date('Y-m-d H:i:s', strtotime($val));
-				}
-				elseif (strtolower($key) == "modifydate") {
-					$modifydate = date('Y-m-d H:i:s', strtotime($val));
-				}
-				else {
-					/* not one of the keywords, so it must be a key/value pair */
-					$keys[$key] = $val;
-					$colsAsVariables = true;
-				}
-			}
-			/* fix any unknown data */
-			if ($type == "") { $type = "observation"; }
-			if ($startdate == "") { $startdate = "1900-01-01"; }
+		/* run through all of the CSV files and CSV pasted text */
+		foreach ($csvs as $name => $csv) {
 			
-			/* if there is a name/value in this row */
-			if ($name != "") {
-				if ($value == "") {
-					if (!$skipblankvalue) {
-						$data[$id][$type][$name][$startdate]['value'] = "";
+			$csvdata = ParseCSV(trim($csv));
+			$rows = count($csvdata);
+			$cols = count(array_keys($csvdata[0]));
+			$cells = count($csvdata, COUNT_RECURSIVE);
+			?>
+			<div class="ui segment">
+				<p>CSV [<?=$name?>] contains <?=$rows?> rows x <?=$cols?> columns = <?=$cells?> cells</p>
+			<?
+			$colsAsVariables = false;
+			
+			foreach ($csvdata as $line) {
+				/* reset all variables for this row */
+				$keys = array();
+				$id = "";
+				$name = "";
+				$value = "";
+				$type = "";
+				$instrument = "";
+				$notes = "";
+				$description = "";
+				$rater = "";
+				$startdate = "";
+				$enddate = "";
+				$duration = "";
+				$entrydate = "";
+				$createdate = "";
+				$modifydate = "";
+				foreach ($line as $key => $val) {
+					if (strtolower($key) == "id") { $id = $val; }
+					elseif (strtolower($key) == "name") { $name = $val; }
+					elseif (strtolower($key) == "value") { $value = $val; }
+					elseif (strtolower($key) == "type") { $type = $val; }
+					elseif (strtolower($key) == "instrument") { $instrument = $val; }
+					elseif (strtolower($key) == "notes") { $notes = $val; }
+					elseif (strtolower($key) == "description") { $description = $val; }
+					elseif (strtolower($key) == "rater") { $rater = $val; }
+					elseif (strtolower($key) == "startdate") {
+						$startdate = date('Y-m-d H:i:s', strtotime($val));
+					}
+					elseif (strtolower($key) == "enddate") {
+						$enddate = date('Y-m-d H:i:s', strtotime($val));
+					}
+					elseif (strtolower($key) == "duration") { $duration = $val; }
+					elseif (strtolower($key) == "entrydate") {
+						$entrydate = date('Y-m-d H:i:s', strtotime($val));
+					}
+					elseif (strtolower($key) == "createdate") {
+						$createdate = date('Y-m-d H:i:s', strtotime($val));
+					}
+					elseif (strtolower($key) == "modifydate") {
+						$modifydate = date('Y-m-d H:i:s', strtotime($val));
+					}
+					else {
+						/* not one of the keywords, so it must be a key/value pair */
+						$keys[$key] = $val;
+						$colsAsVariables = true;
+					}
+				}
+				/* fix any unknown data */
+				if ($type == "") { $type = "observation"; }
+				if ($startdate == "") { $startdate = "1900-01-01"; }
+				
+				/* if there is a name/value in this row */
+				if ($name != "") {
+					if ($value == "") {
+						if (!$skipblankvalue) {
+							$data[$id][$type][$name][$startdate]['value'] = "";
+							$data[$id][$type][$name][$startdate]['instrument'] = $instrument;
+							$data[$id][$type][$name][$startdate]['notes'] = $notes;
+							$data[$id][$type][$name][$startdate]['description'] = $description;
+							$data[$id][$type][$name][$startdate]['rater'] = $rater;
+							$data[$id][$type][$name][$startdate]['enddate'] = $enddate;
+							$data[$id][$type][$name][$startdate]['duration'] = $duration;
+							$data[$id][$type][$name][$startdate]['entrydate'] = $entrydate;
+							$data[$id][$type][$name][$startdate]['createdate'] = $createdate;
+							$data[$id][$type][$name][$startdate]['modifydate'] = $modifydate;
+						}
+					}
+					else {
+						$data[$id][$type][$name][$startdate]['value'] = $val;
 						$data[$id][$type][$name][$startdate]['instrument'] = $instrument;
 						$data[$id][$type][$name][$startdate]['notes'] = $notes;
 						$data[$id][$type][$name][$startdate]['description'] = $description;
@@ -265,45 +295,42 @@
 						$data[$id][$type][$name][$startdate]['modifydate'] = $modifydate;
 					}
 				}
-				else {
-					$data[$id][$type][$name][$startdate]['value'] = $val;
-					$data[$id][$type][$name][$startdate]['instrument'] = $instrument;
-					$data[$id][$type][$name][$startdate]['notes'] = $notes;
-					$data[$id][$type][$name][$startdate]['description'] = $description;
-					$data[$id][$type][$name][$startdate]['rater'] = $rater;
-					$data[$id][$type][$name][$startdate]['enddate'] = $enddate;
-					$data[$id][$type][$name][$startdate]['duration'] = $duration;
-					$data[$id][$type][$name][$startdate]['entrydate'] = $entrydate;
-					$data[$id][$type][$name][$startdate]['createdate'] = $createdate;
-					$data[$id][$type][$name][$startdate]['modifydate'] = $modifydate;
+				
+				/* if there are non-keyword columns */
+				if (count($keys) > 0) {
+					foreach ($keys as $key => $val) {
+						$data[$id][$type][$key][$startdate]['value'] = $val;
+						$data[$id][$type][$key][$startdate]['instrument'] = $instrument;
+						$data[$id][$type][$key][$startdate]['notes'] = $notes;
+						$data[$id][$type][$key][$startdate]['description'] = $description;
+						$data[$id][$type][$key][$startdate]['rater'] = $rater;
+						$data[$id][$type][$key][$startdate]['enddate'] = $enddate;
+						$data[$id][$type][$key][$startdate]['duration'] = $duration;
+						$data[$id][$type][$key][$startdate]['entrydate'] = $entrydate;
+						$data[$id][$type][$key][$startdate]['createdate'] = $createdate;
+						$data[$id][$type][$key][$startdate]['modifydate'] = $modifydate;
+					}
 				}
+			}
+			/* determine the type of csv we are parsing */
+			if ($colsAsVariables) {
+				$csvtype = "CSV format appears to be wide format (each row is a single subject, with multiple columns as variables)";
+			}
+			else {
+				$csvtype = "CSV format appears to be long format (each row is a variable)";
 			}
 			
-			/* if there are non-keyword columns */
-			if (count($keys) > 0) {
-				foreach ($keys as $key => $val) {
-					$data[$id][$type][$key][$startdate]['value'] = $val;
-					$data[$id][$type][$key][$startdate]['instrument'] = $instrument;
-					$data[$id][$type][$key][$startdate]['notes'] = $notes;
-					$data[$id][$type][$key][$startdate]['description'] = $description;
-					$data[$id][$type][$key][$startdate]['rater'] = $rater;
-					$data[$id][$type][$key][$startdate]['enddate'] = $enddate;
-					$data[$id][$type][$key][$startdate]['duration'] = $duration;
-					$data[$id][$type][$key][$startdate]['entrydate'] = $entrydate;
-					$data[$id][$type][$key][$startdate]['createdate'] = $createdate;
-					$data[$id][$type][$key][$startdate]['modifydate'] = $modifydate;
-				}
-			}
+			?>
+			<p><?=$csvtype?></p>
+			</div>
+			<?
 		}
-		//return;
-		
-		//PrintVariable($data);
+
 		?>
+		
 		<!-- Include the JS for AG Grid -->
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		
 		<?
-		//return;
 		
 		$ids = array();
 		$rowdata = array();
@@ -315,16 +342,12 @@
 			if (isset($ids[$id])) {
 				$subjectRowID = $ids[$id]['subjectRowID'];
 				$uid = $ids[$id]['uid'];
-				//echo ".";
 			}
 			else {
 				/* try to find the subject by ID */
-				//echo "calling GetSubjectRowIDByProject($id, $projectid)<br>";
-				
 				list ($subjectRowID, $uid) = GetSubjectRowIDByProject($id, $projectid);
 				$ids[$id]['subjectRowID'] = $subjectRowID;
 				$ids[$id]['uid'] = $subjectRowID;
-				//echo "+";
 			}
 			
 			foreach ($data1 as $type => $data2) {
@@ -349,48 +372,14 @@
 				}
 			}
 		}
-		//return;
 		$datatable = "";
 		$totalrows = count($rowdata);
 		if ($totalrows > 0) {
 			$datatable = implode(",", $rowdata);
 		}
-
-		/* determine the type of csv we are parsing */
-		if ($colsAsVariables) {
-			$csvtype = "CSV format appears to be wide format (each row is a single subject, with multiple columns as variables)";
-		}
-		else {
-			$csvtype = "CSV format appears to be long format (each row is a variable)";
-		}
-		
 		?>
-			<p><?=$csvtype?></p>
-			<p>Found <?=$totalrows?> <i>unique</i> data items to be imported.<br>Review data and click <b>Submit</b></p>
-		</div>
-		<?
+		<p>Found <?=$totalrows?> <i>unique</i> data items to be imported.<br>Review data and click <b>Submit</b></p>
 		
-		/* go through all the files and save them */
-		//foreach ($_FILES['imagingfiles']['name'] as $i => $name) {
-		//	$files[] = $name;
-		//	if (move_uploaded_file($_FILES['imagingfiles']['tmp_name'][$i], "$savepath/$name")) {
-				
-		//		$msg = "Received file [$name]. Size is [" . number_format($_FILES['imagingfiles']['size'][$i]) . "] bytes";
-		//		echo "<li>$msg";
-		//		chmod("$savepath/$name", 0777);
-				
-		//		AppendUploadLog($uploadid, $msg);
-		//	}
-		//	else {
-		//		$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
-		//		echo "<li>$msg";
-		//		$status = "uploaderror";
-				
-		//		AppendUploadLog($uploadid, $msg);
-		//	}
-		//}
-
-		?>
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<script type="text/javascript">
 			let gridApi;
@@ -411,7 +400,6 @@
 			}			
 
 			// Grid Options are properties passed to the grid
-			//import { themeBalham } from 'ag-grid-community';
 			const gridOptions = {
 				theme: agGrid.themeBalham,
 
@@ -455,6 +443,8 @@
 			});
 
 		</script>
+		
+		<!-- submission section -->
 		<div class="ui segment">
 			<div class="ui grid">
 				<div class="two wide column">
@@ -488,10 +478,10 @@
 	/* -------------------------------------------- */
 	function SubmitNewImport($csv, $projectid, $skipblankvalue, $createmissingsubject) {
 
+		/* large imports can exceed the default 30s limit */
+		set_time_limit(0);
+
 		$startTime = microtime(true);
-		
-		/* these inserts could take a long time, so extend the execution timeout */
-		set_time_limit(180);
 		
 		/* prepare fields for SQL */
 		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
@@ -529,7 +519,8 @@
 		//PrintVariable($csvdata);
 		$rows = count($csvdata);
 		$cols = count(array_keys($csvdata[0]));
-		$cells = count($csvdata, COUNT_RECURSIVE);
+		/* avoid COUNT_RECURSIVE which iterates every cell of a potentially huge array */
+		$cells = $rows * $cols;
 		?>
 		<div class="ui segment">
 			<h2 class="ui header">
@@ -544,7 +535,37 @@
 		//return;
 
 		$i=0;
-		$inserts = array();
+
+		/* build instrument and item lookup caches for this project */
+		$instrumentIdCache   = array();
+		$instrumentItemCache = array();
+		$sqlstring = "select instrument_id, instrument_name from instruments where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$instrumentIdCache[strtolower(trim($row['instrument_name']))] = (int)$row['instrument_id'];
+		}
+		if (count($instrumentIdCache) > 0) {
+			$iids = implode(',', array_values($instrumentIdCache));
+			/* store instrumentitem_id (not just true) so it can be used directly in the INSERT */
+			$sqlstring = "select instrument_id, instrumentitem_id, item_name from instrument_items where instrument_id in ($iids)";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$instrumentItemCache[(int)$row['instrument_id']][strtolower(trim($row['item_name']))] = (int)$row['instrumentitem_id'];
+			}
+		}
+
+		/* pre-load all enrollment IDs for this project in one query;
+		   eliminates a per-subject DB lookup for every row in the loop */
+		$sqlstring = "select enrollment_id, subject_id from enrollment where project_id = $projectid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentRowIDCache[$row['subject_id']] = $row['enrollment_id'];
+		}
+
+		/* PASS 1: resolve all subjects/enrollments and collect formatted observation insert strings.
+		   Keeping subject resolution separate from the insert phase allows PASS 2 to hold a
+		   table-level write lock on observations without interfering with other tables. */
+		$observationRows = array();
 
 		foreach ($csvdata as $line) {
 			/* reset all variables for this row */
@@ -639,61 +660,36 @@
 			}
 
 			if ($type == "observation") {
-				/* check if the value is numeric or string */
-				//if (is_numeric($value)) {
-				//	$observationtype = 'n';
-				//	$valuestring = '';
-				//	$valuenum = $value;
-				//}
-				//else {
-				//	$observationtype = 's';
-				//	$valuestring = $value;
-				//	$valuenum = '';
-				//}
-				
-				/* get the observationNameRowID (check the cache first) */
-				// if (isset($observationNameCache[$variablename])) {
-					// $observationNameRowID = $observationNameCache[$variablename];
-				// }
-				// else {
-					// $sqlstringA = "select observationname_id from observationnames where observation_name = '$variablename'";
-					// $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					// if (mysqli_num_rows($resultA) > 0) {
-						// $rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						// $observationNameRowID = $rowA['observationname_id'];
-					// }
-					// else {
-						// $sqlstringA = "insert into observationnames (observation_name) values ('$variablename')";
-						// $resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						// $observationNameRowID = mysqli_insert_id($GLOBALS['linki']);
-					// }
-					// /* update the observation name cache */
-					// $observationNameCache[$variablename] = $observationNameRowID;
-				// }
-				
 				/* fix any missing fields */
 				if (trim($rater) == "") $rater = "null";
 				else $rater = "'" . trim($rater) . "'";
 
-				if (trim($instrument) == "") $instrument = "null";
-				else $instrument = "'" . trim($instrument) . "'";
-				
+				/* resolve instrumentitem_id if instrument name and variable name both match existing DB records */
+				$resolvedItemId = "null";
+				$rawInstrument = trim($instrument);
+				if ($rawInstrument != "") {
+					$instrKey = strtolower($rawInstrument);
+					if (isset($instrumentIdCache[$instrKey])) {
+						$iid = $instrumentIdCache[$instrKey];
+						$itemKey = strtolower(trim($variablename));
+						if (isset($instrumentItemCache[$iid][$itemKey])) {
+							$resolvedItemId = $instrumentItemCache[$iid][$itemKey];
+						}
+					}
+				}
+
+				if ($rawInstrument == "") $instrument = "null";
+				else $instrument = "'" . mysqli_real_escape_string($GLOBALS['linki'], $rawInstrument) . "'";
+
 				if (trim($enddate) == "") $enddate = "null";
 				else $enddate = "'" . trim($enddate) . "'";
 
 				if (trim($startdate) == "") $startdate = "null";
 				else $startdate = "'" . trim($startdate) . "'";
-				
-				/* add to batch insert */
-				$inserts[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate)";
+
+				/* collect the formatted row for the bulk insert pass */
+				$observationRows[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate, $resolvedItemId)";
 				$numObservationsAdded++;
-				
-				if (count($inserts) >= 100) {
-					$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate) values " . implode(",", $inserts);
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$inserts = array();
-				}
 			}
 			
 			if ($type == "intervention") {
@@ -704,6 +700,26 @@
 			//if ($i > 1000)
 			//	break;
 		}
+		
+		/* PASS 2: bulk insert all collected observation rows.
+		   DISABLE KEYS defers non-unique index updates until ENABLE KEYS rebuilds them in
+		   one pass at the end, avoiding per-row index maintenance across 300k+ rows.
+		   LOCK TABLES holds the Aria table-level write lock for the entire insert phase
+		   instead of acquiring and releasing it once per batch. */
+		if (count($observationRows) > 0) {
+			MySQLiQuery("ALTER TABLE observations DISABLE KEYS", __FILE__, __LINE__);
+			MySQLiQuery("LOCK TABLES observations WRITE", __FILE__, __LINE__);
+
+			/* batch size of 1000 reduces round trips by 10x vs the previous 100-row batches */
+			foreach (array_chunk($observationRows, 1000) as $batch) {
+				$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrumentitem_id) values " . implode(",", $batch);
+				MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			}
+
+			MySQLiQuery("UNLOCK TABLES", __FILE__, __LINE__);
+			MySQLiQuery("ALTER TABLE observations ENABLE KEYS", __FILE__, __LINE__);
+		}
+		
 
 		//PrintVariable($subjectRowIDCache, "subjectRowIDCache");
 		//PrintVariable($enrollmentRowIDCache, "enrollmentRowIDCache");
@@ -740,8 +756,8 @@
 				<li><?=number_format($numInterventionsIgnored)?> intervention values skipped
 				<li><?=count($interventionNameCache)?> unique intervention variables
 				<br><br>
-				<li><?=count($subjectsCreated)?> subjects added
-				<li><?=count($subjectsNotFound)?> subjects not found
+				<li><?=$numSubjectsCreated?> subjects added
+				<li><?=$numSubjectsNotFound?> subjects not found
 				<br><br>
 				<li>Import took <?=number_format($elapsedTime,1)?> seconds
 			</ul>
@@ -806,7 +822,7 @@
 	/* ------- EnrollSubject ---------------------- */
 	/* -------------------------------------------- */
 	function EnrollSubject($subjectRowID, $projectid) {
-		if ($projectid == "") {
+		if ($projectid == 0) {
 			Error("Project not specified");
 			return null;
 		}
@@ -910,27 +926,38 @@
 				$numUniqueInterventionVariables = $row['numUniqueInterventionVariables'];
 				$importMessage = $row['importMessage'];
 				
-				if ($row['flagIgnoreEmptyCells']) { $flagIgnoreEmptyCells = "<i class='green large toggle on icon'></i>"; } else { $flagIgnoreEmptyCells = "<i class='gray large toggle off icon'></i>"; }
-				if ($row['flagCreateMissingSubjects']) { $flagCreateMissingSubjects = "<i class='green large toggle on icon'></i>"; } else { $flagCreateMissingSubjects = "<i class='gray large toggle off icon'></i>"; }
+				if ($row['flagIgnoreEmptyCells']) { $flagIgnoreEmptyCells = "<i class='green large check icon'></i>"; }
+				if ($row['flagCreateMissingSubjects']) { $flagCreateMissingSubjects = "<i class='green large check icon'></i>"; }
+
+				if ($numObservationsImported == 0) { $numObservationsImported = "-"; } else { $numObservationsImported = number_format($numObservationsImported); }
+				if ($numObservationsSkipped == 0) { $numObservationsSkipped = "-"; } else { $numObservationsSkipped = number_format($numObservationsSkipped); }
+				if ($numUniqueObservationVariables == 0) { $numUniqueObservationVariables = "-"; } else { $numUniqueObservationVariables = number_format($numUniqueObservationVariables); }
+				
+				if ($numInterventionsImported == 0) { $numInterventionsImported = "-"; } else { $numInterventionsImported = number_format($numInterventionsImported); }
+				if ($numInterventionsSkipped == 0) { $numInterventionsSkipped = "-"; } else { $numInterventionsSkipped = number_format($numInterventionsSkipped); }
+				if ($numUniqueInterventionVariables == 0) { $numUniqueInterventionVariables = "-"; } else { $numUniqueInterventionVariables = number_format($numUniqueInterventionVariables); }
+
+				if ($numSubjectsCreated == 0) { $numSubjectsCreated = "-"; } else { $numSubjectsCreated = number_format($numSubjectsCreated); }
+				if ($numSubjectsNotFound == 0) { $numSubjectsNotFound = "-"; } else { $numSubjectsNotFound = number_format($numSubjectsNotFound); }
 				
 				?>
 				<tr>
 					<td><?=$importdate?></td>
 					<td><?=$projectname?></td>
 					
-					<td><?=$flagIgnoreEmptyCells?></td>
-					<td><?=$flagCreateMissingSubjects?></td>
+					<td class="ui center aligned text"><?=$flagIgnoreEmptyCells?></td>
+					<td class="ui center aligned text"><?=$flagCreateMissingSubjects?></td>
 					
-					<td><?=number_format($numObservationsImported)?></td>
-					<td><?=number_format($numObservationsSkipped)?></td>
-					<td><?=number_format($numUniqueObservationVariables)?></td>
+					<td class="right aligned text"><?=$numObservationsImported?></td>
+					<td class="right aligned text"><?=$numObservationsSkipped?></td>
+					<td class="right aligned text"><?=$numUniqueObservationVariables?></td>
 					
-					<td><?=number_format($numInterventionsImported)?></td>
-					<td><?=number_format($numInterventionsSkipped)?></td>
-					<td><?=number_format($numUniqueInterventionVariables)?></td>
+					<td class="right aligned text"><?=$numInterventionsImported?></td>
+					<td class="right aligned text"><?=$numInterventionsSkipped?></td>
+					<td class="right aligned text"><?=$numUniqueInterventionVariables?></td>
 
-					<td><?=number_format($numSubjectsCreated)?></td>
-					<td><?=number_format($numSubjectsNotFound)?></td>
+					<td class="right aligned text"><?=$numSubjectsCreated?></td>
+					<td class="right aligned text"><?=$numSubjectsNotFound?></td>
 					
 					<td><?=$importMessage?></td>
 				</tr>

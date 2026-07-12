@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleManager.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -24,14 +24,33 @@
 #define MODULEMANAGER_H
 #include "nidb.h"
 
+/**
+ * @brief Maintenance helper that clears stale module process records.
+ *
+ * moduleManager scans module_procs for entries that have not checked in for
+ * several hours, removes their lock files, and deletes their database rows.
+ */
 class moduleManager
 {
 public:
-	moduleManager(nidb *a);
-	~moduleManager();
-	int Run();
+    /**
+     * @brief Construct a module manager bound to the active NiDB instance.
+     * @param a NiDB application context used for logging, SQL, and config access
+     */
+    moduleManager(nidb *a);
+
+    /**
+     * @brief Destroy the module manager.
+     */
+    ~moduleManager();
+
+    /**
+     * @brief Remove stale module lock files and database records.
+     * @return 1 if stale modules were processed, 0 if none were found
+     */
+    int Run();
 private:
-	nidb *n;
+    nidb *n;
 };
 
 #endif // MODULEMANAGER_H

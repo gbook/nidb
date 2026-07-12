@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB modulePipeline.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -44,29 +44,29 @@ struct pipelineStep {
 };
 
 struct dataDefinitionStep {
+    QString exportBehavioralDirectoryFormat;
+    QString exportBehavioralDirectoryName; //behdir;
+    QString exportDataFormat;
+    QString exportSubDirectoryName; //location;
+    QString searchAssociationType;
+    QString searchDataLevel;
+    QString searchImageType;
+    QString searchModality;
+    QString searchNumberBOLDReps; /* this is stored as a string comparison */
+    QString searchProtocol;
+    QString searchSeriesCriteria;
+    //QString type;
     int id;
-    int order;
-    QString type;
-    QString criteria;
-    QString assoctype;
-    QString protocol;
-    QString modality;
-    QString dataformat;
-    QString imagetype;
-    QString location;
-    QString behformat;
-    QString behdir;
-    QString numboldreps; /* this is stored as a string comparison */
-    QString level;
-    qint64 datadownloadid;
+    int stepNumber;
+    qint64 dataDownloadID;
 	struct flag {
-		bool enabled; /*!< whether this step is enabled */
-		bool optional; /*!< if the step is optional */
-		bool gzip; /*!< whether Nifti data should be zipped (.nii.gz) */
-		bool preserveSeries; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
-		bool primaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
-		bool usePhaseDir; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
-		bool useSeries; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+        bool exportPreserveSeriesNumber; /*!< whether to preserve the series number, if writing series directories. Otherwise the series directories are generated sequentially starting at 1 */
+        bool exportWritePhaseDirectory; /*!< whether to place data into a sub-directory based on the phase-encoding direction */
+        bool exportWriteSeriesDirectory; /*!< true to write each series to an individually numbered directory, otherwise write it to the directory specified in 'location' */
+        bool exportGzip; /*!< whether Nifti data should be zipped (.nii.gz) */
+        bool isEnabled; /*!< whether this step is enabled */
+        bool isOptional; /*!< if the step is optional */
+        bool isPrimaryProtocol; /*!< true if this is the primary protocol. this determines if this study will be used as the parent for child pipelines */
         bool behOnly; // download behavioral data only, no imaging data
 	} flags;
 };
@@ -82,7 +82,7 @@ public:
 
     QList<dataDefinitionStep> GetPipelineDataDef(int pipelineid, int version);
     QList<int> GetPipelineList();
-    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QString groupids, qint64 &runnum);
+    QList<int> GetStudyToDoList(int pipelineid, QString modality, int depend, QList<int> groupids, QList<int> projectids, qint64 &runnum);
     QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
     QString CheckDependency(int sid, int pipelinedep);
     QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);
@@ -90,8 +90,8 @@ public:
     bool GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
 
     /* logging and record-keeping */
-    bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, QString datatable, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
-    qint64 RecordDataDownload(qint64 id, qint64 analysisid, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
+    bool UpdateAnalysisStatus(qint64 analysisid, QString status, QString statusmsg, int jobid, int numseries, QString datalog, bool currentStartDate, bool currentEndDate, int supplementFlag, int rerunFlag);
+    qint64 RecordDataDownload(qint64 id, qint64 analysisRowID, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg);
     void ClearPipelineHistory();
     void RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 analysisid, QString event, QString message);
 
@@ -117,6 +117,7 @@ public:
 private:
     nidb *n;
     imageIO *img;
+    QElapsedTimer runTimer;
 };
 
 #endif // MODULEPIPELINE_H

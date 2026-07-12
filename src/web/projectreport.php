@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB projectreport.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -42,8 +42,8 @@
 
 	/* setup variables */
 	$action = GetVariable("action");
-	$enrollmentid = GetVariable("enrollmentid");
-	$projectid = GetVariable("projectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
+	$projectid = (int)GetVariable("projectid");
 	
 	switch ($action) {
 		case 'viewreport':
@@ -63,7 +63,7 @@
 	/* ----------------------------------------------- */
 	function ViewReport($enrollmentid) {
 		
-		if (($enrollmentid == "") || (!isInteger($enrollmentid))) {
+		if (($enrollmentid == 0) || (!isInteger($enrollmentid))) {
 			Error("Invalid or blank enrollment ID");
 		}
 		
@@ -185,7 +185,7 @@
 	/* ----------------------------------------------- */
 	function ViewProjectReport($projectid) {
 		
-		if (($projectid == "") || (!isInteger($projectid))) {
+		if (($projectid == 0) || (!isInteger($projectid))) {
 			Error("Invalid or blank project ID");
 		}
 

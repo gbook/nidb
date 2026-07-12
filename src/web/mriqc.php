@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB mrqcchecklist.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -42,8 +42,8 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
+	$id = (int)GetVariable("id");
+	$projectid = (int)GetVariable("projectid");
 
 	/* determine action */
 	switch ($action) {
@@ -148,12 +148,10 @@
 							if ((!is_null($value)) && ($value != ""))
 								$vals[$metric][] = $value;
 
-							//if ($value > ($stats[$metric]['max'] + 0.0))
-							//	$stats[$metric]['max'] = $value;
-							
-							if (is_numeric($value)) { $value = number_format($value, 3, '.', ''); }
+							if (is_numeric($value)) { $value = number_format($value, 3, '.', ''); } else { $value = "null"; }
 							$metric = str_replace("-", "_", $metric);
-							$rowstr .= ", $metric: \"$value\"";
+							$rowstr .= ", $metric: $value";
+							//$rowstr .= ", $metric: \"$value\"";
 						}
 						$rowstr .= " }";
 						$rowdata[] = $rowstr;
@@ -284,7 +282,7 @@
 										let colorGreen = (scaledWeight)*startGreen + (1.0 - scaledWeight)*endGreen;
 										let colorBlue = (scaledWeight)*startBlue + (1.0 - scaledWeight)*endBlue;
 
-										if (params.value == '') {
+										if ((params.value == '') || (params.value == null)) {
 											return { backgroundColor: `rgb(255, 255, 255)` };
 										}
 										else {
@@ -309,7 +307,7 @@
 					//rowMultiSelectWithClick: true,
 					animateRows: false, // have rows animate to new positions when sorted
 					//onFirstDataRendered: onFirstDataRendered,
-					stopEditingWhenCellsLoseFocus: true,
+					//stopEditingWhenCellsLoseFocus: true,
 					undoRedoCellEditing: true,
 					suppressMovableColumns: true,
 					autoSizeStrategy: { type: 'fitCellContents' }

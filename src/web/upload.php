@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB upload.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -200,8 +200,8 @@ class qqFileUploader {
 	
 /* params are stored in $_GET */
 $modality = strtolower(GetVariable("modality"));
-$studyid = GetVariable("studyid");
-$seriesid = GetVariable("seriesid");
+$studyid = (int)GetVariable("studyid");
+$seriesid = (int)GetVariable("seriesid");
 
 if ($modality == "mr") {
 	$uploadpath = $GLOBALS['dicomincomingpath'] . '/';

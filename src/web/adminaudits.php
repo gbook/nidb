@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminaudits.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -68,9 +68,6 @@
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayMenu($p) {
-		//$urllist['Administration'] = "adminaudits.php";
-		//$urllist['Audits'] = "adminaudits.php";
-		//NavigationBar("Admin", $urllist);
 		
 		?><b>Filter by problem type:</b> <a href="adminaudits.php?problemtype=">All</a><?
 		$sqlstring = "select distinct(problem) from audit_results where problem <> '' order by problem";

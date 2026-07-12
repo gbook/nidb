@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB pipelines.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -48,7 +48,7 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	
 	$viewname = GetVariable("viewname");
 	$viewlevel = GetVariable("viewlevel");
@@ -57,8 +57,8 @@
 	$viewenabled = GetVariable("viewenabled");
 	$viewhidden = GetVariable("viewhidden");
 	$viewall = GetVariable("viewall");
-	$viewuserid = GetVariable("viewuserid");
-	if ($viewuserid != "")
+	$viewuserid = (int)GetVariable("viewuserid");
+	if ($viewuserid != 0)
 		$_SESSION['viewuserid'] = $viewuserid;
 
 	$pipelinetitle = GetVariable("pipelinetitle");
@@ -82,7 +82,7 @@
 	$pipelineusetmpdir = GetVariable("pipelineusetmpdir");
 	$pipelinetmpdir = GetVariable("pipelinetmpdir");
 	$pipelinenotes = GetVariable("pipelinenotes");
-	$version = GetVariable("version");
+	$version = (int)GetVariable("version");
 	$completefiles = GetVariable("completefiles");
 	$dependency = GetVariable("dependency");
 	$deplevel = GetVariable("deplevel");
@@ -98,7 +98,7 @@
 	$bidsoutputdir = GetVariable("bidsoutputdir");
 
 	$newname = GetVariable("newname");
-	$newuserid = GetVariable("newuserid");
+	$newuserid = (int)GetVariable("newuserid");
 	
 	$commandlist = GetVariable("commandlist");
 	$supplementcommandlist = GetVariable("supplementcommandlist");
@@ -106,6 +106,7 @@
 	$dd_enabled = GetVariable("dd_enabled");
 	$dd_order = GetVariable("dd_order");
 	$dd_protocol = GetVariable("dd_protocol");
+	if (!is_array($dd_protocol)) $dd_protocol = array();
 	$dd_modality = GetVariable("dd_modality");
 	$dd_datalevel = GetVariable("dd_datalevel");
 	$dd_studyassoc = GetVariable("dd_studyassoc");
@@ -226,6 +227,10 @@
 			ExportPipeline($id);
 			DisplayPipelineForm("edit", $id, $returntab);
 			break;
+		case 'exportanalysisresults':
+			ExportAnalysisResults($id);
+			DisplayPipelineForm("edit", $id, $returntab);
+			break;
 		default:
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
 	}
@@ -265,7 +270,7 @@
 		$pipelineusetmpdir = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$ishidden = (int)mysqli_real_escape_string($GLOBALS['linki'], $ishidden);
+		$ishidden = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $ishidden));
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
@@ -312,8 +317,8 @@
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
 		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
-		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
+		$groupbysubject = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject));
+		$outputbids = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $outputbids));
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 
 		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
@@ -353,7 +358,7 @@
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultscript')";
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultsscript')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Updated pipeline_options table";
 		
@@ -503,7 +508,7 @@
 		for($i=0; $i<=count($dd_protocol); $i++) {
 			if (trim($dd_protocol[$i]) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]);
+				$dd_enabled[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]));
 				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
 				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
 				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
@@ -511,22 +516,22 @@
 				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
 				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
 				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);
-				$dd_gzip[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]);
+				$dd_gzip[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]));
 				$dd_location[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_location[$i]);
 				$dd_seriescriteria[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_seriescriteria[$i]);
 				$dd_numboldreps[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_numboldreps[$i]);
 				$dd_behformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behformat[$i]);
 				$dd_behdir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]);
-				$dd_optional[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]);
+				$dd_useseriesdirs[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]));
+				$dd_optional[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]));
 				//$dd_primary[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_primary[$i]) + 0;
-				$dd_preserveseries[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]);
-				$dd_usephasedir[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]);
-				$dd_behonly[$i] = (bool)mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]);
+				$dd_preserveseries[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]));
+				$dd_usephasedir[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]));
+				$dd_behonly[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]));
 				
 				if ($dd_isprimary == $dd_order[$i]) { $primary = "1"; } else { $primary = "0"; }
 				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', '$dd_gzip[$i]', '$dd_location[$i]', '$dd_useseriesdirs[$i]', '$dd_preserveseries[$i]', '$dd_usephasedir[$i]', '$dd_behonly[$i]', '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], '$dd_optional[$i]', '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
+				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', $dd_gzip[$i], '$dd_location[$i]', $dd_useseriesdirs[$i], $dd_preserveseries[$i], $dd_usephasedir[$i], $dd_behonly[$i], '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], $dd_optional[$i], '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
 				//PrintSQL($sqlstring);
 				$msg .= "<li>Inserted data definition [$dd_protocol[$i]]";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -576,8 +581,8 @@
 		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetmpdir));
 		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
 		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
-		$groupbysubject = (bool)mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject);
-		$outputbids = (bool)mysqli_real_escape_string($GLOBALS['linki'], $outputbids);
+		$groupbysubject = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject));
+		$outputbids = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $outputbids));
 		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
 		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
 		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
@@ -585,14 +590,19 @@
 		if (is_array($dependency)) {
 			$dependencies = implode(",",$dependency);
 		}
+		else { $dependencies = $dependency; }
+
 		if (is_array($groupid))
 			$groupids = implode2(",",$groupid);
+		else { $groupids = $groupid; }
 
 		if (is_array($projectid))
 			$projectids = implode2(",",$projectid);
-		
+		else { $projectids = $projectid; }
+
 		if (!ctype_alnum($pipelinetitle)) {
 			Error("Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters");
+			return -1;
 		}
 		
 		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
@@ -1044,16 +1054,22 @@
 		
 		if ($numproc == "") { $numproc = 1; }
 		
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		//NavigationBar("", $urllist);
+		/* perform validity checks on the pipeline */
+		if (($deplevel == "subject") && ($dependency != "") && ($groupid == "")) {
+			$checks['Dependency criteria']['level'] = 'error';
+			$checks['Dependency criteria']['message'] = "Subject dependency without group specified";
+			$checks['Dependency criteria']['description'] = "When using the Data & Scripts &rarr; Pipeline dependency &rarr; Matching criteria &rarr; subject, a group must be specified. Matching dependencies based on subject may result in far more analyses than expected, and thus a group must be specified to narrow down the matches";
+		}
+		else {
+			$checks['Dependency criteria']['level'] = 'ok';
+		}
+		
 	?>
 	
 		<script type="text/javascript">
 		
 			$(document).ready(function() {
 
-				//$('.menu .item').tab();
 				$('.tabular.menu .item').tab();
 				
 				$('.pageloading').hide();
@@ -1672,14 +1688,14 @@
 						</div>
 						<?
 							if ($numproc > 1) {
-								$checks['Concurrent&nbsp;jobs']['level'] = 'ok';
-								$checks['Concurrent&nbsp;jobs']['message'] = "More than 1 concurrent process";
-								$checks['Concurrent&nbsp;jobs']['description'] = "Jobs will run in parallel";
+								$checks['Concurrent jobs']['level'] = 'ok';
+								$checks['Concurrent jobs']['message'] = "More than 1 concurrent process";
+								$checks['Concurrent jobs']['description'] = "Jobs will run in parallel";
 							}
 							else {
-								$checks['Concurrent&nbsp;jobs']['level'] = 'warning';
-								$checks['Concurrent&nbsp;jobs']['message'] = "Only 1 concurrent process allowed";
-								$checks['Concurrent&nbsp;jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
+								$checks['Concurrent jobs']['level'] = 'warning';
+								$checks['Concurrent jobs']['message'] = "Only 1 concurrent process allowed";
+								$checks['Concurrent jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
 							}
 						?>
 					</td>
@@ -1877,7 +1893,7 @@
 				<h3 class="ui header">Options</h3>
 			</div>
 			<div class="ui attached segment">
-				<table class="entrytable">
+				<table class="entrytable ui table">
 					<tr>
 						<td class="label" valign="top">
 							Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i>
@@ -1986,7 +2002,8 @@
 							Study Group(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY on the studies in the specified groups"></i><br>
 							<span class="level2" style="color:darkred; font-size:8pt; font-weight:normal"> Second level must have<br> at least one group.<br>Group(s) must be identical to<br>first level <b>dependency's</b> group(s)</span>
 						</td>
-						<td valign="top">
+						<td valign="top" class="right red marked">
+							
 							<select name="groupid[]" id="groupid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($groupid == "") { echo "selected"; } ?>>(Select group)</option>
 								<?
@@ -2010,11 +2027,12 @@
 									}
 								?>
 							</select>
+							<div class="ui basic red left pointing label">If a group and project are selected, then only studies that exist in BOTH will be selected to run</div>
 						</td>
 					</tr>
 					<tr class="level1">
 						<td class="label" valign="top">Project(s) <i class="grey question outline circle icon" title="Perform this analysis ONLY<br>on the studies in the specified project(s)"></i></td>
-						<td valign="top">
+						<td valign="top" class="right red marked">
 							<select name="projectid[]" id="projectid" <?=$disabled?> multiple="multiple" class="ui dropdown">
 								<option value="" <? if ($projectid == "") { echo "selected"; } ?>>(Select project)</option>
 								<?
@@ -2696,6 +2714,7 @@
 				}
 				else {
 					$checks['Primary data item']['level'] = 'ok';
+					$checks['Primary data item']['description'] = "A primary data item must be specified. This determines the root imaging study from which other data can be associated and downloaded.";
 				}
 				
 				if ($blankmodality == true) {
@@ -2705,6 +2724,7 @@
 				}
 				else {
 					$checks['Blank modality']['level'] = 'ok';
+					$checks['Blank modality']['description'] = "Modality must be specified for all data items";
 				}
 				
 			?>
@@ -2923,50 +2943,191 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		<!-- ---------- operations tab ---------- -->
 		
-		<div class="ui bottom attached <?=$tab_fouractive?> tab raised segment" data-tab="fourth">
-			<p><a class="ui button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" style="width:250px" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')" title="This will remove any entries in the database for studies which were not analyzed. If you change your data specification, you will want to reset the analyses. This option does not remove existing analyses, it only removes the flag set for studies that indicates the study has been checked for the specified data"><i class="redo alternate icon"></i> Reset ignored studies</a>
-			</p>
-			<p><a href="#" class="ui button" style="width:250px" onClick="GetNewPipelineName();"><i class="copy icon"></i> Copy to new pipeline...</a></p>
-			<? if (!$readonly) { ?>
-			<p>
-			<form action="pipelines.php" method="post">
-			<input type="hidden" name="action" value="changeowner">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="returntab" value="operations">
-			<div class="ui labeled action input">
-				<label for="modality" class="ui label grey"><i class="exchange alternate icon"></i> New pipeline owner</label>
-				<select class="ui selection dropdown" name="newuserid" id="newuserid" required>
-				<option value="">(Select new owner)</option>
-				<?
-					$sqlstring="select * from users where user_enabled = 1 order by username";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$userid = $row['user_id'];
-						$username = $row['username'];
-						$userfullname = $row['user_fullname'];
-						if ($username != "") {
-							if ($userfullname != "") {
-								$userfullname = "[$userfullname]";
-							}
-							?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
-						}
-					}
-				?>
-				</select>
-				<button class="ui button" type="submit">Change</button>
+		<div class="ui bottom attached <?=$tab_fouractive?> tab centered very padded raised segment" data-tab="fourth">
+		
+		<div class="ui centered cards">
+		
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="redo alternate icon"></i>
+						Reset ignored studies
+					</div>
+					<div class="description">
+						<p>All studies in NiDB are 'checked' if they match criteria for this pipeline, otherwise they are flagged so they are not checked again. This will reset those flags so previously ignored studies will be checked again.</p>
+					</div>
+				</div>
+				<a class="ui primary button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')">Reset</a>
 			</div>
-			</form>
-			</p>
-			<br>
-			<p><a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui button" style="width:250px" title="This pipeline will be exported in squirrel format as a web download"><i class="file export icon"></i> Export pipeline</a></p>
-			<br>
-			<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button" style="width:250px"><img src="images/squirrel-icon-bw-64.png" height="15" style="filter:invert(1)"></img> &nbsp; Add to Package</a>
-			<br><br>
-			<p><a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" style="width:250px" onclick="return confirm('Are you sure you want to completely detach this pipeline?')" title="This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify"><i class="unlock alternate icon"></i> Detach pipeline</a></p>
-			<p><a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" style="width:250px" onclick="return confirm('Are you sure you want to delete this pipeline?')"><i class="trash alternate icon"></i> Delete this pipeline</a></p>
+			
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="copy icon"></i>
+						Copy to new pipeline
+					</div>
+					<div class="description">
+						Create a new pipeline using this pipeline as a template
+					</div>
+				</div>
+				<div class="ui primary button" onClick="GetNewPipelineName();">
+					Copy...
+				</div>
+			</div>
+			
+			<? if (!$readonly) { ?>
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="exchange alternate icon"></i>
+						Change pipeline owner
+					</div>
+					<div class="description">
+						Change the owner of this pipeline
+						<p>
+							<form action="pipelines.php" method="post" name="changeOwnerForm">
+							<input type="hidden" name="action" value="changeowner">
+							<input type="hidden" name="id" value="<?=$id?>">
+							<input type="hidden" name="returntab" value="operations">
+							<select class="ui selection dropdown" name="newuserid" id="newuserid" required>
+							<option value="">(Select new owner)</option>
+							<?
+								$sqlstring="select * from users where user_enabled = 1 order by username";
+								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									$userid = $row['user_id'];
+									$username = $row['username'];
+									$userfullname = $row['user_fullname'];
+									if ($username != "") {
+										if ($userfullname != "") {
+											$userfullname = "[$userfullname]";
+										}
+										?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+									}
+								}
+							?>
+							</select>
+						</p>
+					</div>
+				</div>
+				<div class="ui primary button" onClick="document.changeOwnerForm.submit()">
+					Change...
+				</div>
+				</form>
+			</div>
 			<? } ?>
-		</div>
 
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="file export icon"></i>
+						Export pipeline
+					</div>
+					<div class="description">
+						Export this pipeline in squirrel format as a web download
+					</div>
+				</div>
+				<a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui primary button">Export pipeline</a>
+			</div>
+
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="file export icon"></i>
+						Export analysis results
+					</div>
+					<div class="description">
+						<p>Export all analysis results to a csv file.</p>
+						
+						<p>Previous exports</p>
+						<table class="ui very compact small head stuck short scrolling table">
+							<thead>
+								<th>Date</th>
+								<th>Status</th>
+								<th>Size</th>
+								<th>Get</th>
+							</thead>
+						<?
+							$sqlstring = "select * from export_nonimaging where export_status in ('submitted','pending','processing','complete','error') and (export_deletedate is null or export_deletedate > now()) and pipeline_id = $id";
+							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$exportRowID = $row['exportnonimaging_id'];
+								$exportStatus = $row['export_status'];
+								$exportStatusMessage = $row['export_statusmessage'];
+								$startDate = date('M m, Y', strtotime($row['export_startdate']));
+								$endDate = $row['export_enddate'];
+								$numCols = $row['export_numcols'];
+								$numRows = $row['export_numrows'];
+								$exportSize = HumanReadableFilesize($row['export_size']);
+								$exportFilePath = $row['export_filepath'];
+								
+								if (($exportStatus == "submitted") || ($exportStatus == "pending") || ($exportStatus == "processing")) { $exportStatus = "<i class='spinner loading icon'></i>"; }
+								if ($exportStatus == "complete") { $exportStatus = "<i class='green check icon'></i>"; }
+								if ($exportStatus == "error") { $exportStatus = "<i class='red exclamation triangle icon'></i>"; }
+								
+								?>
+								<tr>
+									<td><?=$startDate?></td>
+									<td title="<?=$exportStatusMessage?>"><?=$exportStatus?></td>
+									<td><?=$exportSize?></td>
+									<td>
+										<? if ($exportFilePath != "") { ?>
+										<a href="getfile.php?action=download&file=<?=$exportFilePath?>"><i class="arrow alternate circle down icon"></i></a>
+										<? } ?>
+									</td>
+								</tr>
+								<?
+							}
+						?>
+						</table>
+					</div>
+				</div>
+				<a href="pipelines.php?action=exportanalysisresults&id=<?=$id?>&returntab=operations" class="ui primary button">Export analysis</a>
+			</div>
+
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<em data-emoji=":chipmunk:"></em>
+						Add to squirrel package
+					</div>
+					<div class="description">
+						Add this pipeline to an existing squirrel package
+					</div>
+				</div>
+				<a href="packages.php?action=addobject&objecttype=pipeline&objectids[]=<?=$id?>" class="ui primary brown button">Add to Package</a>
+			</div>
+
+			<!--<div class="raised disabled card">
+				<div class="content">
+					<i class="right floated unlock icon"></i>
+					<div class="header">Detach pipeline</div>
+					<div class="description">
+						This will completely inactivate the pipeline and remove all analyses from the pipeline control. Since the data will no longer be under pipeline control, all analysis results will be deleted. All analysis data will be moved to the directory you specify
+					</div>
+				</div>
+				<a href="pipelines.php?action=detach&id=<?=$id?>&returntab=operations" class="ui disabled red button" onclick="return confirm('Are you sure you want to completely detach this pipeline?')">Detach</a>
+			</div>-->
+		</div>
+		
+		<div class="ui centered cards">
+		
+			<div class="red raised card">
+				<div class="content">
+					<div class="red header">
+						<i class="red alternate trash icon"></i>
+						Delete pipeline
+					</div>
+					<div class="description">
+						Delete this entire pipeline and all data
+					</div>
+				</div>
+				<a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" onclick="return confirm('Are you sure you want to delete this pipeline?')">Delete</a>
+			</div>
+			
+		</div>
+		</div>
+		
 		<!-- ---------- checks tab ---------- -->
 		
 		<div class="ui bottom attached <?=$tab_fiveactive?> tab raised segment" data-tab="fifth">
@@ -2977,6 +3138,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 					<th>Description</th>
 				</thead>
 				<?
+					$pipelineErrors = 0;
+					ksort($checks);
 					foreach ($checks as $check => $value) {
 						if ($value['level'] == 'ok') {
 							$color = "green";
@@ -2989,6 +3152,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						else {
 							$color = "red";
 							$icon = "exclamation circle";
+							$pipelineErrors++;
 						}
 						
 						?>
@@ -3009,6 +3173,20 @@ echo "#$ps_command     $logged $ps_desc\n";
 					}
 				?>
 			</table>
+			<?
+				if ($pipelineErrors > 0) {
+					?>
+					<script type="text/javascript">
+						const checksTab = document.getElementById('checkTabTitle');
+
+						checksTab.style.backgroundColor = '#F00';
+						checksTab.style.color = '#FFF';
+						checksTab.style.borderRadius = '0.28571429rem 0.28571429rem 0 0';
+						checksTab.innerHTML = '<i class="exclamation triangle icon"></i> <?=$pipelineErrors?> error(s)';
+					</script>
+					<?
+				}
+			?>
 		</div>
 		
 		<? } ?>
@@ -3056,13 +3234,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['pipeline_name'];
 		$desc = $row['pipeline_desc'];
-		if ($version == "") {
+		if ($version == 0) {
 			$version = $row['pipeline_version'];
 		}
-		
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist[$title] = "pipelines.php?action=editpipeline&id=$id";
-		//NavigationBar("$title", $urllist);
 
 		?>
 		<form method="post" action="pipelines.php" name="versionform">
@@ -3108,7 +3282,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 						$deplinktype = $row['pipeline_deplinktype'];
 						$groupid = $row['pipeline_groupid'];
 						$projectid = $row['pipeline_projectid'];
-						$grouptype = $row['pipeline_grouptype'];
+						//$grouptype = $row['pipeline_grouptype'];
 						$groupbysubject = $row['pipeline_groupbysubject'];
 						$outputbids = $row['pipeline_outputbids'];
 						$bidsoutputdir = $row['pipeline_bidsoutputdir'];
@@ -3290,10 +3464,6 @@ echo "#$ps_command     $logged $ps_desc\n";
 	
 		MarkTime("DisplayPipelineUsage()");
 	
-		$urllist['Pipelines'] = "pipelines.php";
-		$urllist['New Pipeline'] = "pipelines.php?action=addform";
-		//NavigationBar("Pipelines", $urllist);
-		
 		$username = $GLOBALS['username'];
 		
 		global $imgdata;
@@ -3359,16 +3529,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid) {
 	
 		MarkTime("DisplayPipelineTree()");
-	
-		//$urllist['Pipelines'] = "pipelines.php";
-		//$urllist['New Pipeline'] = "pipelines.php?action=addform";
-		//NavigationBar("Pipelines", $urllist);
 		
 		$username = $GLOBALS['username'];
 		$viewuserid = $_SESSION['viewuserid'];
 		
 		if ($viewuserid != "all") {
-			if (($viewuserid == "") || ($viewuserid < 0)) {
+			if (($viewuserid == 0) || ($viewuserid < 0)) {
 				$viewuserid = $GLOBALS['userid'];
 			}
 		}
@@ -4192,6 +4358,31 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		Notice("Pipeline queued for export. Download squirrel file from the <a href='requeststatus.php'>Exports</a> page");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ExportAnalysisResults -------------- */
+	/* -------------------------------------------- */
+	function ExportAnalysisResults($id) {
+		/* web, squirrel, pipeline only */
+
+		$ip = getenv('REMOTE_ADDR');
+		$username = $_SESSION['username'];
+		
+		/* get pipeline details */
+		$sqlstring = "select * from pipelines where pipeline_id = $id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$pipelinename = $row['pipeline_name'];
+		
+		$pipelinename = mysqli_real_escape_string($GLOBALS['linki'], $pipelinename);
+		
+		$sqlstring = "insert into export_nonimaging (username, ip, export_type, pipeline_id, export_destinationtype, export_status, export_statusmessage, export_startdate) values ('$username', '$ip', 'analysisresults', $id, 'web', 'submitted', 'Submitted analysis results export for $pipelinename', now())";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		
+		Notice("Analysis results queued for export. Download from this page.");
 	}
 	
 ?>

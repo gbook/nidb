@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB getfile.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -21,84 +21,136 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-if ($_POST["file"] == "") { $file = $_GET["file"]; } else { $file = $_POST["file"]; }
-if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
+define("LEGIT_REQUEST", true);
+	
+session_start();
+
+require "functions.php";
+require "includes_php.php";
+
+$action = GetVariable("action");
+$file   = GetVariable("file");
+$fileid = (int)GetVariable("fileid");
+
+/* ── serve a file blob stored in the 'files' table ── */
+if ($fileid > 0) {
+	$download = (GetVariable("download") === '1');
+
+	$stmt = mysqli_prepare($GLOBALS['linki'], "select file_name, file_contenttype, file_blob, file_size from files where file_id = ?");
+	mysqli_stmt_bind_param($stmt, 'i', $fileid);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	mysqli_stmt_close($stmt);
+
+	if (!$row) {
+		http_response_code(404);
+		exit('File not found');
+	}
+
+	$contentType = $row['file_contenttype'] ?: 'application/octet-stream';
+	$fileName    = $row['file_name']        ?: 'file';
+	$blob        = $row['file_blob'];
+
+	header('Content-Type: '   . $contentType);
+	header('Content-Length: ' . strlen($blob));
+	header('Cache-Control: private, max-age=3600');
+	header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . addslashes($fileName) . '"');
+	echo $blob;
+	exit;
+}
 
 if ($file != "") {
-	if (file_exists($file)) {
-		if ($action == "download") {
-			$filename = basename($file);
-			
-			header("Pragma: public");
-			header("Expires: 0");
-			header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-			header("Cache-Control: public");
-			header("Content-Description: File Transfer");
-			header("Content-type: application/x-gzip");
-			header("Content-Disposition: attachment; filename=\"$filename\"");
-			header("Content-Transfer-Encoding: binary");
-			header("Content-Length: " . filesize($file));
-			
-			//header("Content-Description: File Transfer");
-			//header("Content-Disposition: attachment; filename=$filename");
-			//header("Content-Type: application/octet-stream");
-			////header("Content-type: ".mime_content_type($file)); 
-			//header("Content-length: " . filesize($file) . "\n\n");
-			//header("Content-Transfer-Encoding: binary");
-			
-			ob_end_flush();
-			readfile($file);
-		}
-		else {
-			$pathparts = pathinfo($file);
-			$ext = strtolower($pathparts['extension']);
-			
-			switch ($ext) {
-				case "png":
-					$im = imagecreatefrompng($file);
-					header('Content-type: image/png');
-					imagepng($im);
-					imagedestroy($im);
-					break;
-				case "gif":
-					$im = imagecreatefromgif($file);
-					header('Content-type: image/gif');
-					//imagegif($im);
-					echo file_get_contents($image);
-					imagedestroy($im);
-					break;
-				case "jpg":
-					$im = imagecreatefromjpg($file);
-					header('Content-type: image/jpg');
-					imagejpg($im);
-					imagedestroy($im);
-					break;
-				case "wmv":
-					header('Content-type: video/x-ms-wmv');
-					readfile($file);
-					break;
-				case "ogv":
-					header('Content-type: video/ogg');
-					readfile($file);
-					break;
-				case "ogg":
-					header('Content-type: video/ogg');
-					readfile($file);
-					break;
-				case "mp4":
-					header('Content-type: video/mp4');
-					readfile($file);
-					break;
-				case "flv":
-					header('Content-type: video/x-flv');
-					readfile($file);
-					break;
-				default:
-					echo "no match for [$ext] extension";
+
+	$archivePath = $GLOBALS['cfg']['archivedir'];
+	$mountPath = $GLOBALS['cfg']['mountdir'];
+	
+	/* file must live within the archive directory or mount directory.
+	   realpath() resolves symlinks and ../ so traversal like archivedir/../../etc/passwd is rejected */
+	$realFile = realpath($file);
+	$realArchive = realpath($archivePath);
+	$realMount = realpath($mountPath);
+	$inArchive = (($realFile !== false) && ($realArchive !== false) && (strpos($realFile, $realArchive . DIRECTORY_SEPARATOR) === 0));
+	$inMount   = (($realFile !== false) && ($realMount !== false) && (strpos($realFile, $realMount . DIRECTORY_SEPARATOR) === 0));
+	if ($inArchive || $inMount) {
+		$file = $realFile;
+		if (file_exists($file)) {
+			if ($action == "download") {
+				$filename = basename($file);
+				
+				header("Pragma: public");
+				header("Expires: 0");
+				header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
+				header("Cache-Control: public");
+				header("Content-Description: File Transfer");
+				header("Content-type: application/x-gzip");
+				header("Content-Disposition: attachment; filename=\"$filename\"");
+				header("Content-Transfer-Encoding: binary");
+				header("Content-Length: " . filesize($file));
+				
+				//header("Content-Description: File Transfer");
+				//header("Content-Disposition: attachment; filename=$filename");
+				//header("Content-Type: application/octet-stream");
+				////header("Content-type: ".mime_content_type($file)); 
+				//header("Content-length: " . filesize($file) . "\n\n");
+				//header("Content-Transfer-Encoding: binary");
+				
+				ob_end_flush();
+				readfile($file);
+			}
+			else {
+				$pathparts = pathinfo($file);
+				$ext = strtolower($pathparts['extension']);
+				
+				switch ($ext) {
+					case "png":
+						$im = imagecreatefrompng($file);
+						header('Content-type: image/png');
+						imagepng($im);
+						imagedestroy($im);
+						break;
+					case "gif":
+						$im = imagecreatefromgif($file);
+						header('Content-type: image/gif');
+						imagegif($im);
+						echo file_get_contents($image);
+						imagedestroy($im);
+						break;
+					case "jpg":
+						$im = imagecreatefromjpg($file);
+						header('Content-type: image/jpg');
+						imagejpg($im);
+						imagedestroy($im);
+						break;
+					case "wmv":
+						header('Content-type: video/x-ms-wmv');
+						readfile($file);
+						break;
+					case "ogv":
+						header('Content-type: video/ogg');
+						readfile($file);
+						break;
+					case "ogg":
+						header('Content-type: video/ogg');
+						readfile($file);
+						break;
+					case "mp4":
+						header('Content-type: video/mp4');
+						readfile($file);
+						break;
+					case "flv":
+						header('Content-type: video/x-flv');
+						readfile($file);
+						break;
+					default:
+						echo "no match for [$ext] extension";
+				}
 			}
 		}
+		else { echo "file [$file] does not exist"; }
 	}
-	else { echo "file [$file] does not exist"; }
+	else {
+		echo "$file does not start with archive path";
+	}
 }
 else { echo "filename was blank"; }
 ?>

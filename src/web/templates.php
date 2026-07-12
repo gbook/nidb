@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB minipipeline.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -52,9 +52,9 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$templateid = GetVariable("templateid");
-	$projectid = GetVariable("projectid");
-	$ptid = GetVariable("ptid");
+	$templateid = (int)GetVariable("templateid");
+	$projectid = (int)GetVariable("projectid");
+	$ptid = (int)GetVariable("ptid");
 	$newtemplatename = GetVariable("newtemplatename");
 	$newtemplatemodality = GetVariable("newtemplatemodality");
 	$visittype = GetVariable("visittype");

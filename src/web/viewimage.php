@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB viewimage.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -41,12 +41,12 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$seriesid = GetVariable("seriesid");
+	$seriesid = (int)GetVariable("seriesid");
 	$intype = GetVariable("type");
 	$modality = GetVariable("modality");
 	$filename = GetVariable("filename");
 	
-	if ($seriesid != '') {
+	if ($seriesid != 0) {
 		/* get the path to the data */
 		$sqlstring = "select a.*, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = $seriesid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

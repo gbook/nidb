@@ -29,6 +29,10 @@
 /* ------------------------------------------------------------ */
 /* ----- subject ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Constructor
+ * @param dbID UUID of the database connection to use
+ */
 squirrelSubject::squirrelSubject(QString dbID)
 {
     databaseUUID = dbID;
@@ -42,6 +46,31 @@ squirrelSubject::squirrelSubject(QString dbID)
     debug = false;
     objectID = -1;
     subjectDirFormat = "orig";
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Populate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Populate object fields from a database query result row
+ * @param q an executed QSqlQuery positioned at the row to read
+ */
+void squirrelSubject::Populate(const QSqlQuery &q) {
+    objectID         = q.value("SubjectRowID").toLongLong();
+    AlternateIDs     = q.value("AltIDs").toString().split(",");
+    DateOfBirth      = q.value("DateOfBirth").toDate();
+    EnrollmentGroup  = q.value("EnrollmentGroup").toString();
+    EnrollmentStatus = q.value("EnrollmentStatus").toString();
+    Ethnicity1       = q.value("Ethnicity1").toString();
+    Ethnicity2       = q.value("Ethnicity2").toString();
+    GUID             = q.value("GUID").toString();
+    Gender           = q.value("Gender").toString();
+    ID               = q.value("ID").toString();
+    Notes            = q.value("Notes").toString();
+    SequenceNumber   = q.value("SequenceNumber").toInt();
+    Sex              = q.value("Sex").toString();
+    valid = true;
 }
 
 
@@ -67,21 +96,7 @@ bool squirrelSubject::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
-        /* get the data */
-        objectID = q.value("SubjectRowID").toLongLong();
-        AlternateIDs = q.value("AltIDs").toString().split(",");
-        DateOfBirth = q.value("DateOfBirth").toDate();
-        Ethnicity1 = q.value("Ethnicity1").toString();
-        Ethnicity2 = q.value("Ethnicity2").toString();
-        GUID = q.value("GUID").toString();
-        Gender = q.value("Gender").toString();
-        ID = q.value("ID").toString();
-        Notes = q.value("Notes").toString();
-        SequenceNumber = q.value("SequenceNumber").toInt();
-        Sex = q.value("Sex").toString();
-
-        valid = true;
+        Populate(q);
         return true;
     }
     else {
@@ -109,7 +124,7 @@ bool squirrelSubject::Store() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, Notes, SequenceNumber, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :Notes, :SequenceNumber, :VirtualPath)");
+        q.prepare("insert or ignore into Subject (ID, AltIDs, GUID, DateOfBirth, Sex, Gender, Ethnicity1, Ethnicity2, EnrollmentGroup, EnrollmentStatus, Notes, SequenceNumber, VirtualPath) values (:ID, :AltIDs, :GUID, :DateOfBirth, :Sex, :Gender, :Ethnicity1, :Ethnicity2, :EnrollmentGroup, :EnrollmentStatus, :Notes, :SequenceNumber, :VirtualPath)");
         q.bindValue(":ID", ID);
         q.bindValue(":AltIDs", AlternateIDs.join(","));
         q.bindValue(":GUID", GUID);
@@ -118,6 +133,8 @@ bool squirrelSubject::Store() {
         q.bindValue(":Gender", Gender);
         q.bindValue(":Ethnicity1", Ethnicity1);
         q.bindValue(":Ethnicity2", Ethnicity2);
+        q.bindValue(":EnrollmentGroup", EnrollmentGroup);
+        q.bindValue(":EnrollmentStatus", EnrollmentStatus);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
@@ -126,7 +143,7 @@ bool squirrelSubject::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Subject set ID = :ID, AltIDs = :AltIDs, GUID = :GUID, DateOfBirth = :DateOfBirth, Sex = :Sex, Gender = :Gender, Ethnicity1 = :Ethnicity1, Ethnicity2 = :Ethnicity2, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where SubjectRowID = :id");
+        q.prepare("update Subject set ID = :ID, AltIDs = :AltIDs, GUID = :GUID, DateOfBirth = :DateOfBirth, Sex = :Sex, Gender = :Gender, Ethnicity1 = :Ethnicity1, Ethnicity2 = :Ethnicity2, EnrollmentGroup = :EnrollmentGroup, EnrollmentStatus = :EnrollmentStatus, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where SubjectRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":ID", ID);
         q.bindValue(":AltIDs", AlternateIDs.join(","));
@@ -136,12 +153,42 @@ bool squirrelSubject::Store() {
         q.bindValue(":Gender", Gender);
         q.bindValue(":Ethnicity1", Ethnicity1);
         q.bindValue(":Ethnicity2", Ethnicity2);
+        q.bindValue(":EnrollmentGroup", EnrollmentGroup);
+        q.bindValue(":EnrollmentStatus", EnrollmentStatus);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Bind this subject's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
+bool squirrelSubject::Store(QSqlQuery &q) {
+    q.bindValue(":ID", ID);
+    q.bindValue(":AltIDs", AlternateIDs.join(","));
+    q.bindValue(":GUID", GUID);
+    q.bindValue(":DateOfBirth", DateOfBirth);
+    q.bindValue(":Sex", Sex);
+    q.bindValue(":Gender", Gender);
+    q.bindValue(":Ethnicity1", Ethnicity1);
+    q.bindValue(":Ethnicity2", Ethnicity2);
+    q.bindValue(":EnrollmentGroup", EnrollmentGroup);
+    q.bindValue(":EnrollmentStatus", EnrollmentStatus);
+    q.bindValue(":Notes", Notes);
+    q.bindValue(":SequenceNumber", SequenceNumber);
+    q.bindValue(":VirtualPath", VirtualPath());
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
     return true;
 }
 
@@ -158,6 +205,8 @@ QString squirrelSubject::PrintDetails() {
     str += utils::Print("\t\t----- SUBJECT -----");
     str += utils::Print(QString("\t\tAlternateIDs: %1").arg(AlternateIDs.join(",")));
     str += utils::Print(QString("\t\tDateOfBirth: %1").arg(DateOfBirth.toString("yyyy-MM-dd")));
+    str += utils::Print(QString("\t\tEnrollmentGroup: %1").arg(EnrollmentGroup));
+    str += utils::Print(QString("\t\tEnrollmentStatus: %1").arg(EnrollmentStatus));
     str += utils::Print(QString("\t\tEthnicity1: %1").arg(Ethnicity1));
     str += utils::Print(QString("\t\tEthnicity2: %1").arg(Ethnicity2));
     str += utils::Print(QString("\t\tGUID: %1").arg(GUID));
@@ -223,18 +272,24 @@ QString squirrelSubject::PrintTree(bool isLast) {
 /* ------------------------------------------------------------ */
 /* ----- CSVLine ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a CSV-formatted line containing all subject fields
+ * @return comma-separated string with each field quoted
+ */
 QString squirrelSubject::CSVLine() {
     QStringList data;
 
     data.append(ID);
     data.append(AlternateIDs.join(","));
     data.append(DateOfBirth.toString("yyyy-MM-dd"));
+    data.append(EnrollmentGroup);
+    data.append(EnrollmentStatus);
     data.append(Ethnicity1);
     data.append(Ethnicity2);
     data.append(GUID);
     data.append(Gender);
-    data.append(Sex);
     data.append(Notes);
+    data.append(Sex);
 
     QString line = "\"" + data.join("\",\"") + "\"";
 
@@ -245,6 +300,11 @@ QString squirrelSubject::CSVLine() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of subject fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
     QHash<QString, QString> data;
 
@@ -263,12 +323,14 @@ QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
             data["Subject.ID"] = ID;
             data["Subject.AlternateIDs"] = AlternateIDs.join(",");
             data["Subject.DateOfBirth"] = DateOfBirth.toString("yyyy-MM-dd");
+            data["Subject.EnrollmentGroup"] = EnrollmentGroup;
+            data["Subject.EnrollmentStatus"] = EnrollmentStatus;
             data["Subject.Ethnicity1"] = Ethnicity1;
             data["Subject.Ethnicity2"] = Ethnicity2;
             data["Subject.GUID"] = GUID;
             data["Subject.Gender"] = Gender;
-            data["Subject.Sex"] = Sex;
             data["Subject.Notes"] = Notes;
+            data["Subject.Sex"] = Sex;
             break;
         default:
             break;
@@ -281,6 +343,10 @@ QHash<QString, QString> squirrelSubject::GetData(DatasetType d) {
 /* ------------------------------------------------------------ */
 /* ----- Remove ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Remove this subject and all of its child studies, series, and staged files from the database
+ * @return true if successful
+ */
 bool squirrelSubject::Remove() {
 
     /* find all studies associated with this subject ... */
@@ -344,6 +410,8 @@ QJsonObject squirrelSubject::ToJSON() {
 
     json["AlternateIDs"] = QJsonArray::fromStringList(AlternateIDs);
     json["DateOfBirth"] = DateOfBirth.toString("yyyy-MM-dd");
+    json["EnrollmentGroup"] = EnrollmentGroup;
+    json["EnrollmentStatus"] = EnrollmentStatus;
     json["Ethnicity1"] = Ethnicity1;
     json["Ethnicity2"] = Ethnicity2;
     json["GUID"] = GUID;
@@ -355,16 +423,16 @@ QJsonObject squirrelSubject::ToJSON() {
 
     /* add studies */
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select StudyRowID from Study where SubjectRowID = :id");
+    q.prepare("select * from Study where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONstudies;
     while (q.next()) {
         squirrelStudy s(databaseUUID);
-        s.SetObjectID(q.value("StudyRowID").toLongLong());
-        if (s.Get()) {
-            JSONstudies.append(s.ToJSON());
-        }
+        s.Populate(q);
+        s.parentSubjectID = ID;
+        s.parentSubjectSeqNum = SequenceNumber;
+        JSONstudies.append(s.ToJSON());
     }
     if (JSONstudies.size() > 0) {
         json["StudyCount"] = JSONstudies.size();
@@ -372,16 +440,14 @@ QJsonObject squirrelSubject::ToJSON() {
     }
 
     /* add observations */
-    q.prepare("select ObservationRowID from Observation where SubjectRowID = :id");
+    q.prepare("select * from Observation where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONobservations;
     while (q.next()) {
         squirrelObservation o(databaseUUID);
-        o.SetObjectID(q.value("ObservationRowID").toLongLong());
-        if (o.Get()) {
-            JSONobservations.append(o.ToJSON());
-        }
+        o.Populate(q);
+        JSONobservations.append(o.ToJSON());
     }
     if (JSONobservations.size() > 0) {
         json["ObservationCount"] = JSONobservations.size();
@@ -389,16 +455,14 @@ QJsonObject squirrelSubject::ToJSON() {
     }
 
     /* add interventions */
-    q.prepare("select InterventionRowID from Intervention where SubjectRowID = :id");
+    q.prepare("select * from Intervention where SubjectRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONinterventions;
     while (q.next()) {
         squirrelIntervention i(databaseUUID);
-        i.SetObjectID(q.value("InterventionRowID").toLongLong());
-        if (i.Get()) {
-            JSONinterventions.append(i.ToJSON());
-        }
+        i.Populate(q);
+        JSONinterventions.append(i.ToJSON());
     }
     if (JSONinterventions.size() > 0) {
         json["InterventionCount"] = JSONinterventions.size();
@@ -412,6 +476,10 @@ QJsonObject squirrelSubject::ToJSON() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the subject's virtual path within the squirrel package
+ * @return virtual path string (e.g. "data/S1234")
+ */
 QString squirrelSubject::VirtualPath() {
 
     QString vPath;

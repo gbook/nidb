@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB series.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -78,6 +78,7 @@ void series::LoadSeriesInfo() {
             }
 
             /* check to see if anything isn't valid or is blank */
+            isValid = true;
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; isValid = false; }
             if (uid == "") { msgs << "uid was blank"; isValid = false; }
             if (studynum < 1) { msgs << "studynum is not valid"; isValid = false; }
@@ -102,7 +103,6 @@ void series::LoadSeriesInfo() {
             bidsMapping = aio->GetBIDSMapping(projectid,desc,modality,imagetype);
             delete aio;
         }
-        isValid = true;
     }
     msg = msgs.join(" | ");
 }
@@ -164,11 +164,12 @@ squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
     sqrl.stagedFiles = FindAllFiles(datapath,"*");
     sqrl.stagedBehFiles = FindAllFiles(behpath,"*");
     QString file, m;
-    if (FindFirstFile(datapath,"*",file,m)) {
-        imageIO io;
+    if (NiDBFindFirstFile(datapath,"*",file,m)) {
+        imageIO *io = new imageIO(n);
         QHash<QString, QString> tags;
-        io.GetImageFileTags(file, n->cfg["bindir"], true, tags, m);
+        io->GetImageFileTags(file, tags, m);
         sqrl.params = tags;
+        delete io;
     }
 
     return sqrl;

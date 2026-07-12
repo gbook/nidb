@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminprojects.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -62,6 +62,7 @@
 		$datausers = GetVariable("datausers");
 		$phiusers = GetVariable("phiusers");
 		$usecustomid = GetVariable("usecustomid");
+		$projectdesc = GetVariable("projectdesc");
 		
 		/* determine action */
 		switch ($action) {
@@ -72,11 +73,11 @@
 				DisplayProjectForm("add", "$username");
 				break;
 			case 'update':
-				UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+				UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate);
 				DisplayProjectList();
 				break;
 			case 'add':
-				AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
+				AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
 				DisplayProjectList();
 				break;
 			case 'delete':
@@ -97,57 +98,22 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateProject ---------------------- */
 	/* -------------------------------------------- */
-	function UpdateProject($id, $projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
+	function UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
-		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
+		$projectdesc = mysqli_real_escape_string($GLOBALS['linki'], $projectdesc);
+		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
 		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], $costcenter);
 		$startdate = mysqli_real_escape_string($GLOBALS['linki'], $startdate);
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
-	
+
 		/* update the project */
-		$sqlstring = "update projects set project_name = '$projectname', project_usecustomid = '$usecustomid', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
+		$sqlstring = "update projects set project_name = '$projectname', project_desc = '$projectdesc', project_usecustomid = '$usecustomid', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		/* delete all previous rows from the db for this project */
-		$sqlstring = "delete from user_project where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* update/insert view rows */
-		if (is_array($datausers)) {
-			foreach ($datausers as $userid) {
-				$sqlstring = "select * from user_project where user_id = $userid and project_id = $id";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_data = 1, view_phi = 0 where user_id = $userid and project_id = $id";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($userid, $id, 1, 0, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-		
-		/* update/insert edit rows */
-		if (is_array($phiusers)) {
-			foreach ($phiusers as $userid) {
-				$sqlstring = "select * from user_project where user_id = $userid and project_id = $id";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					$sqlstring = "update user_project set view_phi = 1 where user_id = $userid and project_id = $id";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-				else {
-					$sqlstring = "insert into user_project (user_id, project_id, view_data, view_phi, write_data, write_phi) values ($userid, $id, 0, 1, 0, 0)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-		
 		Notice("title", "$projectname updated");
 	}
 
@@ -155,10 +121,11 @@
 	/* -------------------------------------------- */
 	/* ------- AddProject ------------------------- */
 	/* -------------------------------------------- */
-	function AddProject($projectname, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
+	function AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
 		$projectname = mysqli_real_escape_string($GLOBALS['linki'], trim($projectname));
-		$usecustomid = intval(mysqli_real_escape_string($GLOBALS['linki'], trim($usecustomid)));
+		$projectdesc = mysqli_real_escape_string($GLOBALS['linki'], trim($projectdesc));
+		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
 		$admin = mysqli_real_escape_string($GLOBALS['linki'], trim($admin));
 		$pi = mysqli_real_escape_string($GLOBALS['linki'], trim($pi));
 		$sharing = mysqli_real_escape_string($GLOBALS['linki'], trim($sharing));
@@ -166,15 +133,25 @@
 		$startdate = mysqli_real_escape_string($GLOBALS['linki'], trim($startdate));
 		$enddate = mysqli_real_escape_string($GLOBALS['linki'], trim($enddate));
 		
+		echo "Checkpoint A<br>";
+		
 		if ($startdate == "") { $startdate = "0000-00-00"; }
 		if ($enddate == "") { $enddate = "0000-00-00"; }
+		echo "Checkpoint B<br>";
 		
 		$projectuid = NIDB\CreateUID('P',4);
+		echo "Checkpoint C<br>";
 	
 		// echo "project_admin: $admin, PI $pi";	
 		/* insert the new project */
-		$sqlstring = "insert into projects (project_uid, project_name, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
+		$sqlstring = "insert into projects (project_uid, project_name, project_desc, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$projectdesc', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
+		PrintSQL($sqlstring);
+		echo "Checkpoint D<br>";
+		//exit(0);
+		
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		echo "Checkpoint E<br>";
 		
 		Notice("title", "$projectname added");
 	}
@@ -292,6 +269,7 @@
 			$instanceid = $row['instance_id'];
 			$costcenter = $row['project_costcenter'];
 			$sharing = $row['project_sharing'];
+			$desc = $row['project_desc'];
 			$startdate = $row['project_startdate'];
 			$enddate = $row['project_enddate'];
 			$usecustomid = $row['project_usecustomid'];
@@ -331,7 +309,7 @@
 						<input type="text" name="projectname" value="<?=$name?>" maxlength="255" required>
 					</div>
 				</div>
-				
+
 				<div class="field">
 					<label>Project number</label>
 					<div class="field">
@@ -339,7 +317,12 @@
 					</div>
 				</div>
 			</div>
-			
+
+			<div class="field">
+				<label>Description</label>
+				<textarea name="projectdesc" rows="3" placeholder="Optional project description"><?=htmlspecialchars($desc)?></textarea>
+			</div>
+
 			<div class="field">
 				<label>Use Custom IDs?</label>
 				<div class="field">

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB setup.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -184,7 +184,7 @@
 	$c['archivedir'] = GetVariable("archivedir");
 	$c['backupdir'] = GetVariable("backupdir");
 	$c['backupstagingdir'] = GetVariable("backupstagingdir");
-	$c['ftpdir'] = GetVariable("ftpdir");
+	$c['exportdir'] = GetVariable("exportdir");
 	$c['importdir'] = GetVariable("importdir");
 	$c['incomingdir'] = GetVariable("incomingdir");
 	$c['incoming2dir'] = GetVariable("incoming2dir");
@@ -376,35 +376,36 @@
 
 				<h2>Linux pre-requistites</h2><br>
 				<?
-				$memory = preg_split('/\s+/', shell_exec("free -g"))[8];
-				
+				$freeOutput = shell_exec("free -g");
+				$memory = ($freeOutput !== null && $freeOutput !== false) ? (preg_split('/\s+/', $freeOutput)[8] ?? "?") : "?";
+
 				$cores = (int)shell_exec("cat /proc/cpuinfo | grep processor | wc -l");
 
 				/* check the MariaDB version */
 				$mariadb = shell_exec("mysql --version");
-				if (is_null($mariadb))
+				if ($mariadb === null || $mariadb === false)
 					$mariadbver = "<span style='color:red'>Not Installed</span>";
 				else
-					$mariadbver = str_replace("-MariaDB,", "", preg_split('/\s+/', $mariadb)[4]);
-				
-				$mvers = explode(".",$mariadbver);
+					$mariadbver = str_replace("-MariaDB,", "", preg_split('/\s+/', $mariadb)[4] ?? "");
+
+				$mvers = explode(".", $mariadbver);
 				if ($mvers[0] < 10) {
 					$mariadbver = "<span style='color:red'>$mariadbver (must be version 10.0+)</span>";
 				}
-				
+
 				/* check the httpd version */
-				$httpd = $_SERVER['SERVER_SOFTWARE'];
-				if (is_null($httpd))
+				$httpd = $_SERVER['SERVER_SOFTWARE'] ?? null;
+				if ($httpd === null || $httpd === false)
 					$httpdver = "<span style='color:red'>Not Installed</span> ... how are you viewing this?";
 				else
-					$httpdver = str_replace("Apache/", "", preg_split('/\s+/', $httpd)[0]);
-				
+					$httpdver = str_replace("Apache/", "", preg_split('/\s+/', $httpd)[0] ?? "");
+
 				/* check the image magick version */
 				$imagemagick = shell_exec("convert -version");
-				if (is_null($imagemagick))
+				if ($imagemagick === null || $imagemagick === false)
 					$imagemagickver = "<span style='color:red'>Not Installed</span>";
 				else
-					$imagemagickver = preg_split('/\s+/', $imagemagick)[2];
+					$imagemagickver = preg_split('/\s+/', $imagemagick)[2] ?? "";
 
 				/* check the PHP version */
 				$phpversion = phpversion();
@@ -951,12 +952,12 @@
 		
 		if (!file_exists($sqlfile)) {
 			echo "[$sqlfile] not found<br>";
-			return false;
+			return array(array(), array("SQL file [$sqlfile] not found"));
 		}
-		
+
 		if (!mysqli_select_db($linki, $database)) {
 			echo "Unable to select database [$database]<br>";
-			return false;
+			return array(array(), array("Unable to select database [$database]"));
 		}
 		
 		if ($rowlimit > 0) {
@@ -964,8 +965,9 @@
 		}
 		
 		$ignoredtables = array();
+		$schematables = array();
 		$err = array();
-		
+
 		/* disable strict mode to prevent truncation errors */
 		$sqlstring = "SET @@global.sql_mode= ''";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
@@ -974,7 +976,8 @@
 		$lines = file($sqlfile);
 		$table = "";
 		$tablerowcount = 0;
-		$lastcolumn = "";
+		$previouscol = "";
+		$createtable = "";
 		$tableexists = false;
 		$indextable = "";
 		$createindex = "";
@@ -996,7 +999,8 @@
 			/* create table section */
 			if (substr($line,0,12) == "CREATE TABLE") {
 				$table = str_replace("`", "", preg_split('/\s+/', $line)[2]);
-				
+				$schematables[] = $table;
+
 				/* check if this table exists */
 				$sqlstring = "show tables like '$table'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
@@ -1083,14 +1087,9 @@
 					}
 					
 					
-					$file_null = false;
-					$file_default = "";
+					/* determine whether the schema definition requires NOT NULL */
+					$file_notnull = (bool) preg_match('/\bNOT NULL\b/i', $properties);
 
-					if (contains($properties, "DEFAULT NULL")) {
-						$file_default = "null";
-						$file_null = true;
-					}
-					
 					/* check if the column exists */
 					$sqlstringA = "show columns from `$table` where Field = '$column'";
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__, true);
@@ -1122,8 +1121,9 @@
 							$type = $type . " on update current_timestamp()";
 						}
 						
-						/* check if the column is different */
-						if ( (($default == "") || (contains($properties, $default)) ) && (strtolower($file_type) == strtolower($type)) ) {
+						/* check if the column is different — type, nullability, and default must all match */
+						$db_notnull = ($null == "NO");
+						if ( (($default == "") || (contains($properties, $default)) ) && (strtolower($file_type) == strtolower($type)) && ($file_notnull === $db_notnull) ) {
 							//echo "Column <tt>$column</tt> is unchanged, skipping<br>";
 						}
 						else {
@@ -1204,10 +1204,37 @@
 			}
 		}
 		
+		/* find tables in the database that are not in the schema and rename them */
+		$result = MySQLiQuery("SHOW TABLES", __FILE__, __LINE__, true);
+		$dbtables = array();
+		while ($row = mysqli_fetch_row($result)) {
+			$dbtables[] = $row[0];
+		}
+
+		$orphans = array_diff($dbtables, $schematables);
+		if (count($orphans) > 0) {
+			$toRename = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') !== 0; });
+			$alreadyDeprecated = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') === 0; });
+			if (count($toRename) > 0) {
+				echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
+				foreach ($toRename as $orphan) {
+					$newname = "deprecated_$orphan";
+					echo "Table <tt>$orphan</tt> not in schema &mdash; renaming to <tt>$newname</tt><br>";
+					$err[] = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+				}
+			}
+			if (count($alreadyDeprecated) > 0) {
+				echo "<br><b>Already-deprecated tables</b> (skipped)<br>";
+				foreach ($alreadyDeprecated as $t) {
+					echo "Skipping <tt>$t</tt> (already deprecated)<br>";
+				}
+			}
+		}
+
 		?>
 		</div>
 		<?
-		
+
 		return array(array_unique($ignoredtables), array_filter($err));
 	}
 ?>

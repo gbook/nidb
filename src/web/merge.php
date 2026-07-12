@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB merge.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -47,13 +47,14 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$subjectids = GetVariable("subjectids");
+	if (!is_array($subjectids)) $subjectids = array();
 	$subjectuid = GetVariable("subjectuid");
-	$selectedid = GetVariable("selectedid");
-	$selectedstudyid = GetVariable("selectedstudyid");
+	$selectedid = (int)GetVariable("selectedid");
+	$selectedstudyid = (int)GetVariable("selectedstudyid");
 	$studyids = GetVariable("studyids");
-	$studyid = GetVariable("studyid");
+	$studyid = (int)GetVariable("studyid");
 	$mergemethod = GetVariable("mergemethod");
-	$idtoremove = GetVariable("idtoremove");
+	$idtoremove = (int)GetVariable("idtoremove");
 	$name = GetVariable("name");
 	$dob = GetVariable("dob");
 	$gender = GetVariable("gender");
@@ -317,7 +318,7 @@
 		}
 
 		/* remove the 'idtoremove' */
-		if ($idtoremove != "") {
+		if ($idtoremove != 0) {
 			if (($key = array_search($idtoremove, $subjectids)) !== false) {
 				unset($subjectids[$key]);
 			}

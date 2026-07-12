@@ -27,6 +27,10 @@
 /* ------------------------------------------------------------ */
 /* ----- study ------------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Constructor
+ * @param dbID UUID of the database connection to use
+ */
 squirrelStudy::squirrelStudy(QString dbID)
 {
     databaseUUID = dbID;
@@ -46,6 +50,34 @@ squirrelStudy::squirrelStudy(QString dbID)
     StudyNumber = -1;
     TimePoint = 0;
     Weight = 0.0;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Populate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Populate object fields from a database query result row
+ * @param q an executed QSqlQuery positioned at the row to read
+ */
+void squirrelStudy::Populate(const QSqlQuery &q) {
+    objectID       = q.value("StudyRowID").toLongLong();
+    subjectRowID   = q.value("SubjectRowID").toLongLong();
+    AgeAtStudy     = q.value("Age").toDouble();
+    DateTime       = q.value("Datetime").toDateTime();
+    DayNumber      = q.value("DayNumber").toInt();
+    Description    = q.value("Description").toString();
+    Equipment      = q.value("Equipment").toString();
+    Height         = q.value("Height").toDouble();
+    Modality       = q.value("Modality").toString();
+    Notes          = q.value("Notes").toString();
+    SequenceNumber = q.value("SequenceNumber").toInt();
+    StudyNumber    = q.value("StudyNumber").toInt();
+    StudyUID       = q.value("StudyUID").toString();
+    TimePoint      = q.value("TimePoint").toInt();
+    VisitType      = q.value("VisitType").toString();
+    Weight         = q.value("Weight").toDouble();
+    valid = true;
 }
 
 
@@ -73,26 +105,7 @@ bool squirrelStudy::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
-        /* get the data */
-        objectID = q.value("StudyRowID").toLongLong();
-        subjectRowID = q.value("SubjectRowID").toLongLong();
-        AgeAtStudy = q.value("Age").toDouble();
-        DateTime = q.value("Datetime").toDateTime();
-        DayNumber = q.value("DayNumber").toInt();
-        Description = q.value("Description").toString();
-        Equipment = q.value("StudyRowID").toString();
-        Height = q.value("Height").toDouble();
-        Modality = q.value("Modality").toString();
-        Notes = q.value("Notes").toString();
-        SequenceNumber = q.value("SequenceNumber").toInt();
-        StudyNumber = q.value("StudyNumber").toInt();
-        StudyUID = q.value("StudyUID").toString();
-        TimePoint = q.value("TimePoint").toInt();
-        VisitType = q.value("VisitType").toString();
-        Weight = q.value("Weight").toDouble();
-
-        valid = true;
+        Populate(q);
         return true;
     }
     else {
@@ -121,7 +134,7 @@ bool squirrelStudy::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, Timepoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :Timepoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
+        q.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, TimePoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :TimePoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
         q.bindValue(":Datetime", DateTime);
@@ -133,7 +146,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":StudyUID", StudyUID);
         q.bindValue(":VisitType", VisitType);
         q.bindValue(":DayNumber", DayNumber);
-        q.bindValue(":Timepoint", TimePoint);
+        q.bindValue(":TimePoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
@@ -143,7 +156,7 @@ bool squirrelStudy::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, Timepoint = :Timepoint, Equipment = :Equipment, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
+        q.prepare("update Study set SubjectRowID = :SubjectRowID, StudyNumber = :StudyNumber, Datetime = :Datetime, Age = :Age, Height = :Height, Weight = :Weight, Modality = :Modality, Description = :Description, StudyUID = :StudyUID, VisitType = :VisitType, DayNumber = :DayNumber, TimePoint = :TimePoint, Equipment = :Equipment, Notes = :Notes, SequenceNumber = :SequenceNumber, VirtualPath = :VirtualPath where StudyRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":StudyNumber", StudyNumber);
@@ -156,7 +169,7 @@ bool squirrelStudy::Store() {
         q.bindValue(":StudyUID", StudyUID);
         q.bindValue(":VisitType", VisitType);
         q.bindValue(":DayNumber", DayNumber);
-        q.bindValue(":Timepoint", TimePoint);
+        q.bindValue(":TimePoint", TimePoint);
         q.bindValue(":Equipment", Equipment);
         q.bindValue(":Notes", Notes);
         q.bindValue(":SequenceNumber", SequenceNumber);
@@ -164,6 +177,37 @@ bool squirrelStudy::Store() {
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Bind this study's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
+bool squirrelStudy::Store(QSqlQuery &q) {
+    q.bindValue(":SubjectRowID", subjectRowID);
+    q.bindValue(":StudyNumber", StudyNumber);
+    q.bindValue(":Datetime", DateTime);
+    q.bindValue(":Age", AgeAtStudy);
+    q.bindValue(":Height", Height);
+    q.bindValue(":Weight", Weight);
+    q.bindValue(":Modality", Modality);
+    q.bindValue(":Description", Description);
+    q.bindValue(":StudyUID", StudyUID);
+    q.bindValue(":VisitType", VisitType);
+    q.bindValue(":DayNumber", DayNumber);
+    q.bindValue(":TimePoint", TimePoint);
+    q.bindValue(":Equipment", Equipment);
+    q.bindValue(":Notes", Notes);
+    q.bindValue(":SequenceNumber", SequenceNumber);
+    q.bindValue(":VirtualPath", VirtualPath());
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
     return true;
 }
 
@@ -195,11 +239,9 @@ bool squirrelStudy::Remove() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* delete the study */
-    q.prepare("delete from Study where SubjectRowID = :subjectid");
-    q.bindValue(":subjectid", objectID);
+    q.prepare("delete from Study where StudyRowID = :studyid");
+    q.bindValue(":studyid", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-    utils::RemoveStagedFileList(databaseUUID, objectID, Subject);
 
     /* in case anyone tries to use this object again */
     objectID = -1;
@@ -338,16 +380,18 @@ QJsonObject squirrelStudy::ToJSON() {
 
     /* add all the series */
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select SeriesRowID from Series where StudyRowID = :id");
+    q.prepare("select * from Series where StudyRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONseries;
     while (q.next()) {
         squirrelSeries s(databaseUUID);
-        s.SetObjectID(q.value("SeriesRowID").toLongLong());
-        if (s.Get()) {
-            JSONseries.append(s.ToJSON());
-        }
+        s.Populate(q);
+        s.parentSubjectID = parentSubjectID;
+        s.parentSubjectSeqNum = parentSubjectSeqNum;
+        s.parentStudyNumber = StudyNumber;
+        s.parentStudySeqNum = SequenceNumber;
+        JSONseries.append(s.ToJSON());
     }
     if (JSONseries.size() > 0) {
         json["SeriesCount"] = JSONseries.size();
@@ -355,16 +399,18 @@ QJsonObject squirrelStudy::ToJSON() {
     }
 
     /* add all the analyses */
-    q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
+    q.prepare("select a.*, b.PipelineName from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID where a.StudyRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     QJsonArray JSONanalysis;
     while (q.next()) {
         squirrelAnalysis a(databaseUUID);
-        a.SetObjectID(q.value("AnalysisRowID").toLongLong());
-        if (a.Get()) {
-            JSONanalysis.append(a.ToJSON());
-        }
+        a.Populate(q);
+        a.parentSubjectID = parentSubjectID;
+        a.parentSubjectSeqNum = parentSubjectSeqNum;
+        a.parentStudyNumber = StudyNumber;
+        a.parentStudySeqNum = SequenceNumber;
+        JSONanalysis.append(a.ToJSON());
     }
     if (JSONanalysis.size() > 0) {
         json["AnalysisCount"] = JSONanalysis.size();
@@ -384,31 +430,22 @@ QJsonObject squirrelStudy::ToJSON() {
  */
 QString squirrelStudy::VirtualPath() {
 
-    QString vPath;
     QString subjectDir;
-    QString studyDir;
-
-    /* get parent subject directory */
-    QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
-    q.bindValue(":subjectid", subjectRowID);
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.next()) {
-        if (subjectDirFormat == "orig")
-            subjectDir = utils::CleanString(q.value("ID").toString());
-        else
-            subjectDir = QString("%1").arg(q.value("SequenceNumber").toInt());
+    if (parentSubjectSeqNum >= 0) {
+        subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(parentSubjectID) : QString::number(parentSubjectSeqNum);
+    } else {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select ID, SequenceNumber from Subject where SubjectRowID = :subjectid");
+        q.bindValue(":subjectid", subjectRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.next()) {
+            subjectDir = (subjectDirFormat == "orig") ? utils::CleanString(q.value("ID").toString()) : QString::number(q.value("SequenceNumber").toInt());
+        }
     }
 
-    /* get study directory */
-    if (studyDirFormat == "orig")
-        studyDir = QString("%1").arg(StudyNumber);
-    else
-        studyDir = QString("%1").arg(SequenceNumber);
+    QString studyDir = (studyDirFormat == "orig") ? QString::number(StudyNumber) : QString::number(SequenceNumber);
 
-    vPath = QString("data/%1/%2").arg(subjectDir).arg(studyDir);
-
-    return vPath;
+    return QString("data/%1/%2").arg(subjectDir).arg(studyDir);
 }
 
 
@@ -427,27 +464,35 @@ QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
 
     /* add all the series staged files */
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select SeriesRowID from Series where StudyRowID = :id");
+    q.prepare("select Series.*, Study.StudyNumber as ParentStudyNumber, Study.SequenceNumber as ParentStudySeqNum, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Series left join Study on Series.StudyRowID = Study.StudyRowID left join Subject on Study.SubjectRowID = Subject.SubjectRowID where Series.StudyRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelSeries s(databaseUUID);
-        s.SetObjectID(q.value("SeriesRowID").toLongLong());
-        if (s.Get()) {
-            stagedList += s.GetStagedFileList();
-        }
+        s.Populate(q);
+        s.parentSubjectID = q.value("ParentSubjectID").toString();
+        s.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
+        s.parentStudyNumber = q.value("ParentStudyNumber").toInt();
+        s.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
+        s.stagedFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), Series);
+        s.SetDirFormat(subjectDirFormat, studyDirFormat, "orig");
+        stagedList += s.GetStagedFileList();
     }
 
     /* add all the analysis staged files */
-    q.prepare("select AnalysisRowID from Analysis where StudyRowID = :id");
+    q.prepare("select a.*, b.PipelineName, c.StudyNumber as ParentStudyNumber, c.SequenceNumber as ParentStudySeqNum, d.ID as ParentSubjectID, d.SequenceNumber as ParentSubjectSeqNum from Analysis a left join Pipeline b on a.PipelineRowID = b.PipelineRowID left join Study c on a.StudyRowID = c.StudyRowID left join Subject d on c.SubjectRowID = d.SubjectRowID where a.StudyRowID = :id");
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         squirrelAnalysis a(databaseUUID);
-        a.SetObjectID(q.value("AnalysisRowID").toLongLong());
-        if (a.Get()) {
-            stagedList += a.GetStagedFileList();
-        }
+        a.Populate(q);
+        a.parentSubjectID = q.value("ParentSubjectID").toString();
+        a.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
+        a.parentStudyNumber = q.value("ParentStudyNumber").toInt();
+        a.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
+        a.stagedFiles = utils::GetStagedFileList(databaseUUID, a.GetObjectID(), Analysis);
+        a.SetDirFormat(subjectDirFormat, studyDirFormat);
+        stagedList += a.GetStagedFileList();
     }
 
     return stagedList;
@@ -457,6 +502,10 @@ QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
 /* ------------------------------------------------------------ */
 /* ----- GetNextSeriesNumber ---------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Determine the next available series number for this study
+ * @return the next series number (max existing + 1, or 1 if no series exist)
+ */
 int squirrelStudy::GetNextSeriesNumber() {
     int nextSeriesNum = 1;
 
@@ -475,6 +524,11 @@ int squirrelStudy::GetNextSeriesNumber() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of study fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelStudy::GetData(DatasetType d) {
 
     QHash<QString, QString> data;

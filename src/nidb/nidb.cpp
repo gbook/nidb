@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB nidb.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -98,7 +98,9 @@ bool nidb::LoadConfig() {
     if (runningFromCluster)
         files << binpath + "/nidb-cluster.cfg";
     else
-        files << binpath + "/nidb.cfg"
+        files
+            << "/etc/nidb/nidb.cfg"
+            << binpath + "/nidb.cfg"
             << binpath + "/../nidb.cfg"
             << binpath + "/../../nidb.cfg"
             << binpath + "/../../../nidb.cfg"
@@ -239,6 +241,10 @@ int nidb::ModuleGetNumThreads() {
         if (cfg["moduleexportthreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleexportthreads"].toInt();
     }
+    else if (module == "exportnonimaging") {
+        if (cfg["moduleexportnonimagingthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleexportnonimagingthreads"].toInt();
+    }
     else if ((module == "parsedicom") || (module == "import")) {
         numThreads = 1;
     }
@@ -267,6 +273,10 @@ int nidb::ModuleGetNumThreads() {
     }
     else if (module == "modulemanager") {
         numThreads = 1;
+    }
+    else if (module == "remoteimport") {
+        if (cfg["moduleremoteimportthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleremoteimportthreads"].toInt();
     }
 
     //WriteLog(QString("ModuleGetNumThreads() returned [%1] threads for module [%2]").arg(numThreads).arg(module));
@@ -533,6 +543,16 @@ void nidb::ModuleDBCheckIn() {
             cfg["debug"] = "1";
     }
 
+    /* check if the module should keep the log file */
+    q.prepare("select module_keeplog from modules where module_name = :module");
+    q.bindValue(":module", module);
+    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        if (q.value("module_keeplog").toBool())
+            cfg["keeplog"] = "1";
+    }
+
 }
 
 
@@ -569,7 +589,7 @@ void nidb::ModuleDBCheckOut() {
 void nidb::ModuleRunningCheckIn() {
 
     Print(".",false);
-    Log("Module running check-in");
+    Debug("Module running check-in");
 
     QSqlQuery q;
     if (!checkedin) {
@@ -600,17 +620,121 @@ void nidb::ModuleRunningCheckIn() {
  * @param event event code
  * @param message Event message
  */
-void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString message) {
+void nidb::InsertAnalysisEvent(qint64 analysisid, int pipelineid, int pipelineversion, int studyid, QString event, QString status, QString message) {
+
+    /* possible analysis events
+     *
+     * setup_createDirectory
+     * setup_getData
+     * setup_copyDependency
+     * setup_writeScript
+     * setup_submitToCluster
+     *
+     * cluster_stepCheckIn
+     *
+     * status_started
+     * status_complete
+     * status_supplementComplete
+     * status_recheck
+     *
+     * manage_createLink
+     * manage_delete
+     * manage_copy
+     */
+
+
     QSqlQuery q;
-    q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :message)");
+    q.prepare("insert into analysis_history (analysis_id, pipeline_id, pipeline_version, study_id, analysis_event, analysis_hostname, event_status, event_message) values (:analysisid, :pipelineid, :pipelineversion, :studyid, :event, :hostname, :status, :message)");
     q.bindValue(":analysisid", analysisid);
     q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":pipelineversion", pipelineversion);
     q.bindValue(":studyid", studyid);
     q.bindValue(":event", event);
+    q.bindValue(":status", status);
     q.bindValue(":hostname", QHostInfo::localHostName());
     q.bindValue(":message", message);
     SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- LogAnalysisEvent ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief nidb::LogAnalysisEvent
+ * @param analysisid
+ * @param event
+ * @param status
+ * @param message
+ * @param hostname
+ */
+QString nidb::LogAnalysisEvent(qint64 analysisid, AnalysisEvent event, LogStatus status, int stepNumber, QString message, QString hostname) {
+
+    QString str;
+
+    if (analysisid < 0)
+        return str;
+
+    /* clean up log variables */
+    if (stepNumber < 1)
+        stepNumber = 0;
+    if (hostname == "")
+        hostname = QHostInfo::localHostName();
+
+    /* convert enums to strings */
+    QString statusStr;
+    switch (status) {
+        case LogStatus::error: statusStr = "error"; break;
+        case LogStatus::neutral: statusStr = "neutral"; break;
+        case LogStatus::success: statusStr = "success"; break;
+        case LogStatus::warning: statusStr = "warning"; break;
+    }
+
+    QString eventStr;
+    switch (event) {
+        case AnalysisEvent::ClusterCheckinStep: eventStr = "cluster_checkinStep"; break;
+        case AnalysisEvent::ManageCopy: eventStr = "manage_copy"; break;
+        case AnalysisEvent::ManageCreateLink: eventStr = "manage_createLink"; break;
+        case AnalysisEvent::ManageDelete: eventStr = "manage_delete"; break;
+        case AnalysisEvent::SetupCheckIfOkToRun: eventStr = "setup_checkIfOkToRun"; break;
+        case AnalysisEvent::SetupDependencyCheck: eventStr = "setup_dependencyCheck"; break;
+        case AnalysisEvent::SetupDependencyCopy: eventStr = "setup_dependencyCopy"; break;
+        case AnalysisEvent::SetupCreateAnalysis: eventStr = "setup_createAnalysis"; break;
+        case AnalysisEvent::SetupCreateDirectory: eventStr = "setup_createDirectory"; break;
+        case AnalysisEvent::SetupDataCheckSummary: eventStr = "setup_dataCheckSummary"; break;
+        case AnalysisEvent::SetupDataDownloadSummary: eventStr = "setup_dataDownloadSummary"; break;
+        case AnalysisEvent::SetupDataStepCheck: eventStr = "setup_dataStepCheck"; break;
+        case AnalysisEvent::SetupDataStepDownload: eventStr = "setup_dataStepDownload"; break;
+        case AnalysisEvent::SetupStudyPrecheck: eventStr = "setup_studyPrecheck"; break;
+        case AnalysisEvent::SetupSubmitToCluster: eventStr = "setup_submitToCluster"; break;
+        case AnalysisEvent::SetupSummary: eventStr = "setup_summary"; break;
+        case AnalysisEvent::SetupWriteJobScript: eventStr = "setup_writeJobScript"; break;
+        case AnalysisEvent::StatusAnalysisStepCheckin: eventStr = "status_analysisStepCheckin"; break;
+        case AnalysisEvent::StatusAnalysisComplete: eventStr = "status_analysisComplete"; break;
+        case AnalysisEvent::StatusAnalysisStarted: eventStr = "status_analysisStarted"; break;
+        case AnalysisEvent::StatusCheckSuccessFiles: eventStr = "status_checkSuccessFiles"; break;
+        case AnalysisEvent::StatusRecheckComplete: eventStr = "status_recheckComplete"; break;
+        case AnalysisEvent::StatusRerunComplete: eventStr = "status_analysisRerunComplete"; break;
+        case AnalysisEvent::StatusRerunStarted: eventStr = "status_analysisRerunStarted"; break;
+        case AnalysisEvent::StatusSupplementComplete: eventStr = "status_supplementComplete"; break;
+        case AnalysisEvent::StatusSupplementStarted: eventStr = "status_supplementStarted"; break;
+        case AnalysisEvent::StatusUpdateFileList: eventStr = "status_updateFileList"; break;
+        case AnalysisEvent::StatusResultScript: eventStr = "status_resultScript"; break;
+    }
+
+    QSqlQuery q;
+    q.prepare("insert into analysis_log (analysis_id, analysislog_event, analysislog_eventstatus, step_number, analysislog_message, analysislog_hostname) values (:analysisid, :event, :status, :stepnum, :message, :hostname)");
+    q.bindValue(":analysisid", analysisid);
+    q.bindValue(":event", eventStr);
+    q.bindValue(":status", statusStr);
+    q.bindValue(":stepnum", stepNumber);
+    if (message == "") q.bindValue(":message", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":message", message); // insert null if blank
+    q.bindValue(":hostname", hostname);
+    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    str = QString("Step %1 - Event [%2]  Status [%3]  Message [%4]").arg(stepNumber).arg(eventStr).arg(statusStr).arg(message);
+
+    return str;
 }
 
 
@@ -693,45 +817,37 @@ QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
 /* ---------------------------------------------------------- */
 /* --------- SendEmail -------------------------------------- */
 /* ---------------------------------------------------------- */
-/* OpenSSL 1.0.x required for Qt compatibility                */
-/* ---------------------------------------------------------- */
+/**
+ * @brief Send email using curl, from the command line
+ * @param to To email
+ * @param subject Subject line
+ * @param body Body of the message
+ * @return
+ */
 bool nidb::SendEmail(QString to, QString subject, QString body) {
 
-    SmtpClient smtp(cfg["emailserver"].replace("tls://",""), cfg["emailport"].toInt(), SmtpClient::TlsConnection);
-    smtp.setUser(cfg["emailusername"]);
-    smtp.setPassword(cfg["emailpassword"]);
+    /* get email config variables */
+    QString smtpServer = cfg["emailserver"].replace("tls://","");
+    //int smtpPort = cfg["emailport"].toInt();
+    QString fromEmail = cfg["emailfrom"];
+    //QString smtpUsername = cfg["emailusername"];
+    //QString smtpPassword = cfg["emailpassword"];
+    QString siteName = cfg["sitename"];
+    QString tmpMailFilePath = "/tmp/" + GenerateRandomString(15) + ".txt";
 
-    /* create a MimeMessage object. This will be the email. */
-    MimeMessage message;
-    message.setSender(new EmailAddress(cfg["emailusername"], "NiDB"));
-    message.addRecipient(new EmailAddress(to, ""));
-    message.setSubject(subject);
+    /* create the curl command */
+    QString curlCmd = QString("curl smtp://%1 --mail-from %2 --mail-rcpt %3 --upload-file %4").arg(smtpServer).arg(fromEmail).arg(to).arg(tmpMailFilePath);
+    QString message = QString("From: NiDB (%1) <%2>\nTo: %3\nSubject: %4\nDate: %5\nContent-Type: text/html; charset=\"utf-8\"\n\n").arg(siteName).arg(fromEmail).arg(to).arg(subject).arg(QDateTime::currentDateTime().toString(Qt::RFC2822Date));
+    message += body;
+    message += "\r\n.\r\n";
 
-    /* add the body to the email */
-    MimeText text;
-    text.setText(body);
-    message.addPart(&text);
+    WriteTextFile(tmpMailFilePath, message, false);
 
-    /* Now we can send the mail */
-    if (!smtp.connectToHost()) {
-        Print("Failed to connect to host [" + cfg["emailserver"] + "]");
-        smtp.quit();
-        return false;
-    }
-    if (!smtp.login()) {
-        Print("Failed to login using username [" + cfg["emailusername"] + "] and password [" + cfg["emailpassword"] + "]");
-        smtp.quit();
-        return false;
-    }
-    if (!smtp.sendMail(message)) {
-        Print("Failed to send [" + body + "]");
-        smtp.quit();
-        return false;
-    }
-    else {
-        Print("Sent email successfuly");
-    }
-    smtp.quit();
+    /* send the email */
+    QString result = SystemCommand(curlCmd, true).trimmed();
+    Print(result);
+
+    QFile::remove(tmpMailFilePath);
 
     return true;
 }
@@ -813,7 +929,10 @@ QString nidb::CreateUID(QString prefix, int numletters) {
             C8 = letters.at( QRandomGenerator::global()->bounded(26) );
 
         QString str;
-        str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
+        if (numletters == 4)
+            str = QString("%1%2%3%4").arg(C5).arg(C6).arg(C7).arg(C8);
+        else
+            str = QString("%1%2%3").arg(C5).arg(C6).arg(C7);
         if (!badarray.contains(str,Qt::CaseInsensitive))
             done = true;
     }
@@ -876,7 +995,7 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     if (submitHost == "")
         submitHost = cfg["clustersubmithost"];
     if (submitUser == "")
-        submitHost = cfg["clustersubmituser"];
+        submitUser = cfg["clustersubmituser"];
     if (clusterUser == "")
         clusterUser = cfg["clusteruser"];
 
@@ -888,7 +1007,7 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
          * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
         systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
 
-    result = SystemCommand(systemstring,true).trimmed();
+    result = SystemCommand(systemstring,false).trimmed();
 
     /* get the jobid */
     jobid = -1;
@@ -1114,4 +1233,44 @@ bool nidb::SetExportSeriesStatus(qint64 exportseriesid, qint64 exportid, qint64 
     else {
         return false;
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSubjectStudySeriesMapString ----------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Debugging function to convert a triple nested QMap into a formatted string
+ * @param data The triple nested QMap structure
+ * @return The formatted string
+ */
+QString nidb::GetSubjectStudySeriesMapString(const QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> &data)
+{
+    QString output;
+    QTextStream stream(&output);
+
+    for (auto it1 = data.constBegin(); it1 != data.constEnd(); ++it1)
+    {
+        stream << it1.key() << ":\n";
+
+        const auto &level2 = it1.value();
+        for (auto it2 = level2.constBegin(); it2 != level2.constEnd(); ++it2)
+        {
+            stream << "  [" << it2.key() << "]\n";
+
+            const auto &level3 = it2.value();
+            for (auto it3 = level3.constBegin(); it3 != level3.constEnd(); ++it3)
+            {
+                stream << "    [" << it3.key() << "]\n";
+
+                const auto &level4 = it3.value();
+                for (auto it4 = level4.constBegin(); it4 != level4.constEnd(); ++it4)
+                {
+                    stream << "      " << it4.key() << " = " << it4.value() << "\n";
+                }
+            }
+        }
+    }
+
+    return output;
 }

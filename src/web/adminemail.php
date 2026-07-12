@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminemail.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -68,9 +68,6 @@
 	/* ------- DisplayEmailForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayEmailForm() {
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Mass email'] = "admineamil.php";
-		//NavigationBar("Admin", $urllist);
 		
 		?>
 		<form action="adminemail.php" method="post" name="theform">

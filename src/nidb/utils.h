@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB utils.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -26,6 +26,7 @@
 #include <QString>
 #include <QFile>
 #include <QDir>
+#include <QImage>
 #include <QList>
 #include <QHash>
 #include <QDate>
@@ -39,6 +40,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QStandardPaths>
 
 typedef QHash <int, QHash<QString, QString> > indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");
@@ -61,6 +63,9 @@ struct BIDSMapping {
     bool bidsIncludeAcquisition;
     int bidsRun;
     int run;
+
+    QString mappingMessage;
+    bool isValid;
 };
 
 struct UploadOptions {
@@ -122,6 +127,10 @@ bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString tim
 void AppendCustomLog(QString f, QString msg);
 void Print(QString s, bool n=true, bool pad=false);
 void SortQStringListNaturally(QStringList &s);
+QString extractBracketContent(const QString &input);
+QString extractAfterBracket(const QString &input);
+void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const QString &prefix = "");
+bool ResizeImageFile(const QString &imagePath, int maxDimension = 750);
 
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate);
 
@@ -137,21 +146,24 @@ QString UnzipDirectory(QString dir, bool recurse=false);
 QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
 QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
+QString ReadTextFileIntoString(QString filepath);
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
-bool CopyFile(QString f, QString dir, QString &m);
 bool DirectoryExists(QString dir);
 bool FileDirectoryExists(QString f);
 bool FileExists(QString f);
-bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
+bool NiDBFindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive=false);
 bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting);
 bool MakePath(QString p, QString &msg, bool perm777=true);
 bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
-bool MoveFile(QString f, QString dir, QString &m);
+bool NiDBCopyFile(QString f, QString dir, QString &m);
+bool NiDBMoveFile(QString f, QString dir, QString &m);
 bool RemoveDir(QString p, QString &msg);
 bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
+bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
+bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
 
 #endif // UTILS_H

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB functions.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -35,7 +35,7 @@
 	// ----------------------------------------------------------
 	function LoadConfig(bool $quiet=false) {
 		$file = "";
-		$possiblefiles = array('nidb.cfg', '../nidb.cfg', '../programs/nidb.cfg', '../bin/nidb.cfg', '/home/nidb/programs/nidb.cfg', '/nidb/programs/nidb.cfg', '/nidb/nidb.cfg', '/nidb/bin/nidb.cfg');
+		$possiblefiles = array('/etc/nidb/nidb.cfg', 'nidb.cfg', '../nidb.cfg', '../programs/nidb.cfg', '../bin/nidb.cfg', '/home/nidb/programs/nidb.cfg', '/nidb/programs/nidb.cfg', '/nidb/nidb.cfg', '/nidb/bin/nidb.cfg');
 		
 		$found = false;
 		foreach ($possiblefiles as $f) {
@@ -99,6 +99,19 @@
 		}
 		else
 			return NULL;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSeriesTableName ----------------- */
+	/* -------------------------------------------- */
+	function GetSeriesTableName($modality) {
+		$normalizedModality = strtolower($modality);
+		if (!preg_match('/^[a-z0-9]+$/', $normalizedModality)) {
+			return '';
+		}
+
+		return $normalizedModality . "_series";
 	}
 
 
@@ -377,8 +390,9 @@
 	/* ------- MakeSQLListFromArray --------------- */
 	/* -------------------------------------------- */
 	function MakeSQLListFromArray($parts) {
+		$newparts = array();
 		foreach ($parts as $part) {
-			$newparts[] = "'" . trim($part) . "'";
+			$newparts[] = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($part)) . "'";
 		}
 		return implode2(",", $newparts);
 	}
@@ -589,20 +603,40 @@
 	/* -------------------------------------------- */
 	/* ------- MySQLiBoundQuery ------------------- */
 	/* -------------------------------------------- */
-	function MySQLiBoundQuery($q,$file,$line,$error="") {
+	function MySQLiBoundQuery($stmt,$file,$line,$sqlstring="",$params=[]) {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
-		
-		if (!mysqli_stmt_execute($q)) {
+
+		if (!mysqli_stmt_execute($stmt)) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
+
+			/* substitute bound values into the query template for display only */
+			$debugSql = $sqlstring;
+			foreach ($params as $val) {
+				$pos = strpos($debugSql, '?');
+				if ($pos === false) break;
+				if (is_null($val)) {
+					$replacement = 'NULL';
+				} elseif (is_int($val) || is_float($val)) {
+					$replacement = (string)$val;
+				} else {
+					$str = (string)$val;
+					$replacement = strlen($str) > 200
+						? "'[" . strlen($str) . " bytes]'"
+						: "'" . addslashes($str) . "'";
+				}
+				$debugSql = substr_replace($debugSql, $replacement, $pos, 1);
+			}
+
 			$body = "<b>Query failed on [$datetime]:</b> $file (line $line)<br>
-			<b>Error:</b> " . mysqli_error($GLOBALS['linki']) . "<br>
-			<b>SQL:</b> $sqlstring<br><b>Username:</b> $username<br>
+			<b>Error:</b> " . mysqli_stmt_error($stmt) . "<br>
+			<b>SQL:</b> " . $debugSql . "<br>
+			<b>Username:</b> $username<br>
 			<b>SESSION</b> <pre>" . print_r($_SESSION,true) . "</pre><br>
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
-			SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			//SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			
 			if ($GLOBALS['cfg']['hideerrors']) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
@@ -617,8 +651,34 @@
 			}
 		}
 		else {
-			return mysqli_stmt_get_result($q);
+			return mysqli_stmt_get_result($stmt);
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DebugSQLBoundStatement ------------- */
+	/* -------------------------------------------- */
+	function DebugSQLBoundStatement($sqlstring,$params=[]) {
+		/* substitute bound values into the query template for display only */
+		$debugSql = $sqlstring;
+		foreach ($params as $val) {
+			$pos = strpos($debugSql, '?');
+			if ($pos === false) break;
+			if (is_null($val)) {
+				$replacement = 'NULL';
+			} elseif (is_int($val) || is_float($val)) {
+				$replacement = (string)$val;
+			} else {
+				$str = (string)$val;
+				$replacement = strlen($str) > 200
+					? "'[" . strlen($str) . " bytes]'"
+					: "'" . addslashes($str) . "'";
+			}
+			$debugSql = substr_replace($debugSql, $replacement, $pos, 1);
+		}
+		
+		return $debugSql;
 	}
 	
 	
@@ -685,6 +745,34 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$n = $row['instance_name'];
 		return $n;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetProjectInfo --------------------- */
+	/* -------------------------------------------- */
+	function GetProjectInfo($projectRowID) {
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectRowID]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$p['instanceRowID'] = $row['instance_id'];
+		$p['projectUID'] = $row['project_uid'];
+		$p['useCustomID'] = $row['project_usecustomid'];
+		$p['projectName'] = $row['project_name'];
+		$p['projectAdmin'] = $row['project_admin'];
+		$p['projectPI'] = $row['project_pi'];
+		$p['projectSharing'] = $row['project_sharing'];
+		$p['projectCostCenter'] = $row['project_costcenter'];
+		$p['projectStartDate'] = $row['project_startdate'];
+		$p['projectEndDate'] = $row['project_enddate'];
+		$p['projectIRBApprovalDate'] = $row['project_irbapprovaldate'];
+		$p['projectStatus'] = $row['project_status'];
+		$p['lastUpdate'] = $row['lastupdate'];
+		
+		return $p;
 	}
 
 
@@ -863,6 +951,47 @@
 			return array("", -1, "", "", -1);
 		}
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetEnrollmentID -------------------- */
+	/* -------------------------------------------- */
+	function GetEnrollmentID($subjectRowID, $projectRowID) {
+		$subjectRowID = (int)$subjectRowID;
+		$projectRowID = (int)$projectRowID;
+		
+		$sqlstring = "select enrollment_id from enrollment where subject_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectRowID, $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectRowID, $projectRowID]);
+		mysqli_stmt_close($stmt);
+		
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$enrollmentRowID = $row['enrollment_id'];
+		if ($enrollmentRowID == "") { $enrollmentRowID = 0; }
+		
+		return $enrollmentRowID;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudiesByEnrollmentID ----------- */
+	/* -------------------------------------------- */
+	function GetStudiesByEnrollmentID($enrollmentRowID) {
+		$enrollmentRowID = (int)$enrollmentRowID;
+		
+		$sqlstring = "select study_id from studies where enrollment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID]);
+		mysqli_stmt_close($stmt);
+		$studyids = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$studyids[] = $row['study_id'];
+		}
+		
+		return $studyids;
+	}
 	
 	
 	/* -------------------------------------------- */
@@ -985,10 +1114,12 @@
 		$valid = false;
 		
 		$sqlstring = "select * from modalities where mod_code = '$modality'";
+		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (mysqli_num_rows($result) > 0) {
-			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "%'";
+			//PrintSQL($sqlstringA);
+			$result = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$valid = true;
 			}
@@ -1303,11 +1434,11 @@
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectid = $row['project_id'];
 					$perms[$projectid]['projectname'] = $row['project_name'];
-					$perms[$projectid]['projectadmin'] = (bool)$row['project_admin'];
-					$perms[$projectid]['viewdata'] = (bool)$row['view_data'];
-					$perms[$projectid]['viewphi'] = (bool)$row['view_phi'];
-					$perms[$projectid]['modifydata'] = (bool)$row['write_data'];
-					$perms[$projectid]['modifyphi'] = (bool)$row['write_phi'];
+					$perms[$projectid]['projectadmin'] = GetMySQLTinyInt($row['project_admin']);
+					$perms[$projectid]['viewdata'] = GetMySQLTinyInt($row['view_data']);
+					$perms[$projectid]['viewphi'] = GetMySQLTinyInt($row['view_phi']);
+					$perms[$projectid]['modifydata'] = GetMySQLTinyInt($row['write_data']);
+					$perms[$projectid]['modifyphi'] = GetMySQLTinyInt($row['write_phi']);
 					
 					/* fill in the implied permissions */
 					if ($perms[$projectid]['projectadmin']) {
@@ -1357,7 +1488,7 @@
 				if ($viewphi) { $viewphi = "View PHI"; }
 				if ($viewdata) { $viewdata = "View data"; }
 				
-				if (($admin == '') && ($admin == '') && ($admin == '') && ($admin == '') && ($admin == '')) {
+				if (($admin == '') && ($modifyphi == '') && ($modifydata == '') && ($viewphi == '') && ($viewdata == '')) {
 					$msg .= "<div class='item'>No permissions to access $projectname</div>";
 				}
 				else {
@@ -1409,7 +1540,15 @@
 			return 0;
 		}
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMySQLTinyInt -------------------- */
+	/* -------------------------------------------- */
+	function GetMySQLTinyInt($var) {
+		return (int)filter_var($var, FILTER_VALIDATE_BOOLEAN);
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- HumanReadableFilesize -------------- */
@@ -1790,17 +1929,16 @@
 	/* ------- SetTags ---------------------------- */
 	/* -------------------------------------------- */
 	function SetTags($idtype, $id, $tags, $modality='') {
-		
-		if (count($tags) > 1) {
-			/* trim all the tags */
-			$tags = array_map("trim", $tags);
-		
-			/* remove duplicates */
-			$tags = array_unique($tags, SORT_STRING);
-		
-			/* remove tags that are NULL, FALSE, or empty strings */
-			$tags = array_filter($tags, 'strlen');
-		}
+
+		/* accept an array, a comma-separated string, or null; normalize to an array so
+		   count()/array_map()/foreach() are safe (PHP 8 throws a TypeError on a non-array) */
+		if (!is_array($tags))
+			$tags = explode(",", (string)$tags);
+
+		/* trim, de-duplicate, and drop NULL/FALSE/empty tags */
+		$tags = array_map("trim", $tags);
+		$tags = array_unique($tags, SORT_STRING);
+		$tags = array_filter($tags, 'strlen');
 		
 		/* start a transaction */
 		$sqlstring = "start transaction";
@@ -2085,8 +2223,9 @@
 	/* -------------------------------------------- */
 	/* ------- find_all_files --------------------- */
 	/* -------------------------------------------- */
-	function find_all_files($dir) 
-	{ 
+	function find_all_files($dir)
+	{
+		$result = [];
 		$root = scandir($dir);
 		foreach($root as $value) 
 		{ 
@@ -3208,6 +3347,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- GetFileFromSQL --------------------- */
 	/* -------------------------------------------- */
 	function GetFileFromSQL($fileid) {
+		$fileid = (int)$fileid;
 		$sqlstring = "select * from files where file_id = $fileid";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -3246,21 +3386,22 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		/* set default values if they're not set in the config */
-		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
-		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
-		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
-		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
 
-		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
+		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleexportnonimagingthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportnonimagingthreads']))) { $moduleexportnonimagingthreads = $GLOBALS['cfg']['moduleexportnonimagingthreads']; } else { $moduleexportnonimagingthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleexportthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportthreads']))) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
+		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
 		if (($GLOBALS['cfg']['moduleimportthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportthreads']))) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
+		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
 		if (($GLOBALS['cfg']['modulemriqathreads'] != "") && (isset($GLOBALS['cfg']['modulemriqathreads']))) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
 		if (($GLOBALS['cfg']['modulepipelinethreads'] != "") && (isset($GLOBALS['cfg']['modulepipelinethreads']))) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
-		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleqcthreads'] != "") && (isset($GLOBALS['cfg']['moduleqcthreads']))) { $moduleqcthreads = $GLOBALS['cfg']['moduleqcthreads']; } else { $moduleqcthreads = "2"; }
 		if (($GLOBALS['cfg']['moduleuploadthreads'] != "") && (isset($GLOBALS['cfg']['moduleuploadthreads']))) { $moduleuploadthreads = $GLOBALS['cfg']['moduleuploadthreads']; } else { $moduleuploadthreads = "1"; }
-		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
-		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
+		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
+		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
+		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
+		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
 
 		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
@@ -3270,7 +3411,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
 		if (($GLOBALS['cfg']['downloaddir'] != "") && (isset($GLOBALS['cfg']['downloaddir']))) { $downloaddir = $GLOBALS['cfg']['downloaddir']; } else { $downloaddir = "/nidb/data/download"; }
-		if (($GLOBALS['cfg']['ftpdir'] != "") && (isset($GLOBALS['cfg']['ftpdir']))) { $ftpdir = $GLOBALS['cfg']['ftpdir']; } else { $ftpdir = "/nidb/data/ftp"; }
+		if (($GLOBALS['cfg']['exportdir'] != "") && (isset($GLOBALS['cfg']['exportdir']))) { $exportdir = $GLOBALS['cfg']['exportdir']; } else { $exportdir = "/nidb/data/ftp"; }
 		if (($GLOBALS['cfg']['groupanalysisdir'] != "") && (isset($GLOBALS['cfg']['groupanalysisdir']))) { $groupanalysisdir = $GLOBALS['cfg']['groupanalysisdir']; } else { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if (($GLOBALS['cfg']['importdir'] != "") && (isset($GLOBALS['cfg']['importdir']))) { $importdir = $GLOBALS['cfg']['importdir']; } else { $importdir = "/nidb/data/import"; }
 		if (($GLOBALS['cfg']['incoming2dir'] != "") && (isset($GLOBALS['cfg']['incoming2dir']))) { $incoming2dir = $GLOBALS['cfg']['incoming2dir']; } else { $incoming2dir = "/nidb/data/dicomincoming2"; }
@@ -3412,6 +3553,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="number" name="moduleexportthreads" value="<?=$moduleexportthreads?>"></td>
 							<td></td>
 							<td><b>export</b> module. Recommended is 2</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">moduleexportnonimagingthreads</td>
+							<td><input type="number" name="moduleexportnonimagingthreads" value="<?=$moduleexportnonimagingthreads?>"></td>
+							<td></td>
+							<td><b>exportnonimaging</b> module. Recommended is 1</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleimportthreads</td>
@@ -3632,6 +3779,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="checkbox" name="enablewebexport" value="1" <? if ($GLOBALS['cfg']['enablewebexport']) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Allow this server to export data to downloadable web links</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">enablebackup</td>
+							<td><input type="checkbox" name="enablebackup" value="1" <? if ($GLOBALS['cfg']['enablebackup']) { echo "checked"; } ?>></td>
+							<td></td>
+							<td>Enable automatic copying of newly archived data to the backup directory. Backup directory is currently <code><?=$GLOBALS['cfg']['backupdir']?></code>. </td>
 						</tr>
 
 						<tr>
@@ -3913,9 +4066,9 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td>All data is copied to this directory at the same time it is added to the archive directory. This can be useful if you want to use a tape backup and only copy out newer files from this directory to fill up a tape.</td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">ftpdir</td>
-							<td><input type="text" name="ftpdir" value="<?=$ftpdir?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['ftpdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="right aligned tt">exportdir</td>
+							<td><input type="text" name="exportdir" value="<?=$exportdir?>"></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['exportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Downloaded data to be retreived by FTP is stored here</td>
 						</tr>
 						<tr>
@@ -4117,6 +4270,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* fill in missing values with defaults */
 		if ($modulefileiothreads == "") { $modulefileiothreads = 1; }
 		if ($moduleexportthreads == "") { $moduleexportthreads = 2; }
+		if ($moduleexportnonimagingthreads == "") { $moduleexportnonimagingthreads = 2; }
 		if ($moduleimportthreads == "") { $moduleimportthreads = 1; }
 		if ($modulemriqathreads == "") { $modulemriqathreads = 4; }
 		if ($modulepipelinethreads == "") { $modulepipelinethreads = 4; }
@@ -4134,7 +4288,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
 		if ($deleteddir == "") { $deleteddir = "/nidb/data/deleted"; }
 		if ($downloaddir == "") { $downloaddir = "/nidb/data/download"; }
-		if ($ftpdir == "") { $ftpdir = "/nidb/data/ftp"; }
+		if ($exportdir == "") { $exportdir = "/nidb/data/ftp"; }
 		if ($groupanalysisdir == "") { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
 		if ($importdir == "") { $importdir = "/nidb/data/import"; }
 		if ($incoming2dir == "") { $incoming2dir = "/nidb/data/dicomincoming2"; }
@@ -4201,16 +4355,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [mysqlclusterpassword] = $mysqlclusterpassword
 
 # ----- modules -----
-[modulefileiothreads] = $modulefileiothreads
+[modulebackupthreads] = $modulebackupthreads
+[moduleexportnonimagingthreads] = $moduleexportnonimagingthreads
 [moduleexportthreads] = $moduleexportthreads
+[modulefileiothreads] = $modulefileiothreads
 [moduleimportthreads] = $moduleimportthreads
+[moduleimportuploadedthreads] = $moduleimportuploadedthreads
+[moduleminipipelinethreads] = $moduleminipipelinethreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
-[moduleimportuploadedthreads] = $moduleimportuploadedthreads
 [moduleqcthreads] = $moduleqcthreads
 [moduleuploadthreads] = $moduleuploadthreads
-[modulebackupthreads] = $modulebackupthreads
-[moduleminipipelinethreads] = $moduleminipipelinethreads
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
@@ -4237,12 +4392,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [displayrecentstudydays] = $displayrecentstudydays
 
 # ----- features -----
-[enableremoteconn] = $enableremoteconn
+[enablebackup] = $enablebackup
 [enablecalendar] = $enablecalendar
-[enablepipelines] = $enablepipelines
 [enabledatamenu] = $enabledatamenu
-[enablerdoc] = $enablerdoc
+[enablepipelines] = $enablepipelines
 [enablepublicdownloads] = $enablepublicdownloads
+[enablerdoc] = $enablerdoc
+[enableremoteconn] = $enableremoteconn
 [enablewebexport] = $enablewebexport
 
 # ----- security options -----
@@ -4300,7 +4456,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [clusteranalysisdirb] = $clusteranalysisdirb
 [deleteddir] = $deleteddir
 [downloaddir] = $downloaddir
-[ftpdir] = $ftpdir
+[exportdir] = $exportdir
 [groupanalysisdir] = $groupanalysisdir
 [importdir] = $importdir
 [incoming2dir] = $incoming2dir
@@ -4327,7 +4483,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		$ret = file_put_contents($GLOBALS['cfg']['cfgpath'], $str);
-		if (($ret === false) || ($ret === false) || ($ret == 0)) {
+		if (($ret === false) || ($ret === null) || ($ret == 0)) {
 			?><div class="staticmessage">Problem writing [<?=$GLOBALS['cfg']['cfgpath']?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {
@@ -4375,7 +4531,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 ";
 		$clustercfgfile = dirname($GLOBALS['cfg']['cfgpath']) . "/nidb-cluster.cfg";
 		$ret = file_put_contents($clustercfgfile, $str);
-		if (($ret === false) || ($ret === false) || ($ret == 0)) {
+		if (($ret === false) || ($ret === null) || ($ret == 0)) {
 			?><div class="staticmessage">Problem writing [<?=$clustercfgfile?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
 		}
 		else {

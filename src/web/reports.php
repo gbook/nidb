@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB reports.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -42,7 +42,7 @@
 
 	/* setup variables */
 	$action = GetVariable("action");
-	$year = GetVariable("year");
+	$year = (int)GetVariable("year");
 	$datestart = GetVariable("datestart");
 	$dateend = GetVariable("dateend");
 	$modality = GetVariable("modality");

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB menu.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -48,7 +48,7 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "nda.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
@@ -114,20 +114,22 @@
 			?><a href="subjects.php" class="<? if ($page=="subjects.php"){ echo "active"; } ?> item">Subjects</a><?
 			?><a href="groups.php" class="<? if ($page=="groups.php"){ echo "active"; } ?> item">Groups</a><?
 			?><a href="observations.php" class="<? if ($page=="observations.php"){ echo "active"; } ?> item">Observations</a><?
+			?><a href="interventions.php" class="<? if ($page=="interventions.php"){ echo "active"; } ?> item">Interventions</a><?
+			?><a href="diagnosis.php" class="<? if ($page=="diagnosis.php"){ echo "active"; } ?> item">Diagnosis</a><?
 		}
 		
 		/* studies, which are displayed under the projects menu */
-		elseif ($page == "studies.php" || $page=="observations.php" || $page == "managefiles.php" || $page == "series.php") {
-			$studyid = GetVariable("id");
-			$seriesid = GetVariable("seriesid");
+		elseif ($page == "studies.php" || $page=="observations.php" || $page=="interventions.php" || $page=="diagnosis.php" || $page == "managefiles.php" || $page == "series.php" || $page == "dicom.php" || $page == "enrollment.php" || $page == "timeline.php") {
+			$studyid = (int)GetVariable("id");
+			$seriesid = (int)GetVariable("seriesid");
 			$modality = GetVariable("modality");
-			$enrollmentid = GetVariable("enrollmentid");
-			$experimentid = GetVariable("experimentid");
+			$enrollmentid = (int)GetVariable("enrollmentid");
+			$experimentid = (int)GetVariable("experimentid");
 			
-			if ($studyid == "") {
-				$studyid = GetVariable("studyid");
+			if ($studyid == 0) {
+				$studyid = (int)GetVariable("studyid");
 			}
-			if (($seriesid != "") && ($modality != "")) {
+			if (($seriesid != 0) && ($modality != "")) {
 				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -135,7 +137,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif ($studyid != "") {
+			elseif ($studyid != 0) {
 				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -143,7 +145,7 @@
 				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
 				<?
 			}
-			elseif (($enrollmentid != "") && ($page == "observations.php")) {
+			elseif (($enrollmentid != 0) && (($page == "observations.php") || ($page == "interventions.php") || ($page == "enrollment.php") || ($page == "diagnosis.php") || ($page == "timeline.php"))) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
 				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
@@ -153,14 +155,14 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="projectassessments.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php" || $page == "nda.php") {
 			
 			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
-			$projectid = GetVariable("projectid");
-			if ($projectid == "")
-				$projectid = GetVariable("id");
+			$projectid = (int)GetVariable("projectid");
+			if ($projectid == 0)
+				$projectid = (int)GetVariable("id");
 			
-			if ($projectid == "") {
+			if ($projectid == 0) {
 				?><!--<a href="projects.php" style="background-color:#273f70" class="item">Project List</a>--><?
 			} 
 			else {
@@ -175,53 +177,53 @@
 					<div class="text">View Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numsubjects?></span>
-							<i class="user friends icon"></i> Subjects
-						</a>
-						<a class="item" href="projects.php?action=displaystudies&id=<?=$projectid?>" style="color: #222">
-							<span class="description"><?=$numstudies?></span>
-							<i class="project diagram icon"></i> Studies
-						</a>
+						<a class="item" href="projects.php?action=editsubjects&id=<?=$projectid?>" style="color: #222"><i class="user friends icon"></i> Subjects</a>
+						<a class="item" href="projects.php?action=displaystudies&id=<?=$projectid?>" style="color: #222"><i class="project diagram icon"></i> Studies</a>
+						<a class="item" href="projects.php?action=displaynonimaging&id=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Non-imaging</a>
 						<a class="item" title="Checklist of expected data items" href="projectchecklist.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard list icon"></i> Checklist</a>
 						<a class="item" href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> MR scan QC</a>
 						<a class="item" href="mriqc.php?action=viewmriqc&projectid=<?=$projectid?>" style="color: #222"><i class="clipboard check icon"></i> Advanced mriqc</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
-					<div class="text">Tools</div>
+					<div class="text">Manage</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
+						<a class="item" title="Manage instruments and expected observations" href="instruments.php?projectid=<?=$projectid?>" style="color: #222"><i class="flask icon"></i> Manage instruments</a>
 						<a class="item" href="datadictionary.php?projectid=<?=$projectid?>" style="color: #222"><i class="database icon"></i> Data dictionary</a>
 						<a class="item" href="analysisbuilder.php?action=viewanalysissummary&projectid=<?=$projectid?>" style="color: #222"><i class="list alternate outline icon"></i> Analysis builder</a>
 						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
 						<a class="item" href="minipipeline.php?projectid=<?=$projectid?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a>
 						<a class="item" href="experiment.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a>
 						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a>
-						<a class="item" href="projects.php?action=editndamapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> NDA experiment ID mapping</a>
 						<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
-						<a class="item" href="ndarequests.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="history icon"></i> NDA request history</a>
+						<a class="item" href="nda.php?projectid=<?=$projectid?>" style="color: #222"><i class="upload icon"></i> NDA</a>
 					</div>
 				</div>
 				<div class="ui dropdown item">
 					<div class="text">Import Data</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
+						<a class="item" title="Map remote data source fields to NiDB instruments" href="remoteimportmapping.php?projectid=<?=$projectid?>" style="color: #222"><i class="exchange icon"></i> Remote import mapping</a>
+						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
 						<a class="item" href="importnonimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import Non-imaging</a>
+						<!-- Redcap import deprecated
 						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
 						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
 						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
+						-->
 					</div>
 				</div>
 
 				<div class="ui dropdown item">
-					<div class="text"><i class="cog icon"></i>Project admin</div>
+					<div class="text">Admin</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>
 							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset basic QA</a>
 							<a class="item" class="item" href="projects.php?action=resetmriqc&id=<?=$projectid?>"><i class="red sync icon"></i> Reset advanced mriqc</a>
+							<a class="item" class="item" href="importremote.php?action=viewimports&projectid=<?=$projectid?>"><i class="cloud download alternate icon"></i> Remote import sources</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
 							Project ID: <?=$projectid?><br>
@@ -248,8 +250,8 @@
 		/* pipelines sub-menu */
 		elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
 			if ($GLOBALS['cfg']['enablepipelines']) {
-				$pipelineid = GetVariable("id");
-				if ($pipelineid == "") {
+				$pipelineid = (int)GetVariable("id");
+				if ($pipelineid == 0) {
 					?><a href="pipelines.php" class="item">Pipeline List</a><?
 					?><a href="pipelines.php?action=addform" class="red item">New Pipeline</a><?
 					?><a href="cluster.php" class="<? if ($page == "cluster.php") { echo "active"; } ?> item">Cluster</a><?
@@ -330,6 +332,9 @@
 	</script>
 	
 	<div class="right menu">
+		<a class="item" href="asteroids.php" style="padding-top:0; padding-bottom:0; align-items:flex-end">
+			<img src="images/squirrel-pixel-16.svg" alt="" style="height:66%; width:auto; margin:0; display:block">
+		</a>
 		<div class="vertically fitted item">
 			<div class="ui search">
 				<div class="ui left icon input">

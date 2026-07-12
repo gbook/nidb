@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleMRIQA.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -357,7 +357,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
         /* get the middle slice from the dicom files */
         QStringList dcms = FindAllFiles(s.datapath, "*.dcm");
         QString dcmfile = dcms[int(dcms.size()/2)];
-        systemstring = "convert -normalize " + dcmfile + " " + thumbfile;
+        systemstring = "convert -strip -normalize " + dcmfile + " " + thumbfile;
 		msgs << n->Log(SystemCommand(systemstring, debug));
 	}
 	else {
@@ -396,7 +396,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     /* run fsl_motion_outliers for FD */
     systemstring = QString(fsl + "fsl_motion_outliers -i %1 -o %2/outliers-dvars.txt  -s %2/dvars.txt --fd -p %2/dvars.png").arg(filepath4d).arg(qapath);
 	msgs << n->Log(SystemCommand(systemstring, debug));
-    QStringList dvars = ReadTextFileIntoArray(qapath + "/fd.txt");
+    QStringList dvars = ReadTextFileIntoArray(qapath + "/dvars.txt");
     QList<double> dvarsDouble = SplitStringArrayToDouble(dvars);
     std::sort(dvarsDouble.begin(), dvarsDouble.end());
     double dvarsMean(0.0);
@@ -415,7 +415,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     /* delete the 4D file and temp directory */
 	if (!debug)
 		if (!RemoveDir(tmpdir, m))
-			msgs << n->Log("Unable to remove directory ["+tmpdir+"] because of error ["+m+"]");
+            msgs << n->Log("Unable to remove directory [" + tmpdir + "] because of error [" + m + "]");
 
     /* insert this row into the DB */
     q.prepare("update mr_qa set mrseries_id = :seriesid, io_snr = :iosnr, pv_snr = :pvsnr, move_minx = :mintx, move_miny = :minty, move_minz = :mintz, move_maxx = :maxtx, move_maxy = :maxty, move_maxz = :maxtz, acc_minx = :minax, acc_miny = :minay, acc_minz = :minaz, acc_maxx = :maxax, acc_maxy = :maxay, acc_maxz = :maxaz, rot_minp = :minrx, rot_minr = :minry, rot_miny = :minrz, rot_maxp = :maxrx, rot_maxr = :maxry, rot_maxy = :maxrz, motion_rsq = :motion_rsq, fd_max = :fdmax, fd_mean = :fdmean, fd_sd = :fdstdev, dvars_max = :dvarsmax, dvars_mean = :dvarsmean, dvars_stdev = :dvarsstdev, cputime = 0.0 where mrqa_id = :mrqaid");
@@ -637,7 +637,7 @@ QVector<double> moduleMRIQA::Derivative(QVector<double> a) {
     QVector<double> r;
 
 	if (a.size() > 0) {
-		for (int i=0; i<a.size();i++)
+		for (int i=1; i<a.size();i++)
 			r.append(a[i]-a[i-1]);
 	}
 	else {

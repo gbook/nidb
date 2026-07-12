@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB remoteconnections.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -42,14 +42,14 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	$connname = GetVariable("connname");
 	$remoteserver = GetVariable("remoteserver");
 	$remoteusername = GetVariable("remoteusername");
 	$remotepassword = GetVariable("remotepassword");
-	$remoteinstanceid = GetVariable("remoteinstanceid");
-	$remoteprojectid = GetVariable("remoteprojectid");
-	$remotesiteid = GetVariable("remotesiteid");
+	$remoteinstanceid = (int)GetVariable("remoteinstanceid");
+	$remoteprojectid = (int)GetVariable("remoteprojectid");
+	$remotesiteid = (int)GetVariable("remotesiteid");
 	
 	if (!$nomenu) {
 		require "menu.php";

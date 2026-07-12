@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB import.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -33,11 +33,11 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$apiaction = GetVariable("apiaction");
-	$siteid = GetVariable("siteid");
-	$projectid = GetVariable("projectid");
+	$siteid = (int)GetVariable("siteid");
+	$projectid = (int)GetVariable("projectid");
 	$anonymize = GetVariable("anonymize");
 	$permanent = GetVariable("permanent");
-	$formid = GetVariable("formid");
+	$formid = (int)GetVariable("formid");
 	$fileformat = GetVariable("fileformat");
 	$importdirs = GetVariable("importdirs");
 	$idlist = GetVariable("idlist");
@@ -159,7 +159,7 @@
 						Upload imaging data and track existing uploads.<br><br>
 					</div>
 					<div class="center aligned extra content">
-						<a href="importimaging.php" class="ui button">Import</a>
+						<a href="importimaging.php" class="ui button">Import imaging</a>
 					</div>
 				</div>
 
@@ -171,7 +171,19 @@
 						Import observations and interventions.<br><br>
 					</div>
 					<div class="center aligned extra content">
-						<a href="importnonimaging.php" class="ui button">Import</a>
+						<a href="importnonimaging.php" class="ui button">Import non-imaging</a>
+					</div>
+				</div>
+
+				<div class="ui card">
+					<div class="content">
+						<div class="header">Import remote</div>
+					</div>
+					<div class="content">
+						Import data from remote server.<br><br>
+					</div>
+					<div class="center aligned extra content">
+						<a href="importremote.php" class="ui button">Import remote</a>
 					</div>
 				</div>
 
@@ -1109,10 +1121,6 @@ question_num, question_text, datatype, values, comment</div>
 	/* ------- DisplayAssessmentFormList ---------- */
 	/* -------------------------------------------- */
 	function DisplayAssessmentFormList() {
-		//$urllist['Home'] = "index.php";
-		//$urllist['Import'] = "import.php";
-		//$urllist['Assessment Form List'] = "import.php?action=viewassessmentforms";
-		//NavigationBar("Import", $urllist);
 	
 		?>
 		<table class="ui very compact celled grey table">
@@ -1979,11 +1987,6 @@ question_num, question_text, datatype, values, comment</div>
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
-		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Assessment Forms'] = "adminassessmentforms.php";
-		//$urllist[$title] = "adminassessmentforms.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">

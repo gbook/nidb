@@ -89,6 +89,7 @@ bool squirrelExperiment::Get() {
 bool squirrelExperiment::Store() {
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
         q.prepare("insert or ignore into Experiment (ExperimentName, Size, FileCount, VirtualPath) values (:name, :size, :FileCount, :virtualpath)");
@@ -111,7 +112,8 @@ bool squirrelExperiment::Store() {
     }
 
     /* store any staged filepaths */
-    utils::StoreStagedFileList(databaseUUID, objectID, Experiment, stagedFiles);
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, Experiment, stagedFiles);
 
     return true;
 }
@@ -120,6 +122,10 @@ bool squirrelExperiment::Store() {
 /* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this experiment
+ * @return QJsonObject containing all experiment fields
+ */
 QJsonObject squirrelExperiment::ToJSON() {
     QJsonObject json;
 
@@ -155,6 +161,10 @@ QString squirrelExperiment::PrintExperiment() {
 /* ------------------------------------------------------------ */
 /* ----- VirtualPath ------------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return the experiment's virtual path within the squirrel package
+ * @return virtual path string (e.g. "experiments/ExperimentName")
+ */
 QString squirrelExperiment::VirtualPath() {
     QString vPath = QString("experiments/%1").arg(utils::CleanString(ExperimentName));
 
@@ -165,6 +175,10 @@ QString squirrelExperiment::VirtualPath() {
 /* ------------------------------------------------------------ */
 /* ----- GetStagedFileList ------------------------------------ */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
 QList<QPair<QString,QString>> squirrelExperiment::GetStagedFileList() {
 
     QList<QPair<QString,QString>> stagedList;

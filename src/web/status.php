@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB status.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -117,7 +117,36 @@
 				</tr>
 				<tr>
 					<td><h3 class="header">Memory</h3></td>
-					<td><pre><?=trim(`free -h`)?></pre></td>
+					<td>
+						<div style="display:flex;align-items:flex-start;gap:24px">
+						<?php
+							$freeLines = explode("\n", trim(`free -b`));
+							if (isset($freeLines[1])) {
+								$parts    = preg_split('/\s+/', trim($freeLines[1]));
+								$memTotal = (float)($parts[1] ?? 0);
+								$memUsed  = (float)($parts[2] ?? 0);
+								$memAvail = (float)(isset($parts[6]) ? $parts[6] : ($parts[3] ?? 0));
+								$pctFree  = $memTotal > 0 ? round(($memAvail / $memTotal) * 100) : 0;
+								$pctUsed  = 100 - $pctFree;
+								$barColor = $pctFree < 10 ? '#db2828' : ($pctFree < 25 ? '#f2711c' : ($pctFree < 50 ? '#fbbd08' : '#21ba45'));
+								function fmtBytes($b) {
+									if ($b >= 1073741824) return round($b/1073741824, 1) . ' GB';
+									if ($b >= 1048576)    return round($b/1048576, 1)    . ' MB';
+									return round($b/1024, 1) . ' KB';
+								}
+						?>
+						<div style="width:220px;flex-shrink:0;padding-top:4px">
+							<div style="background:#e0e0e0;border-radius:4px;height:22px;overflow:hidden;margin-bottom:5px">
+								<div style="width:<?= $pctFree ?>%;height:100%;background:<?= $barColor ?>;display:flex;align-items:center;justify-content:center;color:#fff;font-size:0.8em;font-weight:bold;white-space:nowrap">
+									<?= $pctFree ?>% free
+								</div>
+							</div>
+							<div style="font-size:0.85em;color:#555"><?= fmtBytes($memAvail) ?> free of <?= fmtBytes($memTotal) ?> total</div>
+						</div>
+						<?php } ?>
+						<pre style="margin:0"><?= trim(`free -h`) ?></pre>
+						</div>
+					</td>
 				</tr>
 				<tr>
 					<td><h3 class="header">CPU cores</h3></td>

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminmodalities.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -258,9 +258,6 @@
 	/* ------- EditProtocolGroups ----------------- */
 	/* -------------------------------------------- */
 	function EditProtocolGroups($id, $modality) {
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Modalities'] = "adminmodalities.php";
-		//NavigationBar("Admin", $urllist);
 
 		/* perform data checks */
 		$modalityname = mysqli_real_escape_string($GLOBALS['linki'], $modalityname);

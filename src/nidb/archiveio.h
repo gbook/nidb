@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB archiveio.h
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -23,17 +23,18 @@
 #ifndef ARCHIVEIO_H
 #define ARCHIVEIO_H
 #include "nidb.h"
-#include "imageio.h"
-#include "performanceMetric.h"
-#include "series.h"
-#include "subject.h"
-#include "study.h"
 #include "analysis.h"
-#include "pipeline.h"
-#include "minipipeline.h"
+#include "enrollment.h"
 #include "experiment.h"
-#include "observation.h"
+#include "imageio.h"
 #include "intervention.h"
+#include "minipipeline.h"
+#include "observation.h"
+#include "performanceMetric.h"
+#include "pipeline.h"
+#include "series.h"
+#include "study.h"
+#include "subject.h"
 #include "squirrel.h"
 
 /**
@@ -49,7 +50,7 @@ public:
 
     /* archive functions */
     BIDSMapping GetBIDSMapping(int projectRowID, QString protocol, QString modality, QString imageType);
-    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files, performanceMetric &perf);
+    bool ArchiveDICOMSeries(int importid, int existingSubjectID, int existingStudyID, int existingSeriesID, QString subjectMatchCriteria, QString studyMatchCriteria, QString seriesMatchCriteria, int destProjectID, QString specificPatientID, int destSiteID, QString altUIDs, QString seriesNotes, QStringList files);
     bool ArchiveEEGSeries(int importid, QString file);
     bool ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesRowID, int seriesNumber, QHash<QString, QString> tags, QStringList files);
     bool ArchiveParRecSeries(int importid, QString file);
@@ -75,7 +76,7 @@ public:
 
     /* object helper functions */
     void SetUploadID(int upid);
-    void AppendUploadLog(QString func, QString m);
+    void AppendUploadLog(QString m);
 
 private:
     nidb *n;

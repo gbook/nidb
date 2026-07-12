@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleUpload.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -29,7 +29,11 @@
 moduleUpload::moduleUpload(nidb *a)
 {
     n = a;
-    io = new archiveIO(n);
+    //io = new archiveIO(n);
+    //img = new imageIO(n);
+
+    io = std::make_unique<archiveIO>();
+    img = std::make_unique<imageIO>();
 }
 
 
@@ -38,7 +42,8 @@ moduleUpload::moduleUpload(nidb *a)
 /* ---------------------------------------------------------- */
 moduleUpload::~moduleUpload()
 {
-    delete io;
+    //delete io;
+    //delete img;
 }
 
 
@@ -113,7 +118,7 @@ bool moduleUpload::ReadUploads() {
             /* create temporary directory in uploadstagingdir */
             QString m;
             if (!MakePath(uploadstagingpath, m)) {
-                io->AppendUploadLog(__FUNCTION__, "Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]");
+                io->AppendUploadLog("Error creating directory [" + uploadstagingpath + "]  with message [" + m + "]");
                 ret = 1;
 
                 /* update the status */
@@ -130,7 +135,7 @@ bool moduleUpload::ReadUploads() {
 
             /* check if the upload path is valid */
             if ((upload_datapath == "") || (upload_datapath == "/") || (upload_datapath == "/etc") || (upload_datapath == "/bin") || (upload_datapath == "/root")) {
-                io->AppendUploadLog(__FUNCTION__, QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
+                io->AppendUploadLog(QString("upload_datapath is invalid [%1] ").arg(upload_datapath));
 
                 /* update the status */
                 SetUploadStatus(uploadRowID, "parsingerror");
@@ -140,7 +145,7 @@ bool moduleUpload::ReadUploads() {
 
             /* if modality is blank */
             if (upload_modality == "") {
-                io->AppendUploadLog(__FUNCTION__, "Error. Modality was blank [" + upload_modality + "]");
+                io->AppendUploadLog("Error. Modality was blank [" + upload_modality + "]");
                 ret = 1;
 
                 /* update the status */
@@ -150,31 +155,31 @@ bool moduleUpload::ReadUploads() {
             }
 
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
-            io->AppendUploadLog(__FUNCTION__, QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
+            io->AppendUploadLog(QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
             QString systemstring = QString("rsync -a --stats %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
-            io->AppendUploadLog(__FUNCTION__, SystemCommand(systemstring, true, true));
+            io->AppendUploadLog(SystemCommand(systemstring, true, true));
 
             /* remove the uploadtmp directory, if it was uploaded from the web */
             if (upload_source == "web") {
                 QString m;
                 if (RemoveDir(upload_datapath, m)) {
-                    io->AppendUploadLog(__FUNCTION__, "Removed upload_tmp directory [" + upload_datapath + "]");
+                    io->AppendUploadLog("Removed upload_tmp directory [" + upload_datapath + "]");
                 }
                 else {
-                    io->AppendUploadLog(__FUNCTION__, "Error: Unable to remove upload_tmp directory [" + upload_datapath + "]");
+                    io->AppendUploadLog("Error: Unable to remove upload_tmp directory [" + upload_datapath + "]");
                 }
             }
 
             /* unzip any files in the uploadstagingdir */
-            io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploadstagingpath + "]");
+            io->AppendUploadLog("Unzipping files located in [" + uploadstagingpath + "]");
             QString unzipOutput = UnzipDirectory(uploadstagingpath, true);
-            io->AppendUploadLog(__FUNCTION__, "Unzip output" + unzipOutput);
+            io->AppendUploadLog("Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             qint64 c = 0;
             qint64 b = 0;
             GetDirSizeAndFileCount(uploadstagingpath, c, b, true);
-            io->AppendUploadLog(__FUNCTION__, QString("After unzipping, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
+            io->AppendUploadLog(QString("After unzipping, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             n->Log("upload_type is [" + upload_type + "]");
             /* handle the files differently if it's a squirrel upload */
@@ -182,12 +187,14 @@ bool moduleUpload::ReadUploads() {
                 QStringList files = FindAllFiles(uploadstagingpath, "*", true);
                 foreach (QString f, files) {
                     squirrel *sqrl = new squirrel();
+                    sqrl->SetCommandLineExecution(false);
+                    sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
                     sqrl->SetPackagePath(f);
                     sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
                     if (sqrl->Read()) {
                         n->Log("Successfully read squirrel file [" + f + "]");
                         n->Log(sqrl->GetLogBuffer());
-                        ParseUploadedSquirrel(sqrl, "patientid", upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
+                        ParseUploadedSquirrel(sqrl, uploadRowID);
                     }
                     else {
                         /* unable to read squirrel file */
@@ -215,10 +222,10 @@ bool moduleUpload::ReadUploads() {
                     /* get the file info */
                     QHash<QString, QString> tags;
                     QString m;
-                    bool csa = false;
-                    if (n->cfg["enablecsa"] == "1") csa = true;
-                    QString binpath = n->cfg["nidbdir"] + "/bin";
-                    if (img->GetImageFileTags(f, binpath, csa, tags, m)) {
+                    //bool csa = false;
+                    //if (n->cfg["enablecsa"] == "1") csa = true;
+                    //QString binpath = n->cfg["nidbdir"] + "/bin";
+                    if (img->GetImageFileTags(f, tags, m)) {
                         if ((tags["Modality"].toLower() == upload_modality.toLower()) || (upload_modality.toLower() == "auto")) {
 
                             /* subject matching criteria */
@@ -231,7 +238,7 @@ bool moduleUpload::ReadUploads() {
                             else if (upload_subjectcriteria == "namesexdob")
                                 subject = tags["PatientName"] + "|" + tags["PatientSex"] + "|" + tags["PatientBirthDate"];
                             else
-                                io->AppendUploadLog(__FUNCTION__, "Unspecified subject criteria [" + upload_subjectcriteria + "]");
+                                io->AppendUploadLog("Unspecified subject criteria [" + upload_subjectcriteria + "]");
 
                             /* study matching criteria */
                             if (upload_studycriteria == "modalitystudydate")
@@ -239,7 +246,7 @@ bool moduleUpload::ReadUploads() {
                             else if (upload_studycriteria == "studyuid")
                                 study = tags["StudyInstanceUID"];
                             else
-                                io->AppendUploadLog(__FUNCTION__, "Unspecified study criteria [" + upload_studycriteria + "]");
+                                io->AppendUploadLog("Unspecified study criteria [" + upload_studycriteria + "]");
 
                             /* series matching criteria */
                             if (upload_seriescriteria == "seriesnum")
@@ -249,14 +256,14 @@ bool moduleUpload::ReadUploads() {
                             else if (upload_seriescriteria == "seriesuid")
                                 series = tags["SeriesInstanceUID"];
                             else
-                                io->AppendUploadLog(__FUNCTION__, "Unspecified series criteria [" + upload_seriescriteria + "]");
+                                io->AppendUploadLog("Unspecified series criteria [" + upload_seriescriteria + "]");
 
                             /* store the file in the appropriate group */
                             fs[subject][study][series].append(f);
                             validFiles++;
                         }
                         else {
-                            //io->AppendUploadLog(__FUNCTION__, "Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]");
+                            //io->AppendUploadLog("Valid file [" + f + "] but not the modality [" + upload_modality + "] we're looking for [" + tags["Modality"] + "]");
                             fs["nonmatch"]["nonmatch"]["nonmatch"].append(f);
                             nonMatchFiles++;
                         }
@@ -265,7 +272,7 @@ bool moduleUpload::ReadUploads() {
                         /* the file is not readable */
                         fs["NiDBunreadable"]["NiDBunreadable"]["0"].append(f);
                         unreadableFiles++;
-                        //io->AppendUploadLog(__FUNCTION__, "Unable to read file [" + f + "]");
+                        //io->AppendUploadLog("Unable to read file [" + f + "]");
                     }
 
                     i++;
@@ -286,8 +293,8 @@ bool moduleUpload::ReadUploads() {
                         }
 
                         /* after 5000 files, put the found information into the database, then clear the fs list */
-                        io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
-                        io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
+                        io->AppendUploadLog(QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
+                        io->AppendUploadLog(QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
 
                         ParseUploadedFiles(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
                         fs.clear();
@@ -309,8 +316,8 @@ bool moduleUpload::ReadUploads() {
                 }
 
                 /* after 5000 files, put the found information into the database, then clear the fs list */
-                io->AppendUploadLog(__FUNCTION__, QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
-                io->AppendUploadLog(__FUNCTION__, QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
+                io->AppendUploadLog(QString("Found [%1] total files: [%2] valid, [%3] nonmatch, [%4] unreadable").arg(tfiles).arg(validFiles).arg(nonMatchFiles).arg(unreadableFiles));
+                io->AppendUploadLog(QString("fs.size() [%1] before being sent into UpdateParsedUploads()").arg(fs.size()));
 
                 ParseUploadedFiles(fs, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, uploadstagingpath, uploadRowID);
                 fs.clear();
@@ -371,13 +378,13 @@ UploadOptions moduleUpload::GetUploadOptions(int uploadRowID) {
  */
 bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
 
-    io->AppendUploadLog(__FUNCTION__, QString("Processing [%1] subjects").arg(fs.size()));
+    io->AppendUploadLog(QString("Processing [%1] subjects").arg(fs.size()));
 
     /* ---------- iterate through the subjects ---------- */
     for(QMap<QString, QMap<QString, QMap<QString, QStringList> > >::iterator a = fs.begin(); a != fs.end(); ++a) {
         QString subject = a.key();
 
-        io->AppendUploadLog(__FUNCTION__, QString("Processing subject [%1]").arg(subject));
+        io->AppendUploadLog(QString("Processing subject [%1]").arg(subject));
 
         QString PatientID, PatientName, PatientSex, PatientBirthDate;
         if ((upload_subjectcriteria == "patientid") || (upload_subjectcriteria == "specificpatientid") || (upload_subjectcriteria == "patientidfromdir")) {
@@ -404,7 +411,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
 
             QString study = b.key();
 
-            io->AppendUploadLog(__FUNCTION__, QString("Processing study [%1]").arg(study));
+            io->AppendUploadLog(QString("Processing study [%1]").arg(study));
 
             QString Modality;
             QString StudyDateTime;
@@ -431,7 +438,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
             for(QMap<QString, QStringList>::iterator c = fs[subject][study].begin(); c != fs[subject][study].end(); ++c) {
 
                 QString series = c.key();
-                io->AppendUploadLog(__FUNCTION__, QString("Processing series [%1]").arg(series));
+                io->AppendUploadLog(QString("Processing series [%1]").arg(series));
 
                 int SeriesNumber(0);
                 QString SeriesDateTime;
@@ -458,7 +465,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
 
                 QStringList files = fs[subject][study][series];
                 qint64 numfiles = files.size();
-                //io->AppendUploadLog(__FUNCTION__, QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
+                //io->AppendUploadLog(QString("numfiles [%1]   numfiles [%2]").arg(files.size()).arg(numfiles));
                 seriesid = InsertOrUpdateParsedSeries(-1, upload_seriescriteria, studyid, SeriesDateTime, SeriesNumber, SeriesInstanceUID, files, numfiles, "", "", "", "", "", "", 0, 0, m);
 
                 /* remove the prefix for the files */
@@ -475,10 +482,10 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 /* if subject and study are unreadable, put those files into the appropriate bin */
                 QHash<QString, QString> tags;
                 QString m;
-                bool csa = false;
-                if (n->cfg["enablecsa"] == "1") csa = true;
-				QString binpath = n->cfg["nidbdir"] + "/bin";
-				img->GetImageFileTags(files[0], binpath, csa, tags, m);
+                //bool csa = false;
+                //if (n->cfg["enablecsa"] == "1") csa = true;
+                //QString binpath = n->cfg["nidbdir"] + "/bin";
+                img->GetImageFileTags(files[0], tags, m);
 
                 QSqlQuery q3;
 
@@ -515,7 +522,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
  * @param uploadRowID uploadRowID
  * @return true
  */
-bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
+bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, int uploadRowID) {
     n->Log(sqrl->PrintPackage());
 
     /* load subjects, studies, series into the upload_* tables */
@@ -591,7 +598,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
             QString upload_studycriteria = q.value("upload_studycriteria").toString();
             QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
-            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
+            io->AppendUploadLog(QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
 
             /* set status to archiving */
             SetUploadStatus(uploadRowID, "archiving", 0.0);
@@ -631,20 +638,20 @@ bool moduleUpload::ArchiveSelectedFiles() {
                     //        uploadseries_filelist[i] = upload_stagingpath + uploadseries_filelist[i];
                     //}
 
-                    performanceMetric perf;
+                    //performanceMetric perf;
                     /* insert the series */
-                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist, perf);
+                    io->ArchiveDICOMSeries(-1, matchingsubjectid, matchingstudyid, matchingseriesid, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_destprojectid, upload_patientid, -1, "", "Uploaded to NiDB", uploadseries_filelist);
 
                     i++;
                     double pct = static_cast<double>(i)/static_cast<double>(numSeries) * 100.0;
                     SetUploadStatus(uploadRowID, "archiving", pct);
                 }
 
-                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(uploadRowID));
+                io->AppendUploadLog(QString("Completed archiving of upload [%1]").arg(uploadRowID));
             }
             else {
                 error = true;
-                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+                io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
 
             if (error) {
@@ -655,9 +662,9 @@ bool moduleUpload::ArchiveSelectedFiles() {
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
                 if (RemoveDir(upload_stagingpath, m))
-                    io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
+                    io->AppendUploadLog(QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
-                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+                    io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
         }
     }
@@ -699,7 +706,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             //QString upload_studycriteria = q.value("upload_studycriteria").toString();
             //QString upload_seriescriteria = q.value("upload_seriescriteria").toString();
 
-            io->AppendUploadLog(__FUNCTION__, QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
+            io->AppendUploadLog(QString("Beginning archiving of upload [%1] with upload_destprojectid of [%2]").arg(uploadRowID).arg(upload_destprojectid));
 
             /* set status to archiving */
             SetUploadStatus(uploadRowID, "archiving", 0.0);
@@ -707,12 +714,15 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             /* unzip the squirrel package */
             QString f;
             QString m;
-            if (!FindFirstFile(upload_stagingpath, "*.sqrl", f, m)) {
+            if (!NiDBFindFirstFile(upload_stagingpath, "*.sqrl", f, m)) {
                 n->Log("Unable to find any squirrel files in path [" + upload_stagingpath + "]", __FUNCTION__);
                 continue;
             }
             QString tmppath;
-            squirrel *sqrl = new squirrel();
+            auto sqrl = std::make_unique<squirrel>();
+            //squirrel *sqrl = new squirrel();
+            sqrl->SetCommandLineExecution(false);
+            sqrl->SetSystemTempDir(n->cfg["tmpdir"]);
             sqrl->SetPackagePath(f);
             sqrl->SetQuickRead(false); /* it will take longer to read, but we will want the contents of all the params.json files */
             if (sqrl->Read()) {
@@ -726,6 +736,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 tmppath = n->cfg["tmpdir"] + "/" + GenerateRandomString(20);
                 if (!MakePath(tmppath,m)) {
                     n->Log("Error creating temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
+                    //delete sqrl;
                     continue;
                 }
                 else {
@@ -747,8 +758,13 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 }
                 else {
                     n->Log("Error extracting squirrel package [" + f + "] to directory [" + tmppath + "] with message [" + m + "]", __FUNCTION__);
+                    //delete sqrl;
                     continue;
                 }
+            }
+            else {
+                //delete sqrl;
+                continue;
             }
 
             n->Log(sqrl->GetLogBuffer());
@@ -765,7 +781,11 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
 
                     /* check if this module should be running */
                     n->ModuleRunningCheckIn();
-                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
+                    if (!n->ModuleCheckIfActive()) {
+                        n->Log("Module is now inactive, stopping the module");
+                        //delete sqrl;
+                        return false;
+                    }
 
                     ret = true;
                     //int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
@@ -866,6 +886,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     }
                     else if ((sqrl->DataFormat == "dicom") || (sqrl->DataFormat == "orig") || (sqrl->DataFormat == "anon") || (sqrl->DataFormat == "anonfull")) {
                         n->Log("squirrel data format is [" + sqrl->DataFormat + "], calling ArchiveDICOMSeries()");
+                        /* TODO - this section is not implemented yet */
                         //io->ArchiveDICOMSeries();
                     }
                     else {
@@ -879,11 +900,11 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                     n->Log(sqrl->GetLogBuffer());
                 }
 
-                io->AppendUploadLog(__FUNCTION__, QString("Completed archiving of upload [%1]").arg(uploadRowID));
+                io->AppendUploadLog(QString("Completed archiving of upload [%1]").arg(uploadRowID));
             }
             else {
                 error = true;
-                io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+                io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
 
             if (error) {
@@ -894,13 +915,13 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
                 if (RemoveDir(upload_stagingpath, m))
-                    io->AppendUploadLog(__FUNCTION__, QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
+                    io->AppendUploadLog(QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
-                    io->AppendUploadLog(__FUNCTION__, QString("Error: No series found for upload [%1]").arg(uploadRowID));
+                    io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));
             }
 
             n->Log(sqrl->GetLogBuffer());
-            delete sqrl;
+            //delete sqrl;
         }
     }
 
@@ -1232,16 +1253,16 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
 
                 int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                io->AppendUploadLog(QString("2) numfiles, before appending [%1]").arg(numfiles));
                 numfiles += databaseNumFiles;
-                io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("3) numfiles, after appending [%1]").arg(numfiles));
 
                 QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                io->AppendUploadLog(QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
                 files.append(databaseFiles);
-                io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
             }
             else {
                 /* ... otherwise create a new series */
@@ -1261,16 +1282,16 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
                 int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                io->AppendUploadLog(QString("2) numfiles, before appending [%1]").arg(numfiles));
                 numfiles += databaseNumFiles;
-                io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("3) numfiles, after appending [%1]").arg(numfiles));
 
                 QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                io->AppendUploadLog(QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
                 files.append(databaseFiles);
-                io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
             }
             else {
                 /* ... otherwise create a new series */
@@ -1293,16 +1314,16 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
                 int databaseNumFiles = q.value("uploadseries_numfiles").toInt();
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database numfiles [%1]").arg(databaseNumFiles));
-                io->AppendUploadLog(__FUNCTION__, QString("2) numfiles, before appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("1) Database numfiles [%1]").arg(databaseNumFiles));
+                io->AppendUploadLog(QString("2) numfiles, before appending [%1]").arg(numfiles));
                 numfiles += databaseNumFiles;
-                io->AppendUploadLog(__FUNCTION__, QString("3) numfiles, after appending [%1]").arg(numfiles));
+                io->AppendUploadLog(QString("3) numfiles, after appending [%1]").arg(numfiles));
 
                 QStringList databaseFiles = q.value("uploadseries_filelist").toString().split(",");
-                io->AppendUploadLog(__FUNCTION__, QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
-                io->AppendUploadLog(__FUNCTION__, QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("1) Database contains list of [%1] files").arg(databaseFiles.size()));
+                io->AppendUploadLog(QString("2) Files list, before appending, contains [%1] files").arg(files.size()));
                 files.append(databaseFiles);
-                io->AppendUploadLog(__FUNCTION__, QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
+                io->AppendUploadLog(QString("3) Files list, after appending, contains [%1] files").arg(files.size()));
             }
             else {
                 /* ... otherwise create a new series */

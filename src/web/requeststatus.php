@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB requeststatus.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -43,8 +43,8 @@
 	/* get variables */
 	$action = GetVariable("action");
 	$page = GetVariable("page");
-	$exportid = GetVariable("exportid");
-	$requestid = GetVariable("requestid");
+	$exportid = (int)GetVariable("exportid");
+	$requestid = (int)GetVariable("requestid");
 	$viewall = GetVariable("viewall");
 	
 	switch ($action) {
@@ -75,8 +75,10 @@
 	/* ------- CancelExport ------------------------------- */
 	/* --------------------------------------------------- */
 	function CancelExport($exportid) {
-		$sqlstring = "update exports set status = 'cancelled' where export_id = $exportid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'cancelled' where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		
 		Notice("Export [$exportid] cancelled");
 	}
 
@@ -86,10 +88,14 @@
 	/* --------------------------------------------------- */
 	function ResetExport($exportid) {
 		if ($exportid > 0) {
-			$sqlstring = "update exports set status = 'submitted', log = '' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'submitted', log = '' where export_id = ?");
+			mysqli_stmt_bind_param($stmt, "i", $exportid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exportseries set status = 'submitted' where export_id = ?");
+			mysqli_stmt_bind_param($stmt, "i", $exportid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			
 			Notice("Status reset for export [$exportid]");
 		}
 		else {
@@ -159,7 +165,7 @@
 		<?
 		if ($viewall) {
 			?>
-			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show only last 30</a>
+			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show last 30 exports</a>
 			<?
 		}
 		else {
@@ -200,7 +206,14 @@
 			$exportid = $row['export_id'];
 			$submitdate = $row['submitdate'];
 			$username = $row['username'];
+			$downloadflags = $row['download_flags'];
 			$destinationtype = $row['destinationtype'];
+			$filetype = $row['filetype']; /* squirrel, bids, package */
+			$nfsdir = $row['nfsdir'];
+			$niftiFlags = explode(",", $row['nifti_flags']);
+			$bidsFlags = explode(",", $row['bids_flags']);
+			$squirrelFlags = explode(",", $row['squirrel_flags']);
+			$ndaFlags = explode(",", $row['nda_flags']);
 			$exportstatus = $row['status'];
 			$connectionid = $row['remotenidb_connectionid'];
 			$transactionid = $row['remotenidb_transactionid'];
@@ -209,7 +222,8 @@
 				case "web": $deststr = "<i class='cloud download alternate icon'></i> Web"; break;
 				case "publicdownload": $deststr = "<i class='people carry icon'></i> Public Download"; break;
 				case "remotenidb": $deststr = "<em data-emoji=':chipmunk:'></em> Remote NiDB"; break;
-				case "nfs": $deststr = "<i class='server icon'></i> Remote NiDB"; break;
+				case "nfs": $deststr = "<i class='server icon'></i> NFS"; break;
+				case "ndar": $deststr = "<i class='server icon'></i> NDA"; break;
 				default: $deststr = ucfirst($destinationtype);
 			}
 			
@@ -341,42 +355,110 @@
 					</div>
 					<div class="right aligned column">
 						<?
-							if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
-								if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-									$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
-									if (file_exists($zipfile)) {
-										$output = shell_exec("du -sb $zipfile");
-										list($filesize, $fname) = preg_split('/\s+/', $output);
-										$zipfilename = "NIDB-$exportid.zip";
+							$complete = false;
+							if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
+								$complete = true;
+							}
+						
+							/* display download link - destinationtype is 'web' or (destinationtype is 'ndar' and ndaflags contains NDA_WEBDOWNLOAD) */
+							if ($destinationtype == "web") {
+								if ($complete) {
+									$zipFileName = "NIDB-$exportid.zip";
+									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
+									if (file_exists($zipFilePath)) {
+										$filesize = filesize($zipFilePath);
 									}
 									else {
-										$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NiDB-Squirrel-$exportid.zip";
-										if (file_exists($zipfile)) {
-											$output = shell_exec("du -sb $zipfile");
-											list($filesize, $fname) = preg_split('/\s+/', $output);
-											$zipfilename = "NiDB-Squirrel-$exportid.zip";
-											//echo $zipfilename;
-										}
-										else {
-											$filesize = 0;
-										}
+										$filesize = 0;
 									}
-									
-									//echo "[$zipfilename] [$zipfile]";
+
 									if ($filesize == 0) {
-										echo "Zipping download...";
+										echo "Zipping download... ($zipFilePath)";
 									}
 									else {
+										$fsize = HumanReadableFilesize($filesize);
 										?>
-											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=$fsize?></span></a>
 											<br>
 										<?
 									}
+									
 								}
 								else {
 									?>Preparing download...<?
 								}
 							}
+							elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
+								if (in_array('NDA_WEBDOWNLOAD', $ndaFlags)) {
+									?>NDA web download...<?
+									$zipFileName = "NIDB-$exportid.zip";
+									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
+									if (file_exists($zipFilePath)) { $filesize = filesize($zipFilePath); }
+									else { $filesize = 0; }
+
+									if ($filesize == 0) {
+										echo "Zipping download... ($zipFilePath)";
+									}
+									else {
+										?>
+											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<br>
+										<?
+									}
+								}
+								else {
+									?>NDA ftp download...<br>Download available from scp://<?
+								}
+							}
+							elseif ($destinationtype == "remotenidb") {
+								?>Remote NiDB export<?
+							}
+							elseif ($destinationtype == "nfs") {
+							}
+							elseif ($destinationtype == "publicdownload") {
+							}
+							
+							
+							//if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
+							//if (($destinationtype == "web") || ($destinationtype == "ndar")) {
+								//if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
+									
+									//if ($destinationtype == "squirrel") {
+									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
+									//	if (file_exists($zipfile)) {
+									//		$output = shell_exec("du -sb $zipfile");
+									//		list($filesize, $fname) = preg_split('/\s+/', $output);
+									//		$zipfilename = "NiDB-Squirrel-$exportid.zip";
+									//		//echo $zipfilename;
+									//	}
+									//	else {
+									//		$filesize = 0;
+									//	}
+									//}
+									//else {
+									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
+									//	if (file_exists($zipfile)) {
+									//		$output = shell_exec("du -sb $zipfile");
+									//		list($filesize, $fname) = preg_split('/\s+/', $output);
+									//		$zipfilename = "NIDB-$exportid.zip";
+									//	}
+									//	else {
+									//		$filesize = 0;
+									//	}
+									//}
+									
+									//echo "[$zipfilename] [$zipfile]";
+									//if ($filesize == 0) {
+									//	echo "Zipping download... ($zipfile)";
+									//}
+									//else {
+										?><!--
+											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
+											<br>-->
+										<?
+									//}
+								//}
+							//}
 						?>
 					</div>
 				</div>

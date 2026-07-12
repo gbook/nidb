@@ -1,12 +1,99 @@
-#!/bin/sh
+#!/bin/bash
+
+# look for and read an existing config file
+new_installation=1
+CONFIG_FILE=""
+declare -A config
+POSSIBLE_FILES=(
+    "/nidb/nidb.cfg"
+    "/nidb/bin/nidb.cfg"
+    "/etc/nidb/nidb.cfg"
+    "/usr/local/etc/nidb/nidb.cfg"
+    "$HOME/.config/nidb/nidb.cfg"
+    "./nidb.cfg"
+    "/nidb/programs/nidb.cfg"
+)
+
+setup_dcmrcv_service() {
+    echo 'Setting up dcmrcv...'
+
+    if command -v systemctl >/dev/null 2>&1 && [[ -f /nidb/setup/dcmrcv.service ]]; then
+        cp /nidb/setup/dcmrcv.service /etc/systemd/system/
+        systemctl daemon-reload
+        systemctl enable dcmrcv.service
+        systemctl start dcmrcv.service
+        return
+    fi
+
+    if [[ -f /nidb/setup/dcmrcv ]]; then
+        cp /nidb/setup/dcmrcv /etc/init.d/
+        chmod 755 /etc/init.d/dcmrcv
+
+        if command -v chkconfig >/dev/null 2>&1; then
+            chkconfig --add dcmrcv
+        fi
+
+        if command -v service >/dev/null 2>&1; then
+            service dcmrcv start
+        else
+            /etc/init.d/dcmrcv start
+        fi
+    else
+        echo 'No dcmrcv service file found; skipping dcmrcv service setup.'
+    fi
+}
+
+# find the config file if it exists; migrate to /nidb/nidb.cfg if found elsewhere
+for file in "${POSSIBLE_FILES[@]}"; do
+    if [[ -f "$file" ]]; then
+        new_installation=0
+        if [[ "$file" != "/nidb/nidb.cfg" ]]; then
+            echo "Migrating config from $file to /nidb/nidb.cfg"
+            cp -v "$file" /nidb/nidb.cfg
+            chmod 640 /nidb/nidb.cfg
+            if [[ "$file" == "/etc/nidb/nidb.cfg" ]]; then
+                rm -f /etc/nidb/nidb.cfg
+                rmdir --ignore-fail-on-non-empty /etc/nidb
+            fi
+        fi
+        CONFIG_FILE="/nidb/nidb.cfg"
+        break
+    fi
+done
+
+# load the config variables if a config file was found
+if [[ -n "$CONFIG_FILE" ]]; then
+    while IFS= read -r line; do
+        # Trim leading/trailing whitespace
+        line="$(sed 's/^[[:space:]]*//;s/[[:space:]]*$//' <<< "$line")"
+
+        # Skip comments and empty lines
+        [[ -z "$line" || "$line" =~ ^# ]] && continue
+
+        # Match: [key] = value
+        if [[ "$line" =~ ^\[([a-zA-Z0-9_]+)\][[:space:]]*=[[:space:]]*(.*)$ ]]; then
+            key="${BASH_REMATCH[1]}"
+            value="${BASH_REMATCH[2]}"
+
+            # Remove optional surrounding quotes
+            value="${value%\"}"
+            value="${value#\"}"
+
+            config["$key"]="$value"
+            echo "[$key]=$value"
+        fi
+    done < "$CONFIG_FILE"
+fi
+
+if ((new_installation)); then
+    echo "This is a NEW installation"
+else
+    echo "This is an EXISTING installation"
+fi
 
 # create link to the mariadb libraries (may or may not be necessary)
 echo 'Create libmariadb link...'
 ln -sf /lib64/libmariadb.so.3 /lib64/libmysqlclient.so.18
-
-# PHP packages
-echo 'Install PHP packages...'
-pear install Mail Mail_Mime Net_SMTP
 
 # disable SE Linux
 echo 'Disable SE Linux...'
@@ -46,17 +133,21 @@ systemctl start httpd.service
 systemctl start mariadb.service
 systemctl start php-fpm.service
 
-# make sure port 80 is accessible through the firewall
-echo 'Add port 80 to firewall...'
+# make sure required ports are accessible through the firewall
+echo 'Add ports to firewall...'
 firewall-cmd --permanent --add-port=80/tcp
+firewall-cmd --permanent --add-port=104/tcp
+firewall-cmd --permanent --add-port=104/udp
+firewall-cmd --permanent --add-port=8104/tcp
+firewall-cmd --permanent --add-port=8104/udp
 firewall-cmd --reload
 
 # create nidb user if it does not exist, add nidb to the apache group, and apache to the nidb group
 echo 'Add nidb user...'
-id -u nidb &>/dev/null || useradd -p $(openssl passwd -1 password) nidb
-groupadd nidb
-usermod -G apache nidb
-usermod -G nidb apache
+id -u nidb &>/dev/null || useradd -p "$(openssl passwd -1 password)" nidb
+groupadd -f nidb
+usermod -a -G apache nidb
+usermod -a -G nidb apache
 # set nidb as the owner of these directories
 chown nidb:nidb /run/php-fpm/www.sock
 chown -R nidb:nidb /var/lib/php/session
@@ -73,47 +164,89 @@ mysqladmin -uroot password password # set the root password
 echo 'Create MariaDB nidb account...'
 mysql -uroot -ppassword -e "CREATE USER IF NOT EXISTS 'nidb'@'%' IDENTIFIED BY 'password'; GRANT ALL PRIVILEGES ON *.* TO 'nidb'@'%'; FLUSH PRIVILEGES;"
 
-# add dcmrcv service at boot
-echo 'Setting up dcmrcv...'
-cp /nidb/setup/dcmrcv /etc/init.d  # copy the dcmrcv init script
-chmod 755 /etc/init.d/dcmrcv # change permissions of the script
-chkconfig --add dcmrcv       # add the script to start at boot
+setup_dcmrcv_service
 
-# create data directories
-echo 'Create data directories and change owner...'
-mkdir -p /nidb/data
-mkdir -p /nidb/data/archive
-mkdir -p /nidb/data/backup
-mkdir -p /nidb/data/backupstaging
-mkdir -p /nidb/data/deleted
-mkdir -p /nidb/data/dicomincoming
-mkdir -p /nidb/data/download
-mkdir -p /nidb/data/ftp
-mkdir -p /nidb/data/problem
-mkdir -p /nidb/data/tmp
-mkdir -p /nidb/data/upload
-mkdir -p /nidb/data/uploaded
-mkdir -p /nidb/data/uploadstaging
+if ((new_installation)); then
+    # create data directories
+    echo 'Create data directories and change owner...'
+    mkdir -p -m 774 /nidb
+    mkdir -p -m 764 /nidb/data
+    mkdir -p -m 764 /nidb/data/archive
+    mkdir -p -m 764 /nidb/data/backup
+    mkdir -p -m 764 /nidb/data/backupstaging
+    mkdir -p -m 764 /nidb/data/deleted
+    mkdir -p -m 764 /nidb/data/dicomincoming
+    mkdir -p -m 764 /nidb/data/download
+    mkdir -p -m 764 /nidb/data/ftp
+    mkdir -p -m 764 /nidb/data/export
+    mkdir -p -m 764 /nidb/data/problem
+    mkdir -p -m 764 /nidb/data/tmp
+    mkdir -p -m 764 /nidb/data/upload
+    mkdir -p -m 764 /nidb/data/uploaded
+    mkdir -p -m 764 /nidb/data/uploadstaging
 
-# change permissions of the /nidb directory
-echo 'Change ownership of /nidb contents...'
-chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change ownership of the install directory
-chown nidb:nidb /nidb/*  # change ownership of the install directory
-chown nidb:nidb /nidb/data  # change ownership of the data directory
-chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging  # change ownership of the data directories
-echo 'Change permissions of /nidb...'
-chmod -R g+w /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup # change permissions of the install directorys contents
-chmod g+w /nidb/* # change permissions of the install directorys contents
-echo 'Change ownership of /nidb...'
-chmod 777 /nidb              # change permissions of the install directory
+    echo 'Change ownership of /nidb contents...'
+    chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup
+    chown nidb:nidb /nidb/*
+    chown nidb:nidb /nidb/data
+    chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
+    chown -R nidb:nidb /var/www/html
+else
+    echo 'Existing installation detected. RPM changes ownership of key directories to root. Now changing ownership back to nidb'
+    chown -R nidb:nidb /var/www/html
+    chown nidb:nidb /nidb/*
+fi
 
-# change owner and permissions of the web directory
-chown -R nidb:nidb /var/www/html
-find /var/www -type d -exec chmod 755 {} \;
-find /var/www -type f -exec chmod 644 {} \;
+# remove deprecated web files left over from previous versions (RPM upgrades do not delete them automatically)
+echo 'Removing deprecated web files...'
+DEPRECATED_WEB_FILES=(
+    "GetRCInst.php"
+    "adminassessmentforms.php"
+    "assessments.php"
+    "calendar_allocations.php"
+    "calendar_projects.php"
+    "calendar_users.php"
+    "drugs.php"
+    "f.php"
+    "horizontalchart.php"
+    "importcsvdata.php"
+    "importexperiment.php"
+    "importredcapcsvdata.php"
+    "kashi.php"
+    "longformat.csv"
+    "measures.php"
+    "mrqcchecklist_old.php"
+    "prescriptions.php"
+    "projectassessments.php"
+    "projects_ado2dev.php"
+    "rcmaninsert.php"
+    "series_inlineupdate.php"
+    "objectexists.php"
+    "stddevchart.php"
+    "redcap2ADO.php"
+    "redcapimport.php"
+    "redcapimportsubjects.php"
+    "redcapmaping.php"
+    "redcapmapping.php"
+    "redcapsubjectsimport.php"
+    "redcaptonidb.php"
+    "redcaptonidb_Old.php"
+    "shortformat.csv"
+    "subject_inlineupdate.php"
+    "subjectlist.php"
+    "validatepath.php"
+    "vitals.php"
+)
+for f in "${DEPRECATED_WEB_FILES[@]}"; do
+    rm -f "/var/www/html/$f"
+done
+# also remove any files explicitly marked as deprecated
+rm -f /var/www/html/deprecated_*
 
 touch /nidb/setup/dbupgrade
 
-echo "*******************************************************************************"
-echo "IMPORTANT!!  go to http://localhost/setup.php to finish the upgrade process  !!"
-echo "*******************************************************************************"
+echo "*****************************************************************************************"
+echo "  IMPORTANT!!"
+echo "  - Go to http://localhost/setup.php to finish the upgrade process!!"
+echo "  - If needed, edit /etc/systemd/system/dcmrcv.service to reflect the correct dicomincoming path."
+echo "*****************************************************************************************"

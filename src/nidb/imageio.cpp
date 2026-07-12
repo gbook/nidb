@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB imageio.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -25,6 +25,20 @@
 
 
 /* ---------------------------------------------------------- */
+/* --------- align4 ----------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief align a number to 4
+ * @param x
+ * @return
+ */
+static int align4(int x)
+{
+    return (x + 3) & ~3;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- imageIO ---------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -32,7 +46,18 @@
 */
 imageIO::imageIO()
 {
+}
 
+
+/* ---------------------------------------------------------- */
+/* --------- imageIO ---------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * imageIO constructor
+*/
+imageIO::imageIO(nidb *a)
+{
+    n = a;
 }
 
 
@@ -44,7 +69,289 @@ imageIO::imageIO()
 */
 imageIO::~imageIO()
 {
+}
 
+
+/* ---------------------------------------------------------- */
+/* --------- Exiftool --------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Run exiftool to get DICOM tags. Output should be terminated with {ready}, otherwise it is incomplete
+ * @param arg The DICOM (or other type) file
+ * @return The full output from exiftool
+ */
+QString imageIO::Exiftool(QString arg) {
+    QString str;
+
+    QFileInfo fileInfo(arg);
+    QString filename = fileInfo.fileName();
+
+    /* ----- check one more time to see if everything was ok ----- */
+    QString systemstring = "exiftool " + arg;
+    str = SystemCommand(systemstring, false);
+
+    /* check if the output is not truncated or cut off */
+    if (str.size() < 50) {
+        Print(n->Log(QString("*** Exiftool output from file [%1] is ONLY [%2] bytes. str contains [%3] ***").arg(arg).arg(str.size()).arg(str)));
+        str = "";
+    }
+    /* check if the output contains the filename passed to exiftool  */
+    else if (!str.contains(filename.trimmed(), Qt::CaseInsensitive)) {
+        Print(n->Log(QString("*** Exiftool output from file [%1] does NOT contain the file name [%2]. size is [%3] bytes. str is [%4] ***").arg(arg).arg(filename).arg(str.size()).arg(str)));
+        str = "";
+    }
+    /* check if the str is blank */
+    else if (str == "") {
+        Print(n->Log(QString("*** Exiftool output from file [%1] is empty ***").arg(arg)));
+        str = "";
+    }
+
+    return str;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetImageTagsDCMTK ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief imageIO::GetImageTagsDCMTK
+ * @param f
+ * @param tags
+ * @param msg
+ * @return
+ */
+bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
+
+    QStringList msgs;
+
+    tags["FilePath"] = f;
+
+    const char* filename = f.toLatin1();
+
+    DcmFileFormat fileformat;
+    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
+    if (status.good()) {
+        tags["FileType"] = "DICOM";
+        DcmStack stack;
+        DcmDataset *dataset = fileformat.getDataset();
+        while (dataset->nextObject(stack, OFTrue /*intoSub*/).good())
+        {
+            DcmObject *object = stack.top();
+            QString tagName = DcmTag(object->getTag()).getTagName();
+            if (tagName.startsWith("Unknown")) {
+                int group = DcmTag(object->getTag()).getGroup();
+                int element = DcmTag(object->getTag()).getElement();
+                tagName = QString("Unknown_%1x%2").arg(group, 4, 10, QChar('0')).arg(element, 4, 10, QChar('0'));
+            }
+
+            if (object->isElement()) {
+                OFString strValue;
+                DcmElement *element = OFstatic_cast(DcmElement *, object);
+                if (element->getOFStringArray(strValue).good()) {
+                    /* read the Siemens binary encoded CSA header */
+                    if ((object->getGTag() == 0x0029) && (object->getETag() == 0x1010)) {
+                        QString hexstr = strValue.c_str();
+                        hexstr.remove('\\');
+                        QByteArray bytes = QByteArray::fromHex(hexstr.toLatin1());
+
+                        QMap<QString, CsaElement> csaTags = ParseSiemensCSA(bytes);
+                        for (auto i = csaTags.cbegin(), end = csaTags.cend(); i != end; ++i) {
+                            CsaElement elem = i.value();
+                            QString name = i.key();
+                            QString vr = i.value().vr;
+                            QString val;
+                            if (elem.values.size() > 0) {
+                                if (vr == "LO" || vr == "SH" || vr == "ST" || vr == "LT" || vr == "AE" || vr == "CS" || vr == "UT" || vr == "DS" || vr == "IS") {
+                                    val = csaToString(elem.values.first());
+                                }
+                                else if (vr == "FD" || vr == "FL") {
+                                    val = QString("%1").arg(csaToDouble(elem.values.first()));
+                                }
+                                else if (vr == "SL" || vr == "UL" || vr == "SS" || vr == "US") {
+                                    val = QString("%1").arg(csaToInteger(elem.values.first()));
+                                }
+                            }
+                            else {
+                                //printf("Value appears to be empty\n");
+                            }
+                            val.remove(QChar('\0'));
+
+                            /* only add the tag if it does not already exist */
+                            if (!tags.contains(name))
+                                tags[name] = val.trimmed();
+                        }
+                    }
+                    /* read the Siemens MrPhoenixProtocol header */
+                    else if ((object->getGTag() == 0x0029) && (object->getETag() == 0x1020)) {
+                        QString hexstr = strValue.c_str();
+                        hexstr.remove('\\');
+                        QByteArray bytes = QByteArray::fromHex(hexstr.toLatin1());
+                        QString text = QString::fromLatin1(bytes);
+                        QStringList lines = text.split("\n");
+                        foreach (QString line, lines) {
+                            if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
+                                /* make sure the line does not contain any non-printable ASCII control characters */
+                                if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
+                                    qint64 idx = line.indexOf(".dInPlaneRot");
+                                    line = line.mid(idx,23);
+                                    QStringList vals = line.split(QRegularExpression("\\s+"));
+                                    if (vals.size() > 0)
+                                        tags["PhaseEncodeAngle"] = vals.last().trimmed();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    /* read all other tags */
+                    else {
+                        tags[tagName] = strValue.c_str();
+                    }
+                }
+                else if (element->isLeaf()) {
+                    tags[tagName] = "";
+                }
+            }
+        }
+    }
+    else {
+        tags["Valid"] = "0";
+        tags["ParseMessages"] = msgs.join("\n");
+        return false;
+    }
+
+    tags["ParseMessages"] = msgs.join("\n");
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToDouble ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into a double
+ * @param v The bytearray
+ * @return The value
+ */
+double imageIO::csaToDouble(const QByteArray& v)
+{
+    QDataStream s(v);
+    s.setByteOrder(QDataStream::LittleEndian);
+
+    double d;
+    s >> d;
+    return d;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToInteger ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into an integer
+ * @param v The bytearray
+ * @return The value
+ */
+int imageIO::csaToInteger(const QByteArray& v)
+{
+    QDataStream s(v);
+    s.setByteOrder(QDataStream::LittleEndian);
+
+    int d;
+    s >> d;
+    return d;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- csaToString ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a value stored in a CSA byte array into a QString
+ * @param v The bytearray
+ * @return The value
+ */
+QString imageIO::csaToString(const QByteArray& v)
+{
+    return QString::fromLatin1(v).trimmed();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseSiemensCSA -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Parse an older style Siemens CSA header. This function was generated by ChatGPT...
+ * @param csa - The byte array extracted from the DICOM header
+ * @return A list of found elements
+ */
+QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
+{
+    QMap<QString, CsaElement> result;
+
+    QDataStream stream(csa);
+    stream.setByteOrder(QDataStream::LittleEndian);
+
+    char header[4];
+    stream.readRawData(header, 4);
+
+    /* check for SV10 or SV12 */
+    if (memcmp(header, "SV1", 3) != 0)
+        return result;
+
+    stream.skipRawData(4); // unused
+
+    qint32 nTags;
+    stream >> nTags;
+
+    stream.skipRawData(4); // unused
+
+    for (int t = 0; t < nTags; ++t)
+    {
+        char nameBuf[64];
+        stream.readRawData(nameBuf, 64);
+        QString name = QString(QByteArray(nameBuf));
+
+        qint32 vm;
+        stream >> vm;
+
+        char vrBuf[4];
+        stream.readRawData(vrBuf, 4);
+        QString vr = QString::fromLatin1(vrBuf).trimmed();
+
+        qint32 syngo_dt;
+        qint32 nItems;
+        qint32 unused;
+
+        stream >> syngo_dt >> nItems >> unused;
+
+        CsaElement element;
+        element.name = name;
+        element.vr = vr;
+
+        for (int i = 0; i < nItems; ++i)
+        {
+            qint32 itemLen[4];
+            stream.readRawData(reinterpret_cast<char*>(itemLen), 16);
+
+            int len = itemLen[1];   // actual length
+
+            QByteArray value(len, Qt::Uninitialized);
+            if (len > 0)
+                stream.readRawData(value.data(), len);
+
+            // Skip padding
+            int pad = align4(len) - len;
+            if (pad > 0)
+                stream.skipRawData(pad);
+
+            element.values.append(value);
+        }
+
+        result.insert(name, element);
+    }
+
+    return result;
 }
 
 
@@ -97,14 +404,20 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     /* do the conversion */
     QString systemstring;
     QDir::setCurrent(indir);
-    if (filetype == "nifti4dme")
+    if (filetype == "nifti4dme") {
         systemstring = QString("%1/./dcm2niixme %2 -o '%3' %4").arg(bindir).arg(gzipstr).arg(outdir).arg(indir);
-    else if (filetype == "nifti4d")
+    }
+    else if (filetype == "nifti4d") {
         systemstring = QString("%1/./dcm2niix -1 -b %6 %2 -o '%3' %4%5").arg(bindir).arg(gzipstr).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
-    else if (filetype == "nifti3d")
+    }
+    else if (filetype == "nifti3d") {
+        //Print("Checkpoing D-3");
         systemstring = QString("%1/./dcm2niix -1 -b %5 -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext).arg(jsonstr);
-    else if (filetype == "bids")
+    }
+    else if (filetype == "bids") {
+        //Print("Checkpoing D-4");
         systemstring = QString("%1/./dcm2niix -1 -b y -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    }
     else {
         msgs << "Invalid export filetype [" + filetype + "]";
         msg = msgs.join("\n");
@@ -141,10 +454,12 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* rename the files into something meaningful */
     m = "";
-    if (filetype == "bids")
+    if (filetype == "bids") {
         BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, bidsMapping, numfilesrenamed, m);
-    else
+    }
+    else {
         BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m);
+    }
     msgs << "Renamed output files [" + m + "]";
 
     /* change back to original directory before leaving */
@@ -160,223 +475,248 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 /* ---------------------------------------------------------- */
 bool imageIO::IsDICOMFile(QString f) {
     /* check if its really a dicom file... */
-    gdcm::Reader r;
-    r.SetFileName(f.toStdString().c_str());
-    if (r.Read())
-        return true;
-    else {
-        /* try reading with exiftool */
-        QHash<QString, QString> tags;
-        QString systemstring = "exiftool " + f;
-        QString exifoutput = SystemCommand(systemstring, false);
-        QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
+    /* try reading with exiftool */
+    QHash<QString, QString> tags;
+    QString exifoutput = Exiftool(f);
+    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 
-        foreach (QString line, lines) {
-            QString delimiter = ":";
-            qint64 index = line.indexOf(delimiter);
+    foreach (QString line, lines) {
+        QString delimiter = ":";
+        qint64 index = line.indexOf(delimiter);
 
-            if (index != -1) {
-                QString firstPart = line.mid(0, index).replace(" ", "");
-                QString secondPart = line.mid(index + delimiter.length());
-                tags[firstPart.trimmed()] = secondPart.trimmed();
-            }
+        if (index != -1) {
+            QString firstPart = line.mid(0, index).replace(" ", "");
+            QString secondPart = line.mid(index + delimiter.length());
+            tags[firstPart.trimmed()] = secondPart.trimmed();
         }
-
-        if (tags["FileType"] != "DICOM")
-            return false;
-        else
-            return false;
     }
+
+    if (tags["FileType"] != "DICOM")
+        return false;
+    else
+        return true;
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- AnonymizeDICOMFile ----------------------------- */
 /* ---------------------------------------------------------- */
-/* borrowed in its entirety from gdcmanon.cxx                 */
-bool imageIO::AnonymizeDicomFile(gdcm::Anonymizer &anon, QString infile, QString outfile, std::vector<gdcm::Tag> const &empty_tags, std::vector<gdcm::Tag> const &remove_tags, std::vector< std::pair<gdcm::Tag, std::string> > const & replace_tags, QString &msg)
-{
+ bool imageIO::AnonymizeDicomFile(QString infile, QString outfile, QString &msg) {
 
-    gdcm::Reader reader;
-    reader.SetFileName( infile.toStdString().c_str() );
-    if( !reader.Read() ) {
-        msg += QString("Could not read [%1]").arg(infile);
-    }
-    gdcm::File &file = reader.GetFile();
+    const char *anonStr = "Anon";
+    const char *anonDate = "10000101";
+    //const char *anonTime = "000000.000000";
 
-    anon.SetFile( file );
+    DcmFileFormat fileformat;
 
-    if( empty_tags.empty() && replace_tags.empty() && remove_tags.empty() ) {
-        msg += "AnonymizeDICOMFile() empty tags. No operation to be done.";
-        return false;
-    }
+    OFFilename ifile = infile.toStdString().c_str();
+    OFFilename ofile = outfile.toStdString().c_str();
+    OFCondition status = fileformat.loadFile(ifile);
 
-    std::vector<gdcm::Tag>::const_iterator it = empty_tags.begin();
-    bool success = true;
-    for(; it != empty_tags.end(); ++it) {
-        success = success && anon.Empty( *it );
-    }
-    it = remove_tags.begin();
-    for(; it != remove_tags.end(); ++it) {
-        success = success && anon.Remove( *it );
-    }
+    if (status.good()) {
+        DcmDataset *dataset = fileformat.getDataset();
 
-    std::vector< std::pair<gdcm::Tag, std::string> >::const_iterator it2 = replace_tags.begin();
-    for(; it2 != replace_tags.end(); ++it2) {
-        success = success && anon.Replace( it2->first, it2->second.c_str() );
-    }
+        /* partial anonmymization - remove the obvious stuff like name and DOB */
+        if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+        if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+        if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
+        if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientName]\n"; }
+        if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
 
-    gdcm::Writer writer;
-    writer.SetFileName( outfile.toStdString().c_str() );
-    writer.SetFile( file );
-    if( !writer.Write() ) {
-        msg += QString("Could not write [%1]").arg(outfile);
-        if ((infile != infile) && (infile != "")) {
-            gdcm::System::RemoveFile( infile.toStdString().c_str() );
-        }
+        status = fileformat.saveFile(ofile, dataset->getOriginalXfer());
+        if (status.good())
+            std::cout << "Tag modified successfully." << std::endl;
         else
-        {
-            msg += QString("gdcmanon just corrupted [%1] for you (data lost).").arg(infile);
-        }
-        return false;
+            std::cerr << "Error: Cannot save file (" << status.text() << ")" << std::endl;
     }
-    return success;
-}
-
-
-/* ---------------------------------------------------------- */
-/* --------- AnonymizeDir ----------------------------------- */
-/* ---------------------------------------------------------- */
-bool imageIO::AnonymizeDir(QString dir,int anonlevel, QString randstr1, QString randstr2, QString &msg) {
-
-    std::vector<gdcm::Tag> empty_tags;
-    std::vector<gdcm::Tag> remove_tags;
-    std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-
-    gdcm::Tag tag;
-
-    switch (anonlevel) {
-        case 0: {
-            msg += "No anonymization requested. Leaving files unchanged.";
-            return 0;
-        }
-        case 1:
-        case 3: {
-            /* remove referring physician name */
-            tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-            tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
-            tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr2).toStdString().c_str()) );
-            break;
-        }
-        case 2: {
-            /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
-            tag.ReadFromCommaSeparatedString("0008,0012"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationDate
-            tag.ReadFromCommaSeparatedString("0008,0013"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // InstanceCreationTime
-            tag.ReadFromCommaSeparatedString("0008,0020"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // StudyDate
-            tag.ReadFromCommaSeparatedString("0008,0021"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // SeriesDate
-            tag.ReadFromCommaSeparatedString("0008,0022"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // AcquisitionDate
-            tag.ReadFromCommaSeparatedString("0008,0023"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // ContentDate
-            tag.ReadFromCommaSeparatedString("0008,0030"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //StudyTime
-            tag.ReadFromCommaSeparatedString("0008,0031"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //SeriesTime
-            tag.ReadFromCommaSeparatedString("0008,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //AcquisitionTime
-            tag.ReadFromCommaSeparatedString("0008,0033"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); //ContentTime
-            tag.ReadFromCommaSeparatedString("0008,0080"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionName
-            tag.ReadFromCommaSeparatedString("0008,0081"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // InstitutionAddress
-            tag.ReadFromCommaSeparatedString("0008,0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianName
-            tag.ReadFromCommaSeparatedString("0008,0092"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianAddress
-            tag.ReadFromCommaSeparatedString("0008,0094"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianTelephoneNumber
-            tag.ReadFromCommaSeparatedString("0008,0096"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ReferringPhysicianIDSequence
-            tag.ReadFromCommaSeparatedString("0008,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StationName
-            tag.ReadFromCommaSeparatedString("0008,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // StudyDescription
-            tag.ReadFromCommaSeparatedString("0008,103E"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // SeriesDescription
-            tag.ReadFromCommaSeparatedString("0008,1048"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PhysiciansOfRecord
-            tag.ReadFromCommaSeparatedString("0008,1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformingPhysicianName
-            tag.ReadFromCommaSeparatedString("0008,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // NameOfPhysicianReadingStudy
-            tag.ReadFromCommaSeparatedString("0008,1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OperatorsName
-
-            tag.ReadFromCommaSeparatedString("0010,0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientName
-            tag.ReadFromCommaSeparatedString("0010,0020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientID
-            tag.ReadFromCommaSeparatedString("0010,0021"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // IssuerOfPatientID
-            tag.ReadFromCommaSeparatedString("0010,0030"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PatientBirthDate
-            tag.ReadFromCommaSeparatedString("0010,0032"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PatientBirthTime
-            tag.ReadFromCommaSeparatedString("0010,0050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientInsurancePlanCodeSequence
-            tag.ReadFromCommaSeparatedString("0010,1000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientIDs
-            tag.ReadFromCommaSeparatedString("0010,1001"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // OtherPatientNames
-            tag.ReadFromCommaSeparatedString("0010,1005"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientBirthName
-            tag.ReadFromCommaSeparatedString("0010,1010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAge
-            tag.ReadFromCommaSeparatedString("0010,1020"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientSize
-            tag.ReadFromCommaSeparatedString("0010,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientWeight
-            tag.ReadFromCommaSeparatedString("0010,1040"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientAddress
-            tag.ReadFromCommaSeparatedString("0010,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientMotherBirthName
-            tag.ReadFromCommaSeparatedString("0010,2154"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientTelephoneNumbers
-            tag.ReadFromCommaSeparatedString("0010,21B0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // AdditionalPatientHistory
-            tag.ReadFromCommaSeparatedString("0010,21F0"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientReligiousPreference
-            tag.ReadFromCommaSeparatedString("0010,4000"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PatientComments
-
-            tag.ReadFromCommaSeparatedString("0018,1030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ProtocolName
-
-            tag.ReadFromCommaSeparatedString("0032,1032"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestingPhysician
-            tag.ReadFromCommaSeparatedString("0032,1060"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // RequestedProcedureDescription
-
-            tag.ReadFromCommaSeparatedString("0040,0006"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // ScheduledPerformingPhysiciansName
-            tag.ReadFromCommaSeparatedString("0040,0244"); replace_tags.push_back( std::make_pair(tag, "19000101") ); // PerformedProcedureStepStartDate
-            tag.ReadFromCommaSeparatedString("0040,0245"); replace_tags.push_back( std::make_pair(tag, "000000.000000") ); // PerformedProcedureStepStartTime
-            tag.ReadFromCommaSeparatedString("0040,0253"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepID
-            tag.ReadFromCommaSeparatedString("0040,0254"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PerformedProcedureStepDescription
-            tag.ReadFromCommaSeparatedString("0040,4036"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerOrganization
-            tag.ReadFromCommaSeparatedString("0040,4037"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // HumanPerformerName
-            tag.ReadFromCommaSeparatedString("0040,A123"); replace_tags.push_back( std::make_pair(tag, "Anonymous") ); // PersonName
-
-            break;
-        }
-        case 4: {
-            tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, QString("Anonymous" + randstr1).toStdString().c_str()) );
-            break;
-        }
-        default: {
-            break;
-        }
-    }
-
-    /* recursively loop through the directory and anonymize the .dcm files */
-    gdcm::Anonymizer anon;
-    QDirIterator it(dir, QStringList() << "*.dcm", QDir::Files, QDirIterator::Subdirectories);
-    while (it.hasNext()) {
-        QString dcmfile = it.next();
-        AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, msg);
+    else {
+        std::cerr << "Error: Cannot load DICOM file (" << status.text() << ")" << std::endl;
     }
 
     return true;
 }
 
 
-/* ------------------------------------------------- */
-/* --------- GetDicomModality ---------------------- */
-/* ------------------------------------------------- */
-QString imageIO::GetDicomModality(QString f)
-{
-    gdcm::Reader r;
-    r.SetFileName(f.toStdString().c_str());
-    if (!r.CanRead()) {
-        return "NOTDICOM";
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDicomFileInPlace ---------------------- */
+/* ---------------------------------------------------------- */
+//bool imageIO::AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg)
+//{
+//    if( tagsToChange.isEmpty() ) {
+//        msg += "AnonymizeDICOMFile() called with no tags to change. No operation to be done.";
+//        return false;
+//    }
+
+    /* do the command line anonymization */
+//    int i(0);
+//    QStringList subsetTags;
+//    foreach (const QString &str, tagsToChange) {
+//        if (i > 10) {
+//            QString systemstring = QString("gdcmanon --dumb -i %1 -o %2 %3").arg(file).arg(subsetTags.join(" "));
+//            QString output = SystemCommand(systemstring, false);
+//            msg += output;
+//            i=0;
+//            subsetTags.clear();
+//        }
+//        subsetTags.append(str);
+//        i++;
+//    }
+
+//    return true;
+//}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeDicomDir ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Anonymize all DICOM files in a specified directory. This function does not recurse
+ * @param indir Input directory containing files to be anonymized
+ * @param outdir Output directory, where anonymized files will be written
+ * @param anonlevel Anonymization level: (0) no anonymization  (1, 3) partial  (2) full anonymization, all potential names and dates
+ * @param msg Any messages generated while anonymizing
+ * @return true if successful, false otherwise
+ */
+bool imageIO::AnonymizeDicomDir(QString indir, QString outdir, int anonlevel, QString &msg) {
+
+    const char *anonStr = "Anon";
+    const char *anonDate = "10000101";
+    const char *anonTime = "000000.000000";
+
+
+    QStringList files = FindAllFiles(indir, "*");
+
+    foreach (QString inFilePath, files) {
+        QFileInfo fi(inFilePath);
+        QString filename = fi.fileName();
+        if (outdir.endsWith("/")) { outdir.chop(1); }
+        QString outFilePath = outdir + "/" + filename;
+
+        /* convert from QString to dcmtk string format */
+        OFFilename dcmInFile = inFilePath.toStdString().c_str();
+        OFFilename dcmOutFile = outFilePath.toStdString().c_str();
+        DcmFileFormat fileformat;
+        OFCondition status = fileformat.loadFile(dcmInFile);
+        fileformat.loadAllDataIntoMemory();
+
+        if (status.good()) {
+            DcmDataset *dataset = fileformat.getDataset();
+            //qDebug() << "Original TS:" << DcmXfer(dataset->getOriginalXfer()).getXferName();
+            switch (anonlevel) {
+                case 0: {
+                    msg += "No anonymization requested. Leaving files unchanged.";
+                    return 0;
+                }
+                case 1:
+                case 3: {
+                    /* partial anonmymization - remove the obvious stuff like name and DOB */
+                    if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientName]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
+                    break;
+                }
+                case 2: {
+                    /* Full anonymization. remove all names, dates, locations. ANYTHING identifiable */
+                    if (dataset->tagExists(DCM_InstanceCreationDate)) { dataset->putAndInsertString(DCM_InstanceCreationDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_InstanceCreationDate]\n"; }
+                    if (dataset->tagExists(DCM_InstanceCreationTime)) { dataset->putAndInsertString(DCM_InstanceCreationTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_InstanceCreationTime]\n"; }
+                    if (dataset->tagExists(DCM_StudyDate)) { dataset->putAndInsertString(DCM_StudyDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_StudyDate]\n"; }
+                    if (dataset->tagExists(DCM_SeriesDate)) { dataset->putAndInsertString(DCM_SeriesDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_SeriesDate]\n"; }
+                    if (dataset->tagExists(DCM_AcquisitionDate)) { dataset->putAndInsertString(DCM_AcquisitionDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_AcquisitionDate]\n"; }
+                    if (dataset->tagExists(DCM_ContentDate)) { dataset->putAndInsertString(DCM_ContentDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_ContentDate]\n"; }
+                    if (dataset->tagExists(DCM_StudyTime)) { dataset->putAndInsertString(DCM_StudyTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_StudyTime]\n"; }
+                    if (dataset->tagExists(DCM_SeriesTime)) { dataset->putAndInsertString(DCM_SeriesTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_SeriesTime]\n"; }
+                    if (dataset->tagExists(DCM_AcquisitionTime)) { dataset->putAndInsertString(DCM_AcquisitionTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_AcquisitionTime]\n"; }
+                    if (dataset->tagExists(DCM_ContentTime)) { dataset->putAndInsertString(DCM_ContentTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_ContentTime]\n"; }
+                    if (dataset->tagExists(DCM_InstitutionName)) { dataset->putAndInsertString(DCM_InstitutionName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_InstitutionName]\n"; }
+                    if (dataset->tagExists(DCM_InstitutionAddress)) { dataset->putAndInsertString(DCM_InstitutionAddress, anonStr); if (status.bad()) msg += "Error changing tag [DCM_InstitutionAddress]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianName)) { dataset->putAndInsertString(DCM_ReferringPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianAddress)) { dataset->putAndInsertString(DCM_ReferringPhysicianAddress, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianAddress]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianTelephoneNumbers)) { dataset->putAndInsertString(DCM_ReferringPhysicianTelephoneNumbers, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianTelephoneNumbers]\n"; }
+                    if (dataset->tagExists(DCM_ReferringPhysicianIdentificationSequence)) { dataset->putAndInsertString(DCM_ReferringPhysicianIdentificationSequence, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ReferringPhysicianIdentificationSequence]\n"; }
+                    if (dataset->tagExists(DCM_StationName)) { dataset->putAndInsertString(DCM_StationName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_StationName]\n"; }
+                    if (dataset->tagExists(DCM_StudyDescription)) { dataset->putAndInsertString(DCM_StudyDescription, anonStr); if (status.bad()) msg += "Error changing tag [DCM_StudyDescription]\n"; }
+                    if (dataset->tagExists(DCM_SeriesDescription)) { dataset->putAndInsertString(DCM_SeriesDescription, anonStr); if (status.bad()) msg += "Error changing tag [DCM_SeriesDescription]\n"; }
+                    if (dataset->tagExists(DCM_PhysiciansOfRecord)) { dataset->putAndInsertString(DCM_PhysiciansOfRecord, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PhysiciansOfRecord]\n"; }
+                    if (dataset->tagExists(DCM_PerformingPhysicianName)) { dataset->putAndInsertString(DCM_PerformingPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_NameOfPhysiciansReadingStudy)) { dataset->putAndInsertString(DCM_NameOfPhysiciansReadingStudy, anonStr); if (status.bad()) msg += "Error changing tag [DCM_NameOfPhysiciansReadingStudy]\n"; }
+                    if (dataset->tagExists(DCM_OperatorsName)) { dataset->putAndInsertString(DCM_OperatorsName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_OperatorsName]\n"; }
+
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientName]\n"; }
+                    if (dataset->tagExists(DCM_PatientID)) { dataset->putAndInsertString(DCM_PatientID, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientID]\n"; }
+                    if (dataset->tagExists(DCM_IssuerOfPatientID)) { dataset->putAndInsertString(DCM_IssuerOfPatientID, anonStr); if (status.bad()) msg += "Error changing tag [DCM_IssuerOfPatientID]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthDate)) { dataset->putAndInsertString(DCM_PatientBirthDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_PatientBirthDate]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthTime)) { dataset->putAndInsertString(DCM_PatientBirthTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_PatientBirthTime]\n"; }
+                    if (dataset->tagExists(DCM_PatientInsurancePlanCodeSequence)) { dataset->putAndInsertString(DCM_PatientInsurancePlanCodeSequence, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientInsurancePlanCodeSequence]\n"; }
+                    if (dataset->tagExists(DCM_OtherPatientIDsSequence)) { dataset->putAndInsertString(DCM_OtherPatientIDsSequence, anonStr); if (status.bad()) msg += "Error changing tag [DCM_OtherPatientIDsSequence]\n"; }
+                    if (dataset->tagExists(DCM_OtherPatientNames)) { dataset->putAndInsertString(DCM_OtherPatientNames, anonStr); if (status.bad()) msg += "Error changing tag [DCM_OtherPatientNames]\n"; }
+                    if (dataset->tagExists(DCM_PatientBirthName)) { dataset->putAndInsertString(DCM_PatientBirthName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientBirthName]\n"; }
+                    if (dataset->tagExists(DCM_PatientAge)) { dataset->putAndInsertString(DCM_PatientAge, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientAge]\n"; }
+                    if (dataset->tagExists(DCM_PatientSize)) { dataset->putAndInsertString(DCM_PatientSize, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientSize]\n"; }
+                    if (dataset->tagExists(DCM_PatientWeight)) { dataset->putAndInsertString(DCM_PatientWeight, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientWeight]\n"; }
+                    if (dataset->tagExists(DCM_PatientAddress)) { dataset->putAndInsertString(DCM_PatientAddress, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientAddress]\n"; }
+                    if (dataset->tagExists(DCM_PatientMotherBirthName)) { dataset->putAndInsertString(DCM_PatientMotherBirthName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientMotherBirthName]\n"; }
+                    if (dataset->tagExists(DCM_PatientTelephoneNumbers)) { dataset->putAndInsertString(DCM_PatientTelephoneNumbers, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientTelephoneNumbers]\n"; }
+                    if (dataset->tagExists(DCM_AdditionalPatientHistory)) { dataset->putAndInsertString(DCM_AdditionalPatientHistory, anonStr); if (status.bad()) msg += "Error changing tag [DCM_AdditionalPatientHistory]\n"; }
+                    if (dataset->tagExists(DCM_PatientReligiousPreference)) { dataset->putAndInsertString(DCM_PatientReligiousPreference, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientReligiousPreference]\n"; }
+                    if (dataset->tagExists(DCM_PatientComments)) { dataset->putAndInsertString(DCM_PatientComments, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientComments]\n"; }
+
+                    if (dataset->tagExists(DCM_ProtocolName)) { dataset->putAndInsertString(DCM_ProtocolName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ProtocolName]\n"; }
+
+                    if (dataset->tagExists(DCM_RequestingPhysician)) { dataset->putAndInsertString(DCM_RequestingPhysician, anonStr); if (status.bad()) msg += "Error changing tag [DCM_RequestingPhysician]\n"; }
+                    if (dataset->tagExists(DCM_RequestedProcedureDescription)) { dataset->putAndInsertString(DCM_RequestedProcedureDescription, anonStr); if (status.bad()) msg += "Error changing tag [DCM_RequestedProcedureDescription]\n"; }
+
+                    if (dataset->tagExists(DCM_ScheduledPerformingPhysicianName)) { dataset->putAndInsertString(DCM_ScheduledPerformingPhysicianName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_ScheduledPerformingPhysicianName]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepStartDate)) { dataset->putAndInsertString(DCM_PerformedProcedureStepStartDate, anonDate); if (status.bad()) msg += "Error changing tag [DCM_PerformedProcedureStepStartDate]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepStartTime)) { dataset->putAndInsertString(DCM_PerformedProcedureStepStartTime, anonTime); if (status.bad()) msg += "Error changing tag [DCM_PerformedProcedureStepStartTime]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepID)) { dataset->putAndInsertString(DCM_PerformedProcedureStepID, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PerformedProcedureStepID]\n"; }
+                    if (dataset->tagExists(DCM_PerformedProcedureStepDescription)) { dataset->putAndInsertString(DCM_PerformedProcedureStepDescription, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PerformedProcedureStepDescription]\n"; }
+                    if (dataset->tagExists(DCM_HumanPerformerOrganization)) { dataset->putAndInsertString(DCM_HumanPerformerOrganization, anonStr); if (status.bad()) msg += "Error changing tag [DCM_HumanPerformerOrganization]\n"; }
+                    if (dataset->tagExists(DCM_HumanPerformerName)) { dataset->putAndInsertString(DCM_HumanPerformerName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_HumanPerformerName]\n"; }
+                    if (dataset->tagExists(DCM_PersonName)) { dataset->putAndInsertString(DCM_PersonName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PersonName]\n"; }
+
+                    break;
+                }
+                case 4: {
+                    if (dataset->tagExists(DCM_PatientName)) { dataset->putAndInsertString(DCM_PatientName, anonStr); if (status.bad()) msg += "Error changing tag [DCM_PatientName]\n"; }
+                    break;
+                }
+                default: {
+                    break;
+                }
+            }
+
+            status = fileformat.saveFile(dcmOutFile, dataset->getOriginalXfer(), EET_ExplicitLength, EGL_recalcGL, EPD_noChange);
+            if (status.good()) {
+                //std::cout << "Tags modified successfully." << std::endl;
+            }
+            else {
+                msg += QString("Error: Cannot save file (%1)\n").arg(status.text());
+            }
+        }
+        else {
+            msg += QString("Error: Cannot load DICOM file (%1)\n").arg(status.text());
+        }
     }
-    gdcm::StringFilter sf;
-    sf = gdcm::StringFilter();
-    sf.SetFile(r.GetFile());
-    std::string s = sf.ToString(gdcm::Tag(0x0008,0x0060));
 
-    QString qs = s.c_str();
-
-    return qs;
+    return true;
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- GetImageFileTags ------------------------------- */
 /* ---------------------------------------------------------- */
-bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<QString, QString> &tags, QString &msg) {
+/**
+ * @brief Get all image file tags from a given file path. This function is mostly used for DICOM files, but can also accept other files
+ * @param f File path
+ * @param tags hash containing the tags and values
+ * @param msg Any logs generated during the parsing of the file
+ * @return true if successful, false otherwise
+ */
+bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg) {
+
+    tags.clear();
 
     /* check if the file exists and has read permissions */
     QFileInfo fi(f);
@@ -396,256 +736,11 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     tags["Modality"] = "Unknown";
     tags["FileType"] = "Unknown";
 
-    /* check if the file is readable by GDCM, and therefore a DICOM file */
-    gdcm::Reader r;
-    r.SetFileName(f.toStdString().c_str());
-    if (r.Read()) {
-        msg += "GDCM successfuly read file [" + f + "]\n";
+    GetImageTagsDCMTK(f, tags);
+
+    if (tags["FileType"] == "DICOM") {
         /* ---------- it's a readable DICOM file ---------- */
-        gdcm::StringFilter sf;
-        sf = gdcm::StringFilter();
-        sf.SetFile(r.GetFile());
-
-        msg += "GetImageFileTags() checkpoint A\n";
-
-        tags["FileType"] = "DICOM";
-
-        /* get all of the DICOM tags...
-         * we're not using an iterator because we want to know exactly what tags we have, or don't have */
-
-        tags["FileMetaInformationGroupLength"] =	QString(sf.ToString(gdcm::Tag(0x0002,0x0000)).c_str()).trimmed(); /* FileMetaInformationGroupLength */
-        tags["FileMetaInformationVersion"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0001)).c_str()).trimmed(); /* FileMetaInformationVersion */
-        tags["MediaStorageSOPClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0002)).c_str()).trimmed(); /* MediaStorageSOPClassUID */
-        tags["MediaStorageSOPInstanceUID"] =		QString(sf.ToString(gdcm::Tag(0x0002,0x0003)).c_str()).trimmed(); /* MediaStorageSOPInstanceUID */
-        tags["TransferSyntaxUID"] =					QString(sf.ToString(gdcm::Tag(0x0002,0x0010)).c_str()).trimmed(); /* TransferSyntaxUID */
-        tags["ImplementationClassUID"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0012)).c_str()).trimmed(); /* ImplementationClassUID */
-        tags["ImplementationVersionName"] =			QString(sf.ToString(gdcm::Tag(0x0002,0x0013)).c_str()).trimmed(); /* ImplementationVersionName */
-
-        msg += "GetImageFileTags() checkpoint A.1\n";
-
-        tags["SpecificCharacterSet"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0005)).c_str()).trimmed(); /* SpecificCharacterSet */
-        tags["ImageType"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0008)).c_str()).trimmed(); /* ImageType */
-        tags["InstanceCreationDate"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0012)).c_str()).trimmed(); /* InstanceCreationDate */
-        tags["InstanceCreationTime"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0013)).c_str()).trimmed(); /* InstanceCreationTime */
-        tags["SOPClassUID"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0016)).c_str()).trimmed(); /* SOPClassUID */
-        tags["SOPInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0018)).c_str()).trimmed(); /* SOPInstanceUID */
-        tags["StudyDate"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0020)).c_str()).trimmed(); /* StudyDate */
-        tags["SeriesDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0021)).c_str()).trimmed(); /* SeriesDate */
-        tags["AcquisitionDate"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0022)).c_str()).trimmed(); /* AcquisitionDate */
-        tags["ContentDate"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0023)).c_str()).trimmed(); /* ContentDate */
-        tags["StudyTime"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0030)).c_str()).trimmed(); /* StudyTime */
-        tags["SeriesTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0031)).c_str()).trimmed(); /* SeriesTime */
-        tags["AcquisitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0032)).c_str()).trimmed(); /* AcquisitionTime */
-        tags["ContentTime"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0033)).c_str()).trimmed(); /* ContentTime */
-        tags["AccessionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0050)).c_str()).trimmed(); /* AccessionNumber */
-        tags["Modality"] =							QString(sf.ToString(gdcm::Tag(0x0008,0x0060)).c_str()).trimmed(); /* Modality */
-        tags["Manufacturer"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x0070)).c_str()).trimmed(); /* Manufacturer */
-        tags["InstitutionName"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x0080)).c_str()).trimmed(); /* InstitutionName */
-        tags["InstitutionAddress"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x0081)).c_str()).trimmed(); /* InstitutionAddress */
-        tags["ReferringPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x0090)).c_str()).trimmed(); /* ReferringPhysicianName */
-        tags["StationName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1010)).c_str()).trimmed(); /* StationName */
-        tags["StudyDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x1030)).c_str()).trimmed(); /* StudyDescription */
-        tags["SeriesDescription"] =					QString(sf.ToString(gdcm::Tag(0x0008,0x103E)).c_str()).trimmed(); /* SeriesDescription */
-        tags["InstitutionalDepartmentName"] =		QString(sf.ToString(gdcm::Tag(0x0008,0x1040)).c_str()).trimmed(); /* InstitutionalDepartmentName */
-        tags["PerformingPhysicianName"] =			QString(sf.ToString(gdcm::Tag(0x0008,0x1050)).c_str()).trimmed(); /* PerformingPhysicianName */
-        tags["OperatorsName"] =						QString(sf.ToString(gdcm::Tag(0x0008,0x1070)).c_str()).trimmed(); /* OperatorsName */
-        tags["ManufacturerModelName"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x1090)).c_str()).trimmed(); /* ManufacturerModelName */
-        tags["SourceImageSequence"] =				QString(sf.ToString(gdcm::Tag(0x0008,0x2112)).c_str()).trimmed(); /* SourceImageSequence */
-
-        msg += "GetImageFileTags() checkpoint A.2\n";
-
-        tags["PatientName"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0010)).c_str()).trimmed(); /* PatientName */
-        tags["PatientID"] =							QString(sf.ToString(gdcm::Tag(0x0010,0x0020)).c_str()).trimmed(); /* PatientID */
-        tags["PatientBirthDate"] =					QString(sf.ToString(gdcm::Tag(0x0010,0x0030)).c_str()).trimmed(); /* PatientBirthDate */
-        tags["PatientSex"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x0040)).c_str()).trimmed().left(1); /* PatientSex */
-        tags["PatientAge"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1010)).c_str()).trimmed(); /* PatientAge */
-        tags["PatientSize"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1020)).c_str()).trimmed(); /* PatientSize */
-        tags["PatientWeight"] =						QString(sf.ToString(gdcm::Tag(0x0010,0x1030)).c_str()).trimmed(); /* PatientWeight */
-
-        msg += "GetImageFileTags() checkpoint A.3\n";
-
-        tags["ContrastBolusAgent"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0010)).c_str()).trimmed(); /* ContrastBolusAgent */
-        tags["KVP"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x0060)).c_str()).trimmed(); /* KVP */
-        tags["DataCollectionDiameter"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0090)).c_str()).trimmed(); /* DataCollectionDiameter */
-        tags["ContrastBolusRoute"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1040)).c_str()).trimmed(); /* ContrastBolusRoute */
-        tags["RotationDirection"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1140)).c_str()).trimmed(); /* RotationDirection */
-        tags["ExposureTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1150)).c_str()).trimmed(); /* ExposureTime */
-        tags["XRayTubeCurrent"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1151)).c_str()).trimmed(); /* XRayTubeCurrent */
-        tags["FilterType"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1160)).c_str()).trimmed(); /* FilterType */
-        tags["GeneratorPower"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1170)).c_str()).trimmed(); /* GeneratorPower */
-        tags["ConvolutionKernel"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1210)).c_str()).trimmed(); /* ConvolutionKernel */
-
-        msg += "GetImageFileTags() checkpoint A.4\n";
-
-        tags["BodyPartExamined"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0015)).c_str()).trimmed(); /* BodyPartExamined */
-        tags["ScanningSequence"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0020)).c_str()).trimmed(); /* ScanningSequence */
-        tags["SequenceVariant"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0021)).c_str()).trimmed(); /* SequenceVariant */
-        tags["ScanOptions"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0022)).c_str()).trimmed(); /* ScanOptions */
-        tags["MRAcquisitionType"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0023)).c_str()).trimmed(); /* MRAcquisitionType */
-        tags["SequenceName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0024)).c_str()).trimmed(); /* SequenceName */
-        tags["AngioFlag"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0025)).c_str()).trimmed(); /* AngioFlag */
-        tags["SliceThickness"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0050)).c_str()).trimmed(); /* SliceThickness */
-        tags["RepetitionTime"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0080)).c_str()).trimmed(); /* RepetitionTime */
-        tags["EchoTime"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x0081)).c_str()).trimmed(); /* EchoTime */
-        tags["InversionTime"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0082)).c_str()).trimmed(); /* InversionTime */
-        tags["NumberOfAverages"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0083)).c_str()).trimmed(); /* NumberOfAverages */
-        tags["ImagingFrequency"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0084)).c_str()).trimmed(); /* ImagingFrequency */
-        tags["ImagedNucleus"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0085)).c_str()).trimmed(); /* ImagedNucleus */
-        tags["EchoNumbers"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x0086)).c_str()).trimmed(); /* EchoNumbers */
-        tags["MagneticFieldStrength"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0087)).c_str()).trimmed(); /* MagneticFieldStrength */
-        tags["SpacingBetweenSlices"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x0088)).c_str()).trimmed(); /* SpacingBetweenSlices */
-        tags["NumberOfPhaseEncodingSteps"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x0089)).c_str()).trimmed(); /* NumberOfPhaseEncodingSteps */
-        tags["EchoTrainLength"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0091)).c_str()).trimmed(); /* EchoTrainLength */
-        tags["PercentSampling"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0093)).c_str()).trimmed(); /* PercentSampling */
-        tags["PercentPhaseFieldOfView"] =			QString(sf.ToString(gdcm::Tag(0x0018,0x0094)).c_str()).trimmed(); /* PercentPhaseFieldOfView */
-        tags["PixelBandwidth"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x0095)).c_str()).trimmed(); /* PixelBandwidth */
-        tags["DeviceSerialNumber"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1000)).c_str()).trimmed(); /* DeviceSerialNumber */
-        tags["SoftwareVersions"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1020)).c_str()).trimmed(); /* SoftwareVersions */
-        tags["ProtocolName"] =						QString(sf.ToString(gdcm::Tag(0x0018,0x1030)).c_str()).trimmed(); /* ProtocolName */
-        tags["TransmitCoilName"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1251)).c_str()).trimmed(); /* TransmitCoilName */
-        tags["AcquisitionMatrix"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x1310)).c_str()).trimmed().left(20); /* AcquisitionMatrix */
-        tags["InPlanePhaseEncodingDirection"] =		QString(sf.ToString(gdcm::Tag(0x0018,0x1312)).c_str()).trimmed(); /* InPlanePhaseEncodingDirection */
-        tags["FlipAngle"] =							QString(sf.ToString(gdcm::Tag(0x0018,0x1314)).c_str()).trimmed(); /* FlipAngle */
-        tags["VariableFlipAngleFlag"] =				QString(sf.ToString(gdcm::Tag(0x0018,0x1315)).c_str()).trimmed(); /* VariableFlipAngleFlag */
-        tags["SAR"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1316)).c_str()).trimmed(); /* SAR */
-        tags["dBdt"] =								QString(sf.ToString(gdcm::Tag(0x0018,0x1318)).c_str()).trimmed(); /* dBdt */
-        tags["PatientPosition"] =					QString(sf.ToString(gdcm::Tag(0x0018,0x5100)).c_str()).trimmed(); /* PatientPosition */
-
-        msg += "GetImageFileTags() checkpoint A.5\n";
-
-        tags["Unknown Tag & Data"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1009)).c_str()).trimmed(); /* Unknown Tag & Data */
-        tags["NumberOfImagesInMosaic"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100A)).c_str()).trimmed(); /* NumberOfImagesInMosaic*/
-        tags["SliceObservationmentDuration"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100B)).c_str()).trimmed(); /* SliceObservationmentDuration*/
-        tags["B_value"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x100C)).c_str()).trimmed(); /* B_value*/
-        tags["DiffusionDirectionality"] =			QString(sf.ToString(gdcm::Tag(0x0019,0x100D)).c_str()).trimmed(); /* DiffusionDirectionality*/
-        tags["DiffusionGradientDirection"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x100E)).c_str()).trimmed(); /* DiffusionGradientDirection*/
-        tags["GradientMode"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x100F)).c_str()).trimmed(); /* GradientMode*/
-        tags["FlowCompensation"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1011)).c_str()).trimmed(); /* FlowCompensation*/
-        tags["TablePositionOrigin"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1012)).c_str()).trimmed(); /* TablePositionOrigin*/
-        tags["ImaAbsTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1013)).c_str()).trimmed(); /* ImaAbsTablePosition*/
-        tags["ImaRelTablePosition"] =				QString(sf.ToString(gdcm::Tag(0x0019,0x1014)).c_str()).trimmed(); /* ImaRelTablePosition*/
-        tags["SlicePosition_PCS"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1015)).c_str()).trimmed(); /* SlicePosition_PCS*/
-        tags["TimeAfterStart"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1016)).c_str()).trimmed(); /* TimeAfterStart*/
-        tags["SliceResolution"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1017)).c_str()).trimmed(); /* SliceResolution*/
-        tags["RealDwellTime"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1018)).c_str()).trimmed(); /* RealDwellTime*/
-        tags["RBMoCoTrans"] =						QString(sf.ToString(gdcm::Tag(0x0019,0x1025)).c_str()).trimmed(); /* RBMoCoTrans*/
-        tags["RBMoCoRot"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1026)).c_str()).trimmed(); /* RBMoCoRot*/
-        tags["B_matrix"] =							QString(sf.ToString(gdcm::Tag(0x0019,0x1027)).c_str()).trimmed(); /* B_matrix*/
-        tags["BandwidthPerPixelPhaseEncode"] =		QString(sf.ToString(gdcm::Tag(0x0019,0x1028)).c_str()).trimmed(); /* BandwidthPerPixelPhaseEncode*/
-        tags["MosaicRefAcqTimes"] =					QString(sf.ToString(gdcm::Tag(0x0019,0x1029)).c_str()).trimmed(); /* MosaicRefAcqTimes*/
-
-        msg += "GetImageFileTags() checkpoint A.6\n";
-
-        tags["StudyInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000D)).c_str()).trimmed(); /* StudyInstanceUID */
-        tags["SeriesInstanceUID"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x000E)).c_str()).trimmed(); /* SeriesInstanceUID */
-        tags["StudyID"] =							QString(sf.ToString(gdcm::Tag(0x0020,0x0010)).c_str()).trimmed(); /* StudyID */
-        tags["SeriesNumber"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x0011)).c_str()).trimmed(); /* SeriesNumber */
-        tags["AcquisitionNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0012)).c_str()).trimmed(); /* AcquisitionNumber */
-        tags["InstanceNumber"] =					QString(sf.ToString(gdcm::Tag(0x0020,0x0013)).c_str()).trimmed(); /* InstanceNumber */
-        tags["ImagePositionPatient"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0032)).c_str()).trimmed(); /* ImagePositionPatient */
-        tags["ImageOrientationPatient"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0037)).c_str()).trimmed(); /* ImageOrientationPatient */
-        tags["FrameOfReferenceUID"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0052)).c_str()).trimmed(); /* FrameOfReferenceUID */
-        tags["NumberOfTemporalPositions"] =			QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* NumberOfTemporalPositions */
-        tags["ImagesInAcquisition"] =				QString(sf.ToString(gdcm::Tag(0x0020,0x0105)).c_str()).trimmed(); /* ImagesInAcquisition */
-        tags["PositionReferenceIndicator"] =		QString(sf.ToString(gdcm::Tag(0x0020,0x1040)).c_str()).trimmed(); /* PositionReferenceIndicator */
-        tags["SliceLocation"] =						QString(sf.ToString(gdcm::Tag(0x0020,0x1041)).c_str()).trimmed(); /* SliceLocation */
-
-        msg += "GetImageFileTags() checkpoint A.7\n";
-
-        tags["SamplesPerPixel"] =					QString(sf.ToString(gdcm::Tag(0x0028,0x0002)).c_str()).trimmed(); /* SamplesPerPixel */
-        tags["PhotometricInterpretation"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0004)).c_str()).trimmed(); /* PhotometricInterpretation */
-        tags["Rows"] =								QString(sf.ToString(gdcm::Tag(0x0028,0x0010)).c_str()).trimmed(); /* Rows */
-        tags["Columns"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0011)).c_str()).trimmed(); /* Columns */
-        tags["PixelSpacing"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0030)).c_str()).trimmed(); /* PixelSpacing */
-        tags["BitsAllocated"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0100)).c_str()).trimmed(); /* BitsAllocated */
-        tags["BitsStored"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x0101)).c_str()).trimmed(); /* BitsStored */
-        tags["HighBit"] =							QString(sf.ToString(gdcm::Tag(0x0028,0x0102)).c_str()).trimmed(); /* HighBit */
-        tags["PixelRepresentation"] =				QString(sf.ToString(gdcm::Tag(0x0028,0x0103)).c_str()).trimmed(); /* PixelRepresentation */
-        tags["SmallestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0106)).c_str()).trimmed(); /* SmallestImagePixelValue */
-        tags["LargestImagePixelValue"] =			QString(sf.ToString(gdcm::Tag(0x0028,0x0107)).c_str()).trimmed(); /* LargestImagePixelValue */
-        tags["WindowCenter"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1050)).c_str()).trimmed(); /* WindowCenter */
-        tags["WindowWidth"] =						QString(sf.ToString(gdcm::Tag(0x0028,0x1051)).c_str()).trimmed(); /* WindowWidth */
-        tags["WindowCenterWidthExplanation"] =		QString(sf.ToString(gdcm::Tag(0x0028,0x1055)).c_str()).trimmed(); /* WindowCenterWidthExplanation */
-
-        msg += "GetImageFileTags() checkpoint A.8\n";
-
-        tags["RequestingPhysician"] =				QString(sf.ToString(gdcm::Tag(0x0032,0x1032)).c_str()).trimmed(); /* RequestingPhysician */
-        tags["RequestedProcedureDescription"] =		QString(sf.ToString(gdcm::Tag(0x0032,0x1060)).c_str()).trimmed(); /* RequestedProcedureDescription */
-
-        msg += "GetImageFileTags() checkpoint A.9\n";
-
-        tags["PerformedProcedureStepStartDate"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0244)).c_str()).trimmed(); /* PerformedProcedureStepStartDate */
-        tags["PerformedProcedureStepStartTime"] =	QString(sf.ToString(gdcm::Tag(0x0040,0x0245)).c_str()).trimmed(); /* PerformedProcedureStepStartTime */
-        tags["PerformedProcedureStepID"] =			QString(sf.ToString(gdcm::Tag(0x0040,0x0253)).c_str()).trimmed(); /* PerformedProcedureStepID */
-        tags["PerformedProcedureStepDescription"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0254)).c_str()).trimmed(); /* PerformedProcedureStepDescription */
-        tags["CommentsOnThePerformedProcedureSte"] = QString(sf.ToString(gdcm::Tag(0x0040,0x0280)).c_str()).trimmed(); /* CommentsOnThePerformedProcedureSte */
-
-        msg += "GetImageFileTags() checkpoint A.10\n";
-
-        tags["TimeOfAcquisition"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100A)).c_str()).trimmed(); /* TimeOfAcquisition*/
-        tags["AcquisitionMatrixText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x100B)).c_str()).trimmed(); /* AcquisitionMatrixText*/
-        tags["FieldOfView"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100C)).c_str()).trimmed(); /* FieldOfView*/
-        tags["SlicePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100D)).c_str()).trimmed(); /* SlicePositionText*/
-        tags["ImageOrientation"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x100E)).c_str()).trimmed(); /* ImageOrientation*/
-        tags["CoilString"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x100F)).c_str()).trimmed(); /* CoilString*/
-        tags["ImaPATModeText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1011)).c_str()).trimmed(); /* ImaPATModeText*/
-        tags["TablePositionText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1012)).c_str()).trimmed(); /* TablePositionText*/
-        tags["PositivePCSDirections"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1013)).c_str()).trimmed(); /* PositivePCSDirections*/
-        tags["ImageTypeText"] =						QString(sf.ToString(gdcm::Tag(0x0051,0x1016)).c_str()).trimmed(); /* ImageTypeText*/
-        tags["SliceThicknessText"] =				QString(sf.ToString(gdcm::Tag(0x0051,0x1017)).c_str()).trimmed(); /* SliceThicknessText*/
-        tags["ScanOptionsText"] =					QString(sf.ToString(gdcm::Tag(0x0051,0x1019)).c_str()).trimmed(); /* ScanOptionsText*/
-
-        msg += "GetImageFileTags() checkpoint B\n";
-
-        QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
-        tags["UniqueSeriesString"] = uniqueseries;
-
-        /* attempt to get the Siemens CSA header info, but not if this is a Siemens enhanced DICOM */
-        tags["PhaseEncodeAngle"] = "";
-        tags["PhaseEncodingDirectionPositive"] = "";
-
-        if ((enablecsa) && (tags["SOPClassUID"] != "Enhanced MR Image Storage")) {
-            /* attempt to get the phase encode angle (In Plane Rotation) from the siemens CSA header */
-            QFile df(f);
-
-            /* open the dicom file as a text file, since part of the CSA header is stored as text, not binary */
-            if (df.open(QIODevice::ReadOnly | QIODevice::Text)) {
-
-                QTextStream in(&df);
-                while (!in.atEnd()) {
-                    QString line = in.readLine();
-                    if (line.startsWith("sSliceArray.asSlice[0].dInPlaneRot") && (line.size() < 70)) {
-                        /* make sure the line does not contain any non-printable ASCII control characters */
-                        if (!line.contains(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")))) {
-                            qint64 idx = line.indexOf(".dInPlaneRot");
-                            line = line.mid(idx,23);
-                            QStringList vals = line.split(QRegularExpression("\\s+"));
-                            if (vals.size() > 0)
-                                tags["PhaseEncodeAngle"] = vals.last().trimmed();
-                            break;
-                        }
-                    }
-                }
-                //WriteLog(QString("Found PhaseEncodeAngle of [%1]").arg(tags["PhaseEncodeAngle"]));
-                df.close();
-            }
-
-            /* get the other part of the CSA header, the PhaseEncodingDirectionPositive value */
-            QString systemstring = QString("%1/./gdcmdump -C %2 | grep PhaseEncodingDirectionPositive").arg(bindir).arg(f);
-            QString csaheader = SystemCommand(systemstring, false);
-            QStringList parts = csaheader.split(",");
-            QString val;
-            if (parts.size() == 5) {
-                val = parts[4];
-                val.replace("Data '","",Qt::CaseInsensitive);
-                val.replace("'","");
-                if (val.trimmed() == "Data")
-                    val = "";
-                tags["PhaseEncodingDirectionPositive"] = val.trimmed();
-            }
-            //WriteLog(QString("Found PhaseEncodingDirectionPositive of [%1]").arg(tags["PhaseEncodingDirectionPositive"]));
-        }
-        msg += "GetImageFileTags() checkpoint C\n";
+        msg += "dcmtk successfuly read file [" + f + "]\n";
     }
     else {
         /* ---------- not a DICOM file, so see what other type of file it may be ---------- */
@@ -758,7 +853,7 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
         else {
             msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
-            /* try one last time to read with EXIF tool */
+            /* try one last time to read with just the non-interactive command line EXIF tool */
             QString systemstring = "exiftool " + f;
             QString exifoutput = SystemCommand(systemstring, false);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
@@ -786,9 +881,6 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["Modality"] == "")
         tags["Modality"] = "OT";
     QString StudyDate = ParseDate(tags["StudyDate"]);
-    //QString StudyTime = ParseTime(tags["StudyTime"]);
-    //QString SeriesDate = ParseDate(tags["SeriesDate"]);
-    //QString SeriesTime = ParseTime(tags["SeriesTime"]);
 
     /* fix the study date */
     tags["StudyDate"].replace(":", "-");
@@ -842,15 +934,12 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["SeriesTime"] == "")
         tags["SeriesTime"] = tags["StudyTime"];
     else {
-        Print("SeriesTime before [" + tags["SeriesTime"] + "]");
 
         if (tags["SeriesTime"].contains(":")) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
         }
         else if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
-            //Print("SeriesTime before [" + tags["SeriesTime"] + "]");
             tags["SeriesTime"] = tags["SeriesTime"].left(6);
-            //Print("SeriesTime after [" + tags["SeriesTime"] + "]");
         }
         else if (((tags["SeriesTime"].size() == 14) || (tags["SeriesTime"].size() == 15)) && (tags["SeriesTime"].contains(":"))) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
@@ -942,7 +1031,18 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
     if (tags["PatientSex"] == "")
         tags["PatientName"] = "U";
 
-    qDebug() << "Leaving GetImageFileTags()";
+    QString uniqueseries = tags["InstitutionName"] + tags["StationName"] + tags["Modality"] + tags["PatientName"] + tags["PatientBirthDate"] + tags["PatientSex"] + tags["StudyDateTime"] + tags["SeriesNumber"];
+    tags["UniqueSeriesString"] = uniqueseries;
+
+    msg += uniqueseries + "\n";
+
+    //qDebug() << "Leaving GetImageFileTags()";
+    //n->Log(QString("tags[] contains %1 elements").arg(tags.size()));
+    //QString tagString = "";
+    //foreach (const QString &key, tags.keys()) {
+    //    tagString += QString("tags[%1] = %2\n").arg(key).arg(tags.value(key));
+    //}
+    //n->Log(tagString);
 
     return true;
 }
@@ -951,33 +1051,45 @@ bool imageIO::GetImageFileTags(QString f, QString bindir, bool enablecsa, QHash<
 /* ------------------------------------------------- */
 /* --------- GetFileType --------------------------- */
 /* ------------------------------------------------- */
+/**
+ * @brief imageIO::GetFileType - This function has been deprecated, but the code remains in case it's needed again
+ * @param f
+ * @param fileType
+ * @param fileModality
+ * @param filePatientID
+ * @param fileProtocol
+ */
 void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol)
 {
     fileModality = QString("");
-    gdcm::Reader r;
-    r.SetFileName(f.toStdString().c_str());
-    if (r.CanRead()) {
-        r.Read();
-        fileType = QString("DICOM");
-        gdcm::StringFilter sf;
-        sf = gdcm::StringFilter();
-        sf.SetFile(r.GetFile());
-        std::string s;
 
-        /* get modality */
-        s = sf.ToString(gdcm::Tag(0x0008,0x0060));
-        fileModality = QString(s.c_str());
+    /* read file with EXIF tool */
+    QString exifoutput = Exiftool(f);
+    QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
+    QHash<QString, QString> tags;
+    foreach (QString line, lines) {
+        QString delimiter = ":";
+        qint64 index = line.indexOf(delimiter);
 
-        /* get patientID */
-        s = sf.ToString(gdcm::Tag(0x0010,0x0020));
-        filePatientID = QString(s.c_str());
+        if (index != -1) {
+            QString firstPart = line.mid(0, index).replace(" ", "");
+            QString secondPart = line.mid(index + delimiter.length());
+            tags[firstPart.trimmed()] = secondPart.trimmed();
+        }
+    }
 
-        /* get protocol (seriesDesc) */
-        s = sf.ToString(gdcm::Tag(0x0008,0x103E));
-        fileProtocol = QString(s.c_str());
+    if (tags["FileType"] == "DICOM") {
+
+        if (tags.contains("Modality"))
+            fileModality = tags["Modality"];
+
+        if (tags.contains("PatientID"))
+            filePatientID = tags["PatientID"];
+
+        if (tags.contains("SeriesDescription"))
+            fileProtocol = tags["SeriesDescription"];
     }
     else {
-        //WriteLog("[" + f + "] is not a DICOM file");
         /* check if EEG, and Polhemus */
         if ((f.endsWith(".cnt", Qt::CaseInsensitive)) || (f.endsWith(".dat", Qt::CaseInsensitive)) || (f.endsWith(".3dd", Qt::CaseInsensitive)) || (f.endsWith(".eeg", Qt::CaseInsensitive))) {
             //WriteLog("Found an EEG file [" + f + "]");
@@ -1032,11 +1144,13 @@ void imageIO::GetFileType(QString f, QString &fileType, QString &fileModality, Q
                   QString line = in.readLine();
                   if (line.contains("Patient name")) {
                       QStringList parts = line.split(":",Qt::SkipEmptyParts);
-                      filePatientID = parts[1].trimmed();
+                      if (parts.size() >= 2)
+                          filePatientID = parts[1].trimmed();
                   }
                   if (line.contains("Protocol name")) {
                       QStringList parts = line.split(":",Qt::SkipEmptyParts);
-                      fileProtocol = parts[1].trimmed();
+                      if (parts.size() >= 2)
+                          fileProtocol = parts[1].trimmed();
                   }
                   if (line.contains("MRSERIES", Qt::CaseInsensitive)) {
                       fileModality = "MR";

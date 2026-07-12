@@ -50,10 +50,14 @@
 		$selfcall = true;
 	else
 		$selfcall = false;
+
+	//$username = $_SESSION['username'];
+	//$instanceid = $_SESSION['instanceid'];
+	//session_write_close();
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$packageid = GetVariable("packageid");
+	$packageid = (int)GetVariable("packageid");
 	$packagename = GetVariable("packagename");
 	$packagedesc = GetVariable("packagedesc");
 	$packageformat = GetVariable("packageformat");
@@ -65,43 +69,81 @@
 	$license = GetVariable("license");
 	$changes = GetVariable("changes");
 
-	$objecttype = GetVariable("objecttype");
-	$objectids = GetVariable("objectids");
-	$objectIDsToDelete = GetVariable("objectidstodelete");
-	$modality = GetVariable("modality");
-	$enrollmentids = GetVariable("enrollmentids");
-	$subjectids = GetVariable("subjectids");
-	$studyids = GetVariable("studyids");
-	$seriesids = GetVariable("seriesids");
-	$seriesid = GetVariable("seriesid"); /* from the search page this variable is 'seriesid', but will contain multiple values */
-	$experimentids = GetVariable("experimentids");
 	$analysisids = GetVariable("analysisids");
-	$pipelineids = GetVariable("pipelineids");
 	$datadictionaryids = GetVariable("datadictionaryids");
-	$interventionids = GetVariable("interventionids");
-	$observationids = GetVariable("observationids");
+	$enrollmentids = GetVariable("enrollmentids");
+	$experimentids = GetVariable("experimentids");
+	$includeanalysis = GetVariable("includeanalysis");
+	$includeexperiments = GetVariable("includeexperiments");
 	$includeinterventions = GetVariable("includeinterventions");
 	$includeobservations = GetVariable("includeobservations");
-	$includeexperiments = GetVariable("includeexperiments");
-	$includeanalysis = GetVariable("includeanalysis");
 	$includepipelines = GetVariable("includepipelines");
+	$interventionids = GetVariable("interventionids");
+	$modality = GetVariable("modality");
+	$objectids = GetVariable("objectids");
+	$objectIDsToDelete = GetVariable("objectidstodelete");
+	$objecttype = GetVariable("objecttype");
+	$observationids = GetVariable("observationids");
+	$pipelineids = GetVariable("pipelineids");
+	$seriesid = GetVariable("seriesid"); /* from the search page this variable is 'seriesid', but will contain multiple values */
+	$seriesids = GetVariable("seriesids");
+	$studyids = GetVariable("studyids");
+	$subjectids = GetVariable("subjectids");
 
-	//PrintVariable($objectids);
+	/* these are comma-separated lists of integer IDs — strip anything that isn't a digit or comma
+	   so they are safe to use directly in SQL "in (...)" clauses and when exploded into arrays */
+	$analysisidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("analysisidstr"));
+	$datadictionaryidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("datadictionaryidstr"));
+	$enrollmentidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("enrollmentidstr"));
+	$experimentidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("experimentidstr"));
+	$interventionidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("interventionidstr"));
+	$objectidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("objectidstr"));
+	$observationidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("observationidstr"));
+	$pipelineidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("pipelineidstr"));
+	$seriesidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("seriesidstr"));
+	$studyidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("studyidstr"));
+	$subjectidstr = preg_replace('/[^0-9,]/', '', (string)GetVariable("subjectidstr"));
+	
+	/* convert comma-separated strings to arrays */
+	if (strlen(trim($analysisidstr)) > 0) { $analysisids = explode(",", str_replace(" ","", trim($analysisidstr))); }
+	if (strlen(trim($datadictionaryidstr)) > 0) { $datadictionaryids = explode(",", str_replace(" ","", trim($datadictionaryidstr))); }
+	if (strlen(trim($enrollmentidstr)) > 0) { $enrollmentids = explode(",", str_replace(" ","", trim($enrollmentidstr))); }
+	if (strlen(trim($experimentidstr)) > 0) { $experimentids = explode(",", str_replace(" ","", trim($experimentidstr))); }
+	if (strlen(trim($interventionidstr)) > 0) { $interventionids = explode(",", str_replace(" ","", trim($interventionidstr))); }
+	if (strlen(trim($objectidstr)) > 0) { $objectids = explode(",", str_replace(" ","", trim($objectidstr))); }
+	if (strlen(trim($observationidstr)) > 0) { $observationids = explode(",", str_replace(" ","", trim($observationidstr))); }
+	if (strlen(trim($pipelineidstr)) > 0) { $pipelineids = explode(",", str_replace(" ","", trim($pipelineidstr))); }
+	if (strlen(trim($seriesidstr)) > 0) { $seriesids = explode(",", str_replace(" ","", trim($seriesidstr))); }
+	if (strlen(trim($studyidstr)) > 0) { $studyids = explode(",", str_replace(" ","", trim($studyidstr))); }
+	if (strlen(trim($subjectidstr)) > 0) { $subjectids = explode(",", str_replace(" ","", trim($subjectidstr))); }
 	
 	if (is_null($seriesids))
 		$seriesids = array();
 	if (is_null($seriesid))
 		$seriesid = array();
 
-	if (count($seriesids) > 0)
+	if (count((array)$seriesids) > 0)
 		$objectids = $seriesids;
-	if (count($seriesid) > 0)
+	if (count((array)$seriesid) > 0)
 		$objectids = $seriesid;
 	if (trim($objectIDsToDelete) != "") {
 		$objectids = explode(",", $objectIDsToDelete);
 	}
 	
-	//PrintVariable($objectids);
+	?>
+	<div class="ui text container">
+		<div class="ui yellow message" align="center" id="pageloading">
+			<h2 class="ui header">
+				<em data-emoji=":chipmunk:" class="loading"></em> Working...
+			</h2>
+		</div>
+	</div>
+	<script>
+		$(document).ready(function(){
+			$('#pageloading').hide();
+		});
+	</script>
+	<?
 	
 	/* determine action */
 	if ($selfcall) {
@@ -132,6 +174,10 @@
 		}
 		elseif ($action == "splitmodality") {
 			SplitPackageByModality($packageid);
+		}
+		elseif ($action == "deletepackage") {
+			DeletePackage($packageid);
+			DisplayPackageList();
 		}
 		elseif ($action == "export") {
 			ExportPackage($packageid);
@@ -214,12 +260,12 @@
 	/* -------------------------------------------- */
 	function DisplayAddEnrollmentForm($enrollmentids) {
 		
-		if (count($enrollmentids) < 1) {
+		if (count((array)$enrollmentids) < 1) {
 			Error("0 subjectids passed into function");
 			return;
 		}
 		$uids = array();
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 		
 		/* get all series from this enrollment */
 		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
@@ -256,13 +302,13 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
-		$numseries = count($seriesids, COUNT_RECURSIVE);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
+		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
-		if (count($studyids) > 0) {
+		if (count((array)$studyids) > 0) {
 			$studyidstr = implode2(",", $studyids);
 			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -279,6 +325,7 @@
 		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
 			foreach ($modalityvalue as $seriesdesc => $value) {
 				$projectid = $value['projectid'];
+				$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
 				
 				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -320,7 +367,7 @@
 					<div style="text-align: center">
 						<? DisplayFormSelectPackage(); ?>
 						<br><br>
-						<input type="submit" value="Add to package" class="ui primary button">
+						<input type="submit" value="Add to existing package" class="ui primary button">
 					</div>
 				</form>
 			</div>
@@ -334,7 +381,7 @@
 	/* -------------------------------------------- */
 	function DisplayAddStudyForm($studyids) {
 		
-		if (count($studyids) < 1) {
+		if (count((array)$studyids) < 1) {
 			Error("No studyids passed into function");
 			return;
 		}
@@ -376,10 +423,10 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
-		$numseries = count($seriesids, COUNT_RECURSIVE);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
+		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
 		$studyidstr = implode2(",", $studyids);
@@ -456,7 +503,7 @@
 		//PrintVariable($seriesids);
 		//PrintVariable($modality);
 		
-		if (count($seriesids) < 1) {
+		if (count((array)$seriesids) < 1) {
 			Error("0 seriesids passed into function");
 			return;
 		}
@@ -493,9 +540,9 @@
 		$projectids = array_unique($projectids);
 		$seriesdescs = array_unique($seriesdesc);
 		
-		$numenrollments = count($enrollmentids);
-		$numsubjects = count($subjectids);
-		$numstudies = count($studyids);
+		$numenrollments = count((array)$enrollmentids);
+		$numsubjects = count((array)$subjectids);
+		$numstudies = count((array)$studyids);
 		$numseries = count($seriesids2, COUNT_RECURSIVE);
 		
 		/* get list of analysisids */
@@ -722,7 +769,7 @@
 	/* this function expects a list of enrollment IDs */
 	function DisplayFormSubjects($enrollmentids, $required) {
 		
-		$numsubjects = count($enrollmentids);
+		$numsubjects = count((array)$enrollmentids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -736,7 +783,7 @@
 			$numselected = 0;
 		}
 		
-		if (count($enrollmentids) > 0) {
+		if (count((array)$enrollmentids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -794,10 +841,13 @@
 						</thead>
 						<tbody>
 						<?
-							$enrollmentidstr = implode2(",", $enrollmentids);
+							//PrintVariable($enrollmentids);
+							
+							$enrollmentidstr = implode2(", ", $enrollmentids);
 							
 							/* get subject info - there may be series from multiple subjects in this list */
 							$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
+							PrintSQL($sqlstring);
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$enrollmentid = $row['enrollment_id'];
@@ -839,7 +889,7 @@
 	/* -------------------------------------------- */
 	function DisplayFormStudies($studyids, $required) {
 		
-		$numstudies = count($studyids);
+		$numstudies = count((array)$studyids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -853,7 +903,7 @@
 			$numselected = 0;
 		}
 
-		if (count($studyids) > 0) {
+		if (count((array)$studyids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -984,7 +1034,7 @@
 			$numselected = 0;
 		}
 
-		if (count($seriesids) > 0) {
+		if (count((array)$seriesids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1013,6 +1063,7 @@
 					if (e.checked)
 						document.getElementById('includeseries').checked = true;
 				}
+				
 			</script>
 
 			<div class="ui grid">
@@ -1046,6 +1097,7 @@
 						</thead>
 						<tbody>
 						<?
+							$seriesIDarray = array();
 							foreach ($seriesids as $modality => $serieslist) {
 								$seriesidstr = implode2(",", $serieslist);
 							
@@ -1061,8 +1113,9 @@
 									$seriessize = $row['series_size'];
 									$seriesnumfiles = $row['numfiles'];
 									
+									$seriesIDarray[] = "$modality-$seriesid";
 									?>
-										<tr>
+									<!--	<tr>
 											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$modality?>-<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
 											<td><?=$uid?></td>
 											<td><?=$studynum?></td>
@@ -1071,16 +1124,17 @@
 											<td><?=$seriesdesc?></td>
 											<td><?=$seriessize?></td>
 											<td><?=$seriesnumfiles?></td>
-										</tr>
+										</tr> -->
 									<?
 								}
 							}
 						?>
+							<input type="hidden" name="seriesidstr" value="<?=implode(",", $seriesIDarray);?>">
 						</tbody>
 					</table>
 				</div>
 			</div>
-			<input type="hidden" name="modality" value="<?=$modality?>">
+			<!--<input type="hidden" name="modality" value="<?=$modality?>">-->
 			<?
 		}
 		else {
@@ -1101,7 +1155,7 @@
 	function DisplayFormExperiments($experimentids, $required) {
 		
 		$experimentidstr = implode2(",", $experimentids);
-		$numexperiments = count($experimentids);
+		$numexperiments = count((array)$experimentids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1115,7 +1169,7 @@
 			$numselected = 0;
 		}
 
-		if (count($experimentids) > 0) {
+		if (count((array)$experimentids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1213,7 +1267,7 @@
 	function DisplayFormAnalyses($analysisids, $required) {
 
 		$analysisidstr = implode2(",", $analysisids);
-		$numanalysis = count($analysisids);
+		$numanalysis = count((array)$analysisids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1227,7 +1281,7 @@
 			$numselected = 0;
 		}
 
-		if (count($analysisids) > 0) {
+		if (count((array)$analysisids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1327,7 +1381,7 @@
 	function DisplayFormPipelines($pipelineids, $required) {
 
 		$pipelineidstr = implode2(",", $pipelineids);
-		$numpipelines = count($pipelineids);
+		$numpipelines = count((array)$pipelineids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1341,7 +1395,7 @@
 			$numselected = 0;
 		}
 
-		if (count($pipelineids) > 0) {
+		if (count((array)$pipelineids) > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1435,9 +1489,9 @@
 	/* -------------------------------------------- */
 	function DisplayFormObservations($enrollmentids, $required) {
 
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
-		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numobservations = mysqli_num_rows($result);
 		
@@ -1453,7 +1507,7 @@
 			$numselected = 0;
 		}
 		
-		if ((count($enrollmentids) > 0) && ($numobservations > 0)) {
+		if ((count((array)$enrollmentids) > 0) && ($numobservations > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1512,7 +1566,7 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join observationnames d on a.observationname_id = d.observationname_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							//	$uid = $row['uid'];
@@ -1555,9 +1609,9 @@
 	/* -------------------------------------------- */
 	function DisplayFormInterventions($enrollmentids, $required) {
 		
-		$enrollmentidstr = implode2(",", $enrollmentids);
+		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
-		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+		$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		
@@ -1573,7 +1627,7 @@
 			$numselected = 0;
 		}
 
-		if ((count($enrollmentids) > 0) && ($numinterventions > 0)) {
+		if ((count((array)$enrollmentids) > 0) && ($numinterventions > 0)) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1633,7 +1687,7 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							//$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode2(",", $enrollmentids) . ")";
+							//$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join interventionnames d on a.interventionname_id = d.interventionname_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 							//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
@@ -1683,7 +1737,7 @@
 		$objecttype = mysqli_real_escape_string($GLOBALS['linki'], $objecttype);
 		$objectids = mysqli_real_escape_array($GLOBALS['linki'], $objectids);
 
-		$numobjects = count($objectids);
+		$numobjects = count((array)$objectids);
 		$objectidstr = implode2(",", $objectids);
 		switch ($objecttype) {
 			case "enrollment":
@@ -1766,76 +1820,99 @@
 		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
 		
 		/* add any enrollments */
-		if ((count($enrollmentids) > 0) && (is_array($enrollmentids))) {
+		if ((count((array)$enrollmentids) > 0) && (is_array($enrollmentids))) {
 			foreach ($enrollmentids as $enrollmentid) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values ($packageid, $enrollmentid, '$altuid')";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($enrollmentids);
-			$msg .= "Added " . count($enrollmentids) . " enrollments<br>";
+			$numobjects += count((array)$enrollmentids);
+			$msg .= "Added " . count((array)$enrollmentids) . " enrollments<br>";
 		}
 
+		//PrintVariable($seriesids);
 		/* add any series */
-		if ((count($seriesids) > 0) && (is_array($seriesids))) {
+		if ((count((array)$seriesids) > 0) && (is_array($seriesids))) {
 			foreach ($seriesids as $seriesid) {
 				list($mod, $sid) = explode("-",$seriesid);
 				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$mod', $sid)";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($seriesids);
-			$msg .= "Added " . count($seriesids) . " series<br>";
+			$numobjects += count((array)$seriesids);
+			$msg .= "Added " . count((array)$seriesids) . " series<br>";
 		}
 
 		/* add any experiments */
-		if ((count($experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
+		if ((count((array)$experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
 			foreach ($experimentids as $experimentid) {
 				$sqlstring = "insert ignore into package_experiments (package_id, experiment_id) values ($packageid, $experimentid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($experimentids);
-			$msg .= "Added " . count($experimentids) . " experiments<br>";
+			$numobjects += count((array)$experimentids);
+			$msg .= "Added " . count((array)$experimentids) . " experiments<br>";
 		}
 
 		/* add any analyses */
-		if ((count($analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
+		if ((count((array)$analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
 			foreach ($analysisids as $analysisid) {
 				$sqlstring = "insert ignore into package_analyses (package_id, analysis_id) values ($packageid, $analysisid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($analysisids);
-			$msg .= "Added " . count($analysisids) . " analyses<br>";
+			$numobjects += count((array)$analysisids);
+			$msg .= "Added " . count((array)$analysisids) . " analyses<br>";
 		}
 		
 		/* add any pipelines */
-		if ((count($pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
+		if ((count((array)$pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
 			foreach ($pipelineids as $pipelineid) {
 				$sqlstring = "insert ignore into package_pipelines (package_id, pipeline_id) values ($packageid, $pipelineid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($pipelineids);
-			$msg .= "Added " . count($pipelineids) . " pipelines<br>";
+			$numobjects += count((array)$pipelineids);
+			$msg .= "Added " . count((array)$pipelineids) . " pipelines<br>";
 		}
 
 		/* add any interventions */
-		if ((count($interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
+		if ((count((array)$interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
 			foreach ($interventionids as $interventionid) {
 				$sqlstring = "insert ignore into package_interventions (package_id, intervention_id) values ($packageid, $interventionid)";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			$numobjects += count($interventionids);
-			$msg .= "Added " . count($interventionids) . " interventions<br>";
+			$numobjects += count((array)$interventionids);
+			$msg .= "Added " . count((array)$interventionids) . " interventions<br>";
 		}
 		
-		/* add any observations */
-		if ((count($observationids) > 0) && ($includeobservations) && (is_array($observationids))) {
-			foreach ($observationids as $observationid) {
-				$sqlstring = "insert ignore into package_observations (package_id, observation_id) values ($packageid, $observationid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* add ALL observations if selected */
+		if ($includeobservations) {
+			
+			$observationids = array();
+			$inserts = array();
+			
+			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$observationid = $row['observation_id'];
+				$observationids[] = $observationid;
+			
+				$inserts[] = "($packageid, $observationid)";
+			
+				if (count($inserts) >= 100) {
+					$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+					//PrintSQL($sqlstringA);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$inserts = array();
+				}
 			}
-			$numobjects += count($observationids);
-			$msg .= "Added " . count($observationids) . " observations<br>";
+			/* insert the remaining items */
+			if (count($inserts) > 0) {
+				$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+				//PrintSQL($sqlstringA);
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$inserts = array();
+			}
+			$numobjects += count((array)$observationids);
+			$msg .= "Added " . count((array)$observationids) . " observations<br>";
 		}
 		
 		$title = "Added $numobjects objects to package";
@@ -1897,14 +1974,14 @@
 	/* -------------------------------------------- */
 	/* ------- DeletePackage ---------------------- */
 	/* -------------------------------------------- */
-	function DeletePackage($packageid) {
-		if (!ValidID($packageid,'Package ID')) { return; }
+	//function DeletePackage($packageid) {
+	//	if (!ValidID($packageid,'Package ID')) { return; }
 		
-		$sqlstring = "delete from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("Package deleted");
-	}	
+	//	$sqlstring = "delete from packages where package_id = $packageid";
+	//	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	//	
+	//	Notice("Package deleted");
+	//}	
 
 
 	/* -------------------------------------------- */
@@ -2000,29 +2077,32 @@
 
 		MarkTime("Getting observation data");
 		/* get observations */
-		$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		//$sqlstring = "select * from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
+		$sqlstring = "select count(*) 'count' from package_observations where package_id = $packageid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numobservations = mysqli_num_rows($result);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentid = $row['enrollment_id'];
-			$uid = $row['uid'];
-			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$objectid = $row['packageobservation_id'];
-			$observations[$uid][$objectid]['observationid'] = $row['observation_id'];
-			$observations[$uid][$objectid]['name'] = $row['observation_name'];
-			$observations[$uid][$objectid]['value'] = $row['observation_value'];
-			$observations[$uid][$objectid]['startdate'] = $row['observation_startdate'];
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numobservations = $row['count'];
+		//$numobservations = mysqli_num_rows($result);
+		//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		//	$enrollmentid = $row['enrollment_id'];
+		//	$uid = $row['uid'];
+		//	//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+		//	$objectid = $row['packageobservation_id'];
+		//	$observations[$uid][$objectid]['observationid'] = $row['observation_id'];
+		//	$observations[$uid][$objectid]['name'] = $row['observation_name'];
+		//	$observations[$uid][$objectid]['value'] = $row['observation_value'];
+		//	$observations[$uid][$objectid]['startdate'] = $row['observation_startdate'];
 			
-			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
-				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-				if ($altuid != "") {
-					$altIDMapping[$uid] = $altuid;
-					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				}
-			}
-		}
+		//	if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+		//		/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
+		//		list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
+		//		if ($altuid != "") {
+		//			$altIDMapping[$uid] = $altuid;
+		//			$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
+		//			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+		//		}
+		//	}
+		//}
 
 		MarkTime("Getting intervention data");
 		/* get interventions */
@@ -2179,46 +2259,10 @@
 
 		<div class="ui container">
 			<div class="ui top attached raised segment">
-				<div class="ui three column grid">
-					<div class="column">
-						<div class="ui header">
-							<img src="images/squirrel-icon-64.png"></img>
-							<h2 class="content"><?=$pkg['name']?></h2>
-							<div class="sub header"><?=$pkg['desc']?></div>
-						</div>
-					</div>
-					<div class="ui middle aligned right aligned column">
-						<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
-						<div class="ui accordion">
-							<div class="title">
-								<i class="dropdown icon"></i>
-								Previous exports
-							</div>
-							<div class="content">
-								<ul>
-								<?
-									$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									$numexports = mysqli_num_rows($result);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$exportid = $row['export_id'];
-										$startdate = $row['startdate'];
-										$submitdate = $row['submitdate'];
-										$completeddate = $row['completeddate'];
-										$status = $row['status'];
-										?>
-										<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
-										<?
-									}
-								?>
-								</ul>
-							</div>
-						</div>
-					</div>
-					<div class="ui middle aligned right aligned column">
-						<h3>Operations</h3>
-						<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>">Split by modality</a>
-					</div>
+				<div class="ui header">
+					<img src="images/squirrel-icon-64.png"></img>
+					<h2 class="content"><?=$pkg['name']?></h2>
+					<div class="sub header"><?=$pkg['desc']?></div>
 				</div>
 			</div>
 			
@@ -2252,7 +2296,7 @@
 			</div>
 
 			<!-- package overview tab -->
-			<div class="ui bottom attached active tab raised center aligned segment" data-tab="overview">
+			<div class="ui attached active tab raised center aligned segment" data-tab="overview">
 				<div class="ui grid">
 					<div class="ui five wide column">
 						<div class="ui top attached segment" style="background-color: #eee">
@@ -2364,6 +2408,40 @@
 						</pre>
 					</div>
 				</div>
+			</div>
+			<div class="ui bottom attached raised segment">
+				<h3>Operations</h3>
+				
+				<a href="packages.php?action=export&packageid=<?=$packageid?>" class="ui huge green button"><i class="box open icon"></i>Export Package</a>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						Previous exports
+					</div>
+					<div class="content">
+						<ul>
+						<?
+							$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
+							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$numexports = mysqli_num_rows($result);
+							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$exportid = $row['export_id'];
+								$startdate = $row['startdate'];
+								$submitdate = $row['submitdate'];
+								$completeddate = $row['completeddate'];
+								$status = $row['status'];
+								?>
+								<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
+								<?
+							}
+						?>
+						</ul>
+					</div>
+				</div>
+
+				<a class="ui basic primary button" href="packages.php?action=splitmodality&packageid=<?=$packageid?>"><i class="expand alternate icon"></i> Split by modality</a>
+				
+				<a class="ui basic red button" href="packages.php?action=deletepackage&packageid=<?=$packageid?>"><i class="trash alternate outline icon"></i> Delete package</a>
 			</div>
 			
 			<!-- subjects tab -->
@@ -3254,6 +3332,89 @@
 			
 			//CommitSQLTransaction();
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeletePackage ---------------------- */
+	/* -------------------------------------------- */
+	function DeletePackage($packageid) {
+		if (!ValidID($packageid,'Package ID')) { return; }
+		
+		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
+		
+		$sqlstring = "select * from packages where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$packageName = $row['package_name'];
+		
+		$msgs = array();
+		/* delete from package_analyses */
+		$sqlstring = "delete from package_analyses where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " analyses";
+
+		/* delete from package_enrollments */
+		$sqlstring = "delete from package_enrollments where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " enrollments";
+
+		/* delete from package_experiments */
+		$sqlstring = "delete from package_experiments where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " experiments";
+
+		/* delete from package_interventions */
+		$sqlstring = "delete from package_interventions where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " interventions";
+
+		/* delete from package_observations */
+		$sqlstring = "delete from package_observations where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " observations";
+
+		/* delete from package_pipelines */
+		$sqlstring = "delete from package_pipelines where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " pipelines";
+
+		/* delete from package_series */
+		$sqlstring = "delete from package_series where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " series";
+
+		/* delete from package_studies */
+		$sqlstring = "delete from package_studies where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " studies";
+
+		/* delete from package_subjects */
+		$sqlstring = "delete from package_subjects where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " subjects";
+
+		/* delete from packages */
+		$sqlstring = "delete from packages where package_id = $packageid";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " package";
+
+		?>
+		<div class="ui text container">
+			<div class="ui message">
+				<div class="header">
+					Deleted package <?=$packageName?>
+				</div>
+				<ul class="list">
+					<?
+					foreach ($msgs as $msg) {
+						echo "<li>$msg";
+					}
+					?>
+				</ul>
+			</div>
+		</div>
+		<?
 	}
 	
 ?>

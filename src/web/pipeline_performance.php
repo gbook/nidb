@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB pipelines.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -48,9 +48,9 @@
 	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$pipelineid = GetVariable("pipelineid");
-	$id = GetVariable("id");
-	if ($pipelineid == "")
+	$pipelineid = (int)GetVariable("pipelineid");
+	$id = (int)GetVariable("id");
+	if ($pipelineid == 0)
 		$pipelineid = $id;
 		
 	/* determine action */

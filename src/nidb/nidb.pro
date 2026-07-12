@@ -1,7 +1,8 @@
-QT -= gui
 QT += sql
 QT += network
 QT += core
+QT += gui
+QMAKE_LIBS_OPENGL =
 
 #CONFIG -= c++98
 #CONFIG += c++11
@@ -38,6 +39,8 @@ win32-g++ {
 SOURCES += \
     analysis.cpp \
     archiveio.cpp \
+    bids.cpp \
+    enrollment.cpp \
     experiment.cpp \
     imageio.cpp \
     intervention.cpp \
@@ -46,8 +49,10 @@ SOURCES += \
     moduleBackup.cpp \
     moduleCluster.cpp \
     moduleExport.cpp \
+    moduleExportNonImaging.cpp \
     moduleFileIO.cpp \
     moduleImport.cpp \
+    moduleRemoteImport.cpp \
     moduleMRIQA.cpp \
     moduleManager.cpp \
     moduleMiniPipeline.cpp \
@@ -62,6 +67,7 @@ SOURCES += \
     series.cpp \
     study.cpp \
     subject.cpp \
+    survey.cpp \
     utils.cpp
 
 #unix: {
@@ -80,6 +86,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 HEADERS += \
     analysis.h \
     archiveio.h \
+    bids.h \
+    enrollment.h \
     experiment.h \
     imageio.h \
     intervention.h \
@@ -87,8 +95,10 @@ HEADERS += \
     moduleBackup.h \
     moduleCluster.h \
     moduleExport.h \
+    moduleExportNonImaging.h \
     moduleFileIO.h \
     moduleImport.h \
+    moduleRemoteImport.h \
     moduleMRIQA.h \
     moduleManager.h \
     moduleMiniPipeline.h \
@@ -103,48 +113,47 @@ HEADERS += \
     series.h \
     study.h \
     subject.h \
+    survey.h \
     utils.h \
     version.h
 
-# gdcm
 win32: {
-    GDCMBIN = C:/squirrel/bin/gdcm
-    GDCMSRC = C:/squirrel/src/gdcm/Source
-    win32:CONFIG(release, debug|release): LIBS += -L$$GDCMBIN/bin/Release/
-    else:win32:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug/
-    INCLUDEPATH += $$GDCMSRC/Attribute
-    INCLUDEPATH += $$GDCMSRC/Common
-    INCLUDEPATH += $$GDCMSRC/DataDictionary
-    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+    # dcmtk library
+    DCMTK = "C:/Program Files (x86)/DCMTK"
 
-    LIBS += -lgdcmMSFF \
-	-lgdcmCommon \
-	-lgdcmDICT \
-	-lgdcmDSED \
-	-lgdcmIOD \
-	-lgdcmMEXD \
-	-lgdcmcharls \
-	-lgdcmexpat \
-	-lgdcmjpeg12 \
-	-lgdcmjpeg16 \
-	-lgdcmjpeg8 \
-	-lgdcmopenjp2 \
-	-lgdcmzlib \
-	-lsocketxx
+    LIBS += -L$$DCMTK/lib
+    INCLUDEPATH += $$DCMTK/include/
 
-    # Location of SMTP Library
-    SMTPBIN = ../../bin/smtp-win
-    LIBS += -L$$SMTPBIN/release -lSMTPEmail
-    INCLUDEPATH += ../smtp
-    DEPENDPATH += $$SMTPBIN
-    *msvc* { # visual studio spec filter
-	QMAKE_CXXFLAGS += -MP
-    }
+    LIBS += -ldcmdata \
+        -lcmr \
+        -ldcmdata \
+        -ldcmdsig \
+        -ldcmect \
+        -ldcmfg \
+        -ldcmimage \
+        -ldcmimgle \
+        -ldcmiod \
+        -ldcmjpeg \
+        -ldcmjpls \
+        -ldcmnet \
+        -ldcmpmap \
+        -ldcmpstat \
+        -ldcmqrdb \
+        -ldcmrt \
+        -ldcmseg \
+        -ldcmsr \
+        -ldcmtkcharls \
+        -ldcmtls \
+        -ldcmtract \
+        -ldcmwlm \
+        -ldcmxml \
+        -li2d \
+        -lijg8 \
+        -lijg12 \
+        -lijg16 \
+        -loficonv \
+        -loflog \
+        -lofstd
 
     # Location of squirrel Library
     SQUIRRELBIN = ../../bin/squirrel-win
@@ -157,49 +166,51 @@ win32: {
     }
 }
 unix: {
-    # Location of SMTP Library and header
-    INCLUDEPATH += ../smtp
-    SMTPBIN = ../../bin/smtp
-    LIBS += -L$$SMTPBIN/ -lSMTPEmail
-    INCLUDEPATH += $$SMTPBIN
-    DEPENDPATH += $$SMTPBIN
 
     # Location of squirrel Library and header
     INCLUDEPATH += ../squirrel
     SQUIRRELBIN = ../../bin/squirrel
-    LIBS += -L$$SQUIRRELBIN/ -lsquirrel
+    LIBS += -L$$SQUIRRELBIN/ -Wl,-Bstatic -lsquirrel -Wl,-Bdynamic
     INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 
-    # GDCM library
-    GDCMBIN = ../../bin/gdcm
-    GDCMSRC = ../gdcm/Source
-    LIBS += -L$$GDCMBIN/bin/
-    INCLUDEPATH += $$GDCMSRC/Attribute
-    INCLUDEPATH += $$GDCMSRC/Common
-    INCLUDEPATH += $$GDCMSRC/DataDictionary
-    INCLUDEPATH += $$GDCMSRC/DataStructureAndEncodingDefinition
-    INCLUDEPATH += $$GDCMSRC/InformationObjectDefinition
-    INCLUDEPATH += $$GDCMSRC/MediaStorageAndFileFormat
-    INCLUDEPATH += $$GDCMSRC/MessageExchangeDefinition
-    INCLUDEPATH += $$GDCMBIN/Source/Common # for gdcmConfigure.h
-    HEADERS += $$GDCMBIN/Source/Common/gdcmConfigure.h
+    # bit7z (required by static libsquirrel)
+    BIT7ZBIN = ../../bin/bit7z
+    LIBS += -L$$BIT7ZBIN -lbit7z64 -ldl
 
-    LIBS += -lgdcmMSFF \
-	-lgdcmCommon \
-	-lgdcmDICT \
-	-lgdcmDSED \
-	-lgdcmIOD \
-	-lgdcmMEXD \
-	-lgdcmcharls \
-	-lgdcmexpat \
-	-lgdcmjpeg12 \
-	-lgdcmjpeg16 \
-	-lgdcmjpeg8 \
-	-lgdcmopenjp2 \
-	-lgdcmuuid \
-	-lgdcmzlib \
-	-lsocketxx
+    LIBS += -L/usr/local/lib64/
+    INCLUDEPATH += /usr/local/include/
+
+    LIBS += -ldcmdata \
+        -lcmr \
+        -ldcmdata \
+        -ldcmdsig \
+        -ldcmect \
+        -ldcmfg \
+        -ldcmimage \
+        -ldcmimgle \
+        -ldcmiod \
+        -ldcmjpeg \
+        -ldcmjpls \
+        -ldcmnet \
+        -ldcmpmap \
+        -ldcmpstat \
+        -ldcmqrdb \
+        -ldcmrt \
+        -ldcmseg \
+        -ldcmsr \
+        -ldcmtkcharls \
+        -ldcmtls \
+        -ldcmtract \
+        -ldcmwlm \
+        -ldcmxml \
+        -li2d \
+        -lijg8 \
+        -lijg12 \
+        -lijg16 \
+        -loficonv \
+        -loflog \
+        -lofstd
 }
 
 DISTFILES += \

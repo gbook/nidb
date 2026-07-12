@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB studies.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -50,14 +50,15 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$studyid = GetVariable("studyid");
-	if ($studyid == "") { $studyid = GetVariable("id"); }
-	$subjectid = GetVariable("subjectid");
-	$enrollmentid = GetVariable("enrollmentid");
+	if ($studyid == 0) { $studyid = GetVariable("id"); }
+	$studyid = (int)$studyid;
+	$subjectid = (int)GetVariable("subjectid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$newuid = GetVariable("newuid");
-	$newprojectid = GetVariable("newprojectid");
-	$seriesid = GetVariable("seriesid");
+	$newprojectid = (int)GetVariable("newprojectid");
+	$seriesid = (int)GetVariable("seriesid");
 	$seriesids = GetVariable("seriesids");
-	$minipipelineid = GetVariable("minipipelineid");
+	$minipipelineid = (int)GetVariable("minipipelineid");
 	$minipipelineids = GetVariable("minipipelineids");
 	$modality = GetVariable("modality");
 	$series_num = GetVariable("series_num");
@@ -101,7 +102,7 @@
 	$studyexperimenter = GetVariable("studyexperimenter");
 	$files = GetVariable("files");
 	$value = GetVariable("value");
-	$search_pipelineid = GetVariable("search_pipelineid");
+	$search_pipelineid = (int)GetVariable("search_pipelineid");
 	$search_name = GetVariable("search_name");
 	$search_compare = GetVariable("search_compare");
 	$search_value = GetVariable("search_value");
@@ -278,8 +279,8 @@
 	function AddRating($seriesid, $modality, $value, $username) {
 		/* check for valid inputs */
 		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $value));
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $username));
+		$value = mysqli_real_escape_string($GLOBALS['linki'], $value);
+		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
 		if (!ValidID($seriesid,'Series ID')) { return; }
 
 		$sqlstring = "select user_id from users where username = '$username'";
@@ -328,7 +329,7 @@
 		if ($studyageatscan == "") $studyageatscan = "null"; else $studyageatscan = "'$studyageatscan'";
 		
 		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchp', study_status = 'complete' where study_id = $studyid";
+		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchip', study_status = 'complete' where study_id = $studyid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		Notice("Study Updated");
@@ -371,7 +372,7 @@
 		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
 		if (!ValidID($studyid,'Study ID')) { return; }
 
-		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '$username')";
+		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '" . $GLOBALS['username'] . "')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		?><div align="center"><span class="message">Series Added</span></div><?
@@ -498,7 +499,7 @@
 		
 		/* get lowest seriesdatetime, make that the new study time */
 		if (is_array($seriesids)) {
-			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id = $seriesids";
@@ -545,7 +546,7 @@
 
 		/* get all series numbers */
 		if (is_array($seriesids)) {
-			$sqlstring = "select series_num from mr_series where mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "select series_num from mr_series where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "select series_num from mr_series where mrseries_id = $seriesids";
@@ -600,7 +601,7 @@
 		
 		/* 5 - change the studyid for the series */
 		if (is_array($seriesids)) {
-			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id in (" . implode2(',',$seriesids) . ")";
+			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
 		}
 		else {
 			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id = $seriesids";
@@ -659,7 +660,7 @@
 			<tbody>
 			<?
 			foreach ($seriesids as $seriesid) {
-				if ((is_numeric($seriesid)) && ($seriesid != "")) {
+				if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 					$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -746,7 +747,7 @@
 				<tbody>
 				<?
 				foreach ($seriesids as $seriesid) {
-					if ((is_numeric($seriesid)) && ($seriesid != "")) {
+					if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 						$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -1119,7 +1120,7 @@
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 
 		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 				$sqlstring = "update $modality" . "_series set ishidden = 1 where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				?><div align="center"><span class="message">Series hidden</span></div><?
@@ -1139,7 +1140,7 @@
 		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 		
 		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != "")) {
+			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
 				$sqlstring = "update $modality" . "_series set ishidden = 0 where mrseries_id = $seriesid";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				?><div align="center"><span class="message">Series unhidden</span></div><?
@@ -1356,7 +1357,7 @@
 			$s = $seriesid;
 			
 		foreach ($s as $key => $seriesid) {
-			if ($minipipelineid != "")
+			if ($minipipelineid != 0)
 				$mpid = $minipipelineid;
 			else
 				$mpid = $minipipelineids[$key];
@@ -2001,7 +2002,7 @@
 										<option value="">Select project...</option>
 									<?
 										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-										echo $sqlstringB;
+										//echo $sqlstringB;
 										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 											$project_id = $rowB['project_id'];
@@ -2137,7 +2138,7 @@
 		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="<?=$modality?>">
 		<input type="hidden" name="objecttype" value="series">
-		<table class="ui top attached very compact small celled grey table" style="margin: 0px">
+		<table class="ui top attached very compact small celled selectable grey table" style="margin: 0px">
 			<thead>
 				<tr>
 					<th>Series</th>
@@ -2159,7 +2160,7 @@
 					<th title="Image dimensions in voxels. If 4D image, <i>t</i> dimension will be the number of BOLD reps">Image dims <br><span class="tiny">(x y z t) in voxels</span></th>
 					<th>Files</th>
 					<th>Beh</th>
-					<th class="center aligned" style="background-color: Lavender;"><span style="font-size: 8pt;">Select All</span><br><input type="checkbox" id="seriesall"></th>
+					<th class="center aligned" style="background-color: Lavender;"><span style="font-size: 8pt;">Select</span><br><input type="checkbox" id="seriesall"></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -2186,7 +2187,7 @@
 						<?
 					}
 					else {
-						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',',$mrseriesids) . ")";
+						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',', array_map('intval', (array)$mrseriesids)) . ")";
 						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
 						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 							$ratingseriesid = $row3['data_id'];
@@ -2202,6 +2203,7 @@
 							$sqlstring = "select * from pr_series where study_id = $studyid order by series_num";
 						}
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$lastseriesnum = 0;
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mrseries_id = $row[$modality . 'series_id'];
 							$series_datetime = date('g:ia',strtotime($row['series_datetime']));
@@ -2267,6 +2269,7 @@
 								$behs = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh/*");
 								$numfiles_beh = count($behs);
 								$totalsize = 0;
+								$beh_size = 0;
 								foreach ($behs as $behfile) {
 									$beh_size += filesize($behfile);
 								}
@@ -2474,6 +2477,7 @@
 							$hasratings = false;
 							$rowcolor = '';
 
+							$ratingavg = "";
 							if (isset($ratings)) {
 								foreach ($ratings as $key => $ratingarray) {
 									if ($key == $mrseries_id) {
@@ -2510,16 +2514,16 @@
 							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
 							$bidsentity = $row3['bidsEntity'];
 							$bidssuffix = $row3['bidsSuffix'];
-							$bidsIntendedForEntity = $row['bidsIntendedForEntity'];
-							$bidsIntendedForTask = $row['bidsIntendedForTask'];
-							$bidsIntendedForRun = $row['bidsIntendedForRun'];
-							$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'];
-							$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
-							$bidsrun = $row['bidsRun'];
-							$bidsautonumberruns = $row['bidsAutoNumberRuns'];
-							$bidsincludeacquisition = $row['bidsIncludeAcquisition'];
-							$bidstask = $row['bidsTask'];
-							$bidspedirection = $row['bidsPEDirection'];
+							$bidsIntendedForEntity = $row3['bidsIntendedForEntity'];
+							$bidsIntendedForTask = $row3['bidsIntendedForTask'];
+							$bidsIntendedForRun = $row3['bidsIntendedForRun'];
+							$bidsIntendedForSuffix = $row3['bidsIntendedForSuffix'];
+							$bidsIntendedForFileExtension = $row3['bidsIntendedForFileExtension'];
+							$bidsrun = $row3['bidsRun'];
+							$bidsautonumberruns = $row3['bidsAutoNumberRuns'];
+							$bidsincludeacquisition = $row3['bidsIncludeAcquisition'];
+							$bidstask = $row3['bidsTask'];
+							$bidspedirection = $row3['bidsPEDirection'];
 							
 							$bidstitle = "BIDS&#10;&#10;Entity&nbsp;-&nbsp;$bidsentity&#10;BIDS&nbsp;suffix&nbsp;-&nbsp;$bidssuffix&#10;IntendedFor&nbsp;-&nbsp;$bidsintendedfor&#10;Run&nbsp;-&nbsp;$bidsrun&#10;Autonumber&nbsp;runs&nbsp;-&nbsp;$bidsautonumberruns&#10;Task&nbsp;-&nbsp;$bidstask&#10;PE&nbsp;direction&nbsp;-&nbsp;$bidspedirection";
 							
@@ -2535,26 +2539,31 @@
 								xhttp.onload = function() {
 									document.getElementById("series<?=$series_num?>").innerHTML = this.responseText;
 								}
-								xhttp.open("GET", "objectexists.php?action=series&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp.open("GET", "ajaxapi.php?action=checkseriesobject&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
 								xhttp.send();
-								
-								const xhttp2 = new XMLHttpRequest();
-								xhttp2.onload = function() {
-									document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
-								}
-								xhttp2.open("GET", "objectexists.php?action=thumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
-								xhttp2.send();
+
+								$('.series-info-tooltip').tooltip({ items: '.series-info-tooltip', content: function() { return $(this).attr('data-html'); } });
+
+							//	const xhttp2 = new XMLHttpRequest();
+							//	xhttp2.onload = function() {
+							//		document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
+							//	}
+							//	xhttp2.open("GET", "ajaxapi.php?action=getseriesthumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+							//	xhttp2.send();
 							});
 							</script>
 							<tr style="color: <?=$rowcolor?>">
 								<td><?=$series_num?> <? if (!$isvalid) { ?> <i class='ui large red exclamation circle icon' title='<?=$validmessage?>'></i><? } ?> <span id="series<?=$series_num?>"></span></td>
 								<td><span id="uploader<?=$mrseries_id?>"></span></td>
 								<td>
-									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;<span id="thumbnail<?=$series_num?>"></span>
+									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;
+									<a href="dicom.php?seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><em data-emoji=":x_ray:" class="small"></em></a>
+									<!--<span id="thumbnail<?=$series_num?>"></span>-->
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
-									<span data-tooltip="Series Description - <?=$series_desc?>&#10;Protocol - <?=$protocol?>&#10;Sequence Description - <?=$sequence?>&#10;TE - <?=$series_te?>ms&#10;Magnet - <?=$series_fieldstrength?>T&#10;Flip angle - <?=$series_flip?>&deg;&#10;Image type - <?=$imagetype?>&#10;Image comment - <?=$image_comments?>&#10;Phase encoding - <?=$phase?>" data-inverted="" data-variation="multiline"><i class="ui info circle icon"></i></span>
+									<?php $series_tooltip = "<b>Series Description</b> - $series_desc<br><b>Protocol</b> - $protocol<br><b>Sequence Description</b> - $sequence<br><b>TE</b> - {$series_te}ms<br><b>Magnet</b> - {$series_fieldstrength}T<br><b>Flip angle</b> - {$series_flip}&deg;<br><b>Image type</b> - $imagetype<br><b>Image comment</b> - $image_comments<br><b>Phase encoding</b> - $phase"; ?>
+					<span class="series-info-tooltip" data-html="<?=htmlspecialchars($series_tooltip, ENT_QUOTES)?>"><i class="ui info circle icon"></i></span>
 									
 									<?
 										if ($bidsentity == "") {
@@ -2566,7 +2575,7 @@
 											$color = "green";
 										}
 									?>
-									<a class="ui <?=$color?> compact tiny basic button" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
+									<a class="ui <?=$color?> compact tiny basic button right floated" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
@@ -2598,10 +2607,10 @@
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxpvsnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxiosnrcolor?>; font-size:8pt">
-									<a href="stddevchart.php?h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 								</td>
 								<td><?=$sequence?></td>
 								<td style="font-size:8pt"><?=$scanlength?></td>
@@ -2841,8 +2850,8 @@
 						<script type="text/javascript">
 							$(document).ready(function(){
 								$(".edit_inline<? echo $ctseries_id; ?>").editInPlace({
-									url: "series_inlineupdate.php",
-									params: "action=editinplace&modality=CT&id=<? echo $ctseries_id; ?>",
+									url: "ajaxapi.php",
+									params: "action=updateseriesdetails&modality=CT&id=<? echo $ctseries_id; ?>",
 									default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 									bg_over: "white",
 									bg_out: "lightyellow",
@@ -3110,8 +3119,8 @@
 							<script type="text/javascript">
 								$(document).ready(function(){
 									$(".edit_inline<? echo $series_id; ?>").editInPlace({
-										url: "series_inlineupdate.php",
-										params: "action=editinplace&modality=<?=$modality?>&id=<? echo $series_id; ?>",
+										url: "ajaxapi.php",
+										params: "action=updateseriesdetails&modality=<?=$modality?>&id=<? echo $series_id; ?>",
 										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 										bg_over: "white",
 										bg_out: "lightyellow",
@@ -3364,10 +3373,10 @@
 		if ($imgperline == "") { $imgperline = 4; }
 		
 		//echo "DisplayAnalyses($studyid, $search_name, $search_compare, $search_value, $search_swversion)<br>";
-		if (($search_pipelineid != "") || ($search_name != "") || ($search_value != "") || ($search_type != "") || ($search_swversion != "")) {
+		if (($search_pipelineid != 0) || ($search_name != "") || ($search_value != "") || ($search_type != "") || ($search_swversion != "")) {
 			$sqlstring = "select a.*, c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid ";
 			$sqlstring2 = "select distinct(c.pipeline_id), c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id where b.study_id = $studyid ";
-			if ($search_pipelineid != "") {
+			if ($search_pipelineid != 0) {
 				$sqlstring .= " and c.pipeline_id = $search_pipelineid ";
 				$sqlstring2 .= " and c.pipeline_id = $search_pipelineid ";
 			}

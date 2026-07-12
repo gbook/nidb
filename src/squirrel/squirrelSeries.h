@@ -49,9 +49,11 @@ public:
     QString PrintSeries(PrintFormat p);
     QString PrintTree(bool isLast);
     QString VirtualPath();
-    bool Get();             /* gets the object data from the database */
+    bool Get();               /* gets the object data from the database */
     bool Remove();
-    bool Store();           /* saves the object data from this object into the database */
+    bool Store();             /* saves the object data from this object into the database */
+    bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
     bool isValid() { return valid; }
     qint64 GetObjectID() { return objectID; }
     void AnonymizeParams();
@@ -63,15 +65,19 @@ public:
     qint64 experimentRowID = -1;
     qint64 studyRowID = -1;
     qint64 subjectRowID = -1;
+    QString parentSubjectID;       /*!< cached parent subject ID string (avoids DB lookup in VirtualPath) */
+    int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
+    int parentStudyNumber = -1;    /*!< cached parent study number */
+    int parentStudySeqNum = -1;    /*!< cached parent study sequence number */
 
     /* JSON elements */
     QDateTime DateTime;             /*!< Series datetime */
     QHash<QString, QString> params; /*!< Hash containing experimental parameters. eg MR params */
-    QString BIDSEntity;             /*!< BIDS entity (anat, func, etc) */
-    QString BIDSSuffix;             /*!< BIDS suffix (T1w, T2w, etc) */
-    QString BIDSTask;               /*!< BIDS task */
-    QString BIDSRun;                /*!< BIDS run number */
-    QString BIDSPhaseEncodingDirection; /*!< BIDS phase encoding direction */
+    QString BidsEntity;             /*!< BIDS entity (anat, func, etc) */
+    QString BidsSuffix;             /*!< BIDS suffix (T1w, T2w, etc) */
+    QString BidsTask;               /*!< BIDS task */
+    QString BidsRun;                /*!< BIDS run number */
+    QString BidsPhaseEncodingDirection; /*!< BIDS phase encoding direction */
     QString Description;            /*!< Description of the series */
     QString Protocol;               /*!< Protocol (may differ from description) */
     QString SeriesUID;              /*!< SeriesInstanceUID */

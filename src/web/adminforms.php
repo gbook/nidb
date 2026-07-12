@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB adminforms.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -52,6 +52,7 @@
 
 		//$formfieldid = GetVariable("formfieldid");
 		$datatype = GetVariable("datatype");
+		if (!is_array($datatype)) $datatype = array();
 		$field = GetVariable("field");
 		$order = GetVariable("order");
 		$values = GetVariable("values");
@@ -196,11 +197,6 @@
 			$formtitle = "Add new form";
 			$submitbuttonlabel = "Add";
 		}
-		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Forms'] = "adminforms.php";
-		//$urllist[$title] = "adminforms.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">
@@ -377,11 +373,6 @@
 		$title = $row['form_title'];
 		$desc = $row['form_desc'];
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Forms'] = "adminforms.php";
-		//$urllist[$title] = "adminforms.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 
@@ -479,12 +470,6 @@
 	/* ------- DisplayFormList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayFormList() {
-	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Forms'] = "adminforms.php";
-		//$urllist['Add Form'] = "adminforms.php?action=addform";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<table class="graydisplaytable">

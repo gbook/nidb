@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleImport.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,7 @@
 
 #include "moduleImport.h"
 #include <QSqlQuery>
+#include "utils.h"
 
 /* ---------------------------------------------------------- */
 /* --------- moduleImport ----------------------------------- */
@@ -30,6 +31,7 @@ moduleImport::moduleImport(nidb *a)
 {
     n = a;
     io = new archiveIO(n);
+    img = new imageIO(n);
 }
 
 
@@ -39,6 +41,7 @@ moduleImport::moduleImport(nidb *a)
 moduleImport::~moduleImport()
 {
     delete io;
+    delete img;
 }
 
 
@@ -52,17 +55,22 @@ moduleImport::~moduleImport()
 bool moduleImport::Run() {
     n->Log("Entering the import module");
 
-    bool ret(false);
+    if (isExecutableInstalled("exiftool")) {
+        bool ret(false);
 
-    /* archive local data */
-    ret |= ArchiveLocal();
+        /* archive local data */
+        ret |= ArchiveLocal();
 
-    /* parse remotely imported data */
-    ret |= ParseRemotelyImportedData();
+        /* parse remotely imported data */
+        ret |= ParseRemotelyImportedData();
 
-    n->Log("Leaving the import module");
-    return ret;
-
+        n->Log("Leaving the import module");
+        return ret;
+    }
+    else {
+        n->Log("*** ERROR *** -- exiftool is not installed! install on RHEL using 'sudo dnf install exiftool' or on Ubuntu/debian 'sudo apt install exiftool'");
+        return false;
+    }
 }
 
 
@@ -97,7 +105,7 @@ bool moduleImport::ParseRemotelyImportedData() {
 
             QSqlQuery q2;
             q2.prepare("update import_requests set import_status = 'receiving', import_startdate = now() where importrequest_id = :importrequestid");
-            q2.bindValue(":importrequestid",importrequestid);
+            q2.bindValue(":importrequestid", importrequestid);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
             QString uploaddir = QString("%1/%2").arg(n->cfg["uploadeddir"]).arg(importrequestid);
@@ -116,9 +124,9 @@ bool moduleImport::ParseRemotelyImportedData() {
             /* ----- get list of files in directory ----- */
 
             /* unzip the entire directory */
-            io->AppendUploadLog(__FUNCTION__, "Unzipping files located in [" + uploaddir + "]");
+            io->AppendUploadLog("Unzipping files located in [" + uploaddir + "]");
             m = UnzipDirectory(uploaddir, true);
-            io->AppendUploadLog(__FUNCTION__, "Unzip output" + m);
+            io->AppendUploadLog("Unzip output" + m);
 
             QStringList files;
             files = FindAllFiles(uploaddir,"*");
@@ -201,29 +209,19 @@ bool moduleImport::ParseRemotelyImportedData() {
  */
 bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool anonymize) {
 
-    if (anonymize) {
-        gdcm::Anonymizer anon;
-        std::vector<gdcm::Tag> empty_tags;
-        std::vector<gdcm::Tag> remove_tags;
-        std::vector< std::pair<gdcm::Tag, std::string> > replace_tags;
-        gdcm::Tag tag;
-        const char *dcmfile = filepath.toStdString().c_str();
-
-        tag.ReadFromCommaSeparatedString("0008, 0090"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0008, 1050"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0008, 1070"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0010, 0010"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-        tag.ReadFromCommaSeparatedString("0010, 0030"); replace_tags.push_back( std::make_pair(tag, "Anonymous") );
-
-        QString m;
-        img->AnonymizeDicomFile(anon, dcmfile, dcmfile, empty_tags, remove_tags, replace_tags, m);
-    }
     /* if the filename exists in the outgoing directory, prepend some junk to it, since the filename is unimportant
        some directories have all their files named IM0001.dcm ..... so, inevitably, something will get overwrtten, which is bad */
     QString newfilename = QFileInfo(filepath).baseName() + GenerateRandomString(15) + "." + QFileInfo(filepath).completeSuffix();
+    QString newFilePath = QString("%1/%2").arg(outdir).arg(newfilename);
 
-    QString systemstring = QString("touch %1; mv %1 %2/%3").arg(filepath).arg(outdir).arg(newfilename);
-    SystemCommand(systemstring, false);
+    if (anonymize) {
+        QString m;
+        img->AnonymizeDicomFile(filepath, newFilePath, m);
+    }
+    else {
+        QString systemstring = QString("touch %1; mv %1 %2").arg(filepath).arg(newFilePath);
+        SystemCommand(systemstring, false);
+    }
 
     return true;
 }
@@ -358,8 +356,6 @@ bool moduleImport::ArchiveLocal() {
         }
     }
 
-    //n->Log("Leaving the import module");
-
     return ret;
 }
 
@@ -422,6 +418,12 @@ bool moduleImport::SetImportStatus(int importid, QString status, QString msg, QS
 /* ---------------------------------------------------------- */
 /* --------- ParseDirectory --------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Parse an import directory and group files by series, to create a list of files to be archived. Once a list is created, it is passed to the appropriate archiving function
+ * @param dir The directory to parse
+ * @param importid import row ID
+ * @return true if successful, false otherwise
+ */
 bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(QString("********** Working on directory [" + dir + "] with importRowID [%1] **********").arg(importid));
@@ -509,7 +511,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
                 perf.numFilesError++;
                 QString m;
-                if (!MoveFile(file, n->cfg["problemdir"], m))
+                if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                     n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
                 continue;
             }
@@ -539,7 +541,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) {
                 n->Log("Module disabled. Stopping module.");
-                //okToDeleteDir = false;
                 n->Log(perf.End());
                 return true;
             }
@@ -574,7 +575,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
                     m="";
-                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting PAR/REC: " + m, archivereport, true);
@@ -612,7 +613,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    if (!MoveFile(file, n->cfg["problemdir"], m))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
                     SetImportStatus(importid, "error", "Problem inserting " + importDatatype.toUpper() + " - subject ID did not exist", archivereport, true);
@@ -626,14 +627,20 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 /* check if this is a DICOM file */
                 QHash<QString, QString> tags;
                 i++;
-
+                tags.clear();
                 QString m;
-                bool csa = false;
-                if (n->cfg["enablecsa"] == "1") csa = true;
-                QString binpath = n->cfg["nidbdir"] + "/bin";
-                if (img->GetImageFileTags(file, binpath, csa, tags, m)) {
+                QString uniqueSeriesStr;
+                if (img->GetImageFileTags(file, tags, m)) {
 
-                    dcmseries[tags["SeriesInstanceUID"]].append(file);
+                    /* get a unique string for the series. Some Siemens DICOMs have multiple SeriesInstanceUIDs for each SeriesNumber, so try to use the SeriesNumber tag first */
+                    if ((tags["StudyInstanceUID"] != "") && (tags["SeriesNumber"] != ""))
+                        uniqueSeriesStr = tags["StudyInstanceUID"] + "-" + tags["SeriesNumber"];
+                    else
+                        uniqueSeriesStr = tags["SeriesInstanceUID"];
+
+                    dcmseries[uniqueSeriesStr].append(file);
+
+                    n->Debug(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
 
                     QFileInfo fi(file);
                     fi.lastModified();
@@ -644,15 +651,16 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":fileDatetime", fi.lastModified());
                     q.bindValue(":fileSize", fi.size());
                     q.bindValue(":fileType", "DICOM");
-                    q.bindValue(":Modality", tags["Modality"]);
-                    q.bindValue(":PatientID", tags["PatientID"]);
-                    q.bindValue(":StudyUID", tags["StudyUID"]);
-                    q.bindValue(":SeriesUID", tags["SeriesUID"]);
-                    q.bindValue(":StudyDescription", tags["StudyDescription"]);
-                    q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
-                    q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
-                    q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
-                    q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
+                    /* insert nulls if values are blank */
+                    if (tags["AcquisitionNumber"] == "") q.bindValue(":AcquisitionNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
+                    if (tags["InstanceNumber"] == "") q.bindValue(":InstanceNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
+                    if (tags["Modality"] == "") q.bindValue(":Modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":Modality", tags["Modality"]);
+                    if (tags["PatientID"] == "") q.bindValue(":PatientID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":PatientID", tags["PatientID"]);
+                    if (tags["SeriesDescription"] == "") q.bindValue(":SeriesDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
+                    if (tags["SeriesNumber"] == "") q.bindValue(":SeriesNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
+                    if (tags["SeriesInstanceUID"] == "") q.bindValue(":SeriesInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesInstanceUID", tags["SeriesInstanceUID"]);
+                    if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
+                    if (tags["StudyInstanceUID"] == "") q.bindValue(":StudyInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyInstanceUID", tags["StudyInstanceUID"]);
 
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
@@ -672,7 +680,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg", m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                     QString m2;
-                    if (!MoveFile(file, n->cfg["problemdir"], m2))
+                    if (!NiDBMoveFile(file, n->cfg["problemdir"], m2))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
 
                     /* change the import status to reflect the error */
@@ -688,22 +696,20 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(QString("Ignoring %1 files that are less than 60 seconds old").arg(numFilesTooYoung));
 
-    //n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
+    n->Log(QString("dcmseries contains [%1] entries").arg(dcmseries.size()));
     /* done reading all of the files in the directory (more may show up, but we'll get to those later)
      * now archive them */
     for(QMap<QString, QStringList>::iterator a = dcmseries.begin(); a != dcmseries.end(); ++a) {
-        QString seriesuid = a.key();
+        QString uniqueSeriesStr = a.key();
 
-        n->Log(QString("Archiving %1 files for SeriesUID [" + seriesuid + "]").arg(dcmseries[seriesuid].size()));
-        QStringList files2 = dcmseries[seriesuid];
+        n->Log(QString("Archiving %1 files for SeriesUID [" + uniqueSeriesStr + "]").arg(dcmseries[uniqueSeriesStr].size()));
+        QStringList files2 = dcmseries[uniqueSeriesStr];
 
-        performanceMetric perf2;
-        perf2.Start();
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2, perf2))
+        n->Debug(QString("Going to archive a list of files belonging to uniqueSeriesString [%1] List [%2]").arg(uniqueSeriesStr).arg(files2.join(", ")));
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2))
             iscomplete = true;
         else
             iscomplete = false;
-        n->Log(perf2.End());
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */

@@ -24,11 +24,13 @@
 #define SQUIRREL_H
 
 #include <QString>
+#include <QByteArray>
 #include <QDate>
 #include <QDateTime>
 #include <QDebug>
 #include <QtSql>
 #include <QUuid>
+#include <sstream>
 #include "squirrelSubject.h"
 #include "squirrelStudy.h"
 #include "squirrelSeries.h"
@@ -68,6 +70,7 @@ public:
     QString GetSystemTempDir();
     bool GetDebug() { return debug; } /*!< true if debugging is enabled */
     bool GetDebugSQL() { return debugSQL; } /*!< true if SQL debugging is enabled */
+    void SetCommandLineExecution(bool c) { cmdLineExec = c; }
     void SetDebug(bool d);
     void SetDebugSQL(bool d);
     void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
@@ -129,9 +132,11 @@ public:
     qint64 FindStudy(QString subjectID, int studyNum);
     qint64 FindStudyByUID(QString studyUID);
     qint64 FindSubject(QString id);
+    qint64 FindIntervention(QString subjectID, QString interventionName, QDateTime startDate);
+    qint64 FindObservation(QString subjectID, QString observationName, QDateTime startDate);
 
     /* extract objects */
-    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir, bool recursive=false);
+    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir /*, bool recursive=false*/);
 
     /* remove objects */
     bool RemoveObject(ObjectType object, qint64 objectRowID);
@@ -156,6 +161,8 @@ public:
     bool IsValid() { return isValid; }
     /*!< true if ok to delete the object */
     bool OkToDelete() { return isOkToDelete; }
+    bool IsModified() { return isModified; }
+    void SetModified(bool mod) { isModified = mod; }
 
     /* functions to read special files */
     QHash<QString, QString> ReadParamsFile(QString f);
@@ -168,7 +175,7 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    QString PrintAnalyses(qint64 studyRowID, PrintFormat printFormat=List);
+    QString PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID = -1);
     QString PrintDataDictionary(PrintFormat printFormat=List);
     QString PrintExperiments(PrintFormat printFormat=List);
     QString PrintGroupAnalyses(PrintFormat printFormat=List);
@@ -197,6 +204,7 @@ private:
     bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
     bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
     bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
+    bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QByteArray &fileContents);
     bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents);
     bool Get7zipLibPath();
     bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m);
@@ -219,8 +227,10 @@ private:
     QString databaseUUID; /* necessary to create unique DB connections if more than one squirrel package is opened at a time */
 
     /* flags */
+    bool cmdLineExec; /* true if running from command line, false if running from library */
     bool debug;
     bool debugSQL;
+    bool isModified; /* true if any object in the package has been modified */
     bool isOkToDelete;
     bool isValid;
     bool overwritePackage;

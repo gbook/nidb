@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB beh.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -60,9 +60,6 @@
 	/* -------------------------------------------- */
 	function DisplayStats() {
 	
-		//$urllist['Statistics'] = "stats.php";
-		//NavigationBar("Stats", $urllist);
-
 		$currentyear = date("Y");
 		
 		$sqlstring = "select count(*) count from subjects where isactive = 1";

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB utils.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -25,6 +25,12 @@
 /* ---------------------------------------------------------- */
 /* --------- Print ------------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Print a string to stdout.
+ * @param s String to print.
+ * @param n If true, append a newline.
+ * @param pad If true, pad the output to 80 characters.
+ */
 void Print(QString s, bool n, bool pad) {
     if (n)
         if (pad)
@@ -42,6 +48,11 @@ void Print(QString s, bool n, bool pad) {
 /* ---------------------------------------------------------- */
 /* --------- CreateCurrentDateTime -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a formatted string for the current date and time.
+ * @param format Numeric format selector.
+ * @return Current date and/or time formatted according to the selector.
+ */
 QString CreateCurrentDateTime(int format) {
     QString date;
 
@@ -68,6 +79,10 @@ QString CreateCurrentDateTime(int format) {
 /* ---------------------------------------------------------- */
 /* --------- CreateLogDate ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a compact timestamp string for log names or entries.
+ * @return Current date and time formatted as yyyyMMddHHmmss.
+ */
 QString CreateLogDate() {
     QString date;
 
@@ -81,8 +96,16 @@ QString CreateLogDate() {
 /* ---------------------------------------------------------- */
 /* --------- SystemCommand ---------------------------------- */
 /* ---------------------------------------------------------- */
-/* this function does not work in Windows                     */
-/* ---------------------------------------------------------- */
+/**
+ * @brief Run a shell command and collect its output.
+ *
+ * This function does not work in Windows.
+ *
+ * @param s Command string to execute.
+ * @param detail If true, include the command and elapsed time in the result.
+ * @param truncate If true, truncate very large command output.
+ * @return Command output, optionally wrapped with execution details.
+ */
 QString SystemCommand(QString s, bool detail, bool truncate) {
 
     double starttime = double(QDateTime::currentMSecsSinceEpoch());
@@ -136,8 +159,19 @@ QString SystemCommand(QString s, bool detail, bool truncate) {
 /* ---------------------------------------------------------- */
 /* --------- SandboxedSystemCommand ------------------------- */
 /* ---------------------------------------------------------- */
-/* this function does not work in Windows                     */
-/* ---------------------------------------------------------- */
+/**
+ * @brief Run a shell command inside a firejail sandbox.
+ *
+ * This function does not work in Windows.
+ *
+ * @param s Command string to execute from inside the sandbox directory.
+ * @param dir Directory to expose as the private sandbox.
+ * @param output Receives command output or an error message.
+ * @param timeout Firejail timeout value.
+ * @param detail If true, include command and elapsed-time details in output.
+ * @param truncate If true, truncate very large command output.
+ * @return true if the process completed without a QProcess error.
+ */
 bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString timeout, bool detail, bool truncate) {
 
     double starttime = double(QDateTime::currentMSecsSinceEpoch());
@@ -207,6 +241,13 @@ bool SandboxedSystemCommand(QString s, QString dir, QString &output, QString tim
 /* ---------------------------------------------------------- */
 /* --------- MakePath --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Create a directory path if it does not already exist.
+ * @param p Path to create.
+ * @param msg Receives a status or error message.
+ * @param perm777 If true, chmod the path to 777 after creation.
+ * @return true if the path exists or was created successfully.
+ */
 bool MakePath(QString p, QString &msg, bool perm777) {
 
     if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p == "/root") || (p == "/home")) {
@@ -236,6 +277,12 @@ bool MakePath(QString p, QString &msg, bool perm777) {
 /* ---------------------------------------------------------- */
 /* --------- RemoveDir -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Recursively remove a directory after basic safety checks.
+ * @param p Directory path to remove.
+ * @param msg Receives an error message if removal fails.
+ * @return true if the directory was removed successfully.
+ */
 bool RemoveDir(QString p, QString &msg) {
 
     if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
@@ -257,13 +304,18 @@ bool RemoveDir(QString p, QString &msg) {
 /* ---------------------------------------------------------- */
 /* --------- GenerateRandomString --------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Generate a random alphanumeric string.
+ * @param n Number of characters to generate.
+ * @return Random string containing letters and digits.
+ */
 QString GenerateRandomString(int n) {
 
    const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
    QString randomString;
    for(int i=0; i<n; ++i)
    {
-       QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
+       QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()));
        randomString.append(nextChar);
    }
    return randomString;
@@ -271,9 +323,16 @@ QString GenerateRandomString(int n) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- MoveFile --------------------------------------- */
+/* --------- NiDBMoveFile ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool MoveFile(QString f, QString dir, QString &m) {
+/**
+ * @brief Move a file into a directory using the system mv command.
+ * @param f File path to move.
+ * @param dir Destination directory.
+ * @param m Receives an error message on failure.
+ * @return true if the file was moved successfully.
+ */
+bool NiDBMoveFile(QString f, QString dir, QString &m) {
 
     QDir d;
     if (d.exists(dir)) {
@@ -296,9 +355,16 @@ bool MoveFile(QString f, QString dir, QString &m) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- CopyFile --------------------------------------- */
+/* --------- NiDBCopyFile ----------------------------------- */
 /* ---------------------------------------------------------- */
-bool CopyFile(QString f, QString dir, QString &m) {
+/**
+ * @brief Copy a file into a directory using the system cp command.
+ * @param f File path to copy.
+ * @param dir Destination directory.
+ * @param m Receives an error message on failure.
+ * @return true if the file was copied successfully.
+ */
+bool NiDBCopyFile(QString f, QString dir, QString &m) {
 
     QDir d;
     if (d.exists(dir)) {
@@ -323,6 +389,13 @@ bool CopyFile(QString f, QString dir, QString &m) {
 /* ---------------------------------------------------------- */
 /* --------- RenameFile ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Rename or move a file using the system mv command.
+ * @param filepathorig Original file path.
+ * @param filepathnew New file path.
+ * @param force If true, pass -f to mv.
+ * @return true if the rename completed successfully.
+ */
 bool RenameFile(QString filepathorig, QString filepathnew, bool force) {
 
     if (filepathorig == filepathnew) {
@@ -350,6 +423,13 @@ bool RenameFile(QString filepathorig, QString filepathnew, bool force) {
 /* ---------------------------------------------------------- */
 /* --------- FindAllFiles ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find files matching a pattern in a directory.
+ * @param dir Directory to search.
+ * @param pattern Filename pattern to match.
+ * @param recursive If true, search subdirectories recursively.
+ * @return List of matching file paths.
+ */
 QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
     //if (cfg["debug"] == "1") WriteLog("Finding all files in ["+dir+"] with pattern ["+pattern+"]");
 
@@ -388,9 +468,18 @@ QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- FindFirstFile ---------------------------------- */
+/* --------- NiDBFindFirstFile ------------------------------ */
 /* ---------------------------------------------------------- */
-bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive) {
+/**
+ * @brief Find the first file matching a pattern in a directory.
+ * @param dir Directory to search.
+ * @param pattern Filename pattern to match.
+ * @param f Receives the first matching file path.
+ * @param msg Receives an error message if the directory is invalid.
+ * @param recursive If true, search subdirectories recursively.
+ * @return true if a matching file was found.
+ */
+bool NiDBFindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool recursive) {
 
     QDir d = QDir(dir);
     if (!d.exists()) {
@@ -400,27 +489,33 @@ bool FindFirstFile(QString dir, QString pattern, QString &f, QString &msg, bool 
 
     f = "";
 
-    if (recursive) {
-        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
-        if (it.hasNext())
-            f = it.next();
-    }
-    else {
-        QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks);
-        if (it.hasNext())
-            f = it.next();
-    }
+    QDirIterator::IteratorFlags flags = recursive ? QDirIterator::Subdirectories : QDirIterator::NoIteratorFlags;
+    QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, flags);
 
-    if (f.size() == 0)
+    QStringList matches;
+    while (it.hasNext())
+        matches << it.next();
+
+    if (matches.isEmpty())
         return false;
-    else
-        return true;
+
+    matches.sort();
+    f = matches.first();
+    return true;
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- MoveAllFiles ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Move all matching files from one directory tree into another directory.
+ * @param indir Directory tree to search.
+ * @param pattern Filename pattern to match.
+ * @param outdir Destination directory.
+ * @param msg Receives any move error messages.
+ * @return true if all matching files were moved successfully.
+ */
 bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg) {
     QStringList msgs;
     bool ret = true;
@@ -441,6 +536,14 @@ bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg) 
 /* ---------------------------------------------------------- */
 /* --------- FindAllDirs ------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Find directories matching a pattern.
+ * @param dir Directory to search.
+ * @param pattern Directory-name pattern to match, or "*" if blank.
+ * @param recursive If true, search subdirectories recursively.
+ * @param includepath If true, return full paths instead of directory names.
+ * @return List of matching directories.
+ */
 QStringList FindAllDirs(QString dir, QString pattern, bool recursive, bool includepath) {
 
     if (pattern.trimmed() == "")
@@ -478,6 +581,13 @@ QStringList FindAllDirs(QString dir, QString pattern, bool recursive, bool inclu
 /* ---------------------------------------------------------- */
 /* --------- GetDirSizeAndFileCount ------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Count files and total bytes in a directory.
+ * @param dir Directory to inspect.
+ * @param c Receives the number of files.
+ * @param b Receives the total file size in bytes.
+ * @param recurse If true, include files in subdirectories.
+ */
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse) {
     c = 0;
     b = 0;
@@ -506,8 +616,12 @@ void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse) {
 /* ---------------------------------------------------------- */
 /* --------- UnzipDirectory --------------------------------- */
 /* ---------------------------------------------------------- */
-/* perform one pass through a directory and attempt to unzip
- * any zipped files in it */
+/**
+ * @brief Attempt to extract compressed files found in a directory.
+ * @param dir Directory to process.
+ * @param recurse If true, process compressed files in subdirectories.
+ * @return Messages produced by extraction commands.
+ */
 QString UnzipDirectory(QString dir, bool recurse) {
 
     QStringList msgs;
@@ -551,6 +665,12 @@ QString UnzipDirectory(QString dir, bool recurse) {
 /* ---------------------------------------------------------- */
 /* --------- GetFileChecksum -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Calculate a cryptographic hash for a file.
+ * @param fileName File path to hash.
+ * @param hashAlgorithm Hash algorithm to use.
+ * @return Hash bytes, or an empty QByteArray if the file cannot be read.
+ */
 QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm) {
     QFile f(fileName);
     if (f.open(QFile::ReadOnly)) {
@@ -566,6 +686,11 @@ QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorith
 /* ---------------------------------------------------------- */
 /* --------- RemoveNonAlphaNumericChars --------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Remove characters that are not letters, numbers, underscores, or dashes.
+ * @param s Input string to sanitize.
+ * @return Sanitized string.
+ */
 QString RemoveNonAlphaNumericChars(QString s) {
     return s.remove(QRegularExpression("[^a-zA-Z0-9_-]"));
 }
@@ -574,6 +699,10 @@ QString RemoveNonAlphaNumericChars(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- SortQStringListNaturally ----------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Sort a QStringList using natural numeric ordering.
+ * @param s List to sort in place.
+ */
 void SortQStringListNaturally(QStringList &s) {
 
     if (s.size() < 2)
@@ -588,6 +717,11 @@ void SortQStringListNaturally(QStringList &s) {
 /* ---------------------------------------------------------- */
 /* --------- ParseDate -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Parse a date string into yyyy-MM-dd format.
+ * @param s Date string to parse.
+ * @return Parsed date, or 0000-01-01 if no supported format matches.
+ */
 QString ParseDate(QString s) {
     QString d = "0000-01-01";
     QDate date;
@@ -613,6 +747,11 @@ QString ParseDate(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- ParseTime -------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Parse a time string into hh:mm:ss format.
+ * @param s Time string to parse.
+ * @return Parsed time, or 00:00:00 if no supported format matches.
+ */
 QString ParseTime(QString s) {
     QString t = "00:00:00";
     QTime time;
@@ -668,50 +807,65 @@ QString ParseTime(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- chmod ------------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Set file permissions from a three-digit chmod-style string.
+ * @param f File path to update.
+ * @param perm Three-character permission string for owner, group, and others.
+ * @return true if all requested permission changes succeeded.
+ */
 bool chmod(QString f, QString perm) {
     if (perm.size() != 3)
         return false;
 
-    int owner = QString(perm[0]).toInt();
-    int group = QString(perm[1]).toInt();
+    int owner    = QString(perm[0]).toInt();
+    int group    = QString(perm[1]).toInt();
     int everyone = QString(perm[2]).toInt();
 
+    QFileDevice::Permissions perms;
+
     switch (owner) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOwner)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOwner)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOwner)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::ReadOwner)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOwner | QFileDevice::WriteOwner)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOwner | QFileDevice::WriteOwner | QFileDevice::ReadOwner)) return false; break;
+        case 1: perms |= QFileDevice::ExeOwner; break;
+        case 2: perms |= QFileDevice::WriteOwner; break;
+        case 3: perms |= QFileDevice::ExeOwner | QFileDevice::WriteOwner; break;
+        case 4: perms |= QFileDevice::ReadOwner; break;
+        case 5: perms |= QFileDevice::ExeOwner | QFileDevice::ReadOwner; break;
+        case 6: perms |= QFileDevice::ReadOwner | QFileDevice::WriteOwner; break;
+        case 7: perms |= QFileDevice::ExeOwner | QFileDevice::WriteOwner | QFileDevice::ReadOwner; break;
     }
 
     switch (group) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeGroup)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteGroup)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadGroup)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::ReadGroup)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadGroup | QFileDevice::WriteGroup)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeGroup | QFileDevice::WriteGroup | QFileDevice::ReadGroup)) return false; break;
+        case 1: perms |= QFileDevice::ExeGroup; break;
+        case 2: perms |= QFileDevice::WriteGroup; break;
+        case 3: perms |= QFileDevice::ExeGroup | QFileDevice::WriteGroup; break;
+        case 4: perms |= QFileDevice::ReadGroup; break;
+        case 5: perms |= QFileDevice::ExeGroup | QFileDevice::ReadGroup; break;
+        case 6: perms |= QFileDevice::ReadGroup | QFileDevice::WriteGroup; break;
+        case 7: perms |= QFileDevice::ExeGroup | QFileDevice::WriteGroup | QFileDevice::ReadGroup; break;
     }
 
     switch (everyone) {
-        case 1: if (!QFile::setPermissions(f, QFileDevice::ExeOther)) return false; break;
-        case 2: if (!QFile::setPermissions(f, QFileDevice::WriteOther)) return false; break;
-        case 3: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther)) return false; break;
-        case 4: if (!QFile::setPermissions(f, QFileDevice::ReadOther)) return false; break;
-        case 5: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::ReadOther)) return false; break;
-        case 6: if (!QFile::setPermissions(f, QFileDevice::ReadOther | QFileDevice::WriteOther)) return false; break;
-        case 7: if (!QFile::setPermissions(f, QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther)) return false; break;
+        case 1: perms |= QFileDevice::ExeOther; break;
+        case 2: perms |= QFileDevice::WriteOther; break;
+        case 3: perms |= QFileDevice::ExeOther | QFileDevice::WriteOther; break;
+        case 4: perms |= QFileDevice::ReadOther; break;
+        case 5: perms |= QFileDevice::ExeOther | QFileDevice::ReadOther; break;
+        case 6: perms |= QFileDevice::ReadOther | QFileDevice::WriteOther; break;
+        case 7: perms |= QFileDevice::ExeOther | QFileDevice::WriteOther | QFileDevice::ReadOther; break;
     }
-    return true;
+
+    return QFile::setPermissions(f, perms);
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- JoinIntArray ----------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Join a list of integers into a string.
+ * @param a Integer list to join.
+ * @param glue Separator string.
+ * @return Joined string.
+ */
 QString JoinIntArray(QList<int> a, QString glue) {
     if (a.size() == 0)
         return "";
@@ -729,6 +883,11 @@ QString JoinIntArray(QList<int> a, QString glue) {
 /* ---------------------------------------------------------- */
 /* --------- SplitStringArrayToInt -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Convert a list of strings to integers.
+ * @param a String list to convert.
+ * @return List of integer values.
+ */
 QList<int> SplitStringArrayToInt(QStringList a) {
     QList<int> i;
 
@@ -745,6 +904,11 @@ QList<int> SplitStringArrayToInt(QStringList a) {
 /* ---------------------------------------------------------- */
 /* --------- SplitStringArrayToDouble ----------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Convert a list of strings to doubles.
+ * @param a String list to convert.
+ * @return List of double values.
+ */
 QList<double> SplitStringArrayToDouble(QStringList a) {
     QList<double> i;
 
@@ -761,6 +925,11 @@ QList<double> SplitStringArrayToDouble(QStringList a) {
 /* ---------------------------------------------------------- */
 /* --------- SplitStringToIntArray -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Split a comma-separated string into integers.
+ * @param a Comma-separated string.
+ * @return List of integer values.
+ */
 QList<int> SplitStringToIntArray(QString a) {
     QList<int> i;
 
@@ -776,6 +945,11 @@ QList<int> SplitStringToIntArray(QString a) {
 /* ---------------------------------------------------------- */
 /* --------- AppendCustomLog -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Append a timestamped message to a custom log file.
+ * @param file Log file path.
+ * @param msg Message to append.
+ */
 void AppendCustomLog(QString file, QString msg) {
     int pid = QCoreApplication::applicationPid();
 
@@ -794,6 +968,11 @@ void AppendCustomLog(QString file, QString msg) {
 /* ---------------------------------------------------------- */
 /* --------- ShellWords ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Extract double-quoted words from a shell-like command string.
+ * @param s String to parse.
+ * @return List of quoted values without quote characters.
+ */
 QStringList ShellWords(QString s) {
 
     QStringList words;
@@ -816,6 +995,11 @@ QStringList ShellWords(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- IsInt ------------------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a string can be converted to an integer.
+ * @param s String to test.
+ * @return true if the string is an integer.
+ */
 bool IsInt(QString s) {
     bool is = false;
 
@@ -831,6 +1015,11 @@ bool IsInt(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- IsDouble --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a string can be converted to a double.
+ * @param s String to test.
+ * @return true if the string is a double.
+ */
 bool IsDouble(QString s) {
     bool is = false;
 
@@ -846,6 +1035,11 @@ bool IsDouble(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- IsNumber --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a string can be converted to an integer or double.
+ * @param s String to test.
+ * @return true if the string is numeric.
+ */
 bool IsNumber(QString s) {
     if (IsInt(s) || IsDouble(s))
         return true;
@@ -857,6 +1051,12 @@ bool IsNumber(QString s) {
 /* ---------------------------------------------------------- */
 /* --------- WrapText --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Insert newline characters into a string at fixed column intervals.
+ * @param s String to wrap.
+ * @param col Column interval for inserted newlines.
+ * @return Wrapped string.
+ */
 QString WrapText(QString s, int col) {
     for (int i = col; i <= s.size(); i+=col+1)
         s.insert(i, "\n");
@@ -868,20 +1068,57 @@ QString WrapText(QString s, int col) {
 /* ---------------------------------------------------------- */
 /* --------- ParseCSV --------------------------------------- */
 /* ---------------------------------------------------------- */
-/* this function handles most Excel compatible .csv formats
- * but it does not handle nested quotes, and must have a header
- * row */
+/**
+ * @brief Parse a CSV string with a required header row into an indexed hash.
+ *
+ * This handles most Excel-compatible CSV formats, but it does not handle nested
+ * quotes and requires at least one header row and one data row. Typographic single
+ * quotes ("smart quotes": ' ' ‛ ′ ´) are normalized to the ASCII apostrophe first.
+ *
+ * @note Performance: the indexedHash storage type (QHash<int, QHash<QString, QString>>)
+ * still hashes each column name string once per cell when storing values. The row-index
+ * hash and inner-hash lookup are hoisted to once per row, but for wide files (500+
+ * columns, 500+ rows) the per-cell column-name hashing remains. A future improvement
+ * would replace indexedHash with a QVector<QVector<QString>> body plus a single
+ * QHash<QString,int> column-name-to-index map built from the header row, reducing
+ * inner-loop access to a direct array index.
+ *
+ * @param csv CSV content to parse.
+ * @param table Receives parsed row and column values.
+ * @param columns Receives parsed lowercase column names.
+ * @param msg Receives processing details and errors.
+ * @return true if the CSV was parsed with the expected column count.
+ */
 bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg) {
 
     QStringList m;
     bool ret(true);
 
-    /* get header row */
-    QStringList lines = csv.trimmed().split(QRegularExpression("[\\n\\r]"));
+    /* normalize typographic single quotes (Excel/Word "smart quotes") to the ASCII
+       apostrophe so downstream string comparisons against ' don't silently miss.
+       Only the single-quote family is folded; smart double quotes are left alone
+       because mapping them to " would make them act as CSV field delimiters. */
+    csv.replace(QChar(0x2018), '\'')   /* ' left single quotation mark  */
+       .replace(QChar(0x2019), '\'')   /* ' right single quotation mark */
+       .replace(QChar(0x201B), '\'')   /* ‛ single high-reversed-9      */
+       .replace(QChar(0x2032), '\'')   /* ′ prime                       */
+       .replace(QChar(0x00B4), '\'');  /* ´ acute accent                */
+
+    /* normalize all line endings (CRLF, lone CR) to LF so the rows can be split on a
+       single character below */
+    csv.replace('\r', '\n');
+
+    /* Split into lines. A plain-char split skips the regex engine, and Qt::SkipEmptyParts
+       drops the empty element that CRLF (now "\n\n") would otherwise produce as well as
+       any intentional blank rows. */
+    QStringList lines = csv.trimmed().split('\n', Qt::SkipEmptyParts);
 
     if (lines.size() > 1) {
         QString header = lines.takeFirst();
-        QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+        QStringList rawCols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+        QStringList cols;
+        for (const QString &c : rawCols)
+            cols << QString(c).remove('"').trimmed();
         columns = cols;
 
         m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
@@ -894,35 +1131,55 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
         qint64 numcols = cols.size();
 
         int row = 0;
-        foreach (QString line, lines) {
-            QString buffer = "";
+        QString buffer;
+        buffer.reserve(256);
+        for (const QString &line : lines) {
+            /* Bind the row's hash lazily on the first non-empty cell: this hoists the
+               per-cell re-hash of the row index and inner-hash lookup out of the loop,
+               while preserving the original behavior of not creating a table entry for
+               a row that has no values at all. */
+            QHash<QString, QString> *rowData = nullptr;
+            buffer.clear();
             int col = 0;
             bool inQuotes = false;
-            for (int i=0; i<line.size(); i++) {
+            const int len = line.size();
+            for (int i=0; i<len; i++) {
                 QChar c = line.at(i);
 
-                /* determine if we're in quotes or not */
                 if (c == '"') {
-                    if (inQuotes)
-                        inQuotes = false;
-                    else
+                    if (inQuotes) {
+                        /* peek ahead: "" is an escaped quote, not a closing quote */
+                        if ((i + 1 < len) && (line.at(i + 1) == '"')) {
+                            buffer += '"';
+                            i++;
+                        }
+                        else {
+                            inQuotes = false;
+                        }
+                    }
+                    else {
                         inQuotes = true;
+                    }
                 }
-
-                /* check if we've hit the next comma, and therefor should end the previous variable */
-                if ((c == ',') && (!inQuotes)) {
-                    table[row][cols[col]] = buffer.trimmed();
-
-                    buffer = "";
+                else if ((c == ',') && (!inQuotes)) {
+                    QString val = buffer.trimmed();
+                    if (!val.isEmpty()) {
+                        if (!rowData) rowData = &table[row];
+                        (*rowData)[cols[col]] = val;
+                    }
+                    buffer.clear();
                     col++;
                 }
                 else {
-                    buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+                    buffer += c;
                 }
             }
             /* acquire the last column */
-            table[row][cols[col]] = buffer.trimmed();
-            buffer = "";
+            QString lastVal = buffer.trimmed();
+            if (!lastVal.isEmpty()) {
+                if (!rowData) rowData = &table[row];
+                (*rowData)[cols[col]] = lastVal;
+            }
 
             if ((col+1) != numcols) {
                 m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);
@@ -947,6 +1204,13 @@ bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &ms
 /* ---------------------------------------------------------- */
 /* --------- WriteTextFile ---------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Write text to a file.
+ * @param filepath File path to write.
+ * @param str Text to write.
+ * @param append If true, append instead of overwriting.
+ * @return true if the file was opened and written.
+ */
 bool WriteTextFile(QString filepath, QString str, bool append) {
 
     QFile f(filepath);
@@ -969,6 +1233,12 @@ bool WriteTextFile(QString filepath, QString str, bool append) {
 /* ---------------------------------------------------------- */
 /* --------- ReadTextFileIntoArray -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Read a text file into a list of trimmed lines.
+ * @param filepath File path to read.
+ * @param ignoreEmptyLines If true, omit empty lines.
+ * @return List of lines read from the file.
+ */
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines) {
     QStringList a;
 
@@ -991,12 +1261,33 @@ QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- ReadTextFileIntoString ------------------------- */
+/* ---------------------------------------------------------- */
+QString ReadTextFileIntoString(QString filepath) {
+    QFile file(filepath);
+
+    // Open the file in ReadOnly mode. Adding Text flag fixes line breaks automatically.
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        qWarning() << "Failed to open file:" << file.errorString();
+        return QString();
+    }
+
+    QTextStream in(&file);
+    QString fileContent = in.readAll(); // Reads the entire file
+
+    file.close();
+    return fileContent;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- Mean ------------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * Calculates the mean value from a list of doubles
- * @param a array of doubles
-*/
+ * @brief Calculate the mean value of a list of doubles.
+ * @param a Values to average.
+ * @return Mean value, or 0.0 for an empty list.
+ */
 double Mean(QList<double> a) {
     if (a.isEmpty())
         return 0.0;
@@ -1012,6 +1303,11 @@ double Mean(QList<double> a) {
 /* ---------------------------------------------------------- */
 /* --------- Variance --------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Calculate the sample variance of a list of doubles.
+ * @param a Values to evaluate.
+ * @return Sample variance, or 0.0 for an empty list.
+ */
 double Variance(QList<double> a) {
     if (a.isEmpty())
         return 0.0;
@@ -1029,6 +1325,11 @@ double Variance(QList<double> a) {
 /* ---------------------------------------------------------- */
 /* --------- StdDev ----------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Calculate the sample standard deviation of a list of doubles.
+ * @param a Values to evaluate.
+ * @return Standard deviation, or 0.0 for an empty list.
+ */
 double StdDev(QList<double> a) {
     if (a.isEmpty())
         return 0.0;
@@ -1041,14 +1342,14 @@ double StdDev(QList<double> a) {
 /* --------- BatchRenameFiles ------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Batch rename a directory of files into the NiDB archive filename format
- * @param dir Directory containing the files
- * @param seriesnum The series number
- * @param studynum The study number
- * @param uid The subject UID
- * @param numfilesrenamed Number of files renamed
- * @param msg Any messages generated while renaiming
- * @return `true` if successful, `false` otherwise
+ * @brief Batch rename files into the NiDB archive filename format.
+ * @param dir Directory containing files to rename.
+ * @param seriesnum Series number to include in renamed files.
+ * @param studynum Study number to include in renamed files.
+ * @param uid Subject UID to include in renamed files.
+ * @param numfilesrenamed Receives the number of files renamed.
+ * @param msg Receives messages generated while renaming.
+ * @return true if the directory was valid and processing completed.
  */
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg) {
 
@@ -1097,32 +1398,41 @@ bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString 
 /* --------- BatchRenameBIDSFiles --------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Rename files into BIDS format. These files are likely already converted from DICOM to Nifti
- * @param dir Input directory
- * @param bidsSubject BIDS `sub-` label
- * @param bidsSession BIDS `ses-` label
- * @param mapping BIDS Mapping structure
- * @param numfilesrenamed Number of files renamed
- * @param msg Any messages about the renaming process
- * @return `true` if successful, `false` otherwise
+ * @brief Rename converted imaging files into BIDS format.
+ * @param dir Input directory containing files to rename.
+ * @param bidsSubject BIDS sub label.
+ * @param bidsSession BIDS ses label.
+ * @param mapping BIDS mapping values used to build filenames and JSON fields.
+ * @param numfilesrenamed Receives the number of files renamed.
+ * @param msg Receives messages generated while renaming.
+ * @return true if the directory was valid and processing completed.
  */
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg) {
 
+    //Print("Checkpoing BIDS A");
     QDir dd;
     if (!dd.exists(dir)) {
         msg = "directory [" + dir + "] does not exist";
         return false;
     }
 
+    //Print("Checkpoing BIDS B");
+
     mapping.protocol.replace(QRegularExpression("[^a-zA-Z0-9]"), "");
+    //Print("Checkpoing BIDS C");
 
     numfilesrenamed = 0;
     QStringList exts;
+    //Print("Checkpoing BIDS D");
+
     exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+    //Print("Checkpoing BIDS E");
+
     /* loop through all the extensions we want to rename/renumber */
     foreach (QString ext, exts) {
         QFile f;
         QDirIterator it(dir, QStringList() << ext, QDir::Files);
+        //Print("Checkpoing BIDS F");
 
         /* get a list of files */
         QStringList files;
@@ -1131,6 +1441,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
         }
         /* sort the files */
         SortQStringListNaturally(files);
+        //Print("Checkpoing BIDS G");
 
         /* rename the files */
         int r = mapping.run;
@@ -1179,19 +1490,25 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 newName = fi.path() + "/" + QString("%1_%2%3").arg(fileBaseName).arg(bidsSuf).arg(ext.replace("*",""));
             }
 
+            //Print("Checkpoing BIDS H");
+
             msg += QString("\n" + fname + " --> " + newName);
             if (f.rename(newName))
                 numfilesrenamed++;
             else
                 msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]\n");
 
+            //Print("Checkpoing BIDS H 1");
+
             /* add IntendedFor entry to JSON file if needed */
             if (ext.endsWith(".json") && mapping.bidsIntendedForEntity != "") {
+                //Print("Checkpoing BIDS H 2");
                 QStringList intendedForEntityList = mapping.bidsIntendedForEntity.split(",");
                 QStringList intendedForFileExtensionList = mapping.bidsIntendedForFileExtension.split(",");
                 QStringList intendedForRunList = mapping.bidsIntendedForRun.split(",");
                 QStringList intendedForSuffixList = mapping.bidsIntendedForSuffix.split(",");
                 QStringList intendedForTaskList = mapping.bidsIntendedForTask.split(",");
+                //Print("Checkpoing BIDS H 3");
 
                 QJsonArray jsonIntendedFor;
                 for (int i=0; i<intendedForEntityList.size(); i++) {
@@ -1202,15 +1519,21 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                         intendedForStr = QString("bids::%1/%2/%3/%1_%2_task-%4_%5.%6").arg(bidsSubject).arg(bidsSession).arg(intendedForEntityList[i]).arg(intendedForTaskList[i]).arg(intendedForSuffixList[i]).arg(intendedForFileExtensionList[i]);
                     jsonIntendedFor.append(intendedForStr);
                 }
+                //Print("Checkpoing BIDS H 4");
 
                 /* open existing JSON file */
                 QFile jsonFile;
                 jsonFile.setFileName(newName);
-                jsonFile.open(QIODevice::ReadOnly);
+                if (!jsonFile.open(QIODevice::ReadOnly)) {
+                    msg += "Error opening [" + newName + "]: " + jsonFile.errorString();
+                    continue;
+                }
                 QByteArray jsonData = jsonFile.readAll();
+                //Print("Checkpoing BIDS H 5");
 
                 QJsonDocument d = QJsonDocument::fromJson(jsonData);
                 QJsonObject root = d.object();
+                //Print("Checkpoing BIDS H 6");
 
                 /* add IntendedFor section */
                 root["IntendedFor"] = jsonIntendedFor;
@@ -1220,16 +1543,21 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
                 if (!WriteTextFile(newName, j, false))
                     msg += "Error writing [" + newName + "]";
 
+                //Print("Checkpoing BIDS H 7");
             }
+            //Print("Checkpoing BIDS I");
 
             /* add a TaskName field to the JSON file if needed */
-            if (ext.endsWith(".json") && mapping.bidsSuffix == "bold") {
+            if (ext.endsWith(".json") && ((mapping.bidsSuffix == "bold") || (mapping.bidsSuffix == "sbref"))) {
                 QString task = mapping.bidsTask;
 
                 /* open existing JSON file */
                 QFile jsonFile;
                 jsonFile.setFileName(newName);
-                jsonFile.open(QIODevice::ReadOnly);
+                if (!jsonFile.open(QIODevice::ReadOnly)) {
+                    msg += "Error opening [" + newName + "]: " + jsonFile.errorString();
+                    continue;
+                }
                 QByteArray jsonData = jsonFile.readAll();
 
                 QJsonDocument d = QJsonDocument::fromJson(jsonData);
@@ -1245,6 +1573,7 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
             }
         }
     }
+    //Print("Checkpoing BIDS J");
 
     return true;
 }
@@ -1254,11 +1583,11 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 /* --------- GetPatientAge ---------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Get patient age at the time of the imaging study, in years. From DICOM age string, or from StudyDate/PatientBirthdate calculation
- * @param PatientAgeStr DICOM patient age string
- * @param StudyDate Study date
- * @param PatientBirthDate Patient DOB, from DICOM
- * @return the age in years of the patient
+ * @brief Get patient age at the time of an imaging study in years.
+ * @param PatientAgeStr DICOM patient age string.
+ * @param StudyDate Study date.
+ * @param PatientBirthDate Patient birth date from DICOM.
+ * @return Patient age in years, using the DICOM age string or date calculation.
  */
 double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
     double PatientAge(0.0);
@@ -1273,8 +1602,8 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
     if (PatientAge < 0.001) {
         QDate studydate;
         QDate dob;
-        studydate.fromString(StudyDate);
-        dob.fromString(PatientBirthDate);
+        studydate = QDate::fromString(StudyDate, "yyyy-MM-dd");
+        dob = QDate::fromString(PatientBirthDate, "yyyy-MM-dd");
 
         PatientAge = double(dob.daysTo(studydate))/365.25;
     }
@@ -1286,6 +1615,11 @@ double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBi
 /* ---------------------------------------------------------- */
 /* --------- DirectoryExists -------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a directory path exists.
+ * @param dir Directory path to check.
+ * @return true if the path exists.
+ */
 bool DirectoryExists(QString dir) {
     QFile d(dir);
     if (d.exists())
@@ -1298,6 +1632,11 @@ bool DirectoryExists(QString dir) {
 /* ---------------------------------------------------------- */
 /* --------- FileExists ------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a file path exists.
+ * @param f File path to check.
+ * @return true if the file exists.
+ */
 bool FileExists(QString f) {
     QFile file(f);
     if (file.exists())
@@ -1310,6 +1649,11 @@ bool FileExists(QString f) {
 /* ---------------------------------------------------------- */
 /* --------- FileDirectoryExists ---------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Check whether the parent directory of a file path exists.
+ * @param f File path whose parent directory should be checked.
+ * @return true if the parent directory exists.
+ */
 bool FileDirectoryExists(QString f) {
     QFileInfo info(f);
     QDir d(info.absoluteDir());
@@ -1323,6 +1667,16 @@ bool FileDirectoryExists(QString f) {
 /* ---------------------------------------------------------- */
 /* --------- GetZipFileDetails ------------------------------ */
 /* ---------------------------------------------------------- */
+/**
+ * @brief Get summary details and listing text from a zip file.
+ * @param zippath Zip file path.
+ * @param unzipsize Receives total uncompressed size.
+ * @param zipsize Receives total compressed size.
+ * @param compression Receives compression summary text.
+ * @param numfiles Receives number of files in the archive.
+ * @param filelisting Receives the raw unzip listing.
+ * @return true after attempting to read the zip listing.
+ */
 bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QString &compression, qint64 &numfiles, QString &filelisting) {
 
     /* get the contents of the zip file */
@@ -1334,7 +1688,7 @@ bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QStr
     QString lastline = lines.last().trimmed();
     //n->WriteLog(QString("Last line of [%1] %2").arg(systemstring).arg(lastline));
     QStringList parts = lastline.trimmed().split(QRegularExpression("\\s+"), Qt::SkipEmptyParts); /* split on whitespace */
-    if (parts.size() >= 2) {
+    if (parts.size() > 2) {
         unzipsize = parts[0].toLongLong();
         zipsize = parts[1].toLongLong();
         compression = parts[2];
@@ -1342,4 +1696,178 @@ bool GetZipFileDetails(QString zippath, qint64 &unzipsize, qint64 &zipsize, QStr
     }
 
     return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- isExecutableInstalled -------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check whether an executable can be found in the system path.
+ * @param executableName Executable name to locate.
+ * @return true if the executable was found.
+ */
+bool isExecutableInstalled(const QString &executableName) {
+    QString path = QStandardPaths::findExecutable(executableName);
+    return !path.isEmpty();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- extractBracketContent -------------------------- */
+/* ---------------------------------------------------------- */
+QString extractBracketContent(const QString &input) {
+    int start = input.indexOf('[');
+    int end = input.indexOf(']');
+    if (start == -1 || end == -1 || end <= start)
+        return {};
+    return input.mid(start + 1, end - start - 1);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- extractAfterBracket ---------------------------- */
+/* ---------------------------------------------------------- */
+QString extractAfterBracket(const QString &input) {
+    int end = input.indexOf(']');
+    if (end == -1)
+        return input;
+    return input.mid(end + 1).trimmed();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- flattenJSON ------------------------------------ */
+/* ---------------------------------------------------------- */
+void flattenJSON(const QJsonObject &obj, QMap<QString, QString> &result, const QString &prefix)
+{
+    for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+        QString key = prefix.isEmpty() ? it.key() : prefix + "_" + it.key();
+        QJsonValue val = it.value();
+
+        if (val.isObject()) {
+            // Recurse into nested objects
+            flattenJSON(val.toObject(), result, key);
+        } else if (val.isArray()) {
+            // Join array elements with ","
+            QStringList items;
+            for (const QJsonValue &item : val.toArray())
+                items.append(item.toVariant().toString());
+            result[key] = items.join(",");
+        } else if (val.isNull()) {
+            result[key] = "";
+        } else {
+            result[key] = val.toVariant().toString();
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ResizeImageFile -------------------------------- */
+/* ---------------------------------------------------------- */
+bool ResizeImageFile(const QString &imagePath, int maxDimension)
+{
+    QImage image(imagePath);
+    if (image.isNull())
+        return false;
+
+    if (image.width() <= maxDimension && image.height() <= maxDimension)
+        return true;
+
+    QImage resized = image.scaled(maxDimension, maxDimension, Qt::KeepAspectRatio, Qt::SmoothTransformation);
+
+    return resized.save(imagePath);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SafeDeletePath --------------------------------- */
+/* ---------------------------------------------------------- */
+// Deletes `path` (file, symlink, or directory) only if it resolves to a
+// location strictly inside `allowedRoot`. Both arguments must be absolute
+// paths. Rejects system directories and a missing target.
+// Returns true on success; false if refused or failed.
+bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m)
+{
+    // Require absolute paths so resolution never depends on the process's
+    // current working directory.
+    if (!QDir::isAbsolutePath(path) || !QDir::isAbsolutePath(allowedRoot)) {
+        m = "Both path and allowedRoot must be absolute paths";
+        return false;
+    }
+
+    // Canonicalize the root; must exist and be a real directory.
+    const QString root = QFileInfo(allowedRoot).canonicalFilePath();
+    if (root.isEmpty()) {
+        m = "Allowed root does not exist: " + allowedRoot;
+        return false;
+    }
+
+    // Resolve the *parent* canonically, then re-append the leaf name.
+    // This collapses any symlink-escape in the directory chain while leaving
+    // a leaf symlink intact, so we unlink the link rather than its target.
+    QFileInfo info(path);
+    const QString parent = QFileInfo(info.absolutePath()).canonicalFilePath();
+    if (parent.isEmpty()) {
+        m = "Parent directory does not exist: " + path;
+        return false;
+    }
+    const QString target = QDir(parent).absoluteFilePath(info.fileName());
+
+    // Containment: target must be strictly *below* root, never root itself.
+    QString rootPrefix = root;
+    if (!rootPrefix.endsWith(QLatin1Char('/')))
+        rootPrefix += QLatin1Char('/');
+    if (target == root || !target.startsWith(rootPrefix)) {
+        m = "Refusing to delete outside allowed root: " + target;
+        return false;
+    }
+
+    // Reject well-known system directories defensively, even if somehow
+    // reached inside the root (e.g. root itself is misconfigured).
+    static const QSet<QString> protectedPaths = {
+        QStringLiteral("/"),      QStringLiteral("/bin"),
+        QStringLiteral("/boot"),  QStringLiteral("/dev"),
+        QStringLiteral("/etc"),   QStringLiteral("/lib"),
+        QStringLiteral("/lib64"), QStringLiteral("/proc"),
+        QStringLiteral("/root"),  QStringLiteral("/run"),
+        QStringLiteral("/sbin"),  QStringLiteral("/sys"),
+        QStringLiteral("/usr"),   QStringLiteral("/var"),
+        QStringLiteral("/home"),  QDir::homePath(),
+    };
+    if (protectedPaths.contains(target) || protectedPaths.contains(root)) {
+        m = "Refusing to delete protected path: " + target;
+        return false;
+    }
+
+    // Require the target to actually exist.
+    // isSymLink() is OR'd in so a broken (dangling) symlink still counts as
+    // present and gets unlinked, rather than being rejected as missing.
+    QFileInfo t(target);
+    if (!t.exists() && !t.isSymLink()) {
+        m = "Target does not exist: " + target;
+        return false;
+    }
+
+    // Perform the delete. Symlink is checked first so a symlink to a
+    // directory is unlinked, not recursed into.
+    if (t.isSymLink() || t.isFile()) {
+        if (!QFile::remove(target)) {
+            m = "Failed to remove file: " + target;
+            return false;
+        }
+        return true;
+    }
+    if (t.isDir()) {
+        if (!QDir(target).removeRecursively()) {
+            m = "Failed to remove directory: " + target;
+            return false;
+        }
+        return true;
+    }
+
+    // Reached only for exotic types (socket, fifo, device node) inside root.
+    m = "Refusing to delete unsupported file type: " + target;
+    return false;
 }

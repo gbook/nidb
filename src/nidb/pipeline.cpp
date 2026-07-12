@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB pipeline.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -22,6 +22,37 @@
 
 #include "pipeline.h"
 #include <QSqlQuery>
+#include <QTextStream>
+
+namespace {
+QString FormatBool(bool value) { return value ? "true" : "false"; }
+
+QString FormatDateTime(const QDateTime &value) {
+    return value.isValid() ? value.toString(Qt::ISODate) : "<invalid>";
+}
+
+QString FormatString(const QString &value) {
+    return value.isEmpty() ? "<empty>" : value;
+}
+
+QString FormatIntList(const QList<int> &values) {
+    if (values.isEmpty())
+        return "[]";
+
+    QStringList strValues;
+    for (int value : values)
+        strValues.append(QString::number(value));
+
+    return QString("[%1]").arg(strValues.join(", "));
+}
+
+QString FormatStringList(const QStringList &values) {
+    if (values.isEmpty())
+        return "[]";
+
+    return QString("[%1]").arg(values.join(", "));
+}
+}
 
 /* ---------------------------------------------------------- */
 /* --------- pipeline --------------------------------------- */
@@ -79,7 +110,7 @@ void pipeline::LoadPipelineInfo() {
     enabled = q.value("pipeline_enabled").toBool();
     group = q.value("pipeline_group").toString().trimmed();
     groupBySubject = q.value("pipeline_groupbysubject").toBool();
-    groupType = q.value("pipeline_grouptype").toString().trimmed();
+    //groupType = q.value("pipeline_grouptype").toString().trimmed();
     isHidden = q.value("pipeline_ishidden").toBool();
     isPrivate = q.value("pipeline_isprivate").toBool();
     lastCheck = q.value("pipeline_lastcheck").toDateTime();
@@ -104,6 +135,7 @@ void pipeline::LoadPipelineInfo() {
     version = q.value("pipeline_version").toInt();
     QStringList dependencyStr = q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts);
     QStringList groupIDStr = q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts);
+    QStringList projectIDStr = q.value("pipeline_projectid").toString().trimmed().split(",", Qt::SkipEmptyParts);
 
     /* split the 'list' variables */
     foreach (QString did, dependencyStr) {
@@ -111,6 +143,9 @@ void pipeline::LoadPipelineInfo() {
     }
     foreach (QString gid, groupIDStr) {
         groupIDs.append(gid.toInt());
+    }
+    foreach (QString pid, projectIDStr) {
+        projectIDs.append(pid.toInt());
     }
 
     /* check if anything is missing */
@@ -150,41 +185,104 @@ QStringList pipeline::GetParentList() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- PrintPipelineVariables ------------------------- */
+/* ---------------------------------------------------------- */
+QString pipeline::PrintPipelineVariables() const {
+    QString output;
+    QTextStream stream(&output);
+
+    auto writeLine = [&stream](const QString &label, const QString &value) {
+        stream << label << ": " << value << Qt::endl;
+    };
+
+    writeLine("createDate", FormatDateTime(createDate));
+    writeLine("lastCheck", FormatDateTime(lastCheck));
+    writeLine("lastFinish", FormatDateTime(lastFinish));
+    writeLine("lastStart", FormatDateTime(lastStart));
+    writeLine("groupIDs", FormatIntList(groupIDs));
+    writeLine("parentIDs", FormatIntList(parentIDs));
+    writeLine("projectIDs", FormatIntList(projectIDs));
+    writeLine("BIDSoutputDir", FormatString(BIDSoutputDir));
+    writeLine("dataCopyMethod", FormatString(dataCopyMethod));
+    writeLine("depDir", FormatString(depDir));
+    writeLine("depLevel", FormatString(depLevel));
+    writeLine("depLinkType", FormatString(depLinkType));
+    writeLine("desc", FormatString(desc));
+    writeLine("dirStructure", FormatString(dirStructure));
+    writeLine("directory", FormatString(directory));
+    writeLine("group", FormatString(group));
+    writeLine("name", FormatString(name));
+    writeLine("notes", FormatString(notes));
+    writeLine("pipelineRootDir", FormatString(pipelineRootDir));
+    writeLine("resultScript", FormatString(resultScript));
+    writeLine("status", FormatString(status));
+    writeLine("statusMessage", FormatString(statusMessage));
+    writeLine("tmpDir", FormatString(tmpDir));
+    writeLine("completeFiles", FormatStringList(completeFiles));
+    writeLine("debug", FormatBool(debug));
+    writeLine("enabled", FormatBool(enabled));
+    writeLine("groupBySubject", FormatBool(groupBySubject));
+    writeLine("isHidden", FormatBool(isHidden));
+    writeLine("isPrivate", FormatBool(isPrivate));
+    writeLine("outputBIDS", FormatBool(outputBIDS));
+    writeLine("removeData", FormatBool(removeData));
+    writeLine("testing", FormatBool(testing));
+    writeLine("useProfile", FormatBool(useProfile));
+    writeLine("useTmpDir", FormatBool(useTmpDir));
+    writeLine("dynamicGroupID", QString::number(dynamicGroupID));
+    writeLine("level", QString::number(level));
+    writeLine("numConcurrentAnalysis", QString::number(numConcurrentAnalysis));
+    writeLine("ownerID", QString::number(ownerID));
+    writeLine("submitDelay", QString::number(submitDelay));
+    writeLine("version", QString::number(version));
+    writeLine("clusterQueue", FormatString(clusterQueue));
+    writeLine("clusterSubmitHost", FormatString(clusterSubmitHost));
+    writeLine("clusterSubmitHostUser", FormatString(clusterSubmitHostUser));
+    writeLine("clusterType", FormatString(clusterType));
+    writeLine("clusterUser", FormatString(clusterUser));
+    writeLine("clusterMemory", QString::number(clusterMemory));
+    writeLine("clusterMaxWallTime", QString::number(clusterMaxWallTime));
+    writeLine("clusterNumCores", QString::number(clusterNumCores));
+
+    return output;
+}
+
+/* ---------------------------------------------------------- */
 /* --------- GetSquirrelObject ------------------------------ */
 /* ---------------------------------------------------------- */
 squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     squirrelPipeline s(databaseUUID);
 
+    //s.ClusterSubmitHostUser = clusterSubmitHostUser;
+    s.ClusterEngine = clusterType;
     s.ClusterMaxWallTime = clusterMaxWallTime;
     s.ClusterMemory = clusterMemory;
+    s.ClusterNumberConcurrentAnalyses = numConcurrentAnalysis;
     s.ClusterNumberCores = clusterNumCores;
     s.ClusterQueue = clusterQueue;
+    s.ClusterSubmitDelay = submitDelay;
     s.ClusterSubmitHost = clusterSubmitHost;
-    //s.ClusterSubmitHostUser = clusterSubmitHostUser;
-    s.ClusterType = clusterType;
     s.ClusterUser = clusterUser;
-    s.CompleteFiles = completeFiles;
-    s.CreateDate = createDate;
-    s.DataCopyMethod = dataCopyMethod;
-    s.DependencyDirectory = depDir;
-    s.DependencyLevel = depLevel;
-    s.DependencyLinkType = depLinkType;
-    s.Description = desc;
-    s.Directory = directory;
-    s.DirectoryStructure = dirStructure;
-    s.Group = group;
-    s.GroupType = groupType;
-    s.Level = level;
-    s.Notes = notes;
-    s.NumberConcurrentAnalyses = numConcurrentAnalysis;
-    s.ParentPipelines = GetParentList();
+    s.PipelineAnalysisLevel = level;
+    s.PipelineCompleteFiles = completeFiles;
+    s.PipelineCreateDate = createDate;
+    s.PipelineDescription = desc;
+    s.PipelineDirectory = directory;
+    s.PipelineDirectoryStructure = dirStructure;
     s.PipelineName = name;
-    s.ResultScript = resultScript;
-    s.SubmitDelay = submitDelay;
-    s.TempDirectory = tmpDir;
-    s.Version = version;
-    s.flags.UseProfile = useProfile;
-    s.flags.UseTempDirectory = useTmpDir;
+    s.PipelineNotes = notes;
+    s.PipelineResultScript = resultScript;
+    s.PipelineVersion = version;
+    s.SearchDependencyLevel = depLevel;
+    s.SearchDependencyLinkType = depLinkType;
+    s.SearchGroup = group;
+    //s.SearchGroupType = groupType;
+    s.SearchParentPipelines = GetParentList();
+    s.SetupDataCopyMethod = dataCopyMethod;
+    s.SetupDependencyDirectory = depDir;
+    s.SetupTempDirectory = tmpDir;
+    s.flags.SetupUseProfile = useProfile;
+    s.flags.SetupUseTempDirectory = useTmpDir;
 
     /* dataSteps */
     QSqlQuery q;
@@ -195,24 +293,24 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     if (q.size() > 0) {
         while (q.next()) {
             dataStep d;
-            d.AssociationType = q.value("pdd_assoctype").toString();
-            d.BehavioralDirectory = q.value("pdd_behdir").toString();
-            d.BehavioralFormat = q.value("pdd_behformat").toString();
-            d.DataFormat = q.value("pdd_dataformat").toString();
-            d.ImageType = q.value("pdd_imagetype").toString();
-            d.Location = q.value("pdd_location").toString();
-            d.Modality = q.value("pdd_modality").toString();
-            d.NumberBOLDreps = q.value("pdd_numboldreps").toString();
-            d.Order = q.value("pdd_order").toInt();
-            d.Protocol = q.value("pdd_protocol").toString();
-            d.SeriesCriteria = q.value("pdd_seriescriteria").toString();
-            d.flags.Enabled = q.value("pdd_enabled").toBool();
-            d.flags.Gzip = q.value("pdd_gzip").toBool();
-            d.flags.Optional = q.value("pdd_optional").toBool();
-            d.flags.PreserveSeries = q.value("pdd_preserveseries").toBool();
-            d.flags.PrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-            d.flags.UsePhaseDirectory = q.value("pdd_usephasedir").toBool();
-            d.flags.UseSeries = q.value("pdd_useseries").toBool();
+            d.ExportBehavioralDirectoryFormat = q.value("pdd_behformat").toString();
+            d.ExportBehavioralDirectoryName = q.value("pdd_behdir").toString();
+            d.ExportDataFormat = q.value("pdd_dataformat").toString();
+            d.ExportSubDirectoryName = q.value("pdd_location").toString();
+            d.SearchAssociationType = q.value("pdd_assoctype").toString();
+            d.SearchImageType = q.value("pdd_imagetype").toString();
+            d.SearchModality = q.value("pdd_modality").toString();
+            d.SearchNumberBOLDreps = q.value("pdd_numboldreps").toString();
+            d.SearchProtocol = q.value("pdd_protocol").toString();
+            d.SearchSeriesCriteria = q.value("pdd_seriescriteria").toString();
+            d.StepNumber = q.value("pdd_order").toInt();
+            d.flags.ExportGzip = q.value("pdd_gzip").toBool();
+            d.flags.ExportPreserveSeriesNumber = q.value("pdd_preserveseries").toBool();
+            d.flags.ExportWritePhaseDirectory = q.value("pdd_usephasedir").toBool();
+            d.flags.ExportWriteSeriesDirectory = q.value("pdd_useseries").toBool();
+            d.flags.IsEnabled = q.value("pdd_enabled").toBool();
+            d.flags.IsOptional = q.value("pdd_optional").toBool();
+            d.flags.IsPrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
             //d. = q.value("pdd_level").toString();
             //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
@@ -221,8 +319,8 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     }
 
     /* scripts (required) */
-    s.PrimaryScript = GetPrimaryScript();
-    s.SecondaryScript = GetSecondaryScript();
+    s.PipelinePrimaryScript = GetPrimaryScript();
+    s.PipelineSecondaryScript = GetSecondaryScript();
 
     return s;
 }

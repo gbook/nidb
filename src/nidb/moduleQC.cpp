@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB moduleQC.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -261,7 +261,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             /* parse the mriqc results */
             QFile file(resultsJsonPath);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                n->Log("Could not open file:" + file.errorString());
+                n->Log("Could not open file [" + resultsJsonPath + "]. Error: " + file.errorString());
             }
             else {
                 n->Log("Reading output file [" + resultsJsonPath + "]");
@@ -331,9 +331,9 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
 
             /* remove /data directory */
-            if (!RemoveDir(qcpath + "/data", m)) {
-                n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
-            }
+            //if (!RemoveDir(qcpath + "/data", m)) {
+            //    n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
+            //}
         }
     }
 
@@ -568,7 +568,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti3d: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -577,7 +577,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti3dgz: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -586,7 +586,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti4d: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -595,7 +595,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case Nifti4dgz: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }
@@ -604,7 +604,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
         }
         case NiftiMe: {
             if (MakePath(tmpdir, m)) {
-                imageIO img;
+                imageIO img(n);
                 if (!img.ConvertDicom("niftime", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, numFilesConverted, numFilesRenamed, m)) {
                     n->Log("Error exporting series. Message [" + m + "]");
                 }

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB instance.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -200,11 +200,6 @@
 			$formtitle = "Add new contact";
 			$submitbuttonlabel = "Add";
 		}
-		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Instance Control Panel'] = "instance.php";
-		//$urllist[$contact_fullname] = "instance.php?action=editcontactform&contactid=$contactid";
-		//NavigationBar("Admin", $urllist);
 		
 	?>
 		<div align="center">
@@ -622,9 +617,6 @@
 	/* ------- DisplayInstanceControlPanel -------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceControlPanel($id) {
-	
-		$urllist['Instance Control Panel'] = "instance.php";
-		NavigationBar("Admin", $urllist);
 		
 		/* if the instance ID is blank, display a list of instances that they own */
 		if ($id == "") {

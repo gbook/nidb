@@ -29,6 +29,29 @@ squirrelIntervention::squirrelIntervention(QString dbID)
     databaseUUID = dbID;
 }
 
+void squirrelIntervention::Populate(const QSqlQuery &q) {
+    objectID            = q.value("InterventionRowID").toLongLong();
+    subjectRowID        = q.value("SubjectRowID").toLongLong();
+    AdministrationRoute = q.value("AdministrationRoute").toString();
+    DateEnd             = q.value("DateEnd").toDateTime();
+    DateRecordCreate    = q.value("DateRecordCreate").toDateTime();
+    DateRecordEntry     = q.value("DateRecordEntry").toDateTime();
+    DateRecordModify    = q.value("DateRecordModify").toDateTime();
+    DateStart           = q.value("DateStart").toDateTime();
+    Description         = q.value("Description").toString();
+    DoseAmount          = q.value("DoseAmount").toDouble();
+    DoseFrequency       = q.value("DoseFrequency").toString();
+    DoseKey             = q.value("DoseKey").toString();
+    DoseString          = q.value("DoseString").toString();
+    DoseUnit            = q.value("DoseUnit").toString();
+    InterventionClass   = q.value("InterventionClass").toString();
+    InterventionName    = q.value("InterventionName").toString();
+    Notes               = q.value("Notes").toString();
+    Rater               = q.value("Rater").toString();
+    valid = true;
+}
+
+
 /* ------------------------------------------------------------ */
 /* ----- Get -------------------------------------------------- */
 /* ------------------------------------------------------------ */
@@ -52,28 +75,7 @@ bool squirrelIntervention::Get() {
     q.bindValue(":id", objectID);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
-
-        /* get the data */
-        AdministrationRoute = q.value("AdministrationRoute").toString();
-        DateEnd = q.value("DateEnd").toDateTime();
-        DateRecordCreate = q.value("DateRecordCreate").toDateTime();
-        DateRecordEntry = q.value("DateRecordEntry").toDateTime();
-        DateRecordModify = q.value("DateRecordModify").toDateTime();
-        DateStart = q.value("DateStart").toDateTime();
-        Description = q.value("Description").toString();
-        DoseAmount = q.value("DoseAmount").toDouble();
-        DoseFrequency = q.value("DoseFrequency").toString();
-        DoseKey = q.value("DoseKey").toString();
-        DoseString = q.value("DoseString").toString();
-        DoseUnit = q.value("DoseUnit").toString();
-        InterventionClass = q.value("InterventionClass").toString();
-        InterventionName = q.value("InterventionName").toString();
-        Notes = q.value("Notes").toString();
-        Rater = q.value("Rater").toString();
-        objectID = q.value("InterventionRowID").toLongLong();
-        subjectRowID = q.value("SubjectRowID").toLongLong();
-
-        valid = true;
+        Populate(q);
         return true;
     }
     else {
@@ -101,7 +103,7 @@ bool squirrelIntervention::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordEntry, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifer, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordEntry, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifer, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
+        q.prepare("insert into Intervention (SubjectRowID, InterventionName, DateStart, DateEnd, DateRecordCreate, DateRecordEntry, DateRecordModify, DoseString, DoseAmount, DoseFrequency, AdministrationRoute, InterventionClass, DoseKey, DoseUnit, FrequencyModifier, FrequencyValue, FrequencyUnit, Description, Rater, Notes) values (:SubjectRowID, :InterventionName, :DateStart, :DateEnd, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :DoseString, :DoseAmount, :DoseFrequency, :AdministrationRoute, :InterventionClass, :DoseKey, :DoseUnit, :FrequencyModifier, :FrequencyValue, :FrequencyUnit, :Description, :Rater, :Notes)");
 
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":InterventionName", InterventionName);
@@ -126,7 +128,7 @@ bool squirrelIntervention::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Intervention set SubjectRowID = :SubjectRowID, InterventionName = :InterventionName, DateStart = :DateStart, DateEnd = :DateEnd, DateRecordEntry = :DateRecordEntry, DoseString = :DoseString, DoseAmount = :DoseAmount, DoseFrequency = :DoseFrequency, AdministrationRoute = :AdministrationRoute, InterventionClass = :InterventionClass, DoseKey = :DoseKey, DoseUnit = :DoseUnit, FrequencyModifer = :FrequencyModifer, FrequencyValue = :FrequencyValue, FrequencyUnit = :FrequencyUnit, Description = :Description, Rater = :Rater, Notes = :Notes where InterventionRowID = :id");
+        q.prepare("update Intervention set SubjectRowID = :SubjectRowID, InterventionName = :InterventionName, DateStart = :DateStart, DateEnd = :DateEnd, DateRecordCreate = :DateRecordCreate, DateRecordEntry = :DateRecordEntry, DateRecordModify = :DateRecordModify, DoseString = :DoseString, DoseAmount = :DoseAmount, DoseFrequency = :DoseFrequency, AdministrationRoute = :AdministrationRoute, InterventionClass = :InterventionClass, DoseKey = :DoseKey, DoseUnit = :DoseUnit, FrequencyModifier = :FrequencyModifier, FrequencyValue = :FrequencyValue, FrequencyUnit = :FrequencyUnit, Description = :Description, Rater = :Rater, Notes = :Notes where InterventionRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":SubjectRowID", subjectRowID);
         q.bindValue(":InterventionName", InterventionName);
@@ -153,8 +155,47 @@ bool squirrelIntervention::Store() {
 
 
 /* ------------------------------------------------------------ */
+/* ----- Store (bulk insert) ---------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Bind this intervention's values to a pre-prepared bulk-insert query and execute it
+ * @param q a QSqlQuery prepared with the appropriate INSERT statement
+ * @return true if successful
+ */
+bool squirrelIntervention::Store(QSqlQuery &q) {
+    q.bindValue(":SubjectRowID", subjectRowID);
+    q.bindValue(":InterventionName", InterventionName);
+    q.bindValue(":DateStart", DateStart);
+    q.bindValue(":DateEnd", DateEnd);
+    q.bindValue(":DateRecordCreate", DateRecordCreate);
+    q.bindValue(":DateRecordEntry", DateRecordEntry);
+    q.bindValue(":DateRecordModify", DateRecordModify);
+    q.bindValue(":DoseString", DoseString);
+    q.bindValue(":DoseAmount", DoseAmount);
+    q.bindValue(":DoseFrequency", DoseFrequency);
+    q.bindValue(":AdministrationRoute", AdministrationRoute);
+    q.bindValue(":InterventionClass", InterventionClass);
+    q.bindValue(":DoseKey", DoseKey);
+    q.bindValue(":DoseUnit", DoseUnit);
+    q.bindValue(":FrequencyModifier", QVariant());
+    q.bindValue(":FrequencyValue", QVariant());
+    q.bindValue(":FrequencyUnit", QVariant());
+    q.bindValue(":Description", Description);
+    q.bindValue(":Rater", Rater);
+    q.bindValue(":Notes", Notes);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    objectID = q.lastInsertId().toInt();
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- ToJSON ----------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this intervention
+ * @return QJsonObject containing all intervention fields
+ */
 QJsonObject squirrelIntervention::ToJSON() {
     QJsonObject json;
 
@@ -170,7 +211,7 @@ QJsonObject squirrelIntervention::ToJSON() {
     json["DoseString"] = DoseString;
     json["DoseUnit"] = DoseUnit;
     json["InterventionClass"] = InterventionClass;
-    json["InterventionDescription"] = Description;
+    json["Description"] = Description;
     json["InterventionName"] = InterventionName;
     json["Notes"] = Notes;
     json["Rater"] = Rater;
@@ -212,6 +253,11 @@ QString squirrelIntervention::PrintIntervention() {
 /* ------------------------------------------------------------ */
 /* ----- GetData ---------------------------------------------- */
 /* ------------------------------------------------------------ */
+/**
+ * @brief Return a key/value hash of intervention fields for the requested dataset level
+ * @param d the dataset detail level (DatasetID, DatasetBasic, or DatasetFull)
+ * @return hash of field names to string values
+ */
 QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
 
     QHash<QString, QString> data;
@@ -242,7 +288,7 @@ QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
         data["Intervention.DoseString"] = DoseString;
         data["Intervention.DoseUnit"] = DoseUnit;
         data["Intervention.InterventionClass"] = InterventionClass;
-        data["Intervention.InterventionDescription"] = Description;
+        data["Intervention.Description"] = Description;
         data["Intervention.InterventionName"] = InterventionName;
         data["Intervention.Notes"] = Notes;
         data["Intervention.Rater"] = Rater;

@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB cleanup.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -112,9 +112,6 @@
 	/* ------- DisplayMenu ------------------------ */
 	/* -------------------------------------------- */
 	function DisplayMenu() {
-		//$urllist['Administration'] = "cleanup.php";
-		//$urllist['Cleanup'] = "cleanup.php";
-		//NavigationBar("Admin", $urllist);
 		
 		?>
 		<div class="ui container">
@@ -617,7 +614,7 @@
 		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
 		
 		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',',$subjectids) . ")";
+		$sqlstring = "select subject_id, uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$subjectids)) . ")";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$ids[] = $row['subject_id'];

@@ -1,7 +1,7 @@
 <?
 // ------------------------------------------------------------------------------
 // NiDB groups.php
-// Copyright (C) 2004 - 2022
+// Copyright (C) 2004 - 2026
 // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
 // Olin Neuropsychiatry Research Center, Hartford Hospital
 // ------------------------------------------------------------------------------
@@ -41,11 +41,11 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$groupid = GetVariable("groupid");
-	$subjectgroupid = GetVariable("subjectgroupid");
-	$studygroupid = GetVariable("studygroupid");
-	$seriesgroupid = GetVariable("seriesgroupid");
+	$id = (int)GetVariable("id");
+	$groupid = (int)GetVariable("groupid");
+	$subjectgroupid = (int)GetVariable("subjectgroupid");
+	$studygroupid = (int)GetVariable("studygroupid");
+	$seriesgroupid = (int)GetVariable("seriesgroupid");
 	$groupname = GetVariable("groupname");
 	$grouptype = GetVariable("grouptype");
 	$owner = GetVariable("owner");
@@ -54,17 +54,18 @@
 	$seriesids = GetVariable("seriesid");
 	$studyids = GetVariable("studyid");
 	$modality = GetVariable("modality");
-	$itemid = GetVariable("itemid");
+	$itemid = (int)GetVariable("itemid");
 	$observations = GetVariable("observations");
 	$columns = GetVariable("columns");
 	$groupobservations = GetVariable("groupobservations");
 	$studylist = GetVariable("studylist");
+	$displaytype = GetVariable("displaytype");
 
 	/* determine action */
 	switch ($action) {
 		case 'add':
 			AddGroup($groupname, $grouptype, $GLOBALS['username']);
-			DisplayGroupList();
+			DisplayGroupList($displaytype);
 			break;
 		case 'delete': DeleteGroup($id); break;
 		case 'addsubjectstogroup':
@@ -93,8 +94,11 @@
 			UpdateStudyGroup($id, $studylist);
 			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
+		case 'viewgrouplist':
+			DisplayGroupList($displaytype);
+			break;
 		default:
-			DisplayGroupList();
+			DisplayGroupList($displaytype);
 			break;
 	}
 
@@ -108,14 +112,18 @@
 	function AddGroup($groupname, $grouptype, $owner) {
 		/* perform data checks */
 		/* get userid */
-		$sqlstring = "select * from users where username = '$owner'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from users where username = ?");
+		mysqli_stmt_bind_param($stmt, 's', $owner);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$userid = $row['user_id'];
+		mysqli_stmt_close($stmt);
 
 		/* insert the new group */
-		$sqlstring = "insert ignore into groups (group_name, group_type, group_owner) values ('$groupname', '$grouptype', '$userid')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into groups (group_name, group_type, group_owner) values (?, ?, ?)");
+		mysqli_stmt_bind_param($stmt, 'ssi', $groupname, $grouptype, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		Notice("$groupname added");
 	}
 
@@ -129,47 +137,64 @@
 		/* if the request came from the subjects.php page */
 		if (!empty($uids)) {
 			foreach ($uids as $uid) {
-				$sqlstring = "select subject_id from subjects where uid = '$uid'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select subject_id from subjects where uid = ?");
+				mysqli_stmt_bind_param($stmt, 's', $uid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$uidid = $row['subject_id'];
+				mysqli_stmt_close($stmt);
 
 				/* check if its already in the db */
-				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ''");
+				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
 				}
 				else {
 					/* insert the uidids */
-					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
+					mysqli_stmt_bind_param($stmtInsert, 'ii', $groupid, $uidid);
+					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
+					mysqli_stmt_close($stmtInsert);
 					$numadded++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		/* if the request came from the search.php page */
 		if (!empty($seriesids)) {
+			$seriesTable = GetSeriesTableName($modality);
+			if ($seriesTable == '') {
+				Notice("Invalid modality");
+				return;
+			}
+			$seriesIdColumn = strtolower($modality) . "series_id";
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
-				$sqlstring = "select c.subject_id from ".$modality."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.".$modality."series_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select c.subject_id from $seriesTable a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.$seriesIdColumn = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$uidid = $row['subject_id'];
+				mysqli_stmt_close($stmt);
 
 				/* check if its already in the db */
-				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $uidid and modality = ''";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ''");
+				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
 				}
 				else {
 					/* insert the uidids */
-					$sqlstring = "insert into group_data (group_id, data_id) values ($groupid, $uidid)";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
+					mysqli_stmt_bind_param($stmtInsert, 'ii', $groupid, $uidid);
+					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
+					mysqli_stmt_close($stmtInsert);
 					$numadded++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		Notice("<b>$numadded</b> subjects added<br><b>$numexisting</b> subjects already in group");
@@ -181,52 +206,70 @@
 	/* -------------------------------------------- */
 	function AddStudiesToGroup($groupid, $seriesids, $studyids, $modality) {
 		$modality = strtolower($modality);
+		$seriesTable = GetSeriesTableName($modality);
+		$seriesIdColumn = $modality . "series_id";
 
 		$numadded = 0;
 		$numexisting = 0;
 		if (is_array($seriesids)) {
+			if ($seriesTable == '') {
+				Notice("Invalid modality");
+				return;
+			}
 			foreach ($seriesids as $seriesid) {
 				/* get the study id for this seriesid/modality */
-				$sqlstring = "select study_id from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select study_id from $seriesTable where $seriesIdColumn = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$studyid = $row['study_id'];
+				mysqli_stmt_close($stmt);
 
 				/* check if its already in the db */
-				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
+				mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $modality);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
 				}
 				else {
 					/* insert the seriesids */
-					$sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values ($groupid, $studyid, '$modality', now())";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, ?, now())");
+					mysqli_stmt_bind_param($stmtInsert, 'iis', $groupid, $studyid, $modality);
+					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
+					mysqli_stmt_close($stmtInsert);
 					$numadded++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 
 		if (is_array($studyids)) {
 			foreach ($studyids as $studyid) {
 				/* get the modality for this study */
-				$sqlstring = "select study_modality from studies where study_id = $studyid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select study_modality from studies where study_id = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $studyid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$modality = $row['modality'];
+				$studyModality = strtolower($row['study_modality']);
+				mysqli_stmt_close($stmt);
 
 				/* check if its already in the db */
-				$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $studyid and modality = '$modality'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
+				mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $studyModality);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
 				}
 				else {
 					/* insert the studyids */
-					$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $studyid, '$modality')";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality) values (?, ?, ?)");
+					mysqli_stmt_bind_param($stmtInsert, 'iis', $groupid, $studyid, $studyModality);
+					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
+					mysqli_stmt_close($stmtInsert);
 					$numadded++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		Notice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
@@ -242,17 +285,21 @@
 		$numexisting = 0;
 		foreach ($seriesids as $seriesid) {
 			/* check if its already in the db */
-			$sqlstring  = "select * from group_data where group_id = $groupid and data_id = $seriesid and modality = '$modality'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
+			mysqli_stmt_bind_param($stmt, 'iis', $groupid, $seriesid, $modality);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$numexisting++;
 			}
 			else {
 				/* insert the seriesids */
-				$sqlstring = "insert into group_data (group_id, data_id, modality) values ($groupid, $seriesid, '$modality')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality) values (?, ?, ?)");
+				mysqli_stmt_bind_param($stmtInsert, 'iis', $groupid, $seriesid, $modality);
+				MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
+				mysqli_stmt_close($stmtInsert);
 				$numadded++;
 			}
+			mysqli_stmt_close($stmt);
 		}
 		Notice("<b>$numadded</b> series added<br><b>$numexisting</b> series already in group");
 	}
@@ -262,8 +309,6 @@
 	/* ------- UpdateStudyGroup ------------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyGroup($id, $studylist) {
-		
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 
 		if (trim($id) == "") {
 			Error("ID blank");
@@ -273,36 +318,39 @@
 		/* start transaction */
 		$sqlstring = "start transaction";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+
 		$studies = preg_split('/\s+/', $studylist);
-		$studies = mysqli_real_escape_array($GLOBALS['linki'], $studies);
 		$studies = array_unique($studies);
 
 		/* delete all old group entries */
-		$sqlstring = "delete from group_data where group_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 
 		/* loop through all the studies and insert them */
 		foreach ($studies as $study) {
 			if (trim($study) == "") { continue; }
-			
+
 			$uid = substr($study,0,8);
 			$studynum = substr($study,8);
 
-			$sqlstring = "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = '$uid' AND b.study_num='$studynum'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = ? AND b.study_num = ?");
+			mysqli_stmt_bind_param($stmt, 'ss', $uid, $studynum);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$studyid = trim($row['study_id']);
+				mysqli_stmt_close($stmt);
 
-				//echo "[$study] --> [$studyid]<br>";
-			
 				/* insert the studyids */
-				$sqlstring = "insert into group_data (group_id, data_id) values ($id, $studyid)";
-				//echo "$sqlstring<br>";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
+				mysqli_stmt_bind_param($stmt, 'ii', $id, $studyid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
 			}
 			else {
+				mysqli_stmt_close($stmt);
 				echo "Study [$study] not found. Possibly invaliud studynum?<br>";
 			}
 		}
@@ -310,7 +358,7 @@
 		/* commit the transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+
 	}
 	
 
@@ -321,8 +369,10 @@
 		//PrintVariable($itemid,'ItemID');
 
 		foreach ($itemid as $item) {
-			$sqlstring = "delete from group_data where subjectgroup_id = $item";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where subjectgroup_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $item);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
 			?><div align="center"><span class="message">Item <?=$item?> deleted</span></div><?
 		}
 		return;
@@ -333,8 +383,10 @@
 	/* ------- DeleteGroup ------------------------ */
 	/* -------------------------------------------- */
 	function DeleteGroup($id) {
-		$sqlstring = "delete from groups where group_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from groups where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -344,15 +396,17 @@
 	function ViewGroup($id, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
-		$sqlstring = "select * from groups where group_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from groups where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$groupname = $row['group_name'];
 		$grouptype = $row['group_type'];
+		mysqli_stmt_close($stmt);
 
 		//PrintVariable($groupname);
 		//PrintVariable($grouptype);
-		
+
 		if ($grouptype == 'series')
 			ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations);
 		if ($grouptype == 'study')
@@ -799,7 +853,7 @@
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
 
 		if ($observations == "all") {
-			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode2(",", $subjectids) . ")";
+			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in (" . implode(",", array_map('intval', (array)$subjectids)) . ")";
 			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
 
 			if ($groupobservations == "byvalue") {
@@ -1429,7 +1483,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayGroupList ------------------- */
 	/* -------------------------------------------- */
-	function DisplayGroupList() {
+	function DisplayGroupList($type) {
 
 		?>
 		<div class="ui container">
@@ -1445,15 +1499,23 @@
 						<input type="text" name="groupname" placeholder="Group name" required>
 						<select name="grouptype" class="ui selection dropdown" required>
 							<option value="">(select group type)
-							<option value="subject">Subject
-							<option value="study">Study
+							<option value="nda">NDA
 							<option value="series">Series
+							<option value="study">Study
+							<option value="subject">Subject
 						</select>
 						<button type="submit" class="ui button primary"><i class="plus square outline icon"></i> Create Group</button>
 					</div>
 					</form>
 				</div>
 			</div>
+			
+			View
+			<a class="ui <? if ($type == "all" || $type == "") { echo "green"; } ?> button" href="groups.php">All</a>
+			<a class="ui <? if ($type == "subject") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=subject">Subject</a>
+			<a class="ui <? if ($type == "study") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=study">Study</a>
+			<a class="ui <? if ($type == "series") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=series">Series</a>
+			<a class="ui <? if ($type == "nda") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=nda">NDA</a>
 			
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
@@ -1467,7 +1529,16 @@
 				</thead>
 				<tbody>
 				<?
-				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id order by a.group_name";
+				
+				$sqlstring = "select a.*, b.username 'ownerusername', b.user_fullname 'ownerfullname' from groups a left join users b on a.group_owner = b.user_id";
+				switch ($type) {
+					case 'subject': $sqlstring .= " where a.group_type = 'subject'"; break;
+					case 'study': $sqlstring .= " where a.group_type = 'study'"; break;
+					case 'series': $sqlstring .= " where a.group_type = 'series'"; break;
+					case 'nda': $sqlstring .= " where a.group_type = 'nda'"; break;
+				}
+				$sqlstring .= " order by a.group_name";
+				
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['group_id'];

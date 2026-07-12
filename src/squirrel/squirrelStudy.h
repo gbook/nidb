@@ -49,9 +49,11 @@ public:
     QString PrintStudy(PrintFormat p);
     QString PrintTree(bool isLast);
     QString VirtualPath();
-    bool Get();             /* gets the object data from the database */
+    bool Get();               /* gets the object data from the database */
     bool Remove();
-    bool Store();           /* saves the object data from this object into the database */
+    bool Store();             /* saves the object data from this object into the database */
+    bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
     bool isValid() { return valid; }
     int GetNextSeriesNumber();
     qint64 GetObjectID() { return objectID; }
@@ -61,6 +63,8 @@ public:
     void SetObjectID(qint64 id) { objectID = id; }
 
     qint64 subjectRowID;
+    QString parentSubjectID;       /*!< cached parent subject ID string (avoids DB lookup in VirtualPath) */
+    int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
 
     /* JSON elements */
     QDateTime DateTime;     /*!< start datetime of the study */

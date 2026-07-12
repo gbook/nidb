@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB mrqcchecklist.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -43,9 +43,9 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
-	$projectid = GetVariable("projectid");
-	$itemid = GetVariable("itemid");
+	$id = (int)GetVariable("id");
+	$projectid = (int)GetVariable("projectid");
+	$itemid = (int)GetVariable("itemid");
 	$itemorder = GetVariable("itemorder");
 	$itemname = GetVariable("itemname");
 	$modality = GetVariable("modality");
@@ -53,10 +53,10 @@
 	$itemcount = GetVariable("itemcount");
 	$frequency = GetVariable("frequency");
 	$frequencyunit = GetVariable("frequencyunit");
-	$enrollmentid = GetVariable("enrollmentid");
-	$projectchecklistid = GetVariable("projectchecklistid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
+	$projectchecklistid = (int)GetVariable("projectchecklistid");
 	$reason = GetVariable("reason");
-	$missingdataid = GetVariable("missingdataid");
+	$missingdataid = (int)GetVariable("missingdataid");
 
 	$protocolfilter = GetVariable("protocolfilter");
 	
@@ -306,7 +306,7 @@
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
-			$paramid = mysqli_real_escape_string($GLOBALS['linki'], $paramid);
+			$paramid = (int)$paramid;
 			
 			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
 			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
@@ -319,7 +319,7 @@
 			$max_pvsnr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_pvsnr_max[$i])),3,'.','');
 			
 			if ($protocol != "") {
-				if ($paramid == "") {
+				if ($paramid == 0) {
 					$sqlstring = "insert ignore into mr_qcparams (protocol_name, project_id, max_x, max_y, max_z, min_iosnr, max_iosnr, min_pvsnr, max_pvsnr) values ('$protocol', '$id', '$x_max', '$y_max', '$z_max', '$min_iosnr', '$max_iosnr', '$min_pvsnr', '$max_pvsnr')";
 				}
 				else {
@@ -328,7 +328,7 @@
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			if (($protocol == "") && ($paramid != "")) {
+			if (($protocol == "") && ($paramid != 0)) {
 				$sqlstring = "delete from mr_qcparams where mrqcparam_id = $paramid";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -1318,7 +1318,7 @@
 		
 		$i=0;
 		foreach ($param_rowid as $paramid) {
-			$paramid = mysqli_real_escape_string($GLOBALS['linki'], $paramid);
+			$paramid = (int)$paramid;
 			
 			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
 			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
@@ -1346,7 +1346,7 @@
 			$bandwidth_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth_max[$i])),3,'.','');
 			
 			if ($protocol != "") {
-				if ($paramid == "") {
+				if ($paramid == 0) {
 					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr_min, tr_max, te_min, te_max, ti_min, ti_max, flip_min, flip_max, xdim_min, xdim_max, ydim_min, ydim_max, zdim_min, zdim_max, tdim_min, tdim_max, slicethickness_min, slicethickness_max, slicespacing_min, slicespacing_max, bandwidth_min, bandwidth_max) values ('$protocol', '$sequence', '$id', '$tr_min', '$tr_max', '$te_min', '$te_max', '$ti_min', '$ti_max', '$flip_min', '$flip_max', '$xdim_min', '$xdim_max', '$ydim_min', '$ydim_max', '$zdim_min', '$zdim_max', '$tdim_min', '$tdim_max', '$slicethickness_min', '$slicethickness_max', '$slicespacing_min', '$slicespacing_max', '$bandwidth_min', '$bandwidth_max')";
 				}
 				else {
@@ -1355,7 +1355,7 @@
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			}
-			if (($protocol == "") && ($paramid != "")) {
+			if (($protocol == "") && ($paramid != 0)) {
 				$sqlstring = "delete from mr_scanparams where mrscanparam_id = $paramid";
 				//PrintSQL($sqlstring);
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB subject.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -105,7 +105,7 @@ subject::subject(QString altuid, int projectid, nidb *a)
         n->Log(QString("Subject with subjectRowID [%1] found by:  altuid [%2]  projectid [%3]").arg(_subjectid).arg(altuid).arg(projectid));
     }
     else {
-        n->Log(QString("Subject not found by:  altuid [%2]  projectid [%3]").arg(altuid).arg(projectid));
+        n->Log(QString("Subject not found by:  altuid [%1]  projectid [%2]").arg(altuid).arg(projectid));
         msgs << QString("Subject not found by altUID [" + altuid + "] within project [%1]").arg(projectid);
         _isValid = false;
     }
@@ -232,7 +232,7 @@ QString subject::GetPrimaryAlternateID(int projectRowID) {
         n->Debug(QString("Found primary alternate ID [%1] for subjectRowID [%2] and projectRowID [%3]").arg(primaryAltID).arg(_subjectid).arg(projectRowID), __FUNCTION__);
     }
     else
-        n->Log(QString("Unable to find primary alternate ID for subjectRowID [%1] and projectRowID [%2]").arg(_subjectid).arg(projectRowID), __FUNCTION__);
+        n->Debug(QString("Unable to find primary alternate ID for subjectRowID [%1] and projectRowID [%2]").arg(_subjectid).arg(projectRowID), __FUNCTION__);
 
 
     return primaryAltID;

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB main.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -26,8 +26,10 @@
 #include "utils.h"
 #include "moduleFileIO.h"
 #include "moduleExport.h"
+#include "moduleExportNonImaging.h"
 #include "moduleManager.h"
 #include "moduleImport.h"
+#include "moduleRemoteImport.h"
 #include "moduleUpload.h"
 #include "moduleMRIQA.h"
 #include "moduleQC.h"
@@ -36,7 +38,6 @@
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
 #include <iostream>
-#include <SmtpMime>
 
 /* ---------------------------------------------------------- */
 /* --------- main ------------------------------------------- */
@@ -62,7 +63,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup");
+    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -75,28 +76,30 @@ int main(int argc, char *argv[])
     p.addOption(optKeepLog);
 
     /* command line options that take values */
-    QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
     QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin submodules only", "analysisid");
-    QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
-    QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule", "message");
     QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin submodule", "command");
-    QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
-    QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
+    QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule", "message");
+    QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert submodule)", "desc");
     QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert submodule)", "filepath");
     QCommandLineOption optResultImage(QStringList() << "i" << "image", "Insert image result (resultinsert submodule)", "imagepath");
-    QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert submodule)", "desc");
+    QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
+    QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
     QCommandLineOption optResultUnit(QStringList() << "unit", "Result unit (resultinsert submodule)", "unit");
-    p.addOption(optSubModule);
+    QCommandLineOption optStep(QStringList() << "step", "Pipeline checkin step number", "step");
+    QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
+    QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
     p.addOption(optAnalysisID);
-    p.addOption(optStatus);
-    p.addOption(optMessage);
     p.addOption(optCommand);
-    p.addOption(optResultText);
-    p.addOption(optResultNumber);
+    p.addOption(optMessage);
+    p.addOption(optResultDesc);
     p.addOption(optResultFile);
     p.addOption(optResultImage);
-    p.addOption(optResultDesc);
+    p.addOption(optResultNumber);
+    p.addOption(optResultText);
     p.addOption(optResultUnit);
+    p.addOption(optStatus);
+    p.addOption(optStep);
+    p.addOption(optSubModule);
 
     /* Process the actual command line arguments given by the user */
     p.process(a);
@@ -112,20 +115,40 @@ int main(int argc, char *argv[])
     quiet = p.isSet(optQuiet);
     reset = p.isSet(optReset);
     cmdKeepLog = p.isSet(optKeepLog);
-    QString paramSubModule = p.value(optSubModule).trimmed();
     QString paramAnalysisID = p.value(optAnalysisID).trimmed();
-    QString paramStatus = p.value(optStatus).trimmed();
-    QString paramMessage = p.value(optMessage).trimmed();
     QString paramCommand = p.value(optCommand).trimmed();
-    QString paramResultText = p.value(optResultText).trimmed();
-    QString paramResultNumber = p.value(optResultNumber).trimmed();
+    QString paramMessage = p.value(optMessage).trimmed();
+    QString paramResultDesc = p.value(optResultDesc).trimmed();
     QString paramResultFile = p.value(optResultFile).trimmed();
     QString paramResultImage = p.value(optResultImage).trimmed();
-    QString paramResultDesc = p.value(optResultDesc).trimmed();
+    QString paramResultNumber = p.value(optResultNumber).trimmed();
+    QString paramResultText = p.value(optResultText).trimmed();
     QString paramResultUnit = p.value(optResultUnit).trimmed();
+    QString paramStatus = p.value(optStatus).trimmed();
+    QString paramStep = p.value(optStep).trimmed();
+    QString paramSubModule = p.value(optSubModule).trimmed();
 
-    QStringList modules = { "export", "fileio", "qc", "mriqa", "modulemanager", "import", "pipeline", "upload", "cluster", "minipipeline", "backup" };
-    QStringList submodules = { "pipelinecheckin", "resultinsert", "updateanalysis", "checkcompleteanalysis"};
+    QStringList modules = {
+        "backup",
+        "cluster",
+        "export",
+        "exportnonimaging",
+        "fileio",
+        "import",
+        "remoteimport",
+        "minipipeline",
+        "modulemanager",
+        "mriqa",
+        "pipeline",
+        "qc",
+        "upload",
+    };
+    QStringList submodules = {
+        "checkcompleteanalysis",
+        "pipelinecheckin",
+        "resultinsert",
+        "updateanalysis",
+    };
 
     /* now check the command line parameters passed in, to see if they are calling a valid module */
     if (!modules.contains(module)) {
@@ -154,7 +177,7 @@ int main(int argc, char *argv[])
         bool ret = false;
         QString msg;
         if (paramSubModule == "pipelinecheckin")
-            ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramMessage, paramCommand, msg);
+            ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramStep, paramMessage, paramCommand, msg);
         else if (paramSubModule == "resultinsert")
             ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, paramResultImage, paramResultDesc, paramResultUnit, msg);
         else if (paramSubModule == "updateanalysis")
@@ -218,6 +241,11 @@ int main(int argc, char *argv[])
                             keepLog = m->Run();
                             delete m;
                         }
+                        else if (module == "exportnonimaging") {
+                            moduleExportNonImaging *m = new moduleExportNonImaging(n);
+                            keepLog = m->Run();
+                            delete m;
+                        }
                         else if (module == "modulemanager") {
                             moduleManager *m = new moduleManager(n);
                             keepLog = m->Run();
@@ -225,6 +253,11 @@ int main(int argc, char *argv[])
                         }
                         else if (module == "import") {
                             moduleImport *m = new moduleImport(n);
+                            keepLog = m->Run();
+                            delete m;
+                        }
+                        else if (module == "remoteimport") {
+                            moduleRemoteImport *m = new moduleRemoteImport(n);
                             keepLog = m->Run();
                             delete m;
                         }
@@ -262,7 +295,7 @@ int main(int argc, char *argv[])
                             Print("Unrecognized module [" + module + "]");
 
                         /* always keep the logfile in debug mode, or if keepLog command line option is set */
-                        if ((n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
+                        if ((n->cfg["keeplog"].toInt()) || (n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
                             keepLog = true;
 
                         n->ModuleRemoveLogFile(keepLog);

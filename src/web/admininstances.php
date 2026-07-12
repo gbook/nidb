@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB admininstances.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -208,11 +208,6 @@
 			$submitbuttonlabel = "Add";
 		}
 		
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Instances'] = "admininstances.php";
-		//$urllist[$name] = "admininstances.php?action=editform&id=$id";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 		<div align="center">
 		<table class="entrytable">
@@ -307,12 +302,6 @@
 	/* ------- DisplayInstanceList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceList() {
-	
-		//$urllist['Administration'] = "admin.php";
-		//$urllist['Instances'] = "admininstances.php";
-		//$urllist['Add Instance'] = "admininstances.php?action=addform";
-		//NavigationBar("Admin", $urllist);
-		
 	?>
 
 	<table class="ui celled selectable grey compact table">

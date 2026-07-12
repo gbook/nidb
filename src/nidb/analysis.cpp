@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB analysis.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -233,14 +233,14 @@ QJsonObject analysis::GetJSONObject() {
  * @brief Get a squirrel analysis object
  * @return squirrelAnalysis object
  */
-squirrelAnalysis analysis::GetSquirrelObject() {
+squirrelAnalysis analysis::GetSquirrelObject(QString databaseUUID) {
     squirrelAnalysis s(databaseUUID);
 
     s.DateClusterEnd = clusterEndDate;
     s.DateClusterStart = clusterStartDate;
     s.DateEnd = endDate;
     s.Hostname = hostname;
-    s.LastMessage = statusmessage;
+    s.StatusMessage = statusmessage;
     s.SeriesCount = numSeries;
     s.PipelineName = pipelinename;
     s.PipelineVersion = pipelineversion;

@@ -1,6 +1,6 @@
 /* ------------------------------------------------------------------------------
   NIDB experiment.cpp
-  Copyright (C) 2004 - 2024
+  Copyright (C) 2004 - 2025
   Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
   Olin Neuropsychiatry Research Center, Hartford Hospital
   ------------------------------------------------------------------------------
@@ -104,7 +104,10 @@ bool experiment::WriteFiles(QString dir, QStringList &fileList, QString &m) {
         QString filename = dir + "/" + s.filename;
 
         QFile f(filename);
-        f.open(QIODevice::WriteOnly);
+        if (!f.open(QIODevice::WriteOnly)) {
+            m = "Could not open file for writing [" + filename + "]: " + f.errorString();
+            return false;
+        }
         f.write(QByteArray::fromBase64(s.file));
         f.close();
 

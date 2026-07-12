@@ -1,7 +1,7 @@
 <?
  // ------------------------------------------------------------------------------
  // NiDB system.php
- // Copyright (C) 2004 - 2022
+ // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
  // ------------------------------------------------------------------------------
@@ -156,7 +156,7 @@
     $c['backupdir'] = GetVariable("backupdir");
     $c['deleteddir'] = GetVariable("deleteddir");
     $c['downloaddir'] = GetVariable("downloaddir");
-    $c['ftpdir'] = GetVariable("ftpdir");
+    $c['exportdir'] = GetVariable("exportdir");
     $c['groupanalysisdir'] = GetVariable("groupanalysisdir");
     $c['importdir'] = GetVariable("importdir");
     $c['incoming2dir'] = GetVariable("incoming2dir");
