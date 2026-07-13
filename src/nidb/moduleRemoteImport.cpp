@@ -1268,7 +1268,7 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
            into one statement is the main speedup for large files. */
         struct TSRow { qint64 obsid; QDateTime time; QVariant value; };
         QList<TSRow> tsInt, tsDouble, tsString;
-        const int TS_BATCH = 500;
+        const int TS_BATCH = 1000;
         qint64 totalInserts = 0;
 
         auto flushTS = [&](const QString &valueColumn, QList<TSRow> &batch) {
@@ -1397,8 +1397,8 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
                 if (tsDouble.size() >= TS_BATCH) flushTS("value_double", tsDouble);
                 if (tsString.size() >= TS_BATCH) flushTS("value_string", tsString);
 
-                /* progress log every 500 inserts */
-                if (++totalInserts % 500 == 0)
+                /* progress log every 1000 inserts */
+                if (++totalInserts % 1000 == 0)
                     n->Log(QString("Imported %1 timeseries values so far").arg(totalInserts));
 
             }
