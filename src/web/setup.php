@@ -725,9 +725,9 @@
 									<?
 								}
 								else {
-									
+
 								}
-								
+
 								if (file_exists($sqldatafile)) {
 									$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 									shell_exec($systemstring);
@@ -735,6 +735,8 @@
 								else {
 									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 								}
+
+								RunTimeseriesPartitionMaintenance($rootpassword, $database);
 							}
 							else {
 								?><li>No tables found in '<?=$database?>' database. Running full SQL script<?
@@ -742,7 +744,7 @@
 								if (file_exists($schemafile)) {
 									$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
 									shell_exec($systemstring);
-									
+
 									if (file_exists($sqldatafile)) {
 										$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 										shell_exec($systemstring);
@@ -750,6 +752,8 @@
 									else {
 										?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 									}
+
+									RunTimeseriesPartitionMaintenance($rootpassword, $database);
 								}
 								else {
 									?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
@@ -766,7 +770,7 @@
 							if (file_exists($schemafile)) {
 								$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
 								shell_exec($systemstring);
-								
+
 								if (file_exists($sqldatafile)) {
 									$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
 									shell_exec($systemstring);
@@ -774,6 +778,8 @@
 								else {
 									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
 								}
+
+								RunTimeseriesPartitionMaintenance($rootpassword, $database);
 							}
 							else {
 								?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
@@ -920,6 +926,29 @@
 			<? } ?>
 		</div>		
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RunTimeseriesPartitionMaintenance -- */
+	/* -------------------------------------------- */
+	/* Creates/refreshes the sp_timeseries_add_partition procedure and its yearly
+	 * partition-maintenance event. Uses the mysql CLI (like the nidb-data.sql loads
+	 * below) rather than MySQLiQuery/UpgradeDatabase's line-based parser, because this
+	 * file contains a stored procedure/event body with internal semicolons that
+	 * requires DELIMITER handling. Safe to run every time setup runs -- the script
+	 * drops and recreates the procedure/event, and the procedure itself only creates
+	 * a partition if one doesn't already exist for next year. */
+	function RunTimeseriesPartitionMaintenance($rootpassword, $database) {
+		$maintenancefile = "/nidb/setup/timeseries_partition_maintenance.sql";
+		if (file_exists($maintenancefile)) {
+			$systemstring = "mysql -uroot -p$rootpassword $database < $maintenancefile";
+			shell_exec($systemstring);
+			?><div class="ui success message"><i class="check circle icon"></i> Timeseries partition maintenance event installed</div><?
+		}
+		else {
+			?><div class="ui error message"><code><?=$maintenancefile?></code> not found. This file should have been provided by the installer</div><?
+		}
 	}
 
 

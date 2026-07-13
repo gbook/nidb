@@ -124,6 +124,15 @@ sed -i 's/;listen.group = nobody/listen.group = nidb/' /etc/php-fpm.d/www.conf
 sed -i 's/;listen.mode/listen.mode/' /etc/php-fpm.d/www.conf
 sed -i 's/listen.acl_users/;listen.acl_users/' /etc/php-fpm.d/www.conf
 
+# enable the MariaDB event scheduler (needed for automatic timeseries partition
+# maintenance -- see src/setup/timeseries_partition_maintenance.sql)
+echo 'Enabling MariaDB event scheduler...'
+mkdir -p /etc/my.cnf.d
+cat > /etc/my.cnf.d/nidb-mariadb.cnf <<'EOF'
+[mariadb]
+event_scheduler=ON
+EOF
+
 # enable and start services
 echo 'Enable and start services...'
 systemctl enable httpd.service   # enable the apache web service
