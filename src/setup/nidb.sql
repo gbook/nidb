@@ -3336,11 +3336,20 @@ CREATE TABLE `task_series` (
 CREATE TABLE `timeseries` (
   `timeseries_id` bigint(11) NOT NULL,
   `observation_id` int(11) NOT NULL,
-  `time` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `time` timestamp NOT NULL DEFAULT current_timestamp(),
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
+PARTITION BY RANGE (YEAR(`time`)) (
+  PARTITION p2025    VALUES LESS THAN (2026),
+  PARTITION p2026    VALUES LESS THAN (2027),
+  PARTITION p2027    VALUES LESS THAN (2028),
+  PARTITION p2028    VALUES LESS THAN (2029),
+  PARTITION p2029    VALUES LESS THAN (2030),
+  PARTITION p2030    VALUES LESS THAN (2031),
+  PARTITION pfuture  VALUES LESS THAN MAXVALUE
+);
 
 -- --------------------------------------------------------
 
@@ -4834,9 +4843,8 @@ ALTER TABLE `task_series`
 -- Indexes for table `timeseries`
 --
 ALTER TABLE `timeseries`
-  ADD PRIMARY KEY (`timeseries_id`),
-  ADD UNIQUE KEY `observation_id_2` (`observation_id`,`time`,`value_int`,`value_double`,`value_string`),
-  ADD KEY `observation_id` (`observation_id`);
+  ADD PRIMARY KEY (`timeseries_id`,`time`),
+  ADD UNIQUE KEY `observation_id_time` (`observation_id`,`time`);
 
 --
 -- Indexes for table `tms_series`
