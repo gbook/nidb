@@ -122,14 +122,15 @@ make -B -j 16
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
-sudo cp -uv bin/squirrel/libsquirrel.a /lib64/
-sudo cp -uv bin/squirrel/libsquirrel.a /lib/x86_64-linux-gnu/
-#sudo cp -auv bin/gdcm/bin/libgdcm* /lib64/
-#sudo cp -auv bin/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
-#sudo cp -auv bin/smtp/libSMTPEmail* /lib/
-#sudo cp -auv bin/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
+sudo cp -uv $BUILDDIR/squirrel/libsquirrel.a /lib64/
+sudo cp -uv $BUILDDIR/squirrel/libsquirrel.a /lib/x86_64-linux-gnu/
+#sudo cp -auv $BUILDDIR/gdcm/bin/libgdcm* /lib64/
+#sudo cp -auv $BUILDDIR/gdcm/bin/libgdcm* /lib/x86_64-linux-gnu/
+#sudo cp -auv $BUILDDIR/smtp/libSMTPEmail* /lib/
+#sudo cp -auv $BUILDDIR/smtp/libSMTPEmail* /lib/x86_64-linux-gnu/
 
 echo -e "\nCopying nidb to /nidb/bin"
-sudo cp -uv bin/nidb/nidb /nidb/bin/
+sudo mkdir -p /nidb/bin
+sudo cp -uv $BUILDDIR/nidb/nidb /nidb/bin/
 
 #zip -j nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail* ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so*
