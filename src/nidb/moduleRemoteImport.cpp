@@ -1399,7 +1399,7 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
 
                 /* progress log every 1000 inserts */
                 if (++totalInserts % 1000 == 0)
-                    n->Log(QString("Imported %1 timeseries values so far").arg(totalInserts));
+                    n->Log(QString("Imported %1 timeseries values...").arg(totalInserts));
 
             }
         }
