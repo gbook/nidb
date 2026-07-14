@@ -3336,7 +3336,7 @@ CREATE TABLE `task_series` (
 CREATE TABLE `timeseries` (
   `timeseries_id` bigint(11) NOT NULL,
   `observation_id` int(11) NOT NULL,
-  `time` timestamp NOT NULL DEFAULT current_timestamp(),
+  `time` timestamp(3) NOT NULL DEFAULT current_timestamp(3),
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL

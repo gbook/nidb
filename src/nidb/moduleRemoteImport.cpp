@@ -1293,8 +1293,8 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
         for (int i=0; i<table.size(); i++) {
             /* get the participant ID, record date */
             QString avicennaID  = table[i]["user_id"];
-            QString tzOffset    = parseAvicennaTZ(table[i]["record time"]);
-            QDateTime recordTime = parseAvicennaDT(table[i]["record time"]);
+            QString tzOffset    = parseAvicennaTZ(table[i]["record_time"]);
+            QDateTime recordTime = parseAvicennaDT(table[i]["record_time"]);
 
             /* look up (and cache) the subject/enrollment for this Avicenna user. This function
                requires that the subject already exists and is enrolled in this project. */

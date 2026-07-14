@@ -179,7 +179,7 @@
 	switch ($action) {
 		case 'searchform': DisplaySearchForm($searchvars, $action); break;
 		case 'search':
-			//UpdateSearchHistory($searchvars);
+			UpdateSearchHistory($searchvars);
 			DisplaySearchForm($searchvars, $action);
 			Search($searchvars);
 			break;
@@ -316,21 +316,18 @@
 		<div class="fourteen wide column">
 			
 			<div class="ui grey secondary inverted top attached segment">
-				<div class="ui three column grid">
-					<div class="left aligned column">
+				<div class="ui grid">
+					<div class="four wide column">
 						<a href="search.php" class="ui yellow large button"><i class="search plus icon"></i> New Search</a>
-					</div>
-					<div class="column">
 						<? if ($action == "search") { ?>
-						<div class="ui yellow message" align="center" id="pageloading">
+						<div class="ui yellow message" align="center" id="pageloading" style="margin-top: 10px;">
 							<h2 class="ui header">
 								<em data-emoji=":chipmunk:" class="loading"></em> Searching...
 							</h2>
 						</div>
 						<? } ?>
-						&nbsp;
 					</div>
-					<div class="left aligned middle aligned column">
+					<div class="twelve wide left aligned middle aligned column">
 						<? DisplaySearchHistory(); ?>
 					</div>
 				</div>
@@ -1261,7 +1258,17 @@
 				</div>
 				<div class="content">
 					<div class="ui segment">
-						<div class="ui divided list">
+						<style>
+						.searchhistory-list { display:flex; flex-direction:column; gap:8px; }
+						.searchhistory-item { display:block; border:1px solid #d4d4d5; border-left:3px solid #2185d0; border-radius:5px; background:#fff; padding:9px 12px; transition:background .1s, box-shadow .1s; }
+						.searchhistory-item:hover { background:#f4f7fb; box-shadow:0 1px 4px rgba(0,0,0,.15); }
+						.searchhistory-date { color:#8a8a8a; font-size:.85em; margin-bottom:6px; }
+						.searchhistory-terms { display:flex; flex-wrap:wrap; gap:5px; }
+						.searchhistory-chip { display:inline-flex; align-items:center; max-width:100%; background:#eef3f8; border:1px solid #d6e2ee; border-radius:4px; padding:2px 7px; font-size:.9em; line-height:1.5; }
+						.searchhistory-chip .k { color:#7a7a7a; margin-right:5px; white-space:nowrap; }
+						.searchhistory-chip .v { color:#1b1c1d; font-weight:bold; max-width:340px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+						</style>
+						<div class="searchhistory-list">
 						<?
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$searchhistoryid = $row['searchhistory_id'];
@@ -1314,21 +1321,20 @@
 							$s['Form Criteria'] = $row['formcriteria'];
 							$s['Form Value'] = $row['formvalue'];
 							
-							$searchterms = "";
+							$chips = "";
 							foreach ($s as $key => $value) {
 								if ((trim($value) != "") && (trim(strtolower($value)) != "null")) {
-									$searchterms .= " <span style='color: gray'>$key</span> <b>$value</b> &nbsp; ";
+									$k = htmlspecialchars($key);
+									$v = htmlspecialchars($value);
+									$chips .= "<span class='searchhistory-chip'><span class='k'>$k</span><span class='v' title='$v'>$v</span></span>";
 								}
 							}
-							if ($searchterms != "") {
+							if ($chips != "") {
 							?>
-								<div class="item">
-									<i class="sticky note outline icon"></i>
-									<div class="content">
-										<a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>" class="header"><?=$searchterms?></a>
-										<div class="description"><?=$date_added?></div>
-									</div>
-								</div>
+								<a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>" class="searchhistory-item">
+									<div class="searchhistory-date"><i class="clock outline icon"></i> <?=$date_added?></div>
+									<div class="searchhistory-terms"><?=$chips?></div>
+								</a>
 							<?
 							}
 						}

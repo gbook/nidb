@@ -199,6 +199,8 @@
 		?>
 
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<link rel="stylesheet" href="scripts/uplot/uPlot.min.css">
+		<script src="scripts/uplot/uPlot.iife.min.js"></script>
 
 		<!-- Add Instrument Modal -->
 		<div class="ui small modal" id="addInstrumentModal">
@@ -366,6 +368,23 @@
 			<div class="header"><i class="database icon"></i> Metadata &mdash; <span id="obsMetaModalName"></span></div>
 			<div class="content" id="obsMetaContent" style="max-height:65vh;overflow-y:auto">
 				<div class="ui active centered inline loader"></div>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Close</div>
+			</div>
+		</div>
+
+		<!-- Timeseries Chart Modal -->
+		<div class="ui large modal" id="tsModal">
+			<div class="header"><i class="chart line icon"></i> Timeseries &mdash; <span id="tsModalName"></span></div>
+			<div class="content">
+				<div style="margin-bottom:10px; overflow:hidden">
+					<button class="ui small button" id="tsResetBtn"><i class="expand arrows alternate icon"></i> Zoom to all data</button>
+					<span id="tsStats" style="color:#888; margin-left:10px; font-size:0.9em"></span>
+					<span style="color:#aaa; float:right; font-size:0.82em; margin-top:6px">drag to zoom &middot; wheel to zoom &middot; shift+wheel to pan &middot; double-click to reset</span>
+				</div>
+				<div id="tsChart" style="width:100%; height:440px"></div>
+				<div id="tsMsg" style="color:#999; padding:30px; text-align:center; display:none"></div>
 			</div>
 			<div class="actions">
 				<div class="ui cancel button">Close</div>
@@ -822,9 +841,20 @@
 			   falls back to normal editable text for plain observations */
 			const valueColDef = {
 				headerName: 'Value', field: 'value', flex: 1, minWidth: 130,
-				editable: function(params) { return !params.data.fileId; },
+				editable: function(params) { return !params.data.fileId && params.data.itemType !== 'timeseries'; },
 				cellStyle: editableCellStyle,
 				cellRenderer: function(params) {
+					if (params.data.itemType === 'timeseries') {
+						const a = document.createElement('a');
+						a.href  = '#';
+						a.title = 'View timeseries graph';
+						a.innerHTML = '<i class="chart line icon"></i> View graph';
+						a.onclick = function(e) {
+							e.preventDefault();
+							openTimeseriesModal(params.data.observationid, params.data.observationName);
+						};
+						return a;
+					}
 					if (!params.data.fileId) return params.value || '';
 					const isImage = params.data.fileContentType && params.data.fileContentType.startsWith('image/');
 					const icon    = isImage ? 'image' : 'file outline';
@@ -881,6 +911,134 @@
 			function escHtml(s) {
 				return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 			}
+
+			/* ---- timeseries chart (uPlot) ---- */
+			let tsPlot = null, tsObsId = null, tsFullMin = null, tsFullMax = null, tsCurMin = null, tsCurMax = null, tsWheelTimer = null;
+
+			/* opens the modal and kicks off the first (full-range) load once it is visible */
+			function openTimeseriesModal(observationid, name) {
+				tsObsId = observationid;
+				if (tsPlot) { tsPlot.destroy(); tsPlot = null; }
+				tsFullMin = tsFullMax = tsCurMin = tsCurMax = null;
+				document.getElementById('tsModalName').textContent = name || ('Observation #' + observationid);
+				document.getElementById('tsStats').textContent = '';
+				document.getElementById('tsChart').innerHTML = '';
+				tsShowMsg('Loading…');
+				$('#tsModal').modal({
+					closable: true,
+					onHidden: function() { if (tsPlot) { tsPlot.destroy(); tsPlot = null; } }
+				}).modal('show');
+				/* load once the modal has laid out so the chart gets its true width — don't depend on onVisible firing */
+				setTimeout(function() { tsLoadRange(null, null); }, 150);
+			}
+
+			/* toggles the chart canvas vs a centered message (loading / empty / error / string) */
+			function tsShowMsg(msg) {
+				const m = document.getElementById('tsMsg');
+				const c = document.getElementById('tsChart');
+				if (msg) { m.textContent = msg; m.style.display = 'block'; c.style.display = 'none'; }
+				else     { m.style.display = 'none'; c.style.display = 'block'; }
+			}
+
+			/* fetches one window (null,null = full range) at a resolution matched to the chart width */
+			function tsLoadRange(minMs, maxMs) {
+				if (typeof uPlot === 'undefined') { tsShowMsg('Chart library (uPlot) failed to load.'); return; }
+				const el = document.getElementById('tsChart');
+				const w  = Math.max(400, el.clientWidth || 1000);
+				const params = { action: 'getobservationtimeseries', observationid: tsObsId, maxpoints: w };
+				if (minMs != null && maxMs != null) { params.tstart = Math.floor(minMs); params.tend = Math.ceil(maxMs); }
+				if (!tsPlot) tsShowMsg('Loading…');
+				$.getJSON('ajaxapi.php', params, function(resp) {
+					tsRender(resp, minMs, maxMs, w);
+				}).fail(function() { tsShowMsg('Error loading timeseries data.'); });
+			}
+
+			/* renders (or updates) the plot from a server response */
+			function tsRender(resp, minMs, maxMs, w) {
+				if (!resp || resp.error) { tsShowMsg('Error: ' + ((resp && resp.error) || 'unknown')); return; }
+				if (resp.seriesType === 'empty' || !resp.points || !resp.points.length) { tsShowMsg('No timeseries data for this observation.'); return; }
+
+				if (resp.seriesType === 'string') {
+					/* non-numeric series can't be plotted — show a capped table instead */
+					let html = '<div style="text-align:left; max-height:360px; overflow:auto"><table class="ui celled compact small table"><thead><tr><th>Time</th><th>Value</th></tr></thead><tbody>';
+					resp.points.forEach(function(p) { html += '<tr><td>' + escHtml(new Date(p[0]).toLocaleString()) + '</td><td>' + escHtml(p[1]) + '</td></tr>'; });
+					html += '</tbody></table></div>';
+					const m = document.getElementById('tsMsg');
+					m.innerHTML = '<b>String timeseries</b> (' + Number(resp.count).toLocaleString() + ' points, not graphable)' + (resp.downsampled ? ' — showing first ' + resp.points.length : '') + html;
+					m.style.display = 'block';
+					document.getElementById('tsChart').style.display = 'none';
+					return;
+				}
+
+				tsShowMsg('');
+				if (minMs == null) { tsFullMin = resp.tmin; tsFullMax = resp.tmax; tsCurMin = resp.tmin; tsCurMax = resp.tmax; }
+				else               { tsCurMin = minMs; tsCurMax = maxMs; }
+
+				/* uPlot wants columnar data with the time axis in seconds */
+				const xs = new Array(resp.points.length), ys = new Array(resp.points.length);
+				for (let i = 0; i < resp.points.length; i++) { xs[i] = resp.points[i][0] / 1000; ys[i] = resp.points[i][1]; }
+
+				const tr = (resp.tmin && resp.tmax)
+					? ' · ' + new Date(resp.tmin).toLocaleString() + ' – ' + new Date(resp.tmax).toLocaleString()
+					: '';
+				document.getElementById('tsStats').textContent =
+					Number(resp.count).toLocaleString() + ' points' + (resp.downsampled ? ' (downsampled)' : '') + tr;
+
+				if (tsPlot) {
+					tsPlot.setData([xs, ys]);
+				} else {
+					const opts = {
+						width:  w,
+						height: 440,
+						scales: { x: { time: true } },
+						cursor: { drag: { x: true, y: false, setScale: false } },
+						series: [ {}, { label: 'value', stroke: '#2185d0', width: 1, points: { show: false } } ],
+						axes:   [ {}, {} ],
+						hooks:  { setSelect: [ tsOnSelect ] }
+					};
+					tsPlot = new uPlot(opts, [xs, ys], document.getElementById('tsChart'));
+					tsAttachInteractions(tsPlot);
+				}
+			}
+
+			/* drag-select zoom: reload the selected window at full resolution, then clear the selection */
+			function tsOnSelect(u) {
+				if (u.select.width > 4) {
+					const a = u.posToVal(u.select.left, 'x') * 1000;
+					const b = u.posToVal(u.select.left + u.select.width, 'x') * 1000;
+					u.setSelect({ width: 0, height: 0 }, false);
+					if (b - a > 500) tsLoadRange(a, b);
+				}
+			}
+
+			/* wheel = zoom at cursor, shift+wheel = pan, double-click = reset to full range */
+			function tsAttachInteractions(u) {
+				u.over.addEventListener('wheel', function(e) {
+					e.preventDefault();
+					if (tsCurMin == null || tsCurMax == null) return;
+					const rect     = u.over.getBoundingClientRect();
+					const cursorMs = u.posToVal(e.clientX - rect.left, 'x') * 1000;
+					const span     = tsCurMax - tsCurMin;
+					let newMin, newMax;
+					if (e.shiftKey) {
+						const d = (e.deltaY > 0 ? 1 : -1) * span * 0.2;
+						newMin = tsCurMin + d; newMax = tsCurMax + d;
+					} else {
+						const f = e.deltaY > 0 ? 1.25 : 0.8;
+						newMin = cursorMs - (cursorMs - tsCurMin) * f;
+						newMax = cursorMs + (tsCurMax - cursorMs) * f;
+					}
+					if (tsFullMin != null) newMin = Math.max(newMin, tsFullMin);
+					if (tsFullMax != null) newMax = Math.min(newMax, tsFullMax);
+					if (newMax - newMin < 1000) return;
+					tsCurMin = newMin; tsCurMax = newMax;
+					clearTimeout(tsWheelTimer);
+					tsWheelTimer = setTimeout(function() { tsLoadRange(tsCurMin, tsCurMax); }, 140);
+				}, { passive: false });
+				u.over.addEventListener('dblclick', function() { tsLoadRange(null, null); });
+			}
+
+			document.getElementById('tsResetBtn').onclick = function() { tsLoadRange(null, null); };
 
 			/* lazy-loads and displays observation_meta rows for the given observation */
 			function openMetaModal(observationid, obsName) {

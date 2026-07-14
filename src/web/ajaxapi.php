@@ -167,6 +167,9 @@
 		case 'getobservationmeta':
 			GetObservationMeta($observationid);
 			break;
+		case 'getobservationtimeseries':
+			GetObservationTimeseries($observationid, GetVariable("tstart"), GetVariable("tend"), GetVariable("maxpoints"));
+			break;
 		case 'bulkupdateobservations':
 			BulkUpdateObservations($observationids, $column, $value, $tz_offset);
 			break;
@@ -1480,6 +1483,99 @@
 		}
 		mysqli_stmt_close($stmt);
 		echo json_encode($rows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetObservationTimeseries ----------- */
+	/* -------------------------------------------- */
+	/* Returns the timeseries points for one observation as [[epoch_ms, value], ...].
+	   Supports zoom-to-load: pass tstart/tend (epoch milliseconds) to fetch just that
+	   window at full resolution. Series with more than maxpoints rows are bucket-averaged
+	   down to ~maxpoints so the browser never receives a 100k+ row dump. */
+	function GetObservationTimeseries($observationid, $tstart, $tend, $maxpoints) {
+		JsonHeader();
+		$observationid = (int)$observationid;
+		if ($observationid < 1) { echo json_encode(['error' => 'Invalid observation ID']); return; }
+
+		$maxpoints = (int)$maxpoints;
+		if ($maxpoints < 100)   $maxpoints = 2000;
+		if ($maxpoints > 20000) $maxpoints = 20000;
+
+		/* optional zoom-to-load window, passed as epoch milliseconds */
+		$hasWindow   = (is_numeric($tstart) && is_numeric($tend) && (float)$tend > (float)$tstart);
+		$winStartSec = $hasWindow ? (int)floor((float)$tstart / 1000) : 0;
+		$winEndSec   = $hasWindow ? (int)ceil((float)$tend / 1000)    : 0;
+
+		/* filter on the `time` column (not a wrapped expression) so partition pruning can kick in */
+		$whereWindow = $hasWindow ? " and time between from_unixtime(?) and from_unixtime(?)" : "";
+
+		/* summarize: point count, time range, and which typed column holds the values */
+		$sql = "select count(*) n, min(unix_timestamp(time)) tmin, max(unix_timestamp(time)) tmax, sum(value_double is not null) nd, sum(value_int is not null) ni, sum(value_string is not null) ns from timeseries where observation_id = ?" . $whereWindow;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		if ($hasWindow) mysqli_stmt_bind_param($stmt, 'iii', $observationid, $winStartSec, $winEndSec);
+		else            mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		$res     = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$summary = mysqli_fetch_array($res, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		$n = (int)$summary['n'];
+		if ($n < 1) { echo json_encode(['seriesType' => 'empty', 'count' => 0, 'points' => []]); return; }
+
+		$tmin = (int)$summary['tmin'];
+		$tmax = (int)$summary['tmax'];
+
+		/* prefer double, then int, else a (non-graphable) string series */
+		if      ((int)$summary['nd'] > 0) $valcol = 'value_double';
+		elseif  ((int)$summary['ni'] > 0) $valcol = 'value_int';
+		else                              $valcol = 'value_string';
+
+		/* string timeseries can't be plotted; return a capped raw sample for a table fallback */
+		if ($valcol === 'value_string') {
+			$cap  = min($maxpoints, 1000);
+			$sql  = "select unix_timestamp(time)*1000 t, value_string v from timeseries where observation_id = ?" . $whereWindow . " order by time limit " . (int)$cap;
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+			if ($hasWindow) mysqli_stmt_bind_param($stmt, 'iii', $observationid, $winStartSec, $winEndSec);
+			else            mysqli_stmt_bind_param($stmt, 'i', $observationid);
+			$res    = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$points = [];
+			while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) { $points[] = [(float)$row['t'], $row['v']]; }
+			mysqli_stmt_close($stmt);
+			echo json_encode(['seriesType' => 'string', 'count' => $n, 'downsampled' => ($n > $cap), 'tmin' => $tmin * 1000, 'tmax' => $tmax * 1000, 'points' => $points]);
+			return;
+		}
+
+		/* numeric: raw points when small enough, otherwise bucket-average down to ~maxpoints */
+		if ($n <= $maxpoints) {
+			$sql         = "select unix_timestamp(time)*1000 t, $valcol v from timeseries where observation_id = ?" . $whereWindow . " order by time";
+			$downsampled = false;
+		} else {
+			$winStart  = $hasWindow ? $winStartSec : $tmin;
+			$winEnd    = $hasWindow ? $winEndSec   : $tmax;
+			$bucketsec = (int)ceil(max(1, $winEnd - $winStart) / $maxpoints);
+			if ($bucketsec < 1) $bucketsec = 1;
+			$t0          = (int)$winStart;
+			/* $t0 and $bucketsec are integers derived from timestamps; $valcol is an internal whitelist */
+			$sql         = "select min(unix_timestamp(time))*1000 t, avg($valcol) v from timeseries where observation_id = ?" . $whereWindow . " group by floor((unix_timestamp(time) - $t0)/$bucketsec) order by t";
+			$downsampled = true;
+		}
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		if ($hasWindow) mysqli_stmt_bind_param($stmt, 'iii', $observationid, $winStartSec, $winEndSec);
+		else            mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		$res    = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$points = [];
+		while ($row = mysqli_fetch_array($res, MYSQLI_ASSOC)) { $points[] = [(float)$row['t'], ($row['v'] === null ? null : (float)$row['v'])]; }
+		mysqli_stmt_close($stmt);
+
+		echo json_encode([
+			'seriesType'  => 'numeric',
+			'valueColumn' => $valcol,
+			'count'       => $n,
+			'downsampled' => $downsampled,
+			'tmin'        => $tmin * 1000,
+			'tmax'        => $tmax * 1000,
+			'points'      => $points,
+		]);
 	}
 
 
