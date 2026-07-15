@@ -11,7 +11,6 @@ The following OS configurations have been tested to build nidb. It may be possib
 * <mark style="color:green;">**Tested & Compatible**</mark>
   * RHEL 9 compatible (Rocky Linux 9, AlmaLinux 9, RHEL 9)
   * RHEL 8 compatible (Rocky Linux 8, AlmaLinux 8, CentOS 8, RHEL 8)
-  * RHEL 7 compatible (RHEL 7, CentOS 7)
   * Ubuntu 20
   * Debian 12
 * <mark style="color:red;">**Incompatible**</mark>
@@ -50,6 +49,7 @@ dnf install rpmdevtools
 dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
 dnf install libxkbcommon-x11
 dnf install git
+dnf install mesa-libGL-devel
 ```
 {% endtab %}
 
@@ -63,16 +63,8 @@ dnf install libxkbcommon-x11
 dnf install gcc-toolset-10
 dnf install libxcb-devel
 dnf install libX11-xcb
-dnf install xcb-util-cursor xcb-util-cursor-devel
-```
-{% endtab %}
-
-{% tab title="RHEL 7" %}
-```bash
-yum install epel-release
-yum group install 'Development Tools'
-yum install cmake3 rpmdevtools rpm-build
-yum install git
+dnf install xcb-util*
+dnf install mesa-libGL-devel
 ```
 {% endtab %}
 
@@ -132,7 +124,14 @@ apt install wget   # if needed
       2. libs - `/usr/local/lib64`
    2. Debian
       1. include - `/usr/local/include`
-      2. libs - `/usr/local/lib`
+      2. libs - `/usr/local/lib`&#x20;
+
+#### Add /usr/local/lib64 to ldconfig
+
+```bash
+sudo echo "/usr/local/lib64" > /etc/ld.so.conf.d/local-lib64.conf
+sudo ldconfig
+```
 {% endtab %}
 
 {% tab title="Windows" %}
@@ -253,28 +252,6 @@ All **subsequent builds** on this machine can be done with the following
 cd ~/nidb
 ./build.sh      # build only the executable
 ./rpmbuild8.sh  # build the .rpm
-```
-{% endtab %}
-
-{% tab title="RHEL 7" %}
-**First time build** on this machine, perform the following
-
-```bash
-cd ~
-wget https://github.com/gbook/nidb/archive/master.zip
-unzip master.zip
-mv nidb-master nidb
-cd nidb
-./build.sh      # build only the NiDB executable
-./rpmbuild7.sh  # build the nidb .rpm
-```
-
-All **subsequent builds** on this machine can be done with the following
-
-```bash
-cd ~/nidb
-./build.sh      # build only the executable
-./rpmbuild7.sh  # build the .rpm
 ```
 {% endtab %}
 
