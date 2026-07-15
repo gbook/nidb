@@ -48,14 +48,16 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	
-	/* determine action */
-	if ($action == "") {
-		DisplayStatus();
+
+	/* optionally clean up stale pipeline process rows before rendering */
+	$pipelineMsg = "";
+	if ($action == "deleteoldpipelineprocs") {
+		$n = DeleteOldPipelineProcs();
+		$pipelineMsg = "Deleted $n stale pipeline process row(s) (last check-in over 30 days ago).";
 	}
-	else {
-		DisplayStatus();
-	}
+
+	/* this page has a single status view */
+	DisplayStatus($pipelineMsg);
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
@@ -64,12 +66,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStatus ---------------------- */
 	/* -------------------------------------------- */
-	function DisplayStatus() {
+	function DisplayStatus($pipelineMsg = "") {
 
-		# connect to DB and get status
-		$dbconnect = true;
-		$devdbconnect = true;
-		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
+		# get DB status from the existing connection
 		$dbStatus = explode("  ", mysqli_stat($GLOBALS['linki']));
 		
 		# get number of fileio operations pending
@@ -157,7 +156,64 @@
 					<td><pre><?=trim(`df -Th`)?></pre></td>
 				</tr>
 				<tr>
-					<td><h3 class="header">Crontab for <tt><?=system('whoami')?></tt></h3></td>
+					<td><h3 class="header">Directories</h3><span class="tiny">All <tt>cfg['*dir']</tt> paths</span></td>
+					<td>
+						<table class="ui very small very compact celled table">
+							<thead>
+								<tr>
+									<th>Config</th>
+									<th>Path</th>
+									<th>Exists</th>
+									<th>Owner:Group</th>
+									<th>Perms</th>
+									<th>Writable by <tt>nidb</tt></th>
+								</tr>
+							</thead>
+							<tbody>
+							<?
+								$nidbuser = "nidb";
+
+								/* collect every configured directory (cfg keys ending in 'dir') */
+								$dirkeys = array();
+								foreach ($GLOBALS['cfg'] as $ckey => $cval) {
+									if (preg_match('/dir$/i', $ckey) && is_string($cval) && (trim($cval) != ""))
+										$dirkeys[$ckey] = $cval;
+								}
+								ksort($dirkeys);
+
+								foreach ($dirkeys as $ckey => $path) {
+									$exists = is_dir($path);
+									$owner = $group = $perms = "";
+									if ($exists) {
+										$ownerInfo = function_exists('posix_getpwuid') ? posix_getpwuid(fileowner($path)) : false;
+										$groupInfo = function_exists('posix_getgrgid') ? posix_getgrgid(filegroup($path)) : false;
+										$owner = $ownerInfo ? $ownerInfo['name'] : fileowner($path);
+										$group = $groupInfo ? $groupInfo['name'] : filegroup($path);
+										$perms = substr(sprintf('%o', fileperms($path)), -4);
+									}
+									$writable = $exists ? DirWritableByUser($path, $nidbuser) : false;
+									?>
+									<tr>
+										<td><tt><?=htmlspecialchars($ckey)?></tt></td>
+										<td><tt><?=htmlspecialchars($path)?></tt></td>
+										<td class="center aligned"><?= $exists ? '<i class="green check icon"></i>' : '<i class="red times circle icon"></i> <span style="color:#900">missing</span>' ?></td>
+										<td><?= $exists ? htmlspecialchars("$owner:$group") : '' ?></td>
+										<td><tt><?= $exists ? $perms : '' ?></tt></td>
+										<td class="center aligned">
+										<? if ($exists): ?>
+											<?= $writable ? '<i class="green check icon"></i>' : '<i class="red exclamation triangle icon"></i> <span style="color:#900">not writable</span>' ?>
+										<? endif; ?>
+										</td>
+									</tr>
+									<?
+								}
+							?>
+							</tbody>
+						</table>
+					</td>
+				</tr>
+				<tr>
+					<td><h3 class="header">Crontab for <tt><?=trim(`whoami`)?></tt></h3></td>
 					<td>
 						<?
 							$crontab = trim(`crontab -l`);
@@ -182,16 +238,27 @@
 						<?
 							$dcmrcv = trim(`ps -ef | grep '/nidb/bin/dcm4che'`);
 							$lines = explode("\n", $dcmrcv);
+							$dcmrcvline = "";
 							foreach ($lines as $line) {
 								if (contains($line, "java -cp")) {
 									$dcmrcvline = $line;
 									break;
 								}
 							}
-							$parts = preg_split('/\s+/', $dcmrcvline);
-
-							$aeport = $parts[count($parts)-3];
-							$dest = $parts[count($parts)-1];
+							$aeport = $dest = "";
+							if ($dcmrcvline != "") {
+								/* parse by markers, not by offset from the end - the ps line can include trailing
+								   shell tokens (e.g. "> /dev/null 2>&1 &") that shift the final fields */
+								$parts = preg_split('/\s+/', $dcmrcvline);
+								for ($i = 0; $i < count($parts); $i++) {
+									/* AE:port is the argument right after the DcmRcv class */
+									if (contains($parts[$i], "DcmRcv") && isset($parts[$i+1]))
+										$aeport = $parts[$i+1];
+									/* destination directory is the argument after the -dest flag */
+									if (($parts[$i] === "-dest") && isset($parts[$i+1]))
+										$dest = $parts[$i+1];
+								}
+							}
 						?>
 						<table class="ui basic table">
 							<tr>
@@ -202,10 +269,13 @@
 								<td><b>Destination Directory</b></td>
 								<td><?=$dest?>
 								<?
-									if (!is_dir($dest))
-										Error("dcmrcv points to direcory [$dest] which does not exist", false);
-									if ($dest != $GLOBALS['cfg']['incomingdir'])
-										Error("dcmrcv is NOT writing images to the incoming directory. Images will be not be archived. dcmrcv destination path [$dest] must match the config variable 'incomingdir' which is currently [" . $GLOBALS['cfg']['incomingdir'] . "]", false);
+									/* only validate the destination when dcmrcv is actually running */
+									if ($dcmrcvline != "") {
+										if (!is_dir($dest))
+											Error("dcmrcv points to direcory [$dest] which does not exist", false);
+										if ($dest != $GLOBALS['cfg']['incomingdir'])
+											Error("dcmrcv is NOT writing images to the incoming directory. Images will be not be archived. dcmrcv destination path [$dest] must match the config variable 'incomingdir' which is currently [" . $GLOBALS['cfg']['incomingdir'] . "]", false);
+									}
 								?>
 								</td>
 							</tr>
@@ -224,19 +294,47 @@
 				</tr>
 				<tr>
 					<td><h3 class="header">SQL table sizes</h3></td>
-					<td><pre><?
-					/* get information about the modality table */
-					$largetables = array("analysis_results", "analysis_history", "analysis", "qc_results", "importlogs");
-					foreach ($largetables as $table) {
-						$sqlstringA = "show table status like '$table'";
-						$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$numrows = $rowA['Rows'];
-						$tablesize = $rowA['Data_length'];
-						$indexsize = $rowA['Index_length'];
-						?><b><?=$table?></b>&#9;<?=number_format(($tablesize + $indexsize),0)?> bytes   <span class="tiny">(<?=number_format($numrows,0)?> rows)</span><br><?
-					}
-					?></pre>
+					<td>
+						<table class="ui very small very compact celled table">
+							<thead>
+								<tr>
+									<th>Table</th>
+									<th class="right aligned">Rows</th>
+									<th class="right aligned">Data (bytes)</th>
+									<th class="right aligned">Index (bytes)</th>
+									<th class="right aligned">Total (bytes)</th>
+								</tr>
+							</thead>
+							<tbody>
+							<?
+								$largetables = array("analysis_results", "analysis_history", "analysis", "qc_results", "importlogs");
+								/* SHOW TABLE STATUS can't run through the prepared-statement protocol on all MySQL/MariaDB
+								   versions, so read the same figures from information_schema (which is preparable) */
+								$stmtA = mysqli_prepare($GLOBALS['linki'], "select table_rows as numrows, data_length as datalen, index_length as idxlen from information_schema.tables where table_schema = database() and table_name = ?");
+								foreach ($largetables as $table) {
+									mysqli_stmt_bind_param($stmtA, 's', $table);
+									$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__);
+									$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+									/* no row if the table is absent - skip it rather than warn */
+									if (!$rowA)
+										continue;
+									$numrows = $rowA['numrows'];
+									$tablesize = $rowA['datalen'];
+									$indexsize = $rowA['idxlen'];
+									?>
+									<tr>
+										<td><b><?=$table?></b></td>
+										<td class="right aligned"><?=number_format($numrows)?></td>
+										<td class="right aligned"><?=number_format($tablesize)?></td>
+										<td class="right aligned"><?=number_format($indexsize)?></td>
+										<td class="right aligned"><?=number_format($tablesize + $indexsize)?></td>
+									</tr>
+									<?
+								}
+								mysqli_stmt_close($stmtA);
+							?>
+							</tbody>
+						</table>
 					</td>
 				</tr>
 				<tr>
@@ -286,6 +384,7 @@
 										$module_isactive = $row['module_isactive'];
 										
 										/* calculate the status color */
+										$color = "";
 										if (!$module_isactive) { $color = "gray"; }
 										else {
 											if ($module_status == "running") { $color = "green"; }
@@ -310,7 +409,7 @@
 											$runtime = "-";
 										}
 										
-										$module_laststop = date("D M j, Y H:i:s",strtotime($module_laststop));
+										$module_laststop = $module_laststop ? date("D M j, Y H:i:s", strtotime($module_laststop)) : "";
 								?>
 								<tr>
 									<td><b><?=$module_name?></b></td>
@@ -360,6 +459,13 @@
 				<tr>
 					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=pipeline" title="View pipeline.pl logs">Pipeline module</a></h3></td>
 					<td>
+						<? if ($pipelineMsg != "") { ?>
+							<div class="ui small positive message"><?=htmlspecialchars($pipelineMsg)?></div>
+						<? } ?>
+						<form method="post" action="status.php" onsubmit="return confirm('Delete all pipeline process rows whose last check-in was more than 30 days ago?');" style="margin-bottom: 10px">
+							<input type="hidden" name="action" value="deleteoldpipelineprocs">
+							<button class="ui small red button" type="submit"><i class="trash icon"></i> Delete processes older than 30 days</button>
+						</form>
 						<table class="ui very small very compact celled selectable grey table">
 						<thead>
 							<tr>
@@ -400,13 +506,64 @@
 						</table>
 					</td>
 				</tr>
-				<tr>
-					<td><h3 class="header">phpinfo()</h3></td>
-					<td><? //phpinfo(); ?></td>
-				</tr>
 			</table>
 		</div>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteOldPipelineProcs ------------- */
+	/* -------------------------------------------- */
+	/* Delete stale pipeline_procs rows - those whose last check-in was more than 30 days ago.
+	   Returns the number of rows removed. */
+	function DeleteOldPipelineProcs() {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from pipeline_procs where pp_lastcheckin < (now() - interval 30 day)");
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$deleted = mysqli_stmt_affected_rows($stmt);
+		mysqli_stmt_close($stmt);
+		return $deleted;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DirWritableByUser ------------------ */
+	/* -------------------------------------------- */
+	/* Determine whether a specific (named) user can write to a directory, from ownership and permission
+	   bits - independent of which user the web server itself runs as. */
+	function DirWritableByUser($path, $username) {
+		if (!file_exists($path))
+			return false;
+
+		$perms = fileperms($path);
+
+		/* world-writable */
+		if ($perms & 0002)
+			return true;
+
+		/* without posix we can only best-effort check as the current process user */
+		if (!function_exists('posix_getpwnam') || !function_exists('posix_getgrgid'))
+			return is_writable($path);
+
+		$user = posix_getpwnam($username);
+		if (!$user)
+			return false;
+
+		/* owner-writable and owned by the user */
+		if (($perms & 0200) && (fileowner($path) == $user['uid']))
+			return true;
+
+		/* group-writable and the user belongs to the directory's group (primary or supplementary) */
+		if ($perms & 0020) {
+			$gid = filegroup($path);
+			if ($gid == $user['gid'])
+				return true;
+			$grp = posix_getgrgid($gid);
+			if ($grp && in_array($username, $grp['members']))
+				return true;
+		}
+
+		return false;
 	}
 ?>
 

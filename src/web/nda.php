@@ -38,6 +38,9 @@
 	$nda_collectionid = (int)GetVariable("nda_collectionid");
 	$expected_data = GetVariable("expected_data");
 	$submission_dates = GetVariable("submission_dates");
+	$modalities = GetVariable("modalities");
+	$protocolnames = GetVariable("protocolname");
+	$experimentids = GetVariable("experimentid");
 
 	/* the csv download must be sent before any HTML is output */
 	if ($action == "downloadcsv") {
@@ -53,8 +56,8 @@
 
 	/* in-place edit of the NDA project number / submission id - saves and returns a short status string */
 	if ($action == "updatendainfoajax") {
-		UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
-		echo "success";
+		$ok = UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
+		echo $ok ? "success" : "error";
 		exit;
 	}
 ?>
@@ -206,9 +209,9 @@
 			$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
 			$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt2);
-			$ndaprojectnumber = $row2['ndaprojectnum'];
-			$ndasubmissionid = $row2['ndasubmission_id'];
-			$hascsv = !is_null($row2['csv_file']);
+			$ndaprojectnumber = $row2['ndaprojectnum'] ?? "";
+			$ndasubmissionid = $row2['ndasubmission_id'] ?? "";
+			$hascsv = isset($row2['csv_file']);
 			/* a submission is "complete" when it has both an NDA submission ID and a CSV file */
 			$issubmitted = (!empty($ndasubmissionid) && $hascsv);
 			?>
@@ -313,7 +316,8 @@
 			$seriesid = (int)$row['series_id'];
 			$status = $row['status'];
 
-			$uid = $studynum = $seriesnum = $seriesdesc = $seriessize = "";
+			$uid = $studynum = $seriesnum = $seriesdesc = "";
+			$seriessize = 0;
 			/* the modality determines the series table name, so it can't be bound - the scalar ids can */
 			if (IsNiDBModality($modality)) {
 				$sqlstring = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = ? and d.project_id = ? order by uid, study_num, series_num";
@@ -322,11 +326,14 @@
 				$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__);
 				$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 				mysqli_stmt_close($stmt2);
-				$seriesdesc = ($modality == "mr") ? $row2['series_desc'] : $row2['series_protocol'];
-				$uid = $row2['uid'];
-				$studynum = $row2['study_num'];
-				$seriesnum = $row2['series_num'];
-				$seriessize = $row2['series_size'];
+				/* the study/series may not resolve for this project (e.g. orphaned series) - guard the null row */
+				if ($row2) {
+					$seriesdesc = ($modality == "mr") ? ($row2['series_desc'] ?? "") : ($row2['series_protocol'] ?? "");
+					$uid = $row2['uid'] ?? "";
+					$studynum = $row2['study_num'] ?? "";
+					$seriesnum = $row2['series_num'] ?? "";
+					$seriessize = $row2['series_size'] ?? 0;
+				}
 			}
 
 			switch ($status) {
@@ -340,7 +347,7 @@
 				<td><?=htmlspecialchars($uid)?></td>
 				<td><?=htmlspecialchars("$uid$studynum")?></td>
 				<td><?=htmlspecialchars($seriesnum)?> - <?=htmlspecialchars($seriesdesc)?></td>
-				<td class="right aligned"><?=number_format($seriessize)?></td>
+				<td class="right aligned"><?=number_format((float)$seriessize)?></td>
 				<td class="<?=$class?>"><?=ucfirst(htmlspecialchars($status))?></td>
 			</tr>
 			<?
@@ -387,15 +394,15 @@
 				<tbody>
 					<tr>
 						<td style="width: 200px"><b>NDA Collection ID</b></td>
-						<td style="overflow-wrap: anywhere"><?=htmlspecialchars($row['nda_collectionid'])?></td>
+						<td style="overflow-wrap: anywhere"><?=htmlspecialchars($row['nda_collectionid'] ?? "")?></td>
 					</tr>
 					<tr>
 						<td><b>Expected data</b></td>
-						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['expected_data']))?></td>
+						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['expected_data'] ?? ""))?></td>
 					</tr>
 					<tr>
 						<td><b>Submission dates</b></td>
-						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['submission_dates']))?></td>
+						<td style="overflow-wrap: anywhere"><?=nl2br(htmlspecialchars($row['submission_dates'] ?? ""))?></td>
 					</tr>
 				</tbody>
 			</table>
@@ -424,9 +431,9 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 
-		$nda_collectionid = $row ? $row['nda_collectionid'] : "";
-		$expected_data = $row ? $row['expected_data'] : "";
-		$submission_dates = $row ? $row['submission_dates'] : "";
+		$nda_collectionid = $row['nda_collectionid'] ?? "";
+		$expected_data = $row['expected_data'] ?? "";
+		$submission_dates = $row['submission_dates'] ?? "";
 		?>
 		<div class="ui container" style="margin-top: 20px">
 			<h2 class="ui header">Edit NDA Project Information</h2>
@@ -505,9 +512,13 @@
 			$mod = strtolower(trim($row['mod_code']));
 			if (($mod == "") || !ctype_alnum($mod))
 				continue;
-			$chk = MySQLiQuery("show tables like '" . $mod . "_series'", __FILE__, __LINE__);
+			$chkStmt = mysqli_prepare($GLOBALS['linki'], "show tables like ?");
+			$likePattern = $mod . "_series";
+			mysqli_stmt_bind_param($chkStmt, 's', $likePattern);
+			$chk = MySQLiBoundQuery($chkStmt, __FILE__, __LINE__);
 			if (mysqli_num_rows($chk) > 0)
 				$modalities[] = $mod;
+			mysqli_stmt_close($chkStmt);
 		}
 
 		if (count($modalities) < 1)
@@ -553,7 +564,7 @@
 
 		if ($projectid < 1) {
 			Error("Invalid or blank Project ID [$projectid]");
-			return;
+			return false;
 		}
 
 		$hasupload = isset($_FILES['csvfile']) && ($_FILES['csvfile']['error'] === UPLOAD_ERR_OK);
@@ -588,6 +599,7 @@
 		}
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
+		return true;
 	}
 
 
@@ -688,9 +700,9 @@
 		?>
 		<br><br>
 		<div class="ui text container grid">
-		<form action="projects.php" method="post">
+		<form action="nda.php" method="post">
 		<input type="hidden" name="action" value="updatendamapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
+		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<b>NDA mapping</b>
 		<br>
 		This mapping is used in exporting of NDA format
@@ -757,6 +769,18 @@
 
 		/* an empty/"null" project id means this is the global mapping, stored as project_id NULL */
 		$pid = ($projectid == "" || $projectid == "null") ? null : (int)$projectid;
+
+		/* the form submits the project's complete mapping set, so clear the existing rows first;
+		   nda_mapping has no unique key, so without this a re-save would append duplicate rows */
+		if ($pid === null) {
+			$del = mysqli_prepare($GLOBALS['linki'], "delete from nda_mapping where project_id is null");
+		}
+		else {
+			$del = mysqli_prepare($GLOBALS['linki'], "delete from nda_mapping where project_id = ?");
+			mysqli_stmt_bind_param($del, 'i', $pid);
+		}
+		MySQLiBoundQuery($del, __FILE__, __LINE__);
+		mysqli_stmt_close($del);
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values (?, ?, ?, ?)");
 		foreach ($modalities as $i => $modality) {

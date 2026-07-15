@@ -1401,6 +1401,8 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
         }
     }
 
+    SetExportedPath(exportid, rootoutdir);
+
     /* if web download, zip up the directory and move it to /nidb/data/download */
 
     /* extra steps for web download */
@@ -1442,6 +1444,7 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
                 if (!RemoveDir(rootoutdir, m))
                     msgs << "Error [" + m + "] removing directory [" + rootoutdir + "]";
             }
+            SetExportedPath(exportid, zipfile);
         }
         else {
             msgs << "ERROR. Unable to create [" + zipfile + "]. ";

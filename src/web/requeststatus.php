@@ -407,7 +407,19 @@
 									}
 								}
 								else {
-									?>NDA ftp download...<br>Download available from scp://<?
+									if (!$complete) {
+										?>NDA ftp download...<br>Preparing export...<?
+									}
+									else {
+										$exportedPath = $row['exported_path'];
+										if ($exportedPath != "") {
+											$scphost = gethostname();
+											?>NDA ftp download<br>Available at <span style="font-family: monospace; user-select: all">scp://<?=htmlspecialchars($scphost)?><?=htmlspecialchars($exportedPath)?></span><?
+										}
+										else {
+											?>NDA ftp download<br><span style="color: gray">Export path was not recorded for this export; look in <span style="font-family: monospace"><?=htmlspecialchars($GLOBALS['cfg']['exportdir'])?></span> on the server.</span><?
+										}
+									}
 								}
 							}
 							elseif ($destinationtype == "remotenidb") {
