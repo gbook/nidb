@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 10, 2026 at 08:59 PM
--- Server version: 10.3.39-MariaDB
--- PHP Version: 7.2.24
+-- Generation Time: Jul 16, 2026 at 05:23 PM
+-- Server version: 10.5.29-MariaDB
+-- PHP Version: 8.3.31
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -3340,16 +3340,7 @@ CREATE TABLE `timeseries` (
   `value_int` int(11) DEFAULT NULL,
   `value_double` double DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci
-PARTITION BY RANGE (YEAR(`time`)) (
-  PARTITION p2025    VALUES LESS THAN (2026),
-  PARTITION p2026    VALUES LESS THAN (2027),
-  PARTITION p2027    VALUES LESS THAN (2028),
-  PARTITION p2028    VALUES LESS THAN (2029),
-  PARTITION p2029    VALUES LESS THAN (2030),
-  PARTITION p2030    VALUES LESS THAN (2031),
-  PARTITION pfuture  VALUES LESS THAN MAXVALUE
-);
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
