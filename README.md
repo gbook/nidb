@@ -4,7 +4,7 @@
 The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, and share neuroimaging data. Modalities include MR, EEG, ET, video, genetics, assessment data, and any binary data. Subject demographics, family relationships, and data imported from RedCap can be stored and queried in the database.
 
 ### Features
-* .rpm based installation for CentOS 8, RHEL 8, Rocky Linux 8 (not for CentOS Stream)
+* .rpm based installation for RHEL, Rocky Linux, and AlmaLinux (versions 8, 9, and 10)
 * Store any neuroimaging data, including MR, CT, EEG, ET, Video, Task, GSR, Consent, MEG, TMS, and more
 * Store any assessment data (paper-based tasks)
 * Store clinical trial information (manage data across multiple days & dose times, etc)
@@ -14,7 +14,7 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 * Search and manipulate data from subjects across projects
 * Automated imaging analysis pipeline system
 * "Mini-pipeline" module to process behavioral data files (extract timings)
-* All stored data is searchable. Combine results from pipelines, QC output, behavioral data, and more in one searchable
+* All stored data is searchable. Combine results from pipelines, QC output, behavioral data, and more in one searchable interface
 * Export data to NFS, FTP, Web download, NDA (NIMH Data Archive format), or export to a remote NiDB server
 * Export to squirrel format
 * Project level checklists for imaging data
@@ -22,6 +22,26 @@ The Neuroinformatics Database (NiDB) is designed to store, retrieve, analyze, an
 * Calendar for scheduling equipment and rooms
 * Usage reports, audits, tape backup module
 * Intuitive, modern UI. Easy to use
+* Import, store, and export non-imaging (assessment/observation) data, with project checklists
+* Structured non-imaging data collection via instruments, surveys, and a data dictionary
+* Store and interactively graph timeseries data (e.g. continuous datasource / wearable imports)
+* Remote and scheduled data imports, including Avicenna CSV datasources (with image import)
+* Built-in, web-based DICOM viewer with overlays
+* Modular quality control (MRIQC and custom QC modules)
+* Export to BIDS, with protocol-to-BIDS mapping
+* NDA submission management, with web download and FTP delivery of NDA packages
+* REST-style API with per-user API keys for automation and server-to-server transfer
+* Cluster/SLURM integration with live cluster status for pipeline processing
+
+## Supported operating systems
+NiDB is distributed as an `.rpm` package built for Enterprise Linux 8, 9, and 10. Supported distributions:
+
+* RHEL 8, 9, and 10
+* Rocky Linux 8, 9, and 10
+* AlmaLinux 8, 9, and 10
+* CentOS Linux 8 (end-of-life)
+
+CentOS Stream is not supported. Earlier releases also targeted CentOS/RHEL 7 and Amazon Linux 2 / 2023; these are no longer maintained.
 
 ## Download and Install
 * Current release: https://github.com/gbook/nidb/releases
