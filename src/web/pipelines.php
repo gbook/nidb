@@ -1224,6 +1224,8 @@
 								$numcomplete = $row['numcomplete'];
 
 								/* get mean processing times */
+								$analysistimes = array();
+								$clustertimes = array();
 								$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status <> ''";
 								//PrintSQL($sqlstring);
 								//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1259,6 +1261,9 @@
 					<td><h3 class="ui header">Dependency</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 					<?
+						/* PHP 8: count() on null is fatal - ensure these are always arrays */
+						$parents = array();
+						$children = array();
 						if ($dependency != "") {
 							$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -1370,9 +1375,10 @@
 							if (is_dir($dfmount)) {
 								$freespace = disk_free_space($dfmount);
 								$totalspace = disk_total_space($dfmount);
-								
-								$percentfree = ($freespace / $totalspace) * 100.0;
-								
+
+								/* PHP 8: division by zero is fatal - guard against disk_total_space() returning 0/false */
+								$percentfree = ($totalspace > 0) ? ($freespace / $totalspace) * 100.0 : 0;
+
 								if ($percentfree > 10) {
 									$diskcolor = "green";
 									$diskicon = "check icon";
@@ -4101,6 +4107,9 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$hostname = $queue = "";
 		$hostnames = $queues = array();
 
+		/* PHP 8: sort() on null is fatal - ensure these are always arrays */
+		$hostnames = array();
+		$queues = array();
 		foreach ($statsoutput as $line) {
 			$line = trim($line);
 			//echo $line;
@@ -4154,6 +4163,12 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* ------- GetDataGraph ----------------------- */
 	/* -------------------------------------------- */
 	function GetDataGraph($pipelineid, $version, $dependencies) {
+
+		/* PHP 8: count()/foreach() on null is fatal - ensure these are always arrays */
+		if (!is_array($dependencies)) $dependencies = array();
+		$dd = array();
+		$subject = array();
+		$study = array();
 
 		$sqlstring = "select * from pipeline_data_def where pipeline_id = $pipelineid and pipeline_version = $version order by pdd_order + 0";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);

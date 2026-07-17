@@ -155,53 +155,66 @@ window.onload = AreCookiesEnabled;
 	/* ------- DoLogin ---------------------------- */
 	/* -------------------------------------------- */
 	function DoLogin($username) {
+		/* regenerate the session id on successful login to prevent session fixation */
+		session_regenerate_id(true);
+
 		/* check if they are an admin */
-		$sqlstring = "select user_isadmin, user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select user_isadmin, user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, "s", $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		if ($row['user_isadmin'] == '1')
+		$numrows = mysqli_num_rows($result);
+		$userid = $row['user_id'] ?? null;
+		if (($row['user_isadmin'] ?? '') == '1')
 			$isadmin = true;
 		else
 			$isadmin = false;
-		
-		if (mysqli_num_rows($result) > 0) {
-			$sqlstring = "update users set user_lastlogin = now() where username = '$username'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-			$sqlstring = "update users set user_logincount = user_logincount + 1 where username = '$username'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if ($numrows > 0) {
+			$sqlstring = "update users set user_lastlogin = now(), user_logincount = user_logincount + 1 where username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, "s", $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		}
 		else {
-			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values ('$username', 'NIS', now(), 1, 1)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values (?, 'NIS', now(), 1, 1)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, "s", $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		}
-			
+
 		$_SESSION['username'] = $username;
 		$_SESSION['validlogin'] = "true";
 		$_SESSION['userid'] = $userid;
 		if ($isadmin) $_SESSION['isadmin'] = "true";
 		else $_SESSION['isadmin'] = "false";
-		
-		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = '$username')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, "s", $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instanceid = $row['instance_id'];
+		$instanceid = $row['instance_id'] ?? '';
 		if ($instanceid == '') {
-			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = '$username'),(select instance_id from instance where instance_default = 1))";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			
+			$sqlstring = "insert into user_instance (user_id, instance_id) values ((select user_id from users where username = ?),(select instance_id from instance where instance_default = 1))";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, "s", $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+
 			$sqlstring = "select instance_id from instance where instance_default = 1";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$instanceid = $row['instance_id'];
+			$instanceid = $row['instance_id'] ?? '';
 		}
-		
-		$sqlstring = "select instance_name from instance where instance_id = $instanceid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+
+		$sqlstring = "select instance_name from instance where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, "i", $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instancename = $row['instance_name'];
-		
+		$instancename = $row['instance_name'] ?? '';
+
 		$_SESSION['instanceid'] = $instanceid;
 		$_SESSION['instancename'] = $instancename;
 	}
@@ -235,7 +248,8 @@ window.onload = AreCookiesEnabled;
 			return false;
 			
 		$sqlstring = "select user_id from users where username = '$username' and password = sha1('$password') and user_enabled = 1";
-		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser(): [$sqlstring]");
+		/* do NOT log $sqlstring here: it contains the user's plaintext password */
+		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser() for user [$username]");
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) > 0)
 			return true;
@@ -249,17 +263,19 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function AuthenticateUnixUser($username, $password) {
 		
-		if (($username != "root") && ($username != "")) {
-			
+		/* only allow well-formed usernames to reach the shell/NIS lookup below */
+		if (($username != "root") && ($username != "") && preg_match('/^[a-z_][a-z0-9_-]{0,49}$/i', $username)) {
+
 			/* attempt to authenticate a unix user */
 			$pwent = posix_getpwnam($username);
 			$password_hash = $pwent["passwd"];
 
 			if (trim(shell_exec("command -v ypmatch")) != "") {
-				
+
 				//echo "Checkpoint A<br>";
-				
-				$autharray = explode(":",`ypmatch $username passwd`);
+
+				/* escapeshellarg() prevents shell metacharacters in $username from being interpreted */
+				$autharray = explode(":", (string)shell_exec("ypmatch " . escapeshellarg($username) . " passwd"));
 				//echo "autharray <br>";
 				//PrintVariable($autharray);
 				if ($autharray[0] != $username) {

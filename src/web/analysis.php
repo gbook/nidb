@@ -904,18 +904,23 @@
 					$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart, $limitcount);
 					//PrintSQL($sqlstring);
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					/* PHP 8: min()/max() on null or an empty array is fatal - initialize and guard */
+					$numcomplete = 0;
+					$analysistimes = array();
+					$analysissizes = array();
+					$clustertimes = array();
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$numcomplete += $row['analysis_iscomplete'];
 						$analysistimes[] = $row['analysis_time'];
 						$analysissizes[] = $row['analysis_disksize'];
 						$clustertimes[] = $row['cluster_time'];
 					}
-					$minsize = min($analysissizes);
-					$maxsize = max($analysissizes);
-					$minanalysistime = min($analysistimes);
-					$maxanalysistime = max($analysistimes);
-					$minclustertime = min($clustertimes);
-					$maxclustertime = max($clustertimes);
+					$minsize = count($analysissizes) ? min($analysissizes) : 0;
+					$maxsize = count($analysissizes) ? max($analysissizes) : 0;
+					$minanalysistime = count($analysistimes) ? min($analysistimes) : 0;
+					$maxanalysistime = count($analysistimes) ? max($analysistimes) : 0;
+					$minclustertime = count($clustertimes) ? min($clustertimes) : 0;
+					$maxclustertime = count($clustertimes) ? max($clustertimes) : 0;
 
 					/* rewind the result */
 					mysqli_data_seek($result, 0);
@@ -991,7 +996,7 @@
 							/* get color index for the size */
 							$sizeindex = 0;
 							if ($analysis_size > 0) {
-								$sizeindex = round(($analysis_size/($maxsize-$minsize))*100.0);
+								$sizeindex = ($maxsize > $minsize) ? round(($analysis_size/($maxsize-$minsize))*100.0) : 0;
 								if ($sizeindex > 100) { $sizeindex = 100; }
 								$sizecolor = $colors[$sizeindex];
 							}
@@ -1457,6 +1462,7 @@
 			<br><br>
 			<?
 			$files = scandir($path);
+			if (!is_array($files)) { $files = array(); } /* PHP 8: scandir() can return false; array_diff(false) is fatal */
 			$logs = array_diff($files, array('..', '.'));
 			natsort($logs);
 			foreach ($logs as $log) {
