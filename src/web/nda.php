@@ -512,9 +512,12 @@
 			$mod = strtolower(trim($row['mod_code']));
 			if (($mod == "") || !ctype_alnum($mod))
 				continue;
-			$chkStmt = mysqli_prepare($GLOBALS['linki'], "show tables like ?");
-			$likePattern = $mod . "_series";
-			mysqli_stmt_bind_param($chkStmt, 's', $likePattern);
+			/* NOTE: "SHOW TABLES LIKE ?" cannot be prepared on older MariaDB/MySQL versions
+			   (fails in the PHP 7 production environment). Use information_schema instead, which
+			   is preparable everywhere. Exact table_name match is fine since we know the name. */
+			$chkStmt = mysqli_prepare($GLOBALS['linki'], "select table_name from information_schema.tables where table_schema = database() and table_name = ?");
+			$tableName = $mod . "_series";
+			mysqli_stmt_bind_param($chkStmt, 's', $tableName);
 			$chk = MySQLiBoundQuery($chkStmt, __FILE__, __LINE__);
 			if (mysqli_num_rows($chk) > 0)
 				$modalities[] = $mod;
