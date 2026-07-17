@@ -39,6 +39,7 @@ INSERT IGNORE INTO `modules` (`module_name`, `module_status`, `module_numrunning
 ('minipipeline', 'stopped', 0, now(), now(), 1),
 ('modulemanager', 'stopped', 0, now(), now(), 1),
 ('mriqa', 'stopped', 0, now(), now(), 1),
+('remoteimport', 'stopped', 0, now(), now(), 1),
 ('notifications', 'stopped', 0, now(), now(), 0),
 ('pipeline', 'stopped', 0, now(), now(), 1),
 ('qc', 'stopped', 0, now(), now(), 1),

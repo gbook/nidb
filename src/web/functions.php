@@ -606,6 +606,35 @@
 	function MySQLiBoundQuery($stmt,$file,$line,$sqlstring="",$params=[]) {
 		Debug($file, $line,"Running MySQL Query [$sqlstring]");
 
+		/* Diagnostic guard: a failed mysqli_prepare() returns false (an invalid statement). Detect it
+		   here and surface the connection's real error - e.g. "Unknown column", or a statement type
+		   that cannot be prepared on this MySQL/MariaDB version (SHOW ... fails on older MariaDB) -
+		   instead of a nondescript execute failure on a false handle. */
+		if (!($stmt instanceof mysqli_stmt)) {
+			$datetime = date('r');
+			$username = $GLOBALS['username'] ?? '';
+			$prepareError = mysqli_error($GLOBALS['linki']);
+			Debug($file, $line, "mysqli_prepare() failed: [$prepareError] SQL: [$sqlstring]");
+			$body = "<b>Query preparation failed on [$datetime]:</b> $file (line $line)<br>
+			<b>Error:</b> " . htmlspecialchars($prepareError) . "<br>
+			<b>SQL:</b> " . htmlspecialchars($sqlstring) . "<br>
+			<b>Username:</b> $username<br>
+			<b>Note:</b> mysqli_prepare() returned an invalid statement. Common causes: a column or table that does not exist, or a statement type that cannot be prepared on this MySQL/MariaDB version (e.g. SHOW).";
+			//SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			if ($GLOBALS['cfg']['hideerrors']) {
+				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
+			}
+			else {
+				?>
+				<div style="border: 2px solid orange" width="100%">
+					<h2>SQL error occured</h2>
+					<?=$body?>
+				</div>
+				<?
+			}
+			return null;
+		}
+
 		if (!mysqli_stmt_execute($stmt)) {
 			$datetime = date('r');
 			$username = $GLOBALS['username'];
