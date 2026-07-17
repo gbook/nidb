@@ -51,7 +51,7 @@
 
 	switch ($action) {
 		case 'bulkaddavicenna':
-			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "");
+			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "", GetVariable("replaceexisting") != "");
 			break;
 		default:
 			DisplayMappingList((int)$projectid);
@@ -80,7 +80,7 @@
 	/* --------------------------------------------------- */
 	/* ------- BulkAddAvicenna -------------------------- */
 	/* --------------------------------------------------- */
-	function BulkAddAvicenna($projectid, $csvtext, $createInstruments = false) {
+	function BulkAddAvicenna($projectid, $csvtext, $createInstruments = false, $replaceExisting = false) {
 		$csvtext = trim($csvtext);
 		if ($csvtext === '') {
 			Error("No CSV data provided");
@@ -120,6 +120,18 @@
 
 		$colIdx  = array_flip($header);
 		$results = [];
+
+		// If replacing, remove all existing Avicenna mappings for this project before importing.
+		// This only clears the project's remoteimport_mapping rows; instruments and instrument_items
+		// are intentionally left untouched, as they may be shared by other projects.
+		$nDeleted = 0;
+		if ($replaceExisting) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE project_id = ? AND source_type = 'avicenna'");
+			mysqli_stmt_bind_param($stmt, 'i', $projectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$nDeleted = mysqli_stmt_affected_rows($stmt);
+			mysqli_stmt_close($stmt);
+		}
 
 		foreach (array_slice($lines, 1) as $i => $line) {
 			$values = str_getcsv($line);
@@ -330,6 +342,7 @@
 		?>
 		<h3 class="ui header">Bulk import results
 			<div class="sub header">
+				<?php if ($replaceExisting) { ?><span class="ui tiny grey label"><?= $nDeleted ?> existing mapping<?= $nDeleted == 1 ? '' : 's' ?> cleared</span><?php } ?>
 				<?php if ($nAdded)   { ?><span class="ui tiny green  label"><?= $nAdded ?>   added</span><?php } ?>
 				<?php if ($nUpdated) { ?><span class="ui tiny blue   label"><?= $nUpdated ?> updated</span><?php } ?>
 				<?php if ($nErrors)  { ?><span class="ui tiny red    label"><?= $nErrors ?>  errors</span><?php } ?>
@@ -377,9 +390,11 @@
 				<input type="hidden" name="action" value="bulkaddavicenna">
 				<input type="hidden" name="projectid" value="<?= $projectid ?>">
 				<?php if ($createInstruments) { ?><input type="hidden" name="createinstruments" value="1"><?php } ?>
+				<?php if ($replaceExisting) { ?><input type="hidden" name="replaceexisting" value="1"><?php } ?>
 				<textarea name="csvtext" rows="12"
 				          style="font-family:monospace;font-size:0.85em;width:100%;margin-bottom:0.5em"><?= htmlspecialchars($csvtext) ?></textarea>
 				<label style="display:block;margin-bottom:0.5em"><input type="checkbox" disabled <?= $createInstruments ? 'checked' : '' ?>> Create/update instruments <?= $createInstruments ? '(on)' : '(off)' ?></label>
+				<?php if ($replaceExisting) { ?><label style="display:block;margin-bottom:0.5em;color:darkred"><input type="checkbox" disabled checked> Replace existing mapping (on)</label><?php } ?>
 				<button type="submit" class="ui primary button"><i class="upload icon"></i> Import</button>
 			</form>
 		</div>
@@ -681,6 +696,7 @@
 					<input type="hidden" name="action" value="bulkaddavicenna">
 					<input type="hidden" name="projectid" value="<?= $projectid ?>">
 					<input type="hidden" name="createinstruments" id="bulkCreateInstrumentsHidden" value="">
+					<input type="hidden" name="replaceexisting" id="bulkReplaceExistingHidden" value="">
 					<div class="ui form">
 						<div class="field">
 							<table class="ui compact celled table">
@@ -750,6 +766,15 @@
 							</div>
 							<div style="color:#666;font-size:0.85em;margin-top:0.25em">
 								When checked, missing instruments and instrument items are created (rather than reported as errors), and the item's datatype (<code>item_type</code>) is set/updated from <code>avicennadatatype</code>.
+							</div>
+						</div>
+						<div class="field">
+							<div class="ui checkbox">
+								<input type="checkbox" id="bulkReplaceExisting" value="1">
+								<label style="color:darkred;font-weight:bold">Replace existing mapping</label>
+							</div>
+							<div style="color:darkred;font-size:0.85em;margin-top:0.25em">
+								<i class="exclamation triangle icon"></i> <b>Warning:</b> this will <b>erase all existing Avicenna mappings for this project</b> before importing, replacing them with the mappings from the CSV above. Instruments and instrument items are not affected (they may be shared by other projects). This cannot be undone.
 							</div>
 						</div>
 					</div>
@@ -1315,9 +1340,16 @@
 			errDiv.style.display = errors.length ? 'block' : 'none';
 
 			if (warnings.length === 0 || confirm(warnings.join('\n') + '\n\nContinue anyway?')) {
-				// Sync the (UI-only) checkbox state into the hidden field that actually gets POSTed
+				// Sync the (UI-only) checkbox state into the hidden fields that actually get POSTed
 				document.getElementById('bulkCreateInstrumentsHidden').value =
 					document.getElementById('bulkCreateInstruments').checked ? '1' : '';
+				const replaceExisting = document.getElementById('bulkReplaceExisting').checked;
+				document.getElementById('bulkReplaceExistingHidden').value = replaceExisting ? '1' : '';
+
+				// Replacing is destructive - require an explicit confirmation
+				if (replaceExisting && !confirm('This will ERASE all existing Avicenna mappings for this project and replace them with the CSV above.\n\nInstruments and instrument items are not affected. This cannot be undone.\n\nContinue?')) {
+					return;
+				}
 				document.getElementById('bulkForm').submit();
 			}
 		}

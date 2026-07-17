@@ -434,7 +434,19 @@
 							<a class="ui mini basic button" onclick="$('#bulk-add-area').toggle()"><i class="list icon"></i> Bulk add</a>
 							<span id="itemSelectionToolbar" style="display:none;margin-left:10px">
 								<span id="itemSelectionLabel" style="font-size:0.85em;color:#555;margin-right:8px"></span>
-								<button class="ui mini red basic button" onclick="deleteSelectedItems()"><i class="trash icon"></i> Delete</button>
+								<div class="ui mini action input">
+									<select id="bulkTypeSelect" class="ui dropdown">
+										<option value="string">String</option>
+										<option value="int">Int</option>
+										<option value="double">Double</option>
+										<option value="enum">Enum</option>
+										<option value="timeseries">Timeseries</option>
+										<option value="image">Image</option>
+										<option value="csv">CSV</option>
+									</select>
+									<button class="ui basic button" onclick="changeSelectedItemsType()"><i class="edit icon"></i> Change type</button>
+								</div>
+								<button class="ui mini red basic button" onclick="deleteSelectedItems()" style="margin-left:8px"><i class="trash icon"></i> Delete</button>
 							</span>
 							<div id="bulk-add-area" style="display:none; margin-top:6px">
 								<form method="post" action="instruments.php" class="ui mini form">
@@ -566,6 +578,26 @@
 							updateItemSelectionToolbar();
 						} else {
 							alert('Delete failed: ' + (res.error || 'unknown error'));
+						}
+					});
+			}
+
+			function changeSelectedItemsType() {
+				const rows = itemGrid.getSelectedRows();
+				if (rows.length === 0) return;
+				const type  = document.getElementById('bulkTypeSelect').value;
+				const label = typeLabels[type] ?? type;
+				if (!confirm('Change type of ' + rows.length + ' item' + (rows.length !== 1 ? 's' : '') + ' to "' + label + '"?')) return;
+				const ids = rows.map(r => r.id);
+				fetch('ajaxapi.php?action=bulkupdateitemtype&ids=' + encodeURIComponent(JSON.stringify(ids)) + '&type=' + encodeURIComponent(type))
+					.then(r => r.json())
+					.then(res => {
+						if (res.ok) {
+							rows.forEach(r => r.type = type);
+							itemGrid.applyTransaction({ update: rows });
+							updateItemSelectionToolbar();
+						} else {
+							alert('Change type failed: ' + (res.error || 'unknown error'));
 						}
 					});
 			}

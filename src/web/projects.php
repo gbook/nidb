@@ -3271,133 +3271,248 @@
 	}
 
 	/* -------------------------------------------- */
+	/* ------- RenderProjectRow ------------------- */
+	/* -------------------------------------------- */
+	/* renders a single project's <tr> for the project list tables */
+	function RenderProjectRow($p) {
+		if ($p['hasaccess']) {
+			?>
+			<tr valign="top" data-search="<?=$p['search']?>">
+				<td>
+					<b><a href="projects.php?id=<?=$p['id']?>"><?=$p['name']?></a></b>
+					<? if ($p['favorite']) { ?>
+					<a href="projects.php?action=unsetfavorite&id=<?=$p['id']?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
+					<? } else { ?>
+					<a href="projects.php?action=setfavorite&id=<?=$p['id']?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
+					<? } ?>
+				</td>
+				<td><?=$p['projectuid']?></td>
+				<td><?=$p['costcenter']?></td>
+				<td><?=$p['adminfullname']?></td>
+				<td><?=$p['pifullname']?></td>
+				<td align="left" title="<?=$p['studydetail']?>"><?=$p['totalstudies']?></td>
+			</tr>
+			<?
+		}
+		else {
+			?>
+			<tr data-search="<?=$p['search']?>">
+				<td style="color: #999; padding-left: 20px">No access to <b><?=$p['name']?></b></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+				<td></td>
+			</tr>
+			<?
+		}
+	}
+
+	/* -------------------------------------------- */
 	/* ------- DisplayProjectList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
-		
-		?>
-			
-		<!--<p id="msg" style="color: #0A0; text-align: center;">&nbsp;</p>-->
 
-		<table class="ui celled selectable grey table" id="projecttable">
-			<thead>
-				<th data-sort="string-ins">Name &nbsp; 
-					<div class="ui icon input">
-						<input id="projectnamefilter" type="text" placeholder="Filter by project name"/>
-						<i class="search icon"></i>
-					</div>
+		/* gather all active projects for this instance once, then render into two tabs */
+		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$projects = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$id = $row['project_id'];
+			$name = $row['project_name'];
+			$adminfullname = $row['adminfullname'];
+			$pifullname = $row['pifullname'];
+			$projectuid = $row['project_uid'];
+			$costcenter = $row['project_costcenter'];
 
-					<script type="text/javascript">
-						function filterTable(event) {
-							var filter = event.target.value.toUpperCase();
-							var rows = document.querySelector("#projecttable tbody").rows;
-							
-							for (var i = 0; i < rows.length; i++) {
-								var firstCol = rows[i].cells[0].textContent.toUpperCase();
-								var secondCol = rows[i].cells[1].textContent.toUpperCase();
-								if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-									rows[i].style.display = "";
-								} else {
-									rows[i].style.display = "none";
-								}      
-							}
-						}
+			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
+			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
+			$view_data = $rowA['view_data'] ?? '';
+			$favorite = $rowA['favorite'] ?? '';
 
-						document.querySelector('#projectnamefilter').addEventListener('keyup', filterTable, false);
-					</script>
-				</th>
-				<th data-sort="string-ins">UID</th>
-				<th data-sort="string-ins">Cost Center</th>
-				<th data-sort="string-ins">Admin</th>
-				<th data-sort="string-ins">PI</th>
-				<th data-sort="int">Studies</th>
-			</thead>
-			<tbody>
-				<?
-					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$id = $row['project_id'];
-						$name = $row['project_name'];
-						$adminusername = $row['adminusername'];
-						$adminfullname = $row['adminfullname'];
-						$piusername = $row['piusername'];
-						$pifullname = $row['pifullname'];
-						$projectuid = $row['project_uid'];
-						$costcenter = $row['project_costcenter'];
+			$totalstudies = 0;
+			$totalsize = 0.0;
+			$studydetail = "";
+			if ($view_data) {
+				$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
+				$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+					$modality = $row2['study_modality'];
+					$count = $row2['count'];
 
-						$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$view_data = $rowA['view_data'];
-						$view_phi = $rowA['view_phi'];
-						$favorite = $rowA['favorite'];
-						
-						if ($view_data) {
-							?>
-							<tr valign="top">
-								<td>
-									<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
-									<? if ($favorite) { ?>
-									<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-									<? } else { ?>
-									<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-									<? } ?>
-									
-								</td>
-								<td><?=$projectuid?></td>
-								<td><?=$costcenter?></td>
-								<td><?=$adminfullname?></td>
-								<td><?=$pifullname?></td>
-								<?
-								$totalstudies = 0;
-								$totalsize = 0.0;
-								$studydetail = "";
-								$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-								$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-								while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-									$modality = $row2['study_modality'];
-									$count = $row2['count'];
-									
-									$projectModalitySize = 0;
-									if (IsNiDBModality($modality)) {
-										if ($modality != "") {
-											$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-											$projectModalitySize = $row3['modalitysize'];
-										}
-									}
-									
-									$totalstudies += $count;
-									$totalsize += $projectModalitySize;
-									
-									if ($modality == "") { $modality = "(blank)"; }
-									
-									$studydetail .= "<li><b>$modality</b> - $count";
-								}
-								$studydetail = "<ul>$studydetail<ul>";
-								?>
-								<td align="left" title="<?=$studydetail?>">
-									<?=$totalstudies?>
-								</td>
-							</tr>
-							<?
-						}
-						else {
-						?>
-							<tr>
-								<td style="color: #999; padding-left: 20px">No access to <b><?=$name?></b></td>
-								<td></td>
-								<td></td>
-								<td></td>
-								<td></td>
-								<td></td>
-							</tr>
-						<?
+					$projectModalitySize = 0;
+					if (IsNiDBModality($modality)) {
+						if ($modality != "") {
+							$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
+							$projectModalitySize = $row3['modalitysize'] ?? 0;
 						}
 					}
-				?>
-			</tbody>
-		</table>
+
+					$totalstudies += $count;
+					$totalsize += $projectModalitySize;
+
+					if ($modality == "") { $modality = "(blank)"; }
+
+					$studydetail .= "<li><b>$modality</b> - $count";
+				}
+				$studydetail = "<ul>$studydetail<ul>";
+			}
+
+			/* count of active subjects (only needed for the favorites list) */
+			$subjectcount = 0;
+			if ($favorite) {
+				$sqlstringF = "select count(distinct c.subject_id) 'numsubj' from enrollment b left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1";
+				$resultF = MySQLiQuery($sqlstringF, __FILE__, __LINE__);
+				$rowF = mysqli_fetch_array($resultF, MYSQLI_ASSOC);
+				$subjectcount = $rowF['numsubj'] ?? 0;
+			}
+
+			/* searchable text: accessible rows expose all columns, no-access rows expose the name only (all that's shown) */
+			if ($view_data)
+				$search = htmlspecialchars(strtolower(trim("$name $projectuid $costcenter $adminfullname $pifullname")));
+			else
+				$search = htmlspecialchars(strtolower(trim($name)));
+
+			$projects[] = array(
+				'id' => $id,
+				'name' => $name,
+				'projectuid' => $projectuid,
+				'costcenter' => $costcenter,
+				'adminfullname' => $adminfullname,
+				'pifullname' => $pifullname,
+				'favorite' => $favorite,
+				'hasaccess' => (bool)$view_data,
+				'totalstudies' => $totalstudies,
+				'studydetail' => $studydetail,
+				'subjectcount' => $subjectcount,
+				'search' => $search,
+			);
+		}
+
+		$countMine = 0;
+		foreach ($projects as $p) { if ($p['hasaccess']) $countMine++; }
+		$countAll = count($projects);
+		?>
+
+		<script>
+			$(document).ready(function() {
+				$('.menu .item').tab();
+				$('.tabular.menu .item').tab();
+			});
+
+			function filterProjects() {
+				var term = document.getElementById('projectSearch').value.toLowerCase().trim();
+				var tabs = [
+					{ tableId: 'table-mine', badgeId: 'badge-mine' },
+					{ tableId: 'table-all',  badgeId: 'badge-all'  },
+				];
+				tabs.forEach(function(tab) {
+					var table = document.getElementById(tab.tableId);
+					var rows  = table.querySelectorAll('tbody tr');
+					var count = 0;
+					rows.forEach(function(row) {
+						if (term === '') {
+							row.style.display = '';
+						} else {
+							var s = (row.dataset.search || '');
+							var match = s.indexOf(term) !== -1;
+							row.style.display = match ? '' : 'none';
+							if (match) count++;
+						}
+					});
+					var badge = document.getElementById(tab.badgeId);
+					if (term === '') {
+						badge.style.display = 'none';
+					} else {
+						badge.className    = count > 0 ? 'ui red label' : 'ui grey label';
+						badge.textContent  = count;
+						badge.style.display = '';
+					}
+				});
+			}
+		</script>
+
+		<?
+			/* favorite projects list */
+			$favorites = array();
+			foreach ($projects as $p) { if ($p['favorite']) $favorites[] = $p; }
+			if (count($favorites) > 0) {
+		?>
+		<div class="ui segment" style="margin-bottom:16px">
+			<h4 class="ui header" style="margin-bottom:10px"><i class="yellow star icon"></i>Favorite projects</h4>
+			<table class="ui very basic compact collapsing table">
+				<thead>
+					<th>Project</th>
+					<th class="right aligned">Subjects</th>
+				</thead>
+				<tbody>
+					<? foreach ($favorites as $p) { ?>
+					<tr>
+						<td><a href="projects.php?id=<?=$p['id']?>"><?=$p['name']?></a></td>
+						<td class="right aligned"><?=$p['subjectcount']?></td>
+					</tr>
+					<? } ?>
+				</tbody>
+			</table>
+		</div>
+		<? } ?>
+
+		<div class="ui top attached tabular menu large">
+			<a class="item active" data-tab="mine">My Projects &nbsp;<span class="ui label"><?=$countMine?></span> <span id="badge-mine" class="ui label" style="display:none"></span></a>
+			<a class="item" data-tab="all">All Projects &nbsp;<span class="ui label"><?=$countAll?></span> <span id="badge-all" class="ui label" style="display:none"></span></a>
+			<div class="right menu">
+				<div class="item">
+					<div class="ui icon input" style="width:360px">
+						<input type="text" id="projectSearch" oninput="filterProjects()" placeholder="Search"/>
+						<i class="search icon"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="ui bottom attached tab segment active" data-tab="mine">
+			<table id="table-mine" class="ui celled selectable grey table" data-sortable>
+				<thead>
+					<th data-sort="string-ins">Name</th>
+					<th data-sort="string-ins">UID</th>
+					<th data-sort="string-ins">Cost Center</th>
+					<th data-sort="string-ins">Admin</th>
+					<th data-sort="string-ins">PI</th>
+					<th data-sort="int">Studies</th>
+				</thead>
+				<tbody>
+					<?
+						foreach ($projects as $p) {
+							if ($p['hasaccess']) RenderProjectRow($p);
+						}
+						if ($countMine == 0) {
+							?><tr><td colspan="6" style="color:#999; text-align:center; padding:20px">You do not have access to any projects in this instance.</td></tr><?
+						}
+					?>
+				</tbody>
+			</table>
+		</div>
+
+		<div class="ui bottom attached tab segment" data-tab="all">
+			<table id="table-all" class="ui celled selectable grey table" data-sortable>
+				<thead>
+					<th data-sort="string-ins">Name</th>
+					<th data-sort="string-ins">UID</th>
+					<th data-sort="string-ins">Cost Center</th>
+					<th data-sort="string-ins">Admin</th>
+					<th data-sort="string-ins">PI</th>
+					<th data-sort="int">Studies</th>
+				</thead>
+				<tbody>
+					<?
+						foreach ($projects as $p) {
+							RenderProjectRow($p);
+						}
+					?>
+				</tbody>
+			</table>
+		</div>
 		<?
 	}
 

@@ -230,6 +230,9 @@
 		case 'bulkdeleteitems':
 			BulkDeleteItems(GetVariable('ids'));
 			break;
+		case 'bulkupdateitemtype':
+			BulkUpdateItemType(GetVariable('ids'), GetVariable('type'));
+			break;
 	}
 	
 
@@ -2146,6 +2149,26 @@
 			$deleted++;
 		}
 		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	function BulkUpdateItemType($idsJson, $type) {
+		JsonHeader();
+		$allowed = ['string', 'int', 'double', 'enum', 'timeseries', 'image', 'csv'];
+		if (!in_array($type, $allowed, true)) { echo json_encode(['ok' => false, 'error' => 'Invalid type']); return; }
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$updated = 0;
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE instrument_items SET item_type = ? WHERE instrumentitem_id = ?");
+			mysqli_stmt_bind_param($stmt, 'si', $type, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$updated++;
+		}
+		echo json_encode(['ok' => true, 'updated' => $updated]);
 	}
 
 
