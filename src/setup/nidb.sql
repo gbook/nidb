@@ -2940,6 +2940,8 @@ CREATE TABLE `saved_search` (
   `search_pipelineid` int(11) DEFAULT NULL,
   `search_pipelineresultname` longtext DEFAULT NULL,
   `search_pipelineseries` longtext DEFAULT NULL,
+  `search_observationname` longtext DEFAULT NULL,
+  `search_includeallobservations` tinyint(1) DEFAULT NULL,
   `search_measurename` longtext DEFAULT NULL,
   `search_includeallmeasures` tinyint(1) DEFAULT NULL,
   `search_vitalname` longtext DEFAULT NULL,
