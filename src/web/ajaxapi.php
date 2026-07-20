@@ -173,6 +173,12 @@
 		case 'getchecklisttimeseries':
 			GetChecklistTimeseries(GetVariable("enrollmentid"), GetVariable("instrumentitemid"), GetVariable("tstart"), GetVariable("tend"), GetVariable("maxpoints"));
 			break;
+		case 'setmissingreason':
+			ChecklistSetMissingReason(GetVariable("enrollmentid"), GetVariable("projectchecklistid"), GetVariable("reason"));
+			break;
+		case 'deletemissingreason':
+			ChecklistDeleteMissingReason(GetVariable("missingdataid"));
+			break;
 		case 'bulkupdateobservations':
 			BulkUpdateObservations($observationids, $column, $value, $tz_offset);
 			break;
@@ -2237,6 +2243,43 @@
 			$deleted++;
 		}
 		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	/* insert/update a missing-data reason for the imaging checklist; returns the row so the
+	   client can update the ag-grid cell in place. */
+	function ChecklistSetMissingReason($enrollmentid, $projectchecklistid, $reason) {
+		JsonHeader();
+		$enrollmentid       = (int)$enrollmentid;
+		$projectchecklistid = (int)$projectchecklistid;
+		$reason             = trim($reason);
+		if ($enrollmentid < 1 || $projectchecklistid < 1) { echo json_encode(['ok' => false, 'error' => 'Invalid parameters']); return; }
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into enrollment_missingdata (enrollment_id, projectchecklist_id, missing_reason, missingreason_date) values (?, ?, ?, now()) on duplicate key update missing_reason = ?, missingreason_date = now()");
+		mysqli_stmt_bind_param($stmt, 'iiss', $enrollmentid, $projectchecklistid, $reason, $reason);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select missingdata_id, missing_reason, missingreason_date from enrollment_missingdata where enrollment_id = ? and projectchecklist_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $projectchecklistid);
+		$res = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($res, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		echo json_encode(['ok' => true, 'missingdataid' => (int)($row['missingdata_id'] ?? 0), 'reason' => $row['missing_reason'] ?? '', 'date' => $row['missingreason_date'] ?? '']);
+	}
+
+
+	/* delete a missing-data reason (imaging checklist) */
+	function ChecklistDeleteMissingReason($missingdataid) {
+		JsonHeader();
+		$missingdataid = (int)$missingdataid;
+		if ($missingdataid < 1) { echo json_encode(['ok' => false, 'error' => 'Invalid ID']); return; }
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from enrollment_missingdata where missingdata_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $missingdataid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		echo json_encode(['ok' => true]);
 	}
 
 
