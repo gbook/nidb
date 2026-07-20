@@ -89,7 +89,12 @@
 			//echo $tablename;
 			$parts = explode("_", $tablename);
 			$modality = $parts[0];
-			
+
+			/* ignore deprecated* tables (e.g. deprecated_mr_series). They are not present on all
+			   instances, and $parts[0] would otherwise build a non-existent "deprecated_series". */
+			if (strpos($tablename, 'deprecated') === 0)
+				continue;
+
 			if (($modality != 'audit') && ($modality != 'upload') && ($modality != 'package')) {
 				$sqlstring2 = "select count(*) 'count', sum(series_size) 'size' from $modality" . "_series";
 				$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
