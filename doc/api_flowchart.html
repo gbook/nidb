@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NiDB API Flowchart</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  body { font-family: sans-serif; background: #f5f5f5; padding: 2rem; }
+  h1   { font-size: 1.4rem; color: #333; margin-bottom: 1.5rem; }
+  .diagram-wrap { background: #fff; border-radius: 8px; padding: 2rem;
+                  box-shadow: 0 2px 8px rgba(0,0,0,.1); overflow-x: auto; }
+</style>
+</head>
+<body>
+<h1>NiDB API &mdash; Client / Server Flow</h1>
+<div class="diagram-wrap">
+<pre class="mermaid">
+sequenceDiagram
+    autonumber
+    participant C  as Client
+    participant AP as api.php
+    participant DB as MySQL DB
+
+    rect rgb(235, 245, 255)
+        Note over C,AP: Every request — pre-flight checks
+        C->>AP: POST /api.php  { action, ... }
+        AP->>AP: Reject if not HTTPS
+        AP->>AP: Reject if not POST
+        AP->>AP: Reject if action not in allowlist
+    end
+
+    alt action = Authenticate
+        rect rgb(230, 255, 235)
+            Note over C,DB: Authentication &amp; session creation
+            C->>AP: user, token
+            AP->>AP: Reject if user or token missing
+            AP->>DB: SELECT apiuser_id, credential, is_active<br/>FROM api_users WHERE username = ?
+            DB-->>AP: user row  (or not found)
+            AP->>AP: password_verify(token, hash)<br/>always runs — prevents timing attacks
+            AP-->>C: 401 Authentication failed<br/>(bad credentials or inactive user)
+            AP->>DB: DELETE expired sessions for this user<br/>(idle &gt; 10 min — lazy cleanup)
+            AP->>DB: COUNT active sessions for this user
+            DB-->>AP: active session count
+            AP-->>C: 429 Max concurrent sessions reached<br/>(if count ≥ 2)
+            AP->>AP: generateSessionId()<br/>128 random alphanumeric chars
+            AP->>DB: INSERT api_sessions<br/>( SHA-256(sessionID), ip_address, timestamps )
+            AP->>DB: UPDATE api_users<br/>SET login_count+1, last_access=NOW()
+            AP-->>C: 200 { sessionID: "&lt;128-char string&gt;" }
+        end
+
+    else action requires sessionID
+        rect rgb(255, 248, 225)
+            Note over C,DB: Session validation — runs for all remaining actions
+            C->>AP: sessionID  (+ action-specific params)
+            AP->>AP: Reject if sessionID missing or<br/>not exactly 128 alphanumeric chars
+            AP->>DB: SELECT session WHERE<br/>session_hash = SHA-256(sessionID)<br/>AND is_active = 1<br/>AND last_access &gt; NOW() - 10 min
+            DB-->>AP: session row  (or not found)
+            AP-->>C: 401 Invalid or expired session
+            AP->>DB: UPDATE api_sessions<br/>SET last_access = NOW()
+        end
+
+        alt action = StartTransaction
+            rect rgb(245, 235, 255)
+                AP->>DB: Create transaction record
+                DB-->>AP: transactionID
+                AP-->>C: 200 { transactionID: "..." }
+            end
+
+        else action = ImportObject
+            rect rgb(245, 235, 255)
+                C->>AP: squirrelObject  [FILE]
+                AP->>AP: Reject if extension ≠ .sqrl
+                AP->>AP: Reject if size &gt; 512 MB
+                AP->>AP: Reject if MIME type not in allowlist
+                AP->>DB: Process .sqrl file contents
+                DB-->>AP: per-object results
+                AP-->>C: 200 { results: [ { ... }, ... ] }
+            end
+
+        else action = EndTransaction
+            rect rgb(245, 235, 255)
+                AP->>DB: Commit / rollback transaction
+                DB-->>AP: ok
+                AP-->>C: 200 Transaction ended
+            end
+
+        else action = GetProjectList
+            rect rgb(245, 235, 255)
+                AP->>DB: SELECT projectID, projectName<br/>for this user
+                DB-->>AP: project rows
+                AP-->>C: 200 { projects: [ { ... }, ... ] }
+            end
+
+        else action = GetAcceptedObjects
+            rect rgb(245, 235, 255)
+                AP->>DB: SELECT accepted object types
+                DB-->>AP: object type list
+                AP-->>C: 200 { objectTypes: [ ... ] }
+            end
+        end
+    end
+</pre>
+</div>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'default', sequence: { actorMargin: 80, width: 200 } });</script>
+</body>
+</html>

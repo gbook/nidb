@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 17, 2026 at 03:44 PM
+-- Generation Time: Jul 20, 2026 at 08:59 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -879,7 +879,7 @@ CREATE TABLE `enrollment` (
   `enroll_status` enum('consented','enrolled','completed','excluded','') NOT NULL DEFAULT '',
   `irb_consent` blob DEFAULT NULL COMMENT 'scanned image of the IRB consent form',
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -1111,7 +1111,7 @@ CREATE TABLE `families` (
   `family_name` varchar(255) DEFAULT NULL,
   `family_isactive` tinyint(1) NOT NULL DEFAULT 1,
   `family_lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
@@ -2000,7 +2000,7 @@ CREATE TABLE `observation_meta` (
   `observation_id` bigint(20) NOT NULL,
   `variable` tinytext NOT NULL COMMENT 'variable name from imported source',
   `value` text NOT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='Meta data from imported sources';
 
 -- --------------------------------------------------------
 
@@ -2472,7 +2472,7 @@ CREATE TABLE `projects` (
   `redcapid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
   `redcapnidbid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
   `xnat_hostname` text DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='System can have multiple projects. There must be 1 project a' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC COMMENT='System can have multiple projects. There must be 1 project a';
 
 -- --------------------------------------------------------
 
@@ -2592,7 +2592,7 @@ CREATE TABLE `protocol_group` (
   `protocolgroup_id` int(11) NOT NULL,
   `protocolgroup_name` varchar(50) NOT NULL,
   `protocolgroup_modality` varchar(40) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='specifies the protocol group name and modality' ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC COMMENT='specifies the protocol group name and modality';
 
 -- --------------------------------------------------------
 
@@ -2940,8 +2940,6 @@ CREATE TABLE `saved_search` (
   `search_pipelineid` int(11) DEFAULT NULL,
   `search_pipelineresultname` longtext DEFAULT NULL,
   `search_pipelineseries` longtext DEFAULT NULL,
-  `search_observationname` longtext DEFAULT NULL,
-  `search_includeallobservations` tinyint(1) DEFAULT NULL,
   `search_measurename` longtext DEFAULT NULL,
   `search_includeallmeasures` tinyint(1) DEFAULT NULL,
   `search_vitalname` longtext DEFAULT NULL,
@@ -2964,7 +2962,9 @@ CREATE TABLE `saved_search` (
   `search_includeheightweight` tinyint(1) DEFAULT NULL,
   `search_includedob` tinyint(1) DEFAULT NULL,
   `search_reportformat` varchar(50) DEFAULT NULL,
-  `search_outputformat` varchar(50) DEFAULT NULL
+  `search_outputformat` varchar(50) DEFAULT NULL,
+  `search_observationname` longtext DEFAULT NULL,
+  `search_includeallobservations` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
