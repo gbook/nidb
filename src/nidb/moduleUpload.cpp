@@ -32,8 +32,8 @@ moduleUpload::moduleUpload(nidb *a)
     //io = new archiveIO(n);
     //img = new imageIO(n);
 
-    io = std::make_unique<archiveIO>();
-    img = std::make_unique<imageIO>();
+    io = std::make_unique<archiveIO>(n);
+    img = std::make_unique<imageIO>(n);
 }
 
 
@@ -61,12 +61,15 @@ int moduleUpload::Run() {
 
     /* parse any uploads */
     ret |= ReadUploads();
+    n->Log(QString("Finished ReadUploads() ret [%1]").arg(ret));
 
     /* archive any uploads */
     ret |= ArchiveSelectedFiles();
+    n->Log(QString("Finished ArchiveSelectedFiles() ret [%1]").arg(ret));
 
     /* archive any squirrel */
     ret |= ArchiveSelectedSquirrel();
+    n->Log(QString("Finished ArchiveSelectedSquirrel() ret [%1]").arg(ret));
 
     n->Log("Leaving the upload module");
     return ret;
@@ -86,6 +89,8 @@ bool moduleUpload::ReadUploads() {
     QSqlQuery q;
     bool ret(false);
 
+    n->Log("Checkpoint A");
+
     /* get list of uploads that are marked as uploadcomplete, with the upload details */
     q.prepare("select * from uploads where upload_status = 'uploadcomplete'");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -94,6 +99,7 @@ bool moduleUpload::ReadUploads() {
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+            n->Log("Checkpoint B");
 
             ret = 1;
             int uploadRowID = q.value("upload_id").toInt();
@@ -111,6 +117,7 @@ bool moduleUpload::ReadUploads() {
 
             /* update the status */
             SetUploadStatus(uploadRowID, "parsing", 0.0);
+            n->Log("Checkpoint C");
 
             /* create the path for the upload data */
             QString uploadstagingpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(uploadRowID);
@@ -153,11 +160,13 @@ bool moduleUpload::ReadUploads() {
 
                 continue;
             }
+            n->Log("Checkpoint D");
 
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
             io->AppendUploadLog(QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
             QString systemstring = QString("rsync -a --stats %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
             io->AppendUploadLog(SystemCommand(systemstring, true, true));
+            n->Log("Checkpoint E");
 
             /* remove the uploadtmp directory, if it was uploaded from the web */
             if (upload_source == "web") {
