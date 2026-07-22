@@ -354,6 +354,22 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DisplaySlurmCommand --------------- */
+	/* -------------------------------------------- */
+	/* renders the command(s) used to populate a tab, at the top of the block */
+	function DisplaySlurmCommand($cmds) {
+		if (!is_array($cmds)) $cmds = array($cmds);
+		?>
+		<div class="slurm-cmd" style="margin:0 0 10px 0; background:#f7f7f7; border-left:3px solid #2185d0; padding:6px 10px; font-family:monospace; font-size:.85em; overflow-x:auto; white-space:nowrap">
+			<? foreach ($cmds as $c) { ?>
+				<div><i class="terminal icon" style="color:#2185d0"></i> <?=htmlspecialchars($c)?></div>
+			<? } ?>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplaySlurmTabs ------------------- */
 	/* -------------------------------------------- */
 	function DisplaySlurmTabs($activetab) {
@@ -414,7 +430,9 @@
 	/* ------- DisplaySlurmJobs ------------------- */
 	/* -------------------------------------------- */
 	function DisplaySlurmJobs($cluster) {
-		$output = SlurmSSH($cluster, 'squeue --all');
+		$cmd = 'squeue --all';
+		DisplaySlurmCommand($cmd);
+		$output = SlurmSSH($cluster, $cmd);
 		?>
 		<div class="ui fluid basic segment" style="padding:0">
 			<div class="ui styled segment" style="font-family:monospace; white-space:pre; overflow-x:auto"><?=htmlspecialchars($output)?></div>
@@ -428,10 +446,14 @@
 	/* -------------------------------------------- */
 	function DisplaySlurmNodes($cluster) {
 		/* fetch CPU/state/load/memory and GRES in two passes, keyed by node name */
-		$raw = SlurmSSH($cluster, 'sinfo -N --format="%N|%T|%O|%C|%m" --noheader');
+		$cmdMain = 'sinfo -N --format="%N|%T|%O|%C|%m" --noheader';
+		$cmdGres = 'sinfo -N --format="%N|%G" --noheader';
+		DisplaySlurmCommand(array($cmdMain, $cmdGres));
+
+		$raw = SlurmSSH($cluster, $cmdMain);
 		$lines = array_filter(array_map('trim', explode("\n", $raw)));
 
-		$rawGres = SlurmSSH($cluster, 'sinfo -N --format="%N|%G" --noheader');
+		$rawGres = SlurmSSH($cluster, $cmdGres);
 		$gresMap = [];
 		foreach (array_filter(array_map('trim', explode("\n", $rawGres))) as $gl) {
 			$gp = explode('|', $gl, 2);
@@ -526,7 +548,9 @@
 	/* -------------------------------------------- */
 	function DisplaySlurmPartitions($cluster) {
 		/* sinfo -s gives partition summary: PARTITION AVAIL TIMELIMIT NODES(A/I/O/T) NODELIST */
-		$raw = SlurmSSH($cluster, 'sinfo -s --format="%P|%a|%l|%C" --noheader');
+		$cmd = 'sinfo -s --format="%P|%a|%l|%C" --noheader';
+		DisplaySlurmCommand($cmd);
+		$raw = SlurmSSH($cluster, $cmd);
 		$lines = array_filter(array_map('trim', explode("\n", $raw)));
 
 		$usedcolor   = "FF4500";
@@ -582,9 +606,13 @@
 	/* -------------------------------------------- */
 	function DisplaySlurmSummary($cluster) {
 		/* node counts by state from sinfo -s */
-		$rawInfo = SlurmSSH($cluster, 'sinfo -s --format="%P|%a|%D|%T" --noheader');
+		$cmdInfo  = 'sinfo -s --format="%P|%a|%D|%T" --noheader';
 		/* job counts by state */
-		$rawQueue = SlurmSSH($cluster, 'squeue -a --format="%T" --noheader');
+		$cmdQueue = 'squeue -a --format="%T" --noheader';
+		DisplaySlurmCommand(array($cmdInfo, $cmdQueue));
+
+		$rawInfo  = SlurmSSH($cluster, $cmdInfo);
+		$rawQueue = SlurmSSH($cluster, $cmdQueue);
 
 		/* tally jobs by state */
 		$jobCounts = [];
@@ -618,40 +646,26 @@
 		$otherNodes     = array_sum(array_column($partRows, 'other'));
 		?>
 
-		<!-- job state stat cards -->
-		<div class="ui three statistics" style="margin-bottom:20px">
-			<div class="<?=$running>0?'green':''?> statistic">
-				<div class="value"><?=$running?></div>
-				<div class="label">Running jobs</div>
-			</div>
-			<div class="<?=$pending>0?'yellow':''?> statistic">
-				<div class="value"><?=$pending?></div>
-				<div class="label">Pending jobs</div>
-			</div>
-			<div class="statistic">
-				<div class="value"><?=$other?></div>
-				<div class="label">Other jobs</div>
-			</div>
+		<!-- job summary -->
+		<h4 class="ui dividing header">Jobs</h4>
+		<div style="margin-bottom:18px; line-height:1.9">
+			<b style="<?=$running>0?'color:#21ba45':''?>"><?=$running?></b> running
+			&nbsp;&middot;&nbsp;
+			<b style="<?=$pending>0?'color:#f2711c':''?>"><?=$pending?></b> pending
+			&nbsp;&middot;&nbsp;
+			<b><?=$other?></b> other
 		</div>
 
-		<!-- node state stat cards -->
-		<div class="ui four statistics" style="margin-bottom:20px">
-			<div class="statistic">
-				<div class="value"><?=$totalNodes?></div>
-				<div class="label">Total nodes</div>
-			</div>
-			<div class="<?=$allocatedNodes>0?'orange':''?> statistic">
-				<div class="value"><?=$allocatedNodes?></div>
-				<div class="label">Allocated</div>
-			</div>
-			<div class="<?=$idleNodes>0?'green':''?> statistic">
-				<div class="value"><?=$idleNodes?></div>
-				<div class="label">Idle</div>
-			</div>
-			<div class="<?=$otherNodes>0?'red':''?> statistic">
-				<div class="value"><?=$otherNodes?></div>
-				<div class="label">Other / down</div>
-			</div>
+		<!-- node summary -->
+		<h4 class="ui dividing header">Nodes</h4>
+		<div style="margin-bottom:18px; line-height:1.9">
+			<b><?=$totalNodes?></b> total
+			&nbsp;&middot;&nbsp;
+			<b style="<?=$allocatedNodes>0?'color:#f2711c':''?>"><?=$allocatedNodes?></b> allocated
+			&nbsp;&middot;&nbsp;
+			<b style="<?=$idleNodes>0?'color:#21ba45':''?>"><?=$idleNodes?></b> idle
+			&nbsp;&middot;&nbsp;
+			<b style="<?=$otherNodes>0?'color:#db2828':''?>"><?=$otherNodes?></b> other / down
 		</div>
 
 		<!-- per-partition node breakdown -->
@@ -691,10 +705,10 @@
 	/* -------------------------------------------- */
 	function DisplaySlurmHistory($cluster) {
 		$start = date('Y-m-dT00:00:00', strtotime('-24 hours'));
-		$raw   = SlurmSSH($cluster,
-			'sacct -X --starttime=' . $start .
-			' --format=JobID,JobName%30,User%15,Partition%15,State%12,Elapsed,CPUTime,NodeList%20 --noheader --parsable2'
-		);
+		$cmd   = 'sacct -X -a --starttime=' . $start .
+			' --format=JobID,JobName%30,User%15,Partition%15,State%12,Elapsed,CPUTime,NodeList%20 --noheader --parsable2';
+		DisplaySlurmCommand($cmd);
+		$raw   = SlurmSSH($cluster, $cmd);
 		$lines = array_filter(array_map('trim', explode("\n", $raw)));
 
 		$stateColors = [
