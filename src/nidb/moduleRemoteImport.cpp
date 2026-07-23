@@ -1142,7 +1142,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         }
     }
     else {
-        RemoteImportLog(remoteImportBatchRowID, FileEvent, "Error parsing the csv", Error);
+        RemoteImportLog(remoteImportBatchRowID, FileEvent, QString("Error parsing the csv [%1]").arg(m), Error);
         return 0;
     }
 

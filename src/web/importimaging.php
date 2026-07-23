@@ -59,7 +59,7 @@
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
 	$uploadid = (int)GetVariable("uploadid");
-	$uploadseriesid = (int)GetVariable("uploadseriesid");
+	$uploadseriesid = GetVariable("uploadseriesid");
 	$displayall = GetVariable("displayall");
 	$datestart = GetVariable("datestart");
 	$dateend = GetVariable("dateend");
@@ -1248,60 +1248,71 @@
 	/* -------------------------------------------- */
 	function GetMatchingSeries($seriescriteria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid) {
 		//echo "GetMatchingSeries($seriescriteria, $studyid, $modality, $seriesdate, $seriesnum, $seriesuid)<br>";
-		
+
+		$matches = array();
+
 		if ($studyid == "") {
-			return;
+			return $matches;
 		}
 		if (!IsNiDBModality($modality)) {
-			return;
+			return $matches;
 		}
-			
+
 		$i = 0;
 		$modality = strtolower($modality);
-		
+		$studyid = (int)$studyid;
+
 		if ($seriescriteria == "seriesnum") {
-			/* find existing series by seriesnum */
-			if (trim($seriesnum) != "") {
-				$sqlstring = "select * from $modality" . "_series where study_id = $studyid and series_num = $seriesnum";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					//PrintVariable($row);
-					$matches[$i]['modality'] = $row['modality'];
-					$matches[$i]['seriesid'] = $row[$modality . "series_id"];
-					
-					$i++;
-				}
+			/* find existing series by seriesnum (series_num is an integer; blank/unknown is stored as 0) */
+			$seriesnum = is_numeric(trim($seriesnum)) ? (int)$seriesnum : 0;
+			$sqlstring = "select * from " . $modality . "_series where study_id = ? and series_num = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $studyid, $seriesnum);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($studyid, $seriesnum));
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				//PrintVariable($row);
+				$matches[$i]['modality'] = $row['modality'];
+				$matches[$i]['seriesid'] = $row[$modality . "series_id"];
+
+				$i++;
 			}
+			mysqli_stmt_close($stmt);
 		}
 		elseif ($seriescriteria == "seriesdate") {
 			/* find existing series by seriesdate */
 			if (trim($seriesdate) != "") {
-				$sqlstring = "select * from $modality" . "_series where study_id = $studyid and series_datetime = '$seriesdate'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from " . $modality . "_series where study_id = ? and series_datetime = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'is', $studyid, $seriesdate);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($studyid, $seriesdate));
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//PrintVariable($row);
 					$matches[$i]['modality'] = $modality;
 					$matches[$i]['seriesid'] = $row[$modality . "series_id"];
-					
+
 					$i++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		elseif ($seriescriteria == "seriesuid") {
 			/* find existing series by seriesuid (rare that someone would do this) */
 			if (trim($seriesuid) != "") {
-				$sqlstring = "select * from $modality" . "_series where study_id = $studyid and series_uid = '$seriesuid'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from " . $modality . "_series where study_id = ? and series_uid = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'is', $studyid, $seriesuid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($studyid, $seriesuid));
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					//PrintVariable($row);
 					$matches[$i]['modality'] = $modality;
 					$matches[$i]['seriesid'] = $row[$modality . "series_id"];
-					
+
 					$i++;
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
-		
+
 		return $matches;
 	}
 
