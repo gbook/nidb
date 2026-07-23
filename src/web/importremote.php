@@ -698,10 +698,10 @@
 						<th>Survey ID</th>
 						<th>Datasource</th>
 						<th>Type</th>
-						<th>URL</th>
+						<!--<th>URL</th>-->
 						<th>Schedule</th>
+						<th>Upload</th>
 						<th>Actions</th>
-						<th>Import Unmapped</th>
 						<th>Enabled</th>
 					</tr>
 				</thead>
@@ -747,8 +747,17 @@
 						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
 						<td><?= !empty($remote_datasource) ? htmlspecialchars($remote_datasource) : '-' ?></td>
 						<td><?= $typeLabel ?></td>
-						<td><?=$remote_url_display?></td>
+						<!--<td><?=$remote_url_display?></td>-->
 						<td><?=$scheduletext?></td>
+						<td style="text-align:center; min-width:170px; padding: 0px 5px">
+							<? if (($import_schedule === 'ondemand') && in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
+								<div id="remoteDropzone_<?=$importid?>" class="remoteupload-dz" data-importid="<?=$importid?>">
+									<i class="upload icon"></i> Drop .csv/.zip
+								</div>
+							<? else: ?>
+								<span style="color:#ccc">&mdash;</span>
+							<? endif; ?>
+						</td>
 						<td>
 							<div class="ui floating dropdown icon mini basic button">
 								<i class="chevron down icon"></i>
@@ -764,13 +773,6 @@
 									<? endif; ?>
 								</div>
 							</div>
-						</td>
-						<td style="text-align:center">
-							<? if ($flag_import_unmapped): ?>
-								<i class="green check circle icon" title="Import unmapped data enabled"></i>
-							<? else: ?>
-								<i class="grey minus icon" title="Import unmapped data disabled"></i>
-							<? endif; ?>
 						</td>
 						<td>
 							<?
@@ -806,6 +808,70 @@
 					}
 				}
 			?>
+
+			<?
+				/* drag-and-drop uploaders for the on-demand CSV imports. Dropzone only
+				   captures the dropped/selected file; it is injected into the matching
+				   hidden datafileUploadForm_* and submitted as a normal POST, so the
+				   server-side RunRemoteImport flow (and its messages) is unchanged. */
+				$csvImportIds = [];
+				foreach ($imports as $row) {
+					if (($row['import_schedule'] === 'ondemand') && in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource']))
+						$csvImportIds[] = (int)$row['remoteimport_id'];
+				}
+				if (!empty($csvImportIds)):
+			?>
+			<link rel="stylesheet" href="scripts/dropzone.css" type="text/css" />
+			<script src="scripts/dropzone.js"></script>
+			<style>
+				.remoteupload-dz { border:2px dashed #a3cdf2; border-radius:6px; padding:8px 10px; color:#2185d0; background:#f7fbff; cursor:pointer; font-size:.85em; line-height:1.3; min-height:0; transition:background .15s, border-color .15s; }
+				.remoteupload-dz:hover { background:#eaf4ff; border-color:#2185d0; }
+				.remoteupload-dz.dz-drag-hover { background:#d5eafd; border-color:#1678c2; }
+				.remoteupload-dz .dz-message { margin:0; }
+				.remoteupload-dz.uploading { border-style:solid; border-color:#2185d0; background:#eaf4ff; color:#2185d0; cursor:default; pointer-events:none; }
+				.remoteupload-dz.uploading .fn { word-break:break-all; }
+			</style>
+			<script>
+				Dropzone.autoDiscover = false;
+				<?=json_encode($csvImportIds)?>.forEach(function(id) {
+					var el = document.getElementById('remoteDropzone_' + id);
+					if (!el) return;
+					var dz = new Dropzone(el, {
+						url: 'importremote.php',      /* unused: the hidden form is submitted instead */
+						autoProcessQueue: false,
+						maxFiles: 1,
+						acceptedFiles: '.csv,.zip',
+						clickable: true,
+						previewsContainer: false,
+						createImageThumbnails: false
+					});
+					dz.on('addedfile', function(file) {
+						var name = (file.name || '').toLowerCase();
+						if (!name.endsWith('.csv') && !name.endsWith('.zip')) {
+							alert('Only .csv and .zip files are accepted.');
+							dz.removeAllFiles(true);
+							return;
+						}
+						try {
+							var dt = new DataTransfer();
+							dt.items.add(file);
+							document.getElementById('datafile_upload_' + id).files = dt.files;
+							/* uploading-state feedback: spinner + filename, lock the target, dim the row */
+							dz.disable();
+							el.classList.add('uploading');
+							el.innerHTML = '<i class="notched circle loading icon"></i> Uploading <span class="tiny fn"></span>&hellip;';
+							el.querySelector('.fn').textContent = file.name;
+							var tr = el.closest('tr');
+							if (tr) tr.style.opacity = '0.6';
+							document.getElementById('datafileUploadForm_' + id).submit();
+						} catch (e) {
+							alert('Your browser could not attach the dropped file. Please use Actions → Upload & Run instead.');
+							dz.removeAllFiles(true);
+						}
+					});
+				});
+			</script>
+			<? endif; ?>
 		</div>
 	<?
 	}
