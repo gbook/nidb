@@ -25,7 +25,8 @@ Project-specific conventions for working in this repo. These are loaded automati
 ## SQL
 - **Use prepared/bound statements when refactoring or writing queries** that include user input: `mysqli_prepare($GLOBALS['linki'], $sql)` + `mysqli_stmt_bind_param()` + `MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, $params)`. Use `MySQLiQuery($sql, __FILE__, __LINE__)` for parameter-less queries.
 - `SHOW` statements can't be prepared on all MariaDB versions — use `information_schema` tables instead.
-- Local DB access for inspection: `mysql -unidb -ppassword nidb`.
+- **Do not access the live database without permission.** Ask before running any `mysql`/query against it, even read-only inspection.
+- Local DB access for inspection (only once permitted): `mysql -unidb -ppassword nidb`.
 - Config lives in `/nidb/nidb.cfg` (custom `[key] = value` format, not standard INI); PHP reads it into `$GLOBALS['cfg']`.
 
 ## C++ (nidb binary) workflow
