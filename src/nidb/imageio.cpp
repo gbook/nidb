@@ -920,13 +920,12 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
             tags["StudyTime"] = tags["StudyTime"].left(6);
             //Print("StudyTime after [" + tags["StudyTime"] + "]");
         }
-        else {
-            Print("StudyTime is not 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
-        }
-
-        if (tags["StudyTime"].size() == 6) {
+        else if (tags["StudyTime"].size() == 6) {
             tags["StudyTime"].insert(4,':');
             tags["StudyTime"].insert(2,':');
+        }
+        else {
+            Print("StudyTime is not 6, 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
         }
     }
 
@@ -944,13 +943,12 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
         else if (((tags["SeriesTime"].size() == 14) || (tags["SeriesTime"].size() == 15)) && (tags["SeriesTime"].contains(":"))) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
         }
-        else {
-            Print("SeriesTime is not 12, 13 or 15 characters [" + tags["SeriesTime"] + "]");
-        }
-
-        if (tags["SeriesTime"].size() == 6) {
+        else if (tags["SeriesTime"].size() == 6) {
             tags["SeriesTime"].insert(4,':');
             tags["SeriesTime"].insert(2,':');
+        }
+        else {
+            Print("SeriesTime is not 6, 12, 13 or 15 characters [" + tags["SeriesTime"] + "]");
         }
     }
 
