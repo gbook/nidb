@@ -158,12 +158,13 @@ bool MakePath(QString p, QString &msg, bool perm777=true);
 bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 bool NiDBCopyFile(QString f, QString dir, QString &m);
 bool NiDBMoveFile(QString f, QString dir, QString &m);
-bool RemoveDir(QString p, QString &msg);
+//bool RemoveDir(QString p, QString &msg);
 bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
 bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
+bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m);
 
 #endif // UTILS_H

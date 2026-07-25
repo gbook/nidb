@@ -29,8 +29,6 @@
 moduleUpload::moduleUpload(nidb *a)
 {
     n = a;
-    //io = new archiveIO(n);
-    //img = new imageIO(n);
 
     io = std::make_unique<archiveIO>(n);
     img = std::make_unique<imageIO>(n);
@@ -42,8 +40,6 @@ moduleUpload::moduleUpload(nidb *a)
 /* ---------------------------------------------------------- */
 moduleUpload::~moduleUpload()
 {
-    //delete io;
-    //delete img;
 }
 
 
@@ -171,7 +167,7 @@ bool moduleUpload::ReadUploads() {
             /* remove the uploadtmp directory, if it was uploaded from the web */
             if (upload_source == "web") {
                 QString m;
-                if (RemoveDir(upload_datapath, m)) {
+                if (SafeDeletePath(upload_datapath, n->cfg["uploaddir"], m)) {
                     io->AppendUploadLog("Removed upload_tmp directory [" + upload_datapath + "]");
                 }
                 else {
@@ -670,7 +666,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
                 SetUploadStatus(uploadRowID, "archivecomplete", 100.0);
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
-                if (RemoveDir(upload_stagingpath, m))
+                if (SafeDeletePath(upload_stagingpath, n->cfg["uploadstagingdir"], m))
                     io->AppendUploadLog(QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
                     io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));
@@ -923,7 +919,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
                 SetUploadStatus(uploadRowID, "archivecomplete", 100.0);
                 /* delete all of the source data and mark status as 'archivecomplete' */
                 QString m;
-                if (RemoveDir(upload_stagingpath, m))
+                if (SafeDeletePath(upload_stagingpath, n->cfg["uploadstagingdir"], m))
                     io->AppendUploadLog(QString("Removed upload staging directory [%1]").arg(upload_stagingpath));
                 else
                     io->AppendUploadLog(QString("Error: No series found for upload [%1]").arg(uploadRowID));

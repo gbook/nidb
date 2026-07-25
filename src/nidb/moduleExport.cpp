@@ -722,7 +722,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             n->Log(SystemCommand(systemstring));
                                             //n->WriteLog("Done copying files...");
                                             QString m3;
-                                            if (!RemoveDir(tmpdir, m3))
+                                            if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m3))
                                                 msgs << "Error [" + m3 + "] while removing path [" + tmpdir + "]";
                                             msgs << "Converted DICOM/parrec data into " + filetype + " using tmpdir [" + tmpdir + "]. Final directory [" + outdir + "]";
                                         }
@@ -872,7 +872,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 if (d.exists(tmpexportdir)) {
                     n->Log("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
                     QString m;
-                    if (!RemoveDir(tmpexportdir, m))
+                    if (!SafeDeletePath(tmpexportdir, n->cfg["tmpdir"], m))
                         msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
                 }
                 SetExportedPath(exportid, zipfile);
@@ -1225,7 +1225,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
     if (d.exists(tmpexportdir)) {
         n->Log("Temporary export dir [" + tmpexportdir + "] exists and will be deleted");
         QString m;
-        if (!RemoveDir(tmpexportdir, m))
+        if (!SafeDeletePath(tmpexportdir, n->cfg["tmpdir"], m))
             msgs << "Error [" + m + "] removing directory [" + tmpexportdir + "]";
     }
     QFile file;
@@ -1380,7 +1380,7 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
                                 behdesc = "Behavioral/design data file";
                             }
                             if (modality == "mr") {
-                                if (!RemoveDir(tmpdir,m))
+                                if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m))
                                     msgs << "ExportNDA() Unable to remove tmpdir [" + tmpdir + "] because [" + m + "]";
                             }
                         }
@@ -1441,7 +1441,7 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
             if (d.exists(rootoutdir)) {
                 n->Log("Original NDA export dir [" + rootoutdir + "] exists and will be deleted");
                 QString m;
-                if (!RemoveDir(rootoutdir, m))
+                if (!SafeDeletePath(rootoutdir, n->cfg["exportdir"], m))
                     msgs << "Error [" + m + "] removing directory [" + rootoutdir + "]";
             }
             SetExportedPath(exportid, zipfile);

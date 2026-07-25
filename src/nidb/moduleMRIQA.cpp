@@ -414,7 +414,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
 
     /* delete the 4D file and temp directory */
 	if (!debug)
-		if (!RemoveDir(tmpdir, m))
+        if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m))
             msgs << n->Log("Unable to remove directory [" + tmpdir + "] because of error [" + m + "]");
 
     /* insert this row into the DB */

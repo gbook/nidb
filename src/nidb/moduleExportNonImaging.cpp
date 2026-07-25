@@ -73,7 +73,9 @@ int moduleExportNonImaging::Run() {
 
             /* delete the file */
             if (QFile::exists(filePath) && (!filePath.endsWith("/") && (filePath != ""))) {
-                QFile::remove(filePath);
+                QString m;
+                if (!SafeDeletePath(filePath, n->cfg["exportdir"], m))
+                    n->Log(QString("Error deleting path [%1]  error message [%2]").arg(filePath).arg(m));
             }
 
             /* update the export_nonimaging row */

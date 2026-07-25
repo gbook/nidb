@@ -30,8 +30,10 @@
 moduleImport::moduleImport(nidb *a)
 {
     n = a;
-    io = new archiveIO(n);
-    img = new imageIO(n);
+    //io = new archiveIO(n);
+    //img = new imageIO(n);
+    io = std::make_unique<archiveIO>(n);
+    img = std::make_unique<imageIO>(n);
 }
 
 
@@ -40,8 +42,8 @@ moduleImport::moduleImport(nidb *a)
 /* ---------------------------------------------------------- */
 moduleImport::~moduleImport()
 {
-    delete io;
-    delete img;
+    //delete io;
+    //delete img;
 }
 
 
@@ -183,7 +185,7 @@ bool moduleImport::ParseRemotelyImportedData() {
 
             /* delete the uploaded directory */
             n->Log("Attempting to remove [" + uploaddir + "]");
-            if (!RemoveDir(uploaddir, m))
+            if (!SafeDeletePath(uploaddir, n->cfg["uploaddir"], m))
                 n->Log("Unable to remove directory [" + uploaddir + "] because error [" + m + "]");
         }
         ret = true;
@@ -337,7 +339,7 @@ bool moduleImport::ArchiveLocal() {
                 /* check if the directrory is empty */
                 if (QDir(fulldir).entryInfoList(QDir::NoDotAndDotDot|QDir::AllEntries).count() == 0) {
                     QString m;
-                    if (RemoveDir(fulldir, m))
+                    if (SafeDeletePath(fulldir, n->cfg["incomingdir"], m))
                         n->Log("Removed directory [" + fulldir + "]");
                     else
                         n->Log("Error removing directory [" + fulldir + "] [" + m + "]");
@@ -734,7 +736,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             /* delete the uploaded directory */
             n->Log("Attempting to remove [" + dir + "]");
             QString m;
-            if (!RemoveDir(dir, m))
+            if (!SafeDeletePath(dir, n->cfg["incomingdir"], m))
                 n->Log("Unable to delete directory [" + dir + "] because of error [" + m + "]");
         }
         SetImportStatus(importid, "archived", importDatatype.toUpper() + " successfully archived", archivereport, true);

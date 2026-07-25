@@ -621,8 +621,11 @@ bool moduleRemoteImport::ImportAvicennaSurveyAPI(int remoteImportBatchRowID, QSt
     QList<int> subjectids = GetAvicennaSubjectsFromCSV(csv);
     n->Log(QString("Found [%1] subject IDs: [%2]").arg(subjectids.size()).arg(JoinIntArray(subjectids, ",")));
 
-    if (QFile::exists(path))
-        QFile::remove(path);
+    if (QFile::exists(path)) {
+        QString m;
+        if (!SafeDeletePath(path, n->cfg["uploaddir"], m))
+            n->Log(QString("Error deleting path [%1]  error message [%2]").arg(path).arg(m));
+    }
 
     n->Log("ImportAvicenna() complete");
     return true;
@@ -841,11 +844,14 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         zipdir = fi.absolutePath() + "/" + fi.completeBaseName();
 
         // Shell-quote paths to handle spaces; assumes paths don't contain single quotes
-        QString systemstring = QString("unzip -o '%1' -d '%2' && rm '%1'").arg(datafile_path, zipdir);
+        QString systemstring = QString("unzip -o '%1' -d '%2'").arg(datafile_path, zipdir);
         SystemCommand(systemstring);
+        QString m;
+        if (SafeDeletePath(zipdir, n->cfg["uploaddir"], m))
+            n->Log(QString("Error removing path [%1]  with error message [%2]").arg(zipdir).arg(m));
 
         /* find first csv within the zipdir */
-        QString m;
+        //QString m;
         NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
         pathToDelete = zipdir;
     }
@@ -1042,7 +1048,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         //n->Log(QString("Column [%1] is mapped").arg(avicennaVariable));
                     }
                     else {
-                        QString msg = n->Log(QString("Column list does not contain [%1] - this variable is not mapped").arg(avicennaVariable));
+                        QString msg = n->Log(QString("Expected NiDB variable [%1] not found in Avicenna csv").arg(avicennaVariable));
                         RemoteImportLog(remoteImportBatchRowID, RemoteImportLogEvent::ImportObservation, msg, EventResult::Error);
                         continue;
                     }
@@ -1216,11 +1222,15 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
         zipdir = fi.absolutePath() + "/" + fi.completeBaseName();
 
         // Shell-quote paths to handle spaces; assumes paths don't contain single quotes
-        QString systemstring = QString("unzip -o '%1' -d '%2' && rm '%1'").arg(datafile_path, zipdir);
+        QString systemstring = QString("unzip -o '%1' -d '%2'").arg(datafile_path, zipdir);
         SystemCommand(systemstring);
 
-        /* find first csv within the zipdir */
         QString m;
+        if (SafeDeletePath(zipdir, n->cfg["uploaddir"], m))
+            n->Log(QString("Error removing path [%1]  with error message [%2]").arg(zipdir).arg(m));
+
+        /* find first csv within the zipdir */
+        //QString m;
         NiDBFindFirstFile(zipdir, "*.csv", csv_path, m);
         pathToDelete = zipdir;
     }

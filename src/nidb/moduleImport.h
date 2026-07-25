@@ -39,8 +39,10 @@ public:
 
 private:
     nidb *n;
-    archiveIO *io;
-    imageIO *img;
+    //archiveIO *io;
+    //imageIO *img;
+    std::unique_ptr<archiveIO> io;
+    std::unique_ptr<imageIO> img;
 
     QMap<QString, QStringList> dcmseries; /* QMap (associated hash) to store dicoms by the SeriesInstanceUID DICOM tag */
 

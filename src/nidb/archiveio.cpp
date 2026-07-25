@@ -704,7 +704,9 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
         /* check if a file with the same name already exists */
         if (QFile::exists(newfile)) {
             /* remove the existing file */
-            QFile::remove(newfile);
+            QString m;
+            if (!SafeDeletePath(newfile, n->cfg["archivedir"], m))
+                n->Log(QString("Error deleting path [%1]  error message [%2]").arg(newfile).arg(m));
         }
         else {
         }
@@ -2082,7 +2084,7 @@ bool archiveIO::ArchiveSquirrelPackage(UploadOptions options, QString file, QStr
             /* import all interventions/observations */
 
             /* delete the tmppath */
-            if (!RemoveDir(tmppath, m)) {
+            if (!SafeDeletePath(tmppath, n->cfg["tmpdir"], m)) {
                 n->Log("Error removing temp directory [" + tmppath + "] with error [" + m + "]", __FUNCTION__);
             }
         }
@@ -2867,7 +2869,8 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                             else
                                 systemstring = "rsync " + tmpdir + "/* " + seriesoutdir + "/";
                             n->Log(SystemCommand(systemstring));
-                            RemoveDir(tmpdir,m);
+                            if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m))
+                                n->Log(QString("Error deleting path [%1] with error [%2]").arg(tmpdir).arg(m));
                         }
                         else {
                             n->Log("Unable to create directory");
@@ -3346,7 +3349,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
     msgs << n->Log(QString("%1() - squirrel.write() returned [\n" + sqrl.GetLogBuffer() + "\n]").arg(__FUNCTION__));
 
     if (FileDirectoryExists(localTempDir))
-        if (RemoveDir(localTempDir, m))
+        if (SafeDeletePath(localTempDir, n->cfg["tmpdir"], m))
             n->Log(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
         else
             n->Log(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));
@@ -3736,7 +3739,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         if (!n->debug) {
             if (FileDirectoryExists(localTempDir))
-                if (RemoveDir(localTempDir, m))
+                if (SafeDeletePath(localTempDir, n->cfg["tmpdir"], m))
                     n->Log(QString("Successfully removed localTempDir [%1]").arg(localTempDir));
                 else
                     n->Log(QString("Error removing localTempDir [%1] - message [%2]").arg(localTempDir).arg(m));

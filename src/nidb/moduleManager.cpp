@@ -79,8 +79,9 @@ int moduleManager::Run() {
 
             n->Log("Deleting [" + lockfile + "] last checked in on [" + lastcheckin + "]");
 
-            QFile f(lockfile);
-            if (f.remove())
+            //QFile f(lockfile);
+            QString m;
+            if (SafeDeletePath(lockfile, n->cfg["lockdir"], m))
                 n->Log(QString("Lockfile [" + lockfile + "] deleted"));
             else
                 n->Log(QString("Lockfile [" + lockfile + "] NOT deleted"));

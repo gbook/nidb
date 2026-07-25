@@ -816,10 +816,16 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
     QString submithost;
     QString clusteruser;
-    if (p.clusterSubmitHost == "") submithost = n->cfg["clustersubmithost"];
-    else submithost = p.clusterSubmitHost;
-    if (p.clusterUser == "") clusteruser = n->cfg["clusteruser"];
-    else clusteruser = n->cfg["pipeline_clusteruser"];
+    if (p.clusterSubmitHost == "")
+        submithost = n->cfg["clustersubmithost"];
+    else
+        submithost = p.clusterSubmitHost;
+
+    if (p.clusterUser == "")
+        clusteruser = n->cfg["clusteruser"];
+    else
+        clusteruser = p.clusterUser;
+
     exportBIDS = p.outputBIDS;
     BIDSExportDir = p.BIDSoutputDir;
 
@@ -1405,7 +1411,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             n->Log(SystemCommand(systemstring, true, true));
 
                             dlog << "Removing temp directory [" + tmpdir + "]";
-                            if (!RemoveDir(tmpdir,m))
+                            if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m))
                                 dlog << n->Log("Error: unable to remove temp directory [" + tmpdir + "] error [" + m + "]", __FUNCTION__);
 
                             dlog << QString("\tDone copying converted imaging data from [%1] via [%2] to [%3]").arg(indir).arg(tmpdir).arg(newanalysispath);

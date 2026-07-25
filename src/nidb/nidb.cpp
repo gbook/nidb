@@ -349,8 +349,12 @@ bool nidb::ModuleCreateLockFile() {
 bool nidb::ModuleClearLockFiles() {
 
     Print("Clearing lock files [" + lockFilepath + "]",false, true);
-    QString s = QString("rm -v %1/%2*").arg(cfg["lockdir"]).arg(module);
-    SystemCommand(s, true);
+    //QString s = QString("rm -v %1/%2*").arg(cfg["lockdir"]).arg(module);
+    //SystemCommand(s, true);
+    QString m;
+    if (!SafeDeletePath(cfg["lockdir"], cfg["lockdir"], "*", m))
+        Print(QString("Error deleting lock files [%1]").arg(m));
+
     Print("[\033[0;32mOk\033[0m]");
 
     return true;
@@ -401,8 +405,8 @@ void nidb::ModuleDeleteLockFile() {
 
     Print("Deleting lock file [" + lockFilepath + "]",false, true);
 
-    QFile f(lockFilepath);
-    if (f.remove()) {
+    QString m;
+    if (SafeDeletePath(lockFilepath, cfg["lockdir"], m)) {
         Print("[\033[0;32mOk\033[0m]");
         Log("Successfully removed lock file [" + lockFilepath + "]");
     }
@@ -424,8 +428,8 @@ void nidb::ModuleRemoveLogFile(bool keepLog) {
 
     if (!keepLog) {
         Print("Deleting log file [" + logFilepath + "]",false, true);
-        QFile f(logFilepath);
-        if (f.remove())
+        QString m;
+        if (SafeDeletePath(logFilepath, cfg["logdir"], m))
             Print("[\033[0;32mOk\033[0m]");
         else
             Print("[\033[0;31mError\033[0m]");
@@ -847,7 +851,9 @@ bool nidb::SendEmail(QString to, QString subject, QString body) {
     QString result = SystemCommand(curlCmd, true).trimmed();
     Print(result);
 
-    QFile::remove(tmpMailFilePath);
+    QString m;
+    if (!SafeDeletePath(tmpMailFilePath, cfg["tmpdir"], m))
+        Log(QString("Error deleting path [%1]  error message [%2]").arg(tmpMailFilePath).arg(m));
 
     return true;
 }

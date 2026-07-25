@@ -283,22 +283,22 @@ bool MakePath(QString p, QString &msg, bool perm777) {
  * @param msg Receives an error message if removal fails.
  * @return true if the directory was removed successfully.
  */
-bool RemoveDir(QString p, QString &msg) {
+// bool RemoveDir(QString p, QString &msg) {
 
-    if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
-        msg = "Path is not valid [" + p + "]";
-        return false;
-    }
+//     if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
+//         msg = "Path is not valid [" + p + "]";
+//         return false;
+//     }
 
-    QDir path(p);
-    if (path.removeRecursively()) {
-        return true;
-    }
-    else {
-        msg = "Unable to delete directory";
-        return false;
-    }
-}
+//     QDir path(p);
+//     if (path.removeRecursively()) {
+//         return true;
+//     }
+//     else {
+//         msg = "Unable to delete directory";
+//         return false;
+//     }
+// }
 
 
 /* ---------------------------------------------------------- */
@@ -1890,4 +1890,94 @@ bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m)
     // Reached only for exotic types (socket, fifo, device node) inside root.
     m = "Refusing to delete unsupported file type: " + target;
     return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SafeDeletePath (glob overload) ----------------- */
+/* ---------------------------------------------------------- */
+// Deletes the top-level entries of `dir` matching one or more shell globs
+// (e.g. "*.img" or "*.img *.hdr *.nii *.gz"). Semantics:
+//   - The glob is appended to `dir` -- it is a *filename* pattern only and must
+//     NOT contain a path separator ("*/*.img" is rejected).
+//   - Non-recursive: only direct children of `dir` are considered; subdirectories
+//     are not descended into and are not themselves matched/deleted.
+//   - One or more space-separated patterns are accepted.
+// Each matched entry is deleted through the single-path SafeDeletePath() above, so
+// the same containment / protected-path / symlink guarantees apply to every file.
+// `dir` must be absolute and resolve inside (or equal to) `allowedRoot`.
+// Returns true only if every matched entry was deleted (zero matches is success).
+bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m)
+{
+    // Split the glob string into individual filename patterns on whitespace.
+    const QStringList patterns = glob.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
+    if (patterns.isEmpty()) {
+        m = "No glob pattern supplied";
+        return false;
+    }
+    // Filename patterns only: reject any path separator (keeps it non-recursive
+    // and prevents escaping `dir`).
+    for (const QString &pat : patterns) {
+        if (pat.contains(QLatin1Char('/'))) {
+            m = "Glob pattern must not contain a path separator: " + pat;
+            return false;
+        }
+    }
+
+    // `dir` and `allowedRoot` must be absolute so resolution never depends on cwd.
+    if (!QDir::isAbsolutePath(dir) || !QDir::isAbsolutePath(allowedRoot)) {
+        m = "Both dir and allowedRoot must be absolute paths";
+        return false;
+    }
+
+    // Canonicalize both; each must exist.
+    const QString root = QFileInfo(allowedRoot).canonicalFilePath();
+    if (root.isEmpty()) {
+        m = "Allowed root does not exist: " + allowedRoot;
+        return false;
+    }
+    const QString cdir = QFileInfo(dir).canonicalFilePath();
+    if (cdir.isEmpty()) {
+        m = "Directory does not exist: " + dir;
+        return false;
+    }
+
+    // `dir` must be the root itself or strictly below it. (Matched children are
+    // always strictly below root, so scanning root is safe; the single-path
+    // delete still refuses to remove root itself.)
+    QString rootPrefix = root;
+    if (!rootPrefix.endsWith(QLatin1Char('/')))
+        rootPrefix += QLatin1Char('/');
+    if (cdir != root && !cdir.startsWith(rootPrefix)) {
+        m = "Refusing to glob-delete outside allowed root: " + cdir;
+        return false;
+    }
+
+    // Non-recursive listing of matching files (and symlinks to files). Directories
+    // are excluded so a matched entry can never trigger a recursive removal.
+    QDir d(cdir);
+    d.setNameFilters(patterns);
+    const QFileInfoList entries =
+        d.entryInfoList(QDir::Files | QDir::Hidden | QDir::System | QDir::NoDotAndDotDot);
+
+    bool allok = true;
+    int deleted = 0;
+    QStringList errs;
+    for (const QFileInfo &fi : entries) {
+        QString em;
+        // Delegate to the single-path overload so containment/symlink/protected
+        // guards are enforced identically per file.
+        if (SafeDeletePath(fi.absoluteFilePath(), allowedRoot, em))
+            deleted++;
+        else {
+            allok = false;
+            errs << em;
+        }
+    }
+
+    m = QString("Deleted %1 file(s) matching [%2] in [%3]")
+            .arg(deleted).arg(patterns.join(" ")).arg(cdir);
+    if (!allok)
+        m += "; errors: " + errs.join("; ");
+    return allok;
 }

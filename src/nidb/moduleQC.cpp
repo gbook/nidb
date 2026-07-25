@@ -331,7 +331,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
             n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
 
             /* remove /data directory */
-            //if (!RemoveDir(qcpath + "/data", m)) {
+            //if (!SafeDeletePath(qcpath + "/data", n->cfg[""], m)) {
             //    n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
             //}
         }

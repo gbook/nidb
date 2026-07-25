@@ -434,6 +434,10 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* remove any files that may already be in the output directory.. for example, an incomplete series was put in the output directory */
     if ((outdir != "") && (outdir != "/") ) {
+        //QString m;
+        //if (SafeDeletePath(outdir, n->cfg["lockdir"], m))
+        //    n->Log(QString("Lockfile [" + lockfile + "] deleted"));
+
         QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
         msgs << SystemCommand(systemstring2, true, true);
 

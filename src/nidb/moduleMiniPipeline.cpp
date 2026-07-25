@@ -280,7 +280,7 @@ int moduleMiniPipeline::Run() {
                         AppendMiniPipelineLog(n->Log("Error. Unable to write scripts to [" + tmpdir + "] error message [" + m + "]"), mpjobid);
 
                     /* (6) cleanup */
-                    if (!RemoveDir(tmpdir, m))
+                    if (!SafeDeletePath(tmpdir, n->cfg["tmpdir"], m))
                         AppendMiniPipelineLog(n->Log("Error deleting directory [" + tmpdir + "] error message [" + m + "]"), mpjobid);
                     else
                         AppendMiniPipelineLog(n->Log("Deleted temp directory [" + tmpdir + "]"), mpjobid);
