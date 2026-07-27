@@ -125,15 +125,9 @@
 		case 'checkuser':
 			CheckUsername($username);
 			break;
-		//case 'sgejobstatus':
-		//	DisplaySGEJobStatus($jobid);
-		//	break;
 		case 'remoteexportstatus':
 			RemoteExportStatus($connectionid, $transactionid, $detail, $total);
 			break;
-		//case 'checkhost':
-		//	CheckHostStatus($hostname);
-		//	break;
 		case 'checksgehost':
 			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;

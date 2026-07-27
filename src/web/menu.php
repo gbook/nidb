@@ -48,7 +48,7 @@
 		/* subjects */
 		?><a href="subjects.php" class="<? if ($page=="subjects.php" || $page=="groups.php" || $page == "series") { echo "active"; } ?> item">Subjects</a><?
 		/* projects */
-		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "nda.php") { echo "active"; } ?> item">Projects</a><?
+		?><a href="projects.php" class="<? if ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="observations.php" || $page=="minipipeline.php" || $page=="templates.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "nda.php" || $page == "checklist.php") { echo "active"; } ?> item">Projects</a><?
 		/* pipelines */
 		if ($GLOBALS['cfg']['enablepipelines']) {
 			?><a href="pipelines.php" class="<? if ($page=="pipelines.php" || $page=="analysis.php") { echo "active"; } ?> item">Pipelines</a><?
@@ -155,9 +155,7 @@
 		}
 		
 		/* projects sub-menu */
-		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php" || $page == "nda.php") {
-			
-			//if ($page=="projectchecklist.php" || $page=="projectassessments.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php") {
+		elseif ($page=="projects.php" || $page=="projectchecklist.php" || $page=="mrqcchecklist.php" || $page=="studies.php" || $page=="minipipeline.php" || $page=="templates.php" || $page=="datadictionary.php" || $page == "experiment.php" || $page == "mriqc.php" || $page == "importremote.php" || $page == "instruments.php" || $page == "remoteimportmapping.php" || $page == "nda.php" || $page == "checklist.php") {
 			$projectid = (int)GetVariable("projectid");
 			if ($projectid == 0)
 				$projectid = (int)GetVariable("id");
@@ -208,11 +206,6 @@
 						<a class="item" href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" style="color: #222"><i class="cloud download anternate icon"></i> Remote batch imports</a>
 						<a class="item" href="importimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import imaging</a>
 						<a class="item" href="importnonimaging.php?action=newimportform&projectid=<?=$projectid?>" style="color: #222"><i class="file import icon"></i> Import Non-imaging</a>
-						<!-- Redcap import deprecated
-						<a class="item" href="redcapimport.php?action=importsettings&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Global Redcap settings</a>
-						<a class="item" href="redcapimportsubjects.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Redcap subject import</a>
-						<a class="item" href="redcaptonidb.php?action=default&projectid=<?=$projectid?>" style="color: #222"><i class="red redhat icon"></i> Import from Redcap</a>
-						-->
 					</div>
 				</div>
 
@@ -232,17 +225,6 @@
 						</div>
 					</div>
 				</div>
-				<!--
-				<a href="datadictionary.php?projectid=<?=$projectid?>" class="<? if ($page=="datadictionary.php"){ echo "active"; } ?> item">Data Dictionary</a>
-				<a href="projectassessments.php?projectid=<?=$projectid?>" class="<? if ($page=="projectassessments.php"){ echo "active"; } ?> item">Assessments</a>
-				<a href="projects.php?action=editsubjects&id=<?=$projectid?>" class="<? if (($page=="projects.php") && ($action == "editsubjects")) { echo "active"; } ?> item">Subjects</a>
-				<a href="projects.php?action=displaystudies&id=<?=$projectid?>" class="<? if (($page=="projects.php") && ($action == "displaystudies")) { echo "active"; } ?> item">Studies</a>
-				<a href="projectchecklist.php?projectid=<?=$projectid?>" class="<? if ($page=="projectchecklist.php"){ echo "active"; } ?> item">Checklist</a>
-				<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>" class="<? if ($page=="mrqcchecklist.php"){ echo "active"; } ?> item">MR Scan QC</a>
-				<a href="minipipeline.php?projectid=<?=$projectid?>" class="<? if ($page=="minipipeline.php"){ echo "active"; } ?> item">Behavioral pipelines</a>
-				<a href="templates.php?projectid=<?=$projectid?>" class="<? if ($page=="templates.php"){ echo "active"; } ?> item">Templates</a>
-				<a href="experiment.php?projectid=<?=$projectid?>" class="<? if ($page=="experiment.php"){ echo "active"; } ?> item">Experiments</a>
-				-->
 				<?
 			}
 		}
@@ -333,7 +315,7 @@
 	
 	<div class="right menu">
 		<a class="item" href="asteroids.php" style="padding-top:0; padding-bottom:0; align-items:flex-end">
-			<img src="images/squirrel-pixel-16.svg" alt="" style="height:66%; width:auto; margin:0; display:block">
+			<img src="images/squirrel-pixel-16.svg" alt="" style="height:75%; width:auto; margin:0; display:block">
 		</a>
 		<div class="vertically fitted item">
 			<div class="ui search">

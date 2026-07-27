@@ -762,9 +762,9 @@
 			echo "<li>Update existing study enrollments to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			$sqlstring = "update assessments set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
-			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//$sqlstring = "update assessments set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
+			//echo "<li>Update existing assessments to new enrollment [$sqlstring]";
+			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
 			Notice("Subject moved to new project");
 		}
@@ -775,9 +775,9 @@
 			echo "<li>Update existing studies to new enrollment [$sqlstring]";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			
-			$sqlstring = "update assessments set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
-			echo "<li>Update existing assessments to new enrollment [$sqlstring]";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			//$sqlstring = "update assessments set enrollment_id = $new_spid where enrollment_id = $enrollmentid";
+			//echo "<li>Update existing assessments to new enrollment [$sqlstring]";
+			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 			Notice("Subject already enrolled in this project. Studies moved to new project");
 		}

@@ -327,7 +327,7 @@
 		function playNote(freq, time, dur) {
 			const osc = audioCtx.createOscillator();
 			const g = audioCtx.createGain();
-			osc.type = 'triangle';
+			osc.type = 'square';
 			osc.frequency.value = freq;
 			/* short attack + decay so notes stay distinct instead of a continuous drone */
 			g.gain.setValueAtTime(0.0001, time);

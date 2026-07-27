@@ -319,7 +319,7 @@
 		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		$sqlstring = "delete from module_procs where module_id = '$id'";
+		$sqlstring = "delete from module_procs where module_name = '$scriptname'";
 		//echo "$sqlstring<br>";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 

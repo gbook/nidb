@@ -5788,32 +5788,32 @@
 			}
 			
 		}
-		if ($s_formvalue[0] != "") {
-			/* get the formfield datatype to make sure we compare against the correct assessment_data value */
-			$tmpsqlstring = "select * from assessment_formfields where formfield_id = $s_formfieldid[0]";
-			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
-			$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
-			$datatype = $tmprow['formfield_datatype'];
+		//if ($s_formvalue[0] != "") {
+		//	/* get the formfield datatype to make sure we compare against the correct assessment_data value */
+		//	$tmpsqlstring = "select * from assessment_formfields where formfield_id = $s_formfieldid[0]";
+		//	$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
+		//	$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
+		//	$datatype = $tmprow['formfield_datatype'];
 			
-			switch ($datatype) {
-				case "string": $valtype = "value_string"; break;
-				case "number": $valtype = "value_number"; break;
-				case "multichoice": $valtype = "value_text"; break;
-				case "singlechoice": $valtype = "value_text"; break;
-				case "text": $valtype = "value_text"; break;
-				case "date": $valtype = "value_binary"; break;
-				case "binary": $valtype = "value_binary"; break;
-				case "header": $valtype = "value_text"; break;
-			}
-			switch ($s_formcriteria[0]) {
-				case "contains": $val = " like '%$s_formvalue[0]%'"; break;
-				case "eq": $val = " = '$s_formvalue[0]'"; break;
-				case "gt": $val = " > '$s_formvalue[0]'"; break;
-				case "lt": $val = " < '$s_formvalue[0]'"; break;
-			}
+		//	switch ($datatype) {
+		//		case "string": $valtype = "value_string"; break;
+		//		case "number": $valtype = "value_number"; break;
+		//		case "multichoice": $valtype = "value_text"; break;
+		//		case "singlechoice": $valtype = "value_text"; break;
+		//		case "text": $valtype = "value_text"; break;
+		//		case "date": $valtype = "value_binary"; break;
+		//		case "binary": $valtype = "value_binary"; break;
+		//		case "header": $valtype = "value_text"; break;
+		//	}
+		//	switch ($s_formcriteria[0]) {
+		//		case "contains": $val = " like '%$s_formvalue[0]%'"; break;
+		//		case "eq": $val = " = '$s_formvalue[0]'"; break;
+		//		case "gt": $val = " > '$s_formvalue[0]'"; break;
+		//		case "lt": $val = " < '$s_formvalue[0]'"; break;
+		//	}
 			
-			$sqlwhere .= " and `assessment_formfields`.formfield_id = $s_formfieldid[0] and `assessment_data`.$valtype $val";
-		}
+		//	$sqlwhere .= " and `assessment_formfields`.formfield_id = $s_formfieldid[0] and `assessment_data`.$valtype $val";
+		//}
 		Debug(__FILE__, __LINE__, "Checkpoint A");
 		if ($s_pipelineid != ""){
 			Debug(__FILE__, __LINE__, "Checkpoint B");
@@ -5931,12 +5931,12 @@
 			/* join in the observation table if there is a observation to search for */
 			$sqlstring .= " left join `observations` on `observations`.enrollment_id = `enrollment`.enrollment_id left join `observationnames` on `observations`.observationname_id = `observationnames`.observationname_id";
 		}
-		if ($s_formvalue[0] != ""){
-			/* join in the form tables if there is formfield criteria to search for */
-			$sqlstring .= " join `assessments` on `assessments`.enrollment_id = `enrollment`.enrollment_id
-			join `assessment_formfields` on `assessment_formfields`.form_id = `assessments`.form_id
-			join `assessment_data` on `assessment_data`.formfield_id = `assessment_formfields`.formfield_id";
-		}
+		//if ($s_formvalue[0] != ""){
+		//	/* join in the form tables if there is formfield criteria to search for */
+		//	$sqlstring .= " join `assessments` on `assessments`.enrollment_id = `enrollment`.enrollment_id
+		//	join `assessment_formfields` on `assessment_formfields`.form_id = `assessments`.form_id
+		//	join `assessment_data` on `assessment_data`.formfield_id = `assessment_formfields`.formfield_id";
+		//}
 		if ($s_pipelineid != ""){
 			/* join in the pipeline tables if there is formfield criteria to search for */
 			$sqlstring .= " join `analysis` on `analysis`.study_id = `studies`.study_id

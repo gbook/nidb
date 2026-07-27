@@ -251,8 +251,10 @@
 	function SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod) {
 		
 		/* perform data checks */
-		$studydatetime = str_ireplace("T", " ", $studydatetime) . ":00";
+		//$studydatetime = str_ireplace("T", " ", $studydatetime) . ":00";
 		$stmod = strtolower($stmod);
+		$studydaynum = (int)$studydaynum;
+		$studytimepoint = (int)$studytimepoint;
 
 		/* update the user */
 

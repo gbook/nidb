@@ -2963,7 +2963,8 @@
 						<div class="description">Quality control</div>
 					</div>
 					<div class="extra content">
-						<a href="projectchecklist.php?projectid=<?=$id?>" style="color: #4183c4">Checklist</a><br>
+						<a href="checklist.php?projectid=<?=$id?>" style="color: #4183c4">Checklists</a><br>
+						<a href="projectchecklist.php?projectid=<?=$id?>" style="color: #4183c4">Imaging checklist</a><br>
 						<a href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>" style="color: #4183c4">MR scan QC</a><br>
 						<a href="mriqc.php?action=viewmriqc&projectid=<?=$id?>" style="color: #4183c4">Advanced QC</a>
 					</div>
