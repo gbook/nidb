@@ -3465,7 +3465,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get local NiDB objects */
         series ser(seriesRowID, modality, n);
         if (!ser.isValid) {
-            n->Log(QString("Series [%1,%2] is invalid").arg(seriesRowID).arg(modality));
+            n->Log(QString("Series [%1,%2] is invalid: [%3]").arg(seriesRowID).arg(modality).arg(ser.msg));
             seriesMsg += "!";
             continue;
         }
