@@ -287,6 +287,8 @@ bool moduleExport::GetExportSeriesList(int exportid) {
 
             if (q2.size() > 0) {
                 while (q2.next()) {
+                    n->ModuleRunningCheckIn();
+
                     QString uid = q2.value("uid").toString().replace('\u0000', "");
                     int subjectid = q2.value("subject_id").toInt();
                     int studynum = q2.value("study_num").toInt();
@@ -512,6 +514,9 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                 /* iterate through the series (seriesnums) */
                 for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+
+                    n->ModuleRunningCheckIn();
+
                     int seriesnum = c.key();
 
                     int exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toInt();
@@ -1287,6 +1292,8 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
 
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+                n->ModuleRunningCheckIn();
+
                 int seriesnum = c.key();
 
                 n->Log(QString("Series %1-%2-%3").arg(uid).arg(studynum).arg(seriesnum));

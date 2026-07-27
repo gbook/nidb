@@ -2722,6 +2722,8 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+                n->ModuleRunningCheckIn();
+
                 int seriesnum = c.key();
 
                 /* skip the series that contained only a placeholder for the subject/study info */
@@ -3055,6 +3057,8 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* iterate through the studies (array key is studynum) */
         for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+            n->ModuleRunningCheckIn();
+
             int studynum = b.key();
 
             if (studynum == 0)
@@ -3368,7 +3372,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 /**
  * @brief This function writes a squirrel package using the variables stored in the
  * `packages` table, which is populated by using the `packages.php` page.
- * --- This function is different than the WriteSquirrel() because this gets source data from a ---
+ * --- This function is different than WriteSquirrel() because this gets source data from a     ---
  * --- different SQL table. This function should be used to export data to other NiDB servers.  ---
  * @param exportid exportRowID, which contains a pointer to the packageRowID
  * @param zipfilepath Final path to the exported package
@@ -3453,6 +3457,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->Log(QString("Adding %1 series to package...").arg(q.size()));
     QString seriesMsg = "Added series [";
     while (q.next()) {
+        n->ModuleRunningCheckIn();
+
         int seriesRowID = q.value("series_id").toInt();
         QString modality = q.value("modality").toString();
 
