@@ -2723,6 +2723,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 n->ModuleRunningCheckIn();
+                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                 int seriesnum = c.key();
 
@@ -3058,6 +3059,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         /* iterate through the studies (array key is studynum) */
         for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
             n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
             int studynum = b.key();
 
@@ -3458,6 +3460,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     QString seriesMsg = "Added series [";
     while (q.next()) {
         n->ModuleRunningCheckIn();
+        if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
         int seriesRowID = q.value("series_id").toInt();
         QString modality = q.value("modality").toString();

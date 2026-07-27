@@ -288,6 +288,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
             if (q2.size() > 0) {
                 while (q2.next()) {
                     n->ModuleRunningCheckIn();
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                     QString uid = q2.value("uid").toString().replace('\u0000', "");
                     int subjectid = q2.value("subject_id").toInt();
@@ -516,6 +517,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                 for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
 
                     n->ModuleRunningCheckIn();
+                    if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                     int seriesnum = c.key();
 
@@ -1293,6 +1295,7 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 n->ModuleRunningCheckIn();
+                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
                 int seriesnum = c.key();
 
