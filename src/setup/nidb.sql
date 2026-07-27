@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 20, 2026 at 08:59 PM
+-- Generation Time: Jul 27, 2026 at 05:30 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -200,81 +200,6 @@ CREATE TABLE `api_users` (
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `is_active` tinyint(1) NOT NULL DEFAULT 1
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `assessments`
---
-
-CREATE TABLE `assessments` (
-  `experiment_id` int(11) NOT NULL,
-  `enrollment_id` int(11) DEFAULT NULL,
-  `form_id` int(11) DEFAULT NULL,
-  `exp_groupid` int(11) DEFAULT NULL,
-  `exp_admindate` datetime DEFAULT NULL COMMENT 'Date the experiment was administered',
-  `experimentor` varchar(45) DEFAULT NULL COMMENT 'Just a name... anyone could adminisister the experiment, so they need not be registered in the system',
-  `rater_username` varchar(25) DEFAULT NULL,
-  `label` varchar(255) DEFAULT NULL,
-  `notes` longtext DEFAULT NULL,
-  `iscomplete` tinyint(1) DEFAULT NULL,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `assessment_data`
---
-
-CREATE TABLE `assessment_data` (
-  `formdata_id` int(11) NOT NULL,
-  `formfield_id` int(11) DEFAULT NULL,
-  `experiment_id` int(11) DEFAULT NULL,
-  `value_text` longtext DEFAULT NULL,
-  `value_number` double DEFAULT NULL,
-  `value_string` varchar(255) DEFAULT NULL,
-  `value_binary` blob DEFAULT NULL,
-  `value_date` date DEFAULT NULL,
-  `update_username` varchar(50) DEFAULT NULL COMMENT 'last username to change this value',
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `assessment_formfields`
---
-
-CREATE TABLE `assessment_formfields` (
-  `formfield_id` int(11) NOT NULL,
-  `form_id` int(11) DEFAULT NULL,
-  `formfield_desc` longtext DEFAULT NULL COMMENT 'The question description, such as ''DSM score'', or ''Which hand do you use most often''',
-  `formfield_values` longtext DEFAULT NULL COMMENT 'a list of possible values',
-  `formfield_datatype` enum('multichoice','singlechoice','string','text','number','date','header','binary','calculation') DEFAULT NULL COMMENT 'multichoice, singlechoice, string, text, number, date, header, binary',
-  `formfield_calculation` varchar(255) DEFAULT NULL COMMENT '(q1+q4)/5',
-  `formfield_calculationconversion` longtext DEFAULT NULL COMMENT 'comma seperated list of converting strings into numbers (A=1,B=2, etc)',
-  `formfield_haslinebreak` tinyint(1) DEFAULT 0,
-  `formfield_scored` tinyint(1) DEFAULT 0,
-  `formfield_order` varchar(45) DEFAULT NULL
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `assessment_forms`
---
-
-CREATE TABLE `assessment_forms` (
-  `form_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL DEFAULT 0,
-  `form_title` varchar(100) DEFAULT NULL,
-  `form_desc` longtext DEFAULT NULL,
-  `form_creator` varchar(30) DEFAULT NULL COMMENT 'creator username',
-  `form_createdate` datetime DEFAULT NULL,
-  `form_ispublished` tinyint(1) NOT NULL DEFAULT 0,
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2467,10 +2392,6 @@ CREATE TABLE `projects` (
   `project_irbapprovaldate` date DEFAULT NULL,
   `project_status` varchar(15) DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  `redcap_token` varchar(255) DEFAULT NULL,
-  `redcap_server` varchar(255) DEFAULT NULL,
-  `redcapid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
-  `redcapnidbid_field` varchar(255) CHARACTER SET utf16 COLLATE utf16_general_ci DEFAULT NULL,
   `xnat_hostname` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC COMMENT='System can have multiple projects. There must be 1 project a';
 
@@ -2772,37 +2693,6 @@ CREATE TABLE `ratings` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `redcap_import_fields`
---
-
-CREATE TABLE `redcap_import_fields` (
-  `redcap_fieldgroupid` int(11) NOT NULL,
-  `redcap_fieldname` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `redcap_import_mapping`
---
-
-CREATE TABLE `redcap_import_mapping` (
-  `formmap_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `redcap_event` varchar(250) DEFAULT NULL,
-  `redcap_form` varchar(250) DEFAULT NULL,
-  `redcap_fields` mediumtext DEFAULT NULL,
-  `redcap_fieldtype` varchar(250) DEFAULT NULL,
-  `redcapfield_desc` varchar(250) DEFAULT NULL,
-  `redcap_fieldgroupid` int(11) NOT NULL,
-  `nidb_datatype` enum('m','v','d') NOT NULL COMMENT 'measure, vital, drug/dose',
-  `nidb_variablename` varchar(250) DEFAULT NULL,
-  `nidb_instrumentname` varchar(250) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=COMPACT;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `remoteimport_batch`
 --
 
@@ -2901,7 +2791,7 @@ CREATE TABLE `remote_imports` (
   `import_time` int(11) NOT NULL DEFAULT 0 COMMENT 'Hour of the day, 0 to 23',
   `import_dayofmonth` int(11) NOT NULL DEFAULT 1 COMMENT 'day of month - 1 to 31',
   `import_days` set('Sun','Mon','Tue','Wed','Thu','Fri','Sat') NOT NULL DEFAULT 'Sun',
-  `enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
   `create_date` datetime NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -3774,33 +3664,6 @@ ALTER TABLE `api_users`
   ADD UNIQUE KEY `uq_username` (`username`);
 
 --
--- Indexes for table `assessments`
---
-ALTER TABLE `assessments`
-  ADD PRIMARY KEY (`experiment_id`),
-  ADD KEY `fk_experiments_subject_project1` (`enrollment_id`);
-
---
--- Indexes for table `assessment_data`
---
-ALTER TABLE `assessment_data`
-  ADD PRIMARY KEY (`formdata_id`);
-
---
--- Indexes for table `assessment_formfields`
---
-ALTER TABLE `assessment_formfields`
-  ADD PRIMARY KEY (`formfield_id`),
-  ADD KEY `fk_formfielddef_formdef1` (`form_id`);
-
---
--- Indexes for table `assessment_forms`
---
-ALTER TABLE `assessment_forms`
-  ADD PRIMARY KEY (`form_id`,`project_id`),
-  ADD KEY `project_id` (`project_id`);
-
---
 -- Indexes for table `assessment_series`
 --
 ALTER TABLE `assessment_series`
@@ -4655,19 +4518,6 @@ ALTER TABLE `ratings`
   ADD KEY `idx_ratings` (`rater_id`);
 
 --
--- Indexes for table `redcap_import_fields`
---
-ALTER TABLE `redcap_import_fields`
-  ADD PRIMARY KEY (`redcap_fieldgroupid`,`redcap_fieldname`);
-
---
--- Indexes for table `redcap_import_mapping`
---
-ALTER TABLE `redcap_import_mapping`
-  ADD PRIMARY KEY (`formmap_id`),
-  ADD UNIQUE KEY `project_id` (`project_id`,`redcap_event`,`redcap_form`,`redcap_fields`(255)) USING BTREE;
-
---
 -- Indexes for table `remoteimport_batch`
 --
 ALTER TABLE `remoteimport_batch`
@@ -5016,30 +4866,6 @@ ALTER TABLE `api_sessions`
 --
 ALTER TABLE `api_users`
   MODIFY `apiuser_id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessments`
---
-ALTER TABLE `assessments`
-  MODIFY `experiment_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_data`
---
-ALTER TABLE `assessment_data`
-  MODIFY `formdata_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_formfields`
---
-ALTER TABLE `assessment_formfields`
-  MODIFY `formfield_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `assessment_forms`
---
-ALTER TABLE `assessment_forms`
-  MODIFY `form_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `assessment_series`
@@ -5742,12 +5568,6 @@ ALTER TABLE `qc_results`
 --
 ALTER TABLE `ratings`
   MODIFY `rating_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `redcap_import_mapping`
---
-ALTER TABLE `redcap_import_mapping`
-  MODIFY `formmap_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `remoteimport_batch`

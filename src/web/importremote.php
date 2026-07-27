@@ -40,6 +40,7 @@
 	require "includes_html.php";
 	require "menu.php";
 	require "nidbapi.php";
+	require "redcap_functions.php";
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -112,6 +113,10 @@
 			break;
 		case 'deleteimport':
 			DeleteRemoteImport($importid);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'testconnection':
+			TestRemoteImportConnection($importid, $projectid);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'editimportform':
@@ -204,6 +209,40 @@
 		if ($datasource !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $datasource)) {
 			Warning("Datasource \"$datasource\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestRemoteImportConnection --------- */
+	/* -------------------------------------------- */
+	/* Test the REDCap API connection for a remote import row. Reads the URL and
+	   token stored on the import and reports what it was able to reach. */
+	function TestRemoteImportConnection($importid, $projectid) {
+
+		$cred = RedCapGetCredentials($importid, $projectid);
+		if (!$cred['success']) {
+			Error(htmlspecialchars($cred['message']));
+			return;
+		}
+
+		$importname = htmlspecialchars($cred['importname']);
+		$res = RedCapTestConnection($cred['url'], $cred['token']);
+
+		if (!$res['success']) {
+			Error("Could not connect to REDCap for import <b>$importname</b>.<br><br>" . htmlspecialchars($res['message']));
+			return;
+		}
+
+		/* values below come from the remote REDCap server, so escape them */
+		$msg = "Connected to REDCap for import <b>$importname</b>.";
+		if (!empty($res['info'])) {
+			$msg .= "<table class='ui very compact collapsing basic table'>";
+			foreach ($res['info'] as $label => $value)
+				$msg .= "<tr><td><b>" . htmlspecialchars($label) . "</b></td><td>" . htmlspecialchars((string)$value) . "</td></tr>";
+			$msg .= "</table>";
+		}
+
+		Notice($msg, "Connection Successful");
 	}
 
 
@@ -729,6 +768,14 @@
 
 							$scheduletext = FormatRemoteImportSchedule($import_schedule, $import_time, $import_dayofmonth, $import_days);
 							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
+
+							/* which Actions-menu items apply to this row. "Run now" is only
+							   meaningful for on-demand imports, but the REDCap connection test
+							   applies on any schedule. */
+							$isCsvUpload = in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource']);
+							$canRunNow = ($import_schedule === 'ondemand');
+							$canTestConnection = ($remote_type === 'redcap');
+							$hasActions = $canRunNow || $canTestConnection;
 					?>
 					<tr>
 						<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
@@ -762,13 +809,17 @@
 							<div class="ui floating dropdown icon mini basic button">
 								<i class="chevron down icon"></i>
 								<div class="menu">
-									<? if ($import_schedule === 'ondemand'): ?>
-										<? if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
+									<? if ($canRunNow): ?>
+										<? if ($isCsvUpload): ?>
 											<a class="item" href="#" onclick="document.getElementById('datafile_upload_<?=$importid?>').click(); return false;"><i class="upload icon"></i>Upload &amp; Run</a>
 										<? else: ?>
 											<a class="item" href="importremote.php?action=runimport&projectid=<?=$projectid?>&importid=<?=$importid?>"><i class="play icon"></i>Run now</a>
 										<? endif; ?>
-									<? else: ?>
+									<? endif; ?>
+									<? if ($canTestConnection): ?>
+										<a class="item" href="importremote.php?action=testconnection&projectid=<?=$projectid?>&importid=<?=$importid?>" title="Check that the REDCap API URL and token for this import work"><i class="plug icon"></i>Test connection</a>
+									<? endif; ?>
+									<? if (!$hasActions): ?>
 										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>
 									<? endif; ?>
 								</div>
