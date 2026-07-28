@@ -3537,7 +3537,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlSeries.studyRowID = sqrlStudyRowID;
         n->Log("Checkpoint G-3");
         if (!sqrlSeries.isValid())
-            n->Log(QString("squirrelSeries is invalid"));
+            n->Log(QString("squirrelSeries is invalid [%1]").arg(sqrlSeries.msg));
         n->Log("Checkpoint G-4");
         sqrlSeries.Store();
         n->Log("Checkpoint G-5");

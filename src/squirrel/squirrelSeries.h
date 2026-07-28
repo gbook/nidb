@@ -54,7 +54,8 @@ public:
     bool Store();             /* saves the object data from this object into the database */
     bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
     void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
-    bool isValid() { return valid; }
+    bool Validate();          /* checks the object's fields, and populates msg with the reason(s) it is invalid */
+    bool isValid() { return Validate(); }
     qint64 GetObjectID() { return objectID; }
     void AnonymizeParams();
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
@@ -69,6 +70,8 @@ public:
     int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
     int parentStudyNumber = -1;    /*!< cached parent study number */
     int parentStudySeqNum = -1;    /*!< cached parent study sequence number */
+
+    QString msg;                    /*!< reason(s) the object is invalid, set by Validate(). Blank if the object is valid */
 
     /* JSON elements */
     QDateTime DateTime;             /*!< Series datetime */
@@ -97,7 +100,10 @@ public:
     QStringList behFiles;
 
 private:
+    void LogInvalid(QString func);
+
     bool valid = false;
+    bool removed = false; /* true once Remove() has deleted this object from the database */
     bool debug = false;
     QString err;
     qint64 objectID = -1;

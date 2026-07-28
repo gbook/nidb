@@ -61,7 +61,99 @@ void squirrelSeries::Populate(const QSqlQuery &q) {
     SeriesUID                  = q.value("SeriesUID").toString();
     Size                       = q.value("Size").toLongLong();
     experimentRowID            = q.value("ExperimentRowID").toInt();
-    valid = true;
+    removed = false;
+    Validate();
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Validate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelSeries::Validate
+ * @return true if this object is in a state that can be written to,
+ * or was read from, a squirrel package
+ *
+ * Checks the object's fields for anything that would produce a corrupt
+ * or unwritable series. Every problem found is appended to the public
+ * 'msg' variable, which is blank if the object is valid. This performs
+ * no database queries other than checking that the connection exists,
+ * so it is safe to call in a loop.
+ */
+bool squirrelSeries::Validate() {
+
+    QStringList m;
+
+    /* the object must still exist */
+    if (removed)
+        m << "series has been removed from the database";
+
+    /* there must be a usable database connection */
+    if (databaseUUID.trimmed() == "")
+        m << "databaseUUID is not set";
+    else if (!QSqlDatabase::database(databaseUUID, false).isValid())
+        m << QString("database connection [%1] does not exist").arg(databaseUUID);
+
+    /* a series is meaningless without a parent study */
+    if (studyRowID < 0)
+        m << QString("studyRowID [%1] is invalid. A series must belong to a study").arg(studyRowID);
+
+    /* SeriesNumber is half of the UNIQUE(StudyRowID, SeriesNumber) key, and is used
+       as the directory name when SeriesDirFormat is 'orig' */
+    if (SeriesNumber < 0)
+        m << QString("SeriesNumber [%1] is invalid. Must be 0 or greater").arg(SeriesNumber);
+
+    /* SequenceNumber is used as the directory name when SeriesDirFormat is 'seq'. It is 0 until
+       the study is resequenced, which happens after the series is stored, so only a negative
+       value is wrong here */
+    if (SequenceNumber < 0)
+        m << QString("SequenceNumber [%1] is invalid. Must be 0 or greater").arg(SequenceNumber);
+
+    /* directory formats must be one of the two known values */
+    if ((subjectDirFormat != "orig") && (subjectDirFormat != "seq"))
+        m << QString("subjectDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(subjectDirFormat);
+    if ((studyDirFormat != "orig") && (studyDirFormat != "seq"))
+        m << QString("studyDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(studyDirFormat);
+    if ((seriesDirFormat != "orig") && (seriesDirFormat != "seq"))
+        m << QString("seriesDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(seriesDirFormat);
+
+    if (Run < 0)
+        m << QString("Run [%1] is invalid. Must be 0 or greater").arg(Run);
+
+    /* counts and sizes cannot be negative */
+    if (Size < 0)
+        m << QString("Size [%1] is invalid. Must be 0 or greater").arg(Size);
+    if (FileCount < 0)
+        m << QString("FileCount [%1] is invalid. Must be 0 or greater").arg(FileCount);
+    if (BehavioralSize < 0)
+        m << QString("BehavioralSize [%1] is invalid. Must be 0 or greater").arg(BehavioralSize);
+    if (BehavioralFileCount < 0)
+        m << QString("BehavioralFileCount [%1] is invalid. Must be 0 or greater").arg(BehavioralFileCount);
+
+    /* a datetime holding a value that isn't a real date (a failed parse yields a null
+       QDateTime, which is allowed here and simply means 'no datetime') */
+    if (!DateTime.isNull() && !DateTime.isValid())
+        m << "Datetime is set, but is not a valid datetime";
+
+    msg = m.join("; ");
+    valid = m.isEmpty();
+
+    return valid;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- LogInvalid ------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Record, and optionally print, the reason this series is invalid
+ * @param func the calling function name
+ */
+void squirrelSeries::LogInvalid(QString func) {
+
+    err = msg;
+    if (debug)
+        utils::Print(QString("[%1] Invalid series (SeriesNumber [%2] StudyRowID [%3] SeriesRowID [%4]): %5").arg(func).arg(SeriesNumber).arg(studyRowID).arg(objectID).arg(msg));
 }
 
 
@@ -80,7 +172,8 @@ void squirrelSeries::Populate(const QSqlQuery &q) {
 bool squirrelSeries::Get() {
     if (objectID < 0) {
         valid = false;
-        err = "objectID is not set";
+        msg = "objectID is not set";
+        err = msg;
         return false;
     }
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
@@ -97,11 +190,16 @@ bool squirrelSeries::Get() {
         stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Series);
         stagedBehFiles = utils::GetStagedFileList(databaseUUID, objectID, BehSeries);
 
+        /* the row loaded, but it may still contain values that can't be written back out */
+        if (!Validate())
+            LogInvalid(__FUNCTION__);
+
         return true;
     }
     else {
         valid = false;
-        err = QString("objectID [%1] not found in database").arg(objectID);
+        msg = QString("objectID [%1] not found in database").arg(objectID);
+        err = msg;
         return false;
     }
 }
@@ -120,6 +218,12 @@ bool squirrelSeries::Get() {
  * Otherwise it will return false.
  */
 bool squirrelSeries::Store() {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     bool isNewObject = (objectID < 0);
@@ -161,11 +265,13 @@ bool squirrelSeries::Store() {
             utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.next()) {
                 objectID = q2.value("SeriesRowID").toLongLong();
-                err = QString("Series [%1] already exists in study [%2]").arg(SeriesNumber).arg(studyRowID);
+                msg = QString("Series [%1] already exists in study [%2]").arg(SeriesNumber).arg(studyRowID);
+                err = msg;
             }
             else {
                 valid = false;
-                err = QString("Unable to insert or find series [%1] in study [%2]").arg(SeriesNumber).arg(studyRowID);
+                msg = QString("Unable to insert or find series [%1] in study [%2]").arg(SeriesNumber).arg(studyRowID);
+                err = msg;
                 return false;
             }
         }
@@ -224,6 +330,13 @@ bool squirrelSeries::Store() {
  * @return true if successful
  */
 bool squirrelSeries::Store(QSqlQuery &q) {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
+
     q.bindValue(":StudyRowID", studyRowID);
     q.bindValue(":SeriesNumber", SeriesNumber);
     q.bindValue(":Datetime", DateTime);
@@ -275,7 +388,9 @@ bool squirrelSeries::Remove() {
 
     /* in case anyone tries to use this object again */
     objectID = -1;
+    removed = true;
     valid = false;
+    msg = "series has been removed from the database";
 
     return true;
 }
