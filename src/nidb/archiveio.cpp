@@ -3527,7 +3527,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         n->Log(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup()).arg(stud.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
 
         /* create squirrel SERIES */
-        if (!ser.isValid())
+        if (!ser.isValid)
             n->Log(QString("series is invalid. Reason [%1]").arg(ser.msg));
 
         squirrelSeries sqrlSeries(sqrl.GetDatabaseUUID());
