@@ -112,6 +112,33 @@ QString imageIO::Exiftool(QString arg) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- IsDICOMFile ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check whether a file is a DICOM Part 10 file.
+ *
+ * A DICOM Part 10 file begins with a 128-byte preamble followed by the four
+ * character magic "DICM". Testing for that is cheap and, unlike DCMTK's
+ * autodetect, cannot be fooled into parsing an unrelated file.
+ *
+ * @param f File path to test.
+ * @return true if the file carries the DICM magic at offset 128.
+ */
+static bool IsDICOMFile(const QString &f) {
+
+    QFile file(f);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+
+    /* the magic follows the 128-byte preamble; a shorter file cannot be DICOM */
+    if (!file.seek(128))
+        return false;
+
+    return (file.read(4) == QByteArray("DICM"));
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetImageTagsDCMTK ------------------------------ */
 /* ---------------------------------------------------------- */
 /**
@@ -126,6 +153,16 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
     QStringList msgs;
 
     tags["FilePath"] = f;
+
+    /* Only hand genuine DICOM files to DCMTK.
+       DCMTK's ERM_autoDetect falls back to parsing any file as a headerless
+       implicit-VR dataset. An mp4 header reads as element (0000,2000) with a
+       declared length of ~1.757 GiB, so any video larger than that is accepted
+       as DICOM: DCMTK then reads a 1.76 GiB "value" and parses the remaining
+       gigabytes as elements, taking minutes and yielding binary tag values far
+       too large to store. Testing for the DICM magic avoids that entirely. */
+    if (!IsDICOMFile(f))
+        return false;
 
     /* Keep the QByteArray alive: f.toLatin1() returns a temporary that would be
        destroyed at the end of this statement, leaving a dangling pointer for
