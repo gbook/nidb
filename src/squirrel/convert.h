@@ -23,15 +23,19 @@
 #ifndef CONVERT_H
 #define CONVERT_H
 
+#include <QString>
 
 /**
  * @brief The convert class
+ *
+ * Converts an input dataset (DICOM or BIDS) into an output squirrel package.
  */
 class convert
 {
 public:
     convert();
 
+    bool DoConvert(QString inputPath, QString outputPath, QString inputFormat, QString outputFormat, QString dataFormat, QString dirFormat, bool overwrite, bool debug, bool debugSQL, bool quiet, QString &m);
 };
 
 #endif // CONVERT_H

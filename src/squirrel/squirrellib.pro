@@ -132,7 +132,7 @@ win32: {
 linux: {
     CONFIG += staticlib
 
-    LZMABIN = ../../bin/bit7z
+    LZMABIN = ../bit7z
 	LZMAINCLUDE = ../bit7z/include/bit7z
 	LIBS += -L$$LZMABIN -lbit7z64 -ldl
 	INCLUDEPATH += $$LZMAINCLUDE
@@ -179,6 +179,9 @@ linux: {
 
     message($$LIBS)
 	message($$QMAKE_LIBDIR)
-	
-	
+
+
 }
+
+# dcm2niix in-process DICOM->Nifti conversion (Linux only; see dcm2niix.pri)
+include($$PWD/dcm2niix.pri)

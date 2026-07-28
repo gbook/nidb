@@ -53,8 +53,8 @@ public:
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
 
     /* squirrel database variables */
-    qint64 studyRowID;          /*!< database row id of the parent study */
-    qint64 pipelineRowID;       /*!< database row id of the parent pipeline */
+    qint64 studyRowID = -1;      /*!< database row id of the parent study */
+    qint64 pipelineRowID = -1;  /*!< database row id of the parent pipeline */
     QString parentSubjectID;       /*!< cached parent subject ID string (avoids DB lookup in VirtualPath) */
     int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
     int parentStudyNumber = -1;    /*!< cached parent study number */

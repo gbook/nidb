@@ -58,7 +58,7 @@ squirrelSubject::squirrelSubject(QString dbID)
  */
 void squirrelSubject::Populate(const QSqlQuery &q) {
     objectID         = q.value("SubjectRowID").toLongLong();
-    AlternateIDs     = q.value("AltIDs").toString().split(",");
+    AlternateIDs     = q.value("AltIDs").toString().split(",", Qt::SkipEmptyParts);
     DateOfBirth      = q.value("DateOfBirth").toDate();
     EnrollmentGroup  = q.value("EnrollmentGroup").toString();
     EnrollmentStatus = q.value("EnrollmentStatus").toString();
@@ -139,7 +139,27 @@ bool squirrelSubject::Store() {
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        objectID = q.lastInsertId().toInt();
+        if (q.numRowsAffected() > 0) {
+            objectID = q.lastInsertId().toLongLong();
+        }
+        else {
+            /* the insert was ignored, meaning a subject with this ID already exists (or the
+               ID was blank, which the NOT NULL constraint rejects). lastInsertId() would
+               return an unrelated rowID here, so look up the existing row instead */
+            QSqlQuery q2(QSqlDatabase::database(databaseUUID));
+            q2.prepare("select SubjectRowID from Subject where ID = :ID");
+            q2.bindValue(":ID", ID);
+            utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+            if (q2.next()) {
+                objectID = q2.value("SubjectRowID").toLongLong();
+                err = QString("Subject [%1] already exists").arg(ID);
+            }
+            else {
+                valid = false;
+                err = QString("Unable to insert or find subject [%1]").arg(ID);
+                return false;
+            }
+        }
     }
     /* ... otherwise update */
     else {
@@ -188,7 +208,7 @@ bool squirrelSubject::Store(QSqlQuery &q) {
     q.bindValue(":SequenceNumber", SequenceNumber);
     q.bindValue(":VirtualPath", VirtualPath());
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    objectID = q.lastInsertId().toInt();
+    objectID = q.lastInsertId().toLongLong();
     return true;
 }
 

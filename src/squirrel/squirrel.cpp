@@ -39,11 +39,12 @@ qint64 lastupdate(0);
 bool totalArchiveSizeCallback(qint64 val) {
     totalbytes = val;
     blocksize = (double)totalbytes/100.0;
+    lastupdate = 0;
     return true;
 }
 
 bool progressCallback(qint64 val) {
-    if (val > (lastupdate+blocksize)) {
+    if (totalbytes > 0 && val > (lastupdate+blocksize)) {
         double percent = ((double)val/(double)totalbytes)*100.0;
         utils::PrintProgress(percent/100.0);
         lastupdate = val;
@@ -74,6 +75,7 @@ squirrel::squirrel(bool dbg, bool q)
     SubjectDirFormat = "orig";
 
     debug = dbg;
+    cmdLineExec = false;
     fileMode = FileMode::NewPackage;
     isOkToDelete = true;
     isValid = true;
@@ -118,6 +120,11 @@ squirrel::~squirrel()
             Log(QString("Error removing working directory [%1]. Message [%2]").arg(workingDir).arg(m));
     }
     db.close();
+    db = QSqlDatabase(); /* release the member handle so removeDatabase() doesn't warn about connections still in use */
+    QSqlDatabase::removeDatabase(databaseUUID);
+
+    if (debug)
+        QFile::remove(QDir::tempPath() + "/" + databaseUUID + "-sqlite.db");
 }
 
 
@@ -149,6 +156,11 @@ bool squirrel::Get7zipLibPath() {
     else if (QFile::exists("/usr/lib/7zip/7z.so")) {
         p7zipLibPath = "/usr/lib/7zip/7z.so";
         Debug("Found 7zip library path /usr/lib/7zip/7z.so", __FUNCTION__);
+        return true;
+    }
+    else if (QFile::exists("/usr/lib/p7zip/7z.so")) {
+        p7zipLibPath = "/usr/lib/p7zip/7z.so";
+        Debug("Found 7zip library path /usr/lib/p7zip/7z.so", __FUNCTION__);
         return true;
     }
 #endif
@@ -422,7 +434,7 @@ bool squirrel::Read() {
             squirrelStudy sqrlStudy(databaseUUID);
 
             sqrlStudy.AgeAtStudy = jsonStudy["AgeAtStudy"].toDouble();
-            sqrlStudy.DateTime = utils::StringToDatetime(jsonStudy["StudyDatetime"].toString());
+            sqrlStudy.DateTime = QDateTime::fromString(jsonStudy["StudyDatetime"].toString(), "yyyy-MM-dd hh:mm:ss");
             sqrlStudy.DayNumber = jsonStudy["DayNumber"].toInt();
             sqrlStudy.Description = jsonStudy["Description"].toString();
             sqrlStudy.Equipment = jsonStudy["Equipment"].toString();
@@ -705,6 +717,9 @@ bool squirrel::Write() {
 
     /* ----- 1) Write data. And set the relative paths in the objects ----- */
     /* iterate through subjects */
+    QSqlDatabase writeDbconn = QSqlDatabase::database(databaseUUID);
+    if (!writeDbconn.transaction())
+        Log(QString("Warning: could not start write transaction: %1").arg(writeDbconn.lastError().text()));
     QList<squirrelSubject> subjects = GetSubjectList();
     for (auto &subject : subjects) {
         qint64 subjectRowID = subject.GetObjectID();
@@ -834,6 +849,8 @@ bool squirrel::Write() {
             }
         }
     }
+    if (!writeDbconn.commit())
+        Log(QString("Warning: could not commit write transaction: %1").arg(writeDbconn.lastError().text()));
 
     /* ----- 2) write .json file ----- */
     Debug("Creating header file...");
@@ -862,9 +879,8 @@ bool squirrel::Write() {
     QJsonArray JSONsubjects;
 
     /* add subjects to JSON */
-    QList<squirrelSubject> subjectses = GetSubjectList();
-    Log(QString("Adding %1 subjects").arg(subjectses.size()));
-    for (auto &subject : subjectses) {
+    Log(QString("Adding %1 subjects").arg(subjects.size()));
+    for (auto &subject : subjects) {
         JSONsubjects.append(subject.ToJSON());
     }
 
@@ -968,7 +984,6 @@ bool squirrel::Write() {
         if (!utils::WriteTextFile(jsonFilePath, j))
             Log("Error writing [" + jsonFilePath + "]");
 
-        lastupdate = 0;
         QString m;
         Log("Writing package...");
         if (CompressDirectoryToArchive(workingDir, GetPackagePath(), m)) {
@@ -1270,7 +1285,7 @@ QString squirrel::Print(bool detail) {
             foreach (squirrelIntervention intervention, interventions)
                 str += intervention.PrintIntervention();
         else
-            str += QString("[%1 interventions]").arg(observations.size());
+            str += QString("[%1 interventions]").arg(interventions.size());
 
     }
 
@@ -1293,42 +1308,18 @@ QString squirrel::Print(bool detail) {
  */
 qint64 squirrel::GetUnzipSize() {
 
-    qint64 unzipSize(0);
-
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-
-    /* Analysis */
-    q.prepare("select sum(Size) 'Size' from Analysis");
+    q.prepare(
+        "select "
+        "(select coalesce(sum(Size),0) from Analysis) +"
+        "(select coalesce(sum(Size),0) from DataDictionary) +"
+        "(select coalesce(sum(Size),0) from Experiment) +"
+        "(select coalesce(sum(Size),0) from GroupAnalysis) +"
+        "(select coalesce(sum(Size),0) + coalesce(sum(BehavioralSize),0) from Series) as TotalSize"
+    );
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     q.first();
-    unzipSize += q.value("Size").toLongLong();
-
-    /* DataDictionary */
-    q.prepare("select sum(Size) 'Size' from DataDictionary");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    unzipSize += q.value("Size").toLongLong();
-
-    /* Experiment */
-    q.prepare("select sum(Size) 'Size' from Experiment");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    unzipSize += q.value("Size").toLongLong();
-
-    /* GroupAnalysis */
-    q.prepare("select sum(Size) 'Size' from GroupAnalysis");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    unzipSize += q.value("Size").toLongLong();
-
-    /* Series */
-    q.prepare("select sum(Size) 'Size', sum(BehavioralSize) 'BehavioralSize' from Series");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    unzipSize += q.value("Size").toLongLong();
-    unzipSize += q.value("BehavioralSize").toLongLong();
-
-    return unzipSize;
+    return q.value("TotalSize").toLongLong();
 }
 
 
@@ -1340,42 +1331,19 @@ qint64 squirrel::GetUnzipSize() {
  * @return total number of files in the package
  */
 qint64 squirrel::GetFileCount() {
-    qint64 total(0);
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-
-    /* Analysis */
-    q.prepare("select sum(FileCount) 'FileCount' from Analysis");
+    q.prepare(
+        "select "
+        "(select coalesce(sum(FileCount),0) from Analysis) +"
+        "(select coalesce(sum(FileCount),0) from DataDictionary) +"
+        "(select coalesce(sum(FileCount),0) from Experiment) +"
+        "(select coalesce(sum(FileCount),0) from GroupAnalysis) +"
+        "(select coalesce(sum(FileCount),0) + coalesce(sum(BehavioralFileCount),0) from Series) as TotalFileCount"
+    );
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     q.first();
-    total += q.value("FileCount").toLongLong();
-
-    /* DataDictionary */
-    q.prepare("select sum(FileCount) 'FileCount' from DataDictionary");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    total += q.value("FileCount").toLongLong();
-
-    /* Experiment */
-    q.prepare("select sum(FileCount) 'FileCount' from Experiment");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    total += q.value("FileCount").toLongLong();
-
-    /* GroupAnalysis */
-    q.prepare("select sum(FileCount) 'FileCount' from GroupAnalysis");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    total += q.value("FileCount").toLongLong();
-
-    /* Series */
-    q.prepare("select sum(FileCount) 'FileCount', sum(BehavioralFileCount) 'BehavioralFileCount' from Series");
-    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    q.first();
-    total += q.value("FileCount").toLongLong();
-    total += q.value("BehavioralFileCount").toLongLong();
-
-    return total;
+    return q.value("TotalFileCount").toLongLong();
 }
 
 
@@ -1453,6 +1421,9 @@ QString squirrel::PrintPackage() {
     str += utils::Print(QString("  SquirrelBuild: %1").arg(SquirrelBuild));
     str += utils::Print(QString("  SquirrelVersion: %1").arg(SquirrelVersion));
     str += utils::Print(QString("  Objects:\n    +-- %1 subjects\n    |  +-- %4 observations\n    |  +-- %5 Interventions\n    |  +-- %2 studies\n    |  +---- %3 series\n    |  +---- %6 analyses\n    +-- %7 experiments\n    +-- %8 pipelines\n    +-- %9 group analyses\n    +-- %10 data dictionary").arg(numSubjects).arg(numStudies).arg(numSeries).arg(numObservations).arg(numInterventions).arg(numAnalyses).arg(numExperiments).arg(numPipelines).arg(numGroupAnalyses).arg(numDataDictionaries));
+
+    qint64 peakMem = utils::GetPeakMemoryBytes();
+    str += utils::Print(QString("  PeakMemory: %1").arg(peakMem > 0 ? utils::HumanReadableSize(peakMem) : QString("N/A")));
 
     return str;
 }
@@ -2177,8 +2148,43 @@ QList<squirrelStudy> squirrel::GetStudyList(qint64 subjectRowID) {
  * @return list of series
  */
 QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
-    QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    QSqlDatabase db = QSqlDatabase::database(databaseUUID);
     QList<squirrelSeries> list;
+
+    /* batch-load params for the entire study (or all series when studyRowID < 0) */
+    QHash<qint64, QHash<QString,QString>> batchParams;
+    {
+        QSqlQuery qp(db);
+        if (studyRowID < 0)
+            qp.prepare("select * from Params");
+        else
+            qp.prepare("select p.* from Params p join Series s on p.SeriesRowID = s.SeriesRowID where s.StudyRowID = :id");
+        if (studyRowID >= 0) qp.bindValue(":id", studyRowID);
+        utils::SQLQuery(qp, __FUNCTION__, __FILE__, __LINE__);
+        while (qp.next())
+            batchParams[qp.value("SeriesRowID").toLongLong()][qp.value("ParamKey").toString()] = qp.value("ParamValue").toString();
+    }
+
+    /* batch-load staged files (both Series and BehSeries) for the entire study */
+    QHash<qint64, QStringList> batchStaged, batchStagedBeh;
+    {
+        QSqlQuery qs(db);
+        if (studyRowID < 0)
+            qs.prepare("select * from StagedFiles where ObjectType = 'Series' or ObjectType = 'BehSeries'");
+        else
+            qs.prepare("select sf.* from StagedFiles sf join Series s on sf.ObjectRowID = s.SeriesRowID where s.StudyRowID = :id and (sf.ObjectType = 'Series' or sf.ObjectType = 'BehSeries')");
+        if (studyRowID >= 0) qs.bindValue(":id", studyRowID);
+        utils::SQLQuery(qs, __FUNCTION__, __FILE__, __LINE__);
+        while (qs.next()) {
+            qint64 sid = qs.value("ObjectRowID").toLongLong();
+            if (qs.value("ObjectType").toString() == "Series")
+                batchStaged[sid].append(qs.value("StagedPath").toString());
+            else
+                batchStagedBeh[sid].append(qs.value("StagedPath").toString());
+        }
+    }
+
+    QSqlQuery q(db);
     if (studyRowID < 0) {
         q.prepare("select Series.*, Study.SubjectRowID, Study.StudyNumber as ParentStudyNumber, Study.SequenceNumber as ParentStudySeqNum, Subject.ID as ParentSubjectID, Subject.SequenceNumber as ParentSubjectSeqNum from Series left join Study on Series.StudyRowID = Study.StudyRowID left join Subject on Study.SubjectRowID = Subject.SubjectRowID order by SeriesNumber asc, Series.SequenceNumber");
     }
@@ -2194,9 +2200,10 @@ QList<squirrelSeries> squirrel::GetSeriesList(qint64 studyRowID) {
         s.parentSubjectSeqNum = q.value("ParentSubjectSeqNum").toInt();
         s.parentStudyNumber = q.value("ParentStudyNumber").toInt();
         s.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
-        s.params = utils::GetParams(databaseUUID, s.GetObjectID());
-        s.stagedFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), Series);
-        s.stagedBehFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), BehSeries);
+        qint64 sid = s.GetObjectID();
+        s.params = batchParams.value(sid);
+        s.stagedFiles = batchStaged.value(sid);
+        s.stagedBehFiles = batchStagedBeh.value(sid);
         s.SetDirFormat(SubjectDirFormat, StudyDirFormat, SeriesDirFormat);
         list.append(s);
         Debug(QString("Found SeriesNumber [%1]").arg(s.SeriesNumber), __FUNCTION__);
@@ -2675,15 +2682,23 @@ qint64 squirrel::FindExperiment(QString experimentName) {
 /* ----- FindPipeline ----------------------------------------- */
 /* ------------------------------------------------------------ */
 /**
- * @brief Find a Pipeline by name
+ * @brief Find a Pipeline by name, and optionally by version
  * @param pipelineName Pipeline name to search for
+ * @param pipelineVersion Pipeline version to match. If <= 0, version is ignored and the first matching pipeline is returned
  * @return The database rowid
  */
-qint64 squirrel::FindPipeline(QString pipelineName) {
+qint64 squirrel::FindPipeline(QString pipelineName, int pipelineVersion) {
     qint64 rowid(-1);
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
-    q.prepare("select PipelineRowID from Pipeline where PipelineName = :pipelineName");
-    q.bindValue(":pipelineName", pipelineName);
+    if (pipelineVersion > 0) {
+        q.prepare("select PipelineRowID from Pipeline where PipelineName = :pipelineName and PipelineVersion = :pipelineVersion order by PipelineRowID asc");
+        q.bindValue(":pipelineName", pipelineName);
+        q.bindValue(":pipelineVersion", pipelineVersion);
+    }
+    else {
+        q.prepare("select PipelineRowID from Pipeline where PipelineName = :pipelineName order by PipelineRowID asc");
+        q.bindValue(":pipelineName", pipelineName);
+    }
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         rowid = q.value("PipelineRowID").toLongLong();
@@ -2895,13 +2910,7 @@ bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outD
  */
 void squirrel::ResequenceSubjects() {
 
-    QList<squirrelSubject> subjects = GetSubjectList();
-    int i = 1;
-    foreach (squirrelSubject subject, subjects) {
-        subject.SequenceNumber = i;
-        subject.Store();
-        i++;
-    }
+    ResequenceTable("Subject", "SubjectRowID", "", -1, "ID asc, SequenceNumber asc");
 }
 
 
@@ -2914,13 +2923,7 @@ void squirrel::ResequenceSubjects() {
  */
 void squirrel::ResequenceStudies(qint64 subjectRowID) {
 
-    QList<squirrelStudy> studies = GetStudyList(subjectRowID);
-    int i = 1;
-    foreach (squirrelStudy study, studies) {
-        study.SequenceNumber = i;
-        study.Store();
-        i++;
-    }
+    ResequenceTable("Study", "StudyRowID", "SubjectRowID", subjectRowID, "StudyNumber asc, SequenceNumber asc");
 }
 
 
@@ -2933,13 +2936,58 @@ void squirrel::ResequenceStudies(qint64 subjectRowID) {
  */
 void squirrel::ResequenceSeries(qint64 studyRowID) {
 
-    QList<squirrelSeries> serieses = GetSeriesList(studyRowID);
+    ResequenceTable("Series", "SeriesRowID", "StudyRowID", studyRowID, "SeriesNumber asc, SequenceNumber asc");
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ResequenceTable -------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Renumber the SequenceNumber column of a table, in place
+ * @param table Table to renumber, ex `Series`
+ * @param pkCol Primary key column of the table, ex `SeriesRowID`
+ * @param parentCol Column pointing at the parent object, ex `StudyRowID`. Leave blank to renumber the whole table
+ * @param parentRowID rowID of the parent object. Ignored if parentCol is blank
+ * @param orderBy `order by` clause determining the new sequence
+ *
+ * This only touches the SequenceNumber column. It deliberately avoids
+ * loading and re-Store()ing each object, because an object Store() also
+ * rewrites that object's params and staged file lists. Resequencing after
+ * every added object then costs O(n^2) in rows written, which is enough
+ * to stall a large package export for hours.
+ */
+void squirrel::ResequenceTable(QString table, QString pkCol, QString parentCol, qint64 parentRowID, QString orderBy) {
+
+    QSqlDatabase resequenceDb = QSqlDatabase::database(databaseUUID);
+
+    /* get the rowIDs in their new sequence order */
+    QSqlQuery q(resequenceDb);
+    if (parentCol.isEmpty() || (parentRowID < 0)) {
+        q.prepare(QString("select %1 from %2 order by %3").arg(pkCol).arg(table).arg(orderBy));
+    }
+    else {
+        q.prepare(QString("select %1 from %2 where %3 = :parentid order by %4").arg(pkCol).arg(table).arg(parentCol).arg(orderBy));
+        q.bindValue(":parentid", parentRowID);
+    }
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    QList<qint64> rowIDs;
+    while (q.next())
+        rowIDs.append(q.value(0).toLongLong());
+
+    /* ... and renumber them */
+    QSqlQuery u(resequenceDb);
+    u.prepare(QString("update %1 set SequenceNumber = :seq where %2 = :id").arg(table).arg(pkCol));
     int i = 1;
-    foreach (squirrelSeries series, serieses) {
-        series.SequenceNumber = i;
-        series.Store();
+    foreach (qint64 rowID, rowIDs) {
+        u.bindValue(":seq", i);
+        u.bindValue(":id", rowID);
+        utils::SQLQuery(u, __FUNCTION__, __FILE__, __LINE__);
         i++;
     }
+
+    Debug(QString("Resequenced [%1] rows in table [%2]").arg(rowIDs.size()).arg(table), __FUNCTION__);
 }
 
 

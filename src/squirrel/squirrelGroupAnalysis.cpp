@@ -105,7 +105,7 @@ bool squirrelGroupAnalysis::Store() {
         q.bindValue(":Size", Size);
         q.bindValue(":VirtualPath", virtualPath);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        objectID = q.lastInsertId().toInt();
+        objectID = q.lastInsertId().toLongLong();
     }
     /* ... otherwise update */
     else {

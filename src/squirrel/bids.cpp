@@ -21,6 +21,9 @@
   ------------------------------------------------------------------------------ */
 
 #include "bids.h"
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonArray>
 
 /* ---------------------------------------------------------------------------- */
 /* ----- bids ----------------------------------------------------------------- */
@@ -87,6 +90,10 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
         return false;
     }
 
+    QSqlDatabase bidsDbconn = QSqlDatabase::database(sqrl->GetDatabaseUUID());
+    if (!bidsDbconn.transaction())
+        sqrl->Log(QString("Warning: could not start BIDS import transaction: %1").arg(bidsDbconn.lastError().text()));
+
     /* check for all .json files in the root directory */
     QStringList rootfiles = utils::FindAllFiles(dir, "*", false);
     sqrl->Debug(QString("Found [%1] root files matching '%2/*'").arg(rootfiles.size()).arg(dir), __FUNCTION__);
@@ -139,17 +146,32 @@ bool bids::LoadToSquirrel(QString dir, squirrel *sqrl) {
             LoadSessionDir(sespath, subjectRowID, -1, sqrl);
         }
 
+        /* now that this subject's studies exist, apply the sub-*_sessions.tsv (session
+         * acquisition times + session-level measures) */
+        QString sessionsFile = QString("%1/%2_sessions.tsv").arg(subjpath).arg(subjdir);
+        if (utils::FileExists(sessionsFile))
+            LoadSessionsFile(sessionsFile, subjectRowID, sqrl);
     }
 
-    /* check for a 'derivatives' directory, which are analyses */
+    /* check for a 'phenotype' directory, which become subject observations */
+    QString phenotypeDir = QString("%1/phenotype").arg(dir);
+    if (QDir(phenotypeDir).exists())
+        LoadPhenotypeDir(phenotypeDir, sqrl);
 
-    /* check for a 'logs' directory, which are logs */
+    /* check for a 'derivatives' directory, which become pipelines + analyses */
+    QString derivativesDir = QString("%1/derivatives").arg(dir);
+    if (QDir(derivativesDir).exists())
+        LoadDerivatives(derivativesDir, sqrl);
 
-    /* check for a 'code' directory, which are pipeline/code */
+    /* TODO future passes:
+     *   'code' directory     -> pipeline/code
+     *   'stimuli' directory  -> experiments
+     *   'phenotype' directory -> observations
+     *   'logs' directory     -> logs
+     */
 
-    /* check for a 'stimuli' directory, which are experiments */
-
-    /* check for a 'phenotype' directory, which are ... subject demographics, or observations? */
+    if (!bidsDbconn.commit())
+        sqrl->Log(QString("Warning: could not commit BIDS import transaction: %1").arg(bidsDbconn.lastError().text()));
 
     return true;
 }
@@ -188,9 +210,8 @@ bool bids::LoadRootFiles(QStringList rootfiles, squirrel *sqrl) {
         */
 
         if (filename == "dataset_description.json") {
-            sqrl->Debug(QString("Read squirrel->Description from %1").arg(filePath), __FUNCTION__);
-            QString desc = utils::CleanJSON(utils::ReadTextFileToString(filePath));
-            sqrl->Description = desc;
+            sqrl->Debug(QString("Parsing dataset_description.json from %1").arg(filePath), __FUNCTION__);
+            LoadDatasetDescription(filePath, sqrl);
         }
         else if ((filename == "README") || (filename == "README.md")) {
             sqrl->Debug(QString("Read squirrel->Readme from %1").arg(filePath), __FUNCTION__);
@@ -277,26 +298,8 @@ bool bids::LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl) {
             sqrl->Log(QString("Added [%1] files to analysis [%2]").arg(files.size()).arg("analysis"));
 
         }
-        else if (f.endsWith("_sessions.tsv")) {
-
-            /* load this information into a hash. the second column is likely the session date
-             * ses-01 value
-             * ses-02 value
-             */
-            QString filestr = utils::ReadTextFileToString(f);
-
-            utils::indexedHash tsv;
-            QStringList cols;
-            QString m;
-
-            if (utils::ParseTSV(filestr, tsv, cols, m)) {
-                //sqrl->Log(QString("Successfuly read [%1] into [%2] rows").arg(f).arg(tsv.size()), __FUNCTION__);
-                for (int i=0; i<tsv.size(); i++) {
-                    QString sesid = tsv[i]["session_id"];
-                    QString datetime = tsv[i]["acq_time"];
-                }
-            }
-        }
+        /* note: sub-*_sessions.tsv is handled separately in LoadSessionsFile, after
+         * this subject's studies have been created */
 
     }
 
@@ -339,297 +342,250 @@ bool bids::LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squ
         study.Get();
     }
 
-    /* possible directories:
-        anat
-        func
-        figures
-        fmap
-        ieeg
-        perf
-        eeg
-        micr
-        motion
-    */
+    /* BIDS datatype (modality) directories, eg: anat func fmap dwi perf pet eeg ieeg meg micr motion beh nirs */
 
-    /* for loading the JSON files containing paramaters */
-    QHash<QString, QString> params;
+    /* derive the session/visit label from the session directory name (eg "ses-1" -> "1") */
+    QString sesLabel;
+    QString sesDirName = QFileInfo(sesdir).fileName();
+    if (sesDirName.startsWith("ses-"))
+        sesLabel = sesDirName.mid(4);
 
-    /* get list of all dirs in this sesdir */
-    QStringList sesdirs = utils::FindAllDirs(sesdir, "*", false);
-    sqrl->Log(QString("Found [%1] directories in [%2/*]").arg(sesdirs.size()).arg(sesdir));
-    if (sesdirs.size() > 0) {
-        foreach (QString dir, sesdirs) {
-            QString datadir = QString("%1/%2").arg(sesdir).arg(dir);
-            QStringList files = utils::FindAllFiles(datadir, "*", false);
-            sqrl->Log(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir));
+    /* track which modalities are present so we can set the study modality */
+    QSet<QString> modalities;
 
-            /* now do something with the files, depending on what they are */
-            if ((dir == "anat") || (dir == "fmap") || (dir == "perf")) {
-                foreach (QString f, files) {
+    /* get list of all datatype dirs in this sesdir */
+    QStringList datatypeDirs = utils::FindAllDirs(sesdir, "*", false);
+    sqrl->Log(QString("Found [%1] datatype directories in [%2/*]").arg(datatypeDirs.size()).arg(sesdir));
 
-                    sqrl->Debug(QString("Found file [%1] of type [%2]").arg(f).arg(dir), __FUNCTION__);
+    foreach (QString datatype, datatypeDirs) {
+        /* 'figures' (derivatives artifact) and similar non-data dirs are skipped */
+        if (datatype == "figures")
+            continue;
 
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace(".nii.gz", "");
-                    filename.replace(".nii", "");
-                    QString protocol = filename.section("_", -1);
-                    study.VisitType = filename.section("_", 1,1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
+        QString datadir = QString("%1/%2").arg(sesdir).arg(datatype);
+        QStringList files = utils::FindAllFiles(datadir, "*", false);
+        sqrl->Log(QString("Found [%1] files in '%2'").arg(files.size()).arg(datadir));
 
-                    sqrl->Debug(QString("Checkpoint 1 - SubjectID [%1]  protocol [%2]  seriesNum [%3]").arg(subject.ID).arg(protocol).arg(seriesNum), __FUNCTION__);
+        QString modality = ModalityForDatatype(datatype);
+        if (modality == "") {
+            sqrl->Log(QString("Notice! BIDS datatype directory [%1] not recognized; importing its data files generically").arg(datatype));
+        }
 
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    files2.append(f);
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
+        /* identify the 'primary' data files in this datatype dir. Sidecars (.json,
+         * events/channels/scans .tsv, .bval/.bvec) are attached to their primary,
+         * not turned into their own series. */
+        QStringList primaries;
+        foreach (QString f, files) {
+            QString fn = QFileInfo(f).fileName().toLower();
+            if (fn.endsWith(".nii.gz") || fn.endsWith(".nii") ||
+                fn.endsWith(".edf") || fn.endsWith(".bdf") || fn.endsWith(".set") ||
+                fn.endsWith(".vhdr") || fn.endsWith(".fif") || fn.endsWith(".snirf") ||
+                fn.endsWith(".tif") || fn.endsWith(".tiff"))
+                primaries.append(f);
+        }
+        /* fallback for datatypes whose primary data is a .tsv (eg motion, beh): any
+         * file that isn't an obvious sidecar becomes a primary */
+        if (primaries.isEmpty()) {
+            foreach (QString f, files) {
+                QString fn = QFileInfo(f).fileName().toLower();
+                if (fn.endsWith(".json") || fn.endsWith(".bval") || fn.endsWith(".bvec"))
+                    continue;
+                if (fn.endsWith("_events.tsv") || fn.endsWith("_channels.tsv") ||
+                    fn.endsWith("_scans.tsv") || fn.endsWith("_electrodes.tsv") ||
+                    fn.endsWith("_coordsystem.json"))
+                    continue;
+                primaries.append(f);
             }
-            else if (dir == "func") {
-                foreach (QString f, files) {
+        }
 
-                    /* ignore the *events.tsv files, they'll be handled with the .nii.gz */
-                    if (f.endsWith("events.tsv")) {
-                        continue;
-                    }
-
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace(".nii.gz", "");
-                    filename.replace(".nii", "");
-                    filename.replace(".tsv.gz", "");
-                    //QString ID = filename.section("_", 0,0);
-                    QString protocol = filename.section("_", 2, 2);
-                    QString run = filename.section("_", -1);
-                    study.VisitType = filename.section("_", 1, 1);
-                    protocol += run;
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    files2.append(f);
-                    if (f.endsWith("bold.nii.gz", Qt::CaseInsensitive)) {
-                        QString tf = f;
-                        tf.replace("bold.nii.gz", "events.tsv");
-                        files2.append(tf);
-                    }
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else if (dir == "pet") {
-                foreach (QString f, files) {
-
-                    if (f.endsWith("pet.json"))
-                        params = sqrl->ReadParamsFile(f);
-
-                    /* ignore the *.json and event.tsv files, they'll be handled with the .nii.gz later */
-                    if ((f.endsWith("pet.json")) || (f.endsWith("events.tsv")) || (f.endsWith("events.json"))) {
-                        continue;
-                    }
-
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace(".nii.gz", "", Qt::CaseInsensitive);
-                    filename.replace(".nii", "", Qt::CaseInsensitive);
-                    QString protocol = filename.section("_", -1);
-                    study.VisitType = filename.section("_", 1, 1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    /* create a seriesRowID */
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    files2.append(f);
-                    if (f.endsWith("pet.nii.gz", Qt::CaseInsensitive)) {
-                        /* there could be several files that are associated with the .nii.gz file, so lets add all of those */
-                        QString tf = f;
-                        tf.replace("pet.nii.gz", "pet.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("pet.json", "events.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("events.json", "events.tsv", Qt::CaseInsensitive);
-                        files2.append(tf);
-                    }
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else if (dir == "micr") {
-                foreach (QString f, files) {
-
-                    if (f.endsWith("SEM.json", Qt::CaseInsensitive))
-                        params = sqrl->ReadParamsFile(f);
-
-                    /* ignore the *.json and event.tsv files, they'll be handled with the .nii.gz later */
-                    if ((f.endsWith("micr.json")) || (f.endsWith("events.tsv")) || (f.endsWith("events.json"))) {
-                        continue;
-                    }
-
-                    QString filename = QFileInfo(f).fileName();
-                    QString protocol = filename.section("_", -1);
-                    study.VisitType = filename.section("_", 1, 1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    /* create a seriesRowID */
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    files2.append(f);
-                    if (f.endsWith("pet.nii.gz"), Qt::CaseInsensitive) {
-                        /* there could be several files that are associated with the .nii.gz file, so lets add all of those */
-                        QString tf = f;
-                        tf.replace("pet.nii.gz", "pet.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("pet.json", "events.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("events.json", "events.tsv", Qt::CaseInsensitive);
-                        files2.append(tf);
-                    }
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else if (dir == "motion") {
-                /* just copy all the files into the study */
-                foreach (QString f, files) {
-
-                    if (f.endsWith("motion.json"))
-                        params = sqrl->ReadParamsFile(f);
-
-                    /* ignore some files here, they'll be handled with the _motion.tsv file later on */
-                    if ( (f.endsWith("channels.tsv")) || (f.endsWith("motion.json")) ) {
-                        continue;
-                    }
-
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace("_motion.tsv", "");
-                    QString protocol = filename.section("_", 2, 2); /* second part after splitting by _ */
-                    study.VisitType = filename.section("_", 1, 1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    if (f.endsWith("motion.tsv", Qt::CaseInsensitive)) {
-                        /* there could be several files that are associated with the .nii.gz file, so lets add all of those */
-                        QString tf = f;
-                        tf.replace("motion.tsv", "channels.tsv", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("channels.tsv", "motion.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                    }
-                    files2.append(f);
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else if (dir == "eeg") {
-                /* just copy all the files into the study */
-                foreach (QString f, files) {
-
-                    if (f.endsWith("eeg.json"))
-                        params = sqrl->ReadParamsFile(f);
-
-                    /* the only file we care about is the *.edf. All other files will be handled later on */
-                    if ( (f.endsWith("channels.tsv")) || (f.endsWith("eeg.json")) || (f.endsWith("events.tsv")) ) {
-                        continue;
-                    }
-
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace("_eeg.edf", "");
-                    QString protocol = filename.section("_", 2, 2); /* second part after splitting by _ */
-                    study.VisitType = filename.section("_", 1, 1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    if (f.endsWith("eeg.edf", Qt::CaseInsensitive)) {
-                        /* there could be several files that are associated with the .nii.gz file, so lets add all of those */
-                        QString tf = f;
-                        tf.replace("eeg.edf", "channels.tsv", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("channels.tsv", "eeg.json", Qt::CaseInsensitive);
-                        files2.append(tf);
-                        tf.replace("eeg.json", "events.tsv", Qt::CaseInsensitive);
-                        files2.append(tf);
-                    }
-                    files2.append(f);
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else if (dir == "beh") {
-                /* just copy all the files into the study */
-                foreach (QString f, files) {
-
-                    QString filename = QFileInfo(f).fileName();
-                    filename.replace("_eeg.edf", "");
-                    QString protocol = filename.section("_", 2, 2); /* second part after splitting by _ */
-                    study.VisitType = filename.section("_", 1, 1);
-                    qint64 seriesNum = study.GetNextSeriesNumber();
-
-                    /* create a subjectRowID if it doesn't exist */
-                    squirrelSeries series(sqrl->GetDatabaseUUID());
-                    series.SeriesNumber = seriesNum;
-                    series.studyRowID = studyRowID;
-                    series.Protocol = protocol;
-                    series.Store();
-                    qint64 seriesRowID = series.GetObjectID();
-                    sqrl->Log(QString("  Added series [%1] with seriesRowID [%2]").arg(seriesNum).arg(seriesRowID));
-
-                    /* now that the subject/study/series exist, add the file(s) */
-                    QStringList files2;
-                    files2.append(f);
-                    sqrl->AddStagedFiles(Series, seriesRowID, files2);
-                }
-            }
-            else {
-                sqrl->Log(QString("Notice! modality directory [%1] not handled yet").arg(dir));
-            }
+        foreach (QString primary, primaries) {
+            AddSeriesFromBidsFile(primary, datatype, studyRowID, sqrl);
+            if (modality != "")
+                modalities.insert(modality);
         }
     }
 
+    /* persist study-level fields determined from the session contents */
+    if (modalities.contains("MR"))
+        study.Modality = "MR";
+    else if (modalities.size() == 1)
+        study.Modality = *modalities.begin();
+    else if (modalities.size() > 1) {
+        QStringList ml(modalities.begin(), modalities.end());
+        ml.sort();
+        study.Modality = ml.join("/");
+    }
+    if (!sesLabel.isEmpty())
+        study.VisitType = sesLabel;
+    study.Store(); /* objectID is set, so this updates the existing study row */
+
     return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- ParseBidsFilename ---------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Parse a BIDS filename into entity key/value pairs, a suffix, and an extension
+ *
+ * eg "sub-01_ses-1_task-rest_run-2_bold.nii.gz" yields
+ *    entities = {sub:01, ses:1, task:rest, run:2}, suffix = "bold", ext = ".nii.gz"
+ *
+ * @param filename the bare filename (no directory)
+ * @param entities [out] hash of entity key -> value
+ * @param suffix [out] the trailing suffix (the token with no '-')
+ * @param ext [out] the file extension (including leading dot)
+ */
+void bids::ParseBidsFilename(const QString &filename, QHash<QString, QString> &entities, QString &suffix, QString &ext) {
+    entities.clear();
+    suffix.clear();
+    ext.clear();
+
+    QString base = filename;
+
+    /* strip the extension (check multi-part extensions before single-part) */
+    static const QStringList exts = {
+        ".nii.gz", ".tsv.gz", ".ome.tif", ".ome.tiff",
+        ".nii", ".json", ".tsv", ".bval", ".bvec",
+        ".edf", ".bdf", ".set", ".vhdr", ".vmrk", ".eeg", ".fif",
+        ".snirf", ".tif", ".tiff", ".png", ".jpg", ".pos", ".mat", ".txt"
+    };
+    foreach (const QString &e, exts) {
+        if (base.endsWith(e, Qt::CaseInsensitive)) {
+            ext = base.right(e.size());
+            base.chop(e.size());
+            break;
+        }
+    }
+
+    /* split the remaining base into underscore-separated tokens. A 'key-value'
+     * token is an entity; a token with no '-' is the suffix. */
+    foreach (const QString &token, base.split("_", Qt::SkipEmptyParts)) {
+        int dash = token.indexOf('-');
+        if (dash > 0)
+            entities.insert(token.left(dash), token.mid(dash + 1));
+        else
+            suffix = token;
+    }
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- ModalityForDatatype -------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Map a BIDS datatype directory name to a squirrel study modality
+ * @param datatype the datatype directory name (anat, func, eeg, ...)
+ * @return the squirrel modality string, or "" if unrecognized
+ */
+QString bids::ModalityForDatatype(const QString &datatype) {
+    if ((datatype == "anat") || (datatype == "func") || (datatype == "fmap") || (datatype == "dwi") || (datatype == "perf"))
+        return "MR";
+    if (datatype == "pet")   return "PET";
+    if (datatype == "eeg")   return "EEG";
+    if (datatype == "ieeg")  return "iEEG";
+    if (datatype == "meg")   return "MEG";
+    if (datatype == "micr")  return "Microscopy";
+    if (datatype == "motion") return "Motion";
+    if (datatype == "beh")   return "Behavioral";
+    if ((datatype == "nirs") || (datatype == "fnirs")) return "NIRS";
+    return "";
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- AddSeriesFromBidsFile ------------------------------------------------ */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Create a squirrel series from a primary BIDS data file
+ *
+ * Parses the BIDS entities from the filename, populates the series' BIDS fields,
+ * reads the matching .json sidecar into the series params, and stages the primary
+ * file plus its associated sidecars (.json/.bval/.bvec, events/physio/channels).
+ *
+ * @param primaryFile full path to the primary data file
+ * @param datatype the BIDS datatype directory name (anat, func, dwi, ...)
+ * @param studyRowID the parent study row id
+ * @param sqrl squirrel object
+ * @return the new series row id, or -1 on failure
+ */
+qint64 bids::AddSeriesFromBidsFile(QString primaryFile, QString datatype, qint64 studyRowID, squirrel *sqrl) {
+    QFileInfo fi(primaryFile);
+    QString filename = fi.fileName();
+    QString dirpath = fi.absolutePath();
+
+    QHash<QString, QString> entities;
+    QString suffix, ext;
+    ParseBidsFilename(filename, entities, suffix, ext);
+
+    /* next series number for this study */
+    squirrelStudy study(sqrl->GetDatabaseUUID());
+    study.SetObjectID(studyRowID);
+    qint64 seriesNum = study.GetNextSeriesNumber();
+
+    /* build the series and populate its BIDS fields */
+    squirrelSeries series(sqrl->GetDatabaseUUID());
+    series.SeriesNumber = seriesNum;
+    series.studyRowID = studyRowID;
+    series.BidsEntity = datatype;
+    series.BidsSuffix = suffix;
+    series.BidsTask = entities.value("task");
+    series.BidsRun = entities.value("run");
+    series.BidsPhaseEncodingDirection = entities.value("dir");
+    bool runOk = false;
+    int runNum = entities.value("run").toInt(&runOk);
+    if (runOk)
+        series.Run = runNum;
+
+    /* a human-ish protocol/description from the entities */
+    QString protocol = suffix;
+    if (entities.contains("task"))
+        protocol = entities.value("task") + "_" + protocol;
+    if (entities.contains("acq"))
+        protocol = entities.value("acq") + "_" + protocol;
+    series.Protocol = protocol;
+    series.Description = suffix;
+
+    /* the file stem (filename without extension), used to find sidecars */
+    QString stem = filename;
+    stem.chop(ext.size());
+
+    /* read the JSON sidecar (same stem) into the series params */
+    QString jsonSidecar = QString("%1/%2.json").arg(dirpath).arg(stem);
+    if (utils::FileExists(jsonSidecar))
+        series.params = sqrl->ReadParamsFile(jsonSidecar);
+
+    series.Store();
+    qint64 seriesRowID = series.GetObjectID();
+
+    /* gather the primary file plus its associated sidecars */
+    QStringList files;
+    files.append(primaryFile);
+
+    /* same-stem sidecars (.json/.bval/.bvec) */
+    foreach (const QString &se, QStringList({".json", ".bval", ".bvec"})) {
+        QString p = QString("%1/%2%3").arg(dirpath).arg(stem).arg(se);
+        if (utils::FileExists(p) && !files.contains(p))
+            files.append(p);
+    }
+
+    /* entity-prefix sidecars (events/physio/channels/stim) that share the entities
+     * but use a different suffix */
+    QString entityPrefix = stem;
+    if (!suffix.isEmpty() && entityPrefix.endsWith("_" + suffix))
+        entityPrefix.chop(suffix.size() + 1);
+    foreach (const QString &sc, QStringList({"events.tsv", "events.json", "physio.tsv.gz", "physio.json", "channels.tsv", "stim.tsv.gz"})) {
+        QString p = QString("%1/%2_%3").arg(dirpath).arg(entityPrefix).arg(sc);
+        if (utils::FileExists(p) && !files.contains(p))
+            files.append(p);
+    }
+
+    sqrl->AddStagedFiles(Series, seriesRowID, files);
+    sqrl->Log(QString("  Added %1 series [%2] suffix [%3] task [%4] run [%5] with [%6] file(s)")
+                  .arg(datatype).arg(seriesNum).arg(suffix).arg(series.BidsTask).arg(series.BidsRun).arg(files.size()));
+
+    return seriesRowID;
 }
 
 
@@ -755,6 +711,410 @@ bool bids::LoadTaskFile(QString f, squirrel *sqrl) {
     //sqrl->experimentList.append(sqrlExp);
     sqrl->AddStagedFiles(Experiment, expRowID, files);
     sqrl->Debug(QString("Added [%1] files to experiment [%2] with path [%3]").arg(files.size()).arg(experimentName).arg(exp.VirtualPath()), __FUNCTION__);
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- LoadDatasetDescription ----------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Parse dataset_description.json into squirrel package fields
+ *
+ * Maps Name -> PackageName, License -> License, and preserves the remaining BIDS
+ * dataset metadata (Authors, BIDSVersion, DatasetDOI, Funding, etc) as a JSON
+ * object under the 'bids' key in the package Notes field.
+ *
+ * @param f path to dataset_description.json
+ * @param sqrl squirrel object
+ * @return true if parsed as JSON, false if it fell back to raw text
+ */
+bool bids::LoadDatasetDescription(QString f, squirrel *sqrl) {
+    sqrl->Log(QString("Reading dataset_description.json [%1]").arg(f));
+
+    QString str = utils::ReadTextFileToString(f);
+    QJsonDocument doc = QJsonDocument::fromJson(str.toUtf8());
+    if (!doc.isObject()) {
+        sqrl->Log(QString("Could not parse dataset_description.json as JSON; storing raw text in Description"));
+        sqrl->Description = utils::CleanJSON(str);
+        return false;
+    }
+    QJsonObject root = doc.object();
+
+    QString name = root.value("Name").toString().trimmed();
+    if (!name.isEmpty()) {
+        sqrl->PackageName = name;
+        /* fill Description from the dataset Name if it is still empty or the default
+         * placeholder (BIDS has no separate dataset-level description field) */
+        QString desc = sqrl->Description.trimmed();
+        if (desc.isEmpty() || (desc == "Squirrel package"))
+            sqrl->Description = name;
+    }
+
+    QString license = root.value("License").toString().trimmed();
+    if (!license.isEmpty())
+        sqrl->License = license;
+
+    /* preserve the remaining dataset metadata as a JSON object in Notes */
+    QJsonObject bidsMeta;
+    foreach (const QString &key, QStringList({"BIDSVersion", "DatasetType", "DatasetDOI",
+                                              "Acknowledgements", "HowToAcknowledge",
+                                              "Authors", "Funding", "ReferencesAndLinks",
+                                              "EthicsApprovals", "GeneratedBy", "SourceDatasets"})) {
+        if (root.contains(key))
+            bidsMeta.insert(key, root.value(key));
+    }
+    if (!bidsMeta.isEmpty()) {
+        QJsonObject notes;
+        notes.insert("bids", bidsMeta);
+        sqrl->Notes = QString::fromUtf8(QJsonDocument(notes).toJson(QJsonDocument::Compact));
+    }
+
+    sqrl->Log(QString("Parsed dataset_description.json: Name [%1] License [%2]").arg(name).arg(license.left(40)));
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- LoadDerivatives ------------------------------------------------------ */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Import a BIDS 'derivatives' directory as squirrel pipelines + analyses
+ *
+ * Each derivatives/<name>/ directory becomes a squirrel pipeline. Each sub-* (and
+ * ses-*) directory inside it becomes an analysis attached to that subject's study.
+ *
+ * @param derivativesDir path to the derivatives directory
+ * @param sqrl squirrel object
+ * @return true
+ */
+bool bids::LoadDerivatives(QString derivativesDir, squirrel *sqrl) {
+    sqrl->Log(QString("Loading derivatives from [%1]").arg(derivativesDir));
+
+    QStringList pipelineDirs = utils::FindAllDirs(derivativesDir, "*", false);
+    foreach (QString pipelineName, pipelineDirs) {
+        QString pdir = QString("%1/%2").arg(derivativesDir).arg(pipelineName);
+
+        /* create the pipeline if it doesn't already exist */
+        qint64 pipelineRowID = sqrl->FindPipeline(pipelineName);
+        if (pipelineRowID < 0) {
+            squirrelPipeline p(sqrl->GetDatabaseUUID());
+            p.PipelineName = pipelineName;
+            p.PipelineVersion = 1;
+
+            /* a derivative may describe itself in its own dataset_description.json */
+            QString dd = QString("%1/dataset_description.json").arg(pdir);
+            if (utils::FileExists(dd)) {
+                QJsonObject root = QJsonDocument::fromJson(utils::ReadTextFileToString(dd).toUtf8()).object();
+                p.PipelineDescription = root.value("Name").toString();
+                QJsonArray gb = root.value("GeneratedBy").toArray();
+                if (!gb.isEmpty()) {
+                    QJsonObject g0 = gb.first().toObject();
+                    QString gname = g0.value("Name").toString();
+                    QString gver = g0.value("Version").toString();
+                    if (!gname.isEmpty())
+                        p.PipelineDescription = gname + (gver.isEmpty() ? "" : (" " + gver));
+                }
+            }
+            if (p.PipelineDescription.trimmed().isEmpty())
+                p.PipelineDescription = "BIDS derivative: " + pipelineName;
+
+            p.Store();
+            pipelineRowID = p.GetObjectID();
+            sqrl->Log(QString("  Created pipeline [%1]").arg(pipelineName));
+        }
+
+        /* stage pipeline-level files (those sitting directly in the pipeline dir) */
+        QStringList pipelineFiles = utils::FindAllFiles(pdir, "*", false);
+        if (!pipelineFiles.isEmpty())
+            sqrl->AddStagedFiles(Pipeline, pipelineRowID, pipelineFiles);
+
+        /* per-subject outputs become analyses */
+        QStringList subDirs = utils::FindAllDirs(pdir, "sub-*", false);
+        foreach (QString subName, subDirs) {
+            QString sdir = QString("%1/%2").arg(pdir).arg(subName);
+
+            qint64 subjectRowID = sqrl->FindSubject(subName);
+            if (subjectRowID < 0) {
+                sqrl->Log(QString("  Derivative output for unknown subject [%1]; skipping").arg(subName));
+                continue;
+            }
+
+            /* if the derivative subject has sessions, map each to the matching study */
+            QStringList sesDirs = utils::FindAllDirs(sdir, "ses-*", false);
+            if (!sesDirs.isEmpty()) {
+                foreach (QString sesName, sesDirs) {
+                    QString sesLabel = sesName.startsWith("ses-") ? sesName.mid(4) : sesName;
+                    qint64 studyRowID = ResolveDerivativeStudy(subjectRowID, sesLabel, sqrl);
+                    AddAnalysisFromDir(QString("%1/%2").arg(sdir).arg(sesName), pipelineName, pipelineRowID, studyRowID, sqrl);
+                }
+            }
+            else {
+                qint64 studyRowID = ResolveDerivativeStudy(subjectRowID, "", sqrl);
+                AddAnalysisFromDir(sdir, pipelineName, pipelineRowID, studyRowID, sqrl);
+            }
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- ResolveDerivativeStudy ----------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Find the study a derivative analysis should attach to, creating one if needed
+ * @param subjectRowID parent subject
+ * @param sesLabel session/visit label to match (empty = no session)
+ * @param sqrl squirrel object
+ * @return the study row id
+ */
+qint64 bids::ResolveDerivativeStudy(qint64 subjectRowID, QString sesLabel, squirrel *sqrl) {
+    QList<squirrelStudy> studies = sqrl->GetStudyList(subjectRowID);
+
+    /* prefer a study whose visit type matches the session label */
+    if (!sesLabel.isEmpty()) {
+        foreach (squirrelStudy s, studies) {
+            if (s.VisitType == sesLabel)
+                return s.GetObjectID();
+        }
+    }
+    /* otherwise use the subject's first study */
+    if (!studies.isEmpty())
+        return studies.first().GetObjectID();
+
+    /* no study exists (derivative-only subject); create one */
+    squirrelSubject subj(sqrl->GetDatabaseUUID());
+    subj.SetObjectID(subjectRowID);
+    subj.Get();
+
+    squirrelStudy st(sqrl->GetDatabaseUUID());
+    st.subjectRowID = subjectRowID;
+    st.StudyNumber = subj.GetNextStudyNumber();
+    st.Modality = "Derived";
+    st.VisitType = sesLabel;
+    st.Store();
+    sqrl->Log(QString("  Created derived study [%1] for subject [%2]").arg(st.StudyNumber).arg(subj.ID));
+    return st.GetObjectID();
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- AddAnalysisFromDir --------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Create an analysis from a derivative directory and stage its files
+ * @param dir directory containing the derivative output for one subject/session
+ * @param pipelineName name of the pipeline this analysis belongs to
+ * @param pipelineRowID parent pipeline row id
+ * @param studyRowID parent study row id
+ * @param sqrl squirrel object
+ * @return the new analysis row id
+ */
+qint64 bids::AddAnalysisFromDir(QString dir, QString pipelineName, qint64 pipelineRowID, qint64 studyRowID, squirrel *sqrl) {
+    squirrelAnalysis a(sqrl->GetDatabaseUUID());
+    a.AnalysisName = pipelineName;
+    a.PipelineName = pipelineName;
+    a.PipelineVersion = 1;
+    a.studyRowID = studyRowID;
+    a.pipelineRowID = pipelineRowID;
+    a.StatusMessage = "Imported from BIDS derivatives";
+    a.Store();
+    qint64 analysisRowID = a.GetObjectID();
+
+    QStringList files = utils::FindAllFiles(dir, "*", true); /* recursive */
+    if (!files.isEmpty())
+        sqrl->AddStagedFiles(Analysis, analysisRowID, files);
+
+    sqrl->Log(QString("  Added analysis [%1] -> studyRowID [%2] with [%3] file(s)").arg(pipelineName).arg(studyRowID).arg(files.size()));
+    return analysisRowID;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- LoadSessionsFile ----------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Apply a sub-*_sessions.tsv file to a subject's studies
+ *
+ * Sets each study's acquisition datetime from the 'acq_time' column, and stores any
+ * remaining (session-level) columns as subject observations, prefixed with the
+ * session label so repeated measures across sessions stay unique.
+ *
+ * @param f path to the sessions.tsv file
+ * @param subjectRowID the parent subject
+ * @param sqrl squirrel object
+ * @return true if parsed
+ */
+bool bids::LoadSessionsFile(QString f, qint64 subjectRowID, squirrel *sqrl) {
+    sqrl->Log(QString("Reading sessions file [%1]").arg(f));
+
+    utils::indexedHash tsv;
+    QStringList cols;
+    QString m;
+    if (!utils::ParseTSV(utils::ReadTextFileToString(f), tsv, cols, m)) {
+        sqrl->Log(QString("Error reading sessions.tsv [%1]: %2").arg(f).arg(m));
+        return false;
+    }
+
+    QList<squirrelStudy> studies = sqrl->GetStudyList(subjectRowID);
+
+    for (int i = 0; i < tsv.size(); i++) {
+        QString sesid = tsv[i].value("session_id").trimmed();
+        QString sesLabel = sesid.startsWith("ses-") ? sesid.mid(4) : sesid;
+        QString acqTime = tsv[i].value("acq_time").trimmed();
+
+        /* find the study whose visit type matches this session */
+        qint64 studyRowID = -1;
+        foreach (squirrelStudy s, studies) {
+            if (s.VisitType == sesLabel) {
+                studyRowID = s.GetObjectID();
+                break;
+            }
+        }
+
+        /* set the study acquisition datetime from acq_time */
+        QDateTime dt;
+        if (!acqTime.isEmpty() && (acqTime.toLower() != "n/a")) {
+            dt = QDateTime::fromString(acqTime, Qt::ISODate);
+            if (dt.isValid() && (studyRowID >= 0)) {
+                QSqlQuery q(QSqlDatabase::database(sqrl->GetDatabaseUUID()));
+                q.prepare("update Study set Datetime = :dt where StudyRowID = :id");
+                q.bindValue(":dt", dt);
+                q.bindValue(":id", studyRowID);
+                utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                sqrl->Log(QString("  Set study [%1] datetime to [%2]").arg(sesLabel).arg(dt.toString(Qt::ISODate)));
+            }
+        }
+
+        /* remaining columns become subject observations */
+        foreach (QString col, cols) {
+            if ((col == "session_id") || (col == "acq_time") || (col == "subject_id"))
+                continue;
+            QString val = tsv[i].value(col).trimmed();
+            if (val.isEmpty() || (val.toLower() == "n/a"))
+                continue;
+
+            squirrelObservation obs(sqrl->GetDatabaseUUID());
+            obs.subjectRowID = subjectRowID;
+            obs.InstrumentName = "sessions";
+            obs.ObservationName = sesLabel.isEmpty() ? col : QString("%1_%2").arg(sesLabel).arg(col);
+            obs.Description = col;
+            obs.Value = val;
+            if (dt.isValid())
+                obs.DateStart = dt;
+            obs.Store();
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------------------------- */
+/* ----- LoadPhenotypeDir ----------------------------------------------------- */
+/* ---------------------------------------------------------------------------- */
+/**
+ * @brief Import a BIDS 'phenotype' directory as subject observations
+ *
+ * Each phenotype/<instrument>.tsv contributes one observation per measure column
+ * per participant. Column descriptions come from the sibling .json. Repeated-measure
+ * rows are disambiguated by an index column (day/session/visit/...) or row ordinal.
+ *
+ * @param phenotypeDir path to the phenotype directory
+ * @param sqrl squirrel object
+ * @return true
+ */
+bool bids::LoadPhenotypeDir(QString phenotypeDir, squirrel *sqrl) {
+    sqrl->Log(QString("Loading phenotype from [%1]").arg(phenotypeDir));
+
+    static const QStringList idxCols = {"session_id", "ses", "day", "visit", "timepoint", "run", "wave"};
+
+    QStringList tsvFiles = utils::FindAllFiles(phenotypeDir, "*.tsv", false);
+    foreach (QString tsvFile, tsvFiles) {
+        QString instrument = QFileInfo(tsvFile).fileName();
+        instrument.replace(".tsv", "");
+
+        /* read the sibling .json for per-column descriptions */
+        QHash<QString, QString> colDesc;
+        QString jsonFile = tsvFile;
+        jsonFile.replace(".tsv", ".json");
+        if (utils::FileExists(jsonFile)) {
+            QJsonObject root = QJsonDocument::fromJson(utils::ReadTextFileToString(jsonFile).toUtf8()).object();
+            foreach (const QString &k, root.keys()) {
+                if (root.value(k).isObject()) {
+                    QString d = root.value(k).toObject().value("Description").toString();
+                    if (!d.isEmpty())
+                        colDesc.insert(k, d);
+                }
+            }
+        }
+
+        utils::indexedHash tsv;
+        QStringList cols;
+        QString m;
+        if (!utils::ParseTSV(utils::ReadTextFileToString(tsvFile), tsv, cols, m)) {
+            sqrl->Log(QString("Error reading phenotype tsv [%1]: %2").arg(tsvFile).arg(m));
+            continue;
+        }
+
+        /* count rows per participant so repeated measures can be disambiguated */
+        QHash<QString, int> rowCount, rowSeen;
+        for (int i = 0; i < tsv.size(); i++)
+            rowCount[tsv[i].value("participant_id")]++;
+
+        for (int i = 0; i < tsv.size(); i++) {
+            QString pid = tsv[i].value("participant_id").trimmed();
+            qint64 subjectRowID = sqrl->FindSubject(pid);
+            if (subjectRowID < 0)
+                continue;
+
+            /* build a discriminator from an index column, or a row ordinal */
+            QString disc;
+            foreach (const QString &ic, idxCols) {
+                if (cols.contains(ic)) {
+                    QString v = tsv[i].value(ic).trimmed();
+                    if (!v.isEmpty() && (v.toLower() != "n/a")) {
+                        disc = QString("%1-%2").arg(ic).arg(v);
+                        break;
+                    }
+                }
+            }
+            if (disc.isEmpty() && (rowCount.value(pid) > 1))
+                disc = QString("row-%1").arg(++rowSeen[pid]);
+
+            /* optional acquisition date for the observation */
+            QDateTime dt;
+            if (cols.contains("acq_time")) {
+                QString at = tsv[i].value("acq_time").trimmed();
+                if (!at.isEmpty() && (at.toLower() != "n/a"))
+                    dt = QDateTime::fromString(at, Qt::ISODate);
+            }
+
+            foreach (QString col, cols) {
+                if (col == "participant_id")
+                    continue;
+                QString val = tsv[i].value(col).trimmed();
+                if (val.isEmpty() || (val.toLower() == "n/a"))
+                    continue;
+
+                squirrelObservation obs(sqrl->GetDatabaseUUID());
+                obs.subjectRowID = subjectRowID;
+                obs.InstrumentName = instrument;
+                /* prefix with the instrument and suffix with the discriminator so the
+                 * (ObservationName, DateStart) uniqueness holds across instruments and rows */
+                obs.ObservationName = QString("%1_%2%3").arg(instrument).arg(col).arg(disc.isEmpty() ? "" : ("_" + disc));
+                obs.Description = colDesc.value(col);
+                obs.Value = val;
+                if (dt.isValid())
+                    obs.DateStart = dt;
+                obs.Store();
+            }
+        }
+        sqrl->Log(QString("  Imported phenotype instrument [%1] (%2 rows)").arg(instrument).arg(tsv.size()));
+    }
 
     return true;
 }

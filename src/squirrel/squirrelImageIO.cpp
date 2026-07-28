@@ -22,6 +22,11 @@
 
 #include "squirrelImageIO.h"
 
+#ifdef USE_DCM2NIIX_LIB
+/* dcm2niix in-process conversion API (compiled directly into squirrellib) */
+#include "nii_dicom_batch.h"
+#endif
+
 using namespace std;
 
 /* ---------------------------------------------------------- */
@@ -111,7 +116,8 @@ bool squirrelImageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags
 
     tags["FilePath"] = f;
 
-    const char* filename = f.toLatin1();
+    QByteArray filenameBA = f.toLatin1();
+    const char* filename = filenameBA.constData();
 
     DcmFileFormat fileformat;
     OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
@@ -349,23 +355,8 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
 
     msgs << QString("Converting DICOM to Nifti.  indir [" + indir + "]  outdir [" + outdir + "]  outfiletype [" + filetype + "]");
 
-    /* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
-    QString fileext = "";
-    if (datatype == "parrec")
-        fileext = "/*.par";
-
-    /* do the conversion */
-    QString systemstring;
-    QDir::setCurrent(indir);
-    if (filetype == "nifti4d")
-        systemstring = QString("%1/./dcm2niix -1 -b n -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else if (filetype == "nifti4dgz")
-        systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else if (filetype == "nifti3d")
-        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else if (filetype == "nifti3dgz")
-        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
-    else {
+    /* validate the requested output filetype up front */
+    if ((filetype != "nifti4d") && (filetype != "nifti4dgz") && (filetype != "nifti3d") && (filetype != "nifti3dgz")) {
         msg = msgs.join("\n");
         return false;
     }
@@ -378,19 +369,64 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
         return false;
     }
 
-    /* delete any files that may already be in the output directory.. for example, an incomplete series was put in the output directory
-     * remove any stuff and start from scratch to ensure proper file numbering */
-    if ((outdir != "") && (outdir != "/") ) {
-        QString systemstring2 = QString("rm -f %1/*.hdr %1/*.img %1/*.nii %1/*.gz").arg(outdir);
-        msgs << utils::SystemCommand(systemstring2, true, true);
-
-        /* execute the command created above */
-        msgs << utils::SystemCommand(systemstring, true, true);
-    }
-    else {
+    if ((outdir == "") || (outdir == "/")) {
         msg = msgs.join("\n");
         return false;
     }
+
+    /* delete any files that may already be in the output directory.. for example, an incomplete series was put in the output directory
+     * remove any stuff and start from scratch to ensure proper file numbering */
+    for (const QString &stale : QDir(outdir).entryList(QStringList() << "*.hdr" << "*.img" << "*.nii" << "*.gz", QDir::Files))
+        QFile::remove(QDir(outdir).absoluteFilePath(stale));
+
+#ifdef USE_DCM2NIIX_LIB
+    /* ----- in-process conversion using the embedded dcm2niix library ----- */
+    Q_UNUSED(bindir);
+    Q_UNUSED(pwd);
+    Q_UNUSED(gzip);
+
+    /* in case of par/rec, the input to dcm2niix is a file instead of a directory */
+    QString inputArg = indir;
+    if (datatype == "parrec") {
+        QStringList parFiles = QDir(indir).entryList(QStringList() << "*.par" << "*.PAR", QDir::Files);
+        if (!parFiles.isEmpty())
+            inputArg = QDir(indir).absoluteFilePath(parFiles.first());
+    }
+
+    struct TDCMopts opts;
+    setDefaultOpts(&opts, NULL);
+    opts.isCreateBIDS = false;                          /* matches the old '-b n' */
+    opts.isGz = (filetype == "nifti4dgz") || (filetype == "nifti3dgz");
+    opts.isSave3D = (filetype == "nifti3d") || (filetype == "nifti3dgz");
+    opts.isVerbose = 0;
+    opts.isProgress = 0;
+    snprintf(opts.indir, sizeof(opts.indir), "%s", inputArg.toUtf8().constData());
+    snprintf(opts.outdir, sizeof(opts.outdir), "%s", outdir.toUtf8().constData());
+
+    int rc = nii_loadDir(&opts);
+    if (rc != 0)
+        msgs << QString("dcm2niix (in-process) returned non-zero exit code [%1]").arg(rc);
+
+    /* dcm2niix gzips internally when isGz is set; no manual gzip step needed */
+#else
+    /* ----- fallback: shell out to an external dcm2niix executable ----- */
+    /* in case of par/rec, the argument list to dcm2niix is a file instead of a directory */
+    QString fileext = "";
+    if (datatype == "parrec")
+        fileext = "/*.par";
+
+    QString systemstring;
+    QDir::setCurrent(indir);
+    if (filetype == "nifti4d")
+        systemstring = QString("%1/./dcm2niix -1 -b n -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    else if (filetype == "nifti4dgz")
+        systemstring = QString("%1/./dcm2niix -1 -b n -z y -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    else if (filetype == "nifti3d")
+        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+    else if (filetype == "nifti3dgz")
+        systemstring = QString("%1/./dcm2niix -1 -b n -z 3 -o '%2' %3%4").arg(bindir).arg(outdir).arg(indir).arg(fileext);
+
+    msgs << utils::SystemCommand(systemstring, true, true);
 
     /* conversion should be done, so check if it actually gzipped the file */
     if ((gzip) && (filetype != "bids")) {
@@ -398,13 +434,14 @@ bool squirrelImageIO::ConvertDicom(QString filetype, QString indir, QString outd
         msgs << utils::SystemCommand(systemstring, true);
     }
 
+    /* change back to original directory before leaving */
+    QDir::setCurrent(pwd);
+#endif
+
     /* rename the files into something meaningful */
     m = "";
     if (!utils::BatchRenameFiles(outdir, seriesnum, studynum, uid, numfilesrenamed, m))
         msgs << "Error renaming output files [" + m + "]";
-
-    /* change back to original directory before leaving */
-    QDir::setCurrent(pwd);
 
     msg = msgs.join("\n");
     return true;
@@ -813,11 +850,11 @@ bool squirrelImageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags,
         if (tags["StudyTime"].contains(":")) {
             tags["StudyTime"] = tags["StudyTime"].left(8);
         }
-        else if (((tags["StudyTime"].size() == 12) || (tags["StudyTime"].size() == 13)) && (tags["StudyTime"].contains("."))) {
+        else if (tags["StudyTime"].contains(".")) {
             tags["StudyTime"] = tags["StudyTime"].left(6);
         }
         else {
-            utils::Print("StudyTime is not 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
+            utils::Print("StudyTime is not a recognized format [" + tags["StudyTime"] + "]");
         }
 
         if (tags["StudyTime"].size() == 6) {
@@ -833,14 +870,11 @@ bool squirrelImageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags,
         if (tags["SeriesTime"].contains(":")) {
             tags["SeriesTime"] = tags["SeriesTime"].left(8);
         }
-        else if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
+        else if (tags["SeriesTime"].contains(".")) {
             tags["SeriesTime"] = tags["SeriesTime"].left(6);
         }
-        else if (((tags["SeriesTime"].size() == 14) || (tags["SeriesTime"].size() == 15)) && (tags["SeriesTime"].contains(":"))) {
-            tags["SeriesTime"] = tags["SeriesTime"].left(8);
-        }
         else {
-            utils::Print("SeriesTime is not 12, 13 or 15 characters [" + tags["SeriesTime"] + "]");
+            utils::Print("SeriesTime is not a recognized format [" + tags["SeriesTime"] + "]");
         }
 
         if (tags["SeriesTime"].size() == 6) {

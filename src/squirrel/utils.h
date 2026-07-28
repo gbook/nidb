@@ -52,6 +52,7 @@ namespace utils {
     QString CreateCurrentDateTime(int format=1);
     QString CreateLogDate();
     QString GenerateRandomString(int n);
+    qint64 GetPeakMemoryBytes();
     QString HumanReadableSize(qint64 bytes);
     QString ParseDate(QString s);
     QString ParseTime(QString s);

@@ -62,7 +62,7 @@ public:
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
     void SetObjectID(qint64 id) { objectID = id; }
 
-    qint64 subjectRowID;
+    qint64 subjectRowID = -1;
     QString parentSubjectID;       /*!< cached parent subject ID string (avoids DB lookup in VirtualPath) */
     int parentSubjectSeqNum = -1;  /*!< cached parent subject sequence number (-1 = not set) */
 

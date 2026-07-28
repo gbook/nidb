@@ -23,6 +23,9 @@
 #include "utils.h"
 #include "squirrelVersion.h"
 #include "squirrel.h"
+#ifdef Q_OS_LINUX
+#include <sys/resource.h>
+#endif
 
 namespace utils {
 
@@ -218,7 +221,7 @@ namespace utils {
        QString randomString;
        for(int i=0; i<n; ++i)
        {
-           QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()-1));
+           QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()));
            randomString.append(nextChar);
        }
        return randomString;
@@ -435,7 +438,7 @@ namespace utils {
                     }
 
                     /* check if we've hit the next comma, and therefor should end the previous variable */
-                    if ((c == ',') && (!inQuotes)) {
+                    else if ((c == ',') && (!inQuotes)) {
                         table[row][cols[col]] = buffer.trimmed();
 
                         buffer = "";
@@ -492,7 +495,7 @@ namespace utils {
             /* remove the last column if it was blank, because the file contained an extra trailing comma */
             if (cols.last() == "") {
                 cols.removeLast();
-                m << QString("Last column was blank, removing").arg(cols.size());
+                m << QString("Last column was blank, removing. Now [%1] columns").arg(cols.size());
             }
 
             qint64 numcols = cols.size();
@@ -514,7 +517,7 @@ namespace utils {
                     }
 
                     /* check if we've hit the next tab, and therefor should end the previous variable */
-                    if ((c == '\t') && (!inQuotes)) {
+                    else if ((c == '\t') && (!inQuotes)) {
                         table[row][cols[col]] = buffer.trimmed();
 
                         buffer = "";
@@ -822,6 +825,21 @@ namespace utils {
 
 
     /* ---------------------------------------------------------- */
+    /* --------- GetPeakMemoryBytes ----------------------------- */
+    /* ---------------------------------------------------------- */
+    qint64 GetPeakMemoryBytes()
+    {
+#ifdef Q_OS_LINUX
+        struct rusage usage;
+        if (getrusage(RUSAGE_SELF, &usage) == 0)
+            return (qint64)usage.ru_maxrss * 1024;
+        return -1;
+#else
+        return -1;
+#endif
+    }
+
+
     /* --------- HumanReadableSize ------------------------------ */
     /* ---------------------------------------------------------- */
     QString HumanReadableSize(qint64 bytes)
@@ -917,10 +935,10 @@ namespace utils {
             q.bindValue(":type", squirrel::ObjectTypeToString(object));
             utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
+            q.bindValue(":id", objectID);
+            q.bindValue(":type", squirrel::ObjectTypeToString(object));
             foreach (QString path, paths) {
-                q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
-                q.bindValue(":id", objectID);
-                q.bindValue(":type", squirrel::ObjectTypeToString(object));
                 q.bindValue(":path", path);
                 utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             }
@@ -972,13 +990,13 @@ namespace utils {
             q.bindValue(":id", seriesRowID);
             utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+            q.prepare("insert into Params (SeriesRowID, ParamKey, ParamValue) values (:id, :key, :value)");
+            q.bindValue(":id", seriesRowID);
             for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
                 QString key = a.key().trimmed();
                 QString value = a.value().trimmed();
 
                 if (key != "") {
-                    q.prepare("insert into Params (SeriesRowID, ParamKey, ParamValue) values (:id, :key, :value)");
-                    q.bindValue(":id", seriesRowID);
                     q.bindValue(":key", key);
                     q.bindValue(":value", value);
                     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);

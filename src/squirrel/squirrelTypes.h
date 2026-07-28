@@ -40,7 +40,7 @@ struct infoQuery {
 struct modification {
     QString operation;        /* possible values: add, remove, update, splitbymodality, removephi, renumber */
     ObjectType object;
-    QString dataPath;         /* disk path containing the data (most likely for an add operation) */
+    QString dataPath;         /* disk path to stage files from; supports directory, glob (e.g. /path/*.dcm), or single file */
     QString objectData;       /* the object data, likely in URL style format */
     QString objectID;         /* object identifier string. Example: subject ID, experiment name, pipeline name, etc */
     QString subjectID;        /* parent subject ID, used for study/series/analysis/observation/intervention operations */
@@ -50,6 +50,7 @@ struct modification {
     int renumberStartNum;     /* (renumber operation) starting number for new subject IDs */
     QString renumberPrefix;   /* (renumber operation) prefix string prepended to new subject IDs */
     bool renumberRandomize;   /* (renumber operation) true to randomize order before renumbering */
+    bool recursive;           /* search dataPath recursively when it is a directory */
 };
 
 #endif // SQUIRRELTYPES_H

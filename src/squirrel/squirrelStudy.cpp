@@ -152,7 +152,28 @@ bool squirrelStudy::Store() {
         q.bindValue(":SequenceNumber", SequenceNumber);
         q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        objectID = q.lastInsertId().toInt();
+        if (q.numRowsAffected() > 0) {
+            objectID = q.lastInsertId().toLongLong();
+        }
+        else {
+            /* the insert was ignored, meaning a study with this SubjectRowID/StudyNumber
+               already exists. lastInsertId() would return an unrelated rowID here, so look
+               up the existing row instead */
+            QSqlQuery q2(QSqlDatabase::database(databaseUUID));
+            q2.prepare("select StudyRowID from Study where SubjectRowID = :SubjectRowID and StudyNumber = :StudyNumber");
+            q2.bindValue(":SubjectRowID", subjectRowID);
+            q2.bindValue(":StudyNumber", StudyNumber);
+            utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+            if (q2.next()) {
+                objectID = q2.value("StudyRowID").toLongLong();
+                err = QString("Study [%1] already exists for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+            }
+            else {
+                valid = false;
+                err = QString("Unable to insert or find study [%1] for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+                return false;
+            }
+        }
     }
     /* ... otherwise update */
     else {
@@ -207,7 +228,7 @@ bool squirrelStudy::Store(QSqlQuery &q) {
     q.bindValue(":SequenceNumber", SequenceNumber);
     q.bindValue(":VirtualPath", VirtualPath());
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    objectID = q.lastInsertId().toInt();
+    objectID = q.lastInsertId().toLongLong();
     return true;
 }
 

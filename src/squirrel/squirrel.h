@@ -126,7 +126,7 @@ public:
     qint64 FindDataDictionary(QString dataDictionaryName);
     qint64 FindExperiment(QString experimentName);
     qint64 FindGroupAnalysis(QString groupAnalysisName);
-    qint64 FindPipeline(QString pipelineName);
+    qint64 FindPipeline(QString pipelineName, int pipelineVersion = -1);
     qint64 FindSeries(QString subjectID, int studyNum, int seriesNum);
     qint64 FindSeriesByUID(QString seriesUID);
     qint64 FindStudy(QString subjectID, int studyNum);
@@ -195,6 +195,8 @@ public:
     static ObjectType ObjectTypeToEnum(QString object);
 
 private:
+    void ResequenceTable(QString table, QString pkCol, QString parentCol, qint64 parentRowID, QString orderBy);
+
     bool DatabaseConnect();
     bool DeleteTempDir(QString dir);
     bool InitializeDatabase();

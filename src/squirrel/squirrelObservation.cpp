@@ -117,7 +117,7 @@ bool squirrelObservation::Store() {
         q.bindValue(":DateRecordModify", DateRecordModify);
         q.bindValue(":Description", Description);
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        objectID = q.lastInsertId().toInt();
+        objectID = q.lastInsertId().toLongLong();
     }
     /* ... otherwise update */
     else {
@@ -168,7 +168,7 @@ bool squirrelObservation::Store(QSqlQuery &q) {
     q.bindValue(":DateRecordModify", DateRecordModify);
     q.bindValue(":Description", Description);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    objectID = q.lastInsertId().toInt();
+    objectID = q.lastInsertId().toLongLong();
     return true;
 }
 

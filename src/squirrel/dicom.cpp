@@ -63,7 +63,7 @@ bool dicom::LoadToSquirrel(QString dir, squirrel *sqrl) {
     qint64 foundFileCount(0);
     QString m;
     QStringList files = utils::FindAllFiles(dir, "*", true);
-    //numFiles = files.size();
+    numFiles = files.size();
     foreach (QString f, files) {
         processedFileCount++;
 
@@ -78,7 +78,6 @@ bool dicom::LoadToSquirrel(QString dir, squirrel *sqrl) {
             if (tags["FileType"] == "DICOM") {
                 foundFileCount++;
                 dcms[tags["PatientID"]][tags["StudyInstanceUID"]][tags["SeriesInstanceUID"]].append(f);
-                qDebug() << tags;
             }
         }
     }
@@ -106,32 +105,36 @@ bool dicom::LoadToSquirrel(QString dir, squirrel *sqrl) {
 
                     QHash<QString, QString> tags;
                     QString m;
-                    img->GetImageFileTags(files[0], tags, m);
+                    if (!img->GetImageFileTags(files[0], tags, m)) {
+                        sqrl->Log(QString("Warning: could not read tags from [%1]: %2").arg(files[0]).arg(m));
+                        continue;
+                    }
 
-                    /* create/update the subject */
-                    int subjectRowID;
-                    subjectRowID = sqrl->FindSubject(tags["PatientID"]);
+                    /* create/update the subject — use the outer-loop key (subjectID) for lookup
+                     * so subject identity is stable even if tag re-read returns a different value */
+                    qint64 subjectRowID;
+                    subjectRowID = sqrl->FindSubject(subjectID);
                     if (subjectRowID < 0) {
-                        sqrl->Log(QString("Creating squirrel Subject [%1]").arg(tags["PatientID"]));
+                        sqrl->Log(QString("Creating squirrel Subject [%1]").arg(subjectID));
                         currSubject.DateOfBirth = QDate::fromString(tags["PatientBirthDate"], "yyyy-MM-dd");
-                        currSubject.Gender = tags["PatientSex"][0];
-                        currSubject.ID = tags["PatientID"];
-                        currSubject.Sex = tags["PatientSex"][0];
+                        currSubject.Gender = tags["PatientSex"].left(1);
+                        currSubject.ID = subjectID;
+                        currSubject.Sex = tags["PatientSex"].left(1);
                         currSubject.Store();
                         subjectRowID = currSubject.GetObjectID();
                         /* resequence the newly added subject */
                         sqrl->ResequenceSubjects();
                     }
 
-                    /* create/update the study */
-                    int studyRowID;
-                    studyRowID = sqrl->FindStudyByUID(tags["StudyInstanceUID"]);
+                    /* create/update the study — use the outer-loop key (studyID) for lookup */
+                    qint64 studyRowID;
+                    studyRowID = sqrl->FindStudyByUID(studyID);
                     if (studyRowID < 0) {
-                        sqrl->Log(QString("Creating squirrel Study [%1]").arg(tags["StudyInstanceUID"]));
+                        sqrl->Log(QString("Creating squirrel Study [%1]").arg(studyID));
                         currStudy.DateTime = QDateTime::fromString(tags["StudyDateTime"], "yyyy-MM-dd HH:mm:ss");
                         currStudy.Description = tags["StudyDescription"];
                         currStudy.Modality = tags["Modality"];
-                        currStudy.StudyUID = tags["StudyInstanceUID"];
+                        currStudy.StudyUID = studyID;
                         currStudy.Height = tags["PatientSize"].toDouble();
                         currStudy.Weight = tags["PatientWeight"].toDouble();
                         currStudy.subjectRowID = subjectRowID;

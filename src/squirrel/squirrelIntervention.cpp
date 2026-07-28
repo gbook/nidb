@@ -124,7 +124,7 @@ bool squirrelIntervention::Store() {
         q.bindValue(":Notes", Notes);
 
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        objectID = q.lastInsertId().toInt();
+        objectID = q.lastInsertId().toLongLong();
     }
     /* ... otherwise update */
     else {
@@ -184,7 +184,7 @@ bool squirrelIntervention::Store(QSqlQuery &q) {
     q.bindValue(":Rater", Rater);
     q.bindValue(":Notes", Notes);
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    objectID = q.lastInsertId().toInt();
+    objectID = q.lastInsertId().toLongLong();
     return true;
 }
 

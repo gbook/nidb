@@ -41,6 +41,19 @@ public:
 
     bool LoadParticipantsFile(QString f, squirrel *sqrl);
     bool LoadTaskFile(QString f, squirrel *sqrl);
+    bool LoadDatasetDescription(QString f, squirrel *sqrl);
+    bool LoadSessionsFile(QString f, qint64 subjectRowID, squirrel *sqrl);
+    bool LoadPhenotypeDir(QString phenotypeDir, squirrel *sqrl);
+
+    /* derivatives -> pipelines + analyses */
+    bool LoadDerivatives(QString derivativesDir, squirrel *sqrl);
+    qint64 ResolveDerivativeStudy(qint64 subjectRowID, QString sesLabel, squirrel *sqrl);
+    qint64 AddAnalysisFromDir(QString dir, QString pipelineName, qint64 pipelineRowID, qint64 studyRowID, squirrel *sqrl);
+
+    /* BIDS filename/entity parsing helpers */
+    void ParseBidsFilename(const QString &filename, QHash<QString, QString> &entities, QString &suffix, QString &ext);
+    QString ModalityForDatatype(const QString &datatype);
+    qint64 AddSeriesFromBidsFile(QString primaryFile, QString datatype, qint64 studyRowID, squirrel *sqrl);
 };
 
 #endif // BIDS_H

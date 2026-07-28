@@ -1142,6 +1142,15 @@
 			return (ev || '') + '|' + (form || '') + '|' + (field || '') + '|' + (choice || '');
 		}
 
+		/* The REDCap datatype field is a Semantic UI dropdown (initialised globally
+		   by includes_html.php), so assigning .value on the underlying <select>
+		   updates the element but not what Semantic displays. It has to be set
+		   through the dropdown API. */
+		function setRedcapDatatype(v) {
+			if (v) $('#modal_redcap_datatype').dropdown('set selected', v);
+			else   $('#modal_redcap_datatype').dropdown('clear');
+		}
+
 		/* Current event: '' for classic projects, which is what gets stored */
 		function rcCurrentEvent() {
 			const el = document.getElementById('rcEvent');
@@ -1304,7 +1313,7 @@
 			document.getElementById('modal_redcap_form').value        = f.form || '';
 			document.getElementById('modal_redcap_field').value       = f.field || '';
 			document.getElementById('modal_redcap_choice_code').value = f.choicecode || '';
-			document.getElementById('modal_redcap_datatype').value    = f.fieldtype || '';
+			setRedcapDatatype(f.fieldtype || '');
 			document.getElementById('modal_redcap_validation').value  = f.validation || '';
 			$('#mappingModal').modal('show');
 		}
@@ -1341,7 +1350,7 @@
 				document.getElementById('modal_redcap_form').value         = data.redcap_form      || '';
 				document.getElementById('modal_redcap_field').value        = data.redcap_field     || '';
 				document.getElementById('modal_redcap_choice_code').value  = data.redcap_choice_code || '';
-				document.getElementById('modal_redcap_datatype').value     = data.redcap_datatype  || '';
+				setRedcapDatatype(data.redcap_datatype || '');
 				document.getElementById('modal_redcap_datefield').value    = data.redcap_datefield || '';
 				document.getElementById('modal_redcap_validation').value   = data.redcap_validation || '';
 				document.getElementById('modal_flag_date_from_field').checked = !!data.flag_date_from_field;
@@ -1362,10 +1371,12 @@
 			['modal_mappingid','modal_avicenna_survey','modal_avicenna_datasource','modal_avicenna_variable','modal_avicenna_datatype',
 			 'modal_avicenna_question',
 			 'modal_redcap_event','modal_redcap_form','modal_redcap_choice_code',
-			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield',
+			 'modal_redcap_field','modal_redcap_datefield',
 			 'modal_redcap_validation'].forEach(id => {
 				document.getElementById(id).value = '';
 			});
+			/* Semantic dropdowns must be cleared through their API, not by .value */
+			setRedcapDatatype('');
 			$('#modal_nidb_instrument').dropdown('clear');
 			document.getElementById('modal_nidb_variable').innerHTML =
 				'<option value="">-- select instrument first --</option>';

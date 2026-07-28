@@ -36,6 +36,7 @@ public:
     bool SplitByModality(QString packagePath, const modification &mod, QString &m);
     bool RemovePHI(QString packagePath, const modification &mod, QString &m);
     bool RenumberSubjects(QString packagePath, const modification &mod, QString &m);
+    bool MergePackages(QStringList inputPaths, QString outputPath, bool testOnly, bool renumberSubjects, int digits, QString &m);
     void PrintVariables(ObjectType object);
 };
 

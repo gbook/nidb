@@ -26,6 +26,7 @@
 #include "squirrelVersion.h"
 #include "dicom.h"
 #include "bids.h"
+#include "convert.h"
 #include "modify.h"
 #include "extract.h"
 #include "info.h"
@@ -39,14 +40,23 @@ void CommandLineError(QCommandLineParser &p, QString m) {
 
 void PrintExampleUsage() {
     printf("\nExample usage: \n");
-    printf("    squirrel dicom2squirrel <inputDir> <outputPackage> --dataformat nift4d --dirformat orig\n");
-    printf("    squirrel bids2squirrel <inputFile> <outputPackage>\n");
+    printf("    squirrel convert <inputDir> <outputPackage> --inputformat dicom --outputformat squirrel --dataformat nifti4d --dirformat orig\n");
+    printf("    squirrel convert <inputDir> <outputPackage> --inputformat bids --outputformat squirrel\n");
     printf("    squirrel modify <package> --operation update --object subject --objectdata 'SubjectID=S1234&DateOfBirth=1999-12-31&Sex=M&Gender=M'\n");
+}
+
+void PrintExampleUsageConvert() {
+    printf("\nExample convert usage: \n");
+    printf("    squirrel convert <inputDir> <outputPackage> --inputformat dicom --outputformat squirrel --dataformat nifti4d --dirformat orig\n");
+    printf("    squirrel convert <inputDir> <outputPackage> --inputformat bids --outputformat squirrel\n");
 }
 
 void PrintExampleModifyUsage() {
     printf("\nExample modify usage: \n");
     printf("    squirrel modify <package> --operation update --object subject --objectdata 'SubjectID=S1234&DateOfBirth=1999-12-31&Sex=M&Gender=M'\n");
+    printf("    squirrel modify <package> --operation add --object series --subjectid S1234 --studynum 1 --objectdata 'SeriesNumber=3' --datapath /path/to/dicom/\n");
+    printf("    squirrel modify <package> --operation add --object series --subjectid S1234 --studynum 1 --seriesnum 3 --datapath /more/files/*.dcm\n");
+    printf("    squirrel modify <package> --operation add --object experiment --objectid MyExperiment --datapath /path/to/files/ --recursive\n");
 }
 
 void PrintExampleUsageInfo() {
@@ -81,16 +91,16 @@ int main(int argc, char *argv[])
     p.addVersionOption();
 
     /* setup and obtain the tool we're supposed to run */
-    p.addPositionalArgument("tool", "Available tools:\n   bids2squirrel - Converts BIDS to squirrel\n   dicom2squirrel - Convert DICOM to squirrel\n   info - Display information about a package or its contents\n   modify - Add/remove objects from a package\n   extract - Extract data from a package\n   validate - Check if a package is valid");
+    p.addPositionalArgument("tool", "Available tools:\n   convert - Convert DICOM or BIDS data into a squirrel package\n   info - Display information about a package or its contents\n   merge - Merge two or more packages into one\n   modify - Add/remove objects from a package\n   extract - Extract data from a package\n   validate - Check if a package is valid");
     p.parse(QCoreApplication::arguments());
     const QStringList args = p.positionalArguments();
     const QString command = args.isEmpty() ? QString() : args.first();
 
     /* check which tool to run */
-    if (command == "dicom2squirrel") {
+    if (command == "convert") {
         p.clearPositionalArguments();
-        p.addPositionalArgument("dicom2squirrel", "Convert DICOM directory to squirrel.", "dicom2squirrel [options]");
-        p.addPositionalArgument("dicomdirectory", "The input DICOM directory.", "dicomdirectory");
+        p.addPositionalArgument("convert", "Convert DICOM or BIDS data into a squirrel package.", "convert [options]");
+        p.addPositionalArgument("inputdirectory", "The input data directory (DICOM or BIDS).", "inputdirectory");
         p.addPositionalArgument("package", "The output squirrel package.", "package");
         p.parse(QCoreApplication::arguments());
         QStringList args = p.positionalArguments();
@@ -103,24 +113,41 @@ int main(int argc, char *argv[])
         /* command line flag options */
         p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "dataformat", "Output data format if converted from DICOM:\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "format"));
+        p.addOption(QCommandLineOption(QStringList() << "inputformat", "Input data format [bids  dicom]", "format"));
+        p.addOption(QCommandLineOption(QStringList() << "outputformat", "Output data format [squirrel] (default: squirrel)", "format"));
+        p.addOption(QCommandLineOption(QStringList() << "dataformat", "Output data format for DICOM input (ignored for BIDS):\n  anon - Anonymized DICOM\n  nifti4d - Nifti 4D\n  nifti4dgz - Nifti 4D gz (default)\n  nifti3d - Nifti 3D\n  nifti3dgz - Nifti 3D gz", "format"));
         p.addOption(QCommandLineOption(QStringList() << "dirformat", "Output directory structure\n  seq - Sequentially numbered\n  orig - Original ID (default)", "format"));
+        p.addOption(QCommandLineOption(QStringList() << "overwrite", "Overwrite existing squirrel package if a package with same name exists"));
+        p.addOption(QCommandLineOption(QStringList() << "debugsql", "Enable debugging of SQL statements"));
 
         p.process(a);
 
         bool debug = p.isSet("d");
         bool quiet = p.isSet("q");
+        bool overwrite = p.isSet("overwrite");
+        bool debugsql = p.isSet("debugsql");
+        QString inputFormat = p.value("inputformat").trimmed();
+        QString outputFormat = p.value("outputformat").trimmed();
         QString paramOutputDataFormat = p.value("dataformat").trimmed();
         QString paramOutputDirFormat = p.value("dirformat").trimmed();
 
+        /* default the output format to squirrel */
+        if (outputFormat == "")
+            outputFormat = "squirrel";
+
         if (inputPath == "") {
-            CommandLineError(p,"Missing input path. Use -i to specify an input directory.");
-            PrintExampleUsage();
+            CommandLineError(p, "Missing input path.");
+            PrintExampleUsageConvert();
             return 0;
         }
         if (outputPath == "") {
-            CommandLineError(p, "Missing output path. Use -o to specify an output path.");
-            PrintExampleUsage();
+            CommandLineError(p, "Missing output path.");
+            PrintExampleUsageConvert();
+            return 0;
+        }
+        if (inputFormat == "") {
+            CommandLineError(p, "Missing --inputformat. Valid values: bids, dicom");
+            PrintExampleUsageConvert();
             return 0;
         }
 
@@ -128,113 +155,10 @@ int main(int argc, char *argv[])
         if (!quiet)
             utils::PrintHeader();
 
-        /* check if the outfile's parent directory exists */
-        QFileInfo outinfo(outputPath);
-        QDir outdir = outinfo.absolutePath();
-        if (!outdir.exists()) {
-            utils::Print(QString("Output directory [%1] does not exist").arg(outdir.absolutePath()));
-        }
-        else {
-            dicom *dcm = new dicom();
-            squirrel *sqrl = new squirrel(debug, quiet);
-
-            if (paramOutputDataFormat != "")
-                sqrl->DataFormat = paramOutputDataFormat;
-
-            if (paramOutputDirFormat != "") {
-                sqrl->SubjectDirFormat = paramOutputDirFormat;
-                sqrl->StudyDirFormat = paramOutputDirFormat;
-                sqrl->SeriesDirFormat = paramOutputDirFormat;
-            }
-
-            /* 1) load the DICOM data to a squirrel object */
-            dcm->LoadToSquirrel(inputPath, sqrl);
-
-            /* 2) write the squirrel file */
-            sqrl->SetPackagePath(outputPath);
-            sqrl->SetWriteLog(true);
-            sqrl->Write();
-
-            delete dcm;
-            delete sqrl;
-        }
-
-    }
-    else if (command == "bids2squirrel") {
-        p.clearPositionalArguments();
-        p.addPositionalArgument("bids2squirrel", "Convert BIDS directory to squirrel.", "bids2squirrel [options]");
-        p.addPositionalArgument("bidsdirectory", "The BIDS directory.", "bidsdirectory");
-        p.addPositionalArgument("package", "The squirrel package.", "package");
-        p.parse(QCoreApplication::arguments());
-        QStringList args = p.positionalArguments();
-        QString inputPath, outputPath;
-        if (args.size() > 2) {
-            inputPath = args[1];
-            outputPath = args[2];
-        }
-
-        /* command line flag options */
-        p.addOption(QCommandLineOption(QStringList() << "d" << "debug", "Enable debugging"));
-        p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Dont print headers and checks"));
-        p.addOption(QCommandLineOption(QStringList() << "overwrite", "Overwrite existing squirrel package if a package with same name exists"));
-        p.addOption(QCommandLineOption(QStringList() << "debugsql", "Enable debugging of SQL statements"));
-
-        p.process(a);
-
-        bool debug = p.isSet("d");
-        bool debugsql = p.isSet("debugsql");
-        bool overwrite = p.isSet("overwrite");
-        bool quiet = p.isSet("q");
-
-        if (inputPath == "") {
-            CommandLineError(p, "Missing input parameter. Use -i to specify an input directory.");
-            PrintExampleUsage();
-            return 0;
-        }
-        if (outputPath == "") {
-            CommandLineError(p, "Missing output path. Use -o to specify an output path.");
-            PrintExampleUsage();
-            return 0;
-        }
-
-        /* everything is ok, so let's run the tool */
-        if (!quiet)
-            utils::PrintHeader();
-
-        /* check if the infile directory exists */
-        QDir indir(inputPath);
-        if (!indir.exists()) {
-            utils::Print(QString("Input directory [%1] does not exist").arg(indir.absolutePath()));
-        }
-        else if (inputPath == "") {
-            utils::Print("Input directory not specified. Use the -i <indir> option to specify the input directory");
-        }
-        else {
-            QString outputfile = outputPath;
-
-            if (outputPath == "") {
-                outputfile = QString(inputPath + "/squirrel.sqrl");
-                utils::Print(QString("Output package path not specified. Creating squirrel package in input directory [%1]").arg(outputfile));
-            }
-
-            /* create a squirrel object */
-            squirrel *sqrl = new squirrel(debug);
-            sqrl->SetDebugSQL(debugsql);
-            sqrl->SetOverwritePackage(overwrite);
-            sqrl->DataFormat = "orig";
-
-            /* create a BIDS object, and start reading the directory */
-            bids *bds = new bids();
-
-            bds->LoadToSquirrel(indir.path(), sqrl);
-
-            /* save the squirrel object */
-            sqrl->SetPackagePath(outputfile);
-            sqrl->SetWriteLog(true);
-            sqrl->Write();
-
-            delete bds;
-            delete sqrl;
+        QString m;
+        convert converter;
+        if (!converter.DoConvert(inputPath, outputPath, inputFormat, outputFormat, paramOutputDataFormat, paramOutputDirFormat, overwrite, debug, debugsql, quiet, m)) {
+            CommandLineError(p, m);
         }
     }
     else if (command == "info") {
@@ -307,8 +231,8 @@ int main(int argc, char *argv[])
         p.addOption(QCommandLineOption(QStringList() << "q" << "quiet", "Quiet mode. No printing of headers and checks"));
         p.addOption(QCommandLineOption(QStringList() << "operation", "Operation to perform on the package [add  remove  update  splitbymodality  removephi  renumber].", "operation"));
         p.addOption(QCommandLineOption(QStringList() << "object", "Object type to perform operation on [package  subject  study  series  analysis  intervention  observation  experiment  pipeline  groupanalysis  datadictionary].", "object"));
-        p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to new object data. Can include wildcard: /path/*.dcm", "path"));
-        //p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the data path recursively"));
+        p.addOption(QCommandLineOption(QStringList() << "datapath", "Path to files to add. May be a directory, a single file, or a glob pattern (e.g. /path/*.dcm)", "path"));
+        p.addOption(QCommandLineOption(QStringList() << "recursive", "Search the datapath directory recursively for files"));
         p.addOption(QCommandLineOption(QStringList() << "objectid", "Existing object ID, name, or number to modify.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "subjectid", "Parent subject ID. Used when adding a study, series, observation, intervention, or analysis object.", "id"));
         p.addOption(QCommandLineOption(QStringList() << "studynum", "Parent study number. Used when adding a series or analysis object (subjectid also required).", "num"));
@@ -335,7 +259,7 @@ int main(int argc, char *argv[])
         int startNum = p.isSet("startnum") ? p.value("startnum").toInt() : 1;
         QString prefix = p.value("prefix").trimmed();
         bool randomize = p.isSet("random");
-        //bool recursive = p.isSet("recursive");
+        bool recursive = p.isSet("recursive");
 
         modification mod;
         mod.operation = operation;
@@ -350,6 +274,7 @@ int main(int argc, char *argv[])
         mod.renumberStartNum = startNum;
         mod.renumberPrefix = prefix;
         mod.renumberRandomize = randomize;
+        mod.recursive = recursive;
 
         QString m;
         modify modifier;
@@ -401,6 +326,44 @@ int main(int argc, char *argv[])
                 CommandLineError(p,m);
             }
         }
+    }
+    else if (command == "merge") {
+        p.clearPositionalArguments();
+        p.addPositionalArgument("merge", "Merge two or more squirrel packages into one.", "merge [options]");
+        p.addPositionalArgument("packages", "Two or more input squirrel packages.", "package1 package2 [package3 ...]");
+        p.parse(QCoreApplication::arguments());
+
+        p.addOption(QCommandLineOption(QStringList() << "output", "Output squirrel package path (required).", "path"));
+        p.addOption(QCommandLineOption(QStringList() << "test", "Detect and display collisions without writing output."));
+        p.addOption(QCommandLineOption(QStringList() << "renumbersubjects", "Sort all subjects globally and assign new sequential IDs; append original ID to AlternateIDs."));
+        p.addOption(QCommandLineOption(QStringList() << "digits", "Number of digits for renumbered subject IDs (e.g. 4 produces 0001...9999). Auto-sized if omitted or too small.", "n"));
+
+        p.process(a);
+
+        QStringList positional = p.positionalArguments();
+        QStringList inputPaths;
+        for (int i = 1; i < positional.size(); ++i)
+            inputPaths.append(positional[i]);
+
+        const QString outputPath    = p.value("output").trimmed();
+        const bool testOnly         = p.isSet("test");
+        const bool renumberSubjects = p.isSet("renumbersubjects");
+        const int  digits           = p.value("digits").toInt();
+
+        if (inputPaths.size() < 2) {
+            CommandLineError(p, "At least two input packages are required.");
+            return 1;
+        }
+        if (outputPath.isEmpty() && !testOnly) {
+            CommandLineError(p, "Missing --output path. Specify an output package with --output <path>.");
+            return 1;
+        }
+
+        utils::PrintHeader();
+        QString mergeMsg;
+        modify merger;
+        if (!merger.MergePackages(inputPaths, outputPath, testOnly, renumberSubjects, digits, mergeMsg))
+            CommandLineError(p, mergeMsg);
     }
     else if (command == "validate") {
         p.clearPositionalArguments();

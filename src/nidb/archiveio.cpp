@@ -3476,7 +3476,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             continue;
         }
         else {
-            n->Log(QString("Adding series (%1 of %2) [%2]").arg(i).arg(totalSeries).arg(modality));
+            n->Log(QString("Adding series (%1 of %2) [%3]").arg(i).arg(totalSeries).arg(modality));
             //seriesMsg += ".";
         }
         //lastProjectRowID = ser.projectid;
@@ -3497,7 +3497,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
-            sqrl.ResequenceSubjects();
+            //sqrl.ResequenceSubjects();
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
@@ -3566,7 +3566,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubject.ID = subjectID;
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
-            sqrl.ResequenceSubjects();
+            //sqrl.ResequenceSubjects();
         }
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
@@ -3628,7 +3628,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubject.EnrollmentStatus = enroll.enrollmentStatus();
             sqrlSubject.Store();
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
-            sqrl.ResequenceSubjects();
+            //sqrl.ResequenceSubjects();
         }
 
         /* add the analysis to the package */
@@ -3741,6 +3741,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         sqrlExperiment.stagedFiles = stagedFileList;
         sqrlExperiment.Store();
     }
+
+    /* renumber the subjects/studies/series */
+    sqrl.ResequenceSubjects();
+
+
     mbuff = sqrl.GetLogBuffer();
     if (mbuff != "")
         n->Log("libsquirrel message buffer [" + mbuff + "]");
