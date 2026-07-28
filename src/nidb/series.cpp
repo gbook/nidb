@@ -161,14 +161,25 @@ squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
     sqrl.SeriesNumber = seriesnum;
     sqrl.Protocol = protocol;
 
+    bool debug = false;
+    if (modality.toUpper() == "VIDEO") {
+        debug = true;
+    }
+    if (debug) n->Log("GetSquirrelObject() checkpoint A");
     sqrl.stagedFiles = FindAllFiles(datapath,"*");
+    if (debug) n->Log("GetSquirrelObject() checkpoint B");
     sqrl.stagedBehFiles = FindAllFiles(behpath,"*");
+    if (debug) n->Log("GetSquirrelObject() checkpoint C");
     QString file, m;
     if (NiDBFindFirstFile(datapath,"*",file,m)) {
+        if (debug) n->Log("GetSquirrelObject() checkpoint D");
         imageIO *io = new imageIO(n);
         QHash<QString, QString> tags;
+        if (debug) n->Log("GetSquirrelObject() checkpoint E");
         io->GetImageFileTags(file, tags, m);
+        if (debug) n->Log("GetSquirrelObject() checkpoint F");
         sqrl.params = tags;
+        if (debug) n->Log("GetSquirrelObject() checkpoint G");
         delete io;
     }
 

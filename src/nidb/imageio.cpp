@@ -127,7 +127,11 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
 
     tags["FilePath"] = f;
 
-    const char* filename = f.toLatin1();
+    /* Keep the QByteArray alive: f.toLatin1() returns a temporary that would be
+       destroyed at the end of this statement, leaving a dangling pointer for
+       loadFileUntilTag() below. */
+    QByteArray filenameBytes = f.toLatin1();
+    const char* filename = filenameBytes.constData();
 
     DcmFileFormat fileformat;
     OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
