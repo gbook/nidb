@@ -3481,7 +3481,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         }
         //lastProjectRowID = ser.projectid;
         //ser.PrintSeriesInfo();
-        n->Log("Checkpoint A");
+        //n->Log("Checkpoint A");
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
@@ -3491,7 +3491,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             subjectID = subj.UID();
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
-            n->Log("Checkpoint B");
+            //n->Log("Checkpoint B");
             /* ... create subject if necessary */
             sqrlSubject = subj.GetSquirrelObject(sqrl.GetDatabaseUUID());
             //sqrlSubject.AlternateIDs.append(subj.GetAllAlternateIDs());
@@ -3501,48 +3501,48 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             sqrlSubjectRowID = sqrlSubject.GetObjectID();
             //sqrl.ResequenceSubjects();
         }
-        n->Log("Checkpoint C");
+        //n->Log("Checkpoint C");
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
         study stud(ser.studyid, n);
         qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
         if (sqrlStudyRowID < 0) {
-            n->Log("Checkpoint D");
+            //n->Log("Checkpoint D");
             /* ... create study if necessary */
             sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
             sqrlStudy.subjectRowID = sqrlSubjectRowID;
             sqrlStudy.Store();
             sqrlStudyRowID = sqrlStudy.GetObjectID();
             sqrl.ResequenceStudies(sqrlSubjectRowID);
-            n->Log("Checkpoint E");
+            //n->Log("Checkpoint E");
         }
-        n->Log("Checkpoint F");
+        //n->Log("Checkpoint F");
 
         /* update the subject enrollment info */
         sqrlSubject.EnrollmentGroup = stud.enrollmentGroup();
         sqrlSubject.EnrollmentStatus = stud.enrollmentStatus();
         sqrlSubject.Store();
 
-        n->Log(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup()).arg(stud.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
+        n->Debug(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup()).arg(stud.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
 
         /* create squirrel SERIES */
         if (!ser.isValid)
             n->Log(QString("series is invalid. Reason [%1]").arg(ser.msg));
 
         squirrelSeries sqrlSeries(sqrl.GetDatabaseUUID());
-        n->Log("Checkpoint G-1");
+        //n->Log("Checkpoint G-1");
         sqrlSeries = ser.GetSquirrelObject(sqrl.GetDatabaseUUID());
-        n->Log("Checkpoint G-2");
+        //n->Log("Checkpoint G-2");
         sqrlSeries.studyRowID = sqrlStudyRowID;
-        n->Log("Checkpoint G-3");
+        //n->Log("Checkpoint G-3");
         if (!sqrlSeries.isValid())
             n->Log(QString("squirrelSeries is invalid [%1]").arg(sqrlSeries.msg));
-        n->Log("Checkpoint G-4");
+        //n->Log("Checkpoint G-4");
         sqrlSeries.Store();
-        n->Log("Checkpoint G-5");
+        //n->Log("Checkpoint G-5");
         sqrl.ResequenceSeries(sqrlStudyRowID);
-        n->Log("Checkpoint G-6");
+        //n->Log("Checkpoint G-6");
 
     }
     seriesMsg += "]";
