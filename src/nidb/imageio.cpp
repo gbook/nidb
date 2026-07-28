@@ -859,7 +859,13 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
             msg += "GetImageFileTags() checkpoint D\n";
             /* unknown modality/filetype */
             /* try one last time to read with just the non-interactive command line EXIF tool */
-            QString systemstring = "exiftool " + f;
+            /* The path must be quoted: SystemCommand() runs this through `sh -c`,
+               so an unquoted filename is word-split. A name such as
+               "5018-DAT - Copy.log" splits into "5018-DAT", "-", "Copy.log", and
+               the bare "-" tells exiftool to read from stdin -- which never
+               arrives, so the read blocks forever. Quoting also prevents a name
+               containing >, ; or backticks from redirecting or executing. */
+            QString systemstring = "exiftool " + ShellQuote(f);
             QString exifoutput = SystemCommand(systemstring, false);
             QStringList lines = exifoutput.split(QRegularExpression("(\\n|\\r\\n|\\r)"), Qt::SkipEmptyParts);
 

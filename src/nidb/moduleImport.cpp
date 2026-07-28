@@ -164,7 +164,9 @@ bool moduleImport::ParseRemotelyImportedData() {
                 QString behdir = uploaddir + "/beh";
                 QDir bd(behdir);
                 if (bd.exists()) {
-                    QString systemstring = QString("mv -v %1 %2/").arg(behdir).arg(outdir);
+                    /* quote the paths: this runs through `sh -c`, so an unquoted
+                       path containing spaces or metacharacters would be split */
+                    QString systemstring = QString("mv -v %1 %2/").arg(ShellQuote(behdir)).arg(ShellQuote(outdir));
                     SystemCommand(systemstring);
                 }
             }
@@ -172,7 +174,10 @@ bool moduleImport::ParseRemotelyImportedData() {
                 n->Log("Encountered [" + datatype + "] import");
 
                 /* move the files */
-                QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(uploaddir).arg(outdir);
+                /* Quote the directories but leave the /* outside the quotes, so
+                   the shell still expands the glob. Quoting the whole pattern
+                   would make it a literal filename. */
+                QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(ShellQuote(uploaddir)).arg(ShellQuote(outdir));
                 n->Log(SystemCommand(systemstring));
 
                 n->Log("Finished moving the ET or EEG files");
@@ -221,7 +226,9 @@ bool moduleImport::PrepareAndMoveDICOM(QString filepath, QString outdir, bool an
         img->AnonymizeDicomFile(filepath, newFilePath, m);
     }
     else {
-        QString systemstring = QString("touch %1; mv %1 %2").arg(filepath).arg(newFilePath);
+        /* quote the paths: imported filenames arrive from outside NiDB and may
+           contain spaces or shell metacharacters */
+        QString systemstring = QString("touch %1; mv %1 %2").arg(ShellQuote(filepath)).arg(ShellQuote(newFilePath));
         SystemCommand(systemstring, false);
     }
 
@@ -252,14 +259,16 @@ bool moduleImport::PrepareAndMovePARREC(QString parfilepath, QString outdir) {
     QString newparfilename = padding + parfilename;
     QString newparfilepath = outdir + "/" + newparfilename;
 
-    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(parfilepath).arg(newparfilepath)));
+    /* quote the paths (see above) */
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(ShellQuote(parfilepath)).arg(ShellQuote(newparfilepath))));
 
     QString recfilename = parfilename.replace(".par", ".rec", Qt::CaseInsensitive);
     QString newrecfilename = newparfilename.replace(".par", ".rec", Qt::CaseInsensitive);
     QString recfilepath = oldpath + "/" + recfilename;
     QString newrecfilepath = outdir + "/" + newrecfilename;
 
-    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(recfilepath).arg(newrecfilepath)));
+    /* quote the paths (see above) */
+    n->Log(SystemCommand(QString("touch %1; mv -v %1 %2").arg(ShellQuote(recfilepath)).arg(ShellQuote(newrecfilepath))));
 
     return true;
 }

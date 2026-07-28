@@ -337,7 +337,10 @@ bool NiDBMoveFile(QString f, QString dir, QString &m) {
     QDir d;
     if (d.exists(dir)) {
         QString systemstring;
-        systemstring = QString("mv %1 %2/").arg(f).arg(dir);
+        /* quote both paths: this string is run through `sh -c`, so an unquoted
+           filename containing spaces or shell metacharacters would be split or
+           interpreted */
+        systemstring = QString("mv %1 %2/").arg(ShellQuote(f)).arg(ShellQuote(dir));
 
         QString output = SystemCommand(systemstring, false).trimmed();
         if (output != "") {
@@ -369,7 +372,8 @@ bool NiDBCopyFile(QString f, QString dir, QString &m) {
     QDir d;
     if (d.exists(dir)) {
         QString systemstring;
-        systemstring = QString("cp -u %1 %2/").arg(f).arg(dir);
+        /* quote both paths (see NiDBMoveFile) */
+        systemstring = QString("cp -u %1 %2/").arg(ShellQuote(f)).arg(ShellQuote(dir));
 
         QString output = SystemCommand(systemstring, false).trimmed();
         if (output != "") {
@@ -404,10 +408,11 @@ bool RenameFile(QString filepathorig, QString filepathnew, bool force) {
     }
 
     QString systemstring;
+    /* quote both paths (see NiDBMoveFile) */
     if (force)
-        systemstring = QString("mv -f %1 %2").arg(filepathorig).arg(filepathnew);
+        systemstring = QString("mv -f %1 %2").arg(ShellQuote(filepathorig)).arg(ShellQuote(filepathnew));
     else
-        systemstring = QString("mv %1 %2").arg(filepathorig).arg(filepathnew);
+        systemstring = QString("mv %1 %2").arg(ShellQuote(filepathorig)).arg(ShellQuote(filepathnew));
 
     QString output = SystemCommand(systemstring, false).trimmed();
     /* check if there's an error message from mv */
@@ -962,6 +967,32 @@ void AppendCustomLog(QString file, QString msg) {
     else {
         //WriteLog("Error writing to file ["+file+"]");
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ShellQuote ------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Quote a string for safe use as a single argument in a shell command.
+ *
+ * SystemCommand() runs its argument through `sh -c`, so any path interpolated
+ * into that string is subject to word splitting, globbing, redirection and
+ * command substitution. Wrapping the value in single quotes makes the shell
+ * treat it as one literal argument.
+ *
+ * A literal single quote cannot appear inside a single-quoted string, so each
+ * one is emitted as '\'' -- close the quote, escape a bare quote, reopen.
+ *
+ * Note this protects the shell, not the invoked program: a value that begins
+ * with '-' is still one argument but may be read as an option by the command.
+ *
+ * @param s Value to quote (typically a file or directory path).
+ * @return The value wrapped in single quotes, safe for `sh -c`.
+ */
+QString ShellQuote(QString s) {
+    s.replace("'", "'\\''");
+    return "'" + s + "'";
 }
 
 

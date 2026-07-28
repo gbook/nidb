@@ -41,6 +41,7 @@
 	require "menu.php";
 	require "nidbapi.php";
 	require "redcap_functions.php";
+	require "redcap_import.php";
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
@@ -117,6 +118,14 @@
 			break;
 		case 'testconnection':
 			TestRemoteImportConnection($importid, $projectid);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'redcappreview':
+			DisplayRedCapImportResult($importid, $projectid, true);
+			DisplayRemoteImportList($projectid);
+			break;
+		case 'redcapimport':
+			DisplayRedCapImportResult($importid, $projectid, false);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'editimportform':
@@ -208,6 +217,65 @@
 		$datasource = trim($row['remote_datasource'] ?? '');
 		if ($datasource !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $datasource)) {
 			Warning("Datasource \"$datasource\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayRedCapImportResult ---------- */
+	/* -------------------------------------------- */
+	/* Run a REDCap import (or a dry-run preview) and report the outcome.
+	   REDCap imports execute here in PHP rather than being queued for the C++
+	   module, so the result is shown immediately. */
+	function DisplayRedCapImportResult($importid, $projectid, $dryrun) {
+
+		$sum = RedCapRunImport($importid, $projectid, $dryrun);
+
+		if (!$sum['success']) {
+			Error(htmlspecialchars($sum['message']));
+			return;
+		}
+
+		$title = $dryrun ? "Preview (nothing was written)" : "Import complete";
+
+		$msg = "<table class='ui very compact collapsing basic table'>";
+		$msg .= "<tr><td><b>REDCap rows read</b></td><td>" . (int)$sum['rows'] . "</td></tr>";
+		$msg .= "<tr><td><b>Records matched to subjects</b></td><td>" . (int)$sum['records'] . "</td></tr>";
+		$msg .= "<tr><td><b>Observations " . ($dryrun ? "to add" : "added") . "</b></td><td>" . (int)$sum['inserted'] . "</td></tr>";
+		$msg .= "<tr><td><b>Observations " . ($dryrun ? "to update" : "updated") . "</b></td><td>" . (int)$sum['updated'] . "</td></tr>";
+		$msg .= "<tr><td><b>Already up to date</b></td><td>" . (int)$sum['unchanged'] . "</td></tr>";
+		$msg .= "<tr><td><b>Surveys " . ($dryrun ? "to create" : "created") . "</b></td><td>" . (int)$sum['surveys'] . "</td></tr>";
+		$msg .= "<tr><td><b>Value labels " . ($dryrun ? "to add" : "added") . "</b></td><td>" . (int)$sum['labelsadded'] . "</td></tr>";
+		$msg .= "<tr><td><b>Blank values skipped</b></td><td>" . (int)$sum['skippedblank'] . "</td></tr>";
+		if ($sum['skippedcomplete'] > 0)
+			$msg .= "<tr><td><b>Skipped (form not Complete)</b></td><td>" . (int)$sum['skippedcomplete'] . "</td></tr>";
+		if (!$dryrun && $sum['batchid'] > 0)
+			$msg .= "<tr><td><b>Batch</b></td><td><a href='importremote.php?action=viewbatchlog&batchid=" . (int)$sum['batchid'] . "&projectid=" . (int)$projectid . "'>#" . (int)$sum['batchid'] . " log</a></td></tr>";
+		$msg .= "</table>";
+
+		Notice($msg, $title);
+
+		/* records that could not be matched to a NiDB subject */
+		if (!empty($sum['unmatched'])) {
+			$shown = array_slice($sum['unmatched'], 0, 25);
+			$w = "<b>" . count($sum['unmatched']) . " REDCap record(s) had no matching NiDB subject</b> in this project "
+			   . "(matched on subject UID, then alternate UID):<br><code>"
+			   . htmlspecialchars(implode(', ', $shown)) . "</code>";
+			if (count($sum['unmatched']) > count($shown))
+				$w .= " &hellip; and " . (count($sum['unmatched']) - count($shown)) . " more";
+			Warning($w);
+		}
+
+		/* values that could not be stored as the mapped NiDB type */
+		if (!empty($sum['problems'])) {
+			$shown = array_slice($sum['problems'], 0, 25);
+			/* escape each entry, then join with markup -- escaping the joined
+			   string would have to un-escape the separators afterwards */
+			$w = "<b>" . count($sum['problems']) . " value(s) could not be converted</b> to the mapped NiDB item type and were skipped:<br><code>"
+			   . implode('<br>', array_map('htmlspecialchars', $shown)) . "</code>";
+			if (count($sum['problems']) > count($shown))
+				$w .= "<br>&hellip; and " . (count($sum['problems']) - count($shown)) . " more";
+			Warning($w);
 		}
 	}
 
@@ -773,8 +841,12 @@
 							   meaningful for on-demand imports, but the REDCap connection test
 							   applies on any schedule. */
 							$isCsvUpload = in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource']);
-							$canRunNow = ($import_schedule === 'ondemand');
-							$canTestConnection = ($remote_type === 'redcap');
+							$isRedcap = ($remote_type === 'redcap');
+							/* REDCap imports run here in PHP, so they get their own
+							   actions rather than the queue-a-batch "Run now" path
+							   that the C++ module services. */
+							$canRunNow = (($import_schedule === 'ondemand') && !$isRedcap);
+							$canTestConnection = $isRedcap;
 							$hasActions = $canRunNow || $canTestConnection;
 					?>
 					<tr>
@@ -816,8 +888,11 @@
 											<a class="item" href="importremote.php?action=runimport&projectid=<?=$projectid?>&importid=<?=$importid?>"><i class="play icon"></i>Run now</a>
 										<? endif; ?>
 									<? endif; ?>
-									<? if ($canTestConnection): ?>
+									<? if ($isRedcap): ?>
 										<a class="item" href="importremote.php?action=testconnection&projectid=<?=$projectid?>&importid=<?=$importid?>" title="Check that the REDCap API URL and token for this import work"><i class="plug icon"></i>Test connection</a>
+										<a class="item" href="remoteimportmapping.php?projectid=<?=$projectid?>&importid=<?=$importid?>" title="Browse this REDCap project and map its fields"><i class="sitemap icon"></i>Map fields</a>
+										<a class="item" href="importremote.php?action=redcappreview&projectid=<?=$projectid?>&importid=<?=$importid?>" title="Show what would be imported without writing anything"><i class="eye icon"></i>Preview import</a>
+										<a class="item" href="importremote.php?action=redcapimport&projectid=<?=$projectid?>&importid=<?=$importid?>" onclick="return confirm('Import REDCap data into this project now?')"><i class="download icon"></i>Import now</a>
 									<? endif; ?>
 									<? if (!$hasActions): ?>
 										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>

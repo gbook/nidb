@@ -118,6 +118,7 @@ QString ParseTime(QString s);
 QString RemoveNonAlphaNumericChars(QString s);
 QString SystemCommand(QString s, bool detail=true, bool truncate=false);
 QString WrapText(QString s, int col);
+QString ShellQuote(QString s);
 QStringList ShellWords(QString s);
 bool IsDouble(QString s);
 bool IsInt(QString s);
