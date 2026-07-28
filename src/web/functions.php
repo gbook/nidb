@@ -3118,11 +3118,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
 		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
 		// $output = curl_exec($ch);
-		print $output;
+		// print $output;
 		// curl_close($ch);
 		// $EventsList = json_decode($output,true);
 
-		echo var_dump($EventList["event_name"]);
+		// echo var_dump($EventList["event_name"]);
 		// for ($Ev=0;$Ev <= count($EventsList)-1; $Ev++)
 		// {
 				// $Events[$Ev]= $EventsList[$Ev]["unique_event_name"];
@@ -3210,7 +3210,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
 		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
 		// $output = curl_exec($ch);
-		print $output;
+		// print $output;
 		// curl_close($ch);
 
 		// $report = json_decode($output,true);
@@ -3249,12 +3249,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
                 // curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
                 // curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
                 // $output = curl_exec($ch);
-                print $output;
+                // print $output;
 		// curl_close($ch);
 		// $rcmeta =  json_decode($output,true);
 		// $rclabels =  $rcmeta[0]["field_label"];
 
-		               return $rcfielddesc;
+		               // return $rcfielddesc;
 		// return $rclabels;
         // }
 	
@@ -3297,12 +3297,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
 		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
 		// $output = curl_exec($ch);
-		print $output;
+		// print $output;
 		// curl_close($ch);
 
 		// $report = json_decode($output,true);
 
-		$Var_Names = array_keys($report[0]); /* This variable ($Var_Names)contains names of all the variables in selected form */
+		// $Var_Names = array_keys($report[0]); /* This variable ($Var_Names)contains names of all the variables in selected form */
 
 		// return $report;
 
