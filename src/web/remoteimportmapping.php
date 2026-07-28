@@ -39,9 +39,11 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
+	require "redcap_functions.php";
 
 	$action    = GetVariable("action");
 	$projectid = GetVariable("projectid");
+	$importid  = GetVariable("importid");
 
 	if ($projectid == "") {
 		Error("No project specified");
@@ -54,7 +56,7 @@
 			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "", GetVariable("replaceexisting") != "");
 			break;
 		default:
-			DisplayMappingList((int)$projectid);
+			DisplayMappingList((int)$projectid, (int)$importid);
 	}
 
 
@@ -408,7 +410,9 @@
 	/* --------------------------------------------------- */
 	/* ------- DisplayMappingList ------------------------ */
 	/* --------------------------------------------------- */
-	function DisplayMappingList($projectid) {
+	function DisplayMappingList($projectid, $importid = 0) {
+
+		$importid = (int)$importid;
 
 		// Load all instruments for this project — used in JS for the instrument dropdown
 		$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrument_id, instrument_name FROM instruments WHERE project_id = ? ORDER BY instrument_name");
@@ -455,26 +459,27 @@
 
 		// Load REDCap mappings
 		$stmt = mysqli_prepare($GLOBALS['linki'],
-			"SELECT m.remoteimportmapping_id, m.redcap_arm, m.redcap_event, m.redcap_form,
-			        m.redcap_field, m.redcap_datatype, m.redcap_datefield,
+			"SELECT m.remoteimportmapping_id, m.redcap_event, m.redcap_form,
+			        m.redcap_field, m.redcap_choice_code, m.redcap_datatype, m.redcap_validation, m.redcap_datefield,
 			        m.nidb_instrument, m.nidb_variable, m.flag_date_from_field, m.flag_can_repeat,
 			        i.instrument_name, ii.item_name
 			 FROM remoteimport_mapping m
 			 LEFT JOIN instruments i ON i.instrument_id = m.nidb_instrument
 			 LEFT JOIN instrument_items ii ON ii.instrumentitem_id = m.nidb_variable
 			 WHERE m.project_id = ? AND m.source_type = 'redcap'
-			 ORDER BY m.redcap_arm, m.redcap_event, m.redcap_form, m.redcap_field");
+			 ORDER BY m.redcap_event, m.redcap_form, m.redcap_field, m.redcap_choice_code");
 		mysqli_stmt_bind_param($stmt, 'i', $projectid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$redcapRows = [];
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$redcapRows[] = [
 				'id'                   => (int)$row['remoteimportmapping_id'],
-				'redcap_arm'           => (string)$row['redcap_arm'],
 				'redcap_event'         => (string)$row['redcap_event'],
 				'redcap_form'          => (string)$row['redcap_form'],
 				'redcap_field'         => (string)$row['redcap_field'],
+				'redcap_choice_code'   => (string)$row['redcap_choice_code'],
 				'redcap_datatype'      => (string)$row['redcap_datatype'],
+				'redcap_validation'    => (string)$row['redcap_validation'],
 				'redcap_datefield'     => (string)$row['redcap_datefield'],
 				'nidb_instrument_id'   => (int)$row['nidb_instrument'],
 				'nidb_instrument'      => (string)$row['instrument_name'],
@@ -485,6 +490,53 @@
 			];
 		}
 		mysqli_stmt_close($stmt);
+
+		/* Index the saved REDCap mappings by their field address so the structure
+		   browser can show which REDCap fields are already mapped. Mappings are
+		   global per project, so a field mapped for one REDCap import shows as
+		   mapped when browsing another -- that is intentional, and the browser
+		   labels it so the user can see they are reusing an existing mapping. */
+		$mappedIndex = [];
+		foreach ($redcapRows as $r) {
+			$key = $r['redcap_event'] . '|' . $r['redcap_form'] . '|' . $r['redcap_field'] . '|' . $r['redcap_choice_code'];
+			$mappedIndex[$key] = [
+				'id'         => $r['id'],
+				'instrument' => $r['nidb_instrument'],
+				'variable'   => $r['nidb_variable'],
+			];
+		}
+
+		/* The REDCap imports for this project. Mappings are project-global, but the
+		   structure fetch needs a specific import's URL + token, so the user picks
+		   which import to browse. */
+		$stmt = mysqli_prepare($GLOBALS['linki'],
+			"SELECT remoteimport_id, import_name FROM remote_imports
+			 WHERE project_id = ? AND remote_type = 'redcap' ORDER BY import_name");
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$redcapImports = [];
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$redcapImports[] = ['id' => (int)$row['remoteimport_id'], 'name' => (string)$row['import_name']];
+		}
+		mysqli_stmt_close($stmt);
+
+		/* If an import was chosen, pull the live structure from REDCap */
+		$structure = null;
+		$structureError = '';
+		$structureImportName = '';
+		if ($importid > 0) {
+			$cred = RedCapGetCredentials($importid, $projectid);
+			if (!$cred['success'])
+				$structureError = $cred['message'];
+			else {
+				$structureImportName = $cred['importname'];
+				$s = RedCapGetStructure($cred['url'], $cred['token']);
+				if (!$s['success'])
+					$structureError = $s['message'];
+				else
+					$structure = $s;
+			}
+		}
 		?>
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-balham.css">
@@ -532,6 +584,90 @@
 
 		<!-- REDCap tab -->
 		<div class="ui bottom attached tab segment" data-tab="redcap">
+
+			<!-- ── Browse the live REDCap project structure ────────────────── -->
+			<div class="ui segment" style="background:#fafafa">
+				<form method="get" action="remoteimportmapping.php" style="margin:0">
+					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
+						<div>
+							<label style="display:block;font-weight:bold;font-size:0.9em;margin-bottom:3px">Browse REDCap structure</label>
+							<select name="importid" style="padding:5px 8px;min-width:260px;border:1px solid #ccc;border-radius:4px">
+								<option value="">-- select a REDCap import --</option>
+								<? foreach ($redcapImports as $ri): ?>
+									<option value="<?=$ri['id']?>" <?= ($ri['id'] == $importid) ? 'selected' : '' ?>><?=htmlspecialchars($ri['name'])?></option>
+								<? endforeach; ?>
+							</select>
+						</div>
+						<button type="submit" class="ui small button" onclick="this.innerHTML='<i class=\'notched circle loading icon\'></i> Loading...'">
+							<i class="download icon"></i> Load structure
+						</button>
+						<? if (empty($redcapImports)): ?>
+							<span style="color:#a00;font-size:0.9em">No REDCap imports defined for this project.
+								<a href="importremote.php?action=addimportform&projectid=<?=$projectid?>">Add one</a>.</span>
+						<? endif; ?>
+					</div>
+				</form>
+
+				<? if ($structureError != ''): ?>
+					<div class="ui negative message" style="margin-top:10px">
+						<div class="header">Could not read the REDCap project</div>
+						<p><?=htmlspecialchars($structureError)?></p>
+					</div>
+				<? elseif ($structure !== null): ?>
+					<div style="margin-top:10px;padding-top:10px;border-top:1px solid #ddd">
+						<div style="margin-bottom:8px">
+							<b><?=htmlspecialchars($structure['projecttitle'])?></b>
+							<span class="ui tiny label"><?= $structure['islongitudinal'] ? 'Longitudinal' : 'Classic' ?></span>
+							<? if ($structure['hasrepeating']): ?><span class="ui tiny label">Has repeating</span><? endif; ?>
+							<span style="color:#666;font-size:0.9em">via <?=htmlspecialchars($structureImportName)?></span>
+						</div>
+
+						<? foreach ($structure['warnings'] as $w): ?>
+							<div class="ui warning message" style="padding:6px 10px;margin:4px 0"><?=htmlspecialchars($w)?></div>
+						<? endforeach; ?>
+
+						<div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:8px">
+							<? if ($structure['islongitudinal']): ?>
+							<div>
+								<label style="display:block;font-size:0.85em;color:#555">Event</label>
+								<select id="rcEvent" onchange="rcEventChanged()" style="padding:5px 8px;min-width:220px;border:1px solid #ccc;border-radius:4px"></select>
+							</div>
+							<? endif; ?>
+							<div>
+								<label style="display:block;font-size:0.85em;color:#555">Form</label>
+								<select id="rcForm" onchange="rcRenderFields()" style="padding:5px 8px;min-width:240px;border:1px solid #ccc;border-radius:4px"></select>
+							</div>
+							<div>
+								<label style="display:block;font-size:0.85em;color:#555">Show</label>
+								<select id="rcShow" onchange="rcRenderFields()" style="padding:5px 8px;border:1px solid #ccc;border-radius:4px">
+									<option value="all">All fields</option>
+									<option value="unmapped">Unmapped only</option>
+									<option value="mapped">Mapped only</option>
+								</select>
+							</div>
+							<span id="rcFieldCount" style="margin-left:auto;color:#666;font-size:0.9em"></span>
+						</div>
+
+						<div id="rcFieldTableWrap" style="max-height:420px;overflow:auto;border:1px solid #ddd;border-radius:4px">
+							<table class="ui very compact small table" style="margin:0" id="rcFieldTable">
+								<thead style="position:sticky;top:0;background:#f3f3f3;z-index:1">
+									<tr>
+										<th style="width:200px">REDCap field</th>
+										<th>Label</th>
+										<th style="width:90px">Type</th>
+										<th style="width:80px">Suggests</th>
+										<th style="width:230px">NiDB mapping</th>
+										<th style="width:70px"></th>
+									</tr>
+								</thead>
+								<tbody></tbody>
+							</table>
+						</div>
+					</div>
+				<? endif; ?>
+			</div>
+
 			<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
 				<button class="ui small primary button" onclick="openModal('redcap')">
 					<i class="plus icon"></i> Add mapping
@@ -594,12 +730,8 @@
 					<div id="redcap_fields">
 						<div class="three fields">
 							<div class="field">
-								<label>Arm</label>
-								<input type="text" id="modal_redcap_arm" placeholder="Arm">
-							</div>
-							<div class="field">
 								<label>Event</label>
-								<input type="text" id="modal_redcap_event" placeholder="Event">
+								<input type="text" id="modal_redcap_event" placeholder="Unique event name (blank if classic)">
 							</div>
 							<div class="field">
 								<label>Form</label>
@@ -624,12 +756,26 @@
 									<option value="slider">slider</option>
 									<option value="descriptive">descriptive</option>
 									<option value="file">file</option>
+									<option value="yesno">yesno</option>
+									<option value="truefalse">truefalse</option>
+									<option value="sql">sql</option>
 								</select>
 							</div>
+							<div class="field">
+								<label>Choice code</label>
+								<input type="text" id="modal_redcap_choice_code" placeholder="Checkbox choice code; blank if not a checkbox">
+							</div>
+						</div>
+						<div class="three fields">
 							<div class="field">
 								<label>Date field</label>
 								<input type="text" id="modal_redcap_datefield" placeholder="Field used for NiDB date">
 							</div>
+							<div class="field">
+								<label>Validation</label>
+								<input type="text" id="modal_redcap_validation" placeholder="REDCap validation type (eg date_ymd, integer)">
+							</div>
+							<div class="field"></div>
 						</div>
 					</div>
 
@@ -937,10 +1083,10 @@
 			{
 				columnDefs: [
 					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
-					{ field: 'redcap_arm',        headerName: 'Arm',               sortable: true, filter: true, width: 110 },
 					{ field: 'redcap_event',      headerName: 'Event',             sortable: true, filter: true, width: 140 },
 					{ field: 'redcap_form',       headerName: 'Form',              sortable: true, filter: true, flex: 1 },
 					{ field: 'redcap_field',      headerName: 'Field',             sortable: true, filter: true, flex: 1 },
+					{ field: 'redcap_choice_code', headerName: 'Choice',           sortable: true, filter: true, width: 90 },
 					{ field: 'redcap_datatype',   headerName: 'Datatype',          sortable: true, filter: true, width: 110 },
 					{ field: 'redcap_datefield',  headerName: 'Date field',        sortable: true, filter: true, width: 120 },
 					arrowCol,
@@ -985,6 +1131,184 @@
 			}
 		);
 
+		/* ── REDCap structure browser ──────────────────────────────────────
+		   rcStructure is the live project shape fetched from REDCap; rcMapped is
+		   an index of already-saved mappings keyed "event|form|field|choicecode".
+		   Both are null/empty when no import has been loaded. */
+		const rcStructure = <?= json_encode($structure, JSON_UNESCAPED_SLASHES) ?>;
+		const rcMapped    = <?= json_encode($mappedIndex ?: new stdClass(), JSON_UNESCAPED_SLASHES) ?>;
+
+		function rcMapKey(ev, form, field, choice) {
+			return (ev || '') + '|' + (form || '') + '|' + (field || '') + '|' + (choice || '');
+		}
+
+		/* Current event: '' for classic projects, which is what gets stored */
+		function rcCurrentEvent() {
+			const el = document.getElementById('rcEvent');
+			return el ? el.value : '';
+		}
+
+		/* Forms available in the selected event. Longitudinal projects restrict
+		   forms per event via the form/event mapping; classic projects expose all. */
+		function rcFormsForEvent(ev) {
+			if (!rcStructure) return [];
+			if (rcStructure.islongitudinal && ev && rcStructure.formevents && rcStructure.formevents[ev])
+				return rcStructure.formevents[ev];
+			return Object.keys(rcStructure.instruments || {});
+		}
+
+		function rcPopulateEvents() {
+			const el = document.getElementById('rcEvent');
+			if (!el || !rcStructure) return;
+			el.innerHTML = '';
+			Object.keys(rcStructure.events || {}).forEach(function(uen) {
+				const e = rcStructure.events[uen];
+				const o = document.createElement('option');
+				o.value = uen;
+				o.textContent = e.label + ' (' + uen + ')';
+				el.appendChild(o);
+			});
+			if (!el.options.length) {
+				const o = document.createElement('option');
+				o.value = ''; o.textContent = '(no events returned)';
+				el.appendChild(o);
+			}
+		}
+
+		function rcPopulateForms() {
+			const el = document.getElementById('rcForm');
+			if (!el || !rcStructure) return;
+			const prev = el.value;
+			const forms = rcFormsForEvent(rcCurrentEvent());
+			el.innerHTML = '';
+			forms.forEach(function(f) {
+				const o = document.createElement('option');
+				o.value = f;
+				o.textContent = (rcStructure.instruments && rcStructure.instruments[f]) ? rcStructure.instruments[f] : f;
+				el.appendChild(o);
+			});
+			if (forms.indexOf(prev) >= 0) el.value = prev;
+		}
+
+		function rcEventChanged() {
+			rcPopulateForms();
+			rcRenderFields();
+		}
+
+		function rcRenderFields() {
+			if (!rcStructure) return;
+			const tbody = document.querySelector('#rcFieldTable tbody');
+			const form  = document.getElementById('rcForm').value;
+			const ev    = rcCurrentEvent();
+			const show  = document.getElementById('rcShow').value;
+			const fields = (rcStructure.fields && rcStructure.fields[form]) ? rcStructure.fields[form] : [];
+
+			tbody.innerHTML = '';
+			let shown = 0, mappedCount = 0;
+
+			fields.forEach(function(f) {
+				const key = rcMapKey(ev, f.form, f.field, f.choicecode);
+				const m   = rcMapped[key];
+				if (m) mappedCount++;
+				if ((show === 'unmapped' && m) || (show === 'mapped' && !m)) return;
+				shown++;
+
+				const tr = document.createElement('tr');
+				if (!f.mappable) tr.style.opacity = '0.55';
+
+				/* field name (the export column name) */
+				const td1 = document.createElement('td');
+				const code = document.createElement('code');
+				code.textContent = f.exportname;
+				td1.appendChild(code);
+				if (f.isfile) {
+					const b = document.createElement('span');
+					b.className = 'ui tiny label';
+					b.textContent = 'file';
+					b.title = 'Importing this field needs a separate REDCap file download';
+					td1.appendChild(document.createTextNode(' '));
+					td1.appendChild(b);
+				}
+				tr.appendChild(td1);
+
+				/* label */
+				const td2 = document.createElement('td');
+				td2.style.fontSize = '0.9em';
+				td2.textContent = f.label || '';
+				tr.appendChild(td2);
+
+				/* REDCap type */
+				const td3 = document.createElement('td');
+				td3.style.fontSize = '0.85em';
+				td3.textContent = f.fieldtype + (f.validation ? ' / ' + f.validation : '');
+				tr.appendChild(td3);
+
+				/* suggested NiDB type */
+				const td4 = document.createElement('td');
+				td4.style.fontSize = '0.85em';
+				td4.textContent = f.suggestedtype || '—';
+				tr.appendChild(td4);
+
+				/* existing mapping */
+				const td5 = document.createElement('td');
+				td5.style.fontSize = '0.9em';
+				if (m) {
+					td5.innerHTML = '<i class="green check icon"></i>';
+					td5.appendChild(document.createTextNode((m.instrument || '?') + ' › ' + (m.variable || '?')));
+				}
+				else if (!f.mappable) {
+					td5.style.color = '#999';
+					td5.textContent = f.fieldtype === 'descriptive' ? 'no data to map' : 'not mappable';
+				}
+				else {
+					td5.style.color = '#999';
+					td5.textContent = 'unmapped';
+				}
+				tr.appendChild(td5);
+
+				/* action */
+				const td6 = document.createElement('td');
+				if (f.mappable) {
+					const btn = document.createElement('button');
+					btn.className = 'ui mini ' + (m ? 'basic ' : 'primary ') + 'button';
+					btn.textContent = m ? 'Edit' : 'Map';
+					btn.onclick = function() { rcOpenModalForField(ev, f, m); };
+					td6.appendChild(btn);
+				}
+				tr.appendChild(td6);
+
+				tbody.appendChild(tr);
+			});
+
+			document.getElementById('rcFieldCount').textContent =
+				shown + ' of ' + fields.length + ' shown · ' + mappedCount + ' mapped';
+		}
+
+		/* Open the shared mapping modal pre-filled from a browsed REDCap field.
+		   For an already-mapped field the saved row is loaded so this edits rather
+		   than creating a duplicate (which the unique index would reject anyway). */
+		function rcOpenModalForField(ev, f, existing) {
+			if (existing) {
+				let row = null;
+				redcapGridApi.forEachNode(function(node) {
+					if (node.data && node.data.id == existing.id) row = node.data;
+				});
+				if (row) { openModalForEdit('redcap', row); return; }
+			}
+
+			clearModal();
+			document.getElementById('modal_source_type').value = 'redcap';
+			document.getElementById('modalTitle').textContent   = 'Map REDCap field: ' + f.exportname;
+			toggleSourceFields('redcap');
+			document.getElementById('modal_redcap_event').value       = ev || '';
+			document.getElementById('modal_redcap_form').value        = f.form || '';
+			document.getElementById('modal_redcap_field').value       = f.field || '';
+			document.getElementById('modal_redcap_choice_code').value = f.choicecode || '';
+			document.getElementById('modal_redcap_datatype').value    = f.fieldtype || '';
+			document.getElementById('modal_redcap_validation').value  = f.validation || '';
+			$('#mappingModal').modal('show');
+		}
+
 		// ── Modal: open for a new mapping ─────────────────────────────────
 		function openModal(sourceType) {
 			clearModal();
@@ -1013,12 +1337,13 @@
 				document.getElementById('modal_avicenna_question').value      = data.avicenna_question      || '';
 				document.getElementById('modal_flag_import_meta').checked     = !!data.flag_import_meta;
 			} else {
-				document.getElementById('modal_redcap_arm').value          = data.redcap_arm       || '';
 				document.getElementById('modal_redcap_event').value        = data.redcap_event     || '';
 				document.getElementById('modal_redcap_form').value         = data.redcap_form      || '';
 				document.getElementById('modal_redcap_field').value        = data.redcap_field     || '';
+				document.getElementById('modal_redcap_choice_code').value  = data.redcap_choice_code || '';
 				document.getElementById('modal_redcap_datatype').value     = data.redcap_datatype  || '';
 				document.getElementById('modal_redcap_datefield').value    = data.redcap_datefield || '';
+				document.getElementById('modal_redcap_validation').value   = data.redcap_validation || '';
 				document.getElementById('modal_flag_date_from_field').checked = !!data.flag_date_from_field;
 				document.getElementById('modal_flag_can_repeat').checked       = !!data.flag_can_repeat;
 			}
@@ -1036,8 +1361,9 @@
 		function clearModal() {
 			['modal_mappingid','modal_avicenna_survey','modal_avicenna_datasource','modal_avicenna_variable','modal_avicenna_datatype',
 			 'modal_avicenna_question',
-			 'modal_redcap_arm','modal_redcap_event','modal_redcap_form',
-			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield'].forEach(id => {
+			 'modal_redcap_event','modal_redcap_form','modal_redcap_choice_code',
+			 'modal_redcap_field','modal_redcap_datatype','modal_redcap_datefield',
+			 'modal_redcap_validation'].forEach(id => {
 				document.getElementById(id).value = '';
 			});
 			$('#modal_nidb_instrument').dropdown('clear');
@@ -1118,12 +1444,13 @@
 				params.avicenna_question      = document.getElementById('modal_avicenna_question').value;
 				params.flag_import_meta       = document.getElementById('modal_flag_import_meta').checked ? 1 : 0;
 			} else {
-				params.redcap_arm            = document.getElementById('modal_redcap_arm').value;
 				params.redcap_event          = document.getElementById('modal_redcap_event').value;
 				params.redcap_form           = document.getElementById('modal_redcap_form').value;
 				params.redcap_field          = document.getElementById('modal_redcap_field').value;
+				params.redcap_choice_code    = document.getElementById('modal_redcap_choice_code').value;
 				params.redcap_datatype       = document.getElementById('modal_redcap_datatype').value;
 				params.redcap_datefield      = document.getElementById('modal_redcap_datefield').value;
+				params.redcap_validation     = document.getElementById('modal_redcap_validation').value;
 				params.flag_date_from_field  = document.getElementById('modal_flag_date_from_field').checked ? 1 : 0;
 				params.flag_can_repeat       = document.getElementById('modal_flag_can_repeat').checked      ? 1 : 0;
 			}
@@ -1174,12 +1501,13 @@
 					}
 				} else {
 					Object.assign(rowData, {
-						redcap_arm:       params.redcap_arm,
 						redcap_event:     params.redcap_event,
 						redcap_form:      params.redcap_form,
 						redcap_field:     params.redcap_field,
+						redcap_choice_code:   params.redcap_choice_code,
 						redcap_datatype:      params.redcap_datatype,
 						redcap_datefield:     params.redcap_datefield,
+						redcap_validation:    params.redcap_validation,
 						flag_date_from_field: parseInt(params.flag_date_from_field),
 						flag_can_repeat:      parseInt(params.flag_can_repeat),
 					});
@@ -1387,6 +1715,16 @@
 		// ── Semantic UI initialization ─────────────────────────────────────
 		$('.tabular.menu .item').tab();
 		$('.ui.checkbox').checkbox();
+
+		/* If a REDCap structure was loaded, switch to the REDCap tab and populate
+		   the browser. Loading the structure is a full page GET, so without this
+		   the user would land back on the Avicenna tab. */
+		if (rcStructure) {
+			$('.tabular.menu .item').tab('change tab', 'redcap');
+			rcPopulateEvents();
+			rcPopulateForms();
+			rcRenderFields();
+		}
 		</script>
 		<?php
 	}

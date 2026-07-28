@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Jul 27, 2026 at 05:30 PM
+-- Generation Time: Jul 27, 2026 at 08:25 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -1357,7 +1357,7 @@ CREATE TABLE `instance` (
 CREATE TABLE `instrumentitem_map` (
   `itemmap_id` int(11) NOT NULL,
   `instrumentitem_id` int(11) NOT NULL,
-  `int_val` int(11) DEFAULT NULL COMMENT 'example: 1, 2...',
+  `int_val` varchar(50) DEFAULT NULL COMMENT 'coded value; example: 1, 2 ... or AA, BB',
   `string_val` varchar(255) NOT NULL COMMENT 'example: female, male ...'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -1940,6 +1940,7 @@ CREATE TABLE `observation_surveys` (
   `survey_enddate` datetime DEFAULT NULL,
   `survey_notes` text DEFAULT NULL,
   `survey_visit` text DEFAULT NULL,
+  `survey_instance` int(11) DEFAULT NULL COMMENT 'REDCap repeat instance (1,2,3...); NULL if not repeating',
   `survey_experimenter` text DEFAULT NULL,
   `survey_rater` text DEFAULT NULL,
   `survey_entrydate` datetime DEFAULT NULL COMMENT 'Database entry date',
@@ -2738,12 +2739,14 @@ CREATE TABLE `remoteimport_mapping` (
   `avicenna_variable` varchar(255) DEFAULT NULL COMMENT 'Avicenna variable name',
   `avicenna_datatype` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') DEFAULT NULL,
   `avicenna_variablecount` varchar(255) DEFAULT NULL COMMENT 'The number of options for this variable. var_1, var_2, etc',
-  `redcap_arm` tinytext DEFAULT NULL COMMENT 'Redcap arm',
-  `redcap_event` tinytext DEFAULT NULL COMMENT 'Redcap event (baseline, month 3, etc)',
-  `redcap_form` tinytext DEFAULT NULL COMMENT 'Redcap form (instrument)',
-  `redcap_field` text DEFAULT NULL,
-  `redcap_datatype` enum('text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file') DEFAULT NULL,
-  `redcap_datefield` tinytext DEFAULT NULL COMMENT 'the field from which the NiDB date will be taken',
+  `redcap_event` varchar(100) DEFAULT NULL COMMENT 'REDCap unique_event_name; empty string for classic projects',
+  `redcap_form` varchar(100) DEFAULT NULL COMMENT 'REDCap form/instrument name',
+  `redcap_field` varchar(100) DEFAULT NULL COMMENT 'REDCap field name',
+  `redcap_choice_code` varchar(50) DEFAULT NULL COMMENT 'checkbox choice code for this row; exports as field___<code>',
+  `redcap_validation` varchar(50) DEFAULT NULL COMMENT 'REDCap text_validation_type_or_show_slider_number',
+  `redcap_datatype` enum('text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file','yesno','truefalse','sql') DEFAULT NULL,
+  `redcap_datefield` varchar(100) DEFAULT NULL COMMENT 'the field from which the NiDB date will be taken',
+  `redcap_choicecount` int(11) DEFAULT NULL COMMENT 'enumerate var_1, var_2 choices',
   `nidb_instrument` int(11) DEFAULT NULL COMMENT 'links to the instrument table',
   `nidb_variable` int(11) DEFAULT NULL COMMENT 'links to the instrument_item table',
   `flag_date_from_field` tinyint(1) DEFAULT NULL,
@@ -2782,6 +2785,9 @@ CREATE TABLE `remote_imports` (
   `remote_type` enum('redcap','url','csv','avicenna_csv_survey','avicenna_csv_datasource','avicenna_api_survey','avicenna_api_datasource') NOT NULL,
   `remote_url` text DEFAULT NULL,
   `remote_token` text DEFAULT NULL,
+  `redcap_subjectid_field` varchar(100) DEFAULT NULL COMMENT 'REDCap field holding the subject ID (matched UID then altuid)',
+  `redcap_raw_or_label` enum('raw','label') NOT NULL DEFAULT 'raw' COMMENT 'import coded values or labels',
+  `redcap_require_complete` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'only import forms marked Complete',
   `remote_username` varchar(255) DEFAULT NULL,
   `remote_projectid` int(11) DEFAULT NULL,
   `remote_surveyid` int(11) DEFAULT NULL COMMENT 'Avicenna survey ID',
@@ -4533,7 +4539,9 @@ ALTER TABLE `remoteimport_logs`
 -- Indexes for table `remoteimport_mapping`
 --
 ALTER TABLE `remoteimport_mapping`
-  ADD PRIMARY KEY (`remoteimportmapping_id`);
+  ADD PRIMARY KEY (`remoteimportmapping_id`),
+  ADD UNIQUE KEY `uniq_redcap_mapping` (`project_id`,`source_type`,`redcap_event`,`redcap_form`,`redcap_field`,`redcap_choice_code`),
+  ADD KEY `idx_project` (`project_id`);
 
 --
 -- Indexes for table `remote_connections`

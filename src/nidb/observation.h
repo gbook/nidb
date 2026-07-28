@@ -88,7 +88,7 @@ public:
     QString linkedInstrumentItemNotes;
     int linkedInstrumentItemOrder;
     QMap<QString, QString> metadata;
-    QMap<int, QString> valueMap;
+    QMap<QString, QString> valueMap; /* instrumentitem_map: coded value -> label. Keyed as a string because source codes are not always numeric (REDCap choice codes may be alphanumeric) */
 
     /* survey information */
     QDateTime linkedSurveyStartDate;

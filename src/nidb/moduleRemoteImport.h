@@ -62,11 +62,12 @@ struct RemoteImportMapping {
         QString variableCount;
     } avicenna;
     struct Redcap {
-        QString arm;
         QString event;
         QString form;
         QString field;
+        QString choiceCode; /* checkbox choice code; field exports as field___<code>. Empty if not a checkbox */
         QString datatype;
+        QString validation;
         QString dateField;
     } redcap;
     struct flags {
@@ -84,7 +85,7 @@ public:
 
     bool LookupAvicennaMapping(int survey, int question, QString variable, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const;
     bool LookupAvicennaMapping(QString datasource, QString variable, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const;
-    bool LookupRedcapMapping(QString arm, QString event, QString form, QString field, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const;
+    bool LookupRedcapMapping(QString event, QString form, QString field, QString choiceCode, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const;
 
     int size() const;
 

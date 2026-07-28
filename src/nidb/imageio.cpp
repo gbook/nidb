@@ -58,6 +58,7 @@ imageIO::imageIO()
 imageIO::imageIO(nidb *a)
 {
     n = a;
+    OFLog::configure(OFLogger::FATAL_LOG_LEVEL); /* turn off warnings, only log fatal errors */
 }
 
 

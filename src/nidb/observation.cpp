@@ -135,7 +135,7 @@ void observation::LoadObservationInfo() {
                             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                             if (q2.size() > 0) {
                                 while (q2.next()) {
-                                    valueMap[q2.value("int_val").toInt()] = q2.value("string_val").toString();
+                                    valueMap[q2.value("int_val").toString()] = q2.value("string_val").toString();
                                 }
                             }
 

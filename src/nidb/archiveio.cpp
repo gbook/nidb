@@ -3458,10 +3458,13 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     n->Log(QString("Adding %1 series to package...").arg(q.size()));
     QString seriesMsg = "Added series [";
+    int i=0;
+    int totalSeries = q.size();
     while (q.next()) {
         n->ModuleRunningCheckIn();
         if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
 
+        i++;
         int seriesRowID = q.value("series_id").toInt();
         QString modality = q.value("modality").toString();
 
@@ -3473,8 +3476,8 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
             continue;
         }
         else {
-            n->Debug(QString("Adding series [%1,%2] to squirrel package...").arg(seriesRowID).arg(modality));
-            seriesMsg += ".";
+            n->Log(QString("Adding series (%1 of %2) [%2]").arg(i).arg(totalSeries).arg(modality));
+            //seriesMsg += ".";
         }
         //lastProjectRowID = ser.projectid;
         //ser.PrintSeriesInfo();

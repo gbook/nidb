@@ -300,12 +300,13 @@ ImportMapping::ImportMapping(nidb *n, int projectRowID) : n(n) {
             m.avicenna.variableCount = q.value("avicenna_variableCount").toString();
         }
         else if (m.sourceType == "redcap") {
-            m.redcap.arm       = q.value("redcap_arm").toString();
-            m.redcap.event     = q.value("redcap_event").toString();
-            m.redcap.form      = q.value("redcap_form").toString();
-            m.redcap.field     = q.value("redcap_field").toString();
-            m.redcap.datatype  = q.value("redcap_datatype").toString();
-            m.redcap.dateField = q.value("redcap_datefield").toString();
+            m.redcap.event      = q.value("redcap_event").toString();
+            m.redcap.form       = q.value("redcap_form").toString();
+            m.redcap.field      = q.value("redcap_field").toString();
+            m.redcap.choiceCode = q.value("redcap_choice_code").toString();
+            m.redcap.datatype   = q.value("redcap_datatype").toString();
+            m.redcap.validation = q.value("redcap_validation").toString();
+            m.redcap.dateField  = q.value("redcap_datefield").toString();
         }
         m.instrumentRowID     = q.value("nidb_instrument").toInt();
         m.instrumentItemRowID = q.value("nidb_variable").toInt();
@@ -385,22 +386,22 @@ bool ImportMapping::LookupAvicennaMapping(QString datasource, QString variable, 
 /* --------- ImportMapping::LookupRedcapMapping ------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Searches the mapping list for a rule matching the given REDCap arm, event, form, and field.
- * @param arm REDCap arm name.
- * @param event REDCap event name.
+ * @brief Searches the mapping list for a rule matching the given REDCap event, form, field, and choice code.
+ * @param event REDCap unique event name. Empty for classic (non-longitudinal) projects.
  * @param form REDCap form name.
  * @param field REDCap field name.
+ * @param choiceCode Checkbox choice code (the '1' in field___1). Empty for non-checkbox fields.
  * @param instrumentRowID Set to the matching NiDB instrument row ID if found.
  * @param instrumentItemRowID Set to the matching NiDB instrument item row ID if found.
  * @return true if a matching rule was found, false otherwise.
  */
-bool ImportMapping::LookupRedcapMapping(QString arm, QString event, QString form, QString field, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const {
+bool ImportMapping::LookupRedcapMapping(QString event, QString form, QString field, QString choiceCode, int &instrumentRowID, int &instrumentItemRowID, bool &importMeta) const {
     for (const RemoteImportMapping &m : mappings) {
         if (m.sourceType == "redcap" &&
-            m.redcap.arm   == arm   &&
-            m.redcap.event == event &&
-            m.redcap.form  == form  &&
-            m.redcap.field == field) {
+            m.redcap.event      == event &&
+            m.redcap.form       == form  &&
+            m.redcap.field      == field &&
+            m.redcap.choiceCode == choiceCode) {
             instrumentRowID = m.instrumentRowID;
             instrumentItemRowID   = m.instrumentItemRowID;
             importMeta = m.flag.importMeta;
