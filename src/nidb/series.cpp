@@ -177,7 +177,7 @@ squirrelSeries series::GetSquirrelObject(QString databaseUUID) {
         QHash<QString, QString> tags;
         if (debug) n->Log("GetSquirrelObject() checkpoint E");
         io->GetImageFileTags(file, tags, m);
-        if (debug) n->Log("GetSquirrelObject() checkpoint F");
+        if (debug) n->Log(QString("GetSquirrelObject() checkpoint F  GetImageFileTags []").arg(m));
         sqrl.params = tags;
         if (debug) n->Log("GetSquirrelObject() checkpoint G");
         delete io;
