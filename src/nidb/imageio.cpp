@@ -124,18 +124,18 @@ QString imageIO::Exiftool(QString arg) {
  * @param f File path to test.
  * @return true if the file carries the DICM magic at offset 128.
  */
-static bool IsDICOMFile(const QString &f) {
+//static bool IsDICOMFile(const QString &f) {
 
-    QFile file(f);
-    if (!file.open(QIODevice::ReadOnly))
-        return false;
+//    QFile file(f);
+//    if (!file.open(QIODevice::ReadOnly))
+//        return false;
 
-    /* the magic follows the 128-byte preamble; a shorter file cannot be DICOM */
-    if (!file.seek(128))
-        return false;
+//    /* the magic follows the 128-byte preamble; a shorter file cannot be DICOM */
+//    if (!file.seek(128))
+//        return false;
 
-    return (file.read(4) == QByteArray("DICM"));
-}
+//    return (file.read(4) == QByteArray("DICM"));
+//}
 
 
 /* ---------------------------------------------------------- */
@@ -161,8 +161,8 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
        as DICOM: DCMTK then reads a 1.76 GiB "value" and parses the remaining
        gigabytes as elements, taking minutes and yielding binary tag values far
        too large to store. Testing for the DICM magic avoids that entirely. */
-    if (!IsDICOMFile(f))
-        return false;
+    //if (!IsDICOMFile(f))
+    //    return false;
 
     /* Keep the QByteArray alive: f.toLatin1() returns a temporary that would be
        destroyed at the end of this statement, leaving a dangling pointer for
@@ -171,7 +171,7 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
     const char* filename = filenameBytes.constData();
 
     DcmFileFormat fileformat;
-    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
+    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_metaOnly, DcmTagKey(0x7FE0, 0x0010));
     if (status.good()) {
         tags["FileType"] = "DICOM";
         DcmStack stack;
