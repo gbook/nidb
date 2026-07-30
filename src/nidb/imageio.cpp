@@ -161,8 +161,14 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
        as DICOM: DCMTK then reads a 1.76 GiB "value" and parses the remaining
        gigabytes as elements, taking minutes and yielding binary tag values far
        too large to store. Testing for the DICM magic avoids that entirely. */
-    //if (!IsDICOMFile(f))
-    //    return false;
+
+    /* if the file is larger than 50MB, check if it's actually a DICOM file first
+     if it's not a dicom file, let's leave this function */
+    QFileInfo fileInfo(f);
+    if (fileInfo.size() > 50000000) {
+        if (!IsDICOMFile(f))
+            return false;
+    }
 
     /* Keep the QByteArray alive: f.toLatin1() returns a temporary that would be
        destroyed at the end of this statement, leaving a dangling pointer for
@@ -171,7 +177,7 @@ bool imageIO::GetImageTagsDCMTK(QString f, QHash<QString, QString> &tags) {
     const char* filename = filenameBytes.constData();
 
     DcmFileFormat fileformat;
-    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_metaOnly, DcmTagKey(0x7FE0, 0x0010));
+    OFCondition status = fileformat.loadFileUntilTag(filename, EXS_Unknown, EGL_noChange, DCM_MaxReadLength, ERM_autoDetect, DcmTagKey(0x7FE0, 0x0010));
     if (status.good()) {
         tags["FileType"] = "DICOM";
         DcmStack stack;

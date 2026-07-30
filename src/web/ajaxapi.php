@@ -51,6 +51,8 @@
 	$instrumentnotes = GetVariable("instrumentnotes");
 	$originalname = GetVariable("originalname");
 	$itemnamesJson = GetVariable("itemnames");
+	$itemsJson     = GetVariable("items");
+	$createmappings = GetVariable("createmappings");
 
 	$projectid = GetVariable("projectid");
 	$enrollmentid = GetVariable("enrollmentid");
@@ -218,6 +220,12 @@
 			break;
 		case 'getinstrumentitems':
 			GetInstrumentItems((int)$instrumentid);
+			break;
+		case 'getinstrumentbyname':
+			GetInstrumentByName($instrumentname, (int)$projectid);
+			break;
+		case 'createinstrumentitems':
+			CreateInstrumentItems($instrumentname, $instrumentnotes, (int)$projectid, $itemsJson, $redcap_form, $redcap_event, (int)$createmappings);
 			break;
 		case 'updatemappingflag':
 			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
@@ -2096,6 +2104,222 @@
 		}
 		mysqli_stmt_close($stmt);
 		echo json_encode($items);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetInstrumentByName ---------------- */
+	/* -------------------------------------------- */
+	/* Look up an instrument in a project by name and return it with its items,
+	   including type and notes. Used by the "Create Instrument from Form" dialog
+	   to compare a proposed instrument against one that already exists.
+
+	   Returns instrument_id 0 when no instrument of that name exists. */
+	function GetInstrumentByName($name, $projectid) {
+		JsonHeader();
+		$name = trim($name);
+		if (($name == '') || ($projectid < 1)) {
+			echo json_encode(['instrument_id' => 0, 'items' => []]);
+			return;
+		}
+
+		$sql = "select instrument_id, instrument_name, instrument_notes from instruments where project_id = ? and instrument_name = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $name);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($projectid, $name));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$row) {
+			echo json_encode(['instrument_id' => 0, 'items' => []]);
+			return;
+		}
+
+		$instrumentid = (int)$row['instrument_id'];
+		$out = [
+			'instrument_id'    => $instrumentid,
+			'instrument_name'  => (string)$row['instrument_name'],
+			'instrument_notes' => (string)($row['instrument_notes'] ?? ''),
+			'items'            => []
+		];
+
+		$sql = "select instrumentitem_id, item_name, item_type, item_notes, item_order from instrument_items where instrument_id = ? order by item_order, item_name";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($instrumentid));
+		while ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$out['items'][] = [
+				'id'    => (int)$r['instrumentitem_id'],
+				'name'  => (string)$r['item_name'],
+				'type'  => (string)$r['item_type'],
+				'notes' => (string)($r['item_notes'] ?? ''),
+				'order' => (int)$r['item_order']
+			];
+		}
+		mysqli_stmt_close($stmt);
+
+		echo json_encode($out);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateInstrumentItems -------------- */
+	/* -------------------------------------------- */
+	/* Create an instrument (if it does not already exist) and append items to it.
+
+	   Only items whose names are not already present are inserted -- existing
+	   items are never modified, because they may already be referenced by
+	   observations. Item names are compared case-insensitively.
+
+	   $itemsJson is a JSON array of {name, type, notes, field, choicecode,
+	   fieldtype, validation}. The redcap_* members are only needed when
+	   $createmappings is set, in which case a remoteimport_mapping row is also
+	   created for each item, wiring the REDCap field to the new NiDB item. */
+	function CreateInstrumentItems($name, $notes, $projectid, $itemsJson, $redcapForm = '', $redcapEvent = '', $createmappings = 0) {
+		JsonHeader();
+		$name = trim($name);
+		if (($name == '') || ($projectid < 1)) {
+			echo json_encode(['ok' => false, 'error' => 'An instrument name and project are required']);
+			return;
+		}
+
+		$items = json_decode($itemsJson ?? '', true);
+		if (!is_array($items) || empty($items)) {
+			echo json_encode(['ok' => false, 'error' => 'No items were submitted']);
+			return;
+		}
+
+		/* item_type must be a value the enum accepts; anything else is rejected
+		   rather than silently coerced, so a mis-typed item is never created */
+		$validTypes = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv', 'json', 'datetime'];
+
+		/* find or create the instrument */
+		$sql = "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $name);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($projectid, $name));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		$created = false;
+		if ($row)
+			$instrumentid = (int)$row['instrument_id'];
+		else {
+			$sql = "insert into instruments (project_id, instrument_name, instrument_notes) values (?,?,?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+			mysqli_stmt_bind_param($stmt, 'iss', $projectid, $name, $notes);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($projectid, $name, $notes));
+			mysqli_stmt_close($stmt);
+			$instrumentid = (int)mysqli_insert_id($GLOBALS['linki']);
+			$created = true;
+		}
+
+		if ($instrumentid < 1) {
+			echo json_encode(['ok' => false, 'error' => 'Could not create or find the instrument']);
+			return;
+		}
+
+		/* existing item names (lowercased) and the current max order */
+		$existing = [];
+		$maxorder = 0;
+		$sql = "select item_name, item_order from instrument_items where instrument_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($instrumentid));
+		while ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$existing[strtolower(trim($r['item_name']))] = true;
+			if ((int)$r['item_order'] > $maxorder)
+				$maxorder = (int)$r['item_order'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$added = 0;
+		$mapped = 0;
+		$skipped = [];
+		$rejected = [];
+
+		/* redcap_datatype is an enum; anything outside it is stored as NULL rather
+		   than rejected, since the datatype is informational for the mapping */
+		$validRedcapTypes = ['text','notes','radio','dropdown','checkbox','calc','slider','descriptive','file','yesno','truefalse','sql'];
+
+		$sql = "insert into instrument_items (instrument_id, item_name, item_type, item_notes, item_order) values (?,?,?,?,?)";
+		foreach ($items as $it) {
+			if (!is_array($it))
+				continue;
+			$iname  = trim($it['name'] ?? '');
+			$itype  = trim($it['type'] ?? '');
+			$inotes = (string)($it['notes'] ?? '');
+
+			if ($iname == '')
+				continue;
+
+			if (isset($existing[strtolower($iname)])) {
+				$skipped[] = $iname;
+				continue;
+			}
+			if (!in_array($itype, $validTypes, true)) {
+				$rejected[] = "$iname (invalid type '$itype')";
+				continue;
+			}
+
+			$maxorder++;
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+			mysqli_stmt_bind_param($stmt, 'isssi', $instrumentid, $iname, $itype, $inotes, $maxorder);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($instrumentid, $iname, $itype, $inotes, $maxorder));
+			mysqli_stmt_close($stmt);
+			$itemid = (int)mysqli_insert_id($GLOBALS['linki']);
+
+			/* guard against duplicates within the submitted batch itself */
+			$existing[strtolower($iname)] = true;
+			$added++;
+
+			/* optionally wire the REDCap field to the item just created */
+			if ($createmappings && ($itemid > 0)) {
+				$rcField  = trim($it['field'] ?? '');
+				if ($rcField == '')
+					continue;
+
+				/* Key columns are stored as '' rather than NULL so the
+				   uniq_redcap_mapping index actually constrains them -- MySQL
+				   unique indexes do not compare NULLs. */
+				$rcEvent  = (string)$redcapEvent;
+				$rcForm   = (string)$redcapForm;
+				$rcChoice = (string)($it['choicecode'] ?? '');
+				$rcType   = trim($it['fieldtype'] ?? '');
+				$rcTypeVal = in_array($rcType, $validRedcapTypes, true) ? $rcType : null;
+				$rcValid  = trim($it['validation'] ?? '');
+				$rcValidVal = ($rcValid !== '') ? $rcValid : null;
+
+				/* skip if this field is already mapped (the unique index would
+				   reject it anyway) */
+				$q = "select remoteimportmapping_id from remoteimport_mapping where project_id = ? and source_type = 'redcap' and redcap_event = ? and redcap_form = ? and redcap_field = ? and redcap_choice_code = ? limit 1";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $q);
+				mysqli_stmt_bind_param($stmt, 'issss', $projectid, $rcEvent, $rcForm, $rcField, $rcChoice);
+				$res = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $q, array($projectid, $rcEvent, $rcForm, $rcField, $rcChoice));
+				$dupe = mysqli_fetch_array($res, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
+				if ($dupe)
+					continue;
+
+				$q = "insert into remoteimport_mapping (project_id, source_type, redcap_event, redcap_form, redcap_field, redcap_choice_code, redcap_datatype, redcap_validation, nidb_instrument, nidb_variable) values (?, 'redcap', ?,?,?,?,?,?,?,?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $q);
+				mysqli_stmt_bind_param($stmt, 'issssssii', $projectid, $rcEvent, $rcForm, $rcField, $rcChoice, $rcTypeVal, $rcValidVal, $instrumentid, $itemid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $q, array($projectid, $rcEvent, $rcForm, $rcField, $rcChoice, $rcTypeVal, $rcValidVal, $instrumentid, $itemid));
+				mysqli_stmt_close($stmt);
+				$mapped++;
+			}
+		}
+
+		echo json_encode([
+			'ok'              => true,
+			'instrument_id'   => $instrumentid,
+			'instrument_name' => $name,
+			'created'         => $created,
+			'added'           => $added,
+			'mapped'          => $mapped,
+			'skipped'         => $skipped,
+			'rejected'        => $rejected
+		]);
 	}
 
 

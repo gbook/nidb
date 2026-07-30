@@ -542,6 +542,10 @@
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-balham.css">
 		<style>
 			.arrow-col-header { background: #444 !important; color: #fff; font-size: 2em; !important; }
+			/* highlight for a NiDB instrument/variable that was prefilled by name match */
+			.nidb-prefilled > .ui.dropdown,
+			.nidb-prefilled > select { background: #fffbea !important; border-color: #e0b000 !important; box-shadow: 0 0 0 1px #e0b000 inset; }
+			.nidb-prefilled > label:after { content: " (prefilled)"; color: #8a6d00; font-weight: normal; font-size: 0.9em; }
 		</style>
 
 		<div class="ui two column grid">
@@ -646,6 +650,11 @@
 									<option value="mapped">Mapped only</option>
 								</select>
 							</div>
+							<div>
+								<button class="ui small primary button" onclick="rcOpenInstrumentModal()" title="Create a NiDB instrument and items from this REDCap form's fields">
+									<i class="magic icon"></i> Create Instrument from Form
+								</button>
+							</div>
 							<span id="rcFieldCount" style="margin-left:auto;color:#666;font-size:0.9em"></span>
 						</div>
 
@@ -681,6 +690,62 @@
 			<div id="redcapSelectionToolbar" style="display:none;margin-top:8px;align-items:center;gap:8px">
 				<span id="redcapSelectionLabel" style="color:#555;font-size:0.9em"></span>
 				<button class="ui small red button" onclick="deleteSelected('redcap')"><i class="trash icon"></i> Delete</button>
+			</div>
+		</div>
+
+		<!-- Create-instrument-from-REDCap-form modal -->
+		<div class="ui large modal" id="instrumentModal">
+			<div class="header">Create Instrument from REDCap Form</div>
+			<div class="content">
+				<div class="ui form">
+					<div class="two fields">
+						<div class="field">
+							<label>NiDB instrument name</label>
+							<input type="text" id="ci_name" oninput="rcInstrumentNameChanged()" placeholder="Instrument name">
+						</div>
+						<div class="field">
+							<label>Instrument notes</label>
+							<input type="text" id="ci_notes" placeholder="Notes (optional)">
+						</div>
+					</div>
+				</div>
+
+				<div id="ci_status" style="margin:10px 0"></div>
+
+				<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+					<button class="ui mini basic button" onclick="rcCiSelectAll(true)">Select all new</button>
+					<button class="ui mini basic button" onclick="rcCiSelectAll(false)">Select none</button>
+					<span id="ci_counts" style="margin-left:auto;color:#666;font-size:0.9em"></span>
+				</div>
+
+				<div style="max-height:420px;overflow:auto;border:1px solid #ddd;border-radius:4px">
+					<table class="ui very compact small table" style="margin:0" id="ci_table">
+						<thead style="position:sticky;top:0;background:#f3f3f3;z-index:1">
+							<tr>
+								<th style="width:34px"></th>
+								<th style="width:190px">Proposed item (REDCap field)</th>
+								<th>Label &rarr; item notes</th>
+								<th style="width:110px">Type</th>
+								<th style="width:190px">Existing item in NiDB</th>
+								<th style="width:150px">Status</th>
+							</tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+				<div style="margin-top:8px;color:#777;font-size:0.85em">
+					<i class="info circle icon"></i>
+					Existing items cannot be changed &mdash; they may already be referenced by observations.
+					Only the checked new items will be added.
+				</div>
+			</div>
+			<div class="actions">
+				<div class="ui checkbox" style="float:left;margin:10px 0 0 4px">
+					<input type="checkbox" id="ci_createmappings" checked>
+					<label>Add REDCap &rarr; new instrument mappings</label>
+				</div>
+				<div class="ui cancel button">Cancel</div>
+				<div class="ui primary button" id="ci_submit" onclick="rcCreateInstrument()">Create Instrument</div>
 			</div>
 		</div>
 
@@ -781,7 +846,7 @@
 
 					<!-- NiDB instrument + variable (shared by both source types) -->
 					<div class="two fields">
-						<div class="field">
+						<div class="field" id="field_nidb_instrument">
 							<label>NiDB Instrument</label>
 							<select id="modal_nidb_instrument" class="ui fluid dropdown"
 							        onchange="loadInstrumentItems(this.value, null)">
@@ -791,13 +856,14 @@
 								<?php } ?>
 							</select>
 						</div>
-						<div class="field">
+						<div class="field" id="field_nidb_variable">
 							<label>NiDB Variable</label>
 							<select id="modal_nidb_variable" class="ui fluid dropdown">
 								<option value="">-- select instrument first --</option>
 							</select>
 						</div>
 					</div>
+					<div id="nidb_prefill_hint" style="display:none;margin:-8px 0 10px 0;font-size:0.82em;color:#8a6d00"></div>
 
 					<!-- Avicenna-only flags -->
 					<div id="avicenna_flags" class="fields">
@@ -1315,7 +1381,379 @@
 			document.getElementById('modal_redcap_choice_code').value = f.choicecode || '';
 			setRedcapDatatype(f.fieldtype || '');
 			document.getElementById('modal_redcap_validation').value  = f.validation || '';
+			rcPrefillNidbTargets(f);
 			$('#mappingModal').modal('show');
+		}
+
+		/* Clear any prefill highlight/message from a previous open */
+		function rcClearNidbHint() {
+			document.getElementById('field_nidb_instrument').classList.remove('nidb-prefilled');
+			document.getElementById('field_nidb_variable').classList.remove('nidb-prefilled');
+			const h = document.getElementById('nidb_prefill_hint');
+			h.style.display = 'none';
+			h.textContent = '';
+		}
+
+		/* Guess the NiDB instrument and item for a REDCap field being mapped.
+
+		   The convention created by "Create Instrument from Form" is that the
+		   instrument is named after the REDCap form label and each item after the
+		   field's export name, so a name lookup finds them. The guess is only ever
+		   a suggestion -- it is highlighted and labelled so the user can see the
+		   values were not read from a saved mapping. */
+		function rcPrefillNidbTargets(f) {
+			if (!rcStructure) return;
+			const form = document.getElementById('rcForm').value;
+			const candidate = (rcStructure.instruments && rcStructure.instruments[form]) ? rcStructure.instruments[form] : form;
+			if (!candidate) return;
+
+			fetch('ajaxapi.php?action=getinstrumentbyname&projectid=<?= $projectid ?>&instrumentname=' + encodeURIComponent(candidate))
+				.then(r => r.json())
+				.then(function(resp) {
+					if (!resp || !resp.instrument_id) return;
+
+					const want = (f.exportname || '').toLowerCase();
+					let match = null;
+					(resp.items || []).forEach(function(i) {
+						if (!match && i.name.toLowerCase() === want) match = i;
+					});
+
+					$('#modal_nidb_instrument').dropdown('set selected', String(resp.instrument_id));
+					loadInstrumentItems(resp.instrument_id, match ? match.id : null);
+
+					const hint = document.getElementById('nidb_prefill_hint');
+					document.getElementById('field_nidb_instrument').classList.add('nidb-prefilled');
+					if (match) {
+						document.getElementById('field_nidb_variable').classList.add('nidb-prefilled');
+						hint.innerHTML = '<i class="magic icon"></i> Prefilled by name match: instrument <b>'
+							+ ciEsc(resp.instrument_name) + '</b>, item <b>' + ciEsc(match.name)
+							+ '</b>. Verify before saving.';
+					}
+					else {
+						hint.innerHTML = '<i class="magic icon"></i> Instrument <b>' + ciEsc(resp.instrument_name)
+							+ '</b> prefilled by name match, but it has no item named <b>' + ciEsc(f.exportname)
+							+ '</b> &mdash; choose one, or create it from the form first.';
+					}
+					hint.style.display = '';
+				})
+				.catch(function() { /* a failed guess is not an error; leave the fields blank */ });
+		}
+
+		/* ── Create Instrument from Form ───────────────────────────────────
+		   Builds a proposed instrument from the selected REDCap form's fields and
+		   compares it against an existing NiDB instrument of the same name.
+		   Existing items are shown read-only; only new items can be added. */
+
+		const NIDB_ITEM_TYPES = ['enum','int','double','string','timeseries','image','csv','json','datetime'];
+
+		let ciProposed = [];   /* [{name,label,type,mappable,isfile}] */
+		let ciExisting = null; /* {instrument_id, items:[{id,name,type,notes}]} or null */
+
+		/* Levenshtein distance, used to flag a proposed item that looks like an
+		   existing one (eg a renamed REDCap field) so the user does not create a
+		   near-duplicate. */
+		function ciLev(a, b) {
+			a = (a||'').toLowerCase(); b = (b||'').toLowerCase();
+			if (a === b) return 0;
+			if (!a.length) return b.length;
+			if (!b.length) return a.length;
+			let prev = Array.from({length: b.length+1}, (_, i) => i);
+			for (let i = 1; i <= a.length; i++) {
+				const cur = [i];
+				for (let j = 1; j <= b.length; j++) {
+					cur[j] = Math.min(prev[j] + 1, cur[j-1] + 1,
+					                  prev[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+				}
+				prev = cur;
+			}
+			return prev[b.length];
+		}
+
+		/* The REDCap field a checkbox column belongs to: "race___1" -> "race".
+		   null for a plain field. */
+		function ciBase(n) {
+			const i = (n || '').indexOf('___');
+			return (i >= 0) ? n.substring(0, i) : null;
+		}
+
+		/* Closest existing item to a proposed name, if it is close enough to be
+		   worth warning about. Threshold scales with name length.
+
+		   Checkbox choices of the same field are skipped: race___1 and race___2
+		   differ by one character but are legitimately distinct items, so
+		   comparing them would flag every checkbox sibling as a near-duplicate
+		   and drown out the real warnings. */
+		function ciClosest(name, existingItems) {
+			const nbase = ciBase(name);
+			let best = null, bestD = Infinity;
+			existingItems.forEach(function(e) {
+				const ebase = ciBase(e.name);
+				if ((nbase !== null) && (ebase !== null) && (nbase === ebase)) return;
+				const d = ciLev(name, e.name);
+				if (d < bestD) { bestD = d; best = e; }
+			});
+			if (!best) return null;
+			const limit = Math.max(2, Math.floor(name.length * 0.34));
+			return (bestD > 0 && bestD <= limit) ? {item: best, dist: bestD} : null;
+		}
+
+		function rcOpenInstrumentModal() {
+			if (!rcStructure) return;
+			const form = document.getElementById('rcForm').value;
+			if (!form) { alert('Select a form first.'); return; }
+
+			/* proposed items = the form's mappable fields, one per checkbox choice */
+			const fields = (rcStructure.fields && rcStructure.fields[form]) ? rcStructure.fields[form] : [];
+			/* carry the REDCap coordinates too, so the mappings can be created
+			   alongside the items without a second lookup */
+			ciProposed = fields.filter(f => f.mappable).map(function(f) {
+				return {
+					name: f.exportname, label: f.label || '', type: f.suggestedtype || '', isfile: !!f.isfile,
+					field: f.field || '', choicecode: f.choicecode || '',
+					fieldtype: f.fieldtype || '', validation: f.validation || ''
+				};
+			});
+
+			if (!ciProposed.length) { alert('This form has no mappable fields.'); return; }
+
+			/* default the instrument name to the REDCap form's label, else its name */
+			const label = (rcStructure.instruments && rcStructure.instruments[form]) ? rcStructure.instruments[form] : form;
+			document.getElementById('ci_name').value  = label;
+			document.getElementById('ci_notes').value = 'Created from REDCap form "' + form + '"';
+
+			rcInstrumentNameChanged();
+			$('#instrumentModal').modal('show');
+		}
+
+		/* Look up whether an instrument of this name already exists, then redraw */
+		function rcInstrumentNameChanged() {
+			const name = document.getElementById('ci_name').value.trim();
+			const statusEl = document.getElementById('ci_status');
+
+			if (!name) {
+				ciExisting = null;
+				statusEl.innerHTML = '<div class="ui warning message" style="padding:8px 12px;margin:0">An instrument name is required.</div>';
+				rcCiRender();
+				return;
+			}
+
+			statusEl.innerHTML = '<i class="notched circle loading icon"></i> Checking for an existing instrument&hellip;';
+			fetch('ajaxapi.php?action=getinstrumentbyname&projectid=<?= $projectid ?>&instrumentname=' + encodeURIComponent(name))
+				.then(r => r.json())
+				.then(function(resp) {
+					ciExisting = (resp && resp.instrument_id > 0) ? resp : null;
+					if (ciExisting) {
+						statusEl.innerHTML = '<div class="ui info message" style="padding:8px 12px;margin:0">'
+							+ '<i class="info circle icon"></i> Instrument <b>' + ciEsc(name) + '</b> already exists ('
+							+ ciExisting.items.length + ' item' + (ciExisting.items.length === 1 ? '' : 's')
+							+ '). Existing items are shown for comparison and will not be modified.</div>';
+					} else {
+						statusEl.innerHTML = '<div class="ui positive message" style="padding:8px 12px;margin:0">'
+							+ '<i class="plus circle icon"></i> A new instrument <b>' + ciEsc(name) + '</b> will be created.</div>';
+					}
+					rcCiRender();
+				})
+				.catch(function() {
+					ciExisting = null;
+					statusEl.innerHTML = '<div class="ui negative message" style="padding:8px 12px;margin:0">Could not check for an existing instrument.</div>';
+					rcCiRender();
+				});
+		}
+
+		function ciEsc(s) { const d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML; }
+
+		/* Render the side-by-side comparison */
+		function rcCiRender() {
+			const tbody = document.querySelector('#ci_table tbody');
+			tbody.innerHTML = '';
+			const existingItems = ciExisting ? ciExisting.items : [];
+			const byName = {};
+			existingItems.forEach(e => { byName[e.name.toLowerCase()] = e; });
+
+			let nNew = 0, nExists = 0, nSimilar = 0;
+
+			ciProposed.forEach(function(p, idx) {
+				const match = byName[p.name.toLowerCase()] || null;
+				const near  = match ? null : ciClosest(p.name, existingItems);
+				const isNew = !match;
+				if (match) nExists++; else nNew++;
+				if (near) nSimilar++;
+
+				const tr = document.createElement('tr');
+				if (match) tr.style.background = '#f6f6f6';
+
+				/* select checkbox: only for new items */
+				const td0 = document.createElement('td');
+				if (isNew) {
+					const cb = document.createElement('input');
+					cb.type = 'checkbox'; cb.className = 'ci-cb'; cb.dataset.idx = idx;
+					/* a field with no suggested type needs an explicit choice, so
+					   do not pre-select it */
+					cb.checked = (p.type !== '');
+					cb.onchange = rcCiUpdateCounts;
+					td0.appendChild(cb);
+				}
+				tr.appendChild(td0);
+
+				const td1 = document.createElement('td');
+				const code = document.createElement('code'); code.textContent = p.name; td1.appendChild(code);
+				tr.appendChild(td1);
+
+				const td2 = document.createElement('td');
+				td2.style.fontSize = '0.9em'; td2.textContent = p.label;
+				tr.appendChild(td2);
+
+				/* type: editable for new items, read-only for existing */
+				const td3 = document.createElement('td');
+				if (isNew) {
+					const sel = document.createElement('select');
+					sel.className = 'ci-type'; sel.dataset.idx = idx;
+					sel.style.cssText = 'padding:2px 4px;font-size:0.85em;width:100%';
+					const blank = document.createElement('option');
+					blank.value = ''; blank.textContent = '-- type --';
+					sel.appendChild(blank);
+					NIDB_ITEM_TYPES.forEach(function(t) {
+						const o = document.createElement('option');
+						o.value = t; o.textContent = t;
+						if (t === p.type) o.selected = true;
+						sel.appendChild(o);
+					});
+					sel.onchange = function() { ciProposed[idx].type = this.value; rcCiUpdateCounts(); };
+					td3.appendChild(sel);
+				}
+				else {
+					td3.style.fontSize = '0.85em'; td3.style.color = '#666';
+					td3.textContent = match.type;
+				}
+				tr.appendChild(td3);
+
+				/* the existing counterpart, if any */
+				const td4 = document.createElement('td');
+				td4.style.fontSize = '0.9em';
+				if (match) { const c = document.createElement('code'); c.textContent = match.name; td4.appendChild(c); }
+				else if (near) {
+					const c = document.createElement('code'); c.textContent = near.item.name; td4.appendChild(c);
+					td4.appendChild(document.createTextNode(' (' + near.item.type + ')'));
+				}
+				else { td4.style.color = '#bbb'; td4.textContent = '—'; }
+				tr.appendChild(td4);
+
+				/* status */
+				const td5 = document.createElement('td');
+				td5.style.fontSize = '0.85em';
+				if (match) {
+					td5.innerHTML = '<span class="ui tiny label">already exists</span>';
+				}
+				else if (near) {
+					td5.innerHTML = '<span class="ui tiny yellow label" title="Looks similar to an existing item — check you are not creating a duplicate">similar to existing</span>';
+				}
+				else if (p.type === '') {
+					td5.innerHTML = '<span class="ui tiny orange label" title="' + (p.isfile ? 'REDCap file fields need an explicit type' : 'No type could be suggested') + '">choose a type</span>';
+				}
+				else {
+					td5.innerHTML = '<span class="ui tiny green label">new</span>';
+				}
+				tr.appendChild(td5);
+
+				tbody.appendChild(tr);
+			});
+
+			/* items that exist in NiDB but are not in this REDCap form */
+			existingItems.forEach(function(e) {
+				if (ciProposed.some(p => p.name.toLowerCase() === e.name.toLowerCase())) return;
+				const tr = document.createElement('tr');
+				tr.style.cssText = 'background:#fafafa;color:#999';
+				tr.appendChild(document.createElement('td'));
+				const t1 = document.createElement('td'); t1.style.color = '#bbb'; t1.textContent = '—'; tr.appendChild(t1);
+				const t2 = document.createElement('td'); t2.style.fontSize = '0.85em'; t2.textContent = e.notes || ''; tr.appendChild(t2);
+				const t3 = document.createElement('td'); t3.style.fontSize = '0.85em'; t3.textContent = e.type; tr.appendChild(t3);
+				const t4 = document.createElement('td'); const c = document.createElement('code'); c.textContent = e.name; t4.appendChild(c); tr.appendChild(t4);
+				const t5 = document.createElement('td'); t5.innerHTML = '<span class="ui tiny label">in NiDB only</span>'; tr.appendChild(t5);
+				tbody.appendChild(tr);
+			});
+
+			document.getElementById('ci_counts').dataset.newCount     = nNew;
+			document.getElementById('ci_counts').dataset.existsCount  = nExists;
+			document.getElementById('ci_counts').dataset.similarCount = nSimilar;
+			rcCiUpdateCounts();
+		}
+
+		function rcCiUpdateCounts() {
+			const el = document.getElementById('ci_counts');
+			const checked = document.querySelectorAll('.ci-cb:checked').length;
+			el.textContent = checked + ' selected to add · ' + el.dataset.newCount + ' new · '
+			               + el.dataset.existsCount + ' already exist · ' + el.dataset.similarCount + ' similar';
+		}
+
+		function rcCiSelectAll(on) {
+			document.querySelectorAll('.ci-cb').forEach(function(cb) {
+				/* never auto-select an item that still has no type */
+				const p = ciProposed[parseInt(cb.dataset.idx)];
+				cb.checked = on && (p.type !== '');
+			});
+			rcCiUpdateCounts();
+		}
+
+		function rcCreateInstrument() {
+			const name = document.getElementById('ci_name').value.trim();
+			if (!name) { alert('An instrument name is required.'); return; }
+
+			const items = [];
+			let missingType = 0;
+			document.querySelectorAll('.ci-cb:checked').forEach(function(cb) {
+				const p = ciProposed[parseInt(cb.dataset.idx)];
+				if (!p) return;
+				if (!p.type) { missingType++; return; }
+				items.push({
+					name: p.name, type: p.type, notes: p.label,
+					field: p.field, choicecode: p.choicecode,
+					fieldtype: p.fieldtype, validation: p.validation
+				});
+			});
+
+			if (missingType > 0) {
+				alert(missingType + ' selected item(s) have no type chosen. Choose a type or deselect them.');
+				return;
+			}
+			if (!items.length) { alert('No new items are selected.'); return; }
+
+			const btn = document.getElementById('ci_submit');
+			btn.classList.add('loading', 'disabled');
+
+			const makeMappings = document.getElementById('ci_createmappings').checked ? 1 : 0;
+			const body = 'action=createinstrumentitems'
+				+ '&projectid=<?= $projectid ?>'
+				+ '&instrumentname=' + encodeURIComponent(name)
+				+ '&instrumentnotes=' + encodeURIComponent(document.getElementById('ci_notes').value)
+				+ '&redcap_form=' + encodeURIComponent(document.getElementById('rcForm').value)
+				+ '&redcap_event=' + encodeURIComponent(rcCurrentEvent())
+				+ '&createmappings=' + makeMappings
+				+ '&items=' + encodeURIComponent(JSON.stringify(items));
+
+			fetch('ajaxapi.php', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+				body: body
+			})
+				.then(r => r.json())
+				.then(function(resp) {
+					btn.classList.remove('loading', 'disabled');
+					if (!resp || !resp.ok) { alert('Error: ' + ((resp && resp.error) || 'unknown')); return; }
+					let msg = (resp.created ? 'Created instrument "' : 'Updated instrument "') + resp.instrument_name
+						+ '"\n' + resp.added + ' item(s) added.';
+					if (makeMappings) msg += '\n' + (resp.mapped || 0) + ' mapping(s) created.';
+					if (resp.skipped && resp.skipped.length) msg += '\n' + resp.skipped.length + ' skipped (already existed).';
+					if (resp.rejected && resp.rejected.length) msg += '\n' + resp.rejected.length + ' rejected: ' + resp.rejected.join(', ');
+					alert(msg);
+					$('#instrumentModal').modal('hide');
+					/* the instrument dropdown in the mapping modal is rendered
+					   server-side, so reload to pick up the new instrument/items */
+					location.reload();
+				})
+				.catch(function() {
+					btn.classList.remove('loading', 'disabled');
+					alert('Network error creating the instrument.');
+				});
 		}
 
 		// ── Modal: open for a new mapping ─────────────────────────────────
@@ -1377,6 +1815,7 @@
 			});
 			/* Semantic dropdowns must be cleared through their API, not by .value */
 			setRedcapDatatype('');
+			rcClearNidbHint();
 			$('#modal_nidb_instrument').dropdown('clear');
 			document.getElementById('modal_nidb_variable').innerHTML =
 				'<option value="">-- select instrument first --</option>';
@@ -1416,6 +1855,12 @@
 						if (preselectId && item.id == preselectId) opt.selected = true;
 						varSelect.appendChild(opt);
 					});
+					/* This select is wrapped by Semantic UI, so replacing its
+					   options does not update the visible menu. Re-read it, then
+					   re-apply the selection through the API. */
+					$('#modal_nidb_variable').dropdown('refresh');
+					if (preselectId)
+						$('#modal_nidb_variable').dropdown('set selected', String(preselectId));
 				})
 				.catch(() => {
 					varSelect.innerHTML = '<option value="">Error loading items</option>';
@@ -1528,6 +1973,24 @@
 						});
 					} else {
 						redcapGridApi.applyTransaction({ add: [rowData] });
+					}
+
+					/* Keep the structure browser in step. It renders from rcMapped
+					   rather than the grid, so without this the field just mapped
+					   would still show as unmapped until the page reloaded. */
+					if (rcStructure) {
+						/* an edit may have moved the mapping to a different
+						   event/form/field, so drop any previous entry for this id */
+						Object.keys(rcMapped).forEach(function(k) {
+							if (rcMapped[k] && rcMapped[k].id == resp.mappingid) delete rcMapped[k];
+						});
+						rcMapped[rcMapKey(params.redcap_event, params.redcap_form,
+						                  params.redcap_field, params.redcap_choice_code)] = {
+							id:         resp.mappingid,
+							instrument: rowData.nidb_instrument,
+							variable:   rowData.nidb_variable
+						};
+						rcRenderFields();
 					}
 				}
 
