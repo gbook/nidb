@@ -594,6 +594,39 @@
 
 		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 
+		/* Coded-value labels for this enrollment's items.
+		 *
+		 * Observations store the coded value (eg "1"); instrumentitem_map holds the
+		 * human-readable label for that code (eg "Female"). The REDCap importer
+		 * populates it from a field's choices, and it can also be maintained by
+		 * hand. Loaded here in one query and used for display only -- the stored
+		 * value is never altered, and editing a cell still writes the raw code.
+		 *
+		 * int_val is a varchar: codes are not always numeric (a REDCap checkbox
+		 * choice may be alphanumeric), so keys stay strings. */
+		$valueMaps = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'],
+			"select m.instrumentitem_id, m.int_val, m.string_val
+			 from instrumentitem_map m
+			 where m.instrumentitem_id in (
+			     select distinct o.instrumentitem_id from observations o
+			     where o.enrollment_id = ? and o.instrumentitem_id is not null
+			 )");
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
+		$vmResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		if ($vmResult) {
+			while ($vmRow = mysqli_fetch_array($vmResult, MYSQLI_ASSOC)) {
+				$vmItem = (int)$vmRow['instrumentitem_id'];
+				$vmCode = (string)$vmRow['int_val'];
+				if (!isset($valueMaps[$vmItem]))
+					$valueMaps[$vmItem] = array();
+				$valueMaps[$vmItem][$vmCode] = (string)$vmRow['string_val'];
+			}
+		}
+		mysqli_stmt_close($stmt);
+		/* force an object so JS can index it even when empty */
+		$valueMapsJson = json_encode($valueMaps ?: new stdClass(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+
 		/* build per-group metadata: instrument record existence, legacy count, unique item names, item count.
 		 * hasInstrument drives the badge: true → states 1-4 possible (Linked or Partially linked);
 		 * false → all rows are states 5-6 (Legacy badge).
@@ -683,6 +716,18 @@
 
 		<script>
 			const groupedData   = <?=$groupsJson?>;
+			/* instrumentitem_id -> { coded value: label }, for display only */
+			const obsValueMaps  = <?=$valueMapsJson?>;
+
+			/* The label for a coded observation value, or '' if the item has no
+			   value map or the value is not in it (eg free text, or a code added in
+			   REDCap after the map was populated). */
+			function obsValueLabel(itemId, value) {
+				const vm = obsValueMaps[itemId];
+				if (!vm || value === null || value === undefined) return '';
+				const lbl = vm[String(value)];
+				return lbl ? String(lbl) : '';
+			}
 			const groupMeta     = <?=$groupMetaJson?>;
 			const surveyMeta    = <?=$surveyMetaJson?>;
 			const PROJECT_ID    = <?=(int)$projectid?>;
@@ -855,7 +900,23 @@
 						};
 						return a;
 					}
-					if (!params.data.fileId) return params.value || '';
+					if (!params.data.fileId) {
+						/* A coded value is shown as its label with the code kept
+						   alongside, so what is stored stays visible. Editing is
+						   unaffected: the editor works on the raw value. */
+						const lbl = obsValueLabel(params.data.instrumentitemid, params.value);
+						if (lbl) {
+							const span = document.createElement('span');
+							span.title = 'Stored value: ' + params.value;
+							span.appendChild(document.createTextNode(lbl));
+							const code = document.createElement('span');
+							code.style.cssText = 'color:#999;font-size:0.85em;margin-left:5px';
+							code.textContent = '(' + params.value + ')';
+							span.appendChild(code);
+							return span;
+						}
+						return params.value || '';
+					}
 					const isImage = params.data.fileContentType && params.data.fileContentType.startsWith('image/');
 					const icon    = isImage ? 'image' : 'file outline';
 					const label   = params.data.fileName || (isImage ? 'Image' : 'File');

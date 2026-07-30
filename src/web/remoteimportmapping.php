@@ -524,12 +524,14 @@
 		$structure = null;
 		$structureError = '';
 		$structureImportName = '';
+		$structureSubjectField = '';
 		if ($importid > 0) {
 			$cred = RedCapGetCredentials($importid, $projectid);
 			if (!$cred['success'])
 				$structureError = $cred['message'];
 			else {
 				$structureImportName = $cred['importname'];
+				$structureSubjectField = $cred['subjectfield'];
 				$s = RedCapGetStructure($cred['url'], $cred['token']);
 				if (!$s['success'])
 					$structureError = $s['message'];
@@ -1203,6 +1205,18 @@
 		   Both are null/empty when no import has been loaded. */
 		const rcStructure = <?= json_encode($structure, JSON_UNESCAPED_SLASHES) ?>;
 		const rcMapped    = <?= json_encode($mappedIndex ?: new stdClass(), JSON_UNESCAPED_SLASHES) ?>;
+		/* The field configured on the import as the subject identifier. It is not
+		   mapped to an instrument item -- the importer reads it straight off each
+		   exported row -- so the browser marks it rather than offering to map it.
+		   Falls back to REDCap's record ID field when the import has none set. */
+		const rcSubjectField = <?= json_encode($structureSubjectField, JSON_UNESCAPED_SLASHES) ?>;
+
+		function rcIsSubjectField(name) {
+			const configured = (rcSubjectField || '').toLowerCase();
+			if (configured) return (name || '').toLowerCase() === configured;
+			const rid = (rcStructure && rcStructure.recordidfield) ? rcStructure.recordidfield.toLowerCase() : '';
+			return rid && ((name || '').toLowerCase() === rid);
+		}
 
 		function rcMapKey(ev, form, field, choice) {
 			return (ev || '') + '|' + (form || '') + '|' + (field || '') + '|' + (choice || '');
@@ -1288,8 +1302,10 @@
 				if ((show === 'unmapped' && m) || (show === 'mapped' && !m)) return;
 				shown++;
 
+				const isSubject = rcIsSubjectField(f.field);
+
 				const tr = document.createElement('tr');
-				if (!f.mappable) tr.style.opacity = '0.55';
+				if (!f.mappable || isSubject) tr.style.opacity = '0.55';
 
 				/* field name (the export column name) */
 				const td1 = document.createElement('td');
@@ -1331,6 +1347,14 @@
 					td5.innerHTML = '<i class="green check icon"></i>';
 					td5.appendChild(document.createTextNode((m.instrument || '?') + ' › ' + (m.variable || '?')));
 				}
+				else if (isSubject) {
+					/* the subject identifier is read straight off each exported row,
+					   so it is configuration rather than a mappable field */
+					td5.innerHTML = '<span class="ui tiny teal label"><i class="id card icon"></i> subject ID</span>';
+					td5.title = rcSubjectField
+						? "Configured as this import's subject ID field. It identifies the subject and is not mapped to an instrument item."
+						: "REDCap's record ID field. Set it as the import's subject ID field to use it for subject matching.";
+				}
 				else if (!f.mappable) {
 					td5.style.color = '#999';
 					td5.textContent = f.fieldtype === 'descriptive' ? 'no data to map' : 'not mappable';
@@ -1343,7 +1367,7 @@
 
 				/* action */
 				const td6 = document.createElement('td');
-				if (f.mappable) {
+				if (f.mappable && !isSubject) {
 					const btn = document.createElement('button');
 					btn.className = 'ui mini ' + (m ? 'basic ' : 'primary ') + 'button';
 					btn.textContent = m ? 'Edit' : 'Map';
@@ -1506,7 +1530,9 @@
 			const fields = (rcStructure.fields && rcStructure.fields[form]) ? rcStructure.fields[form] : [];
 			/* carry the REDCap coordinates too, so the mappings can be created
 			   alongside the items without a second lookup */
-			ciProposed = fields.filter(f => f.mappable).map(function(f) {
+			/* the subject ID field is configuration, not data: exclude it so it does
+			   not become an instrument item */
+			ciProposed = fields.filter(f => f.mappable && !rcIsSubjectField(f.field)).map(function(f) {
 				return {
 					name: f.exportname, label: f.label || '', type: f.suggestedtype || '', isfile: !!f.isfile,
 					field: f.field || '', choicecode: f.choicecode || '',

@@ -61,6 +61,9 @@
 	$remote_surveyid  = GetVariable("remote_surveyid");
 	$remote_datasource = GetVariable("remote_datasource");
 	$flag_import_unmapped  = GetVariable("flag_import_unmapped") ? 1 : 0;
+	$redcap_subjectid_field  = GetVariable("redcap_subjectid_field");
+	$redcap_raw_or_label     = GetVariable("redcap_raw_or_label");
+	$redcap_require_complete = GetVariable("redcap_require_complete") ? 1 : 0;
 
 	/* determine workflow step for the stepper diagram */
 	if (in_array($action, ['addimportform', 'editimportform', 'addimport', 'updateimport'])) {
@@ -135,11 +138,11 @@
 			DisplayRemoteImportForm("add", "", $projectid);
 			break;
 		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
 			DisplayRemoteImportList($projectid);
 			break;
 		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
 			DisplayRemoteImportList($projectid);
 			break;
 		default:
@@ -236,7 +239,11 @@
 			return;
 		}
 
-		$title = $dryrun ? "Preview (nothing was written)" : "Import complete";
+		$failed = (int)($sum['failed'] ?? 0);
+		if ($dryrun)
+			$title = "Preview (nothing was written)";
+		else
+			$title = ($failed > 0) ? "Import finished with errors" : "Import complete";
 
 		$msg = "<table class='ui very compact collapsing basic table'>";
 		$msg .= "<tr><td><b>REDCap rows read</b></td><td>" . (int)$sum['rows'] . "</td></tr>";
@@ -246,6 +253,8 @@
 		$msg .= "<tr><td><b>Already up to date</b></td><td>" . (int)$sum['unchanged'] . "</td></tr>";
 		$msg .= "<tr><td><b>Surveys " . ($dryrun ? "to create" : "created") . "</b></td><td>" . (int)$sum['surveys'] . "</td></tr>";
 		$msg .= "<tr><td><b>Value labels " . ($dryrun ? "to add" : "added") . "</b></td><td>" . (int)$sum['labelsadded'] . "</td></tr>";
+		if ($failed > 0)
+			$msg .= "<tr><td><b style='color:#a00'>Failed writes</b></td><td style='color:#a00'><b>" . $failed . "</b></td></tr>";
 		$msg .= "<tr><td><b>Blank values skipped</b></td><td>" . (int)$sum['skippedblank'] . "</td></tr>";
 		if ($sum['skippedcomplete'] > 0)
 			$msg .= "<tr><td><b>Skipped (form not Complete)</b></td><td>" . (int)$sum['skippedcomplete'] . "</td></tr>";
@@ -253,7 +262,10 @@
 			$msg .= "<tr><td><b>Batch</b></td><td><a href='importremote.php?action=viewbatchlog&batchid=" . (int)$sum['batchid'] . "&projectid=" . (int)$projectid . "'>#" . (int)$sum['batchid'] . " log</a></td></tr>";
 		$msg .= "</table>";
 
-		Notice($msg, $title);
+		if (!$dryrun && ($failed > 0))
+			Warning("<b>$failed write(s) failed.</b> The batch has been marked <b>error</b>. Data that was written is retained &mdash; re-running the import will fill in what is missing without duplicating what succeeded.<br>$msg");
+		else
+			Notice($msg, $title);
 
 		/* records that could not be matched to a NiDB subject */
 		if (!empty($sum['unmatched'])) {
@@ -328,7 +340,12 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateRemoteImport ----------------- */
 	/* -------------------------------------------- */
-	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field = '', $redcap_raw_or_label = 'raw', $redcap_require_complete = 0) {
+
+		/* REDCap-only settings; stored as NULL when blank */
+		$redcap_subjectid_field_db = (trim($redcap_subjectid_field ?? '') == "") ? null : trim($redcap_subjectid_field);
+		$redcap_raw_or_label_db    = ($redcap_raw_or_label === 'label') ? 'label' : 'raw';
+		$redcap_require_complete   = $redcap_require_complete ? 1 : 0;
 		$importid = (int)$importid;
 		$projectid = (int)$projectid;
 		$importname = trim($importname);
@@ -363,8 +380,12 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, remote_datasource = ?, flag_import_unmapped = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
-		mysqli_stmt_bind_param($stmt, 'sisssssssisissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_imports set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, remote_username = ?, remote_projectid = ?, remote_surveyid = ?, remote_datasource = ?, flag_import_unmapped = ?, redcap_subjectid_field = ?, redcap_raw_or_label = ?, redcap_require_complete = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimport_id = ?");
+		/* 18 params: name s, projectid i, type s, url s, token s, username s,
+		   projectid s, surveyid s, datasource s, unmapped i, subjectfield s,
+		   rawlabel s, requirecomplete i, schedule s, time i, dayofmonth i,
+		   days s, importid i */
+		mysqli_stmt_bind_param($stmt, 'sisssssssissi' . 'siisi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $redcap_subjectid_field_db, $redcap_raw_or_label_db, $redcap_require_complete, $import_schedule, $import_time, $import_dayofmonth, $import_days, $importid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -375,7 +396,12 @@
 	/* -------------------------------------------- */
 	/* ------- AddRemoteImport -------------------- */
 	/* -------------------------------------------- */
-	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days) {
+	function AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field = '', $redcap_raw_or_label = 'raw', $redcap_require_complete = 0) {
+
+		/* REDCap-only settings; stored as NULL when blank */
+		$redcap_subjectid_field_db = (trim($redcap_subjectid_field ?? '') == "") ? null : trim($redcap_subjectid_field);
+		$redcap_raw_or_label_db    = ($redcap_raw_or_label === 'label') ? 'label' : 'raw';
+		$redcap_require_complete   = $redcap_require_complete ? 1 : 0;
 		$importname = trim($importname);
 		$projectid = (int)$projectid;
 		$remote_type = trim($remote_type);
@@ -396,8 +422,11 @@
 		$remote_datasource_db = ($remote_datasource == "") ? null : trim($remote_datasource);
 		$flag_import_unmapped = (int)$flag_import_unmapped;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, remote_datasource, flag_import_unmapped, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'sisssssssisiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_imports (import_name, project_id, remote_type, remote_url, remote_token, remote_username, remote_projectid, remote_surveyid, remote_datasource, flag_import_unmapped, redcap_subjectid_field, redcap_raw_or_label, redcap_require_complete, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		/* 17 params: name s, projectid i, type s, url s, token s, username s,
+		   projectid s, surveyid s, datasource s, unmapped i, subjectfield s,
+		   rawlabel s, requirecomplete i, schedule s, time i, dayofmonth i, days s */
+		mysqli_stmt_bind_param($stmt, 'sisssssssissi' . 'siis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $remote_username_db, $remote_projectid_db, $remote_surveyid_db, $remote_datasource_db, $flag_import_unmapped, $redcap_subjectid_field_db, $redcap_raw_or_label_db, $redcap_require_complete, $import_schedule, $import_time, $import_dayofmonth, $import_days);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
@@ -541,6 +570,9 @@
 			$remote_surveyid = $row['remote_surveyid'];
 			$remote_datasource = $row['remote_datasource'];
 			$flag_import_unmapped = (int)$row['flag_import_unmapped'];
+			$redcap_subjectid_field  = (string)($row['redcap_subjectid_field'] ?? '');
+			$redcap_raw_or_label     = (string)($row['redcap_raw_or_label'] ?? 'raw');
+			$redcap_require_complete = (int)($row['redcap_require_complete'] ?? 0);
 			$import_schedule = $row['import_schedule'];
 			$import_time = $row['import_time'];
 			$import_dayofmonth = $row['import_dayofmonth'];
@@ -560,6 +592,9 @@
 			$remote_surveyid = "";
 			$remote_datasource = "";
 			$flag_import_unmapped = 0;
+			$redcap_subjectid_field  = "";
+			$redcap_raw_or_label     = "raw";
+			$redcap_require_complete = 0;
 			$import_schedule = "";
 			$import_time = 0;
 			$import_dayofmonth = 1;
@@ -653,6 +688,31 @@
 					<input type="text" name="remote_datasource" id="remote_datasource" value="<?=htmlspecialchars($remote_datasource)?>" placeholder="Avicenna datasource">
 				</div>
 
+				<!-- REDCap-only import settings -->
+				<div id="redcap_settings_group">
+					<div class="two fields">
+						<div class="field">
+							<label>REDCap Subject ID Field</label>
+							<input type="text" name="redcap_subjectid_field" id="redcap_subjectid_field" value="<?=htmlspecialchars($redcap_subjectid_field)?>" placeholder="eg record_id">
+							<div style="font-size:0.82em;color:#888;margin-top:3px">The REDCap field holding the subject identifier. Matched against the NiDB subject UID, then alternate UIDs, within this project. Required to run an import.</div>
+						</div>
+						<div class="field">
+							<label>Import Values As</label>
+							<select name="redcap_raw_or_label" id="redcap_raw_or_label">
+								<option value="raw"<?= ($redcap_raw_or_label != 'label') ? ' selected' : '' ?>>Raw coded values (recommended)</option>
+								<option value="label"<?= ($redcap_raw_or_label == 'label') ? ' selected' : '' ?>>Choice labels</option>
+							</select>
+							<div style="font-size:0.82em;color:#888;margin-top:3px">Raw stores the code (1, 2) and carries the labels into the item's value map.</div>
+						</div>
+					</div>
+					<div class="field">
+						<div class="ui checkbox">
+							<input type="checkbox" name="redcap_require_complete" id="redcap_require_complete" value="1"<?= $redcap_require_complete ? ' checked' : '' ?>>
+							<label>Only import forms marked Complete</label>
+						</div>
+					</div>
+				</div>
+
 				<div class="three fields" id="import_schedule_group">
 					<div class="field">
 						<label>Import Schedule</label>
@@ -742,7 +802,9 @@
 				var isAvicennaAPI = (type === 'avicenna_api_survey' || type === 'avicenna_api_datasource');
 				var showSurveyId  = (type === 'avicenna_api_survey' || type === 'avicenna_csv_survey');
 				var showDatasource = (type === 'avicenna_api_datasource' || type === 'avicenna_csv_datasource');
+				var isRedcap      = (type === 'redcap');
 
+				document.getElementById('redcap_settings_group').style.display      = isRedcap ? '' : 'none';
 				document.getElementById('remote_url_group').style.display           = isCSV ? 'none' : '';
 				document.getElementById('remote_token_group').style.display         = isCSV ? 'none' : '';
 				document.getElementById('avicenna_credentials_group').style.display = isAvicennaAPI ? '' : 'none';
