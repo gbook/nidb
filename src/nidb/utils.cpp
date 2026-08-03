@@ -2012,3 +2012,124 @@ bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QStrin
         m += "; errors: " + errs.join("; ");
     return allok;
 }
+
+
+/* ---------------------------------------------------------- */
+/* --------- modeString ------------------------------------- */
+/* ---------------------------------------------------------- */
+static QString modeString(const QFileInfo &fi) {
+#ifdef Q_OS_UNIX
+    struct stat st;
+    if (::lstat(QFile::encodeName(fi.absoluteFilePath()).constData(), &st) == 0) {
+        static const char *rwx[] = {"---","--x","-w-","-wx","r--","r-x","rw-","rwx"};
+        char type = '-';
+        if (S_ISDIR(st.st_mode))       type = 'd';
+        else if (S_ISLNK(st.st_mode))  type = 'l';
+        else if (S_ISCHR(st.st_mode))  type = 'c';
+        else if (S_ISBLK(st.st_mode))  type = 'b';
+        else if (S_ISFIFO(st.st_mode)) type = 'p';
+        else if (S_ISSOCK(st.st_mode)) type = 's';
+
+        QString s = QChar(type);
+        s += rwx[(st.st_mode >> 6) & 7];
+        s += rwx[(st.st_mode >> 3) & 7];
+        s += rwx[ st.st_mode       & 7];
+
+        if (st.st_mode & S_ISUID) s[3] = (s[3] == 'x') ? 's' : 'S';
+        if (st.st_mode & S_ISGID) s[6] = (s[6] == 'x') ? 's' : 'S';
+        if (st.st_mode & S_ISVTX) s[9] = (s[9] == 'x') ? 't' : 'T';
+        return s;
+    }
+#endif
+    // Portable fallback via Qt permissions
+    const QFile::Permissions p = fi.permissions();
+    QString s = fi.isSymLink() ? "l" : (fi.isDir() ? "d" : "-");
+    s += (p & QFile::ReadOwner)  ? 'r' : '-';
+    s += (p & QFile::WriteOwner) ? 'w' : '-';
+    s += (p & QFile::ExeOwner)   ? 'x' : '-';
+    s += (p & QFile::ReadGroup)  ? 'r' : '-';
+    s += (p & QFile::WriteGroup) ? 'w' : '-';
+    s += (p & QFile::ExeGroup)   ? 'x' : '-';
+    s += (p & QFile::ReadOther)  ? 'r' : '-';
+    s += (p & QFile::WriteOther) ? 'w' : '-';
+    s += (p & QFile::ExeOther)   ? 'x' : '-';
+    return s;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- timeString ------------------------------------- */
+/* ---------------------------------------------------------- */
+static QString timeString(const QDateTime &dt) {
+    // ls: "MMM d HH:mm" if within ~6 months, else "MMM d  yyyy"
+    const qint64 sixMonths = Q_INT64_C(15778476); // seconds
+    const qint64 age = dt.secsTo(QDateTime::currentDateTime());
+    const QLocale c(QLocale::C);
+    if (age >= 0 && age < sixMonths)
+        return c.toString(dt, "MMM ") + QString("%1").arg(dt.date().day(), 2) +
+               c.toString(dt, " hh:mm");
+    return c.toString(dt, "MMM ") + QString("%1").arg(dt.date().day(), 2) +
+           QString("  %1").arg(dt.date().year());
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetDirectoryListing ---------------------------- */
+/* ---------------------------------------------------------- */
+QString GetDirectoryListing(const QString &path, bool showHidden) {
+    QDir dir(path);
+    QDir::Filters f = QDir::AllEntries | QDir::System | QDir::NoDotAndDotDot;
+    if (showHidden) f |= QDir::Hidden;
+
+    const QFileInfoList entries = dir.entryInfoList(f, QDir::Name);
+
+    struct Row { QString mode, links, owner, group, size, time, name; };
+    QVector<Row> rows;
+    rows.reserve(entries.size());
+
+    quint64 totalBlocks = 0;
+    int wL = 0, wO = 0, wG = 0, wS = 0;
+
+    for (const QFileInfo &fi : entries) {
+        Row r;
+        r.mode  = modeString(fi);
+        r.owner = fi.owner().isEmpty() ? QString::number(fi.ownerId()) : fi.owner();
+        r.group = fi.group().isEmpty() ? QString::number(fi.groupId()) : fi.group();
+        r.size  = QString::number(fi.size());
+        r.links = "1";
+        r.time  = timeString(fi.lastModified());
+        r.name  = fi.fileName();
+
+#ifdef Q_OS_UNIX
+        struct stat st;
+        if (::lstat(QFile::encodeName(fi.absoluteFilePath()).constData(), &st) == 0) {
+            r.links = QString::number(static_cast<qulonglong>(st.st_nlink));
+            r.size  = QString::number(static_cast<qlonglong>(st.st_size));
+            totalBlocks += static_cast<quint64>(st.st_blocks);
+        }
+#endif
+        if (fi.isSymLink())
+            r.name += " -> " + fi.symLinkTarget();
+
+        wL = qMax(wL, r.links.size());
+        wO = qMax(wO, r.owner.size());
+        wG = qMax(wG, r.group.size());
+        wS = qMax(wS, r.size.size());
+        rows.append(r);
+    }
+
+    QString out;
+    out += QString("total %1\n").arg(totalBlocks / 2); // st_blocks are 512B units
+
+    for (const Row &r : rows) {
+        out += QString("%1 %2 %3 %4 %5 %6 %7\n")
+        .arg(r.mode)
+            .arg(r.links, wL)
+            .arg(r.owner, -wO)
+            .arg(r.group, -wG)
+            .arg(r.size,  wS)
+            .arg(r.time)
+            .arg(r.name);
+    }
+    return out;
+}

@@ -152,6 +152,29 @@
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		
+		/* The user_project rows for this user are about to be deleted and rebuilt from the
+		   permission checkboxes below. That table also holds columns that are NOT part of this
+		   form - the user's project favorites and their last-viewed date - so remember them here
+		   and restore them after the rebuild, otherwise editing a user's permissions silently
+		   clears their favorites. */
+		$preserveduserproject = array();
+		$sqlstring = "select project_id, favorite, lastview_cleardate from user_project where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		if ($result) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				/* only worth restoring if there is something non-default to restore */
+				if ((($row['favorite'] ?? 0) == 0) && (is_null($row['lastview_cleardate'])))
+					continue;
+				$preserveduserproject[(int)$row['project_id']] = array(
+					'favorite' => (int)($row['favorite'] ?? 0),
+					'lastview_cleardate' => $row['lastview_cleardate']
+				);
+			}
+		}
+		mysqli_stmt_close($stmt);
+
 		/* delete all previous rows from the user_project table for this user */
 		$sqlstring = "delete from user_project where user_id = $id";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -246,6 +269,30 @@
 			}
 		}
 		
+		/* Restore the favorites and last-viewed dates saved before the rebuild above. The update
+		   only touches rows the rebuild re-created, so a project the user no longer has any
+		   permission on stays absent - the row lifecycle is unchanged, only the lost columns are
+		   put back. */
+		foreach ($preserveduserproject as $preservedprojectid => $preservedvalues) {
+			/* lastview_cleardate is only written back when it had a value. A NULL there is already
+			   the column default, so leaving it alone is equivalent and avoids binding a NULL into
+			   a datetime column */
+			if (is_null($preservedvalues['lastview_cleardate'])) {
+				$sqlstring = "update user_project set favorite = ? where user_id = ? and project_id = ?";
+				$params = array($preservedvalues['favorite'], $id, $preservedprojectid);
+				$types = 'iii';
+			}
+			else {
+				$sqlstring = "update user_project set favorite = ?, lastview_cleardate = ? where user_id = ? and project_id = ?";
+				$params = array($preservedvalues['favorite'], $preservedvalues['lastview_cleardate'], $id, $preservedprojectid);
+				$types = 'isii';
+			}
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
+		}
+
 		/* manage api_users access */
 		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);

@@ -41,6 +41,10 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QStandardPaths>
+#ifdef Q_OS_UNIX
+#  include <sys/stat.h>
+#  include <unistd.h>
+#endif
 
 typedef QHash <int, QHash<QString, QString> > indexedHash;
 static const QRegularExpression REwhiteSpace("\\s*");
@@ -141,7 +145,6 @@ double Variance(QList<double> a);
 double StdDev(QList<double> a);
 
 /* file and directory operations */
-//void GetDirectoryListing(QString dir, QStringList &files, QList<int> &sizes, bool recurse=false);
 QByteArray GetFileChecksum(const QString &fileName, QCryptographicHash::Algorithm hashAlgorithm);
 QString UnzipDirectory(QString dir, bool recurse=false);
 QStringList FindAllDirs(QString dir, QString pattern, bool recursive=false, bool includepath=false);
@@ -159,7 +162,6 @@ bool MakePath(QString p, QString &msg, bool perm777=true);
 bool MoveAllFiles(QString indir, QString pattern, QString outdir, QString &msg);
 bool NiDBCopyFile(QString f, QString dir, QString &m);
 bool NiDBMoveFile(QString f, QString dir, QString &m);
-//bool RemoveDir(QString p, QString &msg);
 bool RenameFile(QString filepathorig, QString filepathnew, bool force=true);
 bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
@@ -167,5 +169,8 @@ bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
 bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m);
+static QString timeString(const QDateTime &dt);
+static QString modeString(const QFileInfo &fi);
+QString GetDirectoryListing(const QString &path, bool showHidden = false);
 
 #endif // UTILS_H
