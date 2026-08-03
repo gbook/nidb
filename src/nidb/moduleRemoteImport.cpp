@@ -855,7 +855,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         QString systemstring = QString("unzip -o '%1' -d '%2'").arg(datafile_path, zipdir);
         SystemCommand(systemstring);
         QString m;
-        if (SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
+        if (!SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
             n->Log(QString("Error removing path [%1]  with error message [%2]").arg(datafile_path).arg(m));
 
         n->Log(GetDirectoryListing(zipdir));
@@ -1237,7 +1237,7 @@ qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchR
         SystemCommand(systemstring);
 
         QString m;
-        if (SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
+        if (!SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
             n->Log(QString("Error removing path [%1]  with error message [%2]").arg(datafile_path).arg(m));
 
         n->Log(GetDirectoryListing(zipdir));

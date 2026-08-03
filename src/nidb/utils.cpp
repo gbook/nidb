@@ -1839,6 +1839,13 @@ bool ResizeImageFile(const QString &imagePath, int maxDimension)
 // location strictly inside `allowedRoot`. Both arguments must be absolute
 // paths. Rejects system directories and a missing target.
 // Returns true on success; false if refused or failed.
+/**
+ * @brief SafeDeletePath
+ * @param path
+ * @param allowedRoot
+ * @param m
+ * @return
+ */
 bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m)
 {
     // Require absolute paths so resolution never depends on the process's
@@ -2118,7 +2125,7 @@ QString GetDirectoryListing(const QString &path, bool showHidden) {
         rows.append(r);
     }
 
-    QString out;
+    QString out = QString("Path: %1\n").arg(path);
     out += QString("total %1\n").arg(totalBlocks / 2); // st_blocks are 512B units
 
     for (const Row &r : rows) {
