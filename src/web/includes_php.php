@@ -64,6 +64,16 @@
 	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
 	else { $isdevserver = false; }
 
+	/* CSRF token. One token per session: per-request tokens break the back button and multiple
+	   tabs, and buy nothing against this threat. Pages that change state should emit it with
+	   CSRFTokenField() and verify it with VerifyCSRFToken(). Guarded on session_status() because
+	   a few endpoints (api.php, api2.php, audit.php, bsnip.php, v.php) include this file without
+	   ever starting a session. Minting the token does not by itself enforce anything. */
+	if (session_status() === PHP_SESSION_ACTIVE) {
+		if (empty($_SESSION['csrftoken']))
+			$_SESSION['csrftoken'] = bin2hex(random_bytes(32));
+	}
+
  	/* this is the first include file loaded by all pages, so... we'll put the page load start time in here */
 	$time = microtime();
 	$time = explode(' ', $time);

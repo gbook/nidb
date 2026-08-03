@@ -96,7 +96,7 @@
 		$username = trim($username);
 		$password = trim($password);
 
-		if (($username == "") || (password == "")) {
+		if (($username == "") || ($password == "")) {
 			return false;
 		}
 		

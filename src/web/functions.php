@@ -2982,6 +2982,37 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
+	/* ------- CSRFTokenField --------------------- */
+	/* -------------------------------------------- */
+	/* returns the hidden input that carries the CSRF token. Include this inside any <form> that
+	   changes state, and verify it in the receiving page with VerifyCSRFToken() */
+	function CSRFTokenField() {
+		return '<input type="hidden" name="csrftoken" value="' . htmlspecialchars($_SESSION['csrftoken'] ?? '') . '">';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- VerifyCSRFToken -------------------- */
+	/* -------------------------------------------- */
+	/* returns true if the request carries this session's CSRF token. Displays an error and returns
+	   false if it does not, so the caller can decline to act. Fails closed: if no token has been
+	   minted for this session, nothing verifies. */
+	function VerifyCSRFToken($showerror=true) {
+
+		$token = $_POST['csrftoken'] ?? '';
+
+		/* hash_equals is constant-time, and avoids PHP comparing a token to a non-string loosely */
+		if ((!empty($_SESSION['csrftoken'])) && (is_string($token)) && (hash_equals($_SESSION['csrftoken'], $token)))
+			return true;
+
+		if ($showerror)
+			Error("This request could not be verified, and was not performed. Your session may have expired - please reload the page and try again.");
+
+		return false;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- Error ------------------------------ */
 	/* -------------------------------------------- */
 	function Error($msg, $close=true) {
@@ -3045,270 +3076,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	}
 
 
-	/*-----------Redcap to ADO Utility FUNCTIONS-------------------*/
-
-	/* -------------------------------------------- */
-	/* ------- getrcarms -------------------------- */
-	/* -------------------------------------------- */
-	// function getrcarms($projectid) {
-
-		// $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-		// $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		// $RCtoken = $row['redcap_token'];
-		// $RCserver = $row['redcap_server'];
-
-		// $data = array(
-			// 'token' => $RCtoken,
-			// 'content' => 'arm',
-			// 'format' => 'json',
-			// 'arms' => array('1'),
-			// 'returnFormat' => 'json'
-		// );
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_URL, $RCserver);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_VERBOSE, 0);
-		// curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		// curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		// curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-		// curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-		// $output = curl_exec($ch);
-		// curl_close($ch);
-		// $ArmsList = json_decode($output,true);
-
-		// for ($Am=0;$Am <= count($ArmsList)-1; $Am++)
-		// {
-				// $Arms[$Am]= $ArmsList[$Am]["name"];
-		// }
-
-		// return $Arms;
-	// }
-
-
-	/* -------------------------------------------- */
-	/* ------- getrcevents ------------------------ */
-	/* -------------------------------------------- */
-	// function getrcevents($projectid) {
-
-		// $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-		// $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		// $RCtoken = $row['redcap_token'];
-		// $RCserver = $row['redcap_server'];
-
-		// $data = array(
-			// 'token' => $RCtoken,
-			// 'content' => 'event',
-			// 'format' => 'json',
-			// 'returnFormat' => 'json'
-		// );
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_URL, $RCserver);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_VERBOSE, 0);
-		// curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		// curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		// curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-		// curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-		// $output = curl_exec($ch);
-		// print $output;
-		// curl_close($ch);
-		// $EventsList = json_decode($output,true);
-
-		// echo var_dump($EventList["event_name"]);
-		// for ($Ev=0;$Ev <= count($EventsList)-1; $Ev++)
-		// {
-				// $Events[$Ev]= $EventsList[$Ev]["unique_event_name"];
-		// }
-
-		// return $Events;
-	// }
-
-
-	/* -------------------------------------------- */
-	/* ------- getrcinstruments ------------------- */
-	/* -------------------------------------------- */
-	// function getrcinstruments($projectid) {
-
-		// $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-		// $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		// $RCtoken = $row['redcap_token'];
-		// $RCserver = $row['redcap_server'];
-
-		// $data = array(
-			// 'token' => $RCtoken,
-			// 'content' => 'instrument',
-			// 'format' => 'json',
-			// 'returnFormat' => 'json'
-		// );
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_URL, $RCserver);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_VERBOSE, 0);
-		// curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		// curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		// curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-		// curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-		// $output = curl_exec($ch);
-		// $InstList = json_decode($output,true);
-		// curl_close($ch);
-
-		// for ($In=0;$In <= count($InstList)-1; $In++)
-		// {
-			// $Inst_Name[$In]=$InstList[$In]["instrument_name"];
-			// $Inst_Label[$In]=$InstList[$In]["instrument_label"];
-		// }
-
-		// return array($Inst_Name,$Inst_Label);
-	// }
-
-
-	/* -------------------------------------------- */
-	/* ------- getrcvariables --------------------- */
-	/* -------------------------------------------- */
-	// function getrcvariables($projectid,$RCForms,$RCEvents) {
-		// $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-		// $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		// $RCtoken = $row['redcap_token'];
-		// $RCserver = $row['redcap_server'];
-
-		// $data = array(
-			// 'token' => $RCtoken,
-			// 'content' => 'record',
-			// 'format' => 'json',
-			// 'type' => 'flat',
-			// 'forms' => $RCForms,
-			// 'events' => $RCEvents,
-			// 'rawOrLabel' => 'raw',
-			// 'rawOrLabelHeaders' => 'raw',
-			// 'exportCheckboxLabel' => 'false',
-			// 'exportSurveyFields' => 'false',
-			// 'exportDataAccessGroups' => 'false',
-			// 'returnFormat' => 'json'
-		// );
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_URL, $RCserver);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_VERBOSE, 0);
-		// curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		// curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		// curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-		// curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-		// $output = curl_exec($ch);
-		// print $output;
-		// curl_close($ch);
-
-		// $report = json_decode($output,true);
-
-		// $Var_Names = array_keys($report[0]); /* This variable ($Var_Names)contains names of all the variables in selected form */
-
-		// return $Var_Names;
-	// }
-	
-	/* -------------------------------------------- */
-        /* ----- Extracting Redcap Variable Labels----- */
-        /* -------------------------------------------- */
-        // function getrclabels($projectid,$rcfields) {
-                // $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-                // $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                // $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-                // $RCtoken = $row['redcap_token'];
-                // $RCserver = $row['redcap_server'];
-
-                // $data = array(
-                        // 'token' => $RCtoken,
-			// 'content' => 'metadata',
-                        // 'format' => 'json',
-                        // 'fields' => array($rcfields),
-                        // 'returnFormat' => 'json'
-                // );
-                // $ch = curl_init();
-                // curl_setopt($ch, CURLOPT_URL, $RCserver);
-                // curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-                // curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-                // curl_setopt($ch, CURLOPT_VERBOSE, 0);
-                // curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-                // curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-                // curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-                // curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-                // curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-                // curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-                // $output = curl_exec($ch);
-                // print $output;
-		// curl_close($ch);
-		// $rcmeta =  json_decode($output,true);
-		// $rclabels =  $rcmeta[0]["field_label"];
-
-		               // return $rcfielddesc;
-		// return $rclabels;
-        // }
-	
-
-	/* -------------------------------------------- */
-	/* ------- getrcrecords ----------------------- */
-	/* -------------------------------------------- */
-	// function getrcrecords($projectid,$RCForms,$RCEvents,$RCFields,$RCRecords) {
-		// $sqlstring =  "SELECT redcap_token, redcap_server FROM `projects` WHERE  project_id = '$projectid' ";
-		// $result =  MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		// $RCtoken = $row['redcap_token'];
-		// $RCserver = $row['redcap_server'];
-
-		// $data = array(
-			// 'token' => $RCtoken,
-			// 'content' => 'record',
-			// 'format' => 'json',
-			// 'type' => 'flat',
-			// 'records' => $RCRecords,
-			// 'fields' => $RCFields,
-			// 'forms' => $RCForms,
-			// 'events' => $RCEvents,
-			// 'rawOrLabel' => 'raw',
-			// 'rawOrLabelHeaders' => 'raw',
-			// 'exportCheckboxLabel' => 'true',
-			// 'exportSurveyFields' => 'false',
-			// 'exportDataAccessGroups' => 'false',
-			// 'returnFormat' => 'json'
-		// );
-		// $ch = curl_init();
-		// curl_setopt($ch, CURLOPT_URL, $RCserver);
-		// curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-		// curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-		// curl_setopt($ch, CURLOPT_VERBOSE, 0);
-		// curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-		// curl_setopt($ch, CURLOPT_AUTOREFERER, true);
-		// curl_setopt($ch, CURLOPT_MAXREDIRS, 10);
-		// curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-		// curl_setopt($ch, CURLOPT_FRESH_CONNECT, 1);
-		// curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data, '', '&'));
-		// $output = curl_exec($ch);
-		// print $output;
-		// curl_close($ch);
-
-		// $report = json_decode($output,true);
-
-		// $Var_Names = array_keys($report[0]); /* This variable ($Var_Names)contains names of all the variables in selected form */
-
-		// return $report;
-
-	// }
-
-	
 	/* -------------------------------------------- */
 	/* ------- preg_quote2 ------------------------ */
 	/* -------------------------------------------- */
