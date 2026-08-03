@@ -57,6 +57,8 @@ moduleRemoteImport::~moduleRemoteImport()
 bool moduleRemoteImport::Run() {
     n->Log("Entering the remoteimport module");
 
+    bool ret(false);
+
     /* go through list of pending on-demand remote imports (which will already be in the remoteimport_batch table) */
     n->Log("Checking for pending on-demand remote imports");
     QSqlQuery q;
@@ -129,6 +131,8 @@ bool moduleRemoteImport::Run() {
             RemoteImportLog(remoteImportBatchRowID, ImportEnd, QString("Finished %1 import").arg(remoteType), Success);
 
             SetBatchStatus(remoteImportBatchRowID, "complete");
+
+            ret = true;
         }
     }
     else {
@@ -198,10 +202,11 @@ bool moduleRemoteImport::Run() {
             /* get the mapping */
 
             /* run the import */
+            ret = true;
         }
     }
 
-    return true;
+    return ret;
 }
 
 
@@ -848,8 +853,8 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         QString systemstring = QString("unzip -o '%1' -d '%2'").arg(datafile_path, zipdir);
         SystemCommand(systemstring);
         QString m;
-        if (SafeDeletePath(zipdir, n->cfg["uploaddir"], m))
-            n->Log(QString("Error removing path [%1]  with error message [%2]").arg(zipdir).arg(m));
+        if (SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
+            n->Log(QString("Error removing path [%1]  with error message [%2]").arg(datafile_path).arg(m));
 
         /* find first csv within the zipdir */
         //QString m;
