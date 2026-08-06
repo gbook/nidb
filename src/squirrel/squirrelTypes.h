@@ -40,7 +40,7 @@ struct infoQuery {
 struct modification {
     QString operation;        /* possible values: add, remove, update, splitbymodality, removephi, renumber */
     ObjectType object;
-    QString dataPath;         /* disk path to stage files from; supports directory, glob (e.g. /path/*.dcm), or single file */
+    QString dataPath;         /* disk path to stage files from; supports directory, glob (e.g. /path/ *.dcm), or single file */
     QString objectData;       /* the object data, likely in URL style format */
     QString objectID;         /* object identifier string. Example: subject ID, experiment name, pipeline name, etc */
     QString subjectID;        /* parent subject ID, used for study/series/analysis/observation/intervention operations */

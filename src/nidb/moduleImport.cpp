@@ -325,7 +325,7 @@ bool moduleImport::ArchiveLocal() {
     QSqlQuery q("delete from importlogs where importstartdate < date_sub(now(), interval 14 day)");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    q.prepare("delete from import_file_log where importfile_datetime < date_sub(now(), interval 14 day)");
+    q.prepare("delete from dicom_monitor where lastupdate < date_sub(now(), interval 14 day)");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     io->SetUploadID(0);
@@ -511,6 +511,10 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     int numFilesTooYoung(0);
     foreach (QString file, files) {
 
+        /* insert the dicom_monitor log */
+        QHash<QString, QString> t;
+        UpdateDicomMonitor(file, t, "Received",  "");
+
         perf.numFilesRead++;
         /* check if the file exists. par/rec files may be moved from previous steps, so check if they still exist */
         if (QFile::exists(file)) {
@@ -541,6 +545,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             numFilesTooYoung++;
             perf.numFilesIgnored++;
             okToDeleteDir = false;
+            UpdateDicomMonitor(file, t, "Received", QString("File is %1sec old").arg(abs(fileAgeInSec)));
             continue;
         }
 
@@ -653,28 +658,8 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
 
                     n->Debug(QString("Parsing file [%1] SeriesInstanceUID [%2] SeriesNumber [%3] InstanceNumber [%4] AcquisitionNumber [%5]").arg(file).arg(tags["SeriesInstanceUID"]).arg(tags["SeriesNumber"]).arg(tags["InstanceNumber"]).arg(tags["AcquisitionNumber"]));
 
-                    QFileInfo fi(file);
-                    fi.lastModified();
-
-                    QSqlQuery q;
-                    q.prepare("insert into import_file_log (filename, importfile_datetime, file_datetime, file_size, file_type, Modality, PatientID, StudyUID, SeriesUID, StudyDescription, SeriesDescription, SeriesNumber, AcquisitionNumber, InstanceNumber) values (:fileName, now(), :fileDatetime, :fileSize, :fileType, :Modality, :PatientID, :StudyUID, :SeriesUID, :StudyDescription, :SeriesDescription, :SeriesNumber, :AcquisitionNumber, :InstanceNumber)");
-                    q.bindValue(":fileName", file);
-                    q.bindValue(":fileDatetime", fi.lastModified());
-                    q.bindValue(":fileSize", fi.size());
-                    q.bindValue(":fileType", "DICOM");
-                    /* insert nulls if values are blank */
-                    if (tags["AcquisitionNumber"] == "") q.bindValue(":AcquisitionNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
-                    if (tags["InstanceNumber"] == "") q.bindValue(":InstanceNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
-                    if (tags["Modality"] == "") q.bindValue(":Modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":Modality", tags["Modality"]);
-                    if (tags["PatientID"] == "") q.bindValue(":PatientID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":PatientID", tags["PatientID"]);
-                    if (tags["SeriesDescription"] == "") q.bindValue(":SeriesDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
-                    if (tags["SeriesNumber"] == "") q.bindValue(":SeriesNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
-                    if (tags["SeriesInstanceUID"] == "") q.bindValue(":SeriesInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesInstanceUID", tags["SeriesInstanceUID"]);
-                    if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
-                    if (tags["StudyInstanceUID"] == "") q.bindValue(":StudyInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyInstanceUID", tags["StudyInstanceUID"]);
-
-                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
+                    /* insert the dicom_monitor log */
+                    UpdateDicomMonitor(file, tags, "Parsed", "");
                 }
                 else {
                     qint64 fsize = QFileInfo(file).size();
@@ -717,10 +702,16 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QStringList files2 = dcmseries[uniqueSeriesStr];
 
         n->Debug(QString("Going to archive a list of files belonging to uniqueSeriesString [%1] List [%2]").arg(uniqueSeriesStr).arg(files2.join(", ")));
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2))
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2)) {
             iscomplete = true;
-        else
+            QHash<QString, QString> t;
+            foreach (const QString &f, files2) {
+                UpdateDicomMonitor(f, t, "Archived", "");
+            }
+        }
+        else {
             iscomplete = false;
+        }
 
         n->ModuleRunningCheckIn();
         /* check if this module should be running now or not */
@@ -764,4 +755,87 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
 
     n->Log(perf.End());
     return ret;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- UpdateDicomMonitor ----------------------------- */
+/* ---------------------------------------------------------- */
+void moduleImport::UpdateDicomMonitor(QString filepath, QHash<QString, QString> tags, QString status, QString msg) {
+
+    QSqlQuery q;
+    QFileInfo fi(filepath);
+    fi.lastModified();
+
+    /* check if this filepath exists */
+    q.prepare("select dicommonitor_id from dicom_monitor where file_path = :filepath");
+    q.bindValue(":filepath", filepath);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        q.first();
+        int dicomMonitorRowID = q.value("dicommonitor_id").toInt();
+        /* entry exists, so update it */
+        q.prepare("update dicom_monitor set file_status = :status, file_statusmessage = :msg, "
+                  "file_datetime = coalesce(:fileDatetime, file_datetime), "
+                  "file_size = coalesce(:fileSize, file_size), "
+                  "AcquisitionNumber = coalesce(:AcquisitionNumber, AcquisitionNumber), "
+                  "InstanceNumber = coalesce(:InstanceNumber, InstanceNumber), "
+                  "Modality = coalesce(:Modality, Modality), "
+                  "PatientID = coalesce(:PatientID, PatientID), "
+                  "SeriesDescription = coalesce(:SeriesDescription, SeriesDescription), "
+                  "SeriesNumber = coalesce(:SeriesNumber, SeriesNumber), "
+                  "SeriesInstanceUID = coalesce(:SeriesInstanceUID, SeriesInstanceUID), "
+                  "StudyDescription = coalesce(:StudyDescription, StudyDescription), "
+                  "StudyInstanceUID = coalesce(:StudyInstanceUID, StudyInstanceUID), "
+                  "StudyDatetime = coalesce(:StudyDatetime, StudyDatetime), "
+                  "SeriesDatetime = coalesce(:SeriesDatetime, SeriesDatetime) "
+                  " where dicommonitor_id = :id");
+        q.bindValue(":id", dicomMonitorRowID);
+        q.bindValue(":status", status);
+        q.bindValue(":msg", msg);
+        q.bindValue(":filepath", filepath);
+        if (fi.exists()) {
+            q.bindValue(":fileDatetime", fi.lastModified());
+            q.bindValue(":fileSize", fi.size());
+        }
+        else {
+            q.bindValue(":fileDatetime", QVariant(QMetaType::fromType<QString>()));
+            q.bindValue(":fileSize", QVariant(QMetaType::fromType<int>()));
+        }
+        q.bindValue(":fileType", "DICOM");
+        if (tags["AcquisitionNumber"] == "") q.bindValue(":AcquisitionNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
+        if (tags["InstanceNumber"] == "") q.bindValue(":InstanceNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
+        if (tags["Modality"] == "") q.bindValue(":Modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":Modality", tags["Modality"]);
+        if (tags["PatientID"] == "") q.bindValue(":PatientID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":PatientID", tags["PatientID"]);
+        if (tags["SeriesDescription"] == "") q.bindValue(":SeriesDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
+        if (tags["SeriesNumber"] == "") q.bindValue(":SeriesNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
+        if (tags["SeriesInstanceUID"] == "") q.bindValue(":SeriesInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesInstanceUID", tags["SeriesInstanceUID"]);
+        if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
+        if (tags["StudyInstanceUID"] == "") q.bindValue(":StudyInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyInstanceUID", tags["StudyInstanceUID"]);
+        if (tags["StudyDateTime"] == "") q.bindValue(":StudyDatetime", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDatetime", tags["StudyDateTime"]);
+        if (tags["SeriesDateTime"] == "") q.bindValue(":SeriesDatetime", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDatetime", tags["SeriesDateTime"]);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+    else {
+        q.prepare("insert into dicom_monitor (file_path, file_datetime, file_size, file_type, file_status, file_statusmessage, Modality, PatientID, StudyInstanceUID, SeriesInstanceUID, StudyDescription, SeriesDescription, SeriesNumber, AcquisitionNumber, InstanceNumber, StudyDatetime, SeriesDatetime) values (:fileName, :fileDatetime, :fileSize, :fileType, :status, :msg, :Modality, :PatientID, :StudyInstanceUID, :SeriesInstanceUID, :StudyDescription, :SeriesDescription, :SeriesNumber, :AcquisitionNumber, :InstanceNumber, :StudyDatetime, :SeriesDatetime)");
+        q.bindValue(":fileName", filepath);
+        q.bindValue(":fileDatetime", fi.lastModified());
+        q.bindValue(":fileSize", fi.size());
+        q.bindValue(":fileType", "DICOM");
+        q.bindValue(":status", status);
+        q.bindValue(":msg", msg);
+        /* insert nulls if values are blank */
+        if (tags["AcquisitionNumber"] == "") q.bindValue(":AcquisitionNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":AcquisitionNumber", tags["AcquisitionNumber"]);
+        if (tags["InstanceNumber"] == "") q.bindValue(":InstanceNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":InstanceNumber", tags["InstanceNumber"]);
+        if (tags["Modality"] == "") q.bindValue(":Modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":Modality", tags["Modality"]);
+        if (tags["PatientID"] == "") q.bindValue(":PatientID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":PatientID", tags["PatientID"]);
+        if (tags["SeriesDescription"] == "") q.bindValue(":SeriesDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDescription", tags["SeriesDescription"]);
+        if (tags["SeriesNumber"] == "") q.bindValue(":SeriesNumber", QVariant(QMetaType::fromType<int>())); else q.bindValue(":SeriesNumber", tags["SeriesNumber"]);
+        if (tags["SeriesInstanceUID"] == "") q.bindValue(":SeriesInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesInstanceUID", tags["SeriesInstanceUID"]);
+        if (tags["StudyDescription"] == "") q.bindValue(":StudyDescription", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDescription", tags["StudyDescription"]);
+        if (tags["StudyInstanceUID"] == "") q.bindValue(":StudyInstanceUID", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyInstanceUID", tags["StudyInstanceUID"]);
+        if (tags["StudyDateTime"] == "") q.bindValue(":StudyDatetime", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":StudyDatetime", tags["StudyDateTime"]);
+        if (tags["SeriesDateTime"] == "") q.bindValue(":SeriesDatetime", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":SeriesDatetime", tags["SeriesDateTime"]);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
 }

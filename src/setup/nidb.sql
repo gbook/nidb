@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 03, 2026 at 05:44 PM
+-- Generation Time: Aug 05, 2026 at 10:22 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -710,6 +710,34 @@ CREATE TABLE `diagnosis` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `dicom_monitor`
+--
+
+CREATE TABLE `dicom_monitor` (
+  `dicommonitor_id` int(11) NOT NULL,
+  `file_path` varchar(700) NOT NULL,
+  `file_datetime` datetime DEFAULT NULL,
+  `file_size` int(11) DEFAULT NULL,
+  `file_type` varchar(255) DEFAULT NULL,
+  `file_status` enum('Received','Parsed','Archived','Error','') NOT NULL,
+  `file_statusmessage` text DEFAULT NULL,
+  `Modality` varchar(255) DEFAULT NULL,
+  `PatientID` text DEFAULT NULL,
+  `StudyInstanceUID` text DEFAULT NULL,
+  `StudyDescription` text DEFAULT NULL,
+  `StudyDatetime` datetime DEFAULT NULL,
+  `SeriesInstanceUID` text DEFAULT NULL,
+  `SeriesDescription` text DEFAULT NULL,
+  `SeriesDatetime` datetime DEFAULT NULL,
+  `SeriesNumber` int(11) DEFAULT NULL,
+  `AcquisitionNumber` int(11) DEFAULT NULL,
+  `InstanceNumber` int(11) DEFAULT NULL,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `doc_series`
 --
 
@@ -1233,32 +1261,6 @@ CREATE TABLE `importlogs` (
   `enrollment_created` tinyint(1) DEFAULT NULL,
   `overwrote_existing` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=COMPRESSED;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `import_file_log`
---
-
-CREATE TABLE `import_file_log` (
-  `importfilelog_id` int(11) NOT NULL,
-  `importfile_datetime` datetime NOT NULL,
-  `filename` text NOT NULL,
-  `file_datetime` datetime DEFAULT NULL,
-  `file_size` int(11) DEFAULT NULL,
-  `file_type` varchar(255) DEFAULT NULL,
-  `Modality` varchar(255) DEFAULT NULL,
-  `PatientID` text DEFAULT NULL,
-  `StudyUID` text DEFAULT NULL,
-  `StudyDescription` text DEFAULT NULL,
-  `StudyDateTime` datetime DEFAULT NULL,
-  `SeriesUID` text DEFAULT NULL,
-  `SeriesDescription` text DEFAULT NULL,
-  `SeriesDatetime` datetime DEFAULT NULL,
-  `SeriesNumber` int(11) DEFAULT NULL,
-  `AcquisitionNumber` int(11) DEFAULT NULL,
-  `InstanceNumber` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -3559,7 +3561,7 @@ CREATE TABLE `weather` (
   `obsv_type` enum('','clouds','presentweather','temp','dewpoint','humidity','windspeed','winddirection','windgust','pressure','pressuretendency','precip','dailysunrise','dailysunset') NOT NULL,
   `obsv_value` double NOT NULL,
   `presentweather` varchar(255) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=PAGE;
 
 -- --------------------------------------------------------
 
@@ -3817,6 +3819,13 @@ ALTER TABLE `diagnosis`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`icd10_id`);
 
 --
+-- Indexes for table `dicom_monitor`
+--
+ALTER TABLE `dicom_monitor`
+  ADD PRIMARY KEY (`dicommonitor_id`),
+  ADD KEY `file_path` (`file_path`);
+
+--
 -- Indexes for table `doc_series`
 --
 ALTER TABLE `doc_series`
@@ -3990,12 +3999,6 @@ ALTER TABLE `importlogs`
   ADD KEY `importstartdate` (`importstartdate`),
   ADD KEY `stationname_orig` (`stationname_orig`),
   ADD KEY `studydatetime_orig` (`studydatetime_orig`);
-
---
--- Indexes for table `import_file_log`
---
-ALTER TABLE `import_file_log`
-  ADD PRIMARY KEY (`importfilelog_id`);
 
 --
 -- Indexes for table `import_requestdirs`
@@ -4802,7 +4805,8 @@ ALTER TABLE `vitals`
 -- Indexes for table `weather`
 --
 ALTER TABLE `weather`
-  ADD PRIMARY KEY (`observation_id`);
+  ADD PRIMARY KEY (`observation_id`),
+  ADD KEY `obsv_location` (`obsv_datetime`,`obsv_type`) USING BTREE;
 
 --
 -- Indexes for table `xa_series`
@@ -5008,6 +5012,12 @@ ALTER TABLE `diagnosis`
   MODIFY `diagnosis_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `dicom_monitor`
+--
+ALTER TABLE `dicom_monitor`
+  MODIFY `dicommonitor_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `doc_series`
 --
 ALTER TABLE `doc_series`
@@ -5150,12 +5160,6 @@ ALTER TABLE `icd10`
 --
 ALTER TABLE `importlogs`
   MODIFY `importlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `import_file_log`
---
-ALTER TABLE `import_file_log`
-  MODIFY `importfilelog_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `import_requests`

@@ -4335,7 +4335,56 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		
 		?></div><?
-	
+
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DicomArchivedSummaryHTML ----------- */
+	/* -------------------------------------------- */
+	/* Returns the archived-files summary table for the DICOM receiver monitor (dicomimport.php) as
+	   an HTML string, so the same markup is used for the page's initial render and for the ajax
+	   refresh endpoint. One row per PatientID/StudyDatetime/SeriesNumber. */
+	function DicomArchivedSummaryHTML() {
+		ob_start();
+		$sqlstring = "select PatientID, StudyDatetime, SeriesNumber, min(file_datetime) 'oldestfile', max(file_datetime) 'newestfile', count(*) 'numfiles' from dicom_monitor where file_status = 'Archived' group by PatientID, StudyDatetime, SeriesNumber order by PatientID, StudyDatetime, SeriesNumber";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (mysqli_num_rows($result) < 1) {
+			?><div class="ui basic segment">No archived files</div><?
+		}
+		else {
+			?>
+			<table class="ui small very compact celled grey table">
+				<thead>
+					<tr>
+						<th>PatientID</th>
+						<th>Study Datetime</th>
+						<th>Series Number</th>
+						<th>Oldest file date</th>
+						<th>Newest file date</th>
+						<th class="right aligned">Files</th>
+					</tr>
+				</thead>
+				<tbody>
+				<?
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						?>
+						<tr>
+							<td><?=htmlspecialchars($row['PatientID'] ?? '')?></td>
+							<td><?=htmlspecialchars($row['StudyDatetime'] ?? '')?></td>
+							<td><?=htmlspecialchars($row['SeriesNumber'] ?? '')?></td>
+							<td><?=htmlspecialchars($row['oldestfile'] ?? '')?></td>
+							<td><?=htmlspecialchars($row['newestfile'] ?? '')?></td>
+							<td class="right aligned"><?=number_format((int)$row['numfiles'])?></td>
+						</tr>
+						<?
+					}
+				?>
+				</tbody>
+			</table>
+			<?
+		}
+		return ob_get_clean();
 	}
 
 ?>

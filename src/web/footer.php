@@ -99,6 +99,9 @@
 	<div class="item" style="font-size: larger">
 		<em data-emoji=":chipmunk:"></em>&nbsp; <a href="neuroinfodb.org"><b>NiDB</b> v<?=$GLOBALS['cfg']['version']?></a>
 	</div>
+	<a class="item" href="g.php" style="padding-top:0; padding-bottom:0; align-items:flex-end">
+		<img src="images/squirrel-pixel-16.svg" alt="" style="height:75%; width:auto; margin:0; display:block">
+	</a>
 	<div class="item">
 		Page generated: <? echo date("D M j, Y g:i a T"); ?> in <?=$pagetotaltime?> sec
 	</div>

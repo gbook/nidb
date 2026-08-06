@@ -245,11 +245,20 @@
 		case 'bulkupdateitemtype':
 			BulkUpdateItemType(GetVariable('ids'), GetVariable('type'));
 			break;
+		case 'dicomreceivercounts':
+			GetDicomReceiverCounts();
+			break;
+		case 'dicomarchivedsummary':
+			GetDicomArchivedSummary();
+			break;
 	}
 	
 
 	/* ------------------------------------ functions ------------------------------------ */
 
+	/* -------------------------------------------- */
+	/* ------- JsonHeader ------------------------- */
+	/* -------------------------------------------- */
 	/* Discard all buffered output (debug HTML, notices, etc.) and set JSON content-type.
 	   Call at the top of every function that returns JSON. */
 	function JsonHeader() {
@@ -292,7 +301,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- SearchObservationNames ------------ */
+	/* ------- SearchObservationNames ------------- */
 	/* -------------------------------------------- */
 	function SearchObservationNames($term, $instrumentname) {
 		JsonHeader();
@@ -346,20 +355,6 @@
 		
 		echo json_encode($a, JSON_FORCE_OBJECT);
 	}
-
-
-	/* -------------------------------------------- */
-	/* ------- CheckHostStatus -------------------- */
-	/* -------------------------------------------- */
-	//function CheckHostStatus($hostname) {
-	//	$hostname = trim($hostname);
-	//	$hostname = preg_replace("/[^A-Za-z0-9 ]/", '', $hostname);
-	//	exec("ping -c 1 '$hostname'", $output, $result);
-	//	if ($result == 0)
-	//		echo "1";
-	//	else
-	//		echo "0";
-	//}
 
 
 	/* -------------------------------------------- */
@@ -1483,7 +1478,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- GetObservationMeta ---------------- */
+	/* ------- GetObservationMeta ----------------- */
 	/* -------------------------------------------- */
 	function GetObservationMeta($observationid) {
 		JsonHeader();
@@ -1680,7 +1675,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- BulkUpdateObservations ------------ */
+	/* ------- BulkUpdateObservations ------------- */
 	/* -------------------------------------------- */
 	function BulkUpdateObservations($observationidsJson, $column, $value, $tz_offset = '') {
 		JsonHeader();
@@ -1722,7 +1717,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- BulkDeleteObservations ------------ */
+	/* ------- BulkDeleteObservations ------------- */
 	/* -------------------------------------------- */
 	function BulkDeleteObservations($observationidsJson) {
 		JsonHeader();
@@ -1743,7 +1738,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- BulkMoveToNewSurvey --------------- */
+	/* ------- BulkMoveToNewSurvey ---------------- */
 	/* -------------------------------------------- */
 	/* Creates a new survey whose startdate is the oldest observation_startdate among the
 	   selected observations, then assigns all selected observations to it. */
@@ -1776,7 +1771,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- BulkConvertValueToMeta ------------ */
+	/* ------- FlattenJsonArray ------------------- */
 	/* -------------------------------------------- */
 	/* Flattens a nested array into dot-joined key paths using underscore as separator.
 	   e.g. ['var_1' => ['subvar1' => 'x']] → ['var_1_subvar1' => 'x'] */
@@ -1793,6 +1788,9 @@
 		return $result;
 	}
 
+	/* -------------------------------------------- */
+	/* ------- BulkConvertValueToMeta ------------- */
+	/* -------------------------------------------- */
 	function BulkConvertValueToMeta($observationidsJson) {
 		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
@@ -2087,10 +2085,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- GetFileIOStatus -------------------- */
-	/* -------------------------------------------- */
-	/* -------------------------------------------- */
-	/* ------- GetInstrumentItems ---------------- */
+	/* ------- GetInstrumentItems ----------------- */
 	/* -------------------------------------------- */
 	function GetInstrumentItems($instrumentid) {
 		JsonHeader();
@@ -2324,7 +2319,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- UpdateMappingFlag ----------------- */
+	/* ------- UpdateMappingFlag ------------------ */
 	/* -------------------------------------------- */
 	function UpdateMappingFlag($mappingid, $flagname, $value) {
 		JsonHeader();
@@ -2344,7 +2339,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- SaveMapping ----------------------- */
+	/* ------- SaveMapping ------------------------ */
 	/* -------------------------------------------- */
 	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_event, $redcap_form, $redcap_field, $redcap_choice_code, $redcap_datatype, $redcap_validation, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
 		JsonHeader();
@@ -2422,7 +2417,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DeleteMapping --------------------- */
+	/* ------- DeleteMapping ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteMapping($mappingid) {
 		JsonHeader();
@@ -2436,7 +2431,7 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- BulkDeleteMappings ---------------- */
+	/* ------- BulkDeleteMappings ----------------- */
 	/* -------------------------------------------- */
 	function BulkDeleteMappings($idsJson) {
 		JsonHeader();
@@ -2456,7 +2451,8 @@
 	}
 
 
-	/* ------- BulkDeleteItems ------------------- */
+	/* -------------------------------------------- */
+	/* ------- BulkDeleteItems -------------------- */
 	/* -------------------------------------------- */
 	function BulkDeleteItems($idsJson) {
 		JsonHeader();
@@ -2476,6 +2472,9 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- ChecklistSetMissingReason ---------- */
+	/* -------------------------------------------- */
 	/* insert/update a missing-data reason for the imaging checklist; returns the row so the
 	   client can update the ag-grid cell in place. */
 	function ChecklistSetMissingReason($enrollmentid, $projectchecklistid, $reason) {
@@ -2500,6 +2499,9 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- ChecklistDeleteMissingReason ------- */
+	/* -------------------------------------------- */
 	/* delete a missing-data reason (imaging checklist) */
 	function ChecklistDeleteMissingReason($missingdataid) {
 		JsonHeader();
@@ -2513,6 +2515,9 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- BulkUpdateItemType ----------------- */
+	/* -------------------------------------------- */
 	function BulkUpdateItemType($idsJson, $type) {
 		JsonHeader();
 		$allowed = ['string', 'int', 'double', 'enum', 'timeseries', 'image', 'csv'];
@@ -2533,6 +2538,9 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- GetFileIOStatus -------------------- */
+	/* -------------------------------------------- */
 	function GetFileIOStatus($idsJson) {
 		JsonHeader();
 		$idArray = json_decode($idsJson, true);
@@ -2575,6 +2583,40 @@
 			}
 		}
 		echo json_encode($rows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDicomReceiverCounts ------------- */
+	/* -------------------------------------------- */
+	/* counts of files in the dicom_monitor table by status, for the DICOM receiver monitor page */
+	function GetDicomReceiverCounts() {
+		JsonHeader();
+		$counts = array('Received' => 0, 'Parsed' => 0, 'Error' => 0);
+		$sqlstring = "select file_status, count(*) 'count' from dicom_monitor where file_status in ('Received', 'Parsed', 'Error') group by file_status";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if (isset($counts[$row['file_status']]))
+				$counts[$row['file_status']] = (int)$row['count'];
+		}
+		echo json_encode(array(
+			'received' => $counts['Received'],
+			'parsed'   => $counts['Parsed'],
+			'error'    => $counts['Error'],
+			'total'    => $counts['Received'] + $counts['Parsed'] + $counts['Error']
+		));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDicomArchivedSummary ------------ */
+	/* -------------------------------------------- */
+	/* returns the archived-files summary table (HTML) for the DICOM receiver monitor page, using
+	   the same shared renderer as the initial page render */
+	function GetDicomArchivedSummary() {
+		while (ob_get_level() > 0) ob_end_clean();
+		header('Content-Type: text/html; charset=utf-8');
+		echo DicomArchivedSummaryHTML();
 	}
 
 ?>

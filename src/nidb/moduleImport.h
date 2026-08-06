@@ -55,6 +55,8 @@ private:
     bool PrepareAndMovePARREC(QString file, QString outdir);
     bool SetImportRequestStatus(int importid, QString status, QString msg = "");
     bool SetImportStatus(int importid, QString status, QString msg, QString report, bool enddate);
+
+    void UpdateDicomMonitor(QString filepath, QHash<QString, QString> tags, QString status, QString msg);
 };
 
 #endif // MODULEIMPORT_H

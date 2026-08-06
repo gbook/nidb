@@ -506,8 +506,14 @@
 				if ($r['state'] === 'idle')      $statecolor = 'style="color:#21ba45"';
 				elseif ($r['state'] === 'down')  $statecolor = 'style="color:#db2828"';
 				elseif ($r['state'] === 'mixed' || $r['state'] === 'allocated') $statecolor = 'style="color:#f2711c"';
+
+				/* highlight the whole row when the load average exceeds the node's core count
+				   (i.e. the node is oversubscribed). Load can be "N/A" on down nodes, so require
+				   a numeric value and a nonzero core count before comparing. */
+				$overloaded = (is_numeric($r['load']) && ($r['total'] > 0) && ((float)$r['load'] > $r['total']));
+				$rowstyle = $overloaded ? ' style="background-color:#fbe3e4"' : '';
 				?>
-				<tr>
+				<tr<?=$rowstyle?>>
 					<td><?=htmlspecialchars($r['node'])?></td>
 					<td <?=$statecolor?>><?=htmlspecialchars($r['state'])?></td>
 					<td><?=htmlspecialchars($r['load'])?></td>

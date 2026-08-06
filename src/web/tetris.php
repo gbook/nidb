@@ -67,7 +67,7 @@
 			</div>
 			<div style="margin-top:8px">
 				<div class="ui toggle checkbox">
-					<input type="checkbox" id="tetMusicToggle" checked>
+					<input type="checkbox" id="tetMusicToggle">
 					<label>&#9834; Music</label>
 				</div>
 			</div>
@@ -300,7 +300,7 @@
 		   "Korobeiniki" is a 19th-century Russian folk song; the melody is public domain.
 		   We synthesize it with the Web Audio API rather than embed any copyrighted
 		   recording/arrangement, which also keeps the page fully self-contained. */
-		let audioCtx = null, musicGain = null, musicOn = true, musicStarted = false;
+		let audioCtx = null, musicGain = null, musicOn = false, musicStarted = false;
 		let noteIndex = 0, nextNoteTime = 0, schedulerTimer = null;
 		const BEAT = 0.32;   /* seconds per quarter note */
 		const NOTE = {

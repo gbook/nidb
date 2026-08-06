@@ -849,11 +849,12 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         QFileInfo fi(datafile_path);
         zipdir = fi.absolutePath() + "/" + fi.completeBaseName();
 
-        n->Log(GetDirectoryListing(zipdir));
-
         // Shell-quote paths to handle spaces; assumes paths don't contain single quotes
         QString systemstring = QString("unzip -o '%1' -d '%2'").arg(datafile_path, zipdir);
         SystemCommand(systemstring);
+
+        n->Log(GetDirectoryListing(zipdir));
+
         QString m;
         if (!SafeDeletePath(datafile_path, n->cfg["uploaddir"], m))
             n->Log(QString("Error removing path [%1]  with error message [%2]").arg(datafile_path).arg(m));

@@ -860,7 +860,7 @@
 					<a href="importremote.php?action=addimportform&projectid=<?=$GLOBALS['projectid']?>" class="ui primary button"><i class="plus square icon"></i>New Import</a>
 				</div>
 			</div>
-			<table class="ui very compact celled grey table">
+			<table class="ui very compact selectable celled grey table">
 				<thead>
 					<tr>
 						<th>Name</th>
