@@ -64,7 +64,6 @@
 	$tz_offset = GetVariable("tz_offset");
 	$surveyid = GetVariable("surveyid");
 	$observationids = GetVariable("observationids");
-	$fileioIds = GetVariable("ids");
 	$mappingid  = GetVariable("mappingid");
 	$flagname   = GetVariable("flagname");
 	$source_type          = GetVariable("source_type");
@@ -215,9 +214,6 @@
 		case 'updatesurvey':
 			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes);
 			break;
-		case 'getfileiostatus':
-			GetFileIOStatus($fileioIds);
-			break;
 		case 'getinstrumentitems':
 			GetInstrumentItems((int)$instrumentid);
 			break;
@@ -250,6 +246,9 @@
 			break;
 		case 'dicomarchivedsummary':
 			GetDicomArchivedSummary();
+			break;
+		case 'fileiolist':
+			GetFileIOList();
 			break;
 	}
 	
@@ -2539,54 +2538,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- GetFileIOStatus -------------------- */
-	/* -------------------------------------------- */
-	function GetFileIOStatus($idsJson) {
-		JsonHeader();
-		$idArray = json_decode($idsJson, true);
-		if (!is_array($idArray) || count($idArray) === 0) {
-			echo json_encode([]);
-			return;
-		}
-		$cleanIds = array_filter(array_map('intval', $idArray), function($id) { return $id > 0; });
-		if (count($cleanIds) === 0) {
-			echo json_encode([]);
-			return;
-		}
-		$idList = implode(',', $cleanIds);
-		$sqlstring = "SELECT fileiorequest_id, request_status, request_message, startdate, enddate FROM fileio_requests WHERE fileiorequest_id IN ($idList)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$rows = [];
-		if ($result && !is_array($result)) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$duration = '';
-				$validStart = ($row['startdate'] !== '0000-00-00 00:00:00' && $row['startdate'] !== '');
-				$validEnd   = ($row['enddate']   !== '0000-00-00 00:00:00' && $row['enddate']   !== '');
-				if ($validStart && $validEnd) {
-					$diff = strtotime($row['enddate']) - strtotime($row['startdate']);
-					if ($diff > 0) {
-						$h = (int)floor($diff / 3600);
-						$m = (int)floor(($diff % 3600) / 60);
-						$s = (int)($diff % 60);
-						if ($h > 0)     $duration = "{$h}h {$m}m {$s}s";
-						elseif ($m > 0) $duration = "{$m}m {$s}s";
-						else            $duration = "{$s}s";
-					}
-				}
-				$rows[] = [
-					'fileiorequest_id' => (int)$row['fileiorequest_id'],
-					'request_status'   => $row['request_status'],
-					'request_message'  => $row['request_message'],
-					'enddate'          => $row['enddate'],
-					'duration'         => $duration,
-				];
-			}
-		}
-		echo json_encode($rows);
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- GetDicomReceiverCounts ------------- */
 	/* -------------------------------------------- */
 	/* counts of files in the dicom_monitor table by status, for the DICOM receiver monitor page */
@@ -2617,6 +2568,19 @@
 		while (ob_get_level() > 0) ob_end_clean();
 		header('Content-Type: text/html; charset=utf-8');
 		echo DicomArchivedSummaryHTML();
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileIOList ---------------------- */
+	/* -------------------------------------------- */
+	/* returns the full fileio_requests list (JSON) for the filesio.php page to poll, so new
+	   operations appear and existing ones update while the page is idle. Uses the shared builder,
+	   which applies the same per-user access filtering as the initial page render. */
+	function GetFileIOList() {
+		JsonHeader();
+		list($rows, $pendingCount) = GetFileIORequests();
+		echo json_encode($rows);
 	}
 
 ?>

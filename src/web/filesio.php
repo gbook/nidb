@@ -81,46 +81,7 @@
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList() {
-		if ($GLOBALS['issiteadmin']) {
-			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
-		} else {
-			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` where username = '" . $GLOBALS['username'] . "' order by fileiorequest_id desc limit 1000";
-		}
-
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$rows = [];
-		$pendingCount = 0;
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			if ($row['request_status'] === 'pending') $pendingCount++;
-			$enddate = ($row['enddate'] === '0000-00-00 00:00:00' || $row['enddate'] === '') ? '' : $row['enddate'];
-
-			$duration = '';
-			$validStart = ($row['startdate'] !== '0000-00-00 00:00:00' && $row['startdate'] !== '');
-			$validEnd   = ($row['enddate']   !== '0000-00-00 00:00:00' && $row['enddate']   !== '');
-			if ($validStart && $validEnd) {
-				$diff = strtotime($row['enddate']) - strtotime($row['startdate']);
-				if ($diff > 0) {
-					$h = (int)floor($diff / 3600);
-					$m = (int)floor(($diff % 3600) / 60);
-					$s = (int)($diff % 60);
-					if ($h > 0)      $duration = "{$h}h {$m}m {$s}s";
-					elseif ($m > 0)  $duration = "{$m}m {$s}s";
-					else             $duration = "{$s}s";
-				}
-			}
-
-			$rows[] = [
-				'fileiorequest_id' => (int)$row['fileiorequest_id'],
-				'username'         => $row['username'],
-				'requestdate'      => $row['requestdate'],
-				'fileio_operation' => $row['fileio_operation'],
-				'operation'        => ucfirst($row['fileio_operation']) . ' ' . $row['data_type'],
-				'request_status'   => $row['request_status'],
-				'request_message'  => $row['request_message'],
-				'enddate'          => $enddate,
-				'duration'         => $duration,
-			];
-		}
+		list($rows, $pendingCount) = GetFileIORequests();
 		?>
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
@@ -128,6 +89,7 @@
 		<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
 			<input type="text" id="filterInput" placeholder="Search..." oninput="gridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
 			<span id="pendingLabel" class="ui <?= $pendingCount > 0 ? 'yellow' : 'green' ?> label" style="font-size:1em;min-width:160px"><?= $pendingCount > 0 ? '<i class="spinner loading icon"></i>' : '' ?><?= $pendingCount ?> pending operations</span>
+			<span style="margin-left:auto;color:#888">Last refreshed <span id="lastrefresh"></span></span>
 		</div>
 		<div id="fileioGrid" class="ag-theme-alpine" style="height:600px;width:100%"></div>
 
@@ -162,6 +124,7 @@
 					return span;
 				}
 			},
+			{ field: 'details', headerName: 'Details', sortable: true, filter: true, flex: 1 },
 			{
 				field: 'request_status', headerName: 'Status', sortable: true, filter: true, width: 180,
 				cellStyle: params => {
@@ -210,54 +173,46 @@
 			columnDefs,
 			rowData,
 			defaultColDef: { resizable: true },
+			/* a stable row id lets ag-grid diff the polled data: it preserves scroll, sort and
+			   filter, updates only changed rows, and adds/removes rows as operations appear or
+			   are deleted */
+			getRowId: params => String(params.data.fileiorequest_id),
 		};
 
 		const gridDiv = document.getElementById('fileioGrid');
 		const gridApi = agGrid.createGrid(gridDiv, gridOptions);
 
-		// Poll pending rows every second; stop when none remain
-		const pendingIds = new Set(
-			rowData.filter(r => r.request_status === 'pending').map(r => r.fileiorequest_id)
-		);
-
-		function updatePendingLabel() {
+		function updatePendingLabel(n) {
 			const label = document.getElementById('pendingLabel');
-			const n = pendingIds.size;
 			label.className = 'ui ' + (n > 0 ? 'yellow' : 'green') + ' label';
 			label.innerHTML = (n > 0 ? '<i class="spinner loading icon"></i>' : '') + n + ' pending operations';
 		}
 
-		function pollPendingStatus() {
-			if (pendingIds.size === 0) return;
-			fetch('ajaxapi.php', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				body: 'action=getfileiostatus&ids=' + encodeURIComponent(JSON.stringify([...pendingIds]))
-			})
-				.then(r => {
-					if (!r.ok) throw new Error('HTTP ' + r.status);
-					return r.json();
-				})
+		/* Always refresh the full list so operations that start (or are removed) while the page is
+		   idle appear without a manual reload. One request is in flight at a time. */
+		let fileioInFlight = false;
+		function refreshFileIO() {
+			if (fileioInFlight) return;
+			fileioInFlight = true;
+			fetch('ajaxapi.php?action=fileiolist', { cache: 'no-store' })
+				.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
 				.then(data => {
 					if (!Array.isArray(data)) return;
-					data.forEach(item => {
-						if (item.request_status !== 'pending') {
-							gridApi.forEachNode(node => {
-								if (node.data && node.data.fileiorequest_id === item.fileiorequest_id) {
-									const enddate = (item.enddate === '0000-00-00 00:00:00' || item.enddate === '') ? '' : item.enddate;
-									node.setData({ ...node.data, request_status: item.request_status, request_message: item.request_message, enddate, duration: item.duration || '' });
-								}
-							});
-							pendingIds.delete(item.fileiorequest_id);
-						}
-					});
-					updatePendingLabel();
-					if (pendingIds.size === 0) clearInterval(pollTimer);
+					/* ag-grid diffs against the current rows by getRowId */
+					gridApi.setGridOption('rowData', data);
+					updatePendingLabel(data.filter(r => r.request_status === 'pending').length);
+					/* stamp the time only on a successful refresh, so it reflects when the
+					   displayed data was actually last updated */
+					document.getElementById('lastrefresh').textContent = new Date().toLocaleTimeString();
 				})
-				.catch(e => console.error('FileIO poll error:', e));
+				.catch(e => console.error('FileIO poll error:', e))
+				.finally(() => { fileioInFlight = false; });
 		}
 
-		const pollTimer = pendingIds.size > 0 ? setInterval(pollPendingStatus, 1000) : null;
+		/* the rows on the page were rendered by the server as this page loaded */
+		document.getElementById('lastrefresh').textContent = new Date().toLocaleTimeString();
+
+		setInterval(refreshFileIO, 1000);
 		</script>
 		<?
 	}

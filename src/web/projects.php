@@ -233,6 +233,20 @@
 						$msgs[] = UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value);
 					}
 				}
+
+				/* firstname/lastname combine into subjects.name as 'lastname^firstname'. Handled
+				   together (not as individual columns) so one does not overwrite the other. Only
+				   applied when at least one is provided, so a row without them leaves name unchanged. */
+				if (array_key_exists('firstname', $line) || array_key_exists('lastname', $line)) {
+					$firstname = mysqli_real_escape_string($GLOBALS['linki'], trim($line['firstname'] ?? ''));
+					$lastname  = mysqli_real_escape_string($GLOBALS['linki'], trim($line['lastname'] ?? ''));
+					if (($firstname !== '') || ($lastname !== '')) {
+						$newname = $lastname . '^' . $firstname;
+						$sqlstring = "update subjects set name = '$newname' where subject_id = $subjectid";
+						MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$msgs[] = "$uid - Updated name &rarr; <tt>$newname</tt>";
+					}
+				}
 			}
 		}
 		Notice(implode2("<br>", $msgs));
@@ -297,7 +311,16 @@
 			$education    = mysqli_real_escape_string($GLOBALS['linki'], $row['education']     ?? '');
 			$marital      = mysqli_real_escape_string($GLOBALS['linki'], $row['maritalstatus'] ?? '');
 			$smoking      = mysqli_real_escape_string($GLOBALS['linki'], $row['smokingstatus'] ?? '');
+			$firstname    = mysqli_real_escape_string($GLOBALS['linki'], $row['firstname'] ?? '');
+			$lastname     = mysqli_real_escape_string($GLOBALS['linki'], $row['lastname'] ?? '');
 			if ($birthdate === '') $birthdate = '0000-00-00';
+
+			/* if a first and/or last name was provided, store it in subjects.name as
+			   'lastname^firstname'; otherwise fall back to the CSV ID */
+			if (($firstname !== '') || ($lastname !== ''))
+				$name = $lastname . '^' . $firstname;
+			else
+				$name = $altid;
 
 			/* check if a subject with this altuid already exists */
 			$result = MySQLiQuery("select sa.subject_id from subject_altuid sa where sa.altuid = '$altid'", __FILE__, __LINE__);
@@ -319,7 +342,7 @@
 				} while (mysqli_num_rows($chk) > 0);
 
 				/* insert subject */
-				MySQLiQuery("insert into subjects (name, birthdate, sex, gender, ethnicity1, ethnicity2, handedness, education, marital_status, smoking_status, uid, uuid, guid) values ('$altid', '$birthdate', '$sex', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$marital', '$smoking', '$uid', uuid(), '$guid')", __FILE__, __LINE__);
+				MySQLiQuery("insert into subjects (name, birthdate, sex, gender, ethnicity1, ethnicity2, handedness, education, marital_status, smoking_status, uid, uuid, guid) values ('$name', '$birthdate', '$sex', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$marital', '$smoking', '$uid', uuid(), '$guid')", __FILE__, __LINE__);
 				$subjectRowID = (int)mysqli_insert_id($GLOBALS['linki']);
 
 				/* create family record */
@@ -1151,11 +1174,15 @@
 		
 		$rowdata = array();
 		
-		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
+		/* Get all subjects (active and deleted), and their enrollment info, associated with the
+		   project. Everything is loaded so the table can be filtered client-side by status and by
+		   deleted state; the grid defaults to showing active subjects only. */
+		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id order by a.uid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numsubjects = mysqli_num_rows($result);
+		$numsubjects = 0;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rowisactive = (int)$row['isactive'];
+			if ($rowisactive == 1) $numsubjects++;   /* initial view shows active subjects only */
 			$subjectid = $row['subject_id'];
 			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
@@ -1219,12 +1246,14 @@
 				case 8: $education = "Doctoral Degree"; break;
 			}
 
-			$rowdata[] = "{ id: $subjectid, enrollmentid: $enrollmentid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
+			$rowdata[] = "{ id: $subjectid, enrollmentid: $enrollmentid, isactive: $rowisactive, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
 		}
+		/* total enrolled in this project, across all statuses and active + deleted */
+		$numtotalsubjects = count($rowdata);
 		$data = "";
 		if (count($rowdata) > 0)
 			$data = implode(",", $rowdata);
-		
+
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -1239,10 +1268,17 @@
 			<div class="ui red right corner label" title="This table is editable. Changes are permanent after editing each cell."><i class="exclamation circle icon"></i></div>
 			<div class="ui grid">
 				<div class="eight wide column">
-					<h2 class="ui header">
-						Subjects
-						<div class="sub header">Displaying <?=$numsubjects?> subjects</div>
-					</h2>
+					<h2 class="ui header" style="margin-bottom: 6px">Subjects</h2>
+					<div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
+						<span style="color: rgba(0,0,0,.55)">Displaying <span id="subjectcount"><?=$numsubjects?></span> of <?=$numtotalsubjects?> subjects</span>
+						<div class="ui small basic buttons">
+							<button type="button" class="ui button subjectfilter active" data-mode="active">Active (all enrollment status)</button>
+							<button type="button" class="ui button subjectfilter" data-mode="consented">Consented</button>
+							<button type="button" class="ui button subjectfilter" data-mode="completed">Completed</button>
+							<button type="button" class="ui button subjectfilter" data-mode="excluded">Excluded</button>
+						</div>
+						<button type="button" class="ui small basic button subjectfilter" data-mode="deleted">Deleted</button>
+					</div>
 				</div>
 				<div class="right aligned seven wide column">
 					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update...</button> &nbsp;
@@ -1261,32 +1297,45 @@
 						<label>Paste .csv formatted data</label>
 						<textarea name="csv" style="font-family:monospace"></textarea>
 					</div>
-					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
-					Required columns: <code>ID</code>, <code>sex</code>, <code>gender</code>, <code>status</code>, <code>enrollgroup</code>
-					<ul>
-						<li><code>ID</code> - Subject identifier; stored as an alternate UID</li>
-						<li><code>sex</code> - Possible values: <tt>F, M, O, U</tt></li>
-						<li><code>gender</code> - Possible values: <tt>F, M, O, U</tt></li>
-						<li><code>status</code> - Enrollment status. Possible values: <tt>consented, excluded, completed,</tt> or blank</li>
-						<li><code>enrollgroup</code> - Enrollment group (e.g. <tt>control, patient</tt>)</li>
-					</ul>
-					Optional columns:
-					<ul>
-						<li><code>guid</code> - Globally unique ID for NDA submission</li>
-						<li><code>birthdate</code> - format <tt>YYYY-MM-DD</tt> (defaults to <tt>0000-00-00</tt> if omitted)</li>
-						<li><code>ethnicity1</code> - Possible values: <tt>hispanic, nothispanic</tt></li>
-						<li><code>ethnicity2</code> - Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt></li>
-						<li><code>handedness</code> - Possible values: <tt>R, L, A, U</tt></li>
-						<li><code>education</code> - Possible values: 0 (Unknown) through 8 (Doctoral Degree)</li>
-						<li><code>maritalstatus</code> - Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt></li>
-						<li><code>smokingstatus</code> - Possible values: <tt>unknown, never, current, past</tt></li>
-					</ul>
+					<p><i class="blue question circle icon"></i> <b>Formatting Guide</b></p>
 					<b>Sample .csv format</b>
 					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
 						ID, sex, gender, status, enrollgroup<br>
 						SUBJ001, F, F, consented, control<br>
 						SUBJ002, M, M, consented, patient
 					</div>
+					<br><br>
+					<b>Required columns</b>
+					<table class="ui very compact small celled table">
+						<thead>
+							<tr><th>Column</th><th>Description</th></tr>
+						</thead>
+						<tbody>
+							<tr><td><code>ID</code></td><td>Subject identifier; stored as an alternate UID</td></tr>
+							<tr><td><code>sex</code></td><td>Possible values: <tt>F, M, O, U</tt></td></tr>
+							<tr><td><code>gender</code></td><td>Possible values: <tt>F, M, O, U</tt></td></tr>
+							<tr><td><code>status</code></td><td>Enrollment status. Possible values: <tt>consented, excluded, completed,</tt> or blank</td></tr>
+							<tr><td><code>enrollgroup</code></td><td>Enrollment group (e.g. <tt>control, patient</tt>)</td></tr>
+						</tbody>
+					</table>
+					<b>Optional columns</b>
+					<table class="ui very compact small celled table">
+						<thead>
+							<tr><th>Column</th><th>Description</th></tr>
+						</thead>
+						<tbody>
+							<tr><td><code>birthdate</code></td><td>Format <tt>YYYY-MM-DD</tt> (defaults to <tt>0000-00-00</tt> if omitted)</td></tr>
+							<tr><td><code>education</code></td><td>Possible values: 0 (Unknown) through 8 (Doctoral Degree)</td></tr>
+							<tr><td><code>ethnicity1</code></td><td>Possible values: <tt>hispanic, nothispanic</tt></td></tr>
+							<tr><td><code>ethnicity2</code></td><td>Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt></td></tr>
+							<tr><td><code>firstname</code></td><td>Stored in the subject name as <tt>lastname^firstname</tt></td></tr>
+							<tr><td><code>guid</code></td><td>Globally unique ID for NDA submission</td></tr>
+							<tr><td><code>handedness</code></td><td>Possible values: <tt>R, L, A, U</tt></td></tr>
+							<tr><td><code>lastname</code></td><td>Stored in the subject name as <tt>lastname^firstname</tt></td></tr>
+							<tr><td><code>maritalstatus</code></td><td>Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt></td></tr>
+							<tr><td><code>smokingstatus</code></td><td>Possible values: <tt>unknown, never, current, past</tt></td></tr>
+						</tbody>
+					</table>
 				</div>
 			<div class="actions">
 				<input type="submit" class="ui approve button" value="Add Subjects">
@@ -1305,30 +1354,39 @@
 						<label>Paste .csv formatted data</label>
 						<textarea name="csv" style="font-family:monospace"></textarea>
 					</div>
-					<i class="blue question circle icon"></i> <b>Formatting Guide</b><br>
-					Available columns (.csv may contain any set of those columns, but <b>must</b> always contain <tt>uid</tt>)
-					<ul>
-						<li><code>uid</code> - The UID of the subject
-						<li><code>status</code> - Enrollment status. Possible values: <tt>consented, enrolled, completed, excluded</tt>
-						<li><code>altuids</code> - space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code>
-						<li><code>guid</code> - Globally unique ID for NDA submission
-						<li><code>birthdate</code> - format <tt>YYYY-MM-DD</tt>
-						<li><code>sex</code> - Possible values: <tt>F, M, O, U</tt>
-						<li><code>gender</code> - Possible values: <tt>F, M, O, U</tt>
-						<li><code>ethnicity1</code> - Possible values: <tt>hispanic, nothispanic</tt>
-						<li><code>ethnicity2</code> - Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt>
-						<li><code>handedness</code> - Possible values: <tt>R, L, A, U</tt>
-						<li><code>education</code> - Possible values:  0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)
-						<li><code>marital</code> - Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt>
-						<li><code>smoking</code> - Possible values: <tt>unknown, never, current, past</tt>
-						<li><code>enrollgroup</code> - Enrollment group
-						<li><code>icd10</code> - ICD10 code. See list of available <a href="icd10.php" target="newwindow">codes</a>.
-					</ul>
+					<p><i class="blue question circle icon"></i> <b>Formatting Guide</b></p>
+					
 					<b>Sample .csv format</b>
 					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
 						uid, guid, sex, enrollgroup<br>
 						S1234ABC, NDA23548239, F, control
 					</div>
+					<br>
+					Available columns (.csv may contain any set of those columns, but <b>must</b> always contain <tt>uid</tt>)
+					<table class="ui very compact small celled table">
+						<thead>
+							<tr><th>Column</th><th>Description</th></tr>
+						</thead>
+						<tbody>
+							<tr style="color: darkred"><td><code>uid</code></td><td>The <b>UID</b> of the subject (required)</td></tr>
+							<tr><td><code>altuids</code></td><td>Space delimited list of alternate UIDs with asterisk indicating primary alternate ID. Example <code>*1234 AB539 ID2054</code></td></tr>
+							<tr><td><code>birthdate</code></td><td>Format <tt>YYYY-MM-DD</tt></td></tr>
+							<tr><td><code>education</code></td><td>Possible values: 0 (Unknown), 1 (Grade School), 2 (Middle School), 3 (High School/GED), 4 (Trade School), 5 (Associates Degree), 6 (Bachelors Degree), 7 (Masters Degree), 8 (Doctoral Degree)</td></tr>
+							<tr><td><code>enrollgroup</code></td><td>Enrollment group</td></tr>
+							<tr><td><code>ethnicity1</code></td><td>Possible values: <tt>hispanic, nothispanic</tt></td></tr>
+							<tr><td><code>ethnicity2</code></td><td>Possible values: <tt>unknown, asian, black, white, indian, islander, mixed, other</tt></td></tr>
+							<tr><td><code>firstname</code></td><td>Stored in the subject name as <tt>lastname^firstname</tt></td></tr>
+							<tr><td><code>gender</code></td><td>Possible values: <tt>F, M, O, U</tt></td></tr>
+							<tr><td><code>guid</code></td><td>Globally unique ID for NDA submission</td></tr>
+							<tr><td><code>handedness</code></td><td>Possible values: <tt>R, L, A, U</tt></td></tr>
+							<tr><td><code>icd10</code></td><td>ICD10 code. See list of available <a href="icd10.php" target="newwindow">codes</a>.</td></tr>
+							<tr><td><code>lastname</code></td><td>Stored in the subject name as <tt>lastname^firstname</tt></td></tr>
+							<tr><td><code>marital</code></td><td>Possible values: <tt>unknown, married, single, divorced, separated, civilunion, cohabitating, widowed</tt></td></tr>
+							<tr><td><code>sex</code></td><td>Possible values: <tt>F, M, O, U</tt></td></tr>
+							<tr><td><code>smoking</code></td><td>Possible values: <tt>unknown, never, current, past</tt></td></tr>
+							<tr><td><code>status</code></td><td>Enrollment status. Possible values: <tt>consented, enrolled, completed, excluded</tt></td></tr>
+						</tbody>
+					</table>
 				</div>
 			<div class="actions">
 				<input type="submit" class="ui approve button" value="Update">
@@ -1344,12 +1402,49 @@
 		<script type="text/javascript">
 			let gridApi;
 
+			/* the full subject dataset (active + deleted); the grid is given only the filtered subset */
+			const allSubjectRows = [ <?=$data?> ];
+
+			/* subject table filter: single-select. one of
+			     'active'    - all active subjects, any enrollment status
+			     'consented' / 'completed' / 'excluded' - active subjects with that status
+			     'deleted'   - all deleted subjects (isactive=0), any status */
+			let subjectFilterMode = 'active';
+
+			/* Filter the dataset and hand the grid only the matching rows. Replacing rowData (rather
+			   than using an ag-grid external filter) guarantees the table never keeps stale rows: the
+			   grid only ever contains what should be visible. getRowId lets ag-grid diff the change
+			   and preserve sort/scroll. */
+			function applySubjectFilter() {
+				if (!gridApi) return;
+				const mode = subjectFilterMode;
+				const filtered = allSubjectRows.filter(function(r) {
+					const deleted = (Number(r.isactive) === 0);
+					if (mode === 'deleted') return deleted;   /* all deleted, regardless of status */
+					if (deleted) return false;                /* every other mode is active-only */
+					if (mode === 'active') return true;       /* all active */
+					return r.enrollstatus === mode;           /* active with this enrollment status */
+				});
+				gridApi.setGridOption('rowData', filtered);
+				document.getElementById('subjectcount').textContent = filtered.length;
+			}
+
 			$(document).ready(function(){
 				$('#batchsubjectupdatebutton').click(function(){
 					$('#batchmodal').modal('show');
 				});
 				$('#batchsubjectaddbutton').click(function(){
 					$('#batchaddmodal').modal('show');
+				});
+
+				/* filter buttons: single-select. clicking one shows that group and highlights it */
+				document.querySelectorAll('.subjectfilter').forEach(function(btn) {
+					btn.addEventListener('click', function() {
+						subjectFilterMode = this.getAttribute('data-mode');
+						document.querySelectorAll('.subjectfilter').forEach(function(b) { b.classList.remove('active'); });
+						this.classList.add('active');
+						applySubjectFilter();
+					});
 				});
 			});
 			
@@ -1482,7 +1577,12 @@
 					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
 				],
 
-				rowData: [ <?=$data?> ],
+				/* rows are supplied by applySubjectFilter() after the grid is created */
+				rowData: [],
+
+				/* Give each row a stable identity so ag-grid can diff rowData changes (from the
+				   Consented/Completed/Excluded/Deleted filters) and preserve sort and scroll. */
+				getRowId: (params) => String(params.data.enrollmentid),
 
 				rowClassRules: {
 					"completed": "data.enrollstatus == 'completed'",
@@ -1522,7 +1622,10 @@
 				const eGridDiv = document.getElementById("myGrid");
 				// new grid instance, passing in the hosting DIV and Grid Options
 				gridApi = agGrid.createGrid(eGridDiv, gridOptions);
-				
+
+				/* load the default (active subjects) view into the grid */
+				applySubjectFilter();
+
 				autoSizeAll(false);
 			});
 			

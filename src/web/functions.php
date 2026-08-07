@@ -4387,4 +4387,139 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		return ob_get_clean();
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- FileIODetails ---------------------- */
+	/* -------------------------------------------- */
+	/* Human-readable details of what a fileio operation acts on, resolved from the data_id (and,
+	   for a merge, the merge id list) to UIDs / pipeline names / study numbers. All ids are cast to
+	   int before use. Returns an empty string when there is nothing to show. */
+	function FileIODetails($operation, $datatype, $dataid, $mergeid, $mergeids, $modality) {
+
+		/* a merge shows the list of subject UIDs being merged together */
+		if ($operation === 'merge') {
+			$ids = array();
+			if ((int)$mergeid > 0) $ids[] = (int)$mergeid;
+			foreach (explode(',', (string)$mergeids) as $mid) {
+				$mid = (int)trim($mid);
+				if ($mid > 0) $ids[] = $mid;
+			}
+			$ids = array_values(array_unique($ids));
+			if (count($ids) < 1) return '';
+			$uids = array();
+			$sqlstring = "select uid from subjects where subject_id in (" . implode(',', $ids) . ") order by uid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) $uids[] = $r['uid'];
+			return implode(', ', $uids);
+		}
+
+		$dataid = (int)$dataid;
+		if ($dataid < 1) return '';
+
+		if ($datatype === 'subject') {
+			$sqlstring = "select uid from subjects where subject_id = $dataid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'];
+		}
+		elseif ($datatype === 'study') {
+			$sqlstring = "select b.uid, a.study_num from studies a left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects b on c.subject_id = b.subject_id where a.study_id = $dataid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'] . $r['study_num'];
+		}
+		elseif ($datatype === 'series') {
+			/* series live in per-modality tables, so the modality selects the table/id column.
+			   Validate against the tables that actually exist (cached once) so an unexpected
+			   modality can't reference a missing table and fatal the page. */
+			static $seriestables = null;
+			if ($seriestables === null) {
+				$seriestables = array();
+				$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name like '%\\_series'";
+				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				while ($r = mysqli_fetch_array($result, MYSQLI_ASSOC))
+					$seriestables[strtolower($r['table_name'])] = true;
+			}
+			$mod = strtolower(preg_replace('/[^A-Za-z]/', '', (string)$modality));
+			if ($mod === '') return '';
+			$tbl = $mod . '_series';
+			$idcol = $mod . 'series_id';
+			if (!isset($seriestables[$tbl])) return '';
+			$sqlstring = "select d.uid, b.study_num, a.series_num from $tbl a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$idcol = $dataid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'] . $r['study_num'] . '-' . $r['series_num'];
+		}
+		elseif ($datatype === 'analysis') {
+			$sqlstring = "select p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_id = $dataid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$parts = array();
+				if (trim((string)$r['pipeline_name']) !== '') $parts[] = $r['pipeline_name'];
+				if (trim((string)$r['uid']) !== '') $parts[] = $r['uid'] . $r['study_num'];
+				return implode(' · ', $parts);
+			}
+		}
+		elseif ($datatype === 'pipeline') {
+			$sqlstring = "select pipeline_name from pipelines where pipeline_id = $dataid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['pipeline_name'];
+		}
+
+		return '';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileIORequests ------------------ */
+	/* -------------------------------------------- */
+	/* Builds the fileio_requests list for filesio.php - both the initial page render and the ajax
+	   refresh endpoint - so both use identical data and the same per-user access filtering (a
+	   non-site-admin only sees their own requests). Returns array($rows, $pendingCount). */
+	function GetFileIORequests() {
+		if ($GLOBALS['issiteadmin']) {
+			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `data_id`, `modality`, `merge_id`, `merge_ids`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` order by fileiorequest_id desc limit 1000";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		}
+		else {
+			$sqlstring = "SELECT `fileiorequest_id`, `fileio_operation`, `data_type`, `data_id`, `modality`, `merge_id`, `merge_ids`, `request_status`, `request_message`, `username`, `requestdate`, `startdate`, `enddate` FROM `fileio_requests` where username = ? order by fileiorequest_id desc limit 1000";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($GLOBALS['username']));
+		}
+
+		$rows = array();
+		$pendingCount = 0;
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if ($row['request_status'] === 'pending') $pendingCount++;
+			$enddate = ($row['enddate'] === '0000-00-00 00:00:00' || $row['enddate'] === '') ? '' : $row['enddate'];
+
+			$duration = '';
+			$validStart = ($row['startdate'] !== '0000-00-00 00:00:00' && $row['startdate'] !== '');
+			$validEnd   = ($row['enddate']   !== '0000-00-00 00:00:00' && $row['enddate']   !== '');
+			if ($validStart && $validEnd) {
+				$diff = strtotime($row['enddate']) - strtotime($row['startdate']);
+				if ($diff > 0) {
+					$h = (int)floor($diff / 3600);
+					$m = (int)floor(($diff % 3600) / 60);
+					$s = (int)($diff % 60);
+					if ($h > 0)      $duration = "{$h}h {$m}m {$s}s";
+					elseif ($m > 0)  $duration = "{$m}m {$s}s";
+					else             $duration = "{$s}s";
+				}
+			}
+
+			$rows[] = array(
+				'fileiorequest_id' => (int)$row['fileiorequest_id'],
+				'username'         => $row['username'],
+				'requestdate'      => $row['requestdate'],
+				'fileio_operation' => $row['fileio_operation'],
+				'operation'        => ucfirst($row['fileio_operation']) . ' ' . $row['data_type'],
+				'details'          => FileIODetails($row['fileio_operation'], $row['data_type'], $row['data_id'], $row['merge_id'], $row['merge_ids'], $row['modality']),
+				'request_status'   => $row['request_status'],
+				'request_message'  => $row['request_message'],
+				'enddate'          => $enddate,
+				'duration'         => $duration,
+			);
+		}
+		return array($rows, $pendingCount);
+	}
+
 ?>
