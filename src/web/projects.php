@@ -1289,7 +1289,7 @@
 		</div>
 		<div class="ui modal" id="batchaddmodal">
 			<div class="header">Batch Add Subjects</div>
-			<div class="content">
+			<div class="scrolling content">
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchaddsubjects">
 					<input type="hidden" name="projectid" value="<?=$id?>">
@@ -1346,7 +1346,7 @@
 
 		<div class="ui modal" id="batchmodal">
 			<div class="header">Batch Update Subject Information</div>
-			<div class="content">
+			<div class="scrolling content">
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchupdatesubject">
 					<input type="hidden" name="projectid" value="<?=$id?>">

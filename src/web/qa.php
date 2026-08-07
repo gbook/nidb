@@ -48,7 +48,7 @@
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>QA for <?=$uid?> study <?=$study_num?> series <?=$series_num?></title>
-		<script type="text/javascript" src="scripts/jquery-1.3.2.min.js"></script>
+		<script type="text/javascript" src="scripts/jquery-3.7.1.min.js"></script>
 		<script type="text/javascript" src="scripts/jquery.flot.js"></script>
 	</head>
 	
