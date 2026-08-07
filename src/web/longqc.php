@@ -69,7 +69,7 @@
 	function DisplayGroupList() {
 	?>
 
-	<table class="graydisplaytable">
+	<table class="ui table">
 		<thead>
 			<tr>
 				<th>Name</th>

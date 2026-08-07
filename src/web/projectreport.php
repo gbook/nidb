@@ -195,7 +195,7 @@
 		$projectname = $row['project_name'];
 		
 		?>
-		<table class="graydisplaytable">
+		<table class="ui table">
 			<thead>
 				<tr>
 					<th></th>

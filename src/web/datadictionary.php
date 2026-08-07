@@ -272,7 +272,7 @@
 		}
 		
 		/* start the table */
-		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Issues", "Delete", ""), "graydisplaytable", "datadictionarytable");
+		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Issues", "Delete", ""), "ui table", "datadictionarytable");
 		?>
 		<tbody>
 		<tr>
@@ -467,7 +467,7 @@ variable_2, intervention, "Important Variable 1 - no keys", </div>
 		
 		ksort($dbitems);
 		
-		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Action"), "graydisplaytable", "datadictionarytable");
+		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Action"), "ui table", "datadictionarytable");
 		?>
 		<tr>
 			<td colspan="7" style="background-color: #888; color: #fff; font-size: larger; padding:10px; font-weight: bold">Uncategorized Variables</td>

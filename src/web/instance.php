@@ -621,7 +621,7 @@
 		/* if the instance ID is blank, display a list of instances that they own */
 		if ($id == "") {
 		?>
-		<table class="graydisplaytable" width="50%">
+		<table class="ui table" width="50%">
 			<thead>
 				<tr>
 					<th colspan="2">Instances</th>

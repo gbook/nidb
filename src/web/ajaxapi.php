@@ -540,7 +540,7 @@
 			?>
 			<br>
 			<div align="center">Archiving status</div>
-			<table class="graydisplaytable" width="100%">
+			<table class="ui table" width="100%">
 				<thead>
 					<th align="left">Original ID</th>
 					<th align="left">New UID/Study</th>
@@ -718,7 +718,7 @@
 			.underlined { text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #888; }
 		</style>
 		
-		<table class="graydisplaytable">
+		<table class="ui table">
 			<thead>
 				<tr>
 					<th>Criteria<br><span class="tiny">Mouseover for description</span></th>

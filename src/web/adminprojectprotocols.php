@@ -105,7 +105,7 @@
 	function DisplayProjectProtocolList($projectid) {
 	?>
 
-	<table class="graydisplaytable" width="100%">
+	<table class="ui table" width="100%">
 		<thead>
 			<tr>
 				<th>Protocol group<br><span class="tiny">MODALITY - group name</span></th>

@@ -3580,7 +3580,7 @@
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
 		<input type="hidden" name="action" value="submit">
-		<table class="graydisplaytable">
+		<table class="ui table">
 			<thead>
 				<tr>
 					<th colspan="2" style="border-right:1px solid #444">Subject</th>

@@ -1271,17 +1271,19 @@
 					<h2 class="ui header" style="margin-bottom: 6px">Subjects</h2>
 					<div style="display: flex; align-items: center; flex-wrap: wrap; gap: 8px">
 						<span style="color: rgba(0,0,0,.55)">Displaying <span id="subjectcount"><?=$numsubjects?></span> of <?=$numtotalsubjects?> subjects</span>
+						&nbsp;<b>View:</b>
 						<div class="ui small basic buttons">
-							<button type="button" class="ui button subjectfilter active" data-mode="active">Active (all enrollment status)</button>
-							<button type="button" class="ui button subjectfilter" data-mode="consented">Consented</button>
+							<button type="button" class="ui button subjectfilter active" data-mode="active">All active</button>
+							<button type="button" class="ui button subjectfilter" data-mode="consented" title="Active and consented">Consented</button>
 							<button type="button" class="ui button subjectfilter" data-mode="completed">Completed</button>
 							<button type="button" class="ui button subjectfilter" data-mode="excluded">Excluded</button>
 						</div>
-						<button type="button" class="ui small basic button subjectfilter" data-mode="deleted">Deleted</button>
+						&nbsp;
+						<button type="button" class="ui small basic button subjectfilter" data-mode="deleted">Inactive/Deleted</button>
 					</div>
 				</div>
 				<div class="right aligned seven wide column">
-					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update...</button> &nbsp;
+					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update subjects...</button> &nbsp;
 					<button class="ui small basic primary compact button" id="batchsubjectaddbutton"><i class="user plus icon"></i> Batch add subjects...</button> &nbsp;
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>

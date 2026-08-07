@@ -149,6 +149,7 @@
 					<i class="clock outline icon"></i> New Studies
 					<div class="sub header">Imaging studies collected in past <?=$numrecentdays?> days</div>
 				</div>
+				<a class="ui right floated button" href="dicomimport.php">Dicom import monitor</a>
 			</div>
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
