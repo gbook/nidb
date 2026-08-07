@@ -1489,7 +1489,19 @@
 									if ($GLOBALS['isadmin']) {
 										if ($isactive) {
 										?>
-											<a class="ui red button" href="subjects.php?action=deleteconfirm&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this subject?')">Delete</a>
+											<div class="ui red button" onclick="$('#deleteSubjectModal').modal('show')">Delete</div>
+
+										<div class="ui modal" id="deleteSubjectModal">
+											<div class="header">Deleting is not recommended</div>
+											<div class="content">
+												<p>NiDB does not delete subjects, they are instead marked as inactive. Deleted/inactive subjects can cause problems later when matching IDs. It is recommended that you edit an existing subject rather than deleting.</p>
+												<p>Are you absolutely sure you want to delete/inactivate this subject?</p>
+											</div>
+											<div class="actions">
+												<div class="ui cancel button">Cancel</div>
+												<a class="ui red button" href="subjects.php?action=deleteconfirm&id=<?=$id?>">Yes, delete it</a>
+											</div>
+										</div>
 										<? } else { ?>
 											<a class="ui red button" href="subjects.php?action=undelete&id=<?=$id?>" onclick="return confirm('Are you sure you want to undelete this subject?')">Undelete</a>
 										<?

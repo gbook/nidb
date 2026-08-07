@@ -857,6 +857,7 @@
 								<option value="<?= $inst['id'] ?>"><?= htmlspecialchars($inst['name']) ?></option>
 								<?php } ?>
 							</select>
+							<a href="instruments.php?projectid=<?=$projectid?>">Manage instruments/items</a>							
 						</div>
 						<div class="field" id="field_nidb_variable">
 							<label>NiDB Variable</label>
