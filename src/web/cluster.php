@@ -41,7 +41,7 @@
 
 	/* ----- setup variables ----- */
 	$clustertype = GetVariable("clustertype");
-	if ($clustertype !== 'slurm') $clustertype = 'sge';
+	if (!in_array($clustertype, array('slurm', 'pipelines'))) $clustertype = 'sge';
 
 	$action = GetVariable("action");
 
@@ -52,8 +52,9 @@
 	/* ------- DisplayClusterPage ----------------- */
 	/* -------------------------------------------- */
 	function DisplayClusterPage($clustertype, $action) {
-		$sgeactive   = ($clustertype === 'sge')   ? 'primary' : 'basic';
-		$slurmactive = ($clustertype === 'slurm') ? 'primary' : 'basic';
+		$sgeactive       = ($clustertype === 'sge')       ? 'primary' : 'basic';
+		$slurmactive     = ($clustertype === 'slurm')     ? 'primary' : 'basic';
+		$pipelinesactive = ($clustertype === 'pipelines') ? 'primary' : 'basic';
 		?>
 		<div class="ui container">
 			<div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
@@ -62,10 +63,20 @@
 					<a href="cluster.php?clustertype=sge"   class="ui <?=$sgeactive?>   button">SGE</a>
 					<a href="cluster.php?clustertype=slurm" class="ui <?=$slurmactive?> button">Slurm</a>
 				</div>
+				<div class="ui buttons">
+					<a href="cluster.php?clustertype=pipelines" class="ui <?=$pipelinesactive?> button">Pipelines</a>
+				</div>
+
+				<div style="margin-left:auto; display:flex; align-items:center; gap:10px">
+					<span style="color:#888">Page loaded <?=date('M j, Y g:i:s a')?></span>
+					<button type="button" class="ui basic button" onclick="location.reload()"><i class="sync icon"></i> Refresh</button>
+				</div>
 			</div>
 
 			<? if ($clustertype === 'slurm') { ?>
 				<? DisplaySlurmTabs($action); ?>
+			<? } elseif ($clustertype === 'pipelines') { ?>
+				<? DisplayPipelines(); ?>
 			<? } else { ?>
 				<? DisplaySGETabs($action); ?>
 			<? } ?>
@@ -75,6 +86,152 @@
 			$(document).ready(function() {
 				$('.tabular.menu .item').tab();
 			});
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayPipelines ------------------- */
+	/* -------------------------------------------- */
+	/* pipeline analyses that are currently queued or running (pending/processing/submitted) */
+	function DisplayPipelines() {
+		$sqlstring = "select a.analysis_id, a.pipeline_id, p.pipeline_name, u.username, s.uid, st.study_num, a.analysis_startdate, a.analysis_clusterstartdate, a.analysis_status, a.analysis_statusmessage, p.pipeline_clustertype, a.analysis_qsubid, a.analysis_hostname from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join users u on p.pipeline_admin = u.user_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_status in ('pending', 'processing', 'submitted') order by a.analysis_clusterstartdate desc, a.analysis_startdate desc";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = array(
+				'analysisid'       => (int)($row['analysis_id'] ?? 0),
+				'pipelineid'       => (int)($row['pipeline_id'] ?? 0),
+				'pipeline'         => (string)($row['pipeline_name'] ?? ''),
+				'owner'            => (string)($row['username'] ?? ''),
+				'study'            => (string)(($row['uid'] ?? '') . ($row['study_num'] ?? '')),
+				'startdate'        => (string)($row['analysis_startdate'] ?? ''),
+				'clusterstartdate' => (string)($row['analysis_clusterstartdate'] ?? ''),
+				'status'           => (string)($row['analysis_status'] ?? ''),
+				'statusmessage'    => (string)($row['analysis_statusmessage'] ?? ''),
+				'clustertype'      => (string)($row['pipeline_clustertype'] ?? ''),
+				'qsubid'           => (string)($row['analysis_qsubid'] ?? ''),
+				'hostname'         => (string)($row['analysis_hostname'] ?? ''),
+			);
+		}
+		$rowsJson = json_encode($rows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		?>
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+
+		<!-- break out of the constrained .ui.container so the grid spans (nearly) the full page width -->
+		<div style="width:96vw; margin-left:calc(50% - 48vw)">
+			<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+				<input type="text" id="pipelineFilter" placeholder="Search..." oninput="pipelineGridApi.setGridOption('quickFilterText', this.value)" style="padding:5px 8px; width:250px; border:1px solid #ccc; border-radius:4px">
+				<div class="ui selection dropdown" id="withSelectedDropdown" style="margin-left:auto">
+					<input type="hidden" id="withSelectedValue">
+					<i class="dropdown icon"></i>
+					<div class="default text">With selected...</div>
+					<div class="menu">
+						<div class="item" data-value="markanalysescomplete">Mark analyses complete</div>
+						<div class="item" data-value="deleteanalyses">Delete analysis</div>
+					</div>
+				</div>
+			</div>
+			<div id="pipelinesGrid" style="height:60vh; width:100%"></div>
+		</div>
+
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
+		<script>
+		let pipelineGridApi;
+		(function() {
+			const rowData = <?=$rowsJson?>;
+
+			const columnDefs = [
+				{ field: 'pipeline', headerName: 'Pipeline', flex: 2, cellRenderer: function(params) {
+						const a = document.createElement('a');
+						a.href = 'pipelines.php?pipelineid=' + encodeURIComponent(params.data.pipelineid);
+						a.textContent = params.value || '';
+						return a;
+					}
+				},
+				{ field: 'owner',            headerName: 'Owner',               flex: 1 },
+				{ field: 'study',            headerName: 'Study',               flex: 1 },
+				{ field: 'startdate',        headerName: 'Analysis start date', flex: 1 },
+				{ field: 'clusterstartdate', headerName: 'Cluster start date',  flex: 1 },
+				{ field: 'status',           headerName: 'Status',              width: 130 },
+				{ field: 'statusmessage',    headerName: 'Status message',      flex: 1 },
+				{ field: 'clustertype',      headerName: 'Cluster type',        width: 130 },
+				{ field: 'qsubid',           headerName: 'Qsub ID',             width: 130 },
+				{ field: 'hostname',         headerName: 'Hostname',            flex: 1 },
+			];
+
+			const gridOptions = {
+				columnDefs: columnDefs,
+				rowData: rowData,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				/* v36 object-form selection: adds a checkbox column + header select-all checkbox.
+				   enableClickSelection defaults to false, so clicking the Pipeline link (or a row)
+				   does not change the selection - only the checkbox does. */
+				rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
+				/* no theme set -> v36 defaults to the Quartz theme via the Theming API */
+			};
+
+			const gridDiv = document.getElementById('pipelinesGrid');
+			pipelineGridApi = agGrid.createGrid(gridDiv, gridOptions);
+		})();
+
+		/* returns the data objects for the currently checked rows */
+		function getSelectedPipelineRows() {
+			return pipelineGridApi ? pipelineGridApi.getSelectedRows() : [];
+		}
+
+		/* mark the selected analyses complete with a message */
+		function markSelectedAnalysesComplete() {
+			const rows = getSelectedPipelineRows();
+			const ids = rows.map(function(r) { return r.analysisid; }).filter(function(id) { return id > 0; });
+			if (ids.length === 0) { alert('No rows are selected.'); return; }
+			if (!confirm('Mark ' + ids.length + ' selected analys' + (ids.length === 1 ? 'is' : 'es') + ' as complete?')) return;
+
+			fetch('ajaxapi.php', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'action=markanalysescomplete&analysisids=' + encodeURIComponent(JSON.stringify(ids))
+			})
+				.then(function(r) { return r.ok ? r.json() : null; })
+				.then(function(d) {
+					if (d && d.ok) location.reload();   /* completed rows drop out of the pending/processing/submitted filter */
+					else alert('Error marking analyses as complete' + (d && d.error ? ': ' + d.error : '.'));
+				})
+				.catch(function(e) { alert('Error marking analyses as complete: ' + e); });
+		}
+
+		/* queue the selected analyses for permanent deletion */
+		function deleteSelectedAnalyses() {
+			const rows = getSelectedPipelineRows();
+			const ids = rows.map(function(r) { return r.analysisid; }).filter(function(id) { return id > 0; });
+			if (ids.length === 0) { alert('No rows are selected.'); return; }
+			if (!confirm('Delete ' + ids.length + ' selected analys' + (ids.length === 1 ? 'is' : 'es') + '?\n\nThe analysis data will be queued for permanent deletion.')) return;
+
+			fetch('ajaxapi.php', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+				body: 'action=deleteanalyses&analysisids=' + encodeURIComponent(JSON.stringify(ids))
+			})
+				.then(function(r) { return r.ok ? r.json() : null; })
+				.then(function(d) {
+					if (d && d.ok) location.reload();
+					else alert('Error deleting analyses' + (d && d.error ? ': ' + d.error : '.'));
+				})
+				.catch(function(e) { alert('Error deleting analyses: ' + e); });
+		}
+
+		/* wire the 'With selected...' dropdown. Explicit init in case it renders after the global
+		   .ui.dropdown setup has run. Reset to the placeholder after each action. */
+		$(function() {
+			$('#withSelectedDropdown').dropdown({
+				onChange: function(value) {
+					if (value === 'markanalysescomplete') markSelectedAnalysesComplete();
+					else if (value === 'deleteanalyses') deleteSelectedAnalyses();
+					if (value !== '') $('#withSelectedDropdown').dropdown('clear');
+				}
+			});
+		});
 		</script>
 		<?
 	}

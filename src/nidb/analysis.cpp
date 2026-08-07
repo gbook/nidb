@@ -233,6 +233,8 @@ QJsonObject analysis::GetJSONObject() {
  * @brief Get a squirrel analysis object
  * @return squirrelAnalysis object
  */
+/* excluded from the cluster build, which does not link the squirrel library */
+#ifndef NIDB_CLUSTER_BUILD
 squirrelAnalysis analysis::GetSquirrelObject(QString databaseUUID) {
     squirrelAnalysis s(databaseUUID);
 
@@ -253,3 +255,4 @@ squirrelAnalysis analysis::GetSquirrelObject(QString databaseUUID) {
 
 	return s;
 }
+#endif

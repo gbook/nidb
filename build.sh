@@ -119,6 +119,12 @@ $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
 
+# ----- build NiDB cluster (cluster-only executable; links neither dcmtk nor squirrel) -----
+echo -e "\nBuilding NiDB cluster\n"
+$QMAKEBIN -o $BUILDDIR/nidbcluster/Makefile $SRCDIR/nidb/nidbcluster.pro -spec linux-g++
+cd $BUILDDIR/nidbcluster
+make -B -j 16
+
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cd $ORIGDIR
 echo -e "\nCopying libsquirrel to /lib"
@@ -132,5 +138,8 @@ sudo cp -uv $BUILDDIR/squirrel/libsquirrel.a /lib/x86_64-linux-gnu/
 echo -e "\nCopying nidb to /nidb/bin"
 sudo mkdir -p /nidb/bin
 sudo cp -uv $BUILDDIR/nidb/nidb /nidb/bin/
+
+echo -e "\nCopying nidbcluster to /nidb/bin"
+sudo cp -uv $BUILDDIR/nidbcluster/nidbcluster /nidb/bin/
 
 #zip -j nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail* ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so*

@@ -122,18 +122,6 @@ table.merge { padding: 0px; border-collapse: collapse; }
 .merge td.bodyhighlighted { background-color: #FFFFBF; border-right: 1px solid #ccc; padding: 5px 8px; border-bottom: 1px solid #ccc; }
 .merge td.selected { background-color: yellow; }
 
-/* gray display table (multiple rows) */
-table.graydisplaytable { padding: 0px; border: 1px solid #bdbdbd; border-spacing: 0px; }
-.graydisplaytable th { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; text-align: left; }
-.graydisplaytable th.right { font-weight: bold; color: #333; font-size: 12pt; padding: 5px; background-color: #ddd; text-align: right; }
-.graydisplaytable td { border-top: 1px solid #DDD; font-size: 11pt; padding: 2px 4px; vertical-align: top }
-.graydisplaytable td.child { font-size: 11pt; padding: 2px 4px; }
-.graydisplaytable td.subheader { border-bottom: 1px solid #DDD; font-size: 11pt; padding: 3px 6px; background-color: #EFEFEF; }
-.graydisplaytable tbody tr:hover { background-color: #eee; }
-.graydisplaytable .tiny { font-weight: normal; font-size:8pt; color:#888888; }
-.graydisplaytable a { text-decoration: none; color: #224ea5; }
-.graydisplaytable a:hover { text-decoration: underline; color: #224ea5; }
-
 .movementsubtable { border-spacing: 0px; padding: 0px; margin: 0px; border: none; width: 100%; height: 100%; border-radius:0px; }
 .movementsubtable td.mainval { border: none; margin: 0px; text-align: right; padding:8px; border-radius:0px; }
 .movementsubtable td.subval { border: none; margin: 0px; font-size:8pt; color: #555555; text-align: right; border-radius:0px; }

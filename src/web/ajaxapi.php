@@ -250,6 +250,12 @@
 		case 'fileiolist':
 			GetFileIOList();
 			break;
+		case 'markanalysescomplete':
+			MarkAnalysesComplete(GetVariable('analysisids'));
+			break;
+		case 'deleteanalyses':
+			DeleteSelectedAnalyses(GetVariable('analysisids'));
+			break;
 	}
 	
 
@@ -2581,6 +2587,100 @@
 		JsonHeader();
 		list($rows, $pendingCount) = GetFileIORequests();
 		echo json_encode($rows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MarkAnalysesComplete --------------- */
+	/* -------------------------------------------- */
+	/* Marks the given analyses (from the cluster.php pipelines grid) as complete: Ids arrive as a JSON array; each is cast to int and bound. */
+	function MarkAnalysesComplete($idsJson) {
+		JsonHeader();
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('ok' => false, 'error' => 'No analyses selected'));
+			return;
+		}
+		$cleanIds = array();
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id > 0) $cleanIds[] = $id;
+		}
+		if (count($cleanIds) === 0) {
+			echo json_encode(array('ok' => false, 'error' => 'No valid analysis IDs'));
+			return;
+		}
+		$placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
+		$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked complete by user', analysis_statusdatetime = now(), analysis_enddate = now(), analysis_iscomplete = 1 where analysis_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$types = str_repeat('i', count($cleanIds));
+		mysqli_stmt_bind_param($stmt, $types, ...$cleanIds);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $cleanIds);
+		$affected = mysqli_stmt_affected_rows($stmt);
+		mysqli_stmt_close($stmt);
+		echo json_encode(array('ok' => true, 'cancelled' => (int)$affected));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteSelectedAnalyses ------------- */
+	/* -------------------------------------------- */
+	/* Queues the given analyses for deletion (from the cluster.php pipelines grid). This mirrors the
+	   core of analysis.php DeleteAnalyses() - mark the analysis 'Queued for deletion' and insert a
+	   'delete' fileio_requests row for the fileio module to process - but is standalone and does NOT
+	   disable pipelines, because the cluster selection can span many pipelines. */
+	function DeleteSelectedAnalyses($idsJson) {
+		JsonHeader();
+		$ids = json_decode($idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) {
+			echo json_encode(array('ok' => false, 'error' => 'No analyses selected'));
+			return;
+		}
+		$cleanIds = array();
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			if ($id > 0) $cleanIds[] = $id;
+		}
+		if (count($cleanIds) === 0) {
+			echo json_encode(array('ok' => false, 'error' => 'No valid analysis IDs'));
+			return;
+		}
+
+		/* one group id for the whole batch, matching analysis.php DeleteAnalyses() */
+		$result = MySQLiQuery("select max(group_id) 'maxgroupid' from fileio_requests", __FILE__, __LINE__);
+		$grow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = (int)($grow['maxgroupid'] ?? 0) + 1;
+
+		$deleted = 0;
+		foreach ($cleanIds as $analysisid) {
+			/* mark it so the analysis clearly shows it is going away */
+			$sql1 = "update analysis set analysis_statusmessage = 'Queued for deletion' where analysis_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql1);
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql1, array($analysisid));
+			mysqli_stmt_close($stmt);
+
+			/* level 2 pipelines are group analyses; everything else is a study-level analysis */
+			$sql2 = "select e.pipeline_level from analysis a left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql2);
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$lr = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql2, array($analysisid));
+			$lrow = $lr ? mysqli_fetch_array($lr, MYSQLI_ASSOC) : null;
+			mysqli_stmt_close($stmt);
+			$analysislevel = ((int)($lrow['pipeline_level'] ?? 0) === 2) ? 'groupanalysis' : 'analysis';
+
+			/* queue the deletion for the fileio module. Use the logged-in user from the session:
+			   ajaxapi.php reassigns the global $username to GetVariable("username") near the top, so
+			   $GLOBALS['username'] is not the current user here. */
+			$sql3 = "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('delete', ?, ?, ?, ?, now())";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sql3);
+			$params = array($groupid, $analysislevel, $analysisid, ($_SESSION['username'] ?? ''));
+			mysqli_stmt_bind_param($stmt, 'isis', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql3, $params);
+			mysqli_stmt_close($stmt);
+			$deleted++;
+		}
+		echo json_encode(array('ok' => true, 'deleted' => $deleted));
 	}
 
 ?>
