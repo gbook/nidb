@@ -123,6 +123,7 @@
 		<div style="width:96vw; margin-left:calc(50% - 48vw)">
 			<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
 				<input type="text" id="pipelineFilter" placeholder="Search..." oninput="pipelineGridApi.setGridOption('quickFilterText', this.value)" style="padding:5px 8px; width:250px; border:1px solid #ccc; border-radius:4px">
+				<span style="color:#888">Displaying <span id="pipelineCount"><?=count($rows)?></span> analyses</span>
 				<div class="ui selection dropdown" id="withSelectedDropdown" style="margin-left:auto">
 					<input type="hidden" id="withSelectedValue">
 					<i class="dropdown icon"></i>
@@ -169,6 +170,12 @@
 				   enableClickSelection defaults to false, so clicking the Pipeline link (or a row)
 				   does not change the selection - only the checkbox does. */
 				rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true },
+				/* keep the "Displaying X analyses" count in sync with the rows actually shown
+				   (updates as the quick filter narrows the grid) */
+				onModelUpdated: function(params) {
+					const el = document.getElementById('pipelineCount');
+					if (el) el.textContent = params.api.getDisplayedRowCount();
+				},
 				/* no theme set -> v36 defaults to the Quartz theme via the Theming API */
 			};
 
@@ -511,6 +518,27 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SlurmMemToMB ----------------------- */
+	/* -------------------------------------------- */
+	/* Converts a Slurm memory string to megabytes. Handles K/M/G/T suffixes and the trailing
+	   per-node/per-cpu markers (n/c) that ReqMem can carry (e.g. '4Gn', '4000Mc', '1234K'); a bare
+	   number is assumed to already be MB (sacct is queried with --units=M). Returns 0 for blanks. */
+	function SlurmMemToMB($s) {
+		$s = trim((string)$s);
+		if ($s === '' || !preg_match('/[0-9]/', $s)) return 0.0;
+		$s = rtrim($s, 'ncNC');   /* drop per-node / per-cpu marker */
+		if (!preg_match('/^([0-9]*\.?[0-9]+)\s*([KMGT]?)/i', $s, $m)) return 0.0;
+		$val = (float)$m[1];
+		switch (strtoupper($m[2])) {
+			case 'K': return $val / 1024.0;
+			case 'G': return $val * 1024.0;
+			case 'T': return $val * 1024.0 * 1024.0;
+			default:  return $val;   /* M or bare (already MB) */
+		}
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplaySlurmCommand --------------- */
 	/* -------------------------------------------- */
 	/* renders the command(s) used to populate a tab, at the top of the block */
@@ -772,10 +800,62 @@
 		$cmdInfo  = 'sinfo -s --format="%P|%a|%D|%T" --noheader';
 		/* job counts by state */
 		$cmdQueue = 'squeue -a --format="%T" --noheader';
-		DisplaySlurmCommand(array($cmdInfo, $cmdQueue));
+		/* Per-job requested vs max-used memory for running jobs. squeue supplies the running-job
+		   list, node and requested memory; MaxRSS (live memory used) comes from sstat, because
+		   sacct does not report MaxRSS while a job is still running. */
+		$cmdJobs = 'squeue --states=RUNNING -a --format="%i|%u|%N|%m" --noheader';
+		/* the actual sstat is built from the running job ids below; show a representative form */
+		$cmdMemShow = 'sstat -a --parsable2 --noheader --format=JobID,MaxRSS -j <running job ids>';
+		DisplaySlurmCommand(array($cmdInfo, $cmdQueue, $cmdJobs, $cmdMemShow));
 
 		$rawInfo  = SlurmSSH($cluster, $cmdInfo);
 		$rawQueue = SlurmSSH($cluster, $cmdQueue);
+		$rawJobs  = SlurmSSH($cluster, $cmdJobs);
+
+		/* running jobs keyed by job id (from squeue) */
+		$memJobs = array();
+		$runningIds = array();
+		foreach (array_filter(array_map('trim', explode("\n", $rawJobs))) as $line) {
+			$f = explode('|', $line);
+			if (count($f) < 4) continue;
+			list($jid, $juser, $node, $reqmem) = $f;
+			$jid = trim($jid);
+			if ($jid === '') continue;
+			$memJobs[$jid] = array('jobid' => $jid, 'user' => trim($juser), 'node' => trim($node), 'reqmem' => SlurmMemToMB($reqmem), 'maxrss' => 0.0);
+			$runningIds[] = $jid;
+		}
+
+		/* live MaxRSS via sstat for all running jobs in one call. Sanitize the ids (digits and the
+		   array-task underscore only) before they go into the command. Step lines are 'JobID.step'. */
+		$safeIds = array();
+		foreach ($runningIds as $rid) {
+			$rid = preg_replace('/[^0-9_]/', '', $rid);
+			if ($rid !== '') $safeIds[] = $rid;
+		}
+		if (count($safeIds) > 0) {
+			$cmdMem = 'sstat -a --parsable2 --noheader --format=JobID,MaxRSS -j ' . implode(',', $safeIds);
+			$rawMem = SlurmSSH($cluster, $cmdMem);
+			foreach (array_filter(array_map('trim', explode("\n", $rawMem))) as $line) {
+				$f = explode('|', $line);
+				if (count($f) < 2) continue;
+				$base = strtok(trim($f[0]), '.');
+				if (isset($memJobs[$base])) {
+					$rss = SlurmMemToMB($f[1]);
+					if ($rss > $memJobs[$base]['maxrss']) $memJobs[$base]['maxrss'] = $rss;
+				}
+			}
+		}
+
+		/* index -> list for sorting */
+		$memJobs = array_values($memJobs);
+		/* sort by node, then job id */
+		usort($memJobs, function($a, $b) {
+			$c = strnatcasecmp($a['node'], $b['node']);
+			return $c !== 0 ? $c : strnatcasecmp($a['jobid'], $b['jobid']);
+		});
+		/* the largest of any requested/used value sets the full-width scale so rows are comparable */
+		$memScaleMax = 0.0;
+		foreach ($memJobs as $j) { $memScaleMax = max($memScaleMax, $j['maxrss'], $j['reqmem']); }
 
 		/* tally jobs by state */
 		$jobCounts = [];
@@ -858,6 +938,44 @@
 			<? } ?>
 			</tbody>
 		</table>
+		<? } ?>
+
+		<!-- per-job memory usage: light-red bar = max memory used, light-gray = requested minimum overlaid on the left -->
+		<h4 class="ui dividing header">Memory usage by running job</h4>
+		<? if (empty($memJobs)) { ?>
+			<div class="ui info message">No running jobs, or accounting data (sacct) is not available.</div>
+		<? } else {
+			$memChartW = 300;   /* full-width in pixels, = the largest requested/used value */
+			?>
+			<table class="ui small very compact celled grey table">
+				<thead>
+					<tr>
+						<th>Node</th>
+						<th>Job</th>
+						<th>User</th>
+						<th>Memory <span style="font-weight:normal; color:#888">(<span style="color:#c23b3b">&#9646;</span> max used &nbsp; <span style="color:#999">&#9646;</span> requested)</span></th>
+					</tr>
+				</thead>
+				<tbody>
+				<? foreach ($memJobs as $j) {
+					$redW  = ($memScaleMax > 0) ? round(($j['maxrss'] / $memScaleMax) * $memChartW) : 0;
+					$grayW = ($memScaleMax > 0) ? round(($j['reqmem'] / $memScaleMax) * $memChartW) : 0;
+					?>
+					<tr>
+						<td><?=htmlspecialchars($j['node'])?></td>
+						<td><?=htmlspecialchars($j['jobid'])?></td>
+						<td><?=htmlspecialchars($j['user'])?></td>
+						<td>
+							<div style="position:relative; width:<?=$memChartW?>px; max-width:100%; height:16px; background:#f4f4f4; border:1px solid #eee">
+								<div style="position:absolute; left:0; top:0; height:100%; width:<?=$redW?>px; background:#f5a9ad" title="Max used: <?=number_format($j['maxrss'])?> MB"></div>
+								<div style="position:absolute; left:0; top:0; height:100%; width:<?=$grayW?>px; background:#c8c8c8" title="Requested: <?=number_format($j['reqmem'])?> MB"></div>
+							</div>
+							<span class="tiny" style="color:#888"><?=number_format($j['reqmem'])?> MB req &middot; <?=number_format($j['maxrss'])?> MB max</span>
+						</td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
 		<? } ?>
 		<?
 	}
