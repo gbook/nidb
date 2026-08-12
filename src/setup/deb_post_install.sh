@@ -246,6 +246,15 @@ else
     chown nidb:nidb /nidb/*
 fi
 
+# make sure nidb.cfg is owned by and writeable by the nidb account. settings.php (running as the
+# nidb php-fpm user) rewrites this file via WriteConfig(), so it must be nidb-writeable. Package
+# install can leave it root-owned, which breaks saving settings.
+echo 'Ensuring nidb.cfg is writeable by the nidb account...'
+if [[ -f /nidb/nidb.cfg ]]; then
+    chown nidb:nidb /nidb/nidb.cfg
+    chmod 640 /nidb/nidb.cfg
+fi
+
 # remove deprecated web files left over from previous versions (package upgrades do not delete them automatically)
 echo 'Removing deprecated web files...'
 DEPRECATED_WEB_FILES=(
