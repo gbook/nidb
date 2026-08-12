@@ -158,6 +158,10 @@
 	$c['clusteranalysisdir'] = GetVariable("clusteranalysisdir");
 	$c['clusteranalysisdirb'] = GetVariable("clusteranalysisdirb");
     $c['archivedir'] = GetVariable("archivedir");
+    $c['archivedir1'] = GetVariable("archivedir1");
+    $c['archivedir2'] = GetVariable("archivedir2");
+    $c['archivedir3'] = GetVariable("archivedir3");
+    $c['archivedir4'] = GetVariable("archivedir4");
     $c['backupdir'] = GetVariable("backupdir");
     $c['deleteddir'] = GetVariable("deleteddir");
     $c['downloaddir'] = GetVariable("downloaddir");

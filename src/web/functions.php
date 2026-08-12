@@ -3167,10 +3167,19 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		/* load the actual .cfg file */
 		$GLOBALS['cfg'] = LoadConfig();
 	
+		/* PHP 8.1+ mysqli throws mysqli_sql_exception on a failed connect (the old
+		   `or $dbconnect = false` idiom no longer fires), so catch it explicitly. A
+		   blank/unconfigured dev DB is normal and must not be a fatal error. */
 		$dbconnect = true;
 		$devdbconnect = true;
-		$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'],$GLOBALS['cfg']['mysqluser'],$GLOBALS['cfg']['mysqlpassword'],$GLOBALS['cfg']['mysqldatabase']) or $dbconnect = false;
-		$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'],$GLOBALS['cfg']['mysqldevuser'],$GLOBALS['cfg']['mysqldevpassword'],$GLOBALS['cfg']['mysqldevdatabase']) or $devdbconnect = false;
+		try {
+			$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'] ?? '', $GLOBALS['cfg']['mysqluser'] ?? '', $GLOBALS['cfg']['mysqlpassword'] ?? '', $GLOBALS['cfg']['mysqldatabase'] ?? '');
+			if ($L) mysqli_close($L);
+		} catch (Throwable $e) { $dbconnect = false; }
+		try {
+			$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'] ?? '', $GLOBALS['cfg']['mysqldevuser'] ?? '', $GLOBALS['cfg']['mysqldevpassword'] ?? '', $GLOBALS['cfg']['mysqldevdatabase'] ?? '');
+			if ($Ldev) mysqli_close($Ldev);
+		} catch (Throwable $e) { $devdbconnect = false; }
 
 		if ($returnpage == "setup") { $active = "active"; } else { $active = ""; }
 		
@@ -3202,6 +3211,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
 		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
+		/* storage tiers (archivedir1..archivedir4): optional, blank when unconfigured */
+		$archivedir1 = $GLOBALS['cfg']['archivedir1'] ?? "";
+		$archivedir2 = $GLOBALS['cfg']['archivedir2'] ?? "";
+		$archivedir3 = $GLOBALS['cfg']['archivedir3'] ?? "";
+		$archivedir4 = $GLOBALS['cfg']['archivedir4'] ?? "";
 		if (($GLOBALS['cfg']['backupdir'] != "") && (isset($GLOBALS['cfg']['backupdir']))) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
 		if (($GLOBALS['cfg']['clusteranalysisdir'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdir']))) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
 		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
@@ -3855,6 +3869,14 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['archivedir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory for archived data. All binary data is stored in this directory.</td>
 						</tr>
+						<? for ($t = 1; $t <= 4; $t++) { $tierdir = ${"archivedir$t"}; ?>
+						<tr>
+							<td class="right aligned tt">archivedir<?=$t?></td>
+							<td><input type="text" name="archivedir<?=$t?>" value="<?=$tierdir?>"></td>
+							<td class="center aligned"><? if ($tierdir == "") { ?><i class="large grey minus icon"></i><? } elseif (file_exists($tierdir)) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td>Optional storage tier <?=$t?>. Reserved for tiered storage; leave blank if unused.</td>
+						</tr>
+						<? } ?>
 						<tr>
 							<td class="right aligned tt">backupdir</td>
 							<td><input type="text" name="backupdir" value="<?=$backupdir?>"></td>
@@ -4079,6 +4101,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
 		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
 		if ($archivedir == "") { $archivedir = "/nidb/data/archive"; }
+		/* storage tiers (archivedir1..archivedir4): optional, blank by default. Reserved for tiered storage. */
+		if (!isset($archivedir1)) { $archivedir1 = ""; }
+		if (!isset($archivedir2)) { $archivedir2 = ""; }
+		if (!isset($archivedir3)) { $archivedir3 = ""; }
+		if (!isset($archivedir4)) { $archivedir4 = ""; }
 		if ($backupdir == "") { $backupdir = "/nidb/data/backup"; }
 		if ($clusteranalysisdir == "") { $clusteranalysisdir = "/nidb/data/pipeline"; }
 		if ($clusteranalysisdirb == "") { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
@@ -4165,7 +4192,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
-[emaillib] = $emaillib
 [emailusername] = $emailusername
 [emailpassword] = $emailpassword
 [emailserver] = $emailserver
@@ -4182,7 +4208,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [sitecolor] = $sitecolor
 [ispublic] = $ispublic
 [sitetype] = $sitetype
-[allowphi] = $allowphi
 [uploadsizelimit] = $uploadsizelimit
 [displayrecentstudies] = $displayrecentstudies
 [displayrecentstudydays] = $displayrecentstudydays
@@ -4213,11 +4238,8 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [enablenfs] = $enablenfs
 [enableftp] = $enableftp
 [allowrawdicomexport] = $allowrawdicomexport
-[redcapurl] = $redcapurl
-[redcaptoken] = $redcaptoken
 
 # ----- qc -----
-#[fslbinpath] = $fslbinpath
 [fsldir] = $fsldir
 
 # ----- cluster -----
@@ -4247,6 +4269,10 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [analysisdir] = $analysisdir
 [analysisdirb] = $analysisdirb
 [archivedir] = $archivedir
+[archivedir1] = $archivedir1
+[archivedir2] = $archivedir2
+[archivedir3] = $archivedir3
+[archivedir4] = $archivedir4
 [backupdir] = $backupdir
 [clusteranalysisdir] = $clusteranalysisdir
 [clusteranalysisdirb] = $clusteranalysisdirb
@@ -4321,9 +4347,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [sitename] = $sitename
 [clusteranalysisdir] = $clusteranalysisdir
 [clusteranalysisdirb] = $clusteranalysisdirb
-
-# ----- qc -----
-[fslclusterbinpath] = $fslclusterbinpath
 ";
 		$clustercfgfile = dirname($GLOBALS['cfg']['cfgpath']) . "/nidb-cluster.cfg";
 		$ret = file_put_contents($clustercfgfile, $str);

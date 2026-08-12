@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 07, 2026 at 03:13 PM
+-- Generation Time: Aug 12, 2026 at 01:11 AM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -3005,6 +3005,23 @@ CREATE TABLE `sr_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `storage_tiers`
+--
+
+CREATE TABLE `storage_tiers` (
+  `storagetier_id` int(11) NOT NULL,
+  `storage_configname` varchar(50) NOT NULL,
+  `storage_type` enum('nfs','s3','gcs') DEFAULT NULL COMMENT 'NFS (default) includes all Linux paths, Amazon S3, Google cloud storage (GCS)',
+  `storage_path` text NOT NULL COMMENT 'full path to the root of the storage',
+  `storage_username` varchar(255) DEFAULT NULL COMMENT 'if there is a username to access the storage',
+  `storage_password` varchar(255) DEFAULT NULL COMMENT 'password',
+  `storage_token` text DEFAULT NULL COMMENT 'access token',
+  `storage_capacity` int(11) NOT NULL DEFAULT 0 COMMENT 'capacity in GB'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `studies`
 --
 
@@ -4608,6 +4625,12 @@ ALTER TABLE `sr_series`
   ADD KEY `fk_eeg_series_studies1` (`study_id`);
 
 --
+-- Indexes for table `storage_tiers`
+--
+ALTER TABLE `storage_tiers`
+  ADD PRIMARY KEY (`storagetier_id`);
+
+--
 -- Indexes for table `studies`
 --
 ALTER TABLE `studies`
@@ -5652,6 +5675,12 @@ ALTER TABLE `snp_series`
 --
 ALTER TABLE `sr_series`
   MODIFY `srseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `storage_tiers`
+--
+ALTER TABLE `storage_tiers`
+  MODIFY `storagetier_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `studies`

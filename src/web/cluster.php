@@ -857,6 +857,23 @@
 		$memScaleMax = 0.0;
 		foreach ($memJobs as $j) { $memScaleMax = max($memScaleMax, $j['maxrss'], $j['reqmem']); }
 
+		/* Cross-reference each slurm job id against NiDB analyses (analysis.analysis_qsubid). Where a
+		   match exists, show its pipeline name and UID/study number. One query for all running ids. */
+		$analysisByQsub = array();
+		$qsubInts = array();
+		foreach ($memJobs as $j) { $q = (int)$j['jobid']; if ($q > 0) $qsubInts[$q] = true; }
+		if (count($qsubInts) > 0) {
+			$idlist = implode(',', array_keys($qsubInts));
+			$sqlstring = "select a.analysis_qsubid, p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_qsubid in ($idlist)";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$analysisByQsub[(string)$row['analysis_qsubid']] = array(
+					'pipeline' => (string)($row['pipeline_name'] ?? ''),
+					'study'    => (string)(($row['uid'] ?? '') . ($row['study_num'] ?? '')),
+				);
+			}
+		}
+
 		/* tally jobs by state */
 		$jobCounts = [];
 		foreach (array_filter(array_map('trim', explode("\n", $rawQueue))) as $state) {
@@ -953,6 +970,8 @@
 						<th>Node</th>
 						<th>Job</th>
 						<th>User</th>
+						<th>Pipeline</th>
+						<th>Study</th>
 						<th>Memory <span style="font-weight:normal; color:#888">(<span style="color:#c23b3b">&#9646;</span> max used &nbsp; <span style="color:#999">&#9646;</span> requested)</span></th>
 					</tr>
 				</thead>
@@ -960,11 +979,14 @@
 				<? foreach ($memJobs as $j) {
 					$redW  = ($memScaleMax > 0) ? round(($j['maxrss'] / $memScaleMax) * $memChartW) : 0;
 					$grayW = ($memScaleMax > 0) ? round(($j['reqmem'] / $memScaleMax) * $memChartW) : 0;
+					$match = $analysisByQsub[(string)(int)$j['jobid']] ?? null;
 					?>
 					<tr>
 						<td><?=htmlspecialchars($j['node'])?></td>
 						<td><?=htmlspecialchars($j['jobid'])?></td>
 						<td><?=htmlspecialchars($j['user'])?></td>
+						<td><?=htmlspecialchars($match['pipeline'] ?? '')?></td>
+						<td><?=htmlspecialchars($match['study'] ?? '')?></td>
 						<td>
 							<div style="position:relative; width:<?=$memChartW?>px; max-width:100%; height:16px; background:#f4f4f4; border:1px solid #eee">
 								<div style="position:absolute; left:0; top:0; height:100%; width:<?=$redW?>px; background:#f5a9ad" title="Max used: <?=number_format($j['maxrss'])?> MB"></div>
