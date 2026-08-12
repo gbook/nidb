@@ -44,41 +44,148 @@ resolver (§2.4).
 
 ### 1.1 Reference inventory (per file)
 
-Counts of the **`archivedir`** config reference only (the base archive root — `archivedir1`–
-`archivedir4` are excluded). Top-level files only; no subdirectories. "Clear reads" are direct
-config accesses (`cfg["archivedir"]` / `$cfg['archivedir']` / `$GLOBALS['cfg']['archivedir']`) — the
-sites the resolver refactor must convert. Ambiguous/other mentions are listed separately below.
+Every location of the **`archivedir`** config read (the base archive root only — `archivedir1`–`archivedir4` excluded), with line numbers and a snippet. Top-level files only; no subdirectories. These are the sites the resolver refactor (§2.4) must convert. Lines marked *(×2)* contain the reference twice.
 
-**C++ (`src/nidb`) — `cfg["archivedir"]`: 29 reads in 8 files**
+**C++ (`src/nidb`) — `cfg["archivedir"]`: 29 references across 26 lines in 8 files**
 
-| File | Reads |
-|------|------:|
-| `archiveio.cpp` | 9 |
-| `moduleExport.cpp` | 5 |
-| `modulePipeline.cpp` | 3 |
-| `series.cpp` | 3 |
-| `study.cpp` | 3 |
-| `subject.cpp` | 3 |
-| `moduleMRIQA.cpp` | 2 |
-| `moduleQC.cpp` | 1 |
+`archiveio.cpp` (9)
+- L708 — `if (!SafeDeletePath(newfile, n->cfg["archivedir"], m))`
+- L852 — `QString outbehdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(...`
+- L1558 — `QString outdir = QString("%1/%2/%3/%4/parrec").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(...`
+- L1586 — `QString systemstring = QString("chmod -Rf 777 %1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(s...`
+- L1901 — `QString outdir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(subjectUID).arg(studynum).arg(Seri...`
+- L1923 — `QString systemstring = QString("chmod -Rf 777 %1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUID).arg(s...`
+- L3885 — `QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum)...`
+- L3886 — `QString behdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
+- L3887 — `QString qcdir = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
 
-**PHP (`/var/www/html`) — `$cfg['archivedir']`: 58 reads in 19 files**
+`moduleExport.cpp` (5)
+- L320 — `QString datadir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum)...`
+- L321 — `QString behdir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
+- L322 — `QString qcdir = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
+- L1792 — `QString inDirPath = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnu...`
+- L1793 — `QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
 
-| File | Reads | File | Reads |
-|------|------:|------|------:|
-| `studies.php` | 19 | `mrqcchecklist.php` | 1 |
-| `functions.php` | 10 | `niiview.php` | 1 |
-| `search.php` | 6 | `projects.php` | 1 |
-| `upload.php` | 3 | `viewfile.php` | 1 |
-| `cleanup.php` | 2 | `viewimage.php` | 1 |
-| `download.php` | 2 | `viewimagefile.php` | 1 |
-| `managefiles.php` | 2 | `adminstorage.php` | 1 |
-| `mrseriesqa.php` | 2 | `audit.php` | 1 |
-| `qa.php` | 2 | `dicom.php` | 1 |
-| `getfile.php` | 1 | | |
+`modulePipeline.cpp` (3)
+- L1311 — `QString indir = QString("%1/%2/%3/%4/%5").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesn...`
+- L1312 — `QString behindir = QString("%1/%2/%3/%4/beh").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(ser...`
+- L1316 — `indir = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(uid).arg(localstudynum).arg(seriesnum);`
 
-> `functions.php`'s 10 reads mix true archive-path builders (`GetPath`-style helpers) with
-> Settings-page reads (default loader + `file_exists` status check); both are direct `cfg` accesses.
+`series.cpp` (3)
+- L82 *(×2)* — `if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid";...`
+- L87 — `seriespath = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
+
+`study.cpp` (3)
+- L149 *(×2)* — `if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid";...`
+- L153 — `_studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(_uid).arg(_studynum);`
+
+`subject.cpp` (3)
+- L179 *(×2)* — `if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid";...`
+- L182 — `_subjectpath = QString("%1/%2").arg(n->cfg["archivedir"]).arg(_uid);`
+
+`moduleMRIQA.cpp` (2)
+- L144 — `QString qapath = QString("%1/%2/%3/%4/qa").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnum);`
+- L161 — `QString systemstring = QString("cp -v %1/%2/%3/%4/nifti/* %5").arg(n->cfg["archivedir"]).arg(uid).arg(study...`
+
+`moduleQC.cpp` (1)
+- L193 — `QString qcpath = QString("%1/%2/%3/%4/qc/%5").arg(n->cfg["archivedir"]).arg(uid).arg(studynum).arg(seriesnu...`
+
+**PHP (`/var/www/html`) — `$cfg[archivedir]`: 58 references across 57 lines in 19 files**
+
+`studies.php` (19)
+- L448 — `echo "<b>Moving all studies to study ID [$newstudyid] Num [$lowestStudyNum]. Moving data into [" . $GLOBALS...`
+- L464 *(×2)* — `$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $dat...`
+- L563 — `$oldpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$oldstudynum/$seriesnum";`
+- L564 — `$newpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$newstudynum/$seriesnum";`
+- L565 — `$oldpathrenamed = $GLOBALS['cfg']['archivedir'] . "/$uid/$oldstudynum/$seriesnum-" . GenerateRandomString(10);`
+- L1221 — `$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";`
+- L1225 — `rename($archivepath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num-$datetime");`
+- L1291 — `$savepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$modality";`
+- L1295 — `$systemstring = "chmod -R 777 " . $GLOBALS['cfg']['archivedir'] . "/$uid";`
+- L2033 — `$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";`
+- L2271 — `$behs = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh/*");`
+- L2337 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L2338 — `$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";`
+- L2339 — `$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";`
+- L2848 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L2849 — `$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";`
+- L2938 — `$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num";`
+- L2942 — `$newpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num-$datetime";`
+
+`functions.php` (10)
+- L836 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";`
+- L837 — `$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum";`
+- L838 — `$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/qa";`
+- L856 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";`
+- L880 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";`
+- L915 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";`
+- L2131 — `$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";`
+- L2132 — `$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";`
+- L3213 — `if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBA...`
+- L3869 — `<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['archivedir'])) { ?><i class="large green che...`
+
+`search.php` (6)
+- L2001 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L2002 — `$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";`
+- L2307 — `$files = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/dicom/*.dcm");`
+- L2617 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L2618 — `$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";`
+- L3548 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";`
+
+`upload.php` (3)
+- L217 — `$uploadpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh/";`
+- L230 — `$uploadpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/" . strtolower($modality) . "/";`
+- L266 — `$systemstring = "cp -R " . $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/* $backupdir";`
+
+`cleanup.php` (2)
+- L176 — `$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";`
+- L261 — `$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum";`
+
+`download.php` (2)
+- L80 — `$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh";`
+- L84 — `$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";`
+
+`managefiles.php` (2)
+- L81 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";`
+- L83 — `$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/" . strtolower($datatype);`
+
+`mrseriesqa.php` (2)
+- L60 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L61 — `$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/qa";`
+
+`qa.php` (2)
+- L42 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";`
+- L43 — `$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/qa";`
+
+`adminstorage.php` (1)
+- L306 — `$defaultpath = $GLOBALS['cfg']['archivedir'] ?? '';`
+
+`audit.php` (1)
+- L37 — `$archivedir = $GLOBALS['cfg']['archivedir'];`
+
+`dicom.php` (1)
+- L127 — `$archivepath = realpath($GLOBALS['cfg']['archivedir']);`
+
+`getfile.php` (1)
+- L64 — `$archivePath = $GLOBALS['cfg']['archivedir'];`
+
+`mrqcchecklist.php` (1)
+- L515 — `$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";`
+
+`niiview.php` (1)
+- L63 — `$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";`
+
+`projects.php` (1)
+- L925 — `$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";`
+
+`viewfile.php` (1)
+- L36 — `$archivePath = $GLOBALS['cfg']['archivedir'];`
+
+`viewimage.php` (1)
+- L63 — `$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";`
+
+`viewimagefile.php` (1)
+- L37 — `$archivePath = $GLOBALS['cfg']['archivedir'];`
 
 ### 1.2 Ambiguous / non-path mentions (per file)
 

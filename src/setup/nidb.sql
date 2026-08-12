@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 12, 2026 at 01:11 AM
+-- Generation Time: Aug 12, 2026 at 07:21 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -3060,6 +3060,8 @@ CREATE TABLE `studies` (
   `study_isactive` tinyint(1) DEFAULT 1,
   `study_createdby` varchar(50) DEFAULT NULL,
   `study_createdate` datetime DEFAULT NULL,
+  `storage_tier` enum('archivedir1','archivedir2','archivedir3','archivedir4') DEFAULT NULL COMMENT 'NULL for default archivedir, otherwise archivedir1...4',
+  `storage_lastupdate` datetime DEFAULT NULL COMMENT 'datetime of the last change on disk',
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
