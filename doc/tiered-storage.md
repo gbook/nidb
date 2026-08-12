@@ -40,7 +40,66 @@ Implication: tiering cannot be achieved by changing one config value. It require
 of truth** for "where does study N physically live," which today does not exist. The
 `subject`/`study`/`series` classes are the natural seam (they already own path building), but the
 inline `cfg["archivedir"]` usages in the modules and all of PHP must be routed through the same
-resolver (§3.4).
+resolver (§2.4).
+
+### 1.1 Reference inventory (per file)
+
+Counts of the **`archivedir`** config reference only (the base archive root — `archivedir1`–
+`archivedir4` are excluded). Top-level files only; no subdirectories. "Clear reads" are direct
+config accesses (`cfg["archivedir"]` / `$cfg['archivedir']` / `$GLOBALS['cfg']['archivedir']`) — the
+sites the resolver refactor must convert. Ambiguous/other mentions are listed separately below.
+
+**C++ (`src/nidb`) — `cfg["archivedir"]`: 29 reads in 8 files**
+
+| File | Reads |
+|------|------:|
+| `archiveio.cpp` | 9 |
+| `moduleExport.cpp` | 5 |
+| `modulePipeline.cpp` | 3 |
+| `series.cpp` | 3 |
+| `study.cpp` | 3 |
+| `subject.cpp` | 3 |
+| `moduleMRIQA.cpp` | 2 |
+| `moduleQC.cpp` | 1 |
+
+**PHP (`/var/www/html`) — `$cfg['archivedir']`: 58 reads in 19 files**
+
+| File | Reads | File | Reads |
+|------|------:|------|------:|
+| `studies.php` | 19 | `mrqcchecklist.php` | 1 |
+| `functions.php` | 10 | `niiview.php` | 1 |
+| `search.php` | 6 | `projects.php` | 1 |
+| `upload.php` | 3 | `viewfile.php` | 1 |
+| `cleanup.php` | 2 | `viewimage.php` | 1 |
+| `download.php` | 2 | `viewimagefile.php` | 1 |
+| `managefiles.php` | 2 | `adminstorage.php` | 1 |
+| `mrseriesqa.php` | 2 | `audit.php` | 1 |
+| `qa.php` | 2 | `dicom.php` | 1 |
+| `getfile.php` | 1 | | |
+
+> `functions.php`'s 10 reads mix true archive-path builders (`GetPath`-style helpers) with
+> Settings-page reads (default loader + `file_exists` status check); both are direct `cfg` accesses.
+
+### 1.2 Ambiguous / non-path mentions (per file)
+
+Lines that mention `archivedir` but are **not** a clear config read. Called out so the resolver
+refactor neither misses a real usage nor needlessly touches config-management code.
+
+- **`audit.php` (PHP) — real usage via indirection.** Beyond its 1 clear read, it traverses the
+  archive at **7 sites** through a local `$archivedir` variable (`scandir($archivedir)`,
+  `glob("$archivedir/$subject/$study/$series/dicom/*.dcm")`, etc.). A plain `cfg['archivedir']`
+  grep misses these — the resolver work must catch the local-variable form here.
+- **`functions.php` (PHP) — config management, not path construction.** The Settings form field
+  (`name="archivedir"`), the `WriteConfig()` template line (`[archivedir] = $archivedir`), and the
+  default-setter (`if ($archivedir == "") …`) belong to config handling and stay as-is.
+- **`settings.php`, `setup.php`, `system.php` (PHP) — settings save handlers.** Each has one
+  `$c['archivedir'] = GetVariable("archivedir")` (writing config). Not archive reads; not
+  tiering-relevant.
+- **`adminstorage.php` (PHP) — display only.** Besides its 1 read, the remaining mentions are the
+  default-row label and a comment.
+- **`getfile.php` (PHP) — comment only** (a security note); the 1 read is counted above.
+- **`moduleFileIO.cpp` (C++) — log text only.** Two mentions are inside log-message strings
+  ("moving DICOM files from archivedir to incomingdir"); no path is built from the config here.
 
 ---
 
