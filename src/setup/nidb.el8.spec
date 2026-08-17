@@ -31,6 +31,7 @@ mkdir -p %{buildroot}/var/www/html
 mkdir -p %{buildroot}/usr/local/share/dcmtk-3.7.0/
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
+rm -f %{buildroot}/var/www/html/download # do NOT package the download symlink; the post-install creates it if absent so upgrades never clobber a custom download path
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/

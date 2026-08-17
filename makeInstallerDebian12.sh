@@ -38,6 +38,7 @@ cp -rf tools/*                        "$NIDBDIR/bin/"     # bundled helper tools
 cp -rf src/qcmodules/*                "$NIDBDIR/qcmodules/"
 cp -f  src/setup/*                    "$NIDBDIR/setup/"
 cp -rf src/web/*                      "$WEBDIR/"
+rm -f  "$WEBDIR/download"             # do NOT package the download symlink; the postinst creates it if absent so upgrades never clobber a custom download path
 
 # the postinst is the Debian equivalent of the RPM %post; ship a copy under
 # /nidb/setup too (parallel to the RPM), but the one that dpkg runs is DEBIAN/postinst

@@ -1857,7 +1857,11 @@
 													else {
 														$age = $calcage;
 													}
-													
+													/* normalize to a plain number: $calcage is already number_format()'d (comma thousands
+													   separator) and $study_ageatscan may also contain a comma, both of which make
+													   number_format() throw a TypeError on PHP 8. Strip commas and cast to float. */
+													$age = (float)str_replace(',', '', $age);
+
 													if ($study_modality != "") {
 														$sqlstring4 = "show tables like '" . strtolower($study_modality) . "_series'";
 														$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
