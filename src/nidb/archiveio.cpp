@@ -3627,9 +3627,9 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         enrollment enroll(subjectRowID, projectRowID, n);
         //n->Log(QString("enroll(%1, %2)").arg(subjectRowID).arg(projectRowID));
         //enroll.PrintEnrollmentInfo();
-        //n->Log("Checkpoint A");
+        //n->Log("Checkpoint H-1");
         if (!enroll.valid()) continue;
-        //n->Log("Checkpoint B");
+        //n->Log("Checkpoint H-2");
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());

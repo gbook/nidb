@@ -40,6 +40,7 @@ squirrelStudy::squirrelStudy(QString dbID)
     studyDirFormat = "orig";
     subjectDirFormat = "orig";
     valid = false;
+    removed = false;
 
     AgeAtStudy = 0.0;
     DateTime = QDateTime::currentDateTime();
@@ -77,7 +78,93 @@ void squirrelStudy::Populate(const QSqlQuery &q) {
     TimePoint      = q.value("TimePoint").toInt();
     VisitType      = q.value("VisitType").toString();
     Weight         = q.value("Weight").toDouble();
-    valid = true;
+    removed = false;
+    Validate();
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Validate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelStudy::Validate
+ * @return true if this object is in a state that can be written to,
+ * or was read from, a squirrel package
+ *
+ * Checks the object's fields for anything that would produce a corrupt
+ * or unwritable study. Every problem found is appended to the public
+ * 'msg' variable, which is blank if the object is valid. Only
+ * unambiguously wrong values are reported; anything that could
+ * legitimately occur is treated as valid. This performs no database
+ * queries other than checking that the connection exists, so it is safe
+ * to call in a loop.
+ */
+bool squirrelStudy::Validate() {
+
+    QStringList m;
+
+    /* the object must still exist */
+    if (removed)
+        m << "study has been removed from the database";
+
+    /* there must be a usable database connection */
+    if (databaseUUID.trimmed() == "")
+        m << "databaseUUID is not set";
+    else if (!QSqlDatabase::database(databaseUUID, false).isValid())
+        m << QString("database connection [%1] does not exist").arg(databaseUUID);
+
+    /* a study is meaningless without a parent subject */
+    if (subjectRowID < 0)
+        m << QString("subjectRowID [%1] is invalid. A study must belong to a subject").arg(subjectRowID);
+
+    /* StudyNumber is half of the UNIQUE(SubjectRowID, StudyNumber) key, and is used
+       as the directory name when StudyDirFormat is 'orig' */
+    if (StudyNumber < 0)
+        m << QString("StudyNumber [%1] is invalid. Must be 0 or greater").arg(StudyNumber);
+
+    /* directory formats must be one of the two known values */
+    if ((subjectDirFormat != "orig") && (subjectDirFormat != "seq"))
+        m << QString("subjectDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(subjectDirFormat);
+    if ((studyDirFormat != "orig") && (studyDirFormat != "seq"))
+        m << QString("studyDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(studyDirFormat);
+
+    /* a physical measurement can be 0 (unknown), but never negative */
+    if (AgeAtStudy < 0.0)
+        m << QString("AgeAtStudy [%1] is invalid. Must be 0 or greater").arg(AgeAtStudy);
+    if (Height < 0.0)
+        m << QString("Height [%1] is invalid. Must be 0 or greater").arg(Height);
+    if (Weight < 0.0)
+        m << QString("Weight [%1] is invalid. Must be 0 or greater").arg(Weight);
+
+    /* a datetime holding a value that isn't a real date (a failed parse yields a null
+       QDateTime, which is allowed here and simply means 'no datetime') */
+    if (!DateTime.isNull() && !DateTime.isValid())
+        m << "Datetime is set, but is not a valid datetime";
+
+    /* SequenceNumber is deliberately not checked: it is -1 until the subject is
+       resequenced, which happens after the study is stored.
+       DayNumber and TimePoint are also not checked, since a negative value is
+       meaningful for studies before a baseline visit. */
+
+    msg = m.join("; ");
+    valid = m.isEmpty();
+
+    return valid;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- LogInvalid ------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Record, and optionally print, the reason this study is invalid
+ * @param func the calling function name
+ */
+void squirrelStudy::LogInvalid(QString func) {
+
+    err = msg;
+    if (debug)
+        utils::Print(QString("[%1] Invalid study (StudyNumber [%2] SubjectRowID [%3] StudyRowID [%4]): %5").arg(func).arg(StudyNumber).arg(subjectRowID).arg(objectID).arg(msg));
 }
 
 
@@ -96,7 +183,8 @@ void squirrelStudy::Populate(const QSqlQuery &q) {
 bool squirrelStudy::Get() {
     if (objectID < 0) {
         valid = false;
-        err = "objectID is not set";
+        msg = "objectID is not set";
+        err = msg;
         return false;
     }
 
@@ -106,11 +194,17 @@ bool squirrelStudy::Get() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         Populate(q);
+
+        /* the row loaded, but it may still contain values that can't be written back out */
+        if (!Validate())
+            LogInvalid(__FUNCTION__);
+
         return true;
     }
     else {
         valid = false;
-        err = "objectID not found in database";
+        msg = QString("objectID [%1] not found in database").arg(objectID);
+        err = msg;
         return false;
     }
 }
@@ -129,6 +223,12 @@ bool squirrelStudy::Get() {
  * Otherwise it will return false.
  */
 bool squirrelStudy::Store() {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
 
@@ -166,11 +266,13 @@ bool squirrelStudy::Store() {
             utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.next()) {
                 objectID = q2.value("StudyRowID").toLongLong();
-                err = QString("Study [%1] already exists for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+                msg = QString("Study [%1] already exists for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+                err = msg;
             }
             else {
                 valid = false;
-                err = QString("Unable to insert or find study [%1] for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+                msg = QString("Unable to insert or find study [%1] for subject [%2]").arg(StudyNumber).arg(subjectRowID);
+                err = msg;
                 return false;
             }
         }
@@ -211,6 +313,13 @@ bool squirrelStudy::Store() {
  * @return true if successful
  */
 bool squirrelStudy::Store(QSqlQuery &q) {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
+
     q.bindValue(":SubjectRowID", subjectRowID);
     q.bindValue(":StudyNumber", StudyNumber);
     q.bindValue(":Datetime", DateTime);
@@ -266,7 +375,9 @@ bool squirrelStudy::Remove() {
 
     /* in case anyone tries to use this object again */
     objectID = -1;
+    removed = true;
     valid = false;
+    msg = "study has been removed from the database";
 
     return true;
 }

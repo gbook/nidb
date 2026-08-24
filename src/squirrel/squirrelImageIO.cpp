@@ -294,24 +294,48 @@ QMap<QString, CsaElement> squirrelImageIO::ParseSiemensCSA(const QByteArray& csa
 
     stream.skipRawData(4); // unused
 
+    /* nTags, nItems and len below all come straight from the (untrusted) DICOM
+       blob. Every one of them is bounded against the size of the blob before it
+       is used as a loop count or an allocation size: a corrupt or truncated CSA
+       header must never drive a huge allocation or an out-of-bounds read. The
+       whole header cannot describe more entries than it has bytes, so csa.size()
+       is a safe (loose) upper bound. stream.status() is checked after each read
+       so a read past the end of the blob stops parsing instead of continuing
+       with garbage. */
+    const int maxBytes = csa.size();
+    if ((nTags < 0) || (nTags > maxBytes))
+        return result;
+
     for (int t = 0; t < nTags; ++t)
     {
+        if (stream.status() != QDataStream::Ok)
+            break;
+
         char nameBuf[64];
-        stream.readRawData(nameBuf, 64);
-        QString name = QString(QByteArray(nameBuf));
+        if (stream.readRawData(nameBuf, 64) != 64)
+            break;
+        /* nameBuf is not guaranteed to contain a NUL within 64 bytes, so bound
+           the scan explicitly rather than letting QByteArray run off the end */
+        QString name = QString::fromLatin1(nameBuf, qstrnlen(nameBuf, 64));
 
         qint32 vm;
         stream >> vm;
 
         char vrBuf[4];
-        stream.readRawData(vrBuf, 4);
-        QString vr = QString::fromLatin1(vrBuf).trimmed();
+        if (stream.readRawData(vrBuf, 4) != 4)
+            break;
+        QString vr = QString::fromLatin1(vrBuf, qstrnlen(vrBuf, 4)).trimmed();
 
         qint32 syngo_dt;
         qint32 nItems;
         qint32 unused;
 
         stream >> syngo_dt >> nItems >> unused;
+        if (stream.status() != QDataStream::Ok)
+            break;
+
+        if ((nItems < 0) || (nItems > maxBytes))
+            break;
 
         CsaElement element;
         element.name = name;
@@ -320,13 +344,22 @@ QMap<QString, CsaElement> squirrelImageIO::ParseSiemensCSA(const QByteArray& csa
         for (int i = 0; i < nItems; ++i)
         {
             qint32 itemLen[4];
-            stream.readRawData(reinterpret_cast<char*>(itemLen), 16);
+            if (stream.readRawData(reinterpret_cast<char*>(itemLen), 16) != 16)
+                break;
 
             int len = itemLen[1];   // actual length
 
+            /* refuse a length that is negative or larger than the bytes still
+               left in the blob - either indicates a corrupt/truncated header */
+            qint64 avail = stream.device() ? stream.device()->bytesAvailable() : 0;
+            if ((len < 0) || (len > avail))
+                break;
+
             QByteArray value(len, Qt::Uninitialized);
-            if (len > 0)
-                stream.readRawData(value.data(), len);
+            if (len > 0) {
+                if (stream.readRawData(value.data(), len) != len)
+                    break;
+            }
 
             // Skip padding
             int pad = align4(len) - len;

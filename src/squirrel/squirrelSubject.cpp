@@ -43,6 +43,7 @@ squirrelSubject::squirrelSubject(QString dbID)
     SequenceNumber = -1;
 
     valid = false;
+    removed = false;
     debug = false;
     objectID = -1;
     subjectDirFormat = "orig";
@@ -70,7 +71,79 @@ void squirrelSubject::Populate(const QSqlQuery &q) {
     Notes            = q.value("Notes").toString();
     SequenceNumber   = q.value("SequenceNumber").toInt();
     Sex              = q.value("Sex").toString();
-    valid = true;
+    removed = false;
+    Validate();
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Validate --------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelSubject::Validate
+ * @return true if this object is in a state that can be written to,
+ * or was read from, a squirrel package
+ *
+ * Checks the object's fields for anything that would produce a corrupt
+ * or unwritable subject. Every problem found is appended to the public
+ * 'msg' variable, which is blank if the object is valid. Only
+ * unambiguously wrong values are reported; anything that could
+ * legitimately occur is treated as valid. This performs no database
+ * queries other than checking that the connection exists, so it is safe
+ * to call in a loop.
+ */
+bool squirrelSubject::Validate() {
+
+    QStringList m;
+
+    /* the object must still exist */
+    if (removed)
+        m << "subject has been removed from the database";
+
+    /* there must be a usable database connection */
+    if (databaseUUID.trimmed() == "")
+        m << "databaseUUID is not set";
+    else if (!QSqlDatabase::database(databaseUUID, false).isValid())
+        m << QString("database connection [%1] does not exist").arg(databaseUUID);
+
+    /* ID is NOT NULL UNIQUE in the database, and is used as the directory name
+       when SubjectDirFormat is 'orig'. A blank ID is silently dropped on insert */
+    if (ID.trimmed() == "")
+        m << "ID is blank. A subject must have a unique, non-blank ID";
+
+    /* directory format must be one of the two known values */
+    if ((subjectDirFormat != "orig") && (subjectDirFormat != "seq"))
+        m << QString("subjectDirFormat [%1] is invalid. Must be 'orig' or 'seq'").arg(subjectDirFormat);
+
+    /* a date of birth holding a value that isn't a real date (an unset or unparseable
+       date is null, which is allowed here and simply means 'no date of birth') */
+    if (!DateOfBirth.isNull() && !DateOfBirth.isValid())
+        m << "DateOfBirth is set, but is not a valid date";
+
+    /* SequenceNumber is deliberately not checked: it is -1 until the package is
+       resequenced, which happens after the subject is stored.
+       Sex, Gender, Ethnicity1 and Ethnicity2 are free text in practice, so their
+       contents are not checked. */
+
+    msg = m.join("; ");
+    valid = m.isEmpty();
+
+    return valid;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- LogInvalid ------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Record, and optionally print, the reason this subject is invalid
+ * @param func the calling function name
+ */
+void squirrelSubject::LogInvalid(QString func) {
+
+    err = msg;
+    if (debug)
+        utils::Print(QString("[%1] Invalid subject (ID [%2] SubjectRowID [%3]): %4").arg(func).arg(ID).arg(objectID).arg(msg));
 }
 
 
@@ -87,7 +160,8 @@ void squirrelSubject::Populate(const QSqlQuery &q) {
 bool squirrelSubject::Get() {
     if (objectID < 0) {
         valid = false;
-        err = "objectID is not set";
+        msg = "objectID is not set";
+        err = msg;
         return false;
     }
 
@@ -97,11 +171,17 @@ bool squirrelSubject::Get() {
     utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.next()) {
         Populate(q);
+
+        /* the row loaded, but it may still contain values that can't be written back out */
+        if (!Validate())
+            LogInvalid(__FUNCTION__);
+
         return true;
     }
     else {
         valid = false;
-        err = "objectID not found in database";
+        msg = QString("objectID [%1] not found in database").arg(objectID);
+        err = msg;
         return false;
     }
 }
@@ -120,6 +200,12 @@ bool squirrelSubject::Get() {
  * Otherwise it will return false.
  */
 bool squirrelSubject::Store() {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
 
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     /* insert if the object doesn't exist ... */
@@ -152,11 +238,13 @@ bool squirrelSubject::Store() {
             utils::SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.next()) {
                 objectID = q2.value("SubjectRowID").toLongLong();
-                err = QString("Subject [%1] already exists").arg(ID);
+                msg = QString("Subject [%1] already exists").arg(ID);
+                err = msg;
             }
             else {
                 valid = false;
-                err = QString("Unable to insert or find subject [%1]").arg(ID);
+                msg = QString("Unable to insert or find subject [%1]").arg(ID);
+                err = msg;
                 return false;
             }
         }
@@ -194,6 +282,13 @@ bool squirrelSubject::Store() {
  * @return true if successful
  */
 bool squirrelSubject::Store(QSqlQuery &q) {
+
+    /* refuse to write an object that would corrupt the package */
+    if (!Validate()) {
+        LogInvalid(__FUNCTION__);
+        return false;
+    }
+
     q.bindValue(":ID", ID);
     q.bindValue(":AltIDs", AlternateIDs.join(","));
     q.bindValue(":GUID", GUID);
@@ -412,7 +507,9 @@ bool squirrelSubject::Remove() {
 
     /* in case anyone tries to use this object again */
     objectID = -1;
+    removed = true;
     valid = false;
+    msg = "subject has been removed from the database";
 
     return true;
 }

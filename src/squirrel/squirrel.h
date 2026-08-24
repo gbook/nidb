@@ -29,6 +29,7 @@
 #include <QDateTime>
 #include <QDebug>
 #include <QtSql>
+#include <QMutex>
 #include <QUuid>
 #include <sstream>
 #include "squirrelSubject.h"
@@ -168,10 +169,16 @@ public:
     QHash<QString, QString> ReadParamsFile(QString f);
 
     /* logging */
+    /* All of the log accessors below are safe to call from a different thread
+       than the one running a long operation such as Write(). A parent
+       application can therefore run Write() on a worker thread and poll
+       GetLogBuffer()/GetProgress() from another thread to observe progress
+       while the call is still running. */
     void Log(QString s);
     void Debug(QString s, QString func="");
-    QString GetLog() { return log; } /*!< Get the entire log */
-    QString GetLogBuffer();
+    QString GetLog();          /*!< Get the entire log (thread-safe) */
+    QString GetLogBuffer();    /*!< Get and clear log accumulated since the last call (thread-safe) */
+    double GetProgress();      /*!< Get progress (0-100) of the current long operation (thread-safe) */
     bool quiet=false;
 
     /* printing of information to console */
@@ -197,6 +204,13 @@ public:
 private:
     void ResequenceTable(QString table, QString pkCol, QString parentCol, qint64 parentRowID, QString orderBy);
 
+    /* progress reporting for long operations (compression). SetProgress updates
+       the pollable progress value and appends a throttled progress line to the
+       log; ResetProgress zeroes it at the start of an operation. Both are
+       thread-safe (they take logMutex). */
+    void SetProgress(double pct);
+    void ResetProgress();
+
     bool DatabaseConnect();
     bool DeleteTempDir(QString dir);
     bool InitializeDatabase();
@@ -210,11 +224,18 @@ private:
     bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents);
     bool Get7zipLibPath();
     bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m);
+    bool PreloadArchiveForRead(QHash<QString, QByteArray> &paramsByPath, QHash<QString, QStringList> &filesBySeriesDir, QString &m);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
 
+    /* logMutex guards log, logBuffer, progress and lastLoggedProgressPct so the
+       accessors can be called from a different thread than the running operation.
+       It is mutable so it can be locked inside const-like accessors. */
+    mutable QMutex logMutex;
     QString log;
     QString logBuffer;
+    double progress = 0.0;          /* 0-100, progress of the current long operation */
+    int lastLoggedProgressPct = -1; /* last whole percent written to the log, to throttle progress lines */
     QString logfile;
     QString p7zipLibPath;
     QString packagePath;

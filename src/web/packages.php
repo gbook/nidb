@@ -367,19 +367,24 @@
 			$projectids[] = $row['project_id'];
 			$projectid = $row['project_id'];
 			
-			$modality = strtolower($row['study_modality']);
-			
-			$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+			$modality = strtolower(trim($row['study_modality'] ?? ''));
 
-				if (trim($rowA['series_desc']) == "")
-					$seriesdesc = $rowA['series_protocol'];
-				else
-					$seriesdesc = $rowA['series_desc'];
-				
-				$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+			/* a study with a blank/invalid modality has no <modality>_series table -- building the
+			   query anyway yields "_series" and a "Table doesn't exist" error, so skip it. The
+			   modality also names a table, so require plain letters before interpolating it. */
+			if (preg_match('/^[a-z]+$/', $modality)) {
+				$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+
+					if (trim($rowA['series_desc']) == "")
+						$seriesdesc = $rowA['series_protocol'];
+					else
+						$seriesdesc = $rowA['series_desc'];
+
+					$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+				}
 			}
 		}
 		//PrintVariable($seriesids);
@@ -497,19 +502,24 @@
 			$projectids[] = $row['project_id'];
 			$projectid = $row['project_id'];
 			
-			$modality = strtolower($row['study_modality']);
-			
-			$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+			$modality = strtolower(trim($row['study_modality'] ?? ''));
 
-				if (trim($rowA['series_desc']) == "")
-					$seriesdesc = $rowA['series_protocol'];
-				else
-					$seriesdesc = $rowA['series_desc'];
-				
-				$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+			/* a study with a blank/invalid modality has no <modality>_series table -- building the
+			   query anyway yields "_series" and a "Table doesn't exist" error, so skip it. The
+			   modality also names a table, so require plain letters before interpolating it. */
+			if (preg_match('/^[a-z]+$/', $modality)) {
+				$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+
+					if (trim($rowA['series_desc']) == "")
+						$seriesdesc = $rowA['series_protocol'];
+					else
+						$seriesdesc = $rowA['series_desc'];
+
+					$experimentmapping[$modality][$seriesdesc]['projectid'] = $projectid; /* don't make this array unique because multiple mappings could exist for each protocol */
+				}
 			}
 		}
 		//PrintVariable($seriesids);
@@ -1643,114 +1653,35 @@
 
 		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
-		$observationrows = array();
+		/* the true total is counted separately from the rows that are listed. A set of enrollments
+		   can have 100k+ observations, and every listed row is shipped to the browser as JSON for
+		   the ag-grid, so the listing is capped at OBSERVATION_DISPLAY_LIMIT. The count shown to the
+		   user is always the true total, and "add all" (the master toggle) adds EVERY observation --
+		   not just the listed ones -- because the server re-queries them (see AddObjectsToPackage) */
 		$numobservations = 0;
+		$observationRowData = array();
 		if (strlen(trim($enrollmentidstr)) > 0) {
-			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
+			$sqlstring = "select count(*) 'count' from observations where enrollment_id in ($enrollmentidstr)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numobservations = mysqli_num_rows($result);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$numobservations = (int)$row['count'];
+
+			$observationlimit = OBSERVATION_DISPLAY_LIMIT;
+			$sqlstring = "select a.observation_id, a.observation_name, a.observation_value, a.observation_startdate, c.uid, c.subject_id from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in ($enrollmentidstr) order by a.observation_id limit $observationlimit";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$observationrows[] = $row;
+				$observationRowData[] = array(
+					"id"    => (int)$row['observation_id'],
+					"uid"   => (string)($row['uid'] ?? ''),
+					"name"  => (string)($row['observation_name'] ?? ''),
+					"value" => (string)($row['observation_value'] ?? ''),
+					"date"  => (string)($row['observation_startdate'] ?? '')
+				);
 			}
 		}
+		$numobservationslisted = count($observationRowData);
 
-		if ($required) {
-			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
-			$checkboxreadonly = "read-only";
-			$checkboxstate = "checked";
-			$labelstr = "will be added";
-			$numselected = $numobservations;
-		}
-		else {
-			$checkboxstr = "";
-			$checkboxreadonly = "";
-			$checkboxstate = "";
-			$labelstr = "selected";
-			$numselected = 0;
-		}
-		
-		if ((count((array)$enrollmentids) > 0) && ($numobservations > 0)) {
-			?>
-			<script type="text/javascript">
-				$(function() {
-					$("#selectallobservations").click(function() {
-						var checked_status = this.checked;
-						$(".allobservations").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
-						if (this.checked)
-							document.getElementById('includeobservations').checked = true;
-					});
-				});
-				
-				function SelectAllObservations() {
-					var checked_status = document.getElementById('includeobservations').checked;
-					$(".allobservations").find("input[type='checkbox']").each(function() {
-						this.checked = checked_status;
-					});
-					CheckSelectedObservationCount();
-				}
-
-				function CheckSelectedObservationCount(e) {
-					var n = document.querySelectorAll('input[type="checkbox"].observationcheck:checked').length;
-					document.getElementById('numobservationsselected').innerHTML = n;
-
-					if (e.checked)
-						document.getElementById('includeobservations').checked = true;
-				}
-			</script>
-
-			<div class="ui grid">
-				<div class="ui four wide column">
-					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllObservations()">
-						<input type="checkbox" name="includeobservations" id="includeobservations" value="1" <?=$checkboxstate?>>
-						<label style="font-size:larger; font-weight: bold">Observations</label>
-					</div>
-				</div>
-				<div class="ui ten wide column">
-					<div class="ui left pointing red label"><span id="numobservationsselected"><?=$numselected?></span> of <?=$numobservations?> observations <?=$labelstr?></div>
-				</div>
-			</div>
-
-			<div class="ui accordion">
-				<div class="title">
-					<i class="dropdown icon"></i>
-					View observations
-				</div>
-				<div class="content">
-					<table class="ui very compact collapsing table">
-						<thead>
-							<th><input type="checkbox" id="selectallobservations"></th>
-							<th>UID</th>
-							<th>Observation</th>
-							<th>Date</th>
-						</thead>
-						<tbody>
-						<?
-							/* rows were collected above. there may be observations from multiple subjects in this list */
-							foreach ($observationrows as $row) {
-								$uid = $row['uid'];
-								$subjectid = $row['subject_id'];
-								$observationdate = $row['observation_startdate'];
-								$observationid = $row['observation_id'];
-								$observationname = $row['observation_name'];
-								?>
-									<tr>
-										<td class="allobservations"><input type="checkbox" name="observationids[]" value="<?=$observationid?>" <?=$checkboxstr?> class="observationcheck" onClick="CheckSelectedObservationCount(this);"></td>
-										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
-										<td><?=htmlspecialchars($observationname ?? '')?></td>
-										<td><?=$observationdate?></td>
-									</tr>
-								<?
-							}
-						?>
-						</tbody>
-					</table>
-				</div>
-			</div>
-			<?
-		}
-		else {
+		if ($numobservations <= 0) {
 			?>
 			<div class="ui toggle read-only checkbox">
 				<input type="checkbox" name="includeneasures" value="0">
@@ -1758,7 +1689,151 @@
 			</div>
 			<br>
 			<?
+			return;
 		}
+
+		/* required = the whole set is always added (master toggle forced on and read-only) */
+		if ($required) {
+			$checkboxstate = "checked";
+			$checkboxreadonly = "read-only";
+			$labelstr = "will be added";
+		}
+		else {
+			$checkboxstate = "";
+			$checkboxreadonly = "";
+			$labelstr = "selected";
+		}
+
+		/* json_encode rather than hand-built javascript: observation names and values are free text
+		   and will contain quotes, backslashes and newlines */
+		$observationData = json_encode($observationRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		?>
+
+		<!-- AG Grid (community): noStyle build + alpine theme CSS -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css">
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css">
+
+		<div class="ui grid">
+			<div class="ui six wide column">
+				<div class="ui toggle <?=$checkboxreadonly?> checkbox">
+					<input type="checkbox" name="includeobservations" id="includeobservations" value="1" <?=$checkboxstate?>>
+					<label style="font-size:larger; font-weight: bold">Add all <?=number_format($numobservations)?> observations</label>
+				</div>
+			</div>
+			<div class="ui ten wide column">
+				<div class="ui left pointing red label"><span id="numobservationsselected"><?= $required ? $numobservations : 0 ?></span> of <?=number_format($numobservations)?> observations <?=$labelstr?></div>
+			</div>
+		</div>
+
+		<? if ($numobservations > $numobservationslisted) { ?>
+			<div class="ui small warning message" style="margin-top:0">
+				<i class="exclamation triangle icon"></i>
+				Only the first <?=number_format($numobservationslisted)?> of <?=number_format($numobservations)?> observations are listed below. To add <b>all</b> of them, use the <b>&ldquo;Add all &hellip; observations&rdquo;</b> toggle above &mdash; selecting rows in the grid adds only the rows you select.
+			</div>
+		<? } ?>
+
+		<div class="ui accordion" id="observationsAccordion">
+			<div class="title">
+				<i class="dropdown icon"></i>
+				View / select observations
+			</div>
+			<div class="content">
+				<!-- hidden field carrying the granular (grid) selection; populated on form submit -->
+				<input type="hidden" name="observationidstr" id="observationidstr" value="">
+				<div id="observationsFormGrid" class="ag-theme-alpine" style="height: 45vh"></div>
+			</div>
+		</div>
+
+		<script type="text/javascript">
+			let gridApiFormObservations;
+			const observationsRequired = <?= $required ? 'true' : 'false' ?>;
+			const observationsListedCount = <?=$numobservationslisted?>;
+			const observationsTotalCount = <?=$numobservations?>;
+
+			function updateObservationSelectionUI() {
+				var master = document.getElementById('includeobservations');
+				var count;
+				if (master && master.checked) {
+					/* master toggle = add ALL observations (the server re-queries every observation
+					   for these enrollments, including any beyond the listed cap) */
+					count = observationsTotalCount;
+				}
+				else if (gridApiFormObservations) {
+					count = gridApiFormObservations.getSelectedRows().length;
+				}
+				else {
+					count = 0;
+				}
+				document.getElementById('numobservationsselected').innerHTML = count.toLocaleString();
+			}
+
+			/* build observationidstr just before the form submits. If the master "add all" toggle is
+			   on, leave it empty: the server adds every observation via includeobservations, which is
+			   NOT limited to the listed rows. Otherwise post only the selected grid rows. */
+			function buildObservationIdStr() {
+				var field = document.getElementById('observationidstr');
+				var master = document.getElementById('includeobservations');
+				if (master && master.checked) {
+					field.value = "";
+					return;
+				}
+				var ids = [];
+				if (gridApiFormObservations) {
+					gridApiFormObservations.getSelectedRows().forEach(function (r) { ids.push(r.id); });
+				}
+				field.value = ids.join(",");
+			}
+
+			const gridOptionsFormObservations = {
+				columnDefs: [
+					{ field: 'id', hide: true },
+					{ headerName: "UID", field: "uid", editable: false },
+					{ headerName: "Observation", field: "name", editable: false },
+					{ headerName: "Value", field: "value", editable: false },
+					{ headerName: "Date", field: "date", editable: false }
+				],
+				rowData: <?=$observationData?>,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true },
+				animateRows: false,
+				suppressMovableColumns: true,
+				onSelectionChanged: function() {
+					/* picking rows in the grid means "a subset", so clear the master "add all"
+					   toggle to avoid ambiguity (skip in required mode, where all are always added) */
+					var master = document.getElementById('includeobservations');
+					if (master && master.checked && !observationsRequired) {
+						$('#includeobservations').closest('.ui.checkbox').checkbox('set unchecked');
+					}
+					updateObservationSelectionUI();
+				}
+			};
+
+			$(document).ready(function() {
+				const eGridDiv = document.getElementById("observationsFormGrid");
+				gridApiFormObservations = agGrid.createGrid(eGridDiv, gridOptionsFormObservations);
+
+				/* master toggle keeps the count label in sync */
+				$('#includeobservations').on('change', function() {
+					updateObservationSelectionUI();
+				});
+
+				/* the grid starts inside a collapsed accordion (display:none); resize it once the
+				   panel is revealed so columns lay out against the real width */
+				$('#observationsAccordion .title').on('click', function() {
+					setTimeout(function() {
+						if (gridApiFormObservations) gridApiFormObservations.sizeColumnsToFit();
+					}, 50);
+				});
+
+				/* populate the hidden id string right before the containing form submits */
+				var form = document.getElementById('observationidstr').form;
+				if (form) form.addEventListener('submit', buildObservationIdStr);
+
+				updateObservationSelectionUI();
+			});
+		</script>
+		<?
 	}
 
 
@@ -2055,12 +2130,17 @@
 			$msg .= "Added " . count((array)$interventionids) . " interventions<br>";
 		}
 		
-		/* add ALL observations if selected */
+		/* Observations. Two mutually exclusive paths:
+		     1. "Add all" (includeobservations) -- re-query and add EVERY observation for these
+		        enrollments. This is unbounded and deliberately ignores the incoming id list, so
+		        it adds all observations even when the add form only listed the first N.
+		     2. otherwise, add just the granular subset the user selected in the grid (arrives as
+		        observationidstr -> $observationids). */
 		if (($includeobservations) && (count((array)$enrollmentids) > 0)) {
 
 			$observationids = array();
 			$inserts = array();
-			
+
 			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2086,7 +2166,32 @@
 			$numobjects += count((array)$observationids);
 			$msg .= "Added " . count((array)$observationids) . " observations<br>";
 		}
-		
+		elseif ((count((array)$observationids) > 0) && (is_array($observationids))) {
+			/* granular subset selected in the grid. Batch-insert in groups of 100 like the
+			   add-all path. Cast to int defensively even though the ids were already sanitized to
+			   digits/commas at the top of the page. */
+			$inserts = array();
+			$numobsadded = 0;
+			foreach ($observationids as $observationid) {
+				$oid = (int)$observationid;
+				if ($oid <= 0)
+					continue;
+				$inserts[] = "($packageid, $oid)";
+				$numobsadded++;
+				if (count($inserts) >= 100) {
+					$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					$inserts = array();
+				}
+			}
+			if (count($inserts) > 0) {
+				$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
+				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			}
+			$numobjects += $numobsadded;
+			$msg .= "Added " . $numobsadded . " observations<br>";
+		}
+
 		$title = "Added $numobjects objects to package";
 		Notice($msg, $title);
 	}
@@ -3402,6 +3507,8 @@
 						<th>Description</th>
 						<th>Create date</th>
 						<th class="right aligned">Objects</th>
+						<th>Last export date</th>
+						<th class="right aligned">Export</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -3413,6 +3520,15 @@
 							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'] . " order by package_name";
 						}
 						
+						/* pre-fetch the most recent export submit date for every package in ONE grouped
+						   query, keyed by package_id, instead of a per-row query inside the loop */
+						$lastexports = array();
+						$sqlstringE = "select b.package_id, max(a.submitdate) 'lastexport' from exports a inner join exportseries b on a.export_id = b.export_id group by b.package_id";
+						$resultE = MySQLiQuery($sqlstringE, __FILE__, __LINE__);
+						while ($rowE = mysqli_fetch_array($resultE, MYSQLI_ASSOC)) {
+							$lastexports[$rowE['package_id']] = $rowE['lastexport'];
+						}
+
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$packageid = $row['package_id'];
@@ -3431,6 +3547,14 @@
 							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects = $rowA['count'];
+
+							/* most recent export submit date for this package (from the grouped pre-fetch
+							   above); blank if it has never been exported */
+							$lastexport = $lastexports[$packageid] ?? '';
+							if (($lastexport != '') && ($lastexport != '0000-00-00 00:00:00'))
+								$lastexportstr = date('M j, Y h:ia', strtotime($lastexport));
+							else
+								$lastexportstr = "<span class='ui grey text'>Never</span>";
 							?>
 							<tr>
 								<td valign="top">
@@ -3439,6 +3563,15 @@
 								<td valign="top"><?=$desc?></td>
 								<td valign="top"><?=$createdate?></td>
 								<td valign="top" class="right aligned"><tt><?=number_format($numobjects)?></tt></td>
+								<td valign="top"><?=$lastexportstr?></td>
+								<td valign="top" class="right aligned">
+									<form method="post" action="packages.php" style="display: inline">
+										<input type="hidden" name="action" value="export">
+										<input type="hidden" name="packageid" value="<?=$packageid?>">
+										<?=CSRFTokenField()?>
+										<button type="submit" class="ui small green button"><i class="box open icon"></i> Export</button>
+									</form>
+								</td>
 							</tr>
 							<?
 						}

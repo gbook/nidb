@@ -53,6 +53,7 @@ namespace utils {
     QString CreateLogDate();
     QString GenerateRandomString(int n);
     qint64 GetPeakMemoryBytes();
+    long RaiseOpenFileLimit(long desired = 8192); /* raise the RLIMIT_NOFILE soft limit; returns the resulting soft limit, or -1 if unsupported */
     QString HumanReadableSize(qint64 bytes);
     QString ParseDate(QString s);
     QString ParseTime(QString s);

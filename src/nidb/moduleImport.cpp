@@ -511,6 +511,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     int numFilesTooYoung(0);
     foreach (QString file, files) {
 
+        /* ignore .part files - they're partially uploaded files */
+        if (file.toLower().endsWith(".part")) {
+            continue;
+        }
+
         /* insert the dicom_monitor log */
         QHash<QString, QString> t;
         UpdateDicomMonitor(file, t, "Received",  "");

@@ -23,7 +23,7 @@
 #include "utils.h"
 #include "squirrelVersion.h"
 #include "squirrel.h"
-#ifdef Q_OS_LINUX
+#ifdef Q_OS_UNIX
 #include <sys/resource.h>
 #endif
 
@@ -835,6 +835,59 @@ namespace utils {
             return (qint64)usage.ru_maxrss * 1024;
         return -1;
 #else
+        return -1;
+#endif
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- RaiseOpenFileLimit ----------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Raise the process's open-file (RLIMIT_NOFILE) soft limit
+     * @param desired the soft limit we would like, in file descriptors
+     * @return the resulting soft limit, or -1 on an unsupported platform
+     *
+     * Writing a large squirrel package opens many files at once (bit7z walks the
+     * staging tree with a recursive_directory_iterator while compressTo() holds
+     * files open), so the default soft limit of 1024 descriptors can be exceeded
+     * on big exports even with no descriptor leak - the command line tools hit
+     * the same ceiling. A process may raise its own soft limit up to the hard
+     * limit without any privileges, so we do that on start-up.
+     *
+     * This never LOWERS the current soft limit, and never asks for more than the
+     * hard limit allows. It is a process-wide setting; when squirrel is embedded
+     * in another application, raising the limit affects that whole process, which
+     * is the intended behavior.
+     */
+    long RaiseOpenFileLimit(long desired)
+    {
+#ifdef Q_OS_UNIX
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_NOFILE, &rl) != 0)
+            return -1;
+
+        rlim_t want = (rlim_t)desired;
+
+        /* never reduce an already-higher soft limit */
+        if (want < rl.rlim_cur)
+            return (long)rl.rlim_cur;
+
+        /* cannot exceed the hard limit without CAP_SYS_RESOURCE */
+        if ((rl.rlim_max != RLIM_INFINITY) && (want > rl.rlim_max))
+            want = rl.rlim_max;
+
+        if (want > rl.rlim_cur) {
+            struct rlimit nl = rl;
+            nl.rlim_cur = want;
+            if (setrlimit(RLIMIT_NOFILE, &nl) == 0)
+                return (long)want;
+        }
+
+        /* setrlimit failed or nothing to do: report the limit still in force */
+        return (long)rl.rlim_cur;
+#else
+        Q_UNUSED(desired);
         return -1;
 #endif
     }

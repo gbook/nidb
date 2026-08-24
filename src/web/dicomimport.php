@@ -39,7 +39,11 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	DisplayDicomImport();
+	$action = GetVariable("action");
+	if ($action == "listfiles")
+		DisplayStatusFiles(GetVariable("status"));
+	else
+		DisplayDicomImport();
 
 
 	/* ------------------------------------ functions ------------------------------------ */
@@ -94,15 +98,15 @@
 					</thead>
 					<tbody>
 						<tr>
-							<td>Received</td>
+							<td><a href="dicomimport.php?action=listfiles&status=Received">Received</a></td>
 							<td class="right aligned" id="count_received"><?=number_format($received)?></td>
 						</tr>
 						<tr>
-							<td>Parsed</td>
+							<td><a href="dicomimport.php?action=listfiles&status=Parsed">Parsed</a></td>
 							<td class="right aligned" id="count_parsed"><?=number_format($parsed)?></td>
 						</tr>
 						<tr>
-							<td>Error</td>
+							<td><a href="dicomimport.php?action=listfiles&status=Error">Error</a></td>
 							<td class="right aligned" id="count_error"><?=number_format($error)?></td>
 						</tr>
 						<tr>
@@ -174,6 +178,110 @@
 					<div id="archivedContainer"><?=DicomArchivedSummaryHTML()?></div>
 				</div>
 			</div>
+
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayStatusFiles ----------------- */
+	/* -------------------------------------------- */
+	function DisplayStatusFiles($status) {
+
+		/* only these statuses are listable; anything else falls back to Received. This whitelist
+		   also keeps the (validated) value safe to interpolate into the query below */
+		$labels = array(
+			'Received' => 'waiting to be parsed',
+			'Parsed'   => 'parsed',
+			'Error'    => 'with errors'
+		);
+		if (!isset($labels[$status]))
+			$status = 'Received';
+		$iserror = ($status == 'Error');
+
+		/* the DICOM files currently in this state. The list can be large (e.g. when parsing is
+		   backed up), so it is capped; the count is always the true total */
+		$displaylimit = 5000;
+
+		$sqlstring = "select count(*) 'count' from dicom_monitor where file_status = '$status'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$numfiles = (int)$row['count'];
+
+		$sqlstring = "select * from dicom_monitor where file_status = '$status' order by file_datetime desc, dicommonitor_id desc limit $displaylimit";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$numlisted = mysqli_num_rows($result);
+		?>
+
+		<div class="ui container">
+
+			<div class="ui grid">
+				<div class="twelve wide column">
+					<h2 class="ui header">
+						<div class="content">
+							<?=htmlspecialchars($status)?> DICOM files
+							<div class="sub header"><?=number_format($numfiles)?> file<?= $numfiles == 1 ? '' : 's' ?> <?=$labels[$status]?></div>
+						</div>
+					</h2>
+				</div>
+				<div class="four wide right aligned column">
+					<a class="ui basic button" href="dicomimport.php"><i class="arrow left icon"></i> Back to monitor</a>
+				</div>
+			</div>
+
+			<? if ($numfiles > $numlisted) { ?>
+				<div class="ui small warning message">
+					<i class="exclamation triangle icon"></i> Showing the first <?=number_format($numlisted)?> of <?=number_format($numfiles)?> files.
+				</div>
+			<? } ?>
+
+			<? if ($numlisted < 1) { ?>
+				<div class="ui info message">No files are currently in the <?=htmlspecialchars($status)?> state.</div>
+			<? } else { ?>
+			<table class="ui small very compact celled grey selectable table">
+				<thead>
+					<tr>
+						<th>Received</th>
+						<th>File</th>
+						<th class="right aligned">Size</th>
+						<th>Modality</th>
+						<th>Patient ID</th>
+						<th>Study description</th>
+						<th>Series</th>
+						<? if ($iserror) { ?><th>Status message</th><? } ?>
+					</tr>
+				</thead>
+				<tbody>
+				<?
+					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$filepath = $row['file_path'];
+						$filedatetime = $row['file_datetime'];
+						$filesize = $row['file_size'];
+						$modality = $row['Modality'];
+						$patientid = $row['PatientID'];
+						$studydesc = $row['StudyDescription'];
+						$seriesdesc = $row['SeriesDescription'];
+						$seriesnum = $row['SeriesNumber'];
+						$statusmessage = $row['file_statusmessage'];
+						$series = trim((($seriesnum !== null && $seriesnum !== '') ? $seriesnum . ' - ' : '') . ($seriesdesc ?? ''));
+						?>
+						<tr>
+							<td><?=htmlspecialchars($filedatetime ?? '')?></td>
+							<td><tt><?=htmlspecialchars($filepath ?? '')?></tt></td>
+							<td class="right aligned"><?= is_null($filesize) ? '' : number_format((int)$filesize) ?></td>
+							<td><?=htmlspecialchars($modality ?? '')?></td>
+							<td><?=htmlspecialchars($patientid ?? '')?></td>
+							<td><?=htmlspecialchars($studydesc ?? '')?></td>
+							<td><?=htmlspecialchars($series)?></td>
+							<? if ($iserror) { ?><td><?=htmlspecialchars($statusmessage ?? '')?></td><? } ?>
+						</tr>
+						<?
+					}
+				?>
+				</tbody>
+			</table>
+			<? } ?>
 
 		</div>
 		<?

@@ -1969,6 +1969,7 @@
 				if (sourceType === 'avicenna') {
 					Object.assign(rowData, {
 						avicenna_survey:        params.avicenna_survey,
+						avicenna_datasource:    params.avicenna_datasource,
 						avicenna_variable:      params.avicenna_variable,
 						avicenna_datatype:      params.avicenna_datatype,
 						avicenna_question:      parseInt(params.avicenna_question)      || 0,

@@ -38,6 +38,9 @@
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
 #include <iostream>
+#ifdef Q_OS_UNIX
+#include <sys/resource.h>
+#endif
 
 /* ---------------------------------------------------------- */
 /* --------- main ------------------------------------------- */
@@ -51,6 +54,26 @@
 int main(int argc, char *argv[])
 {
     QCoreApplication a(argc, argv);
+
+#ifdef Q_OS_UNIX
+    /* Raise the open-file-descriptor soft limit to the hard limit. Large package exports
+       (archiveIO::WriteExportPackage) open a DICOM file per series, spawn `exiftool` via
+       QProcess (each process needs several pipe fds), and the squirrel library opens many
+       files while building the archive. Against the default 1024 soft limit a very large
+       export exhausts descriptors, producing "QProcess: Cannot create pipe (Too many open
+       files)". The hard limit is typically far higher (e.g. 524288), so lifting the soft
+       limit to it removes the ceiling without needing root. */
+    {
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_NOFILE, &rl) == 0) {
+            if (rl.rlim_cur < rl.rlim_max) {
+                rl.rlim_cur = rl.rlim_max;
+                if (setrlimit(RLIMIT_NOFILE, &rl) != 0)
+                    std::cerr << "Warning: unable to raise RLIMIT_NOFILE soft limit (continuing with the default)" << std::endl;
+            }
+        }
+    }
+#endif
 
     /* this whole section reads the command line parameters */
     a.setApplicationVersion(QString("%1.%2.%3").arg(VERSION_MAJ).arg(VERSION_MIN).arg(BUILD_NUM));

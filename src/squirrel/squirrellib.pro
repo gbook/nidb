@@ -1,17 +1,14 @@
 # Use this file to build libsquirrel
 
 QT -= gui
-QT += sql
 
 CONFIG += c++17 console
 CONFIG -= app_bundle
 CONFIG += silent
 
-win32: LIBS += -loleaut32 -lole32
-
 TARGET = squirrel
 TEMPLATE = lib
-DEFINES += SQUIRREL_BUILD
+
 #win32:CONFIG += dll
 #win32:CONFIG += lib
 *msvc* {
@@ -21,167 +18,22 @@ DEFINES += SQUIRREL_BUILD
     DESTDIR = ../../bin/squirrel
 }
 
+linux: CONFIG += staticlib
+
 # You can make your code fail to compile if it uses deprecated APIs.
 # In order to do so, uncomment the following line.
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-#INCLUDEPATH += $$PWD/../nidb
+# squirrel core sources (everything except main.cpp)
+include($$PWD/squirrel-sources.pri)
 
-SOURCES += \
-	# main.cpp \
-	bids.cpp \
-	convert.cpp \
-	dicom.cpp \
-	extract.cpp \
-	info.cpp \
-	modify.cpp \
-	squirrel.cpp \
-	squirrelAnalysis.cpp \
-	squirrelDataDictionary.cpp \
-	squirrelExperiment.cpp \
-	squirrelGroupAnalysis.cpp \
-	squirrelImageIO.cpp \
-	squirrelIntervention.cpp \
-	squirrelObservation.cpp \
-	squirrelPipeline.cpp \
-	squirrelSeries.cpp \
-	squirrelStudy.cpp \
-	squirrelSubject.cpp \
-	utils.cpp
+# bit7z (LZMA) + DCMTK, shared with squirrel.pro and squirrel-gui.pro
+include($$PWD/squirrel-deps.pri)
+
+# dcm2niix in-process DICOM->Nifti conversion (Linux only; see dcm2niix.pri)
+include($$PWD/dcm2niix.pri)
 
 # Default rules for deployment.
 #qnx: target.path = /tmp/$${TARGET}/bin
 #else: unix:!android: target.path = /opt/$${TARGET}/bin
 #!isEmpty(target.path): INSTALLS += target
-
-HEADERS += \
-	bids.h \
-	convert.h \
-	dicom.h \
-	extract.h \
-	info.h \
-	modify.h \
-	squirrel.h \
-	squirrel.sql.h \
-	squirrelAnalysis.h \
-	squirrelDataDictionary.h \
-	squirrelExperiment.h \
-	squirrelGroupAnalysis.h \
-	squirrelImageIO.h \
-	squirrelIntervention.h \
-	squirrelObservation.h \
-	squirrelPipeline.h \
-	squirrelSeries.h \
-	squirrelStudy.h \
-	squirrelSubject.h \
-	squirrelTypes.h \
-	squirrelVersion.h \
-	utils.h
-
-
-# bit7z library (provides LZMA)
-win32: {
-    LZMABIN = C:/squirrel/bit7z/lib/x64
-    LZMAINCLUDE = ../../bit7z/include/bit7z
-    *msvc*:CONFIG(release, debug|release): LIBS += -L$$LZMABIN/Release
-    else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$LZMABIN/Debug
-    INCLUDEPATH += $$LZMAINCLUDE
-    HEADERS += $$LZMAINCLUDE/bit7z.hpp
-    LIBS += -lbit7z
-
-    # dcmtk library
-    DCMTK = "C:/Program Files (x86)/DCMTK"
-
-    LIBS += -L$$DCMTK/lib
-    #*msvc*:CONFIG(release, debug|release): LIBS += -L$$DCMTK/lib
-    #else:*msvc*:CONFIG(debug, debug|release): LIBS += -L$$GDCMBIN/bin/Debug
-    INCLUDEPATH += $$DCMTK/include/
-
-    LIBS += -ldcmdata \
-    -lcmr \
-	-ldcmdata \
-	-ldcmdsig \
-	-ldcmect \
-	-ldcmfg \
-	-ldcmimage \
-	-ldcmimgle \
-	-ldcmiod \
-	-ldcmjpeg \
-	-ldcmjpls \
-	-ldcmnet \
-	-ldcmpmap \
-	-ldcmpstat \
-	-ldcmqrdb \
-	-ldcmrt \
-	-ldcmseg \
-	-ldcmsr \
-	-ldcmtkcharls \
-	-ldcmtls \
-	-ldcmtract \
-	-ldcmwlm \
-	-ldcmxml \
-	-li2d \
-	-lijg8 \
-	-lijg12 \
-	-lijg16 \
-	-loficonv \
-	-loflog \
-	-lofstd
-
-}
-linux: {
-    CONFIG += staticlib
-
-    LZMABIN = ../bit7z
-	LZMAINCLUDE = ../bit7z/include/bit7z
-	LIBS += -L$$LZMABIN -lbit7z64 -ldl
-	INCLUDEPATH += $$LZMAINCLUDE
-	HEADERS += $$LZMAINCLUDE/bit7z.hpp
-
-    # dcmtk
-    LIBS += -L/usr/local/lib/ -L/usr/local/lib64/
-    INCLUDEPATH += /usr/local/include/
-
-    LIBS += -Wl,--start-group \
-		-ldcmdata \
-		-lcmr \
-		-ldcmdata \
-		-ldcmdsig \
-		-ldcmect \
-		-ldcmfg \
-		-ldcmimage \
-		-ldcmimgle \
-		-ldcmiod \
-		-ldcmjpeg \
-		-ldcmjpls \
-		-ldcmnet \
-		-ldcmpmap \
-		-ldcmpstat \
-		-ldcmqrdb \
-		-ldcmrt \
-		-ldcmseg \
-		-ldcmsr \
-		-ldcmtkcharls \
-		-ldcmtls \
-		-ldcmtract \
-		-ldcmwlm \
-		-ldcmxml \
-		-li2d \
-		-lijg8 \
-		-lijg12 \
-		-lijg16 \
-		-loficonv \
-		-loflog \
-		-lofstd \
-		-Wl,--end-group \
-		-lz
-
-
-    message($$LIBS)
-	message($$QMAKE_LIBDIR)
-
-
-}
-
-# dcm2niix in-process DICOM->Nifti conversion (Linux only; see dcm2niix.pri)
-include($$PWD/dcm2niix.pri)

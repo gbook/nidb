@@ -1080,115 +1080,164 @@
 					<a href="importremote.php?action=viewimports&projectid=<?=$projectid?>" class="ui button"><i class="arrow alternate circle left icon"></i> View Remote Imports</a>
 				</div>
 			</div>
-			<table class="ui very compact celled grey table">
-				<thead>
-					<tr>
-						<th>Batch ID</th>
-						<th>Import Name</th>
-						<th>Enabled</th>
-						<th>Source</th>
-						<th>Start Date</th>
-						<th>End Date</th>
-						<th>Status</th>
-						<th>Next State</th>
-						<th>Actions</th>
-						<th>Logs</th>
-						<th>Imports</th>
-					</tr>
-				</thead>
-				<tbody>
-					<?
-						$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, b.enabled, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count, (select count(*) from remoteimport_logs where remoteimportbatch_id = a.remoteimportbatch_id and result = 'Error') as error_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
-						mysqli_stmt_bind_param($stmt, 'i', $projectid);
-						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$batchRowID = $row['remoteimportbatch_id'];
-							$remoteType = $row['remote_type'];
-							$importname = $row['import_name'];
-							$startdate = $row['start_date'];
-							$enddate = $row['end_date'];
-							$status = $row['status'];
-							$nextstate = $row['next_state'];
-							$datafilepath = $row['datafile_path'];
+			<?
+				/* build the row data for the grid. Interactive/formatted cells (enabled icon,
+				   source, actions, logs, imports) are precomputed as HTML strings and rendered by a
+				   cellRenderer; the plain data columns stay as raw values so ag-grid can sort/filter
+				   them naturally */
+				$rows = array();
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.import_name, b.remote_type, b.remote_url, b.import_schedule, b.enabled, (select count(*) from observations where remotebatch_id = a.remoteimportbatch_id) as obs_count, (select count(*) from remoteimport_logs where remoteimportbatch_id = a.remoteimportbatch_id and result = 'Error') as error_count from remoteimport_batch a left join remote_imports b on a.remoteimport_id = b.remoteimport_id where b.project_id = ? order by a.remoteimportbatch_id desc");
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$batchRowID = (int)$row['remoteimportbatch_id'];
+					$remoteType = $row['remote_type'];
+					$importname = $row['import_name'];
+					$startdate = $row['start_date'];
+					$enddate = $row['end_date'];
+					$status = $row['status'];
+					$nextstate = $row['next_state'];
+					$datafilepath = $row['datafile_path'];
 
-							$importschedule = $row['import_schedule'];
-							$enabled = (int)$row['enabled'];
-							$obs_count = (int)$row['obs_count'];
-							$error_count = (int)$row['error_count'];
-							$importname_display = ($importname == "") ? "-" : $importname;
-							$startdate_display = ($startdate == "") ? "-" : $startdate;
-							$enddate_display = ($enddate == "") ? "-" : $enddate;
-							$status_display = ($status == "") ? "-" : ucfirst($status);
-							$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
-							
-							$typeLabels = [
-								'avicenna_api_survey'     => 'Avicenna API Survey',
-								'avicenna_api_datasource' => 'Avicenna API Datasource',
-								'avicenna_csv_survey'     => 'Avicenna CSV Survey',
-								'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
-								'nidb'   => 'NiDB',
-								'redcap' => 'REDCap',
-								'url'    => 'URL',
-							];
-							$typeLabel = isset($typeLabels[$remoteType]) ? $typeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
-							if (in_array($remoteType, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-								if (file_exists($datafilepath)) {
-									$filesize = HumanReadableFilesize(filesize($datafilepath));
-									$source_display = "$typeLabel &mdash; <tt>$datafilepath</tt> <div class='ui small label'>$filesize</div>";
-								}
-								else {
-									$source_display = "$typeLabel";
-								}
-							}
-							else {
-								$source_display = $typeLabel;
-							}
-					?>
-					<tr<?= $enabled ? '' : ' class="disabled"' ?>>
-						<td><?=$batchRowID?></td>
-						<td><?=$importname_display?></td>
-						<td style="text-align:center"><?= $enabled ? '<i class="green check circle icon" title="Enabled"></i>' : '<i class="grey minus icon" title="Disabled"></i>' ?></td>
-						<td><?=$source_display?></td>
-						<td><?=$startdate_display?></td>
-						<td><?=$enddate_display?></td>
-						<td><?=$status_display?></td>
-						<td><?=$nextstate_display?></td>
-						<td>
-							<div class="ui floating dropdown icon mini basic button">
-								<i class="chevron down icon"></i>
-								<div class="menu">
-									<? if ($importschedule === 'ondemand'): ?>
-										<a class="item" href="importremote.php?action=resetbatch&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>" onclick="return confirm('Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.')"><i class="redo icon"></i>Reset</a>
-									<? endif; ?>
-									<? if (in_array($status, ['started', 'running', 'waiting', 'pending'])): ?>
-										<a class="item" href="importremote.php?action=cancelbatch&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>" onclick="return confirm('Are you sure you want to cancel this batch?')"><i class="times circle icon"></i>Cancel</a>
-									<? endif; ?>
-									<? if (!($importschedule === 'ondemand') && !in_array($status, ['started', 'running', 'waiting', 'pending'])): ?>
-										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>
-									<? endif; ?>
-								</div>
-							</div>
-						</td>
-						<td>
-							<a href="importremote.php?action=viewbatchlog&batchid=<?=$batchRowID?>">View logs</a>
-							<? if ($error_count > 0): ?>
-								<i class="red exclamation triangle icon" title="<?=$error_count?> error<?=$error_count != 1 ? 's' : ''?>"></i>
-							<? endif; ?>
-						</td>
-						<td>
-							<? if ($obs_count > 0): ?>
-								<a href="importremote.php?action=viewbatchimports&batchid=<?=$batchRowID?>&projectid=<?=$projectid?>"><?=$obs_count?> observation<?=$obs_count != 1 ? 's' : ''?></a>
-							<? else: ?>
-								-
-							<? endif; ?>
-						</td>
-					</tr>
-					<?
+					$importschedule = $row['import_schedule'];
+					$enabled = (int)$row['enabled'];
+					$obs_count = (int)$row['obs_count'];
+					$error_count = (int)$row['error_count'];
+					$importname_display = ($importname == "") ? "-" : $importname;
+					$startdate_display = ($startdate == "") ? "-" : $startdate;
+					$enddate_display = ($enddate == "") ? "-" : $enddate;
+					$status_display = ($status == "") ? "-" : ucfirst($status);
+					$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
+
+					$typeLabels = [
+						'avicenna_api_survey'     => 'Avicenna API Survey',
+						'avicenna_api_datasource' => 'Avicenna API Datasource',
+						'avicenna_csv_survey'     => 'Avicenna CSV Survey',
+						'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
+						'nidb'   => 'NiDB',
+						'redcap' => 'REDCap',
+						'url'    => 'URL',
+					];
+					$typeLabel = isset($typeLabels[$remoteType]) ? $typeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
+					if (in_array($remoteType, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
+						if (file_exists($datafilepath)) {
+							$filesize = HumanReadableFilesize(filesize($datafilepath));
+							$source_display = "$typeLabel &mdash; <tt>" . htmlspecialchars($datafilepath ?? '') . "</tt> <div class='ui small label'>$filesize</div>";
 						}
-						mysqli_stmt_close($stmt);
-					?>
-				</tbody>
-			</table>
+						else {
+							$source_display = "$typeLabel";
+						}
+					}
+					else {
+						$source_display = $typeLabel;
+					}
+
+					/* actions: Reset (ondemand only) and Cancel (only while active). Rendered as
+					   inline links with a confirm(), replacing the per-row Fomantic dropdown which
+					   would not initialize reliably inside a virtualized grid */
+					$actionparts = array();
+					if ($importschedule === 'ondemand')
+						$actionparts[] = '<a href="importremote.php?action=resetbatch&batchid=' . $batchRowID . '&projectid=' . $projectid . '" onclick="return confirm(\'Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.\')"><i class="redo icon"></i>Reset</a>';
+					if (in_array($status, ['started', 'running', 'waiting', 'pending']))
+						$actionparts[] = '<a href="importremote.php?action=cancelbatch&batchid=' . $batchRowID . '&projectid=' . $projectid . '" onclick="return confirm(\'Are you sure you want to cancel this batch?\')"><i class="times circle icon"></i>Cancel</a>';
+					$actions_html = count($actionparts) ? implode(' &nbsp; ', $actionparts) : '<span style="color:#999">-</span>';
+
+					/* logs */
+					$logs_html = '<a href="importremote.php?action=viewbatchlog&batchid=' . $batchRowID . '">View logs</a>';
+					if ($error_count > 0)
+						$logs_html .= ' <i class="red exclamation triangle icon" title="' . $error_count . ' error' . ($error_count != 1 ? 's' : '') . '"></i>';
+
+					/* imports */
+					if ($obs_count > 0)
+						$imports_html = '<a href="importremote.php?action=viewbatchimports&batchid=' . $batchRowID . '&projectid=' . $projectid . '">' . $obs_count . ' observation' . ($obs_count != 1 ? 's' : '') . '</a>';
+					else
+						$imports_html = '-';
+
+					$enabled_html = $enabled
+						? '<i class="green check circle icon" title="Enabled"></i>'
+						: '<i class="grey minus icon" title="Disabled"></i>';
+
+					$rows[] = array(
+						'id'           => $batchRowID,
+						'importname'   => $importname_display,
+						'enabled'      => $enabled,
+						'enabled_html' => $enabled_html,
+						'source_text'  => $typeLabel,
+						'source_html'  => $source_display,
+						'startdate'    => $startdate_display,
+						'enddate'      => $enddate_display,
+						'status'       => $status_display,
+						'nextstate'    => $nextstate_display,
+						'actions_html' => $actions_html,
+						'logs_html'    => $logs_html,
+						'obs_count'    => $obs_count,
+						'imports_html' => $imports_html,
+					);
+				}
+				mysqli_stmt_close($stmt);
+
+				array_walk_recursive($rows, function(&$v) {
+					if (is_string($v)) $v = mb_convert_encoding($v, 'UTF-8', 'UTF-8');
+				});
+				$batchRowDataJson = json_encode($rows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+				if ($batchRowDataJson === false) $batchRowDataJson = '[]';
+			?>
+
+			<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+			<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+				<input type="text" id="batchFilterInput" placeholder="Search..." oninput="batchGridApi.setGridOption('quickFilterText', this.value)" style="padding:5px 8px; width:250px; border:1px solid #ccc; border-radius:4px">
+				<span style="color:#888">Displaying <span id="batchCount"><?=count($rows)?></span> batch<?=count($rows) != 1 ? 'es' : ''?></span>
+			</div>
+			<div id="batchGrid" style="height:70vh; width:100%"></div>
+
+			<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
+			<script>
+			let batchGridApi;
+			(function() {
+				const batchRowData = <?=$batchRowDataJson?>;
+
+				/* render a precomputed HTML string into a cell */
+				function htmlCell(field) {
+					return function(params) {
+						const span = document.createElement('span');
+						span.innerHTML = (params.data && params.data[field] != null) ? params.data[field] : '';
+						return span;
+					};
+				}
+
+				const batchColumnDefs = [
+					{ field: 'id',          headerName: 'Batch ID',    width: 100, sort: 'desc' },
+					{ field: 'importname',  headerName: 'Import Name',  width: 170 },
+					{ field: 'enabled',     headerName: 'Enabled',      width: 100, cellRenderer: htmlCell('enabled_html'), filter: false },
+					{ field: 'source_text', headerName: 'Source',       flex: 1,    cellRenderer: htmlCell('source_html') },
+					{ field: 'startdate',   headerName: 'Start Date',   width: 170 },
+					{ field: 'enddate',     headerName: 'End Date',     width: 170 },
+					{ field: 'status',      headerName: 'Status',       width: 120 },
+					{ field: 'nextstate',   headerName: 'Next State',   width: 120 },
+					{ field: 'actions_html', headerName: 'Actions',     width: 150, cellRenderer: htmlCell('actions_html'), sortable: false, filter: false },
+					{ field: 'logs_html',   headerName: 'Logs',         width: 130, cellRenderer: htmlCell('logs_html'),   sortable: false, filter: false },
+					{ field: 'obs_count',   headerName: 'Imports',      width: 140, cellRenderer: htmlCell('imports_html') },
+				];
+
+				const gridOptions = {
+					columnDefs: batchColumnDefs,
+					rowData: batchRowData,
+					defaultColDef: { sortable: true, filter: true, resizable: true },
+					/* grey out disabled batches, matching the old row 'disabled' class */
+					getRowStyle: function(params) {
+						return (params.data && !params.data.enabled) ? { opacity: '0.5' } : null;
+					},
+					/* keep the "Displaying X batches" count in step with the quick filter */
+					onModelUpdated: function(params) {
+						const el = document.getElementById('batchCount');
+						if (el) el.textContent = params.api.getDisplayedRowCount();
+					},
+					/* no theme set -> v36 defaults to the Quartz theme via the Theming API */
+				};
+
+				batchGridApi = agGrid.createGrid(document.getElementById('batchGrid'), gridOptions);
+			})();
+			</script>
 		</div>
 	<?
 	}
@@ -1369,8 +1418,7 @@
 		}
 		mysqli_stmt_close($stmt);
 		?>
-		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
-		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-theme-alpine.css">
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
 
 		<div>
 			<div class="ui two column grid">
@@ -1384,12 +1432,12 @@
 			</div>
 
 			<div style="margin-bottom:8px">
-				<input type="text" id="obsFilterInput" placeholder="Search..." oninput="obsGridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
+				<input type="text" id="obsFilterInput" placeholder="Search..." oninput="obsGridApi.setGridOption('quickFilterText', this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
 			</div>
-			<div id="obsGrid" class="ag-theme-alpine" style="height:600px;width:100%"></div>
+			<div id="obsGrid" style="height:600px;width:100%"></div>
 		</div>
 
-		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
 		<script>
 		<?php
 		array_walk_recursive($rows, function(&$v) {
@@ -1402,9 +1450,15 @@
 
 		const obsColumnDefs = [
 			{ field: 'subject_uid',            headerName: 'Subject',    sortable: true, filter: true, width: 110,
-			  cellRenderer: p => (p.value && p.data.subject_id)
-			      ? '<a href="subjects.php?id=' + p.data.subject_id + '">' + p.value + '</a>'
-			      : (p.value || '') },
+			  cellRenderer: p => {
+			      if (p.value && p.data.subject_id) {
+			          const a = document.createElement('a');
+			          a.href = 'subjects.php?id=' + encodeURIComponent(p.data.subject_id);
+			          a.textContent = p.value;
+			          return a;
+			      }
+			      return p.value || '';
+			  } },
 			{ field: 'observation_name',        headerName: 'Name',       sortable: true, filter: true, width: 180 },
 			{ field: 'observation_instrument',  headerName: 'Instrument', sortable: true, filter: true, width: 160 },
 			{ field: 'observation_value',       headerName: 'Value',      sortable: true, filter: true, width: 130 },

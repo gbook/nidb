@@ -43,29 +43,8 @@ mkdir -p $BUILDDIR
 
 # ----- build pre-requisites -----
 
-# build gdcm (make sure cmake 3 is installed)
-#if [ ! -d "$BUILDDIR/gdcm" ]; then
-
-	#command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.x. Install using 'yum install cmake' or 'apt-get cmake'.\n"; exit 1; }
-
-#	echo -e "\ngdcm not built. Building gdcm now\n"
-
-#	mkdir -p $BUILDDIR/gdcm
-#	mkdir -p $BUILDDIR/gdcm
-#	cd $BUILDDIR/gdcm
-#	$CMAKEBIN -DGDCM_BUILD_APPLICATIONS:STRING=NO -DGDCM_BUILD_DOCBOOK_MANPAGES:BOOL=OFF -DGDCM_BUILD_SHARED_LIBS:STRING=YES -DGDCM_BUILD_TESTING:STRING=NO -DGDCM_BUILD_EXAMPLES:STRING=NO $SRCDIR/gdcm
-#	make -j 16
-#else
-#	echo -e "\ngdcm already built in $BUILDDIR/gdcm\n"
-#fi
 
 # ----- build bit7z library -----
-#echo -e "\n ----- Building bit7z -----\n"
-#mkdir -p $BIT7ZDIR/build
-#cd $BIT7ZDIR/build
-#cmake .. -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC
-#cmake --build . --config Release
-
 echo -e "\n ----- Building bit7z -----\n"
 echo -e "\n ----- Created path $BUILDDIR/bit7z -----\n"
 mkdir -p $BUILDDIR/bit7z
@@ -78,39 +57,12 @@ cmake --build . --config Release
 cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
 cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
 
-
-#mkdir -p $BUILDDIR/bit7z
-#cd $BUILDDIR/bit7z
-#cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC $SRCDIR/bit7z
-#make -B -j 16
-#cmake --build . --config Release
-#echo -e "\nCopying bit7z library to $BUILDDIR\n"
-#mkdir -pv $BUILDDIR/../bit7z/lib/x64
-#cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/../bit7z/lib/x64
-#mkdir -pv $BUILDDIR/bit7z
-#cp -uv $SRCDIR/bit7z/lib/x64/* $BUILDDIR/bit7z/
-
-# ----- build smtp module -----
-#if [ ! -d "$BUILDDIR/smtp" ]; then
-
-#	echo -e "\nsmtp module not built. Building smtp module now\n"
-
-#	echo $QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-	
-#	$QMAKEBIN -o $BUILDDIR/smtp/Makefile $SRCDIR/smtp/SMTPEmail.pro -spec linux-g++
-#	cd $BUILDDIR/smtp
-#	make -j 16
-#else
-#	echo -e "\nsmtp already built in $BUILDDIR/smtp\n"
-#fi
-
 # ----- build squirrel library -----
 echo -e "\nBuilding squirrel library\n"
 echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
 cd $BUILDDIR/squirrel
 make -j 16
-
 
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"
@@ -141,5 +93,3 @@ sudo cp -uv $BUILDDIR/nidb/nidb /nidb/bin/
 
 echo -e "\nCopying nidbcluster to /nidb/bin"
 sudo cp -uv $BUILDDIR/nidbcluster/nidbcluster /nidb/bin/
-
-#zip -j nidb-cluster.zip bin/nidb/nidb bin/squirrel/libsquirrel* bin/gdcm/bin/libgdcm* bin/smtp/libSMTPEmail* ~/Qt/6.6.3/gcc_64/lib/libQt6Sql.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Network.so* ~/Qt/6.6.3/gcc_64/lib/libQt6Core.so*

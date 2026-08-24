@@ -56,12 +56,15 @@ public:
     bool Store();             /* saves the object data from this object into the database */
     bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
     void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
-    bool isValid() { return valid; }
+    bool Validate();          /* checks the object's fields, and populates msg with the reason(s) it is invalid */
+    bool isValid() { return Validate(); }
     int GetNextStudyNumber();
     qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
     void SetDirFormat(QString subject_DirFormat) {subjectDirFormat = subject_DirFormat; }
     void SetObjectID(qint64 id) { objectID = id; }
+
+    QString msg;                /*!< reason(s) the object is invalid, set by Validate(). Blank if the object is valid */
 
     /* JSON elements */
     QDate DateOfBirth;          /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
@@ -78,7 +81,10 @@ public:
     int SequenceNumber;
 
 private:
+    void LogInvalid(QString func);
+
     bool valid;
+    bool removed; /* true once Remove() has deleted this object from the database */
     bool debug;
     QString err;
     qint64 objectID;

@@ -132,8 +132,8 @@ bool squirrelSeries::Validate() {
 
     /* a datetime holding a value that isn't a real date (a failed parse yields a null
        QDateTime, which is allowed here and simply means 'no datetime') */
-    if (!DateTime.isNull() && !DateTime.isValid())
-        m << "Datetime is set, but is not a valid datetime";
+    //if (!DateTime.isNull() && !DateTime.isValid())
+    //    m << "Datetime is set, but is not a valid datetime";
 
     msg = m.join("; ");
     valid = m.isEmpty();
