@@ -883,13 +883,14 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
         for (int i=0; i<table.size(); i++) {
             /* get the participant ID, survey date */
             QString avicennaID = table[i]["participant id"];
-            QString tzOffset    = parseAvicennaTZ(table[i]["prompt time"]);
-            QDateTime startTime = parseAvicennaDT(table[i]["prompt time"]);
-            QDateTime endTime   = parseAvicennaDT(table[i]["record time"]);
-            QDateTime openTime   = parseAvicennaDT(table[i]["session scheduled time"]);
+            QString tzOffset       = parseAvicennaTZ(table[i]["prompt time"]); /* timezone for all survey times */
+            QDateTime startTime    = parseAvicennaDT(table[i]["prompt time"]);
+            QDateTime endTime      = parseAvicennaDT(table[i]["record time"]);
+            QDateTime openTime     = parseAvicennaDT(table[i]["session scheduled time"]);
             QDateTime promptTime   = parseAvicennaDT(table[i]["prompt time"]);
             QDateTime recordTime   = parseAvicennaDT(table[i]["record time"]);
             QDateTime expiryTime   = parseAvicennaDT(table[i]["expiry time"]);
+            qint8 surveyStatus       = table[i]["status"];
 
             int surveyRowID = -1;
 
@@ -1014,6 +1015,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         sur.datePrompt = promptTime;
                         sur.dateRecord = recordTime;
                         sur.dateExpiry = expiryTime;
+                        sur.status = surveyStatus;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
                     }
@@ -1132,6 +1134,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         sur.datePrompt = promptTime;
                         sur.dateRecord = recordTime;
                         sur.dateExpiry = expiryTime;
+                        sur.status = surveyStatus;
                         sur.AddToDatabase();
                         surveyRowID = sur.surveyRowID;
                     }

@@ -48,6 +48,7 @@ public:
     QString notes;
     QString rater;
     QString visit;
+    qint8 status = -1;
     int instrumentRowID = -1;
     qint64 surveyRowID = -1;
 

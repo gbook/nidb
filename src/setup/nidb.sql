@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 17, 2026 at 03:51 PM
+-- Generation Time: Aug 25, 2026 at 07:17 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -1198,6 +1198,47 @@ CREATE TABLE `icd10` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `image_series`
+--
+
+CREATE TABLE `image_series` (
+  `imageseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_desc` varchar(100) DEFAULT NULL COMMENT 'series description / acquisition label',
+  `series_protocol` varchar(45) DEFAULT NULL COMMENT 'protocol/sequence label',
+  `series_num` int(11) DEFAULT NULL,
+  `img_rows` int(11) DEFAULT NULL COMMENT 'image height in pixels',
+  `img_cols` int(11) DEFAULT NULL COMMENT 'image width in pixels',
+  `img_slices` int(11) DEFAULT NULL COMMENT 'number of planes/frames (often derived from file count)',
+  `numfiles` int(11) DEFAULT NULL,
+  `series_numfiles` int(11) DEFAULT 0,
+  `data_type` varchar(255) DEFAULT NULL,
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'number of bytes',
+  `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
+  `series_notes` varchar(255) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
+  `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `series_duration` bigint(20) DEFAULT NULL,
+  `image_format` varchar(50) DEFAULT NULL COMMENT 'jpeg, png, tiff, bigtiff, isyntax, ndpi, svs, etc.',
+  `image_mimetype` varchar(100) DEFAULT NULL COMMENT 'e.g. image/jpeg, image/png, application/octet-stream',
+  `is_proprietary` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = proprietary/vendor format (e.g. Philips iSyntax)',
+  `img_bitspersample` int(11) DEFAULT NULL COMMENT 'bit depth per channel (8, 16, ...)',
+  `img_channels` int(11) DEFAULT NULL COMMENT 'number of color channels (1=gray, 3=RGB, 4=RGBA/CMYK)',
+  `img_colorspace` varchar(20) DEFAULT NULL COMMENT 'RGB, grayscale, YCbCr, CMYK, etc.',
+  `img_compression` varchar(50) DEFAULT NULL COMMENT 'none, JPEG, JPEG2000, LZW, deflate, etc.',
+  `img_mpp_x` double DEFAULT NULL COMMENT 'microns per pixel, X (base level)',
+  `img_mpp_y` double DEFAULT NULL COMMENT 'microns per pixel, Y (base level)',
+  `img_magnification` varchar(20) DEFAULT NULL COMMENT 'objective magnification, e.g. 40x',
+  `img_pyramid_levels` int(11) DEFAULT NULL COMMENT 'number of resolution levels in the image pyramid',
+  `img_tile_width` int(11) DEFAULT NULL COMMENT 'tile width in pixels (tiled/pyramidal formats)',
+  `img_tile_height` int(11) DEFAULT NULL COMMENT 'tile height in pixels (tiled/pyramidal formats)'
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `importlogs`
 --
 
@@ -1945,6 +1986,7 @@ CREATE TABLE `observation_surveys` (
   `survey_instance` int(11) DEFAULT NULL COMMENT 'REDCap repeat instance (1,2,3...); NULL if not repeating',
   `survey_experimenter` text DEFAULT NULL,
   `survey_rater` text DEFAULT NULL,
+  `survey_status` tinyint(3) DEFAULT NULL COMMENT '0: Unanswered / Unknown, 1: Completed, 2: Canceled, 3: Expired, 4: Blocked, 5: False Criteria, 6: In Progress, 7: Deleted (excluded from exports)',
   `survey_entrydate` datetime DEFAULT NULL COMMENT 'Database entry date',
   `survey_opentime` datetime DEFAULT NULL COMMENT 'Time when a survey opens',
   `survey_prompttime` datetime DEFAULT NULL COMMENT 'Time when a user is prompted to fill out the survey',
@@ -3253,11 +3295,11 @@ CREATE TABLE `task_series` (
 --
 
 CREATE TABLE `timeseries` (
-  `timeseries_id` bigint(11) NOT NULL,
-  `observation_id` int(11) NOT NULL,
+  `timeseries_id` bigint(11) UNSIGNED NOT NULL,
+  `observation_id` int(11) UNSIGNED NOT NULL,
   `time` timestamp(3) NOT NULL DEFAULT current_timestamp(3),
   `value_int` int(11) DEFAULT NULL,
-  `value_double` double DEFAULT NULL,
+  `value_double` float DEFAULT NULL,
   `value_string` varchar(255) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
@@ -4009,6 +4051,15 @@ ALTER TABLE `gsr_series`
 ALTER TABLE `icd10`
   ADD PRIMARY KEY (`icd10_id`);
 ALTER TABLE `icd10` ADD FULLTEXT KEY `icd10_code` (`icd10_code`,`icd10_shortdesc`,`icd10_longdesc`);
+
+--
+-- Indexes for table `image_series`
+--
+ALTER TABLE `image_series`
+  ADD PRIMARY KEY (`imageseries_id`),
+  ADD KEY `fk_image_series_studies1` (`study_id`),
+  ADD KEY `ishidden` (`ishidden`),
+  ADD KEY `series_desc` (`series_desc`);
 
 --
 -- Indexes for table `importlogs`
@@ -5181,6 +5232,12 @@ ALTER TABLE `icd10`
   MODIFY `icd10_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `image_series`
+--
+ALTER TABLE `image_series`
+  MODIFY `imageseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `importlogs`
 --
 ALTER TABLE `importlogs`
@@ -5754,7 +5811,7 @@ ALTER TABLE `task_series`
 -- AUTO_INCREMENT for table `timeseries`
 --
 ALTER TABLE `timeseries`
-  MODIFY `timeseries_id` bigint(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `timeseries_id` bigint(11) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tms_series`
