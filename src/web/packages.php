@@ -373,6 +373,7 @@
 			   query anyway yields "_series" and a "Table doesn't exist" error, so skip it. The
 			   modality also names a table, so require plain letters before interpolating it. */
 			if (preg_match('/^[a-z]+$/', $modality)) {
+				if ($modality == "mrseries") { $modality = "mr"; }
 				$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
