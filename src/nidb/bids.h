@@ -68,9 +68,9 @@ struct FileRecord {
 struct Acquisition {
     QString key;            // canonical entity-based identifier
     QString subject;
-    QString session;
-    QString datatype;
-    QString suffix;
+    QString session;        /* equivalent to an imaging study */
+    QString datatype;       /* loosely equivalent to a modality, but each datatype (anat) can contain multiple entitites (T1w, T2w) */
+    QString suffix;         /* file extension (.nii) */
     QMap<QString, QString> entities;
 
     QList<FileRecord> files;   // all files belonging to this acquisition

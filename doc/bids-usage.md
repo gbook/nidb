@@ -10,13 +10,13 @@ Read an on-disk [BIDS](https://bids.neuroimaging.io/) dataset and **archive it i
           ▼
   ┌───────────────────────────────┐   Layer 1 — the reader (src/nidb/bids.{h,cpp})
   │  bids::Reader::readDataset()   │   • pure BIDS parsing, NO squirrel, NO DB
-  │      → bids::BidsDataset      │   • resolves JSON inheritance into each
+  │      → bids::BidsDataset       │   • resolves JSON inheritance into each
   └───────────────────────────────┘     Acquisition.resolvedMetadata
           │
           │  neutral in-memory model (bids::BidsDataset)
           ▼
-  ┌───────────────────────────────┐   Layer 2 — the translator (src/nidb/bidsImport.{h,cpp}, TBD)
-  │  bidsImport::Import()          │   • walks the BidsDataset
+  ┌───────────────────────────────┐   Layer 2 — your import (you write this)
+  │  your import functions         │   • walk the BidsDataset
   │      → archiveIO calls         │   • the ONLY layer that touches NiDB / the DB
   └───────────────────────────────┘
           │
@@ -24,7 +24,7 @@ Read an on-disk [BIDS](https://bids.neuroimaging.io/) dataset and **archive it i
   NiDB archive (subjects / studies / series rows + files on disk)
 ```
 
-Layer 1 exists today. Layer 2 is sketched below — **interface only, no implementation yet**.
+Layer 1 exists today. Section 2 below shows how to traverse a `BidsDataset` so you can write Layer 2 (your own import) against it.
 
 ---
 
@@ -39,154 +39,204 @@ QString err;
 if (!reader.readDataset("/path/to/bids", ds, err)) { /* handle err */ }
 ```
 
-Key structures the translator consumes (see `bids.h` for full definitions):
+Key structures you will consume (see `bids.h` for full definitions):
 
 | Structure | Holds |
 |---|---|
-| `BidsDataset` | `subjects` map, `participantRows`, `datasetDescription`, dataset name/version |
-| `SubjectRecord` | `id`, `participantRow`, `sessions`, `acquisitionsWithoutSession`, subject-level `scansTable` |
-| `SessionRecord` | `id`, `acquisitions`, session-level `scansTable` |
+| `BidsDataset` | `subjects` map, `participantRows`, `datasetDescription`, dataset name/version, `topLevelFiles` |
+| `SubjectRecord` | `id`, `participantRow`, `sessions`, `acquisitionsWithoutSession`, subject-level `scansTable`, `looseFiles` |
+| `SessionRecord` | `id`, `acquisitions`, session-level `scansTable`, `looseFiles` |
 | `Acquisition` | `datatype`, `suffix`, `entities`, `primaryDataPath`, companion paths (`bvalPath`/`bvecPath`/`eventsPath`), `files`, **`resolvedMetadata` (merged JSON via BIDS inheritance)**, matched `scansRow` |
 
-The reader has already applied the BIDS **inheritance principle**, so `Acquisition.resolvedMetadata` is the fully-merged sidecar metadata for that acquisition — the translator does not need to re-walk JSON files.
+The reader has already applied the BIDS **inheritance principle**, so `Acquisition.resolvedMetadata` is the fully-merged sidecar metadata for that acquisition — you do not need to re-walk JSON files.
 
 ---
 
-## Layer 2 — the translator (interface sketch)
+## 2. Traversing a BidsDataset
 
-Proposed as a new NiDB-side class in `src/nidb/bidsImport.{h,cpp}`. This is where all NiDB coupling lives; the reader stays clean. It drives NiDB's existing `archiveIO` API — the same one the DICOM/Nifti import paths use.
+You are writing your own BIDS → NiDB import against the `bids::BidsDataset` produced by Layer 1. This section shows how to walk it and reach **every piece of metadata and every file (with full paths)**. All containers are `QtCore` types, and `QMap` iterates in sorted key order, so traversal is deterministic.
+
+### Dataset-level fields
 
 ```cpp
-// bidsImport.h  — NiDB-side; depends on nidb + archiveIO.
-//                 Keep this OUT of bids.h so the reader stays DB-free.
-#include "bids.h"        // Layer 1: the squirrel-free reader (namespace bids)
-#include "nidb.h"
-#include "archiveio.h"
+const bids::BidsDataset &ds = /* filled by reader.readDataset(...) */;
 
-/* Caller-supplied import policy. */
-struct BidsImportOptions {
-    int     projectRowID     = -1;      // destination NiDB project (required)
-    QString subjectMatchCriteria;       // how participant_id maps to an existing
-                                        //   subject (PatientID/AltUID/...), or create new
-    QString defaultModality  = "MR";    // fallback when a datatype has no mapping
-    bool    importDerivatives = true;   // derivatives/ -> pipelines + analyses (reader gap, see below)
-    bool    importPhenotype   = true;   // phenotype/  -> subject observations   (reader gap, see below)
-    bool    dryRun            = false;  // parse + plan, write nothing to the DB or disk
-};
+ds.rootPath;             // absolute dataset root
+ds.name;                 // dataset_description.json "Name"
+ds.bidsVersion;          // "BIDSVersion"
+ds.datasetDescription;   // QJsonObject: the full dataset_description.json
 
-/* What the import did (for logging / the import module UI). */
-struct BidsImportResult {
-    int         subjectsTouched = 0;    // created or matched
-    int         studiesCreated  = 0;
-    int         seriesArchived  = 0;
-    QStringList warnings;
-    bool        success = false;
-};
+// participants.tsv as a table
+ds.participantColumns;                          // QStringList of column names
+for (const QVariantMap &row : ds.participantRows)
+    row.value("participant_id").toString();     // e.g. "sub-01"
 
-class bidsImport {
-public:
-    explicit bidsImport(nidb *n);
-
-    /* Top level: read a BIDS directory (Layer 1) and archive it into NiDB (Layer 2). */
-    bool Import(const QString &bidsDir,
-                const BidsImportOptions &opts,
-                BidsImportResult &result,
-                QString &msg);
-
-    /* Same, but against an already-parsed BidsDataset (lets a caller inspect/validate the
-       BidsDataset first, or reuse one built elsewhere). */
-    bool ImportDataset(const bids::BidsDataset &ds,
-                     const BidsImportOptions &opts,
-                     BidsImportResult &result,
-                     QString &msg);
-
-private:
-    /* --- per-level translators over the neutral BidsDataset --- */
-
-    /* participants.tsv row / sub-XX  ->  NiDB subject (+ enrollment in the project). */
-    bool TranslateSubject(const bids::SubjectRecord &subj,
-                          const BidsImportOptions &opts,
-                          int &subjectRowID,
-                          int &enrollmentRowID,
-                          QString &msg);
-
-    /* ses-YY (or the no-session bucket)  ->  NiDB study. */
-    bool TranslateStudy(const bids::SessionRecord &sess,       // pass a synthetic record for no-session
-                        int subjectRowID,
-                        int enrollmentRowID,
-                        const BidsImportOptions &opts,
-                        int &studyRowID,
-                        int &studyNum,
-                        QString &msg);
-
-    /* one Acquisition (primary + companions + resolvedMetadata)  ->  NiDB series. */
-    bool TranslateSeries(const bids::Acquisition &acq,
-                         int subjectRowID,
-                         int studyRowID,
-                         int seriesNum,
-                         QString &msg);
-
-    /* --- helpers --- */
-
-    /* BIDS datatype dir (anat/func/dwi/eeg/...) -> NiDB modality (MR/EEG/PET/...). */
-    QString ModalityForDatatype(const QString &datatype);
-
-    /* Acquisition.resolvedMetadata (QJsonObject) -> flat series tags for archiveIO.
-       Scalars pass through; integer-valued doubles drop the decimal; arrays/objects
-       are kept as compact JSON so nothing is silently lost. */
-    QHash<QString, QString> FlattenMetadata(const QJsonObject &meta);
-
-    /* Pick the study/series datetime from scansRow.acq_time (or sessions.tsv). */
-    QString AcqTimeFor(const bids::Acquisition &acq);
-
-    nidb      *n;
-    archiveIO *aio;
-};
+// files sitting at the dataset root (dataset_description.json, README, ...)
+for (const bids::FileRecord &f : ds.topLevelFiles)
+    f.absolutePath;                             // full path on disk
 ```
 
-### How the translators map onto `archiveIO`
+### Iterating subjects
 
-The translator is a thin adapter — it converts `bids::` structs into the arguments NiDB's archive API already expects:
+`ds.subjects` is a `QMap<QString, SubjectRecord>` keyed by the **bare** subject id (`"01"`, no `sub-` prefix).
 
-| Step | `bids::` input | `archiveIO` call (existing API) | Output |
-|---|---|---|---|
-| Subject | `SubjectRecord` (+`participantRow` sex/age) | `GetSubject(...)` else `CreateSubject(PatientID, …, subjectRowID, subjectUID)` | `subjectRowID` |
-| Enrollment | subject + `opts.projectRowID` | `GetOrCreateEnrollment(subjectRowID, projectRowID, enrollmentRowID)` | `enrollmentRowID` |
-| Study | `SessionRecord` (+`acq_time`, `ses` label) | `GetStudy(...)` else `CreateStudy(subjectRowID, enrollmentRowID, StudyDateTime, …, Modality, …, studyRowID, studyNum)` | `studyRowID`, `studyNum` |
-| Series (MR) | `Acquisition` + `FlattenMetadata(resolvedMetadata)` | `ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNum, tags, files)` | series row + files on disk |
-| Series (non-MR) | `Acquisition` (eeg/meg/…) | `ArchiveEEGSeries(...)` / other `Archive*Series` paths | series row |
+```cpp
+for (auto it = ds.subjects.constBegin(); it != ds.subjects.constEnd(); ++it) {
+    const QString &subid          = it.key();     // "01"
+    const bids::SubjectRecord &subj = it.value();
 
-`ArchiveNiftiSeries`'s `QHash<QString,QString> tags` parameter is the natural home for the inherited BIDS metadata — `FlattenMetadata()` produces exactly that shape.
+    subj.id;                                       // "01"
+
+    // demographics from participants.tsv (empty QVariantMap if no row matched)
+    if (!subj.participantRow.isEmpty()) {
+        subj.participantRow.value("age").toString();
+        subj.participantRow.value("sex").toString();
+    }
+
+    // subject-level scans.tsv, if present
+    subj.scansTable.rows;                          // QList<QVariantMap>
+
+    // files under sub-XX/ that were not groupable into an acquisition
+    for (const bids::FileRecord &f : subj.looseFiles)
+        f.absolutePath;
+}
+```
+
+### Subject → sessions → acquisitions
+
+**Session vs. sessionless datasets.** In BIDS the `ses-<label>` directory level is *optional*. A **session dataset** inserts it — `sub-01/ses-1/anat/…`, `sub-01/ses-2/anat/…` — to group data acquired across multiple visits/scanning sessions for one subject. A **sessionless dataset** omits it entirely — `sub-01/anat/…` — which is the common single-visit case. The choice is per-subject (a subject either has `ses-` directories or does not; BIDS does not allow data files at both levels for the same subject), but different subjects — and different datasets — may differ, so import code must handle both. In NiDB terms, **each session maps to one study** (`VisitType = ses` label), and a **sessionless subject maps to a single study**.
+
+The reader mirrors that split, so acquisitions live in **two** places: sessionless subjects put them in `subj.acquisitionsWithoutSession`; session subjects put them under each `subj.sessions[ses].acquisitions`. Handle both.
+
+> **The reader routes per file, not per dataset or per subject — and enforces nothing.** A single `BidsDataset` freely mixes session and sessionless *subjects* (e.g. `sub-01` has `ses-` directories while `sub-02` does not); each file lands in the right bucket independently, and there is no dataset- or subject-level "has sessions" flag. The per-subject exclusivity above is a **BIDS spec expectation, not a `BidsDataset` invariant**: if one subject has data both under `ses-*/` and not, the reader will populate *both* `subj.sessions` and `subj.acquisitionsWithoutSession` for that subject without validating or warning. So always walk both containers for **every** subject — never assume a dataset, or even a subject, is uniformly one shape.
+
+```
+  session dataset                     sessionless dataset
+  sub-01/                             sub-01/
+    ses-1/                              anat/  sub-01_T1w.nii.gz
+      anat/  sub-01_ses-1_T1w.nii.gz    func/  sub-01_task-rest_bold.nii.gz
+      func/  sub-01_ses-1_task-...      →  subj.acquisitionsWithoutSession
+    ses-2/
+      anat/  sub-01_ses-2_T1w.nii.gz
+  →  subj.sessions["1"], subj.sessions["2"]
+```
+
+```cpp
+// sessionless acquisitions (no ses-XX directories)
+for (const bids::Acquisition &acq : subj.acquisitionsWithoutSession)
+    handleAcq(QString(), acq);                     // your function; "" = no session
+
+// per-session acquisitions
+for (auto sit = subj.sessions.constBegin(); sit != subj.sessions.constEnd(); ++sit) {
+    const bids::SessionRecord &sess = sit.value();
+    sess.id;                     // "1" (bare, no ses- prefix)  — maps to a NiDB study
+    sess.scansTable.rows;        // session-level scans.tsv, if any
+    for (const bids::Acquisition &acq : sess.acquisitions)
+        handleAcq(sess.id, acq);
+}
+```
+
+> Note: range-based `for` over a Qt `QMap` yields the **values**; use the iterator form (`it.key()` / `it.value()`) when you also need the key.
+
+### An acquisition's metadata
+
+An `Acquisition` groups one data file with its sidecars — the natural unit for a NiDB series.
+
+```cpp
+acq.key;         // canonical id, e.g. "sub-01_ses-1_task-rest_run-1_bold"
+acq.datatype;    // "anat", "func", "dwi", "eeg", ...  (≈ modality)
+acq.suffix;      // "T1w", "bold", "dwi", ...
+acq.entities;    // QMap<QString,QString>: {"sub":"01","task":"rest","run":"1",...}
+acq.entities.value("task");
+acq.entities.value("run");
+
+// merged JSON metadata — BIDS inheritance already applied (root + datatype + sidecar)
+const QJsonObject &meta = acq.resolvedMetadata;
+meta.value("RepetitionTime").toDouble();
+meta.value("EchoTime").toDouble();
+for (const QString &k : meta.keys())
+    meta.value(k);              // a QJsonValue: scalar, array, or object
+
+// matching row from scans.tsv (acq_time, etc.); empty QVariantMap if none matched
+acq.scansRow.value("acq_time").toString();
+```
+
+### An acquisition's files (full paths)
+
+`acq.files` holds **every** file in the group (primary + all sidecars) as `FileRecord`s, each with a full `absolutePath` — this is what you copy/archive. The `primaryDataPath` / `bvalPath` / … pointers are dataset-**relative**, so resolve them against `ds.rootPath`.
+
+```cpp
+// every file in the acquisition, full path
+for (const bids::FileRecord &f : acq.files) {
+    f.absolutePath;   // full path on disk   <-- use this for archiving/copying
+    f.extension;      // ".nii.gz", ".json", ".bval", ...
+    f.suffix;         // "bold", "events", ...
+}
+
+// specific roles (relative paths -> resolve to full paths)
+const QString primary = QDir(ds.rootPath).filePath(acq.primaryDataPath);   // main data file
+if (!acq.bvalPath.isEmpty())   QDir(ds.rootPath).filePath(acq.bvalPath);
+if (!acq.bvecPath.isEmpty())   QDir(ds.rootPath).filePath(acq.bvecPath);
+if (!acq.eventsPath.isEmpty()) QDir(ds.rootPath).filePath(acq.eventsPath);
+```
+
+### One loop over every acquisition in the dataset
+
+The common case — visit all acquisitions with their subject/session context:
+
+```cpp
+for (auto sit = ds.subjects.constBegin(); sit != ds.subjects.constEnd(); ++sit) {
+    const bids::SubjectRecord &subj = sit.value();
+
+    for (const bids::Acquisition &acq : subj.acquisitionsWithoutSession)
+        importSeries(subj, QString(), acq);        // your import function
+
+    for (auto ssit = subj.sessions.constBegin(); ssit != subj.sessions.constEnd(); ++ssit)
+        for (const bids::Acquisition &acq : ssit.value().acquisitions)
+            importSeries(subj, ssit.value().id, acq);
+}
+```
+
+### Quick dump
+
+To eyeball a parsed dataset — the full hierarchy, merged metadata, and every file path — use the built-in:
+
+```cpp
+qDebug().noquote() << bids::PrintDataset(ds);
+```
 
 ---
 
 ## BIDS → NiDB mapping reference
+
+A suggested mapping from the parsed structures onto NiDB, regardless of how you structure the import code:
 
 | BIDS concept | Reader (`BidsDataset`) | NiDB target |
 |---|---|---|
 | `sub-XX` / `participants.tsv` row | `SubjectRecord.id`, `.participantRow` | subject (+ project enrollment) |
 | `ses-YY` directory | `SubjectRecord.sessions[YY]` | study, `VisitType = YY` |
 | session-less subject | `SubjectRecord.acquisitionsWithoutSession` | a single study |
-| datatype dir (`anat`,`func`,`dwi`,…) | `Acquisition.datatype` | study/series `Modality` via `ModalityForDatatype` |
+| datatype dir (`anat`,`func`,`dwi`,…) | `Acquisition.datatype` | study/series `Modality` |
 | grouped acquisition (data + companions) | `Acquisition.primaryDataPath` + `.files` | series (+ archived files) |
-| inherited JSON sidecars | `Acquisition.resolvedMetadata` (already merged) | series tags/params (flattened) |
+| inherited JSON sidecars | `Acquisition.resolvedMetadata` (already merged) | series tags/params |
 | `scans.tsv` `acq_time` | `Acquisition.scansRow` | study/series datetime |
-| `derivatives/` | **not parsed by the reader yet** | pipelines + analyses |
-| `phenotype/` | **not parsed by the reader yet** | subject observations |
+| `derivatives/` | **not parsed by the reader** (excluded) | pipelines + analyses (future) |
+| `phenotype/` | **not parsed by the reader** (excluded) | subject observations (future) |
+
+The relevant `archiveIO` entry points on the NiDB side are `GetSubject`/`CreateSubject`, `GetOrCreateEnrollment`, `GetStudy`/`CreateStudy`, and `ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNum, tags, files)` — whose `QHash<QString,QString> tags` argument is the natural home for the flattened `resolvedMetadata`.
 
 ---
 
-## Open questions for integration
+## Things to decide in your import
 
-These are decisions to settle when Layer 2 is actually built — not blockers for the sketch:
+Not blockers for traversal — decisions that shape the import:
 
-1. **Subject matching.** How does `participant_id` (e.g. `sub-01`) resolve to a NiDB subject — always create new, or match an existing subject by PatientID/alt-UID? This is `opts.subjectMatchCriteria` and mirrors the DICOM import's match logic.
+1. **Subject matching.** How does `participant_id` (e.g. `sub-01`) resolve to a NiDB subject — always create new, or match an existing subject by PatientID/alt-UID?
 2. **Non-MR modalities.** `ArchiveNiftiSeries` covers `anat/func/dwi/fmap/perf`. `eeg/ieeg/meg/pet/micr/motion/nirs/beh` need their own archive paths (some exist, some don't). Decide per-modality: real archive vs. store-as-files.
-3. **Study datetime.** Prefer `scans.tsv acq_time`, fall back to `sessions.tsv acq_time`, else leave null — confirm the precedence.
-4. **`derivatives/` and `phenotype/`.** The old squirrel reader handled these; the neutral reader does not. Either extend `bids::Reader` to read them into the `BidsDataset`, or handle them in a separate translator pass. (Recommendation: extend the reader so Layer 2 stays a pure adapter.)
+3. **Study datetime.** Prefer `scans.tsv acq_time` (`acq.scansRow`), fall back to `sessions.tsv acq_time`, else leave null.
+4. **`derivatives/` and `phenotype/`.** The reader deliberately excludes these from the raw index. If you need them, either extend `bids::Reader` to read them into the `BidsDataset`, or handle them in a separate pass.
 5. **Idempotency / re-import.** Behavior when the same dataset is imported twice — match-and-skip, update, or duplicate. `GetStudy`/`GetSubject` give a natural hook for match-and-reuse.
-6. **`dryRun` reporting.** In dry-run mode, `BidsImportResult` should still be fully populated (planned counts + warnings) so the import module can preview before committing.
 
 ---
 
-*Layer 1 (`bids.{h,cpp}`) is squirrel-free and DB-free by design; keep it that way. All NiDB/`archiveIO`/SQL coupling belongs in Layer 2 (`bidsImport.{h,cpp}`).*
+*Layer 1 (`bids.{h,cpp}`) is squirrel-free and DB-free by design; keep it that way. All NiDB / `archiveIO` / SQL coupling belongs in your import layer, never in `bids.{h,cpp}`.*

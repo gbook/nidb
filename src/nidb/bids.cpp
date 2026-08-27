@@ -4,6 +4,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QTextStream>
@@ -1015,6 +1016,23 @@ QString PrintDataset(const BidsDataset &ds) {
             parts << QString("%1-%2").arg(it.key(), it.value());
         return parts.join(", ");
     };
+    /* render one JSON value as a single line; arrays/objects stay as compact JSON */
+    auto jsonValueStr = [](const QJsonValue &v) -> QString {
+        switch (v.type()) {
+            case QJsonValue::String: return v.toString();
+            case QJsonValue::Bool:   return v.toBool() ? "true" : "false";
+            case QJsonValue::Double: {
+                const double d = v.toDouble();
+                if ((d == static_cast<double>(static_cast<qint64>(d))) && (qAbs(d) < 1e15))
+                    return QString::number(static_cast<qint64>(d));
+                return QString::number(d, 'g', 12);
+            }
+            case QJsonValue::Array:  return QString::fromUtf8(QJsonDocument(v.toArray()).toJson(QJsonDocument::Compact));
+            case QJsonValue::Object: return QString::fromUtf8(QJsonDocument(v.toObject()).toJson(QJsonDocument::Compact));
+            case QJsonValue::Null:   return "null";
+            default:                 return QString();
+        }
+    };
     /* print one acquisition and its files (with full paths) at the given indent */
     auto printAcq = [&](const Acquisition &acq, const QString &indent) {
         lines << QString("%1[%2]  datatype=%3 suffix=%4  entities={%5}")
@@ -1024,7 +1042,14 @@ QString PrintDataset(const BidsDataset &ds) {
         if (!acq.bvalPath.isEmpty())   lines << QString("%1  bval:   %2").arg(indent, fullPath(acq.bvalPath));
         if (!acq.bvecPath.isEmpty())   lines << QString("%1  bvec:   %2").arg(indent, fullPath(acq.bvecPath));
         if (!acq.eventsPath.isEmpty()) lines << QString("%1  events: %2").arg(indent, fullPath(acq.eventsPath));
-        lines << QString("%1  resolvedMetadata: %2 key(s)").arg(indent).arg(acq.resolvedMetadata.size());
+        if (acq.resolvedMetadata.isEmpty()) {
+            lines << QString("%1  resolvedMetadata: (none)").arg(indent);
+        } else {
+            lines << QString("%1  resolvedMetadata (%2 key(s)):").arg(indent).arg(acq.resolvedMetadata.size());
+            /* QJsonObject::keys() is sorted, so the dump is deterministic */
+            for (const QString &k : acq.resolvedMetadata.keys())
+                lines << QString("%1    %2 = %3").arg(indent, k, jsonValueStr(acq.resolvedMetadata.value(k)));
+        }
         lines << QString("%1  files (%2):").arg(indent).arg(acq.files.size());
         for (const FileRecord &f : acq.files)
             lines << QString("%1    %2").arg(indent, f.absolutePath);
