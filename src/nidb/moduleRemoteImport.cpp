@@ -890,7 +890,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
             QDateTime promptTime   = parseAvicennaDT(table[i]["prompt time"]);
             QDateTime recordTime   = parseAvicennaDT(table[i]["record time"]);
             QDateTime expiryTime   = parseAvicennaDT(table[i]["expiry time"]);
-            qint8 surveyStatus       = table[i]["status"];
+            qint16 surveyStatus     = table[i]["status"].toShort();
 
             int surveyRowID = -1;
 

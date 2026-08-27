@@ -127,11 +127,11 @@ struct SubjectRecord {
 };
 
 /**
- * @brief Top-level in-memory index for one BIDS dataset.
+ * @brief In-memory representation of one BIDS dataset.
  *
  * Reader::readDataset() populates this structure.
  */
-struct DatasetIndex {
+struct BidsDataset {
     QString rootPath;
     QString name;
     QString bidsVersion;
@@ -220,23 +220,23 @@ class MetadataResolver {
 public:
     /**
      * @brief Resolve metadata for every acquisition in the dataset.
-     * @param dataset Fully indexed dataset whose acquisitions should receive resolved metadata
+     * @param dataset Fully populated BidsDataset whose acquisitions should receive resolved metadata
      */
-    static void resolveDatasetMetadata(DatasetIndex &dataset);
+    static void resolveDatasetMetadata(BidsDataset &dataset);
 
 private:
-    static void resolveAcquisitionMetadata(const DatasetIndex &dataset, Acquisition &acq);
+    static void resolveAcquisitionMetadata(const BidsDataset &dataset, Acquisition &acq);
 
-    static QList<FileRecord> candidateJsonFiles(const DatasetIndex &dataset, const Acquisition &acq);
+    static QList<FileRecord> candidateJsonFiles(const BidsDataset &dataset, const Acquisition &acq);
 
     /**
      * @brief Return true if a JSON sidecar applies to one acquisition.
-     * @param dataset Dataset index used to resolve relative path relationships
+     * @param dataset BidsDataset used to resolve relative path relationships
      * @param jsonFile JSON file being tested
      * @param acq Acquisition that may receive metadata from the JSON file
      * @return True if the JSON file is an applicable sidecar for the acquisition
      */
-    static bool jsonAppliesToAcquisition(const DatasetIndex &dataset, const FileRecord &jsonFile, const Acquisition &acq);
+    static bool jsonAppliesToAcquisition(const BidsDataset &dataset, const FileRecord &jsonFile, const Acquisition &acq);
 
     /**
      * @brief Measure common directory depth between two relative paths.
@@ -265,41 +265,41 @@ private:
 /**
  * @brief Main dataset reader.
  *
- * Call readDataset() to build a DatasetIndex from a BIDS root directory.
+ * Call readDataset() to build a BidsDataset from a BIDS root directory.
  */
 class Reader {
 public:
     /**
-     * @brief Read and index a BIDS dataset rooted at rootPath.
+     * @brief Read a BIDS dataset rooted at rootPath into a BidsDataset.
      * @param rootPath Root directory of the BIDS dataset
-     * @param out Populated dataset index on success
+     * @param out Populated BidsDataset on success
      * @param error Error message if reading fails
      * @return True if the dataset was read successfully
      */
     bool readDataset(const QString &rootPath,
-                     DatasetIndex &out,
+                     BidsDataset &out,
                      QString &error) const;
 
 private:
     /**
      * @brief Read dataset_description.json and extract required fields.
      * @param path Path to dataset_description.json
-     * @param out Dataset index that receives the parsed description fields
+     * @param out BidsDataset that receives the parsed description fields
      * @param error Error message if the file is missing or invalid
      * @return True if the file exists, parses, and contains required fields
      */
-    static bool readDatasetDescription(const QString &path, DatasetIndex &out, QString &error);
+    static bool readDatasetDescription(const QString &path, BidsDataset &out, QString &error);
 
     /**
      * @brief Load participants.tsv if present.
      * @param path Path to participants.tsv
-     * @param out Dataset index that receives the participants table
+     * @param out BidsDataset that receives the participants table
      */
-    static void readParticipants(const QString &path, DatasetIndex &out);
+    static void readParticipants(const QString &path, BidsDataset &out);
 
     /**
-     * @brief Build a FileRecord from one filesystem path.
-     * @param absPath Absolute filesystem path to the file
+     * @brief Build a FileRecord from one filesystem path (a file, or an OME-Zarr store directory).
+     * @param absPath Absolute filesystem path to the file or directory
      * @param relPath File path relative to the dataset root
      * @return FileRecord populated with parsed filename and path-derived fields
      */
@@ -328,10 +328,10 @@ private:
 
     /**
      * @brief Ensure the subject container exists before inserting data under it.
-     * @param out Dataset index that will receive the subject
+     * @param out BidsDataset that will receive the subject
      * @param subject Subject identifier without the sub- prefix
      */
-    static void ensureSubject(DatasetIndex &out, const QString &subject);
+    static void ensureSubject(BidsDataset &out, const QString &subject);
 
     /**
      * @brief Insert one file into the dataset hierarchy.
@@ -339,15 +339,15 @@ private:
      * This determines whether the file is top-level, a scans table, a loose
      * file, or part of a grouped acquisition.
      * @param fr Parsed file record to insert
-     * @param out Dataset index that will receive the file
+     * @param out BidsDataset that will receive the file
      */
-    static void insertFile(const FileRecord &fr, DatasetIndex &out);
+    static void insertFile(const FileRecord &fr, BidsDataset &out);
 
     /**
      * @brief Link participants.tsv rows to the matching subject records.
-     * @param out Dataset index whose subjects should be matched to participants.tsv rows
+     * @param out BidsDataset whose subjects should be matched to participants.tsv rows
      */
-    static void attachParticipantRows(DatasetIndex &out);
+    static void attachParticipantRows(BidsDataset &out);
 
     /**
      * @brief Identify *_scans.tsv files, which are handled separately from acquisitions.
@@ -372,9 +372,9 @@ private:
 
     /**
      * @brief Attach scans.tsv rows across the entire dataset hierarchy.
-     * @param out Dataset index whose acquisitions should receive scans row matches
+     * @param out BidsDataset whose acquisitions should receive scans row matches
      */
-    static void attachScansRows(DatasetIndex &out);
+    static void attachScansRows(BidsDataset &out);
 
     /**
      * @brief Match scans.tsv rows back to acquisitions.
@@ -390,19 +390,19 @@ private:
 class Validator {
 public:
     /**
-     * @brief Validate the in-memory dataset index and return warnings/errors.
-     * @param ds Dataset index to validate
+     * @brief Validate the in-memory BidsDataset and return warnings/errors.
+     * @param ds BidsDataset to validate
      * @return List of validation messages describing warnings and errors
      */
-    QList<ValidationMessage> validate(const DatasetIndex &ds) const;
+    QList<ValidationMessage> validate(const BidsDataset &ds) const;
 
 private:
     /**
      * @brief Validate participants.tsv shape and subject linkage.
-     * @param ds Dataset index to inspect
+     * @param ds BidsDataset to inspect
      * @param out Output list that receives validation messages
      */
-    static void validateParticipants(const DatasetIndex &ds, QList<ValidationMessage> &out);
+    static void validateParticipants(const BidsDataset &ds, QList<ValidationMessage> &out);
 
     /**
      * @brief Validate one acquisition for common problems.
@@ -413,10 +413,22 @@ private:
 
     /**
      * @brief Walk all acquisitions and validate each one.
-     * @param ds Dataset index containing all acquisitions to validate
+     * @param ds BidsDataset containing all acquisitions to validate
      * @param out Output list that receives validation messages
      */
-    static void validateAcquisitions(const DatasetIndex &ds, QList<ValidationMessage> &out);
+    static void validateAcquisitions(const BidsDataset &ds, QList<ValidationMessage> &out);
 };
+
+/**
+ * @brief Render a BidsDataset to a human-readable, multi-line string.
+ *
+ * Prints the dataset header (root/name/version), a participants summary, the
+ * top-level files, and the full subject -> session -> acquisition hierarchy.
+ * Every file is listed with its full (absolute) path.
+ *
+ * @param ds The BidsDataset to render
+ * @return A printable multi-line summary
+ */
+QString PrintDataset(const BidsDataset &ds);
 
 } // namespace bids

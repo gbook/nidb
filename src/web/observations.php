@@ -180,6 +180,14 @@
 			return;
 		}
 
+		/* debug mode: append ?debug=1 to the URL to dump the SQL statements used to
+		   load this page (and the json_encode status of each structure passed to JS).
+		   A blank page with a stuck "Loading..." usually means json_encode() returned
+		   false because an observation value contains invalid UTF-8 / an odd character,
+		   which turns "const groupedData = <false>;" into a JS syntax error. */
+		$debug = (trim(GetVariable('debug')) != "") && !empty($GLOBALS['isadmin']);
+		$debugSQL = array();
+
 		/* get subject's info and project for the breadcrumb/form */
 		list(,,,,$projectid) = GetEnrollmentInfo($enrollmentid);
 
@@ -313,9 +321,25 @@
 							<input type="datetime-local" id="editSurveyEnddate">
 						</div>
 					</div>
-					<div class="field">
-						<label>Rater</label>
-						<input type="text" id="editSurveyRater" placeholder="Rater name">
+					<div class="fields">
+						<div class="eight wide field">
+							<label>Rater</label>
+							<input type="text" id="editSurveyRater" placeholder="Rater name">
+						</div>
+						<div class="eight wide field">
+							<label>Status</label>
+							<select id="editSurveyStatus" class="ui dropdown">
+								<option value="">(not set)</option>
+								<option value="0">Unanswered / Unknown</option>
+								<option value="1">Completed</option>
+								<option value="2">Canceled</option>
+								<option value="3">Expired</option>
+								<option value="4">Blocked</option>
+								<option value="5">False Criteria</option>
+								<option value="6">In Progress</option>
+								<option value="7">Deleted (excluded from exports)</option>
+							</select>
+						</div>
 					</div>
 					<div class="field">
 						<label>Notes</label>
@@ -534,7 +558,8 @@
 		/* joined to instrument_items and instruments to resolve states 1-4 (instrumentitem_id set);
 		   joined to observation_surveys to pull survey dates/rater for states 1,3,5,7;
 		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
-		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, s.survey_status, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = $enrollmentid order by a.observation_name";
+		$debugSQL['main observations query'] = $sqlstring;
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
@@ -580,6 +605,7 @@
 					'rater'     => $row['survey_rater'],
 					'notes'     => $row['survey_notes'],
 					'visit'     => $row['survey_visit'],
+					'status'    => isset($row['survey_status']) && $row['survey_status'] !== null ? (int)$row['survey_status'] : null,
 				);
 			}
 		}
@@ -592,7 +618,8 @@
 			$groups['__none__'] = $noneGroups;
 		}
 
-		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		if ($debug) $debugSQL['json_encode($groups)'] = ($groupsJson === false ? "FAILED: " . json_last_error_msg() . " -- this is almost certainly why the page is blank (invalid UTF-8 in an observation value)" : "ok (" . strlen($groupsJson) . " bytes)");
 
 		/* Coded-value labels for this enrollment's items.
 		 *
@@ -612,6 +639,7 @@
 			     select distinct o.instrumentitem_id from observations o
 			     where o.enrollment_id = ? and o.instrumentitem_id is not null
 			 )");
+		if ($debug) $debugSQL['value-map query (enrollment_id=' . (int)$enrollmentid . ')'] = "select m.instrumentitem_id, m.int_val, m.string_val from instrumentitem_map m where m.instrumentitem_id in (select distinct o.instrumentitem_id from observations o where o.enrollment_id = " . (int)$enrollmentid . " and o.instrumentitem_id is not null)";
 		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
 		$vmResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		if ($vmResult) {
@@ -625,7 +653,8 @@
 		}
 		mysqli_stmt_close($stmt);
 		/* force an object so JS can index it even when empty */
-		$valueMapsJson = json_encode($valueMaps ?: new stdClass(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$valueMapsJson = json_encode($valueMaps ?: new stdClass(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		if ($debug) $debugSQL['json_encode($valueMaps)'] = ($valueMapsJson === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($valueMapsJson) . " bytes)");
 
 		/* build per-group metadata: instrument record existence, legacy count, unique item names, item count.
 		 * hasInstrument drives the badge: true → states 1-4 possible (Linked or Partially linked);
@@ -687,12 +716,29 @@
 				'itemCount'     => $itemCount,
 			);
 		}
-		$groupMetaJson  = json_encode($groupMeta,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-		$surveyMetaJson = json_encode($surveyMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+		$groupMetaJson  = json_encode($groupMeta,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		$surveyMetaJson = json_encode($surveyMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		if ($debug) {
+			$debugSQL['json_encode($groupMeta)']  = ($groupMetaJson  === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($groupMetaJson) . " bytes)");
+			$debugSQL['json_encode($surveyMeta)'] = ($surveyMetaJson === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($surveyMetaJson) . " bytes)");
+		}
 		
 		$topInformation = sprintf("%d observation%s from %d instrument%s (%d unaffiliated observation%s)", $totalObs, $totalObs != 1 ? 's' : '', $instrumentCount, $instrumentCount != 1 ? 's' : '', $unaffiliatedCount, $unaffiliatedCount != 1 ? 's' : '');
 		
 		?>
+		<? if ($debug) { ?>
+		<div class="ui segment" style="background:#1b1c1d; color:#e0e0e0; font-family:monospace; font-size:0.85em; overflow-x:auto">
+			<div style="color:#fbbd08; font-weight:bold; margin-bottom:6px">DEBUG — SQL statements &amp; JSON encode status for enrollment <?=(int)$enrollmentid?></div>
+			<? foreach ($debugSQL as $label => $sql) {
+				$isfail = (stripos($sql, 'FAILED') !== false);
+			?>
+			<div style="margin-bottom:8px">
+				<div style="color:<?=$isfail ? '#ff5c5c' : '#21ba45'?>; font-weight:bold"><?=htmlspecialchars($label)?></div>
+				<div style="white-space:pre-wrap; word-break:break-all; color:<?=$isfail ? '#ff9c9c' : '#c0c0c0'?>"><?=htmlspecialchars($sql)?></div>
+			</div>
+			<? } ?>
+		</div>
+		<? } ?>
 		<div style="margin: 8px 0; display:flex; align-items:center; gap:1em; flex-wrap:wrap">
 			<button class="ui primary button" onclick="$('#addObsModal').modal('show')">
 				<i class="plus icon"></i> Add observation
@@ -1107,7 +1153,6 @@
 				document.getElementById('obsMetaContent').innerHTML = '<div class="ui active centered inline loader" style="margin:20px 0"></div>';
 				$('#obsMetaModal').modal({ closable: true }).modal('show');
 				$.getJSON('ajaxapi.php', { action: 'getobservationmeta', observationid: observationid }, function(data) {
-					console.log('getobservationmeta response:', data);
 					try {
 						if (!data || data.error) {
 							document.getElementById('obsMetaContent').innerHTML = '<p class="ui red text">Error loading metadata.</p>';
@@ -1470,9 +1515,11 @@
 								complBadge = '&nbsp;<span class="ui tiny ' + complColor + ' label">' + filledCount + ' / ' + totalItems + ' items</span>';
 							}
 							const editLink = '&nbsp;<a class="edit-survey-link" href="#" data-surveykey="' + escHtml(surveyKey) + '" style="font-size:0.85em"><i class="edit icon"></i>Edit survey</a>';
+							/* survey_status 1 = Completed → show the observation count in green */
+							const countClass = (sm && sm.status === 1) ? 'ui small circular green label' : 'ui small circular label';
 							surveyTitleHtml = '<i class="dropdown icon"></i><i class="calendar outline icon"></i> '
 								+ escHtml(dateStr) + raterStr
-								+ '&nbsp;<div class="ui small circular label">' + rows.length + '</div>'
+								+ '&nbsp;<div class="' + countClass + '">' + rows.length + '</div>'
 								+ complBadge + editLink;
 						}
 
@@ -1652,6 +1699,7 @@
 					$('#editSurveyStartdate').val(sm && sm.startdate ? sm.startdate.replace(' ', 'T').slice(0, 16) : '');
 					$('#editSurveyEnddate').val(sm && sm.enddate   ? sm.enddate.replace(' ', 'T').slice(0, 16)   : '');
 					$('#editSurveyRater').val(sm && sm.rater ? sm.rater : '');
+					$('#editSurveyStatus').val(sm && sm.status !== null && sm.status !== undefined ? String(sm.status) : '');
 					$('#editSurveyNotes').val(sm && sm.notes ? sm.notes : '');
 					$('#editSurveyError').hide();
 					$('#editSurveySaveButton').removeClass('loading disabled');
@@ -1666,6 +1714,7 @@
 								startdate: $('#editSurveyStartdate').val(),
 								enddate:   $('#editSurveyEnddate').val(),
 								rater:     $('#editSurveyRater').val(),
+								status:    $('#editSurveyStatus').val(),
 								notes:     $('#editSurveyNotes').val()
 							}, function(data) {
 								if (data && data.error) {

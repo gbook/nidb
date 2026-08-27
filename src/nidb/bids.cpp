@@ -69,7 +69,7 @@ bool TsvReader::read(const QString &path, QStringList &headers, QList<QVariantMa
 /* --------- FilenameParser::parse -------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Parse a BIDS-style filename into entities, suffix, and extension. This parser is intentionally lightweight and supports indexing/grouping.
+ * @brief Parse a BIDS-style filename into entities, suffix, and extension. This parser is intentionally lightweight and supports parsing/grouping.
  * @param fileName Filename to parse
  * @return a ParseResult object
  */
@@ -77,13 +77,23 @@ ParseResult FilenameParser::parse(const QString &fileName) {
     ParseResult out;
 
     QString stem = fileName;
-    if (stem.endsWith(".nii.gz", Qt::CaseInsensitive)) {
-        out.extension = ".nii.gz";
-        stem.chop(7);
-    } else if (stem.endsWith(".tsv.gz", Qt::CaseInsensitive)) {
-        out.extension = ".tsv.gz";
-        stem.chop(7);
-    } else {
+
+    /* Multi-part extensions must be checked before falling back to the single-part
+     * QFileInfo::suffix(), otherwise the leading part leaks into the stem/suffix
+     * (eg "sub-01_T1w.ome.tif" would parse a suffix of "T1w.ome"). */
+    static const QStringList multiExts = {
+        ".nii.gz", ".tsv.gz", ".ome.tif", ".ome.tiff", ".ome.zarr"
+    };
+    bool matchedMulti = false;
+    for (const QString &e : multiExts) {
+        if (stem.endsWith(e, Qt::CaseInsensitive)) {
+            out.extension = e;
+            stem.chop(e.size());
+            matchedMulti = true;
+            break;
+        }
+    }
+    if (!matchedMulti) {
         const QFileInfo fi(fileName);
         const QString suffix = fi.suffix();
         if (!suffix.isEmpty()) {
@@ -165,10 +175,10 @@ QString FilenameParser::canonicalStem(const QMap<QString, QString> &entities, co
 /* --------- MetadataResolver::resolveDatasetMetadata ------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Resolve metadata for every acquisition in the dataset. This is called only after indexing is complete.
- * @param dataset The fully indexed dataset to update with resolved JSON metadata
+ * @brief Resolve metadata for every acquisition in the dataset. This is called only after the BidsDataset has been fully read.
+ * @param dataset The fully populated BidsDataset to update with resolved JSON metadata
  */
-void MetadataResolver::resolveDatasetMetadata(DatasetIndex &dataset) {
+void MetadataResolver::resolveDatasetMetadata(BidsDataset &dataset) {
     for (auto subIt = dataset.subjects.begin(); subIt != dataset.subjects.end(); ++subIt) {
         SubjectRecord &subj = subIt.value();
 
@@ -190,10 +200,10 @@ void MetadataResolver::resolveDatasetMetadata(DatasetIndex &dataset) {
 /* ---------------------------------------------------------- */
 /**
  * @brief Resolve inherited JSON metadata for one acquisition. Candidate JSON files are merged from broadest to most specific.
- * @param dataset Dataset index containing all candidate JSON sidecar files
+ * @param dataset BidsDataset containing all candidate JSON sidecar files
  * @param acq Acquisition to resolve metadata for
  */
-void MetadataResolver::resolveAcquisitionMetadata(const DatasetIndex &dataset, Acquisition &acq) {
+void MetadataResolver::resolveAcquisitionMetadata(const BidsDataset &dataset, Acquisition &acq) {
     const QList<FileRecord> candidates = candidateJsonFiles(dataset, acq);
     if (candidates.isEmpty()) {
         return;
@@ -205,8 +215,10 @@ void MetadataResolver::resolveAcquisitionMetadata(const DatasetIndex &dataset, A
         const int pb = commonPrefixDepth(b.relativePath, acq.primaryDataPath);
         if (pa != pb) return pa < pb;
 
-        const int sa = a.entities.size()*100;
-        const int sb = b.entities.size()*100;
+        /* within the same directory depth, fewer entities = more general, so it
+         * merges first and the more-specific sidecar overrides it */
+        const int sa = a.entities.size();
+        const int sb = b.entities.size();
         if (sa != sb) return sa < sb;
 
         return a.relativePath < b.relativePath;
@@ -239,11 +251,11 @@ void MetadataResolver::resolveAcquisitionMetadata(const DatasetIndex &dataset, A
 /* ---------------------------------------------------------- */
 /**
  * @brief Collect JSON files that could apply to this acquisition.
- * @param dataset Dataset index that provides the pool of JSON sidecar files
+ * @param dataset BidsDataset that provides the pool of JSON sidecar files
  * @param acq Acquisition used to test JSON applicability
  * @return List of JSON files that may contribute inherited metadata
  */
-QList<FileRecord> MetadataResolver::candidateJsonFiles(const DatasetIndex &dataset, const Acquisition &acq) {
+QList<FileRecord> MetadataResolver::candidateJsonFiles(const BidsDataset &dataset, const Acquisition &acq) {
     QList<FileRecord> out;
     for (const FileRecord &jsonFile : dataset.jsonFiles) {
         if (jsonAppliesToAcquisition(dataset, jsonFile, acq)) {
@@ -255,16 +267,16 @@ QList<FileRecord> MetadataResolver::candidateJsonFiles(const DatasetIndex &datas
 
 
 /* ---------------------------------------------------------- */
-/* --------- MetadataResolver::candidateJsonFiles ----------- */
+/* --------- MetadataResolver::jsonAppliesToAcquisition ----- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Return true if one JSON sidecar applies to an acquisition. The sidecar must match by suffix and by entity subset, and must be located in the acquisition directory or one of its parent directories.
- * @param dataset Dataset index used to resolve relative path relationships
+ * @param dataset BidsDataset used to resolve relative path relationships
  * @param jsonFile JSON file being tested
  * @param acq Acquisition that may receive metadata from the JSON file
  * @return True if the JSON file is an applicable sidecar for the acquisition
  */
-bool MetadataResolver::jsonAppliesToAcquisition(const DatasetIndex &dataset, const FileRecord &jsonFile, const Acquisition &acq) {
+bool MetadataResolver::jsonAppliesToAcquisition(const BidsDataset &dataset, const FileRecord &jsonFile, const Acquisition &acq) {
     if (jsonFile.extension.toLower() != ".json") {
         return false;
     }
@@ -294,7 +306,11 @@ bool MetadataResolver::jsonAppliesToAcquisition(const DatasetIndex &dataset, con
     const QString acqDirPath = acqInfo.dir().absolutePath();
     const QString jsonDirPath = jsonInfo.dir().absolutePath();
 
-    return acqDirPath.startsWith(jsonDirPath);
+    /* the sidecar's directory must BE the acquisition directory or a true ancestor
+     * of it. A raw startsWith() would false-match sibling dirs that share a name
+     * prefix (eg "/ds/anat" would wrongly apply to "/ds/anat2"), so require an
+     * exact match or a path-separator boundary. */
+    return (acqDirPath == jsonDirPath) || acqDirPath.startsWith(jsonDirPath + "/");
 }
 
 
@@ -345,8 +361,16 @@ bool MetadataResolver::readJsonObject(const QString &path, QJsonObject &obj) {
     return true;
 }
 
-// Merge overlay into base so later values override earlier values.
-// This is the behavior needed for inherited BIDS metadata.
+/* ---------------------------------------------------------- */
+/* --------- MetadataResolver::mergeJson -------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Merge overlay into base so later values override earlier ones. This is a
+ *        shallow (top-level key) merge, which is exactly what BIDS metadata
+ *        inheritance requires.
+ * @param base JSON object to receive the merged values
+ * @param overlay JSON object whose values should overwrite base values
+ */
 void MetadataResolver::mergeJson(QJsonObject &base, const QJsonObject &overlay) {
     for (auto it = overlay.begin(); it != overlay.end(); ++it) {
         base.insert(it.key(), it.value());
@@ -361,19 +385,19 @@ void MetadataResolver::mergeJson(QJsonObject &base, const QJsonObject &overlay) 
 /* --------- Reader::readDataset ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Main entry point for reading a BIDS dataset.
-     The order is:
-     1) read top-level dataset files
-     2) walk all files
-     3) attach tabular metadata
-     4) resolve inherited JSON metadata
+ * @brief Main entry point for reading a BIDS dataset. The order is:
+ *   1) read dataset_description.json and participants.tsv
+ *   2) walk the tree in two passes: data files, then OME-Zarr store directories
+ *      (skipping reserved dirs like derivatives/, and files inside zarr stores)
+ *   3) attach tabular metadata (participants.tsv rows, scans.tsv rows)
+ *   4) resolve inherited JSON metadata
  * @param rootPath Root directory of the BIDS dataset
- * @param out Populated dataset index on success
+ * @param out Populated BidsDataset on success
  * @param error Error message if reading fails
  * @return True if the dataset was read successfully
  */
-bool Reader::readDataset(const QString &rootPath, DatasetIndex &out, QString &error) const {
-    out = DatasetIndex{};
+bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &error) const {
+    out = BidsDataset{};
     out.rootPath = QDir(rootPath).absolutePath();
 
     const QDir root(out.rootPath);
@@ -388,6 +412,31 @@ bool Reader::readDataset(const QString &rootPath, DatasetIndex &out, QString &er
 
     readParticipants(root.filePath("participants.tsv"), out);
 
+    /* Reserved top-level directories that are NOT raw data and must be excluded
+     * from the raw BidsDataset. Otherwise their sub-XX subtrees (eg
+     * derivatives/fmriprep/sub-01/...) would be mis-read as raw acquisitions.
+     * derivatives/ and phenotype/ are handled by their own passes at integration. */
+    static const QSet<QString> reservedTopDirs = {
+        "derivatives", "sourcedata", "code", "stimuli", "phenotype"
+    };
+
+    /* OME-Zarr / NGFF images are DIRECTORIES (eg sub-01_T1w.ome.zarr/ holding
+     * chunk files), not single files. Return the index of the first path
+     * component that is a zarr store, or -1 if the path is not inside one. */
+    auto zarrComponentIndex = [](const QString &rel) -> int {
+        const QStringList comps = rel.split('/', Qt::SkipEmptyParts);
+        for (int i = 0; i < comps.size(); ++i)
+            if (comps[i].endsWith(".zarr", Qt::CaseInsensitive))
+                return i;
+        return -1;
+    };
+    auto isUnderReservedTop = [&](const QString &rel) -> bool {
+        const int slash = rel.indexOf('/');
+        return (slash > 0) && reservedTopDirs.contains(rel.left(slash));
+    };
+
+    /* pass 1: files. Skip reserved dirs and skip files that live inside a zarr
+     * store (the store directory itself is recorded in pass 2). */
     QDirIterator it(out.rootPath, QDir::Files, QDirIterator::Subdirectories);
     while (it.hasNext()) {
         const QString absPath = it.next();
@@ -395,7 +444,29 @@ bool Reader::readDataset(const QString &rootPath, DatasetIndex &out, QString &er
         if (relPath == "dataset_description.json" || relPath == "participants.tsv") {
             continue;
         }
+        if (isUnderReservedTop(relPath)) {
+            continue;
+        }
+        if (zarrComponentIndex(relPath) >= 0) {
+            continue;
+        }
         insertFile(makeFileRecord(absPath, relPath), out);
+    }
+
+    /* pass 2: zarr store directories. Record each store as a single primary data
+     * record. A store is a directory whose OWN name ends in .zarr and which is not
+     * itself nested inside another zarr store (so only the outermost is recorded). */
+    QDirIterator dit(out.rootPath, QDir::Dirs | QDir::NoDotAndDotDot, QDirIterator::Subdirectories);
+    while (dit.hasNext()) {
+        const QString absPath = dit.next();
+        const QString relPath = root.relativeFilePath(absPath);
+        if (isUnderReservedTop(relPath)) {
+            continue;
+        }
+        const QStringList comps = relPath.split('/', Qt::SkipEmptyParts);
+        if (!comps.isEmpty() && zarrComponentIndex(relPath) == comps.size() - 1) {
+            insertFile(makeFileRecord(absPath, relPath), out);
+        }
     }
 
     attachParticipantRows(out);
@@ -411,11 +482,11 @@ bool Reader::readDataset(const QString &rootPath, DatasetIndex &out, QString &er
 /**
  * @brief Read dataset_description.json and extract required fields.
  * @param path Path to dataset_description.json
- * @param out Dataset index that receives the parsed description fields
+ * @param out BidsDataset that receives the parsed description fields
  * @param error Error message if the file is missing or invalid
  * @return True if the file exists, parses, and contains required fields
  */
-bool Reader::readDatasetDescription(const QString &path, DatasetIndex &out, QString &error) {
+bool Reader::readDatasetDescription(const QString &path, BidsDataset &out, QString &error) {
     QFile f(path);
     if (!f.open(QIODevice::ReadOnly)) {
         error = "Missing or unreadable dataset_description.json";
@@ -448,9 +519,9 @@ bool Reader::readDatasetDescription(const QString &path, DatasetIndex &out, QStr
 /**
  * @brief Read participants.tsv if present.
  * @param path Path to participants.tsv
- * @param out Dataset index that receives the participants table
+ * @param out BidsDataset that receives the participants table
  */
-void Reader::readParticipants(const QString &path, DatasetIndex &out) {
+void Reader::readParticipants(const QString &path, BidsDataset &out) {
     if (!QFileInfo::exists(path)) {
         return;
     }
@@ -469,8 +540,8 @@ void Reader::readParticipants(const QString &path, DatasetIndex &out) {
 /* --------- Reader::makeFileRecord ------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Convert one filesystem entry into a FileRecord. This is where filename parsing and basic path-derived inference happens.
- * @param absPath Absolute filesystem path to the file
+ * @brief Convert one filesystem entry (a file, or an OME-Zarr store directory) into a FileRecord. This is where filename parsing and basic path-derived inference happens.
+ * @param absPath Absolute filesystem path to the file or directory
  * @param relPath File path relative to the dataset root
  * @return FileRecord populated with parsed filename and path-derived fields
  */
@@ -536,8 +607,15 @@ QString Reader::acquisitionKey(const FileRecord &fr) {
  */
 bool Reader::isCompanionOrPrimary(const QString &ext) {
     static const QSet<QString> exts = {
-        ".nii.gz", ".nii", ".json", ".tsv", ".tsv.gz", ".bval", ".bvec", ".edf",
-        ".vhdr", ".eeg", ".vmrk", ".set", ".fdt", ".fif"
+        /* neuroimaging / diffusion */
+        ".nii.gz", ".nii", ".json", ".tsv", ".tsv.gz", ".bval", ".bvec",
+        /* EEG: European Data Format, BioSemi, BrainVision (.vhdr/.eeg/.vmrk),
+         * EEGLAB (.set/.fdt), MEG (.fif) */
+        ".edf", ".bdf", ".vhdr", ".eeg", ".vmrk", ".set", ".fdt", ".fif",
+        /* NIRS */
+        ".snirf",
+        /* microscopy */
+        ".tif", ".tiff", ".ome.tif", ".ome.tiff", ".ome.zarr"
     };
     return exts.contains(ext.toLower());
 }
@@ -563,7 +641,10 @@ void Reader::classifyIntoAcquisition(const FileRecord &fr, Acquisition &acq) {
         acq.bvecPath = fr.relativePath;
     } else if ((ext == ".tsv" || ext == ".tsv.gz") && fr.suffix == "events") {
         acq.eventsPath = fr.relativePath;
-    } else if (ext == ".nii.gz" || ext == ".nii" || ext == ".edf" || ext == ".set" || ext == ".fif" || ext == ".eeg") {
+    } else if (ext == ".nii.gz" || ext == ".nii" ||
+               ext == ".edf" || ext == ".bdf" || ext == ".set" || ext == ".fif" || ext == ".eeg" ||
+               ext == ".snirf" ||
+               ext == ".tif" || ext == ".tiff" || ext == ".ome.tif" || ext == ".ome.tiff" || ext == ".ome.zarr") {
         acq.primaryDataPath = fr.relativePath;
     }
 }
@@ -574,10 +655,10 @@ void Reader::classifyIntoAcquisition(const FileRecord &fr, Acquisition &acq) {
 /* ---------------------------------------------------------- */
 /**
  * @brief Ensure the subject container exists before inserting data under it.
- * @param out Dataset index that will receive the subject
+ * @param out BidsDataset that will receive the subject
  * @param subject Subject identifier without the sub- prefix
  */
-void Reader::ensureSubject(DatasetIndex &out, const QString &subject) {
+void Reader::ensureSubject(BidsDataset &out, const QString &subject) {
     if (!out.subjects.contains(subject)) {
         SubjectRecord sr;
         sr.id = subject;
@@ -691,9 +772,9 @@ void Reader::attachScansRowsToAcquisitionMap(const ScansTable &table, QMap<QStri
 /* ---------------------------------------------------------- */
 /**
  * @brief Attach scans.tsv rows across the entire dataset hierarchy.
- * @param out Dataset index whose acquisitions should receive scans row matches
+ * @param out BidsDataset whose acquisitions should receive scans row matches
  */
-void Reader::attachScansRows(DatasetIndex &out) {
+void Reader::attachScansRows(BidsDataset &out) {
     for (auto subIt = out.subjects.begin(); subIt != out.subjects.end(); ++subIt) {
         SubjectRecord &subj = subIt.value();
         attachScansRowsToAcquisitionMap(subj.scansTable, subj.acquisitionsWithoutSession);
@@ -708,16 +789,16 @@ void Reader::attachScansRows(DatasetIndex &out) {
 /* --------- Reader::insertFile ----------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Insert one FileRecord into the dataset hierarchy.
-            This determines whether the file is:
-            - top-level
-            - a scans.tsv table
-            - a loose file
-            - part of a grouped acquisition
+ * @brief Insert one FileRecord into the dataset hierarchy. This determines whether
+ *        the file is:
+ *          - top-level (no subject)
+ *          - a scans.tsv table
+ *          - a loose file (has a subject but is not groupable)
+ *          - part of a grouped acquisition
  * @param fr Parsed file record to insert
- * @param out Dataset index that will receive the file
+ * @param out BidsDataset that will receive the file
  */
-void Reader::insertFile(const FileRecord &fr, DatasetIndex &out) {
+void Reader::insertFile(const FileRecord &fr, BidsDataset &out) {
     if (fr.extension.toLower() == ".json") {
         out.jsonFiles.append(fr);
     }
@@ -798,9 +879,9 @@ void Reader::insertFile(const FileRecord &fr, DatasetIndex &out) {
 /* ---------------------------------------------------------- */
 /**
  * @brief Link participants.tsv rows back to subjects by participant_id.
- * @param out Dataset index whose subjects should be matched to participants.tsv rows
+ * @param out BidsDataset whose subjects should be matched to participants.tsv rows
  */
-void Reader::attachParticipantRows(DatasetIndex &out) {
+void Reader::attachParticipantRows(BidsDataset &out) {
     for (const QVariantMap &row : out.participantRows) {
         const QString participantId = row.value("participant_id").toString();
         if (!participantId.startsWith("sub-")) {
@@ -819,11 +900,11 @@ void Reader::attachParticipantRows(DatasetIndex &out) {
 /* --------- Validator::validate ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Run lightweight validation checks on the indexed dataset.
- * @param ds Dataset index to validate
+ * @brief Run lightweight validation checks on the BidsDataset.
+ * @param ds BidsDataset to validate
  * @return List of validation messages describing warnings and errors
  */
-QList<ValidationMessage> Validator::validate(const DatasetIndex &ds) const {
+QList<ValidationMessage> Validator::validate(const BidsDataset &ds) const {
     QList<ValidationMessage> out;
 
     if (ds.name.isEmpty()) {
@@ -844,10 +925,10 @@ QList<ValidationMessage> Validator::validate(const DatasetIndex &ds) const {
 /* ---------------------------------------------------------- */
 /**
  * @brief Validate participants.tsv shape and subject linkage.
- * @param ds Dataset index to inspect
+ * @param ds BidsDataset to inspect
  * @param out Output list that receives validation messages
  */
-void Validator::validateParticipants(const DatasetIndex &ds, QList<ValidationMessage> &out) {
+void Validator::validateParticipants(const BidsDataset &ds, QList<ValidationMessage> &out) {
     if (!ds.participantRows.isEmpty() && !ds.participantColumns.contains("participant_id")) {
         out.append({ValidationMessage::Error, "participants.tsv", "participants.tsv exists but is missing participant_id column"});
     }
@@ -893,10 +974,10 @@ void Validator::validateOneAcq(const Acquisition &acq, QList<ValidationMessage> 
 /* ---------------------------------------------------------- */
 /**
  * @brief Walk all acquisitions and validate each one.
- * @param ds Dataset index containing all acquisitions to validate
+ * @param ds BidsDataset containing all acquisitions to validate
  * @param out Output list that receives validation messages
  */
-void Validator::validateAcquisitions(const DatasetIndex &ds, QList<ValidationMessage> &out) {
+void Validator::validateAcquisitions(const BidsDataset &ds, QList<ValidationMessage> &out) {
     for (auto sit = ds.subjects.begin(); sit != ds.subjects.end(); ++sit) {
         const SubjectRecord &subj = sit.value();
         for (auto it = subj.acquisitionsWithoutSession.begin(); it != subj.acquisitionsWithoutSession.end(); ++it) {
@@ -908,6 +989,98 @@ void Validator::validateAcquisitions(const DatasetIndex &ds, QList<ValidationMes
             }
         }
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- PrintDataset ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Render a BidsDataset to a human-readable, multi-line string. Every file
+ *        is listed with its full (absolute) path.
+ * @param ds The BidsDataset to render
+ * @return A printable multi-line summary
+ */
+QString PrintDataset(const BidsDataset &ds) {
+    QStringList lines;
+
+    /* resolve a dataset-relative path (eg a primaryDataPath) to a full path */
+    auto fullPath = [&](const QString &rel) -> QString {
+        return rel.isEmpty() ? QString() : QDir(ds.rootPath).filePath(rel);
+    };
+    /* format a BIDS entity map as "key-value, key-value" */
+    auto formatEntities = [](const QMap<QString, QString> &e) -> QString {
+        QStringList parts;
+        for (auto it = e.begin(); it != e.end(); ++it)
+            parts << QString("%1-%2").arg(it.key(), it.value());
+        return parts.join(", ");
+    };
+    /* print one acquisition and its files (with full paths) at the given indent */
+    auto printAcq = [&](const Acquisition &acq, const QString &indent) {
+        lines << QString("%1[%2]  datatype=%3 suffix=%4  entities={%5}")
+                     .arg(indent, acq.key, acq.datatype, acq.suffix, formatEntities(acq.entities));
+        if (!acq.primaryDataPath.isEmpty())
+            lines << QString("%1  primary: %2").arg(indent, fullPath(acq.primaryDataPath));
+        if (!acq.bvalPath.isEmpty())   lines << QString("%1  bval:   %2").arg(indent, fullPath(acq.bvalPath));
+        if (!acq.bvecPath.isEmpty())   lines << QString("%1  bvec:   %2").arg(indent, fullPath(acq.bvecPath));
+        if (!acq.eventsPath.isEmpty()) lines << QString("%1  events: %2").arg(indent, fullPath(acq.eventsPath));
+        lines << QString("%1  resolvedMetadata: %2 key(s)").arg(indent).arg(acq.resolvedMetadata.size());
+        lines << QString("%1  files (%2):").arg(indent).arg(acq.files.size());
+        for (const FileRecord &f : acq.files)
+            lines << QString("%1    %2").arg(indent, f.absolutePath);
+    };
+
+    lines << "===== BidsDataset =====";
+    lines << QString("Root:         %1").arg(ds.rootPath);
+    lines << QString("Name:         %1").arg(ds.name);
+    lines << QString("BIDSVersion:  %1").arg(ds.bidsVersion);
+    lines << QString("Participants: %1 row(s), columns: [%2]").arg(ds.participantRows.size()).arg(ds.participantColumns.join(", "));
+    lines << QString("JSON pool:    %1 file(s)").arg(ds.jsonFiles.size());
+    lines << "";
+
+    lines << QString("Top-level files (%1):").arg(ds.topLevelFiles.size());
+    for (const FileRecord &f : ds.topLevelFiles)
+        lines << QString("  %1").arg(f.absolutePath);
+    lines << "";
+
+    /* QMap iterates in sorted key order, so subject/session output is stable */
+    for (auto sit = ds.subjects.begin(); sit != ds.subjects.end(); ++sit) {
+        const SubjectRecord &subj = sit.value();
+        lines << QString("Subject [%1]%2").arg(subj.id, subj.participantRow.isEmpty() ? QString() : QString("  (has participants.tsv row)"));
+
+        if (!subj.scansTable.path.isEmpty())
+            lines << QString("  scans table: %1 (%2 row(s))").arg(fullPath(subj.scansTable.path)).arg(subj.scansTable.rows.size());
+
+        if (!subj.looseFiles.isEmpty()) {
+            lines << QString("  Loose files (%1):").arg(subj.looseFiles.size());
+            for (const FileRecord &f : subj.looseFiles)
+                lines << QString("    %1").arg(f.absolutePath);
+        }
+
+        if (!subj.acquisitionsWithoutSession.isEmpty()) {
+            lines << QString("  Acquisitions without session (%1):").arg(subj.acquisitionsWithoutSession.size());
+            for (auto ait = subj.acquisitionsWithoutSession.begin(); ait != subj.acquisitionsWithoutSession.end(); ++ait)
+                printAcq(ait.value(), "    ");
+        }
+
+        for (auto sessIt = subj.sessions.begin(); sessIt != subj.sessions.end(); ++sessIt) {
+            const SessionRecord &sess = sessIt.value();
+            lines << QString("  Session [%1]").arg(sess.id);
+            if (!sess.scansTable.path.isEmpty())
+                lines << QString("    scans table: %1 (%2 row(s))").arg(fullPath(sess.scansTable.path)).arg(sess.scansTable.rows.size());
+            if (!sess.looseFiles.isEmpty()) {
+                lines << QString("    Loose files (%1):").arg(sess.looseFiles.size());
+                for (const FileRecord &f : sess.looseFiles)
+                    lines << QString("      %1").arg(f.absolutePath);
+            }
+            lines << QString("    Acquisitions (%1):").arg(sess.acquisitions.size());
+            for (auto ait = sess.acquisitions.begin(); ait != sess.acquisitions.end(); ++ait)
+                printAcq(ait.value(), "      ");
+        }
+        lines << "";
+    }
+
+    return lines.join("\n");
 }
 
 } // namespace bids

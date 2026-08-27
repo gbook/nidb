@@ -89,7 +89,8 @@
 	$enddate = GetVariable("enddate");
 	$rater = GetVariable("rater");
 	$notes = GetVariable("notes");
-	
+	$surveystatus = GetVariable("status");
+
 	$s['pipelineid'] = GetVariable("pipelineid");
 	$s['dependency'] = GetVariable("dependency");
 	$s['deplevel'] = GetVariable("deplevel");
@@ -212,7 +213,7 @@
 			CreateAndAssignSurvey((int)$enrollmentid, (int)$instrumentid, $startdate, $enddate, $rater, $notes, $observationids);
 			break;
 		case 'updatesurvey':
-			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes);
+			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes, $surveystatus);
 			break;
 		case 'getinstrumentitems':
 			GetInstrumentItems((int)$instrumentid);
@@ -2071,7 +2072,7 @@
 	/* ------- UpdateSurvey ----------------------- */
 	/* -------------------------------------------- */
 	/* updates metadata fields on an existing observation_surveys record */
-	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes) {
+	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes, $status = "") {
 		JsonHeader();
 		if ($surveyid <= 0) {
 			echo json_encode(array('error' => 'invalid survey_id'));
@@ -2081,8 +2082,10 @@
 		$enddate_sql   = !empty(trim($enddate))   ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $enddate) . "'"   : "null";
 		$rater_sql     = !empty(trim($rater))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $rater) . "'"     : "null";
 		$notes_sql     = !empty(trim($notes))     ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $notes) . "'"     : "null";
+		/* survey_status is a tinyint code (0-7); a blank selection clears it to NULL. 0 is a valid code, so test for numeric rather than truthiness. */
+		$status_sql    = is_numeric(trim($status)) ? (int)$status : "null";
 
-		$sqlstring = "update observation_surveys set survey_startdate = $startdate_sql, survey_enddate = $enddate_sql, survey_rater = $rater_sql, survey_notes = $notes_sql where survey_id = $surveyid";
+		$sqlstring = "update observation_surveys set survey_startdate = $startdate_sql, survey_enddate = $enddate_sql, survey_rater = $rater_sql, survey_notes = $notes_sql, survey_status = $status_sql where survey_id = $surveyid";
 		MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
 		echo json_encode(array('success' => true));
