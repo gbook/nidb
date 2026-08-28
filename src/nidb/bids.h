@@ -137,6 +137,15 @@ struct BidsDataset {
     QString bidsVersion;
     QJsonObject datasetDescription;
 
+    /* Compliance: bidsCompliant is false when a BIDS-REQUIRED element is missing
+     * or invalid (currently: dataset_description.json absent/unparseable, or
+     * missing its required Name/BIDSVersion). The reader still parses the rest of
+     * the tree so an incomplete "BIDS-like" dataset can be imported. complianceIssues
+     * lists every deviation found, including RECOMMENDED-but-absent files (eg
+     * participants.tsv), which are noted without flipping bidsCompliant. */
+    bool bidsCompliant = true;
+    QStringList complianceIssues;
+
     QStringList participantColumns;
     QList<QVariantMap> participantRows;
 

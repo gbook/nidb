@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "moduleUpload.h"
+#include "bids.h"
 #include <QSqlQuery>
 
 /* ---------------------------------------------------------- */
@@ -175,9 +176,13 @@ bool moduleUpload::ReadUploads() {
                 }
             }
 
-            /* unzip any files in the uploadstagingdir */
+            /* unzip any files in the uploadstagingdir (do not recurse into a BIDS directory) */
             io->AppendUploadLog("Unzipping files located in [" + uploadstagingpath + "]");
-            QString unzipOutput = UnzipDirectory(uploadstagingpath, true);
+            QString unzipOutput;
+            if (upload_type == "bids")
+                unzipOutput = UnzipDirectory(uploadstagingpath, true);
+            else
+                unzipOutput = UnzipDirectory(uploadstagingpath, false);
             io->AppendUploadLog("Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
@@ -187,7 +192,7 @@ bool moduleUpload::ReadUploads() {
             io->AppendUploadLog(QString("After unzipping, upload directory [%1] now contains [%2] files, and is [%3] bytes in size.").arg(uploadstagingpath).arg(c).arg(b));
 
             n->Log("upload_type is [" + upload_type + "]");
-            /* handle the files differently if it's a squirrel upload */
+            /* ----- determine whether DICOM, squirrel, or BIDS ----- */
             if (upload_type == "squirrel") {
                 QStringList files = FindAllFiles(uploadstagingpath, "*", true);
                 foreach (QString f, files) {
@@ -208,6 +213,18 @@ bool moduleUpload::ReadUploads() {
                     }
 
                     delete sqrl;
+                }
+            }
+            else if (upload_type == "bids") {
+                /* there should only be one BIDS dataset in this directory */
+                bids::Reader reader;
+                bids::BidsDataset dataset;
+                QString err;
+                if (!reader.readDataset(uploadstagingpath, dataset, err)) {
+                    n->Log(QString("Error reading BIDS directory [].  Error message []").arg(uploadstagingpath).arg(err));
+                }
+                else {
+                    n->Log(bids::PrintDataset(dataset));
                 }
             }
             else {

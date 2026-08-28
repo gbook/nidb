@@ -407,10 +407,20 @@ bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &err
         return false;
     }
 
-    if (!readDatasetDescription(root.filePath("dataset_description.json"), out, error)) {
-        return false;
+    /* dataset_description.json is BIDS-required, but we tolerate its absence so that
+     * "BIDS-like" datasets (correct sub-/ses- layout and sidecars, but no root
+     * metadata) can still be imported. A failure here marks the dataset non-compliant
+     * and is recorded, but does NOT abort the read. */
+    QString ddError;
+    if (!readDatasetDescription(root.filePath("dataset_description.json"), out, ddError)) {
+        out.bidsCompliant = false;
+        out.complianceIssues << ddError;
     }
 
+    /* participants.tsv is only RECOMMENDED by BIDS, so its absence is noted but does
+     * not by itself make the dataset non-compliant. */
+    if (!QFileInfo::exists(root.filePath("participants.tsv")))
+        out.complianceIssues << "participants.tsv not found (no subject-level demographics)";
     readParticipants(root.filePath("participants.tsv"), out);
 
     /* Reserved top-level directories that are NOT raw data and must be excluded
@@ -1061,6 +1071,9 @@ QString PrintDataset(const BidsDataset &ds) {
     lines << QString("BIDSVersion:  %1").arg(ds.bidsVersion);
     lines << QString("Participants: %1 row(s), columns: [%2]").arg(ds.participantRows.size()).arg(ds.participantColumns.join(", "));
     lines << QString("JSON pool:    %1 file(s)").arg(ds.jsonFiles.size());
+    lines << QString("BIDS compliant: %1").arg(ds.bidsCompliant ? "yes" : "no");
+    for (const QString &issue : ds.complianceIssues)
+        lines << QString("  - %1").arg(issue);
     lines << "";
 
     lines << QString("Top-level files (%1):").arg(ds.topLevelFiles.size());

@@ -58,6 +58,7 @@
 	$subjectcriteria = GetVariable("subjectcriteria");
 	$studycriteria = GetVariable("studycriteria");
 	$seriescriteria = GetVariable("seriescriteria");
+	$bidsflags = GetVariable("bidsflags"); /* array of checked BIDS flag values (name="bidsflags[]"), or NULL */
 	$uploadid = (int)GetVariable("uploadid");
 	$uploadseriesid = GetVariable("uploadseriesid");
 	$displayall = GetVariable("displayall");
@@ -72,7 +73,7 @@
 			DisplayNewImportForm($username, $instanceid);
 			break;
 		case 'newimport':
-			NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid);
+			NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflags);
 			DisplayImportList($displayall);
 			break;
 		case 'queueforarchive':
@@ -119,15 +120,43 @@
 					<div class="three wide column"><h3 class="ui grey right aligned header">Data Location</h3></div>
 					<div class="thirteen wide column">
 						<div class="field">
-							<label><input type="radio" name="datalocation" value="web" checked> Local Computer</label>
-							<input type="file" name="imagingfiles[]" multiple>
+							<div style="display:flex; align-items:center; gap:1em">
+								<label style="white-space:nowrap"><input type="radio" name="datalocation" value="web" checked onchange="updateDataLocation()"> Local Computer</label>
+								<input type="file" name="imagingfiles[]" id="datalocation_web" multiple>
+							</div>
 						</div>
 						<div class="field">
-							<label><input type="radio" name="datalocation" value="nfs"> NFS path</label>
-							<input class="ui fluid input" type="text" name="nfspath" placeholder="/path/accessible/to/nidb/server">
+							<div style="display:flex; align-items:center; gap:1em">
+								<label style="white-space:nowrap"><input type="radio" name="datalocation" value="nfs" onchange="updateDataLocation()"> NFS path</label>
+								<input class="ui fluid input" type="text" name="nfspath" id="datalocation_nfs" placeholder="/path/accessible/to/nidb/server" style="flex:1">
+							</div>
 						</div>
 					</div>
-					
+					<script>
+						/* show only the input (file picker or NFS path) for the selected data location radio */
+						function updateDataLocation() {
+							var loc = document.querySelector('input[name="datalocation"]:checked');
+							loc = loc ? loc.value : 'web';
+							document.getElementById('datalocation_web').style.display = (loc == 'web') ? '' : 'none';
+							document.getElementById('datalocation_nfs').style.display = (loc == 'nfs') ? '' : 'none';
+						}
+						updateDataLocation();
+					</script>
+
+					<div class="three wide column"><h3 class="ui grey right aligned header">File Format</h3></div>
+					<div class="thirteen wide column">
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="filetype" required>
+							<i class="dropdown icon"></i>
+							<div class="default text">Select file format</div>
+							<div class="menu">
+								<div class="item" data-value="auto"><b>Imaging file(s)</b></div>
+								<div class="item" data-value="bids"><b>BIDS</b></div>
+								<div class="item" data-value="squirrel"><b>squirrel</b> - only one squirrel package at a time</div>
+							</div>
+						</div>
+					</div>
+
 					<div class="three wide column"><h3 class="ui grey right aligned header">Data Modality</h3></div>
 					<div class="thirteen wide column">
 						<div class="ui fluid selection dropdown">
@@ -143,19 +172,6 @@
 									}
 								?>
 								<div class="item" data-value="unknown"><b>Unknown</b> - Let NiDB guess the modality</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="three wide column"><h3 class="ui grey right aligned header">File format</h3></div>
-					<div class="thirteen wide column">
-						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="filetype" required>
-							<i class="dropdown icon"></i>
-							<div class="default text">Select file format</div>
-							<div class="menu">
-								<div class="item" data-value="auto"><b>Imaging file(s)</b></div>
-								<div class="item" data-value="squirrel"><b>squirrel</b> - only one squirrel package at a time</div>
 							</div>
 						</div>
 					</div>
@@ -179,10 +195,15 @@
 						</select>
 					</div>
 					
-					<div class="three wide column"><h3 class="ui grey right aligned header">Matching Criteria</h3></div>
+					<div class="three wide column"><h3 class="ui grey right aligned header">DICOM Matching Criteria</h3></div>
 					<div class="thirteen wide column">
 					
-						<div class="ui grey segment">
+						<div class="ui styled accordion" id="matchingAccordion">
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Subject <span class="ui small grey text" id="sel_subject" style="font-weight:normal"></span>
+							</div>
+							<div class="content">
 							<div class="ui grid">
 								<div class="four wide right aligned column">
 									<h3 class="ui blue header">Subject</h3>
@@ -191,7 +212,7 @@
 								<div class="eight wide column">
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="subjectcriteria" value="patientid" checked>
+											<input type="radio" name="subjectcriteria" value="patientid" data-label="PatientID" onchange="updateCriteriaLabels()" checked>
 										</div>
 										<div class="fourteen wide column">
 											Patient<b>ID</b> <span class="tiny">DICOM (<tt>0010</tt>, <tt>0020</tt>)</span>
@@ -200,7 +221,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="subjectcriteria" value="specificpatientid" >
+											<input type="radio" name="subjectcriteria" value="specificpatientid" data-label="Specific PatientID" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											Specific PatientID <input type="text" name="userspecifiedpatientid" placeholder="Enter PatientID"><br><span class="tiny">This PatientID will be applied to all imported data</span>
@@ -209,7 +230,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="subjectcriteria" value="patientidfromdir" >
+											<input type="radio" name="subjectcriteria" value="patientidfromdir" data-label="PatientID from directory name" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											PatientID from directory name
@@ -218,7 +239,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="subjectcriteria" value="namesexdob" >
+											<input type="radio" name="subjectcriteria" value="namesexdob" data-label="PatientName / BirthDate / Sex" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											Patient<b>Name</b> <span class="tiny">DICOM (<tt>0010</tt>, <tt>0010</tt>)</span><br>
@@ -228,9 +249,12 @@
 									</div>
 								</div>
 							</div>
-						</div>
-						
-						<div class="ui grey segment">
+							</div>
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Study <span class="ui small grey text" id="sel_study" style="font-weight:normal"></span>
+							</div>
+							<div class="content">
 							<div class="ui grid">
 								<div class="four wide right aligned column">
 									<h3 class="ui blue header">Study</h3>
@@ -239,7 +263,7 @@
 								<div class="eight wide column">
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="studycriteria" value="modalitystudydate" checked>
+											<input type="radio" name="studycriteria" value="modalitystudydate" data-label="Modality / StudyDate / StudyTime" onchange="updateCriteriaLabels()" checked>
 										</div>
 										<div class="fourteen wide column">
 											Modality <span class="tiny">DICOM (<tt>0008</tt>, <tt>0020</tt>)</span><br>
@@ -250,7 +274,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="studycriteria" value="studyuid" >
+											<input type="radio" name="studycriteria" value="studyuid" data-label="StudyInstanceUID" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											StudyInstanceUID <span class="tiny">DICOM (<tt>0020</tt>, <tt>000D</tt>)</span>
@@ -259,7 +283,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="studycriteria" value="studyid" >
+											<input type="radio" name="studycriteria" value="studyid" data-label="StudyID" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											StudyID <span class="tiny">DICOM (<tt>0020</tt>, <tt>0010</tt>)</span>
@@ -267,9 +291,12 @@
 									</div>
 								</div>
 							</div>
-						</div>
-
-						<div class="ui grey segment">
+							</div>
+							<div class="title">
+								<i class="dropdown icon"></i>
+								Series <span class="ui small grey text" id="sel_series" style="font-weight:normal"></span>
+							</div>
+							<div class="content">
 							<div class="ui grid">
 								<div class="four wide right aligned column">
 									<h3 class="ui blue header">Series</h3>
@@ -278,7 +305,7 @@
 								<div class="eight wide column">
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="seriescriteria" value="seriesnum" checked>
+											<input type="radio" name="seriescriteria" value="seriesnum" data-label="SeriesNumber" onchange="updateCriteriaLabels()" checked>
 										</div>
 										<div class="fourteen wide column">
 											SeriesNumber <span class="tiny">DICOM (<tt>0020</tt>, <tt>0011</tt>)</span>
@@ -287,7 +314,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="seriescriteria" value="seriesdate" >
+											<input type="radio" name="seriescriteria" value="seriesdate" data-label="SeriesDate / SeriesTime" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											SeriesDate <span class="tiny">DICOM (<tt>0008</tt>, <tt>0021</tt>)</span><br>
@@ -297,7 +324,7 @@
 									<div class="ui horizontal divider">Or</div>
 									<div class="ui grid">
 										<div class="two wide right aligned column">
-											<input type="radio" name="seriescriteria" value="seriesuid" >
+											<input type="radio" name="seriescriteria" value="seriesuid" data-label="SeriesInstanceUID" onchange="updateCriteriaLabels()">
 										</div>
 										<div class="fourteen wide column">
 											SeriesInstanceUID <span class="tiny">DICOM (<tt>0020</tt>, <tt>000E</tt>)</span>
@@ -305,9 +332,72 @@
 									</div>
 								</div>
 							</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="three wide column"><h3 class="ui grey right aligned header">BIDS Options</h3></div>
+					<div class="thirteen wide column">
+						<span class="tiny">Optional flags applied when importing a BIDS (or BIDS-like) dataset. Ignored for non-BIDS file formats.</span>
+						<div class="ui grid" style="margin-top:0.25em">
+							<div class="sixteen wide column">
+								<div class="ui checkbox">
+									<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SUBID">
+									<label><b>Keep BIDS subject IDs</b><br><span class="tiny">Use the <tt>sub-&lt;label&gt;</tt> value as the NiDB subject ID instead of matching/creating a new one</span></label>
+								</div>
+							</div>
+							<div class="sixteen wide column">
+								<div class="ui checkbox">
+									<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SES">
+									<label><b>Keep BIDS session labels</b><br><span class="tiny">Use the <tt>ses-&lt;label&gt;</tt> value as the study visit label</span></label>
+								</div>
+							</div>
+							<div class="sixteen wide column">
+								<div class="ui checkbox">
+									<input type="checkbox" name="bidsflags[]" value="BIDS_SEPARATE_RUNS">
+									<label><b>Separate runs</b><br><span class="tiny">Import each <tt>run-&lt;index&gt;</tt> as its own series</span></label>
+								</div>
+							</div>
+							<div class="sixteen wide column">
+								<div class="ui checkbox">
+									<input type="checkbox" name="bidsflags[]" value="BIDS_ADD_REVERSE_MAPPING">
+									<label><b>Add reverse mapping</b><br><span class="tiny">Record a mapping from each imported series back to its original BIDS entities/paths</span></label>
+								</div>
+							</div>
+							<div class="sixteen wide column">
+								<div class="ui checkbox">
+									<input type="checkbox" name="bidsflags[]" value="BIDS_ACCEPT_NONCOMPLIANT_DATASET">
+									<label><b>Accept non-compliant dataset</b><br><span class="tiny">Import BIDS-like datasets that are missing required root metadata (e.g. <tt>dataset_description.json</tt>) instead of rejecting them</span></label>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
+				<script>
+					/* the global init (includes_html.php) sets every accordion to exclusive:false;
+					   re-flip just this one so only one of Subject/Study/Series is open at a time.
+					   Registered after the global $(document).ready, so it runs after it. */
+					$(document).ready(function() {
+						$('#matchingAccordion').accordion('setting', 'exclusive', true);
+						$('.ui.checkbox').checkbox();
+						updateCriteriaLabels();
+					});
+
+					/* show the selected radio's label in each accordion title, so the choice
+					   is visible while the section is collapsed */
+					function updateCriteriaLabels() {
+						var groups = {
+							subjectcriteria: 'sel_subject',
+							studycriteria:   'sel_study',
+							seriescriteria:  'sel_series'
+						};
+						for (var name in groups) {
+							var sel = document.querySelector('input[name="' + name + '"]:checked');
+							var span = document.getElementById(groups[name]);
+							if (span) span.textContent = sel ? ('— ' + (sel.getAttribute('data-label') || '')) : '';
+						}
+					}
+				</script>
 
 				<br>
 				<div style="text-align: right">
@@ -324,8 +414,8 @@
 	/* -------------------------------------------- */
 	/* ------- NewImport -------------------------- */
 	/* -------------------------------------------- */
-	function NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid) {
-		
+	function NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflags = null) {
+
 		/* prepare fields for SQL */
 		$datalocation = mysqli_real_escape_string($GLOBALS['linki'], $datalocation);
 		$nfspath = mysqli_real_escape_string($GLOBALS['linki'], $nfspath);
@@ -336,6 +426,18 @@
 		$studycriteria = mysqli_real_escape_string($GLOBALS['linki'], $studycriteria);
 		$seriescriteria = mysqli_real_escape_string($GLOBALS['linki'], $seriescriteria);
 		$userspecifiedpatientid = mysqli_real_escape_string($GLOBALS['linki'], $userspecifiedpatientid);
+
+		/* BIDS flags: whitelist the posted checkbox values against the allowed SET members,
+		   then join with commas for the upload_bidsflags SET column (empty string = no flags) */
+		$allowedbidsflags = array('BIDS_KEEP_SUBID', 'BIDS_KEEP_SES', 'BIDS_SEPARATE_RUNS', 'BIDS_ADD_REVERSE_MAPPING', 'BIDS_ACCEPT_NONCOMPLIANT_DATASET');
+		$bidsflagslist = array();
+		if (is_array($bidsflags)) {
+			foreach ($bidsflags as $flag) {
+				if (in_array($flag, $allowedbidsflags))
+					$bidsflagslist[] = $flag;
+			}
+		}
+		$bidsflagsstr = mysqli_real_escape_string($GLOBALS['linki'], implode(",", $bidsflagslist));
 		
 		if ($modality == "unknown")
 			$guessmodality = 1;
@@ -347,7 +449,7 @@
 		  */
 		
 		/* create the upload and get the upload_id */
-		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_type, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid) values (now(), 'uploading', '$datalocation', '$filetype', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid')";
+		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_type, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid, upload_bidsflags) values (now(), 'uploading', '$datalocation', '$filetype', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid', '$bidsflagsstr')";
 		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$uploadid = mysqli_insert_id($GLOBALS['linki']);

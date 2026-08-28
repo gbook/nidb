@@ -43,7 +43,7 @@ Key structures you will consume (see `bids.h` for full definitions):
 
 | Structure | Holds |
 |---|---|
-| `BidsDataset` | `subjects` map, `participantRows`, `datasetDescription`, dataset name/version, `topLevelFiles` |
+| `BidsDataset` | `subjects` map, `participantRows`, `datasetDescription`, dataset name/version, `topLevelFiles`, `bidsCompliant` + `complianceIssues` |
 | `SubjectRecord` | `id`, `participantRow`, `sessions`, `acquisitionsWithoutSession`, subject-level `scansTable`, `looseFiles` |
 | `SessionRecord` | `id`, `acquisitions`, session-level `scansTable`, `looseFiles` |
 | `Acquisition` | `datatype`, `suffix`, `entities`, `primaryDataPath`, companion paths (`bvalPath`/`bvecPath`/`eventsPath`), `files`, **`resolvedMetadata` (merged JSON via BIDS inheritance)**, matched `scansRow` |
@@ -75,6 +75,20 @@ for (const QVariantMap &row : ds.participantRows)
 for (const bids::FileRecord &f : ds.topLevelFiles)
     f.absolutePath;                             // full path on disk
 ```
+
+### Compliance — importing "BIDS-like" datasets
+
+The reader is **tolerant by design**: a dataset with a correct `sub-XX/ses-YY` layout and valid sidecars, but missing root metadata, still parses so it can be imported. `readDataset()` returns `false` only on a hard read failure, not on a compliance deviation — so check the compliance fields, not just the return value.
+
+```cpp
+ds.bidsCompliant;        // bool: false if a BIDS-REQUIRED element is missing/invalid
+ds.complianceIssues;     // QStringList: every deviation found (see below)
+```
+
+- `bidsCompliant` is set to `false` only when a **BIDS-required** element is missing or invalid. Currently that means `dataset_description.json` is absent/unparseable, or lacks its required `Name` / `BIDSVersion`.
+- `complianceIssues` lists **every** deviation found, including **RECOMMENDED-but-absent** files (e.g. `participants.tsv`). A recommended-only deviation is recorded here **without** flipping `bidsCompliant` to `false`.
+
+So a dataset can be `bidsCompliant == true` and still have entries in `complianceIssues`. Decide in your import how strict to be — e.g. import anything that parses, but surface `complianceIssues` to the user, and perhaps gate on `bidsCompliant` for a "strict" mode. `bids::PrintDataset(ds)` prints both the flag and the issue list.
 
 ### Iterating subjects
 

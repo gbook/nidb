@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 25, 2026 at 07:17 PM
+-- Generation Time: Aug 28, 2026 at 05:52 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -3342,7 +3342,7 @@ CREATE TABLE `uploads` (
   `upload_log` mediumtext DEFAULT NULL,
   `upload_originalfilelist` longtext DEFAULT NULL,
   `upload_source` enum('web','api','nfs','') DEFAULT NULL,
-  `upload_type` enum('dicom','squirrel','auto','') NOT NULL,
+  `upload_type` enum('dicom','squirrel','auto','bids','') NOT NULL,
   `upload_datapath` mediumtext DEFAULT NULL,
   `upload_stagingpath` varchar(255) DEFAULT NULL,
   `upload_destprojectid` int(11) NOT NULL,
@@ -3351,7 +3351,8 @@ CREATE TABLE `uploads` (
   `upload_guessmodality` tinyint(1) DEFAULT NULL,
   `upload_subjectcriteria` enum('patientid','namesexdob','specificpatientid','patientidfromdir','') DEFAULT NULL,
   `upload_studycriteria` enum('modalitystudydate','studyuid','') DEFAULT NULL,
-  `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL
+  `upload_seriescriteria` enum('seriesnum','seriesdate','seriesuid','') DEFAULT NULL,
+  `upload_bidsflags` set('BIDS_KEEP_SUBID','BIDS_KEEP_SES','BIDS_SEPARATE_RUNS','BIDS_ADD_REVERSE_MAPPING','BIDS_ACCEPT_NONCOMPLIANT_DATASET') NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
