@@ -200,6 +200,26 @@
 			$status = 'Received';
 		$iserror = ($status == 'Error');
 
+		/* For 'Received' files, a name ending in '.part' is a partial transfer still being written
+		   (or one that was abandoned). If the '.part' file is no longer on disk, the transfer either
+		   completed (renamed) or was dropped, so the monitor row is stale — remove it before counting
+		   and listing, so the page never shows phantom partial files. */
+		if ($status == 'Received') {
+			$sqlstring = "select dicommonitor_id, file_path from dicom_monitor where file_status = 'Received' and file_path like '%.part'";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$staleids = array();
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				if (($row['file_path'] !== null) && !file_exists($row['file_path']))
+					$staleids[] = (int)$row['dicommonitor_id'];
+			}
+			foreach ($staleids as $id) {
+				$sql = "delete from dicom_monitor where dicommonitor_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
+				mysqli_stmt_bind_param($stmt, "i", $id);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($id));
+			}
+		}
+
 		/* the DICOM files currently in this state. The list can be large (e.g. when parsing is
 		   backed up), so it is capped; the count is always the true total */
 		$displaylimit = 5000;

@@ -4377,7 +4377,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		}
 		else {
 			?>
-			<table class="ui small very compact celled grey table">
+			<style>
+				/* 2px separator on the first row of each study-datetime group. Applied to the cells
+				   (not the tr) so it paints in Fomantic's border-collapse: separate model. */
+				table.dicomarchived tr.studygroup td { border-top: 2px solid #888 }
+			</style>
+			<table class="ui small very compact celled grey table dicomarchived">
 				<thead>
 					<tr>
 						<th>PatientID</th>
@@ -4390,9 +4395,18 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				</thead>
 				<tbody>
 				<?
+					/* rows are ordered by PatientID, StudyDatetime, SeriesNumber, so a study group is a
+					   run of rows sharing the same PatientID + StudyDatetime. Draw a 2px top border on
+					   the first row of each new group (except the very first, which already sits under
+					   the header) to visually separate one study's series from the next. */
+					$prevgroup = null;
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$group = ($row['PatientID'] ?? '') . '|' . ($row['StudyDatetime'] ?? '');
+						$newgroup = ($prevgroup !== null && $group !== $prevgroup);
+						$prevgroup = $group;
+						$rowclass = $newgroup ? ' class="studygroup"' : '';
 						?>
-						<tr>
+						<tr<?=$rowclass?>>
 							<td><?=htmlspecialchars($row['PatientID'] ?? '')?></td>
 							<td><?=htmlspecialchars($row['StudyDatetime'] ?? '')?></td>
 							<td><?=htmlspecialchars($row['SeriesNumber'] ?? '')?></td>
