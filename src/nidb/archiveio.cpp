@@ -938,7 +938,11 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
     }
 
     /* get parent subject and study information */
-    subject subj(subjectRowID, n);
+    subject subj(n);
+    subj.searchMethod = RowId;
+    subj.searchSubjectRowID = subjectRowID;
+    if (!subj.Load()) { n->Log(QString("subject not valid [%1]").arg(subj.msg)); return false; }
+
     study stud(studyRowID, n);
 
     QString seriesPath = QString("%1/%2").arg(stud.path()).arg(seriesNumber);
@@ -946,7 +950,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
 
     /* check if this series already exists */
     if (seriesRowID < 0) {
-        n->Log(QString("Creating series [%1] [%2] [%3]").arg(subj.UID()).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+        n->Log(QString("Creating series [%1] [%2] [%3]").arg(subj.uid).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
 
         /* series doesn't exist, so we'll create it */
         AppendUploadLog(QString("MR series [%1] did not exist, creating").arg(seriesNumber));
@@ -959,7 +963,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
         seriesRowID = q.lastInsertId().toInt();
     }
 
-    n->Log(QString("Updating series [%1 - %2 - %3]").arg(subj.UID()).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+    n->Log(QString("Updating series [%1 - %2 - %3]").arg(subj.uid).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
 
     /* update (new or existing) series */
     QString sqlstring = "update mr_series set series_datetime = '" + tags["SeriesDateTime"] + "', series_desc = :SeriesDescription, series_protocol = :ProtocolName, series_sequencename = :SequenceName, series_tr = :RepetitionTime, series_te = :EchoTime,series_flip = :FlipAngle, phaseencodedir = :InPlanePhaseEncodingDirection, phaseencodeangle = :PhaseEncodeAngle, PhaseEncodingDirectionPositive = :PhaseEncodingDirectionPositive, series_spacingx = :pixelX,series_spacingy = :pixelY, series_spacingz = :SliceThickness, series_fieldstrength = :MagneticFieldStrength, img_rows = :Rows, img_cols = :Columns, img_slices = :zsize, series_ti = :InversionTime, percent_sampling = :PercentSampling, percent_phasefov = :PercentPhaseFieldOfView, acq_matrix = :AcquisitionMatrix, slicethickness = :SliceThickness, slicespacing = :SpacingBetweenSlices, bandwidth = :PixelBandwidth, image_type = :ImageType, image_comments = :ImageComments, bold_reps = :boldreps, numfiles = :numfiles, series_notes = :importSeriesNotes, series_status = 'complete' where mrseries_id = :seriesRowID";
@@ -2306,8 +2310,10 @@ bool archiveIO::GetProject(int destProjectID, QString StudyDescription, int &pro
 bool archiveIO::GetOrCreateEnrollment(int subjectRowID, int projectRowID, int &enrollmentRowID) {
     QSqlQuery q;
 
-    subject s(subjectRowID, n);
-    s.UID();
+    subject s(n);
+    s.searchMethod = RowId;
+    s.searchSubjectRowID = subjectRowID;
+    if (!s.Load()) { n->Log("subject was invalid"); return false; }
 
     /* check if the subject is enrolled in the project */
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
@@ -2327,7 +2333,7 @@ bool archiveIO::GetOrCreateEnrollment(int subjectRowID, int projectRowID, int &e
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         enrollmentRowID = q.lastInsertId().toInt();
 
-        AppendUploadLog(QString("Created new enrollmentRowID [%1]. %2 is now enrolled in project [%3]").arg(enrollmentRowID).arg(s.UID()).arg(projectRowID));
+        AppendUploadLog(QString("Created new enrollmentRowID [%1]. %2 is now enrolled in project [%3]").arg(enrollmentRowID).arg(s.uid).arg(projectRowID));
     }
 
     return true;
@@ -2382,20 +2388,40 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
     subject *s = nullptr;
 
     if (existingSubjectID >= 0) {
-        s = new subject(existingSubjectID, n);
+        s = new subject(n);
+        s->searchMethod = RowId;
+        s->searchSubjectRowID = existingSubjectID;
+        if (!s->Load()) { n->Log("subject was invalid"); return false; }
     }
     else {
         if (((subjectMatchCriteria == "") || (subjectMatchCriteria == "patientid") || (subjectMatchCriteria == "specificpatientid") || (subjectMatchCriteria == "patientidfromdir")) && (projectID > -1)) {
-            s = new subject(PatientID, projectID, n);
+            s = new subject(n);
+            s->searchMethod = AltUid;
+            s->searchProjectRowID = projectID;
+            s->searchAltUID = PatientID;
+            if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else if (subjectMatchCriteria == "uid") {
-            s = new subject(PatientID, false, n);
+            s = new subject(n);
+            s->searchMethod = Uid;
+            s->searchUID = PatientID;
+            if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else if (subjectMatchCriteria == "uidoraltuid") {
-            s = new subject(PatientID, true, n);
+            s = new subject(n);
+            s->searchMethod = UidOrAltUid;
+            s->searchProjectRowID = projectID;
+            s->searchUID = PatientID;
+            s->searchAltUID = PatientID;
+            if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else if (subjectMatchCriteria == "namesexdob") {
-            s = new subject(PatientName, PatientSex, PatientBirthDate, n);
+            s = new subject(n);
+            s->searchMethod = NameSexDob;
+            s->searchName = PatientName;
+            s->searchSex = PatientSex;
+            s->searchDOB = PatientBirthDate;
+            if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else {
             subjectRowID = -1;
@@ -2406,10 +2432,10 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
     }
 
     if (s) {
-        if (s->valid()) {
-            subjectRowID = s->subjectRowID();
-            subjectUID = s->UID();
-            AppendUploadLog(QString("Subject [%1] with subjectRowID [%2] found by [%3] matching criteria").arg(s->UID()).arg(s->subjectRowID()).arg(subjectMatchCriteria));
+        if (s->isValid()) {
+            subjectRowID = s->GetSubjectRowID();
+            subjectUID = s->uid;
+            AppendUploadLog(QString("Subject [%1] with subjectRowID [%2] found by [%3] matching criteria").arg(s->uid).arg(s->GetSubjectRowID()).arg(subjectMatchCriteria));
             delete s;
             return true;
         }
@@ -3040,7 +3066,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         QString uid = a.key();
 
         /* get the subject object by UID */
-        subject subj(uid, false, n);
+        subject subj(n);
+        subj.searchMethod = Uid;
+        subj.searchUID = uid;
+        if (!subj.Load()) { n->Log("subject was invalid"); return false; }
 
         n->Log(QString("%1() Working on subject [" + uid + "]").arg(__FUNCTION__));
 
@@ -3052,7 +3081,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         sqrlSubject.Store();
         qint64 squirrelSubjectRowID = sqrlSubject.GetObjectID();
 
-        n->Log(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.UID() [" + subj.UID() + "]").arg(__FUNCTION__));
+        n->Log(QString("%1() sqrlSubject.ID [" + sqrlSubject.ID + "]   subj.uid [" + subj.uid + "]").arg(__FUNCTION__));
 
         QList<int> enrollmentIDs;
 
@@ -3485,10 +3514,14 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
-        subject subj(ser.subjectid, n);
+        subject subj(n);
+        subj.searchMethod = RowId;
+        subj.searchSubjectRowID = ser.subjectid;
+        if (!subj.Load()) { n->Log("subject was invalid"); return false; }
+
         QString subjectID = subj.GetPrimaryAlternateID(ser.projectid);
         if (subjectID == "")
-            subjectID = subj.UID();
+            subjectID = subj.uid;
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             //n->Log("Checkpoint B");
@@ -3566,15 +3599,19 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         study stud(studyRowID, n);
         if (!stud.valid()) continue;
 
-        subject subj(stud.subjectRowID(), n);
-        if (!subj.valid()) continue;
+        subject subj(n);
+        subj.searchMethod = RowId;
+        subj.searchSubjectRowID = stud.subjectRowID();
+        if (!subj.Load()) { n->Log("subject was invalid"); continue; }
+
+        //if (!subj.isValid()) continue;
 
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         //subject subj(ser.subjectid, n);
         QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
-            subjectID = subj.UID();
+            subjectID = subj.uid;
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
@@ -3621,8 +3658,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int subjectRowID = q.value("subject_id").toInt();
         int projectRowID = q.value("project_id").toInt();
 
-        subject subj(subjectRowID, n);
-        if (!subj.valid()) continue;
+        subject subj(n);
+        subj.searchMethod = RowId;
+        subj.searchSubjectRowID = subjectRowID;
+        if (!subj.Load()) { n->Log("subject was invalid"); continue; }
+        //if (!subj.isValid()) continue;
 
         enrollment enroll(subjectRowID, projectRowID, n);
         //n->Log(QString("enroll(%1, %2)").arg(subjectRowID).arg(projectRowID));
@@ -3635,7 +3675,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
-            subjectID = subj.UID();
+            subjectID = subj.uid;
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */
@@ -3673,8 +3713,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int subjectRowID = q.value("subject_id").toInt();
         int projectRowID = q.value("project_id").toInt();
 
-        subject subj(subjectRowID, n);
-        if (!subj.valid()) continue;
+        subject subj(n);
+        subj.searchMethod = RowId;
+        subj.searchSubjectRowID = subjectRowID;
+        if (!subj.Load()) { n->Log("subject was invalid"); continue; }
+        //if (!subj.isValid()) continue;
 
         enrollment enroll(subjectRowID, projectRowID, n);
         if (!enroll.valid()) continue;
@@ -3683,7 +3726,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         QString subjectID = subj.GetPrimaryAlternateID(projectRowID);
         if (subjectID == "")
-            subjectID = subj.UID();
+            subjectID = subj.uid;
         qint64 sqrlSubjectRowID = sqrl.FindSubject(subjectID);
         if (sqrlSubjectRowID < 0) {
             /* ... create subject if necessary */

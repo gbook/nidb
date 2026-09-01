@@ -592,11 +592,14 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, int uploadRowID) {
 /* ---------------------------------------------------------- */
 bool moduleUpload::ParseUploadedBIDS(bids::BidsDataset *dataset, int uploadRowID) {
 
+    /* get the upload info */
+    UploadOptions upload = GetUploadOptions(uploadRowID);
+
     /* get BIDS package information */
     QString bidsRootPath = dataset->rootPath;
     QString bidsName = dataset->name;
     QString bidsVersion = dataset->bidsVersion;
-    QString bidsDesc = dataset->datasetDescription;
+    //QString bidsDesc = dataset->datasetDescription; /* full QJsonObject */
 
     /* files in the root BIDS directory */
     for (const bids::FileRecord &f : dataset->topLevelFiles) {
@@ -606,7 +609,7 @@ bool moduleUpload::ParseUploadedBIDS(bids::BidsDataset *dataset, int uploadRowID
     /* participants.tsv */
     QStringList participantColumns = dataset->participantColumns;
     for (const QVariantMap &row : dataset->participantRows) {
-        QString bidsSubjectID = row.value("participant_id");
+        QString bidsSubjectID = row.value("participant_id").toString();
     }
 
     /* iterate through the subject data ------ mapped to the NiDB subject */
@@ -628,18 +631,21 @@ bool moduleUpload::ParseUploadedBIDS(bids::BidsDataset *dataset, int uploadRowID
             QString filePath = f.absolutePath;
         }
 
-        /* find existing subject that a) has this subjectID b) is enrolled in this project */
+        /* find existing subject that has this subjectID AND is enrolled in this project */
         QSqlQuery q;
-        q.prepare("select * from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id WHERE (a.uid = :altuid or a.uid = SHA1(:altuid) or b.altuid = :altuid or b.altuid = SHA1(:altuid))");
+        q.prepare("select * from subjects a left join subject_altuid b on a.subject_id = b.subject_id left join enrollment c on a.subject_id = c.subject_id WHERE (a.uid = :altuid or b.altuid = :altuid) and c.project_id = :projectid");
         q.bindValue(":altuid", subjectID);
+        q.bindValue(":projectid", upload.projectRowID);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
         }
         else {
-            n->Log("Subject not found by AltUID [" + uid + "]. Subject could not be found");
+            n->Log(QString("Subject not found by AltUID [%1] within this project [%2]. Subject could not be found").arg(subjectID).arg(upload.projectRowID));
 
             /* need to create the subject and enrollment */
         }
+
+        /* create the study */
 
         /* ----- map the BIDS sessions to NiDB studies ----- */
 
@@ -650,30 +656,46 @@ bool moduleUpload::ParseUploadedBIDS(bids::BidsDataset *dataset, int uploadRowID
 
             QList scans = sess.scansTable.rows; /* parsed scans.tsv */
             for (const bids::Acquisition &acq : subj.acquisitionsWithoutSession) {
-                ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)
+                QString err;
+                //if (!ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)) {
+
+                //}
             }
         }
 
         /* sessionless acquisitions - no 'ses-XX' directories */
         for (const bids::Acquisition &acq : subj.acquisitionsWithoutSession) {
-            ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)
+            QString err;
+            //if (!ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)) {
+            //    n->Log();
+            //}
         }
 
     }
+
+    return true;
 }
 
 
 /* ---------------------------------------------------------- */
 /* --------- ImportBidsAcquisition -------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief This function imports a BIDS acquisition into an NiDB series
+ * @param subjectRowID NiDB database subjectRowID
+ * @param studyRowID NiDB database studyRowID
+ * @param acq BIDS acquisition object
+ * @param err Any errors reported during import
+ * @return true if successful, false otherwise
+ */
 bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, const bids::Acquisition &acq, QString err) {
     QString key = acq.key; /* 'sub-01_ses-1_task-rest_run-1_bold' */
     QString datatype = acq.datatype; /* anat, func, dwi, eeg ... */
     QString suffix = acq.suffix; /* T1w, bold, dwi ... */
-    QMap<QString, QString> = acq.entities;
-    QString taskName = acq.entities("task");
-    QString run = acq.entities("run");
-    QString acq = acq.entities("acq");
+    //QMap<QString, QString> = acq.entities;
+    QString taskName = acq.entities.value("task");
+    QString run = acq.entities.value("run");
+    QString acqName = acq.entities.value("acq");
 
     return true;
 }

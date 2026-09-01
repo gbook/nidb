@@ -800,7 +800,11 @@ void moduleImport::UpdateDicomMonitor(QString filepath, QHash<QString, QString> 
         q.bindValue(":msg", msg);
         q.bindValue(":filepath", filepath);
         if (fi.exists()) {
-            q.bindValue(":fileDatetime", fi.lastModified());
+            /* Bind as a local wall-clock string (same as StudyDatetime/SeriesDatetime below) so the
+             * QMYSQL driver stores it verbatim. Binding a QDateTime object instead lets Qt6's driver
+             * convert it to UTC before writing to the datetime column, which shifts the stored time
+             * into the future by the local UTC offset. */
+            q.bindValue(":fileDatetime", fi.lastModified().toLocalTime().toString("yyyy-MM-dd HH:mm:ss"));
             q.bindValue(":fileSize", fi.size());
         }
         else {
@@ -824,7 +828,11 @@ void moduleImport::UpdateDicomMonitor(QString filepath, QHash<QString, QString> 
     else {
         q.prepare("insert into dicom_monitor (file_path, file_datetime, file_size, file_type, file_status, file_statusmessage, Modality, PatientID, StudyInstanceUID, SeriesInstanceUID, StudyDescription, SeriesDescription, SeriesNumber, AcquisitionNumber, InstanceNumber, StudyDatetime, SeriesDatetime) values (:fileName, :fileDatetime, :fileSize, :fileType, :status, :msg, :Modality, :PatientID, :StudyInstanceUID, :SeriesInstanceUID, :StudyDescription, :SeriesDescription, :SeriesNumber, :AcquisitionNumber, :InstanceNumber, :StudyDatetime, :SeriesDatetime)");
         q.bindValue(":fileName", filepath);
-        q.bindValue(":fileDatetime", fi.lastModified());
+        /* local wall-clock string, not a QDateTime object - see note in the update branch above */
+        if (fi.exists())
+            q.bindValue(":fileDatetime", fi.lastModified().toLocalTime().toString("yyyy-MM-dd HH:mm:ss"));
+        else
+            q.bindValue(":fileDatetime", QVariant(QMetaType::fromType<QString>()));
         q.bindValue(":fileSize", fi.size());
         q.bindValue(":fileType", "DICOM");
         q.bindValue(":status", status);

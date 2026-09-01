@@ -26,52 +26,58 @@
 #include "nidb.h"
 #include "squirrelSubject.h"
 
-
+/**
+ * @brief The subject class - databaseRowID, valid, datapath are private, all other subject info is public
+ */
 class subject
 {
 public:
-    subject();
-    subject(int id, nidb *a);
-    subject(QString uid, bool checkAltUID, nidb *a);
-    subject(QString altuid, int projectid, nidb *a);
-    subject(QString name, QString sex, QString dob, nidb *a);
-    nidb *n;
+    subject(nidb *a);
+
+    bool Load();
+    bool Update();
 
     void PrintSubjectInfo();
     squirrelSubject GetSquirrelObject(QString databaseUUID);
 
-    QDate dob() { return _dob; }
-    QString GUID() { return _guid; }
-    QString ethnicity1() { return _ethnicity1; }
-    QString ethnicity2() { return _ethnicity2; }
-    QString handedness() { return _handedness; }
-    QString sex() { return _sex; }
-    QString UID() { return _uid; }
-    QString msg() { return _msg; }
-    QString path() { return _subjectpath; }
+    QString GetSubjectDataPath() { return subjectDataPath; }
     QStringList GetAllAlternateIDs();
     QString GetPrimaryAlternateID(int projectRowID);
-    bool dataPathExists() { return _dataPathExists; }
-    bool valid() { return _isValid; }
-    int subjectRowID() { return _subjectid; }
+    bool DataPathExists() { return dataPathExists; }
+    bool isValid() { return valid; }
+    int GetSubjectRowID() { return subjectRowID; }
+
+    /* subject data */
+    QDate dob = QDate(0,0,0);
+    QString ethnicity1;
+    QString ethnicity2;
+    QString gender = "U";
+    QString guid;
+    QString handedness = "U";
+    QString sex = "U";
+    QString uid;
+    QStringList altuids;
+    int searchProjectRowID = -1;
+
+    /* object information */
+    SubjectSearchMethod searchMethod = SubjectSearchMethod::RowId;
+    QString searchAltUID;
+    QString searchDOB; /* YYYY-MM-DD format */
+    QString searchName;
+    QString searchSex;
+    QString searchUID;
+    int searchSubjectRowID = -1;
+    QString msg;
+    QStringList msgs;
 
 private:
-    void LoadSubjectInfo();
+    bool LoadSubjectInfo();
 
-    int _subjectid = -1;
-    QString _uid = "";
-	QString _guid = "";
-	QStringList _altuids;
-	QDate _dob = QDate(0,0,0);
-	QString _sex = "U";
-	QString _ethnicity1 = "";
-	QString _ethnicity2 = "";
-	QString _handedness = "U";
-    QString _subjectpath = "";
-    bool _dataPathExists = false;
-    bool _isValid = false;
-    QString _msg = "";
-    QStringList msgs;
+    nidb *n;
+    int subjectRowID = -1;
+    QString subjectDataPath;
+    bool dataPathExists = false;
+    bool valid = false;
 
 };
 

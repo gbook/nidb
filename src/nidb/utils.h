@@ -108,6 +108,7 @@ struct computeCluster {
 enum ExportFormat { Original, Dicom, DicomLite, DicomFull, Nifti4dgz, Nifti4d, Nifti3dgz, Nifti3d, NiftiMe, BIDS, Squirrel };
 //static const char * ExportFormatStrings[] = { "Original", "Dicom", "DicomLite", "DicomFull", "Nifti4dgz", "Nifti4d", "Nifti3dgz", "Nifti3d", "NiftiMe", "BIDS", "Squirrel" };
 
+enum SubjectSearchMethod { RowId, Uid, AltUid, UidOrAltUid, NameSexDob };
 
 /* generic functions */
 QList<double> SplitStringArrayToDouble(QStringList a);
