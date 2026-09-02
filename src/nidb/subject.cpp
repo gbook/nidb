@@ -35,6 +35,12 @@ subject::subject(nidb *a)
 /* ---------------------------------------------------------- */
 /* --------- Load ------------------------------------------- */
 /* ---------------------------------------------------------- */
+/**
+ * @brief SearchMethod and the appropriate search criteria must
+ *        be set before calling Load(). `msg` is set if Load is
+ *        unsucessful
+ * @return true if successful, false otherwise
+ */
 bool subject::Load() {
     QSqlQuery q;
 

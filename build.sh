@@ -1,5 +1,11 @@
 #!/bin/sh
 
+# WSL appends the Windows PATH (which contains spaces, e.g. "Program Files"),
+# which breaks PATH-walking in the sudo copy steps below (env: 'Files': No such
+# file or directory). Drop the /mnt/ (Windows) entries.
+PATH="$(printf %s "$PATH" | tr ':' '\n' | grep -v '^/mnt/' | paste -sd: -)"
+export PATH
+
 if grep -q -i "release 8" /etc/redhat-release
 then
 	echo "RHEL 8 detected. Enabling gcc 10"
