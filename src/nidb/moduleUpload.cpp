@@ -588,7 +588,7 @@ bool moduleUpload::ParseUploadedSquirrel(squirrel *sqrl, int uploadRowID) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- ParseUploadedSquirrel -------------------------- */
+/* --------- ParseUploadedBIDS ------------------------------ */
 /* ---------------------------------------------------------- */
 bool moduleUpload::ParseUploadedBIDS(bids::BidsDataset *dataset, int uploadRowID) {
 
