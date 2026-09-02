@@ -143,39 +143,6 @@
 						updateDataLocation();
 					</script>
 
-					<div class="three wide column"><h3 class="ui grey right aligned header">File Format</h3></div>
-					<div class="thirteen wide column">
-						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="filetype" required>
-							<i class="dropdown icon"></i>
-							<div class="default text">Select file format</div>
-							<div class="menu">
-								<div class="item" data-value="auto"><b>Imaging file(s)</b></div>
-								<div class="item" data-value="bids"><b>BIDS</b></div>
-								<div class="item" data-value="squirrel"><b>squirrel</b> - only one squirrel package at a time</div>
-							</div>
-						</div>
-					</div>
-
-					<div class="three wide column"><h3 class="ui grey right aligned header">Data Modality</h3></div>
-					<div class="thirteen wide column">
-						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="modality" required>
-							<i class="dropdown icon"></i>
-							<div class="default text">Select modality</div>
-							<div class="menu">
-								<div class="item" data-value="auto"><b>Automatically detect</b> - DICOM only</div>
-								<?
-									$modalities = GetModalityList();
-									foreach ($modalities as $modality) {
-										?><div class="item" data-value="<?=$modality?>"><?=$modality?></div><?
-									}
-								?>
-								<div class="item" data-value="unknown"><b>Unknown</b> - Let NiDB guess the modality</div>
-							</div>
-						</div>
-					</div>
-
 					<div class="three wide column"><h3 class="ui grey right aligned header">Destination Project</h3></div>
 					<div class="thirteen wide column">
 						<select name="projectid" required>
@@ -194,10 +161,43 @@
 							?>
 						</select>
 					</div>
-					
-					<div class="three wide column"><h3 class="ui grey right aligned header">DICOM Matching Criteria</h3></div>
+
+					<div class="three wide column"><h3 class="ui grey right aligned header">File Format</h3></div>
 					<div class="thirteen wide column">
-					
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="filetype" id="filetype" required>
+							<i class="dropdown icon"></i>
+							<div class="default text">Select file format</div>
+							<div class="menu">
+								<div class="item" data-value="auto"><b>Imaging file(s)</b></div>
+								<div class="item" data-value="bids"><b>BIDS</b></div>
+								<div class="item" data-value="squirrel"><b>squirrel</b> - only one squirrel package at a time</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="three wide column fmt-modality"><h3 class="ui grey right aligned header">Data Modality</h3></div>
+					<div class="thirteen wide column fmt-modality">
+						<div class="ui fluid selection dropdown">
+							<input type="hidden" name="modality" id="modalityfield" required>
+							<i class="dropdown icon"></i>
+							<div class="default text">Select modality</div>
+							<div class="menu">
+								<div class="item" data-value="auto"><b>Automatically detect</b> - DICOM only</div>
+								<?
+									$modalities = GetModalityList();
+									foreach ($modalities as $modality) {
+										?><div class="item" data-value="<?=$modality?>"><?=$modality?></div><?
+									}
+								?>
+								<div class="item" data-value="unknown"><b>Unknown</b> - Let NiDB guess the modality</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="three wide column fmt-dicom"><h3 class="ui grey right aligned header">DICOM Matching Criteria</h3></div>
+					<div class="thirteen wide column fmt-dicom">
+
 						<div class="ui styled accordion" id="matchingAccordion">
 							<div class="title">
 								<i class="dropdown icon"></i>
@@ -336,38 +336,46 @@
 						</div>
 					</div>
 
-					<div class="three wide column"><h3 class="ui grey right aligned header">BIDS Options</h3></div>
-					<div class="thirteen wide column">
-						<span class="tiny">Optional flags applied when importing a BIDS (or BIDS-like) dataset. Ignored for non-BIDS file formats.</span>
-						<div class="ui grid" style="margin-top:0.25em">
-							<div class="sixteen wide column">
-								<div class="ui checkbox">
-									<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SUBID">
-									<label><b>Keep BIDS subject IDs</b><br><span class="tiny">Use the <tt>sub-&lt;label&gt;</tt> value as the NiDB subject ID instead of matching/creating a new one</span></label>
-								</div>
+					<div class="three wide column fmt-bids"><h3 class="ui grey right aligned header">BIDS Options</h3></div>
+					<div class="thirteen wide column fmt-bids">
+						<div class="ui styled fluid accordion" id="bidsAccordion">
+							<div class="title active">
+								<i class="dropdown icon"></i>
+								BIDS Flags
 							</div>
-							<div class="sixteen wide column">
-								<div class="ui checkbox">
-									<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SES">
-									<label><b>Keep BIDS session labels</b><br><span class="tiny">Use the <tt>ses-&lt;label&gt;</tt> value as the study visit label</span></label>
-								</div>
-							</div>
-							<div class="sixteen wide column">
-								<div class="ui checkbox">
-									<input type="checkbox" name="bidsflags[]" value="BIDS_SEPARATE_RUNS">
-									<label><b>Separate runs</b><br><span class="tiny">Import each <tt>run-&lt;index&gt;</tt> as its own series</span></label>
-								</div>
-							</div>
-							<div class="sixteen wide column">
-								<div class="ui checkbox">
-									<input type="checkbox" name="bidsflags[]" value="BIDS_ADD_REVERSE_MAPPING">
-									<label><b>Add reverse mapping</b><br><span class="tiny">Record a mapping from each imported series back to its original BIDS entities/paths</span></label>
-								</div>
-							</div>
-							<div class="sixteen wide column">
-								<div class="ui checkbox">
-									<input type="checkbox" name="bidsflags[]" value="BIDS_ACCEPT_NONCOMPLIANT_DATASET">
-									<label><b>Accept non-compliant dataset</b><br><span class="tiny">Import BIDS-like datasets that are missing required root metadata (e.g. <tt>dataset_description.json</tt>) instead of rejecting them</span></label>
+							<div class="content active">
+								<span class="tiny">Optional flags applied when importing a BIDS (or BIDS-like) dataset. Ignored for non-BIDS file formats.</span>
+								<div class="ui grid" style="margin-top:0.25em">
+									<div class="sixteen wide column">
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SUBID">
+											<label><b>Keep BIDS subject IDs</b><br><span class="tiny">Use the <tt>sub-&lt;label&gt;</tt> value as the NiDB subject ID instead of matching/creating a new one</span></label>
+										</div>
+									</div>
+									<div class="sixteen wide column">
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflags[]" value="BIDS_KEEP_SES">
+											<label><b>Keep BIDS session labels</b><br><span class="tiny">Use the <tt>ses-&lt;label&gt;</tt> value as the study visit label</span></label>
+										</div>
+									</div>
+									<div class="sixteen wide column">
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflags[]" value="BIDS_SEPARATE_RUNS">
+											<label><b>Separate runs</b><br><span class="tiny">Import each <tt>run-&lt;index&gt;</tt> as its own series</span></label>
+										</div>
+									</div>
+									<div class="sixteen wide column">
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflags[]" value="BIDS_ADD_REVERSE_MAPPING">
+											<label><b>Add reverse mapping</b><br><span class="tiny">Record a mapping from each imported series back to its original BIDS entities/paths</span></label>
+										</div>
+									</div>
+									<div class="sixteen wide column">
+										<div class="ui checkbox">
+											<input type="checkbox" name="bidsflags[]" value="BIDS_ACCEPT_NONCOMPLIANT_DATASET">
+											<label><b>Accept non-compliant dataset</b><br><span class="tiny">Import BIDS-like datasets that are missing required root metadata (e.g. <tt>dataset_description.json</tt>) instead of rejecting them</span></label>
+										</div>
+									</div>
 								</div>
 							</div>
 						</div>
@@ -381,7 +389,36 @@
 						$('#matchingAccordion').accordion('setting', 'exclusive', true);
 						$('.ui.checkbox').checkbox();
 						updateCriteriaLabels();
+						/* Fomantic updates the hidden filetype input and fires 'change' on it
+						   when a format is picked; show only the sections relevant to that format */
+						var ff = document.getElementById('filetype');
+						if (ff) ff.addEventListener('change', updateFileFormatSections);
+						updateFileFormatSections();
 					});
+
+					/* show/hide Data Modality, DICOM Matching Criteria, and BIDS Options based on
+					   the selected file format:
+					     Imaging file(s) (auto) -> Data Modality + DICOM Matching Criteria
+					     BIDS                    -> BIDS Options only
+					     squirrel                -> none
+					   nothing selected yet      -> none (a format must be chosen first) */
+					function updateFileFormatSections() {
+						var ff = document.getElementById('filetype');
+						var v = ff ? ff.value : '';
+						setSectionDisplay('fmt-modality', v == 'auto');
+						setSectionDisplay('fmt-dicom', v == 'auto');
+						setSectionDisplay('fmt-bids', v == 'bids');
+						/* the modality field is 'required'; drop that when it is hidden so the
+						   form can still submit for BIDS/squirrel imports */
+						var mod = document.getElementById('modalityfield');
+						if (mod) { if (v == 'auto') mod.setAttribute('required', ''); else mod.removeAttribute('required'); }
+					}
+
+					function setSectionDisplay(cls, show) {
+						var els = document.getElementsByClassName(cls);
+						for (var i = 0; i < els.length; i++)
+							els[i].style.display = show ? '' : 'none';
+					}
 
 					/* show the selected radio's label in each accordion title, so the choice
 					   is visible while the section is collapsed */

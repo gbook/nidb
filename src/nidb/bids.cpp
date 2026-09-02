@@ -15,6 +15,78 @@ namespace bids {
 
 
 /* ---------------------------------------------------------- */
+/* --------- MapBidsDatatypeToModality ---------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Map a list of BIDS datatypes to their NiDB/DICOM equivalent modality(s).
+ *        See the declaration in bids.h for behavior details.
+ */
+QStringList MapBidsDatatypeToModality(QStringList bidsDatatypes) {
+    /* Every BIDS datatype (the sub-XX/[ses-YY]/<datatype>/ directory name defined
+     * by the BIDS specification) mapped to its NiDB/DICOM equivalent modality.
+     * Mappings that are not yet known are left blank ("") to be filled in later;
+     * a blank mapping contributes no modality to the result. */
+    static const QMap<QString, QString> datatypeToModality = {
+        /* --- MR-based ------------------------------------------------ */
+        { "anat",   "MR"  },   /* anatomical / structural MRI */
+        { "func",   "MR"  },   /* task & resting-state functional MRI */
+        { "dwi",    "MR"  },   /* diffusion-weighted MRI */
+        { "fmap",   "MR"  },   /* field maps (MRI) */
+        { "perf",   "MR"  },   /* perfusion (ASL) MRI */
+        { "mrs",    ""    },   /* magnetic resonance spectroscopy */
+        /* --- electrophysiology -------------------------------------- */
+        { "eeg",    "EEG" },   /* scalp electroencephalography */
+        { "ieeg",   "EEG" },   /* intracranial EEG (ECoG / sEEG) */
+        { "meg",    "MEG" },   /* magnetoencephalography */
+        /* --- nuclear medicine --------------------------------------- */
+        { "pet",    "PET"    },   /* positron emission tomography */
+        /* --- optical ------------------------------------------------ */
+        { "nirs",   "NIRS"    },   /* (functional) near-infrared spectroscopy */
+        /* --- microscopy --------------------------------------------- */
+        { "micr",   "MICR"    },   /* microscopy */
+        /* --- other -------------------------------------------------- */
+        { "motion", "OT"    },   /* motion capture */
+        { "beh",    "OT"    },   /* behavioral (no imaging data) */
+    };
+
+    QStringList modalities;
+    for (const QString &dt : bidsDatatypes) {
+        /* normalize to lower case so the lookup is case-insensitive (map keys are lower case) */
+        const QString key = dt.trimmed().toLower();
+        if (!datatypeToModality.contains(key))
+            continue;
+        const QString modality = datatypeToModality.value(key);
+        if (!modality.isEmpty() && !modalities.contains(modality))
+            modalities.append(modality);
+    }
+    return modalities;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- NormalizeBidsSex ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Map a BIDS participants.tsv 'sex' value to a NiDB sex code (M/F/O/U).
+ *        See the declaration in bids.h for behavior details.
+ */
+QString NormalizeBidsSex(QString bidsSex) {
+    /* normalize to lower case so the lookup is case-insensitive */
+    const QString key = bidsSex.trimmed().toLower();
+
+    if (key == "m" || key == "male")
+        return "M";
+    if (key == "f" || key == "female")
+        return "F";
+    if (key == "o" || key == "other")
+        return "O";
+
+    /* "n/a", blank, or anything unrecognized */
+    return "U";
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- TsvReader::read -------------------------------- */
 /* ---------------------------------------------------------- */
 /**

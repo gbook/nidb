@@ -182,6 +182,31 @@ struct BidsDataset {
 };
 
 /**
+ * @brief Map a list of BIDS datatypes to their NiDB/DICOM equivalent modality(s).
+ *
+ * Each BIDS datatype is the sub-XX/[ses-YY]/<datatype>/ directory name defined by
+ * the BIDS specification (anat, func, eeg, ...). The returned list contains the
+ * unique modalities that the given datatypes map to, in first-seen order, e.g.
+ * {anat, func, dwi} -> {MR} and {eeg, func} -> {EEG, MR}. Datatypes whose modality
+ * mapping is not yet known contribute nothing to the result.
+ *
+ * @param bidsDatatypes List of BIDS datatype names (case-insensitive)
+ * @return De-duplicated list of NiDB/DICOM modalities
+ */
+QStringList MapBidsDatatypeToModality(QStringList bidsDatatypes);
+
+/**
+ * @brief Map a BIDS participants.tsv 'sex' value to a NiDB sex code.
+ *
+ * NiDB uses single-letter sex codes M/F/O/U. BIDS datasets vary in how they encode
+ * sex (M/F, male/female, m/f, ...); anything unrecognized or "n/a" maps to "U".
+ *
+ * @param bidsSex Sex value as written in participants.tsv (case-insensitive)
+ * @return NiDB sex code: "M", "F", "O", or "U"
+ */
+QString NormalizeBidsSex(QString bidsSex);
+
+/**
  * @brief Lightweight TSV reader used for participants.tsv and scans.tsv files.
  */
 class TsvReader {
