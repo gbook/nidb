@@ -724,20 +724,62 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             }
 
             //QList scans = sess.scansTable.rows; /* parsed scans.tsv */
+            int nextSeries = 1;
             for (const bids::Acquisition &acq : sess.acquisitions) {
                 QString err;
-                //if (!ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)) {
-
-                //}
+                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, acq, err)) {
+                    n->Log(QString("Inserted series [%1]").arg(nextSeries));
+                    nextSeries++;
+                }
+                else {
+                    n->Log(QString("Error inserting series [%1]").arg(nextSeries));
+                }
             }
         }
 
-        /* sessionless acquisitions - no 'ses-XX' directories */
-        for (const bids::Acquisition &acq : bidsSubj.acquisitionsWithoutSession) {
-            QString err;
-            //if (!ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)) {
-            //    n->Log();
-            //}
+        /* --- store all sessionless acquisitions in 1 study --- */
+
+        if (bidsSubj.acquisitionsWithoutSession.size() > 0) {
+            /* determine the acquisition datatypes */
+            QStringList bidsDatatypes;
+            for (const bids::Acquisition &acq : bidsSubj.acquisitionsWithoutSession) {
+                bidsDatatypes.append(acq.datatype);
+            }
+            QStringList modalities = bids::MapBidsDatatypeToModality(bidsDatatypes);
+
+            if (modalities.size() > 1) {
+                n->Log(QString("sessionless acquisitions contains more than one modality [%1]. Skipping import of this acquisition.").arg(bidsDatatypes.join(",")));
+                continue;
+            }
+            else if (modalities.size() == 0) {
+                n->Log(QString("sessionless acquisitions contained no matching modality [%1]. Skipping import of this acquisition.").arg(bidsDatatypes.join(",")));
+                continue;
+            }
+
+            QString modality = modalities[0];
+            /* create study */
+            int studyRowID;
+            int studyNum;
+            if (io->CreateStudy(subjectRowID, enrollmentRowID, CreateCurrentDateTime(), "",modality, bidsSubjectID, subjectAge, 0.0, 0.0, "BIDS sessionless acquisitions", "BIDS", "", "BIDS", "BIDS", "BIDS", studyRowID, studyNum )) {
+                n->Log(QString("Created sessionless study [%1] for subject UID [%2]").arg(studyNum).arg(subjectUID));
+            }
+            else {
+                n->Log(QString("Error creating sessionless study for subject UID [%1]").arg(subjectUID));
+                continue;
+            }
+
+            /* sessionless acquisitions - no 'ses-XX' directories */
+            int nextSeries = 1;
+            for (const bids::Acquisition &acq : bidsSubj.acquisitionsWithoutSession) {
+                QString err;
+                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, acq, err)) {
+                    n->Log(QString("Inserted series [%1]").arg(nextSeries));
+                    nextSeries++;
+                }
+                else {
+                    n->Log(QString("Error inserting series [%1]").arg(nextSeries));
+                }
+            }
         }
 
         i++;
@@ -773,12 +815,44 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int s
     QString run = acq.entities.value("run");
     QString acqName = acq.entities.value("acq");
 
-    /* get DICOM-like tags */
+    /* get full paths to the files */
+    QStringList files;
+    for (const bids::FileRecord &f : acq.files) {
+        files.append(f.absolutePath);
+    }
+
+    /* get DICOM-like tags, and fix missing tags */
     QHash<QString, QString> tags = acq.ResolvedMetadataAsMap();
+    if (!tags.contains("SeriesDateTime")) { tags["SeriesDateTime"] = CreateCurrentDateTime(); }
+    if (!tags.contains("boldreps")) { tags["boldreps"] = "0"; }
+    if (!tags.contains("numfiles")) { tags["numfiles"] = QString("%1").arg(files.size()); }
+    //if (!tags.contains("PhaseEncodingDirectionPositive")) { tags["SeriesDateTime"] = CreateCurrentDateTime(); }
 
-    io->ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNumber, tags, acq.files);
+    /* attempt to get some image dimensions - it is possible for multiple .nii files to be in this directory so just get the first file */
+    foreach (QString f, files) {
+        if ((f.endsWith(".nii")) || (f.endsWith(".nii.gz"))) {
+            QString fsl = QString("export FSLDIR=%1; source ${FSLDIR}/etc/fslconf/fsl.sh; export PATH=$PATH:%1/bin; ").arg(n->cfg["fsldir"]);
+            QHash<QString,QString> hdr = NiftiInfo(f, fsl);
+            if (!hdr.isEmpty()) {
+                //qDebug() << hdr;
+                tags["Rows"] = hdr.value("dim1");
+                tags["Columns"] = hdr.value("dim2");
+                tags["zsize"] = hdr.value("dim3");
+                tags["boldreps"] = hdr.value("dim4");
+                tags["pixelX"] = hdr.value("pixdim1");
+                tags["pixelY"] = hdr.value("pixdim2");
+                break;
+            }
+        }
+    }
 
-    return true;
+    if (io->ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNumber, tags, files)) {
+        return true;
+    }
+    else {
+        err = "ArchiveNiftiSeries() failed. Check logs";
+        return false;
+    }
 }
 
 

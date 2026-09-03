@@ -177,22 +177,20 @@ acq.scansRow.value("acq_time").toString();
 
 ### Flattening metadata to DICOM-style tags
 
-`resolvedMetadata` is a `QJsonObject`. To feed it into NiDB's series-tag machinery (e.g. the `QHash<QString,QString> tags` argument of `ArchiveNiftiSeries`), `Acquisition::ResolvedMetadataAsMap()` flattens it into a `QMap<QString,QString>` of DICOM-style tag/value pairs:
+`resolvedMetadata` is a `QJsonObject`. `Acquisition::ResolvedMetadataAsMap()` flattens it into a `QHash<QString,QString>` of DICOM-style tag/value pairs — the same type as the `tags` argument of `ArchiveNiftiSeries`, so it plugs straight in:
 
 - nested objects are flattened with dot-joined keys (`Foo.Bar`)
 - array values are joined into a single DICOM multi-valued (VM) string with backslash (`\`) separators, preserving element order
 
 ```cpp
-QMap<QString, QString> tags = acq.ResolvedMetadataAsMap();
+QHash<QString, QString> tags = acq.ResolvedMetadataAsMap();
 
 tags.value("RepetitionTime");   // "2"       (2.0 prints without a trailing ".0")
 tags.value("EchoTime");         // "0.03"
 tags.value("ImageType");        // "ORIGINAL\PRIMARY\M\ND"   (array -> DICOM VM)
 
-// hand off to NiDB series tags (QHash) for ArchiveNiftiSeries
-QHash<QString, QString> seriesTags;
-for (auto it = tags.constBegin(); it != tags.constEnd(); ++it)
-    seriesTags.insert(it.key(), it.value());
+// plugs straight into NiDB's series archiving
+io->ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNum, tags, files);
 ```
 
 > Best fit for the flat, scalar / scalar-array shape of MR sidecars. Deeply nested structures — arrays of arrays, or arrays of objects, more common in EEG/MEG/microscopy — are collapsed into a single `\`-joined string and cannot be losslessly reconstructed; for those, read the raw `acq.resolvedMetadata` `QJsonObject` directly.

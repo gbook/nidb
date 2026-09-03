@@ -173,4 +173,7 @@ bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m)
 bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m);
 QString GetDirectoryListing(const QString &path, bool showHidden = false);
 
+/* imaging */
+QHash<QString, QString> NiftiInfo(QString niftipath, QString fslprefix="");
+
 #endif // UTILS_H

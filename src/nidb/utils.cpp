@@ -157,6 +157,50 @@ QString SystemCommand(QString s, bool detail, bool truncate) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- NiftiInfo -------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Read a NIfTI file's header via FSL's `fslhd` and return it as a key/value hash.
+ *
+ * `fslhd` prints one "key<whitespace>value" per line; the key is the first token and
+ * the value is the remainder of the line (which may itself contain spaces, e.g. the
+ * s/qform matrix rows). Lines with a key but no value are stored with an empty value.
+ *
+ * @param niftipath Full path to the .nii or .nii.gz file
+ * @param fslprefix Optional shell prefix that sets up the FSL environment (e.g.
+ *                  "export FSLDIR=...; source ${FSLDIR}/etc/fslconf/fsl.sh; export PATH=$PATH:.../bin; ").
+ *                  If empty, `fslhd` is expected to be on the PATH.
+ * @return QHash of the fslhd key/value pairs; empty if fslhd produced no output
+ */
+QHash<QString, QString> NiftiInfo(QString niftipath, QString fslprefix) {
+    QHash<QString, QString> info;
+
+    QString cmd = fslprefix + "fslhd " + ShellQuote(niftipath);
+    QString output = SystemCommand(cmd, false, false);
+
+    static const QRegularExpression whitespace("\\s+");
+    const QStringList lines = output.split('\n', Qt::SkipEmptyParts);
+    for (const QString &rawline : lines) {
+        const QString line = rawline.trimmed();
+        if (line.isEmpty())
+            continue;
+
+        const int sep = line.indexOf(whitespace);
+        if (sep < 0) {
+            /* key with no value */
+            info.insert(line, "");
+            continue;
+        }
+        const QString key = line.left(sep);
+        const QString value = line.mid(sep).trimmed();
+        info.insert(key, value);
+    }
+
+    return info;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- SandboxedSystemCommand ------------------------- */
 /* ---------------------------------------------------------- */
 /**

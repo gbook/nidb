@@ -119,7 +119,7 @@ static QString jsonArrayToDicomString(const QJsonArray &arr) {
 }
 
 /* Recursively flatten a JSON object into dot-joined keys. */
-static void flattenMetadataObject(const QJsonObject &obj, const QString &prefix, QMap<QString, QString> &out) {
+static void flattenMetadataObject(const QJsonObject &obj, const QString &prefix, QHash<QString, QString> &out) {
     for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
         const QString key = prefix.isEmpty() ? it.key() : (prefix + "." + it.key());
         const QJsonValue v = it.value();
@@ -138,8 +138,8 @@ static void flattenMetadataObject(const QJsonObject &obj, const QString &prefix,
  * @brief Flatten resolvedMetadata into DICOM-style tag/value pairs.
  *        See the declaration in bids.h for behavior details.
  */
-QMap<QString, QString> Acquisition::ResolvedMetadataAsMap() const {
-    QMap<QString, QString> out;
+QHash<QString, QString> Acquisition::ResolvedMetadataAsMap() const {
+    QHash<QString, QString> out;
     flattenMetadataObject(resolvedMetadata, QString(), out);
     return out;
 }

@@ -4,6 +4,7 @@
 #include <QJsonObject>
 #include <QList>
 #include <QMap>
+#include <QHash>
 #include <QSet>
 #include <QString>
 #include <QStringList>
@@ -95,9 +96,9 @@ struct Acquisition {
      * objects are flattened using dot-joined keys; array values are joined into a
      * single DICOM multi-valued string with backslash ('\\') separators
      * (e.g. ImageType ["ORIGINAL","PRIMARY"] -> "ORIGINAL\\PRIMARY").
-     * @return Flattened key/value map of the resolved metadata
+     * @return Flattened key/value hash of the resolved metadata
      */
-    QMap<QString, QString> ResolvedMetadataAsMap() const;
+    QHash<QString, QString> ResolvedMetadataAsMap() const;
 };
 
 /**
