@@ -87,6 +87,65 @@ QString NormalizeBidsSex(QString bidsSex) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- Acquisition::ResolvedMetadataAsMap ------------- */
+/* ---------------------------------------------------------- */
+namespace {
+
+/* Convert a scalar JSON value to its unquoted string form. */
+static QString jsonScalarToString(const QJsonValue &v) {
+    switch (v.type()) {
+        case QJsonValue::String: return v.toString();
+        case QJsonValue::Bool:   return v.toBool() ? "true" : "false";
+        /* 'g' with 15 significant digits: prints 2.0 as "2" and preserves 0.03 etc. */
+        case QJsonValue::Double: return QString::number(v.toDouble(), 'g', 15);
+        case QJsonValue::Null:   return QString();
+        default:                 return QString();
+    }
+}
+
+/* Join a JSON array into a DICOM multi-valued string (values separated by '\'). */
+static QString jsonArrayToDicomString(const QJsonArray &arr) {
+    QStringList parts;
+    for (const QJsonValue &v : arr) {
+        if (v.isArray())
+            parts << jsonArrayToDicomString(v.toArray());
+        else if (v.isObject())
+            /* non-scalar element: keep it as compact JSON rather than dropping it */
+            parts << QString::fromUtf8(QJsonDocument(v.toObject()).toJson(QJsonDocument::Compact)).trimmed();
+        else
+            parts << jsonScalarToString(v);
+    }
+    return parts.join('\\');
+}
+
+/* Recursively flatten a JSON object into dot-joined keys. */
+static void flattenMetadataObject(const QJsonObject &obj, const QString &prefix, QMap<QString, QString> &out) {
+    for (auto it = obj.constBegin(); it != obj.constEnd(); ++it) {
+        const QString key = prefix.isEmpty() ? it.key() : (prefix + "." + it.key());
+        const QJsonValue v = it.value();
+        if (v.isObject())
+            flattenMetadataObject(v.toObject(), key, out);
+        else if (v.isArray())
+            out.insert(key, jsonArrayToDicomString(v.toArray()));
+        else
+            out.insert(key, jsonScalarToString(v));
+    }
+}
+
+} // anonymous namespace
+
+/**
+ * @brief Flatten resolvedMetadata into DICOM-style tag/value pairs.
+ *        See the declaration in bids.h for behavior details.
+ */
+QMap<QString, QString> Acquisition::ResolvedMetadataAsMap() const {
+    QMap<QString, QString> out;
+    flattenMetadataObject(resolvedMetadata, QString(), out);
+    return out;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- TsvReader::read -------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -641,7 +700,12 @@ FileRecord Reader::makeFileRecord(const QString &absPath, const QString &relPath
     fr.entities = parsed.entities;
 
     const QStringList parts = relPath.split('/', Qt::SkipEmptyParts);
-    for (const QString &part : parts) {
+    /* subject/session are taken from the DIRECTORY components (sub-XX/ses-YY/), not
+     * from the filename (the last part), which also begins with "sub-" and would
+     * otherwise overwrite the correct value. Flat datasets with no sub- directory
+     * fall back to the filename entities parsed below. */
+    for (int p = 0; p < parts.size() - 1; ++p) {
+        const QString &part = parts.at(p);
         if (part.startsWith("sub-")) fr.subject = part.mid(4);
         else if (part.startsWith("ses-")) fr.session = part.mid(4);
     }

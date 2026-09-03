@@ -148,7 +148,7 @@ bool moduleUpload::ReadUploads() {
             }
 
             /* if modality is blank */
-            if (upload_modality == "") {
+            if ((upload_modality == "") && (upload_type != "bids")) {
                 io->AppendUploadLog("Error. Modality was blank [" + upload_modality + "]");
                 ret = 1;
 
@@ -180,9 +180,9 @@ bool moduleUpload::ReadUploads() {
             io->AppendUploadLog("Unzipping files located in [" + uploadstagingpath + "]");
             QString unzipOutput;
             if (upload_type == "bids")
-                unzipOutput = UnzipDirectory(uploadstagingpath, true);
-            else
                 unzipOutput = UnzipDirectory(uploadstagingpath, false);
+            else
+                unzipOutput = UnzipDirectory(uploadstagingpath, true);
             io->AppendUploadLog("Unzip output" + unzipOutput);
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
@@ -377,6 +377,7 @@ UploadOptions moduleUpload::GetUploadOptions(int uploadRowID) {
     q.bindValue(":uploadid", uploadRowID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
+        q.first();
         options.dataPath = q.value("upload_datapath").toString();
         options.modality = q.value("upload_modality").toString();
         options.patientID = q.value("upload_patientid").toString();
@@ -386,6 +387,10 @@ UploadOptions moduleUpload::GetUploadOptions(int uploadRowID) {
         options.studyMatchCriteria = q.value("upload_studycriteria").toString();
         options.subjectMatchCriteria = q.value("upload_subjectcriteria").toString();
         options.type = q.value("upload_type").toString();
+        options.isValid = true;
+    }
+    else {
+        options.isValid = false;
     }
     return options;
 }
@@ -612,13 +617,13 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
         QString file = f.absolutePath;
     }
 
-    /* handle participants.tsv */
-    QStringList participantColumns = dataset.participantColumns;
-    for (const QVariantMap &row : dataset.participantRows) {
-        QString bidsSubjectID = row.value("participant_id").toString();
-    }
+    /* iterate over participants.tsv */
+    //QStringList participantColumns = dataset.participantColumns;
+    //for (const QVariantMap &row : dataset.participantRows) {
+    //    QString bidsSubjectID = row.value("participant_id").toString();
+    //}
 
-    /* iterate through the BIDS subject data --> mapped to the NiDB subject */
+    /* iterate through the BIDS subject data --> map to the NiDB subject */
     int i=0;
     int subjectCount = dataset.subjects.count();
     for (auto it = dataset.subjects.constBegin(); it != dataset.subjects.constEnd(); ++it) {
@@ -627,6 +632,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
 
         /* subject ID */
         const QString &bidsSubjectID = bidsSubj.id; /* base subject ID, without 'sub-' */
+        n->Log(QString("Working on BIDS subject %1 of %2: id [%3]").arg(i+1).arg(subjectCount).arg(bidsSubjectID));
 
         /* demographics */
         double subjectAge = 0.0;
@@ -636,8 +642,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             subjectSex = bids::NormalizeBidsSex(bidsSubj.participantRow.value("sex").toString());
         }
 
-
-        /* handle files in sub-XX/ without acquisitions */
+        /* handle loose files in sub-XX/ without acquisitions */
         for (const bids::FileRecord &f : bidsSubj.looseFiles) {
             QString filePath = f.absolutePath;
         }
@@ -672,7 +677,10 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
         }
 
         /* enroll the subject in the project */
-        if (!io->GetOrCreateEnrollment(subjectRowID, upload.projectRowID, enrollmentRowID)) {
+        if (io->GetOrCreateEnrollment(subjectRowID, upload.projectRowID, enrollmentRowID)) {
+            n->Log(QString("Created enrollment [subjectRowID %1,  projectRowID %2,  enrollmentRowID %3]").arg(subjectRowID).arg(upload.projectRowID).arg(enrollmentRowID));
+        }
+        else {
             n->Log(QString("Error creating enrollment [%1, %2, %3]").arg(subjectRowID).arg(upload.projectRowID).arg(enrollmentRowID));
             continue;
         }
@@ -683,13 +691,9 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
         /* ----- map the BIDS session(s) --> NiDB study(s) ----- */
 
         /* session acquisitions - has 'ses-XX' directory */
-        //int maxSessNum = 0;
         for (auto sit = bidsSubj.sessions.constBegin(); sit != bidsSubj.sessions.constEnd(); ++sit) {
             const bids::SessionRecord &sess = sit.value();
             QString sessionLabel = sess.id;
-
-            //if (sessionNumber > maxSessNum)
-            //    maxSessNum = sessionNumber;
 
             /* determine the acquisition datatypes */
             QStringList bidsDatatypes;
@@ -729,9 +733,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
         }
 
         /* sessionless acquisitions - no 'ses-XX' directories */
-        //int sessionNumber = maxSessNum;
         for (const bids::Acquisition &acq : bidsSubj.acquisitionsWithoutSession) {
-            //sessionNumber++;
             QString err;
             //if (!ImportBidsAcquisition(subjectRowID, studyRowID, acq, err)) {
             //    n->Log();
@@ -762,7 +764,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
  * @param err Any errors reported during import
  * @return true if successful, false otherwise
  */
-bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, const bids::Acquisition &acq, QString &err) {
+bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int seriesNumber, const bids::Acquisition &acq, QString &err) {
     QString key = acq.key; /* 'sub-01_ses-1_task-rest_run-1_bold' */
     QString datatype = acq.datatype; /* anat, func, dwi, eeg ... */
     QString suffix = acq.suffix; /* T1w, bold, dwi ... */
@@ -770,6 +772,11 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, const
     QString taskName = acq.entities.value("task");
     QString run = acq.entities.value("run");
     QString acqName = acq.entities.value("acq");
+
+    /* get DICOM-like tags */
+    QHash<QString, QString> tags = acq.ResolvedMetadataAsMap();
+
+    io->ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNumber, tags, acq.files);
 
     return true;
 }

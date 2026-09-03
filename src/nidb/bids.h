@@ -87,6 +87,17 @@ struct Acquisition {
 
     // Row from scans.tsv if matched
     QVariantMap scansRow;
+
+    /**
+     * @brief Flatten resolvedMetadata into DICOM-style tag/value string pairs.
+     *
+     * resolvedMetadata is primarily a set of DICOM tags and their values. Nested
+     * objects are flattened using dot-joined keys; array values are joined into a
+     * single DICOM multi-valued string with backslash ('\\') separators
+     * (e.g. ImageType ["ORIGINAL","PRIMARY"] -> "ORIGINAL\\PRIMARY").
+     * @return Flattened key/value map of the resolved metadata
+     */
+    QMap<QString, QString> ResolvedMetadataAsMap() const;
 };
 
 /**

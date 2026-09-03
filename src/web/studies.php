@@ -2176,6 +2176,7 @@
 					}
 					
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$mrseriesids = array();
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$mrseriesids[] = $row[$modality . 'series_id'];
 					}

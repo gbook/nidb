@@ -175,6 +175,28 @@ for (const QString &k : meta.keys())
 acq.scansRow.value("acq_time").toString();
 ```
 
+### Flattening metadata to DICOM-style tags
+
+`resolvedMetadata` is a `QJsonObject`. To feed it into NiDB's series-tag machinery (e.g. the `QHash<QString,QString> tags` argument of `ArchiveNiftiSeries`), `Acquisition::ResolvedMetadataAsMap()` flattens it into a `QMap<QString,QString>` of DICOM-style tag/value pairs:
+
+- nested objects are flattened with dot-joined keys (`Foo.Bar`)
+- array values are joined into a single DICOM multi-valued (VM) string with backslash (`\`) separators, preserving element order
+
+```cpp
+QMap<QString, QString> tags = acq.ResolvedMetadataAsMap();
+
+tags.value("RepetitionTime");   // "2"       (2.0 prints without a trailing ".0")
+tags.value("EchoTime");         // "0.03"
+tags.value("ImageType");        // "ORIGINAL\PRIMARY\M\ND"   (array -> DICOM VM)
+
+// hand off to NiDB series tags (QHash) for ArchiveNiftiSeries
+QHash<QString, QString> seriesTags;
+for (auto it = tags.constBegin(); it != tags.constEnd(); ++it)
+    seriesTags.insert(it.key(), it.value());
+```
+
+> Best fit for the flat, scalar / scalar-array shape of MR sidecars. Deeply nested structures — arrays of arrays, or arrays of objects, more common in EEG/MEG/microscopy — are collapsed into a single `\`-joined string and cannot be losslessly reconstructed; for those, read the raw `acq.resolvedMetadata` `QJsonObject` directly.
+
 ### An acquisition's files (full paths)
 
 `acq.files` holds **every** file in the group (primary + all sidecars) as `FileRecord`s, each with a full `absolutePath` — this is what you copy/archive. The `primaryDataPath` / `bvalPath` / … pointers are dataset-**relative**, so resolve them against `ds.rootPath`.
@@ -237,7 +259,7 @@ A suggested mapping from the parsed structures onto NiDB, regardless of how you 
 | `derivatives/` | **not parsed by the reader** (excluded) | pipelines + analyses (future) |
 | `phenotype/` | **not parsed by the reader** (excluded) | subject observations (future) |
 
-The relevant `archiveIO` entry points on the NiDB side are `GetSubject`/`CreateSubject`, `GetOrCreateEnrollment`, `GetStudy`/`CreateStudy`, and `ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNum, tags, files)` — whose `QHash<QString,QString> tags` argument is the natural home for the flattened `resolvedMetadata`.
+The relevant `archiveIO` entry points on the NiDB side are `GetSubject`/`CreateSubject`, `GetOrCreateEnrollment`, `GetStudy`/`CreateStudy`, and `ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNum, tags, files)` — whose `QHash<QString,QString> tags` argument is the natural home for the flattened `resolvedMetadata` (see `Acquisition::ResolvedMetadataAsMap()` above).
 
 ---
 

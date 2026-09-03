@@ -90,6 +90,7 @@ struct UploadOptions {
     QString subjectMatchCriteria;
     QString studyMatchCriteria;
     QString seriesMatchCriteria;
+    bool isValid;
 };
 
 struct computeCluster {
@@ -170,8 +171,6 @@ bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
 bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
 bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m);
-static QString timeString(const QDateTime &dt);
-static QString modeString(const QFileInfo &fi);
 QString GetDirectoryListing(const QString &path, bool showHidden = false);
 
 #endif // UTILS_H
