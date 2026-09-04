@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Aug 28, 2026 at 05:52 PM
+-- Generation Time: Sep 04, 2026 at 08:53 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -3195,7 +3195,7 @@ CREATE TABLE `subject_altuid` (
   `subjectaltuid_id` int(11) NOT NULL,
   `subject_id` int(11) NOT NULL,
   `altuid` varchar(245) NOT NULL,
-  `isprimary` tinyint(1) NOT NULL,
+  `isprimary` tinyint(1) NOT NULL DEFAULT 0,
   `enrollment_id` int(11) NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
