@@ -2887,7 +2887,12 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                             int numfilesconv(0), numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
-                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSubject, bidsSession, mapping, datatype, numfilesconv, numfilesrenamed, m))
+                            /* for a NIfTI-source series, build a base BIDS sidecar from the DB tags,
+                               to be written for any image that has no sidecar on disk */
+                            QJsonObject niftiSidecar;
+                            if (datatype == "nifti")
+                                niftiSidecar = GetSeriesSidecarFromDB(seriesid, modality);
+                            if (!img->ConvertDicom("bids", datadir, tmpdir, binpath, true, false, subjectdir, sessiondir, seriesdir, bidsSubject, bidsSession, mapping, datatype, niftiSidecar, numfilesconv, numfilesrenamed, m))
                                 msgs << "Error converting files [" + m + "]";
                             else
                                 n->Log(m);
@@ -2965,6 +2970,62 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     msg = msgs.join("\n");
     n->Log("Leaving WriteBIDS()...");
     return returnStatus;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSeriesSidecarFromDB ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Build a base BIDS JSON sidecar for a series from its stored DB tags.
+ *
+ * Used when exporting a NIfTI series to BIDS that has no sidecar on disk. Only the
+ * subset of fields NiDB stores are emitted; IntendedFor / TaskName are added later by
+ * the BIDS-mapping code (BatchRenameBIDSFiles). NiDB stores TR/TE/TI in milliseconds,
+ * but BIDS expects seconds. Currently only MR series produce a sidecar.
+ * @param seriesid The series rowID
+ * @param modality The series modality
+ * @return QJsonObject of BIDS sidecar fields (empty for none/unsupported modality)
+ */
+QJsonObject archiveIO::GetSeriesSidecarFromDB(int seriesid, QString modality) {
+    QJsonObject j;
+
+    if (modality.toLower() != "mr")
+        return j;
+
+    QSqlQuery q;
+    q.prepare("select * from mr_series where mrseries_id = :id");
+    q.bindValue(":id", seriesid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() < 1)
+        return j;
+    q.first();
+
+    /* numeric field: include only if present and > 0; scale converts ms -> s for BIDS */
+    auto addNum = [&](const QString &bidsKey, const QString &col, double scale) {
+        if (!q.value(col).isNull()) {
+            const double v = q.value(col).toDouble();
+            if (v > 0.0)
+                j[bidsKey] = v * scale;
+        }
+    };
+    auto addStr = [&](const QString &bidsKey, const QString &col) {
+        const QString v = q.value(col).toString().trimmed();
+        if (v != "")
+            j[bidsKey] = v;
+    };
+
+    addNum("RepetitionTime", "series_tr", 0.001);                 /* ms -> s */
+    addNum("EchoTime", "series_te", 0.001);                       /* ms -> s */
+    addNum("InversionTime", "series_ti", 0.001);                  /* ms -> s */
+    addNum("FlipAngle", "series_flip", 1.0);                      /* degrees */
+    addNum("MagneticFieldStrength", "series_fieldstrength", 1.0); /* Tesla */
+    addNum("SliceThickness", "slicethickness", 1.0);              /* mm */
+    addStr("ProtocolName", "series_protocol");
+    addStr("SeriesDescription", "series_desc");
+    addStr("SequenceName", "series_sequencename");
+
+    return j;
 }
 
 

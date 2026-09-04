@@ -22,6 +22,8 @@
 
 #include "imageio.h"
 #include <QRegularExpression>
+#include <QJsonObject>
+#include <QJsonDocument>
 
 
 /* ---------------------------------------------------------- */
@@ -404,6 +406,36 @@ QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
 
 
 /* ---------------------------------------------------------- */
+/* --------- IsBIDSFilename --------------------------------- */
+/* ---------------------------------------------------------- */
+/* Return true if a filename is already BIDS-formatted: it starts with a
+   'sub-<label>' entity and ends with a non-entity suffix (eg
+   sub-01_ses-1_task-rest_bold.nii.gz). Used to decide whether an already-NIfTI
+   file needs BIDS renaming on export, or should be left as-is. */
+static bool IsBIDSFilename(const QString &filename) {
+    if (!filename.startsWith("sub-"))
+        return false;
+
+    /* strip the (possibly multi-part) extension */
+    QString stem = filename;
+    static const QStringList exts = { ".nii.gz", ".nii", ".json", ".bval", ".bvec", ".hdr", ".img" };
+    foreach (const QString &e, exts) {
+        if (stem.endsWith(e, Qt::CaseInsensitive)) { stem.chop(e.size()); break; }
+    }
+
+    const QStringList parts = stem.split('_', Qt::SkipEmptyParts);
+    if (parts.size() < 2)                 /* need at least sub-<label> plus a suffix */
+        return false;
+    if (!parts.first().startsWith("sub-"))
+        return false;
+    if (parts.last().contains('-'))       /* the trailing part must be a suffix, not an entity */
+        return false;
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -426,7 +458,7 @@ QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
  * @param msg Any messages generated during converstion
  * @return `true` if successful, `false` otherwise
  */
-bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg) {
+bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, QJsonObject niftiSidecar, int &numfilesconv, int &numfilesrenamed, QString &msg) {
 
     QStringList msgs;
 
@@ -448,6 +480,72 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     QString fileext = "";
     if (datatype == "parrec")
         fileext = "/*.par";
+
+    /* ----- NIfTI source: nothing for dcm2niix to convert -----
+       The series is already stored as NIfTI (eg imported from BIDS). dcm2niix reads
+       DICOM only, so running it here would produce nothing. Instead, copy the existing
+       images and sidecars into the output directory, and - for a BIDS export -
+       BIDS-rename them unless they are already BIDS-formatted. This branch runs before
+       QDir::setCurrent() below, so the working directory is left unchanged. */
+    if (datatype == "nifti") {
+        QString m2;
+        if (!MakePath(outdir, m2)) {
+            msgs << "Unable to create path [" + outdir + "] because of error [" + m2 + "]";
+            msg = msgs.join("\n");
+            return false;
+        }
+
+        /* copy only the NIfTI images and their sidecars */
+        QString copycmd = QString("rsync --stats --include='*.nii' --include='*.nii.gz' --include='*.json' --include='*.bval' --include='*.bvec' --exclude='*' %1/ %2/").arg(indir).arg(outdir);
+        msgs << SystemCommand(copycmd, true, true);
+
+        /* for BIDS, rename to BIDS naming unless every image is already BIDS-formatted */
+        if (filetype == "bids") {
+            const QStringList primaryFiles = FindAllFiles(outdir, "*.nii*");
+
+            /* regenerate a JSON sidecar from the DB tags for any image that lacks one
+               (eg a NIfTI series stored without its original sidecar). This writes only
+               the base metadata; BatchRenameBIDSFiles below still adds IntendedFor /
+               TaskName to it during the rename, exactly as it does for dcm2niix output.
+               An existing sidecar (copied above) is left untouched. */
+            if (!niftiSidecar.isEmpty()) {
+                foreach (const QString &pf, primaryFiles) {
+                    QString base = pf;
+                    if (base.endsWith(".nii.gz", Qt::CaseInsensitive)) base.chop(7);
+                    else if (base.endsWith(".nii", Qt::CaseInsensitive)) base.chop(4);
+                    const QString jsonPath = base + ".json";
+                    if (!QFile::exists(jsonPath)) {
+                        QFile jf(jsonPath);
+                        if (jf.open(QIODevice::WriteOnly)) {
+                            jf.write(QJsonDocument(niftiSidecar).toJson());
+                            jf.close();
+                            msgs << "Wrote JSON sidecar from DB tags [" + jsonPath + "]";
+                        }
+                        else
+                            msgs << "Error writing JSON sidecar [" + jsonPath + "]";
+                    }
+                }
+            }
+
+            bool alreadyBids = !primaryFiles.isEmpty();
+            foreach (const QString &pf, primaryFiles) {
+                if (!IsBIDSFilename(QFileInfo(pf).fileName())) {
+                    alreadyBids = false;
+                    break;
+                }
+            }
+            if (alreadyBids)
+                msgs << "NIfTI files are already BIDS-formatted; leaving filenames unchanged";
+            else {
+                QString rm;
+                BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, bidsMapping, numfilesrenamed, rm);
+                msgs << "Renamed NIfTI files to BIDS format [" + rm + "]";
+            }
+        }
+
+        msg = msgs.join("\n");
+        return true;
+    }
 
     /* do the conversion */
     QString systemstring;

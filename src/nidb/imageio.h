@@ -60,7 +60,7 @@ public:
     bool AnonymizeDicomFile(QString infile, QString outfile, QString &msg);
 //    bool AnonymizeDicomFileInPlace(QString file, QStringList tagsToChange, QString &msg);
     //bool AnonymizeDir(QString indir, QString outdir, int anonlevel, QString &msg);
-    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, int &numfilesconv, int &numfilesrenamed, QString &msg);
+    bool ConvertDicom(QString filetype, QString indir, QString outdir, QString bindir, bool gzip, bool json, QString uid, QString studynum, QString seriesnum, QString bidsSubject, QString bidsSession, BIDSMapping bidsMapping, QString datatype, QJsonObject niftiSidecar, int &numfilesconv, int &numfilesrenamed, QString &msg);
     bool IsDICOMFile(QString f);
     void GetFileType(QString f, QString &fileType, QString &fileModality, QString &filePatientID, QString &fileProtocol);
     bool GetImageFileTags(QString f, QHash<QString, QString> &tags, QString &msg);

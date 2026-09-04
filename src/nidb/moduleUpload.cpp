@@ -843,6 +843,20 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int s
 
     /* get the DICOM-like tags from the JSON file - and fix missing tags */
     QHash<QString, QString> tags = acq.ResolvedMetadataAsMap();
+
+    /* BIDS stores these timing fields in seconds, but NiDB's mr_series columns
+       (series_tr/series_te/series_ti) are milliseconds (DICOM convention). Convert
+       seconds -> ms here so the DB stays consistent with DICOM-imported series and
+       exports round-trip correctly. */
+    foreach (const QString &k, QStringList({ "RepetitionTime", "EchoTime", "InversionTime" })) {
+        if (tags.contains(k) && (tags.value(k) != "")) {
+            bool ok = false;
+            double secs = tags.value(k).toDouble(&ok);
+            if (ok)
+                tags[k] = QString::number(secs * 1000.0);
+        }
+    }
+
     if (!tags.contains("SeriesDateTime")) { tags["SeriesDateTime"] = CreateCurrentDateTime(2); }
     if (!tags.contains("boldreps")) { tags["boldreps"] = "0"; }
     if (!tags.contains("numfiles")) { tags["numfiles"] = QString("%1").arg(files.size()); }
