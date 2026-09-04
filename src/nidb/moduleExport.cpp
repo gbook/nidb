@@ -685,7 +685,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                         msgs << "Copying QC data from [" + indir + "/qa] to [" + qcoutdir + "]";
 
                                         /* write the series info to a text file */
-                                        QString seriesfile = outdir + "seriesinfo.txt";
+                                        QString seriesfile = outdir + "/seriesinfo.txt";
                                         QFile f(seriesfile);
                                         if (f.open(QIODevice::WriteOnly | QIODevice::Text)) {
                                             QTextStream fs(&f);
@@ -701,7 +701,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
 
                                                 q.first();
                                                 for (const QString &field : fields) {
-                                                    fs << QString("%1: %2").arg(field).arg(q.value(field).toString());
+                                                    fs << QString("%1: %2\n").arg(field).arg(q.value(field).toString());
                                                 }
                                             }
                                             f.close();

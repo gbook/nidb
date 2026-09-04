@@ -2710,7 +2710,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
     /* write the participants.csv file */
     QString pfile = outdir + "/participants.tsv";
-    if (!WriteTextFile(pfile, "participant_id\tAge\tGender\n", false)) n->Log("Error writing " + pfile);
+    if (!WriteTextFile(pfile, "participant_id\tage\tsex\n", false)) n->Log("Error writing " + pfile);
 
     int i = 1; /* the subject counter */
     /* iterate through the UIDs */
@@ -2787,7 +2787,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
 
                 /* check which run- to use */
                 if (mapping.bidsRun > 0) {
-                    n->Debug(QString("mapping.bidsRun is 0. Setting run = %1").arg(mapping.bidsRun));
+                    n->Debug(QString("mapping.bidsRun is %1. Setting run = %1").arg(mapping.bidsRun));
                     run = mapping.bidsRun;
                 }
                 else if (mapping.bidsAutoNumberRuns == false) {
@@ -2907,11 +2907,13 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     }
                     else {
 						seriesstatus = exportstatus = "error";
+						statusmessage = "series data directory is empty";
 						msgs << n->Log("ERROR [" + datadir + "] is empty");
                     }
                 }
                 else {
 					seriesstatus = exportstatus = "error";
+					statusmessage = "series data directory does not exist";
 					msgs << n->Log("ERROR datadir [" + datadir + "] does not exist");
                 }
 
@@ -2957,7 +2959,7 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
     /* write the readme file */
     if (!WriteTextFile(outdir + "/README", bidsreadme, false)) n->Log("Error writing README file [" + outdir + "/README]");
 
-    QString systemstring = "chmod -rf 777 " + outdir;
+    QString systemstring = "chmod -Rf 777 " + outdir;
     n->Log(SystemCommand(systemstring));
 
     msg = msgs.join("\n");
