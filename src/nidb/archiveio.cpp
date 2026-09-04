@@ -945,7 +945,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
 
     study stud(studyRowID, n);
 
-    QString seriesPath = QString("%1/%2").arg(stud.path()).arg(seriesNumber);
+    QString seriesPath = QString("%1/%2/nifti").arg(stud.path()).arg(seriesNumber);
     QSqlQuery q;
 
     /* check if this series already exists */

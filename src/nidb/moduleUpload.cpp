@@ -224,7 +224,7 @@ bool moduleUpload::ReadUploads() {
                     n->Log(QString("Error reading BIDS directory [%1].  Error message [%2]").arg(uploadstagingpath).arg(err));
                 }
                 else {
-                    n->Log(bids::PrintDataset(dataset));
+                    //n->Log(bids::PrintDataset(dataset));
                     if (ArchiveUploadedBIDS(dataset, uploadRowID)) {
                         n->Log(QString("Successful archived BIDS directory [%1]").arg(uploadstagingpath));
                     }
@@ -716,6 +716,14 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             int studyRowID;
             int studyNum;
             if (io->CreateStudy(subjectRowID, enrollmentRowID, CreateCurrentDateTime(), "",modality, bidsSubjectID, subjectAge, 0.0, 0.0, sessionLabel, "BIDS", "", "BIDS", "BIDS", "BIDS", studyRowID, studyNum )) {
+                n->Log("Checkpoint A");
+                QSqlQuery q;
+                q.prepare("update studies set study_type = :visit where study_id = :studyid");
+                q.bindValue(":visit", sessionLabel);
+                q.bindValue(":studyid", studyRowID);
+                n->Log("Checkpoint B");
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->Log("Checkpoint C");
                 n->Log(QString("Created study [bids %1] for subject UID [%2]").arg(sessionLabel).arg(subjectUID));
             }
             else {
@@ -761,6 +769,12 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             int studyRowID;
             int studyNum;
             if (io->CreateStudy(subjectRowID, enrollmentRowID, CreateCurrentDateTime(), "",modality, bidsSubjectID, subjectAge, 0.0, 0.0, "BIDS sessionless acquisitions", "BIDS", "", "BIDS", "BIDS", "BIDS", studyRowID, studyNum )) {
+                QSqlQuery q;
+                q.prepare("update studies set study_type = :visit where study_id = :studyid");
+                q.bindValue(":visit", "bids no-ses");
+                q.bindValue(":studyid", studyRowID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
                 n->Log(QString("Created sessionless study [%1] for subject UID [%2]").arg(studyNum).arg(subjectUID));
             }
             else {
@@ -821,12 +835,23 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int s
         files.append(f.absolutePath);
     }
 
-    /* get DICOM-like tags, and fix missing tags */
+    /* get the DICOM-like tags from the JSON file - and fix missing tags */
     QHash<QString, QString> tags = acq.ResolvedMetadataAsMap();
-    if (!tags.contains("SeriesDateTime")) { tags["SeriesDateTime"] = CreateCurrentDateTime(); }
+    if (!tags.contains("SeriesDateTime")) { tags["SeriesDateTime"] = CreateCurrentDateTime(2); }
     if (!tags.contains("boldreps")) { tags["boldreps"] = "0"; }
     if (!tags.contains("numfiles")) { tags["numfiles"] = QString("%1").arg(files.size()); }
-    //if (!tags.contains("PhaseEncodingDirectionPositive")) { tags["SeriesDateTime"] = CreateCurrentDateTime(); }
+    if (!tags.contains("PhaseEncodingDirectionPositive")) {
+        /* check if the phase encoding moves in the positive 0->1 direction */
+        if (tags.value("PhaseEncodingDirection").endsWith("-"))
+            tags["PhaseEncodingDirectionPositive"] = "0";
+        else
+            tags["PhaseEncodingDirectionPositive"] = "1";
+    }
+    /* NiDB stores phaseencodedir from the tag InPlanePhaseEncodingDirection; BIDS provides it as InPlanePhaseEncodingDirectionDICOM, so copy it over when present */
+    if (tags.contains("InPlanePhaseEncodingDirectionDICOM")) { tags["InPlanePhaseEncodingDirection"] = tags.value("InPlanePhaseEncodingDirectionDICOM"); }
+    /* ArchiveNiftiSeries reads the series protocol from ProtocolName - default it to the series description if missing */
+    if (!tags.contains("ProtocolName")) { tags["ProtocolName"] = tags.value("SeriesDescription"); }
+    if ((tags.value("ProtocolName") == tags.value("SeriesDescription")) && (tags.contains("TaskName"))) { tags["SeriesDescription"] = tags.value("TaskName"); }
 
     /* attempt to get some image dimensions - it is possible for multiple .nii files to be in this directory so just get the first file */
     foreach (QString f, files) {
@@ -835,8 +860,9 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int s
             QHash<QString,QString> hdr = NiftiInfo(f, fsl);
             if (!hdr.isEmpty()) {
                 //qDebug() << hdr;
-                tags["Rows"] = hdr.value("dim1");
-                tags["Columns"] = hdr.value("dim2");
+                /* NIfTI dim1 = X (columns), dim2 = Y (rows), matching DICOM Rows/Columns */
+                tags["Rows"] = hdr.value("dim2");
+                tags["Columns"] = hdr.value("dim1");
                 tags["zsize"] = hdr.value("dim3");
                 tags["boldreps"] = hdr.value("dim4");
                 tags["pixelX"] = hdr.value("pixdim1");
