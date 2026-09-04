@@ -86,7 +86,7 @@ bool moduleUpload::ReadUploads() {
     QSqlQuery q;
     bool ret(false);
 
-    n->Log("Checkpoint A");
+    //n->Log("Checkpoint A");
 
     /* get list of uploads that are marked as uploadcomplete, with the upload details */
     q.prepare("select * from uploads where upload_status = 'uploadcomplete'");
@@ -96,7 +96,7 @@ bool moduleUpload::ReadUploads() {
             /* check if this module should be running */
             n->ModuleRunningCheckIn();
             if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
-            n->Log("Checkpoint B");
+            //n->Log("Checkpoint B");
 
             ret = 1;
             int uploadRowID = q.value("upload_id").toInt();
@@ -114,7 +114,7 @@ bool moduleUpload::ReadUploads() {
 
             /* update the status */
             SetUploadStatus(uploadRowID, "parsing", 0.0);
-            n->Log("Checkpoint C");
+            //n->Log("Checkpoint C");
 
             /* create the path for the upload data */
             QString uploadstagingpath = QString("%1/%2").arg(n->cfg["uploadstagingdir"]).arg(uploadRowID);
@@ -157,13 +157,13 @@ bool moduleUpload::ReadUploads() {
 
                 continue;
             }
-            n->Log("Checkpoint D");
+            //n->Log("Checkpoint D");
 
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
             io->AppendUploadLog(QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
             QString systemstring = QString("rsync -a --stats %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
             io->AppendUploadLog(SystemCommand(systemstring, true, true));
-            n->Log("Checkpoint E");
+            //n->Log("Checkpoint E");
 
             /* remove the uploadtmp directory, if it was uploaded from the web */
             if (upload_source == "web") {
@@ -227,6 +227,12 @@ bool moduleUpload::ReadUploads() {
                     //n->Log(bids::PrintDataset(dataset));
                     if (ArchiveUploadedBIDS(dataset, uploadRowID)) {
                         n->Log(QString("Successful archived BIDS directory [%1]").arg(uploadstagingpath));
+                        /* remove the staging directory now that the data has been archived (left in place on error for debugging) */
+                        QString delmsg;
+                        if (SafeDeletePath(uploadstagingpath, n->cfg["uploadstagingdir"], delmsg))
+                            n->Log(QString("Removed BIDS staging directory [%1]").arg(uploadstagingpath));
+                        else
+                            n->Log(QString("Error removing BIDS staging directory [%1]: %2").arg(uploadstagingpath).arg(delmsg));
                     }
                     else {
                         n->Log(QString("Error archiving BIDS directory [%1]").arg(uploadstagingpath));
@@ -307,7 +313,7 @@ bool moduleUpload::ReadUploads() {
                     tfiles++;
 
                     if (i >= 5000) {
-                        double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+                        double pct = (c > 0) ? (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0 : 0.0;
                         SetUploadStatus(uploadRowID, "parsing", pct);
 
                         /* check if this module should be running */
@@ -330,7 +336,7 @@ bool moduleUpload::ReadUploads() {
                     }
                 }
 
-                double pct = (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0;
+                double pct = (c > 0) ? (static_cast<double>(tfiles)/static_cast<double>(c)) * 100.0 : 0.0;
                 SetUploadStatus(uploadRowID, "parsing", pct);
 
                 /* check if this module should be running */
@@ -502,12 +508,12 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 seriesid = InsertOrUpdateParsedSeries(-1, upload_seriescriteria, studyid, SeriesDateTime, SeriesNumber, SeriesInstanceUID, files, numfiles, "", "", "", "", "", "", 0, 0, m);
 
                 /* remove the prefix for the files */
-                QStringList filesNoPrefix;
-                for (int ii=0; ii<files.size(); ii++) {
-                    QString str = files[ii];
-                    str.replace(str.indexOf(uploadstagingpath), uploadstagingpath.size(), "");
-                    filesNoPrefix.append(str);
-                }
+                //QStringList filesNoPrefix;
+                //for (int ii=0; ii<files.size(); ii++) {
+                //    QString str = files[ii];
+                //    str.replace(str.indexOf(uploadstagingpath), uploadstagingpath.size(), "");
+                //    filesNoPrefix.append(str);
+                //}
 
                 /* we've arrived at a series, so let's put it into the database */
                 /* get tags from first file in the list to populate the subject/study/series info not included in the criteria matching */
@@ -716,14 +722,14 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             int studyRowID;
             int studyNum;
             if (io->CreateStudy(subjectRowID, enrollmentRowID, CreateCurrentDateTime(), "",modality, bidsSubjectID, subjectAge, 0.0, 0.0, sessionLabel, "BIDS", "", "BIDS", "BIDS", "BIDS", studyRowID, studyNum )) {
-                n->Log("Checkpoint A");
+                //n->Log("Checkpoint A");
                 QSqlQuery q;
                 q.prepare("update studies set study_type = :visit where study_id = :studyid");
                 q.bindValue(":visit", sessionLabel);
                 q.bindValue(":studyid", studyRowID);
-                n->Log("Checkpoint B");
+                //n->Log("Checkpoint B");
                 n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
-                n->Log("Checkpoint C");
+                //n->Log("Checkpoint C");
                 n->Log(QString("Created study [bids %1] for subject UID [%2]").arg(sessionLabel).arg(subjectUID));
             }
             else {
@@ -1312,7 +1318,7 @@ int moduleUpload::InsertOrUpdateParsedSubject(int parsedSubjectRowID, QString up
         else if (upload_subjectcriteria == "namesexdob") {
             /* update all subject details except PatientName/Sex/BirthDate */
             q.prepare("update upload_subjects set uploadsubject_patientid = :patientid where uploadsubject_id = :subjectid");
-            q.bindValue(":name", PatientID);
+            q.bindValue(":patientid", PatientID);
             q.bindValue(":subjectid", parsedSubjectRowID);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
@@ -1403,7 +1409,6 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.bindValue(":datatype", FileType);
             q.bindValue(":equipment", Equipment);
             q.bindValue(":operator", Operator);
-            q.bindValue(":studyinstanceuid", StudyInstanceUID);
             q.bindValue(":studyid", parsedStudyRowID);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
@@ -1416,7 +1421,6 @@ int moduleUpload::InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload
             q.bindValue(":datatype", FileType);
             q.bindValue(":equipment", Equipment);
             q.bindValue(":operator", Operator);
-            q.bindValue(":studyinstanceuid", StudyInstanceUID);
             q.bindValue(":studyid", parsedStudyRowID);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }

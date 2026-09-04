@@ -325,7 +325,7 @@ bool moduleExport::GetExportSeriesList(int exportid) {
                     s[uid][studynum][seriesnum]["seriesid"] = QString("%1").arg(seriesid);
                     s[uid][studynum][seriesnum]["subjectid"] = QString("%1").arg(subjectid);
                     s[uid][studynum][seriesnum]["studyid"] = QString("%1").arg(studyid);
-                    s[uid][studynum][seriesnum]["enrollmentid"] = QString("%1").arg(studyid);
+                    s[uid][studynum][seriesnum]["enrollmentid"] = QString("%1").arg(enrollmentid);
                     s[uid][studynum][seriesnum]["studydatetime"] = studydatetime;
                     s[uid][studynum][seriesnum]["modality"] = modality;
                     s[uid][studynum][seriesnum]["seriessize"] = QString("%1").arg(seriessize);
@@ -1509,15 +1509,20 @@ bool moduleExport::ExportBIDS(int exportid, QString bidsreadme, QStringList bids
         }
 
         n->Log(QString("Calling WriteBIDS(%1, %2, ...)").arg(seriesids.size()).arg(modalities.size()));
-        if (io->WriteBIDS(seriesids, modalities, outdir, bidsreadme, bidsflags, m))
+        if (io->WriteBIDS(seriesids, modalities, outdir, bidsreadme, bidsflags, m)) {
             n->Log("WriteBIDS() returned true");
-        else
-            n->Log("WriteBIDS() returned false");
+        }
+        else {
+            exportstatus = "error";
+            msg = n->Log("WriteBIDS() returned false. BIDS export failed. [" + m + "]");
+            return false;
+        }
 
         SetExportedPath(exportid, outdir);
     }
     else {
-        n->Log("No series found");
+        exportstatus = "error";
+        msg = n->Log("No series found for this export");
         return false;
     }
 
@@ -1590,8 +1595,18 @@ bool moduleExport::ExportSquirrel(int exportid, QString squirreltitle, QString s
             }
         }
     }
-    else
-        n->Log(QString("%1() WriteSquirrel() returned false").arg(__FUNCTION__));
+    else {
+        /* mark the export and its series as failed */
+        q.prepare("select * from exportseries where export_id = :exportid");
+        q.bindValue(":exportid",exportid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next())
+            n->SetExportSeriesStatus(q.value("exportseries_id").toLongLong(), -1, -1, "","error","squirrel export failed");
+
+        exportstatus = "error";
+        msg = n->Log(QString("%1() WriteSquirrel() returned false. Squirrel export failed. [%2]").arg(__FUNCTION__).arg(m));
+        return false;
+    }
 
     QString systemstring = "chmod -Rf 777 " + rootoutdir;
     n->Log(SystemCommand(systemstring, true));
