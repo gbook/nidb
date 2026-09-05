@@ -526,7 +526,7 @@ bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, 
                 //QString binpath = n->cfg["nidbdir"] + "/bin";
                 img->GetImageFileTags(files[0], tags, m);
 
-                QSqlQuery q3;
+                //QSqlQuery q3;
 
                 /* don't overwrite the tags in the databse that were used to group the subject/study/series */
                 /* we run the InsertOrUpdateS*() functions again, because sometimes information is stored at the series level, which we first encounter here. The subject/study/series may already exist, but it should be updated with the new information */
@@ -741,7 +741,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             int nextSeries = 1;
             for (const bids::Acquisition &acq : sess.acquisitions) {
                 QString err;
-                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, acq, err)) {
+                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, upload.projectRowID, acq, err)) {
                     n->Log(QString("Inserted series [%1]").arg(nextSeries));
                     nextSeries++;
                 }
@@ -792,7 +792,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
             int nextSeries = 1;
             for (const bids::Acquisition &acq : bidsSubj.acquisitionsWithoutSession) {
                 QString err;
-                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, acq, err)) {
+                if (ImportBidsAcquisition(subjectRowID, studyRowID, nextSeries, upload.projectRowID, acq, err)) {
                     n->Log(QString("Inserted series [%1]").arg(nextSeries));
                     nextSeries++;
                 }
@@ -826,14 +826,14 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
  * @param err Any errors reported during import
  * @return true if successful, false otherwise
  */
-bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int seriesNumber, const bids::Acquisition &acq, QString &err) {
-    QString key = acq.key; /* 'sub-01_ses-1_task-rest_run-1_bold' */
+bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int seriesNumber, int projectRowID, const bids::Acquisition &acq, QString &err) {
+    //QString key = acq.key; /* 'sub-01_ses-1_task-rest_run-1_bold' */
     QString datatype = acq.datatype; /* anat, func, dwi, eeg ... */
     QString suffix = acq.suffix; /* T1w, bold, dwi ... */
     //QMap<QString, QString> = acq.entities;
     QString taskName = acq.entities.value("task");
     QString run = acq.entities.value("run");
-    QString acqName = acq.entities.value("acq");
+    //QString acqName = acq.entities.value("acq");
 
     /* get full paths to the files */
     QStringList files;
@@ -893,6 +893,28 @@ bool moduleUpload::ImportBidsAcquisition(int subjectRowID, int studyRowID, int s
     }
 
     if (io->ArchiveNiftiSeries(subjectRowID, studyRowID, -1, seriesNumber, tags, files)) {
+        /* add the reverse BIDS mapping */
+        QSqlQuery q;
+        q.prepare("insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIncludeAcquisition, bidstask, bidspedirection) values (:projectid, :seriesdesc, :imagetype, :modality, :bidsentity, :bidssuffix, :bidsrun, :bidsautonumberruns, :bidsincludeacquisition, :bidstask, :bidspedirection) on duplicate key update bidsentity = :bidsentity, bidssuffix = :bidssuffix, bidsrun = :bidsrun, bidsAutoNumberRuns = :bidsautonumberruns, bidsIncludeAcquisition = :bidsincludeacquisition, bidstask = :bidstask, bidspedirection = :bidspedirection");
+        q.bindValue(":projectid", projectRowID);
+        q.bindValue(":seriesdesc", tags.value("SeriesDescription"));
+        q.bindValue(":imagetype", tags.value("ImageType"));
+        /* the BIDS JSON may not carry a Modality field, so derive it from the datatype
+           (falling back to the tag if present) - this must match the modality used by
+           GetBIDSMapping() on export or the reverse mapping won't be found */
+        QStringList mods = bids::MapBidsDatatypeToModality(QStringList() << datatype);
+        q.bindValue(":modality", mods.isEmpty() ? tags.value("Modality") : mods.first());
+        q.bindValue(":bidsentity", datatype);
+        q.bindValue(":bidssuffix", suffix);
+        q.bindValue(":bidsrun", run.toInt());
+        /* the exact run is stored in bidsrun, so no auto-numbering is needed on export */
+        q.bindValue(":bidsautonumberruns", 0);
+        q.bindValue(":bidsincludeacquisition", acq.entities.value("acq").isEmpty() ? 0 : 1);
+        q.bindValue(":bidstask", taskName);
+        /* PE direction comes from the BIDS 'dir' entity (eg dir-AP); empty for non-fmap */
+        q.bindValue(":bidspedirection", acq.entities.value("dir"));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
         return true;
     }
     else {

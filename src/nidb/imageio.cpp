@@ -496,7 +496,10 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         }
 
         /* copy only the NIfTI images and their sidecars */
-        QString copycmd = QString("rsync --stats --include='*.nii' --include='*.nii.gz' --include='*.json' --include='*.bval' --include='*.bvec' --exclude='*' %1/ %2/").arg(indir).arg(outdir);
+        /* -r is required: rsync will not descend into a directory argument without it
+           (it prints "skipping directory ."), so the include/exclude filters would copy
+           nothing. The dir is flat, so -r + these filters copy only the images/sidecars. */
+        QString copycmd = QString("rsync --stats -r --include='*.nii' --include='*.nii.gz' --include='*.json' --include='*.bval' --include='*.bvec' --exclude='*' %1/ %2/").arg(indir).arg(outdir);
         msgs << SystemCommand(copycmd, true, true);
 
         /* for BIDS, rename to BIDS naming unless every image is already BIDS-formatted */
