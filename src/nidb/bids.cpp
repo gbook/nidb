@@ -623,8 +623,12 @@ bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &err
      * can fix the source naming. */
     if (!gluedFiles.isEmpty()) {
         out.bidsCompliant = false;
+        const int cap = 5;
+        QString examples = gluedFiles.mid(0, cap).join(", ");
+        if (gluedFiles.size() > cap)
+            examples += QString(", ... (and %1 more)").arg(gluedFiles.size() - cap);
         out.complianceIssues << QString("%1 file(s) have the datatype glued into the filename (eg 'anat-T1w' instead of 'T1w', 'fmap-dir-AP' instead of 'dir-AP'); NiDB corrected these on import: %2")
-                                .arg(gluedFiles.size()).arg(gluedFiles.join(", "));
+                                .arg(gluedFiles.size()).arg(examples);
     }
 
     attachParticipantRows(out);
