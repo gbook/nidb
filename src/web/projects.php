@@ -580,6 +580,8 @@
 	/* ------- ApplyTags -------------------------- */
 	/* -------------------------------------------- */
 	function ApplyTags($projectRowID, $studyids, $tags) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
+
 		/* prepare the fields for SQL */
 		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
@@ -704,8 +706,11 @@
 	/* ------- ObliterateSubject ------------------ */
 	/* -------------------------------------------- */
 	function ObliterateSubject($studyids) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		
+		$ids = array();
+		$uids = array();
+
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -729,8 +734,9 @@
 	/* ------- ObliterateStudy -------------------- */
 	/* -------------------------------------------- */
 	function ObliterateStudy($studyids) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		
+
 		/* delete all information about this SUBJECT from the database */
 		foreach ($studyids as $id) {
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
@@ -747,6 +753,7 @@
 	/* ------- RearchiveStudies ------------------- */
 	/* -------------------------------------------- */
 	function RearchiveStudies($studyids, $matchidonly) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
 		
@@ -768,9 +775,12 @@
 	/* ------- RearchiveSubjects ------------------ */
 	/* -------------------------------------------- */
 	function RearchiveSubjects($studyids, $matchidonly) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
 		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
 		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
-		
+		$ids = array();
+		$uids = array();
+
 		/* get list of subjects from the studyids */
 		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -799,6 +809,7 @@
 	/* ------- ChangeProject ---------------------- */
 	/* -------------------------------------------- */
 	function ChangeProject($projectRowID, $studyids) {
+		if (empty($studyids)) { Notice("No studies selected"); return; }
 		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
 	
 		$msgs = array();
@@ -2159,7 +2170,6 @@
 		<form method="post" action="projects.php" id="theform" name="theform" onSubmit="return onSubmitForm();">
 		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="">
-		<input type="hidden" name="selectedStudyRowIDs" id="selectedStudyRowIDs">
 		
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<style>
@@ -2346,7 +2356,7 @@
 						}
 					?>
 					</datalist>
-					<button class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.action='projects.php'; document.theform.action.value='applytags'; document.theform.submit()">Apply tags</button>
+					<button type="submit" class="ui button" title="Applies the tags to the selected studies" onclick="document.theform.elements['action'].value='applytags'">Apply tags</button>
 				</div>
 			</div>
 
@@ -2373,7 +2383,7 @@
 						}
 					?>
 					</select>
-					<button class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.action='projects.php'; document.theform.action.value='changeproject'; document.theform.submit()">Move studies</button>
+					<button type="submit" class="ui button" title="Moves the imaging studies from this project to the selected project" onclick="document.theform.elements['action'].value='changeproject'">Move studies</button>
 				</div>
 			</div>
 			
@@ -2387,17 +2397,17 @@
 					<label>Match by ID only</label>
 				</div>
 				&nbsp; &nbsp;
-				<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivestudies'; document.theform.submit()">Re-archive DICOM studies</button>
+				<button class="ui orange button" title="Moves all DICOM files back into the incoming directory to be parsed again. Useful if there was an archiving error and too many subjects are in the wrong place." type="submit" onclick="document.theform.elements['action'].value='rearchivestudies'">Re-archive DICOM studies</button>
 				&nbsp; &nbsp;
-				<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" onclick="document.theform.action='projects.php'; document.theform.action.value='rearchivesubjects'; document.theform.submit()">Re-archive Subjects</button>
+				<button class="ui orange button" title="Moves all DICOM files from this SUBJECT into the incoming directory, and deletes the subject" type="submit" onclick="document.theform.elements['action'].value='rearchivesubjects'">Re-archive Subjects</button>
 			</div>
 			
 			<div class="ui segment">
 				<h3 class="ui header">
 					Obliterate
 				</h3>
-				<button class="ui red button" title="Delete the subject permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratesubject'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
-				<button class="ui red button" title="Delete the studies permanently" onclick="document.theform.action='projects.php';document.theform.action.value='obliteratestudy'; document.theform.submit()"><i class="bomb icon"></i> Obliterate Studies</button>
+				<button class="ui red button" title="Delete the subject permanently" type="submit" onclick="document.theform.elements['action'].value='obliteratesubject'"><i class="bomb icon"></i> Obliterate Subjects</button> &nbsp; &nbsp;
+				<button class="ui red button" title="Delete the studies permanently" type="submit" onclick="document.theform.elements['action'].value='obliteratestudy'"><i class="bomb icon"></i> Obliterate Studies</button>
 			</div>
 		</div>
 		<? } ?>
@@ -2426,6 +2436,7 @@
 		$rowdata = array();
 		
 		$observationNames = array();
+		$table = array();
 		/* get all subjects, and their enrollment info, associated with the project */
 		$sqlstring = "select a.observation_name, observation_value, observation_startdate, b.enrollment_id, c.subject_id, c.uid, c.sex, c.gender from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = '$isactive'";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2444,6 +2455,7 @@
 			if ( ($obsv_name == "uid") || ($obsv_name == "subjectRowID") || ($obsv_name == "enrollmentRowID")) { continue; }
 			
 			$table[$subjectRowID]['uid'] = $uid;
+			$table[$subjectRowID]['enrollmentRowID'] = $enrollmentRowID;
 			$table[$subjectRowID]['observations'][$obsv_name]++;
 			$observationNames[] = $obsv_name;
 		}
@@ -2455,6 +2467,7 @@
 		
 		foreach ($table as $subjectRowID => $data) {
 			$uid = $data['uid'];
+			$enrollmentRowID = $data['enrollmentRowID'];
 			$row = "{ subjectRowID: $subjectRowID, enrollmentRowID: $enrollmentRowID, uid: " . json_encode((string)$uid) . " ";
 			foreach ($observationNames as $name) {
 				$obsvName = $name;
