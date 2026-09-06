@@ -109,12 +109,16 @@
 	function DisplayMenu() {
 	
 		?>
-		<div class="ui container">
-		
-			<div class="ui spaced buttons">
-				<a href="requeststatus.php" class="ui large green button"><i class="cloud download alternate icon"></i> Data Exports & Downloads</a>
-				<a href="search.php" class="ui large green button"><i class="search icon"></i> Search for Data</a>
+
+			<div class="ui container">
+				<div class="ui spaced buttons">
+					<a href="requeststatus.php" class="ui large green button"><i class="cloud download alternate icon"></i> Data Exports & Downloads</a>
+					<a href="search.php" class="ui large green button"><i class="search icon"></i> Search for Data</a>
+				</div>
 			</div>
+
+			<div class="ui two column stackable grid">
+			<div class="column">
 
 			<h2 class="ui header">
 				<i class="grey file import icon"></i>
@@ -123,7 +127,7 @@
 				</div>
 			</h2>
 			
-			<div class="ui four cards">
+			<div class="ui cards">
 				<div class="ui card">
 					<div class="content">
 						<div class="header">ID Mapping</div>
@@ -196,8 +200,10 @@
 					</div>
 				</div>
 			</div>
-			
-			<br><br>
+
+			</div>
+			<div class="column">
+
 			<h2 class="ui header">
 				<i class="grey file export icon"></i>
 				<div class="content">Exports
@@ -205,7 +211,7 @@
 				</div>
 			</h2>
 			
-			<div class="ui four cards">
+			<div class="ui cards">
 				<div class="ui card">
 					<div class="content">
 						<div class="header"><img src="images/squirrel-icon-64.png" height="50%"></img> Squirrel Packages</div>
@@ -254,14 +260,16 @@
 					</div>
 				</div>
 			</div>
-			
+
+			</div>
+			</div>
+
 			<!--
 				<br><br>
 				<i class="large disabled upload icon"></i> <span style="color: gray"><a href="import.php?action=import">Import</a> data via website (deprecated)</span>
 				<br><br>
 				<i class="large disabled file alternate outline icon"></i> <span style="color: gray">View <a href="importlog.php?action=viewtransactions">import logs</a> (deprecated)</span>
 			-->
-		</div>
 		<?
 	}
 

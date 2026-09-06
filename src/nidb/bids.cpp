@@ -577,6 +577,9 @@ bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &err
         return (slash > 0) && reservedTopDirs.contains(rel.left(slash));
     };
 
+    /* filenames whose datatype was glued onto a component (non-compliant) and corrected on read */
+    QStringList gluedFiles;
+
     /* pass 1: files. Skip reserved dirs and skip files that live inside a zarr
      * store (the store directory itself is recorded in pass 2). */
     QDirIterator it(out.rootPath, QDir::Files, QDirIterator::Subdirectories);
@@ -592,7 +595,9 @@ bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &err
         if (zarrComponentIndex(relPath) >= 0) {
             continue;
         }
-        insertFile(makeFileRecord(absPath, relPath), out);
+        const FileRecord rec = makeFileRecord(absPath, relPath);
+        if (rec.datatypeGlued) gluedFiles << rec.fileName;
+        insertFile(rec, out);
     }
 
     /* pass 2: zarr store directories. Record each store as a single primary data
@@ -607,8 +612,19 @@ bool Reader::readDataset(const QString &rootPath, BidsDataset &out, QString &err
         }
         const QStringList comps = relPath.split('/', Qt::SkipEmptyParts);
         if (!comps.isEmpty() && zarrComponentIndex(relPath) == comps.size() - 1) {
-            insertFile(makeFileRecord(absPath, relPath), out);
+            const FileRecord rec = makeFileRecord(absPath, relPath);
+            if (rec.datatypeGlued) gluedFiles << rec.fileName;
+            insertFile(rec, out);
         }
+    }
+
+    /* non-compliant filenames that glued the datatype onto a component (eg 'anat-T1w'
+     * instead of 'T1w'); these were corrected on read, but flag the dataset so the user
+     * can fix the source naming. */
+    if (!gluedFiles.isEmpty()) {
+        out.bidsCompliant = false;
+        out.complianceIssues << QString("%1 file(s) have the datatype glued into the filename (eg 'anat-T1w' instead of 'T1w', 'fmap-dir-AP' instead of 'dir-AP'); NiDB corrected these on import: %2")
+                                .arg(gluedFiles.size()).arg(gluedFiles.join(", "));
     }
 
     attachParticipantRows(out);
@@ -722,6 +738,25 @@ FileRecord Reader::makeFileRecord(const QString &absPath, const QString &relPath
         if (datatypes.contains(parentDir)) {
             fr.datatype = parentDir;
         }
+    }
+
+    /* Some non-compliant datasets glue the datatype onto the following filename
+     * component with a dash, eg sub-01_ses-1_anat-T1w or sub-01_ses-1_fmap-dir-AP_epi.
+     * The parser then reads a bogus entity keyed by the datatype (anat=T1w, fmap=dir-AP)
+     * and, for the anat case, finds no suffix - which pushes the file to looseFiles.
+     * Undo the gluing: drop the datatype-keyed entity and re-interpret its value - a
+     * '<key>-<value>' token becomes the real entity (dir-AP -> dir=AP), a bare token
+     * becomes the suffix when none was found (T1w -> suffix). */
+    if (!fr.datatype.isEmpty() && fr.entities.contains(fr.datatype)) {
+        const QString val = fr.entities.value(fr.datatype);
+        fr.entities.remove(fr.datatype);
+        const int dash = val.indexOf('-');
+        if (dash > 0 && dash < val.size() - 1)
+            fr.entities.insert(val.left(dash), val.mid(dash + 1));
+        else if (fr.suffix.isEmpty())
+            fr.suffix = val;
+        fr.parsedAsBids = !fr.subject.isEmpty() && !fr.suffix.isEmpty();
+        fr.datatypeGlued = true;
     }
 
     return fr;

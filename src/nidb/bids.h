@@ -59,6 +59,7 @@ struct FileRecord {
 
     QMap<QString, QString> entities; // parsed BIDS entities
     bool parsedAsBids = false;       // whether filename matched BIDS pattern
+    bool datatypeGlued = false;      // filename had the datatype glued to a component (non-compliant), corrected on read
 };
 
 /**

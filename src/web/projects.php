@@ -186,6 +186,10 @@
 			BatchAddSubjects($id, $csv);
 			DisplaySubjectsTable($id);
 			break;
+		case 'batchupdatestudy':
+			BatchUpdateStudy($id, $csv);
+			DisplayStudiesTable($id);
+			break;
 		case 'displaynonimaging':
 			DisplayNonImagingTable($id);
 			break;
@@ -248,6 +252,83 @@
 					}
 				}
 			}
+		}
+		Notice(implode2("<br>", $msgs));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BatchUpdateStudy ------------------- */
+	/* -------------------------------------------- */
+	function BatchUpdateStudy($projectid, $csvstr) {
+		$projectid = (int)$projectid;
+
+		$lines = preg_split('/\r\n|\r|\n/', trim($csvstr));
+		if (count($lines) < 2) { Notice("CSV must contain a header row and at least one data row."); return; }
+
+		/* strip spaces from header, lowercase for case-insensitive matching */
+		$header = array_map('trim', str_getcsv($lines[0]));
+		$headerLower = array_map('strtolower', $header);
+
+		$requiredCols = ['uid', 'studynum'];
+		foreach ($requiredCols as $req) {
+			if (!in_array($req, $headerLower)) {
+				Notice("CSV is missing required column: <b>$req</b>");
+				return;
+			}
+		}
+
+		/* map optional CSV column (lowercased) -> studies table column */
+		$colMap = array(
+			'visit'         => 'study_type',
+			'studydatetime' => 'study_datetime',
+			'studyage'      => 'study_ageatscan',
+			'description'   => 'study_desc',
+			'studyid'       => 'study_alternateid',
+			'site'          => 'study_site',
+		);
+
+		$msgs = array();
+		for ($i = 1; $i < count($lines); $i++) {
+			$line = trim($lines[$i]);
+			if ($line === '') continue;
+
+			$values = array_map('trim', str_getcsv($line));
+			/* zip header to values (lowercased keys); pad short rows with empty strings */
+			$row = array();
+			foreach ($headerLower as $idx => $col) {
+				$row[$col] = isset($values[$idx]) ? $values[$idx] : '';
+			}
+
+			$uid = mysqli_real_escape_string($GLOBALS['linki'], $row['uid']);
+			$studynum = (int)$row['studynum'];
+			if ($uid === '') { $msgs[] = "Row $i: skipped &mdash; uid is blank"; continue; }
+			if ($studynum <= 0) { $msgs[] = "Row $i ($uid): skipped &mdash; studynum is missing or invalid"; continue; }
+
+			/* find the study for this uid + studynum within this project */
+			$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects d on d.subject_id = b.subject_id where d.uid = '$uid' and a.study_num = $studynum and b.project_id = $projectid";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (mysqli_num_rows($result) < 1) { $msgs[] = "Row $i ($uid $studynum): study not found in this project"; continue; }
+			$rowS = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$studyid = (int)$rowS['study_id'];
+
+			/* build the update from whichever optional columns are present in the CSV */
+			$sets = array();
+			$updated = array();
+			foreach ($colMap as $csvcol => $dbcol) {
+				if (!array_key_exists($csvcol, $row)) continue;
+				$raw = $row[$csvcol];
+				/* skip blank values for numeric/datetime columns to avoid invalid writes */
+				if (($raw === '') && in_array($dbcol, array('study_datetime', 'study_ageatscan'))) continue;
+				$val = mysqli_real_escape_string($GLOBALS['linki'], $raw);
+				$sets[] = "$dbcol = '$val'";
+				$updated[] = $csvcol;
+			}
+			if (count($sets) < 1) { $msgs[] = "Row $i ($uid $studynum): no updatable columns provided"; continue; }
+
+			$sqlstringA = "update studies set " . implode(", ", $sets) . " where study_id = $studyid";
+			MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$msgs[] = "$uid $studynum &mdash; updated <tt>" . implode(", ", $updated) . "</tt>";
 		}
 		Notice(implode2("<br>", $msgs));
 	}
@@ -2019,12 +2100,62 @@
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
+					<button type="button" class="ui small basic primary compact button" id="batchstudyupdatebutton" title="Paste a CSV to batch update studies">Batch Update...</button>
 					<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
 		</div>
-		
+
+		<div class="ui modal" id="batchstudymodal">
+			<div class="header">Batch Update Studies</div>
+			<div class="scrolling content">
+				<form action="projects.php" method="post" class="ui form">
+					<input type="hidden" name="action" value="batchupdatestudy">
+					<input type="hidden" name="projectid" value="<?=$id?>">
+					<div class="field">
+						<label>Paste .csv formatted data</label>
+						<textarea name="csv" style="font-family:monospace"></textarea>
+					</div>
+					<p><i class="blue question circle icon"></i> <b>Formatting Guide</b></p>
+
+					<b>Sample .csv format</b>
+					<div style="font-family:monospace; padding:8px; background-color: #eee; border: 1px dashed #aaa">
+						uid, studynum, visit, studyage<br>
+						S1234ABC, 1, baseline, 24.5
+					</div>
+					<br>
+					Available columns (.csv may contain any set of the optional columns, but <b>must</b> always contain <tt>uid</tt> and <tt>studynum</tt> to identify each study)
+					<table class="ui very compact small celled table">
+						<thead>
+							<tr><th>Column</th><th>Description</th></tr>
+						</thead>
+						<tbody>
+							<tr style="color: darkred"><td><code>uid</code></td><td>The subject <b>UID</b> (required)</td></tr>
+							<tr style="color: darkred"><td><code>studynum</code></td><td>The study number for the subject (required)</td></tr>
+							<tr><td><code>visit</code></td><td>Study visit / type</td></tr>
+							<tr><td><code>studydatetime</code></td><td>Study date/time, format <tt>YYYY-MM-DD HH:MM:SS</tt></td></tr>
+							<tr><td><code>studyage</code></td><td>Age at scan (numeric)</td></tr>
+							<tr><td><code>description</code></td><td>Study description</td></tr>
+							<tr><td><code>studyid</code></td><td>Alternate study ID</td></tr>
+							<tr><td><code>site</code></td><td>Study site</td></tr>
+						</tbody>
+					</table>
+				</div>
+			<div class="actions">
+				<input type="submit" class="ui approve button" value="Update Studies">
+				<div class="ui cancel button">Cancel</div>
+				</form>
+			</div>
+		</div>
+		<script>
+			$(document).ready(function(){
+				$('#batchstudyupdatebutton').click(function(){
+					$('#batchstudymodal').modal('show');
+				});
+			});
+		</script>
+
 		<form method="post" action="projects.php" id="theform" name="theform" onSubmit="return onSubmitForm();">
 		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="">
