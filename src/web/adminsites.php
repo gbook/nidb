@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -53,6 +54,7 @@
 		$sitecontact = GetVariable("sitecontact");
 		
 		/* determine action */
+		/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 		if ($action == "editform") {
 			DisplaySiteForm("edit", $id);
 		}
@@ -60,15 +62,22 @@
 			DisplaySiteForm("add", "");
 		}
 		elseif ($action == "update") {
+			ob_start();
 			UpdateSite($id, $sitename, $siteaddress, $sitecontact);
-			DisplaySiteList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminsites.php");
 		}
 		elseif ($action == "add") {
+			ob_start();
 			AddSite($sitename, $siteaddress, $sitecontact);
-			DisplaySiteList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminsites.php");
 		}
 		elseif ($action == "delete") {
+			ob_start();
 			DeleteSite($id);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminsites.php");
 		}
 		else {
 			DisplaySiteList();
@@ -85,12 +94,13 @@
 		$id = (int)$id;
 		
 		/* update the site */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update nidb_sites set site_name = ?, site_contact = ?, site_address = ? where site_id = ?");
+		$sqlstring = "update nidb_sites set site_name = ?, site_contact = ?, site_address = ? where site_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'sssi', $sitename, $sitecontact, $siteaddress, $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sitename, $sitecontact, $siteaddress, $id]);
 		mysqli_stmt_close($stmt);
-		
-		?><div align="center"><span class="message"><?=$sitename?> updated</span></div><br><br><?
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($sitename)?> updated</span></div><br><br><?
 	}
 
 
@@ -101,12 +111,13 @@
 		$siteuid = NIDB\CreateUID('T',4);
 		
 		/* insert the new site */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values (?, uuid(), ?, ?, ?)");
+		$sqlstring = "insert into nidb_sites (site_uid, site_uuid, site_name, site_address, site_contact) values (?, uuid(), ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ssss', $siteuid, $sitename, $siteaddress, $sitecontact);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$siteuid, $sitename, $siteaddress, $sitecontact]);
 		mysqli_stmt_close($stmt);
-		
-		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($sitename)?> added</span></div><br><br><?
 	}
 
 
@@ -115,26 +126,34 @@
 	/* -------------------------------------------- */
 	function DeleteSite($id) {
 		$id = (int)$id;
-		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from nidb_sites where site_id = ?");
+		$sqlstring = "delete from nidb_sites where site_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		mysqli_stmt_close($stmt);
-	}	
+		Notice("Site deleted");
+	}
 	
 	
 	/* -------------------------------------------- */
 	/* ------- DisplaySiteForm -------------------- */
 	/* -------------------------------------------- */
 	function DisplaySiteForm($type, $id) {
-	
+
+		/* defaults so the "add" form doesn't reference undefined vars */
+		$name = $address = $contact = $uuid = "";
+		$siteid = "";
+
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			$id = (int)$id;
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from nidb_sites where site_id = ?");
+			$sqlstring = "select * from nidb_sites where site_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $id);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
+			if (!$row) { Error("Site not found"); return; }
 			$siteid = $row['site_id'];
 			$uuid = $row['site_uuid'];
 			$name = $row['site_name'];
@@ -154,7 +173,7 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><?=$formtitle?></div>
+				<div class="header"><?=htmlspecialchars($formtitle)?></div>
 			</div>
 
 			<form method="post" action="adminsites.php" class="ui form attached fluid segment">
@@ -163,17 +182,17 @@
 
 				<div class="required field">
 					<label>Site Name</label>
-					<input type="text" name="sitename" value="<?=$name?>" placeholder="Site name" required autofocus="autofocus">
+					<input type="text" name="sitename" value="<?=htmlspecialchars($name)?>" placeholder="Site name" required autofocus="autofocus">
 				</div>
 
 				<div class="field">
 					<label>Address</label>
-					<textarea name="siteaddress" rows="3" placeholder="Site address"><?=$address?></textarea>
+					<textarea name="siteaddress" rows="3" placeholder="Site address"><?=htmlspecialchars($address)?></textarea>
 				</div>
 
 				<div class="field">
 					<label>Contact Info</label>
-					<textarea name="sitecontact" rows="3" placeholder="Contact information"><?=$contact?></textarea>
+					<textarea name="sitecontact" rows="3" placeholder="Contact information"><?=htmlspecialchars($contact)?></textarea>
 				</div>
 
 				<? if ($type == 'edit') { ?>
@@ -201,6 +220,7 @@
 	/* ------- DisplaySiteList -------------------- */
 	/* -------------------------------------------- */
 	function DisplaySiteList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 	<div class="ui container">
 		<div class="ui two column grid">
@@ -233,10 +253,10 @@
 						$contact = $row['site_contact'];
 				?>
 				<tr>
-					<td><a href="adminsites.php?action=editform&id=<?=$id?>"><?=$name?></td>
+					<td><a href="adminsites.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($name)?></a></td>
 					<td><?=$id?></td>
-					<td><?=$address?></td>
-					<td><?=$contact?></td>
+					<td><?=htmlspecialchars($address ?? '')?></td>
+					<td><?=htmlspecialchars($contact ?? '')?></td>
 					<td class="tiny"><?=strtoupper($uuid)?></td>
 				</tr>
 				<? 

@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -66,13 +67,18 @@
 			case 'addform':
 				DisplayRemoteImportForm("add", "");
 				break;
+			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'update':
+				ob_start();
 				UpdateRemoteImport($id, $importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
-				DisplayRemoteImportList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminremoteimports.php");
 				break;
 			case 'add':
+				ob_start();
 				AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $import_schedule, $import_time, $import_dayofmonth, $import_days);
-				DisplayRemoteImportList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminremoteimports.php");
 				break;
 			default:
 				DisplayRemoteImportList();
@@ -99,9 +105,10 @@
 		$import_days = NormalizeImportDays($import_days);
 
 		/* if the incoming token field is blank then we leave it alone, otherwise update it */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select remote_token from remote_import_sources where remoteimportsetting_id = ?");
+		$sqlstring = "select remote_token from remote_import_sources where remoteimportsetting_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$existingtoken = isset($row['remote_token']) ? $row['remote_token'] : "";
 		mysqli_stmt_close($stmt);
@@ -114,12 +121,14 @@
 			$remote_token_db = $remote_token;
 		}
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update remote_import_sources set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimportsetting_id = ?");
+		$sqlstring = "update remote_import_sources set import_name = ?, project_id = ?, remote_type = ?, remote_url = ?, remote_token = ?, import_schedule = ?, import_time = ?, import_dayofmonth = ?, import_days = ? where remoteimportsetting_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = [$importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $id];
 		mysqli_stmt_bind_param($stmt, 'sissssissi', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days, $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
-		Notice("title", "$importname updated");
+		Notice(htmlspecialchars($importname) . " updated");
 	}
 
 
@@ -140,12 +149,14 @@
 		$remote_url_db = ($remote_url == "") ? null : $remote_url;
 		$remote_token_db = ($remote_token == "") ? null : $remote_token;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into remote_import_sources (import_name, project_id, remote_type, remote_url, remote_token, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+		$sqlstring = "insert into remote_import_sources (import_name, project_id, remote_type, remote_url, remote_token, import_schedule, import_time, import_dayofmonth, import_days) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = [$importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days];
 		mysqli_stmt_bind_param($stmt, 'sissssiis', $importname, $projectid, $remote_type, $remote_url_db, $remote_token_db, $import_schedule, $import_time, $import_dayofmonth, $import_days);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
-		Notice("title", "$importname added");
+		Notice(htmlspecialchars($importname) . " added");
 	}
 
 
@@ -162,9 +173,10 @@
 
 		if ($type == "edit") {
 			$id = (int)$id;
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.project_name from remote_import_sources a left join projects b on a.project_id = b.project_id where a.remoteimportsetting_id = ?");
+			$sqlstring = "select a.*, b.project_name from remote_import_sources a left join projects b on a.project_id = b.project_id where a.remoteimportsetting_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $id);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
 			if (!$row) {
@@ -225,7 +237,7 @@
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><?=$formtitle?></div>
+				<div class="header"><?=htmlspecialchars($formtitle)?></div>
 			</div>
 
 			<form method="post" action="adminremoteimports.php" class="ui form attached fluid segment">
@@ -234,7 +246,7 @@
 
 				<div class="field">
 					<label>Import Name</label>
-					<input type="text" name="importname" value="<?=$importname?>" maxlength="255" required autofocus="autofocus">
+					<input type="text" name="importname" value="<?=htmlspecialchars($importname)?>" maxlength="255" required autofocus="autofocus">
 				</div>
 
 				<div class="field">
@@ -271,7 +283,7 @@
 					</div>
 					<div class="field">
 						<label>Remote URL</label>
-						<input type="text" name="remote_url" value="<?=$remote_url?>" placeholder="https://...">
+						<input type="text" name="remote_url" value="<?=htmlspecialchars($remote_url ?? '')?>" placeholder="https://...">
 					</div>
 				</div>
 
@@ -379,6 +391,7 @@
 	/* ------- DisplayRemoteImportList ------------ */
 	/* -------------------------------------------- */
 	function DisplayRemoteImportList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 		<div class="ui container">
 			<div class="ui two column grid">
@@ -420,11 +433,11 @@
 							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
 					?>
 					<tr>
-						<td><a href="adminremoteimports.php?action=editform&id=<?=$id?>"><?=$importname?></a></td>
-						<td><?=$projectname?></td>
+						<td><a href="adminremoteimports.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($importname)?></a></td>
+						<td><?=htmlspecialchars($projectname ?? '')?></td>
 						<td><?=ucfirst($remote_type)?></td>
 						<td><?=$scheduletext?></td>
-						<td><?=$remote_url_display?></td>
+						<td><?=htmlspecialchars($remote_url_display)?></td>
 						<td class="tiny"><?=$create_date?></td>
 					</tr>
 					<? 

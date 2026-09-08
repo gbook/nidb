@@ -21,9 +21,9 @@ for the reference implementation.
 | `adminmodalities.php` | 1 | ✅ |
 | `adminprojectprotocols.php` | 1 | ✅ |
 | `adminprojects.php` | 2 | ✅ |
-| `adminqc.php` | 2 | ⬜ |
-| `adminremoteimports.php` | 1 | ⬜ |
-| `adminsites.php` | 1 | ⬜ |
+| `adminqc.php` | 2 | ✅ |
+| `adminremoteimports.php` | 1 | ✅ |
+| `adminsites.php` | 1 | ✅ |
 | `adminstorage.php` | 1 | ⬜ |
 | `adminusers.php` | 1 | ✅ |
 | `analysis.php` | 4 | ⬜ |

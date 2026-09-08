@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -56,32 +57,35 @@
 	$datatype = GetVariable("datatype");
 	$entrypoint = GetVariable("entrypoint");
 
-	PrintVariable($_POST);
-	
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 		case 'addmodule':
+			ob_start();
 			AddQCModule($modulename, $modality, $clusterid, $datatype, $entrypoint);
-			DisplayQCModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminqc.php");
 			break;
 		case 'updatemodule':
+			ob_start();
 			UpdateQCModule($id, $modulename, $modality, $clusterid, $datatype, $entrypoint);
-			DisplayQCModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminqc.php");
 			break;
 		case 'editmodule':
 			DisplayQCModuleForm('edit', $id);
 			break;
 		case 'disable':
+			ob_start();
 			DisableQCModule($id);
-			DisplayQCModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminqc.php");
 			break;
 		case 'enable':
+			ob_start();
 			EnableQCModule($id);
-			DisplayQCModuleList();
-			break;
-		case 'reset':
-			ResetQCModule($id);
-			DisplayQCModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminqc.php");
 			break;
 		default:
 			DisplayQCModuleList();
@@ -94,22 +98,14 @@
 	/* ------- UpdateQCModule --------------------- */
 	/* -------------------------------------------- */
 	function UpdateQCModule($id, $modulename, $modality, $clusterid, $datatype, $entrypoint) {
+		/* update the QC module */
+		$sqlstring = "update qc_modules set module_name = ?, modality = ?, cluster_id = nullif(?, ''), datatype = ?, entrypoint = ? where qcmodule_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssi', $modulename, $modality, $clusterid, $datatype, $entrypoint, $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modulename, $modality, $clusterid, $datatype, $entrypoint, $id]);
+		mysqli_stmt_close($stmt);
 
-		/* perform data checks */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
-		$entrypoint = mysqli_real_escape_string($GLOBALS['linki'], $entrypoint);
-		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
-		$clusterid = mysqli_real_escape_string($GLOBALS['linki'], $clusterid);
-		
-		/* update the modality */
-		$sqlstring = "update qc_modules set module_name = '$modulename', modality = '$modality', cluster_id = nullif('$clusterid', ''), datatype = '$datatype', entrypoint = '$entrypoint' where qcmodule_id = $id";
-		PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice ("$modulename updated");
+		Notice(htmlspecialchars($modulename) . " updated");
 	}
 
 
@@ -117,20 +113,14 @@
 	/* ------- AddQCmodule ------------------------ */
 	/* -------------------------------------------- */
 	function AddQCmodule($modulename, $modality, $clusterid, $datatype, $entrypoint) {
+		/* insert the new QC module */
+		$sqlstring = "insert into qc_modules (module_name, modality, cluster_id, datatype, entrypoint) values (?, ?, nullif(?, ''), ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssss', $modulename, $modality, $clusterid, $datatype, $entrypoint);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modulename, $modality, $clusterid, $datatype, $entrypoint]);
+		mysqli_stmt_close($stmt);
 
-		/* perform data checks */
-		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
-		$entrypoint = mysqli_real_escape_string($GLOBALS['linki'], $entrypoint);
-		$datatype = mysqli_real_escape_string($GLOBALS['linki'], $datatype);
-		$clusterid = mysqli_real_escape_string($GLOBALS['linki'], $clusterid);
-		
-		/* insert the new modality */
-		$sqlstring = "insert into qc_modules (module_name, modality, cluster_id, datatype, entrypoint) values ('$modulename', '$modality', nullif('$clusterid', ''), '$datatype', '$entrypoint')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("$modulename added");
+		Notice(htmlspecialchars($modulename) . " added");
 	}
 
 	
@@ -138,8 +128,12 @@
 	/* ------- EnableQCModule --------------------- */
 	/* -------------------------------------------- */
 	function EnableQCModule($id) {
-		$sqlstring = "update qc_modules set qcm_isenabled = 1 where qcmodule_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* column is `isenabled` (current schema); `qcm_isenabled` was the old name */
+		$sqlstring = "update qc_modules set isenabled = 1 where qcmodule_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -147,8 +141,12 @@
 	/* ------- DisableQCModule -------------------- */
 	/* -------------------------------------------- */
 	function DisableQCModule($id) {
-		$sqlstring = "update qc_modules set qcm_isenabled = 0 where qcmodule_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* column is `isenabled` (current schema); `qcm_isenabled` was the old name */
+		$sqlstring = "update qc_modules set isenabled = 0 where qcmodule_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -156,18 +154,24 @@
 	/* ------- EditQCModuleForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayQCModuleForm($type, $id) {
-	
+
+		/* defaults so the "add" form doesn't reference undefined vars */
+		$modality = $name = $clusterid = $datatype = $entrypoint = "";
+
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from qc_modules where qcmodule_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select * from qc_modules where qcmodule_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$modality = $row['modality'];
 			$name = $row['module_name'];
 			$clusterid = $row['cluster_id'];
 			$datatype = $row['datatype'];
 			$entrypoint = $row['entrypoint'];
-		
+
 			$formaction = "updatemodule";
 			$formtitle = "Updating $name";
 			$submitbuttonlabel = "Update";
@@ -177,7 +181,7 @@
 			$formtitle = "Add new QC module";
 			$submitbuttonlabel = "Add";
 		}
-		
+
 	?>
 	<div class="ui text container">
 		<form method="post" action="adminqc.php">
@@ -193,7 +197,7 @@
 				<td>Name</td>
 				<td>
 					<div class="ui fluid input">
-						<input type="text" name="modulename" value="<?=$name?>">
+						<input type="text" name="modulename" value="<?=htmlspecialchars($name)?>">
 					</div>
 				</td>
 			</tr>
@@ -229,9 +233,9 @@
 				<td>Data format</td>
 				<td>
 					<select name="datatype" class="ui fluid dropdown">
-						<option value="dicom">DICOM</option>
-						<option value="bids">BIDS</option>
-						<option value="nifti4dgz">Nifti 4D .gz</option>
+						<option value="dicom" <? if ($datatype == "dicom") echo "selected"; ?>>DICOM</option>
+						<option value="bids" <? if ($datatype == "bids") echo "selected"; ?>>BIDS</option>
+						<option value="nifti4dgz" <? if ($datatype == "nifti4dgz") echo "selected"; ?>>Nifti 4D .gz</option>
 					</select>
 				</td>
 			</tr>
@@ -239,7 +243,7 @@
 				<td>Entry point (full script path)<br><span class="tiny">This must be an executable script that accepts input and output parameters.</span></td>
 				<td>
 					<div class="ui fluid input">
-						<textarea name="entrypoint" cols=60><?=$entrypoint?></textarea>
+						<textarea name="entrypoint" cols=60><?=htmlspecialchars($entrypoint)?></textarea>
 					</div>
 					Example: <code>./&lt;qcscript&gt; /path/to/input /path/to/output UID</code>
 				</td>
@@ -265,7 +269,8 @@
 	/* ------- DisplayQCModuleList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayQCModuleList() {
-	
+
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<div class="ui text container">
