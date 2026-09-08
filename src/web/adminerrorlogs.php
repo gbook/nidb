@@ -47,16 +47,7 @@
 		exit(0);
 	}
 	
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	
-	/* determine action */
-	if ($action == "editform") {
-		DisplaySiteForm("edit", $id);
-	}
-	else {
-		DisplayErrorLogs();
-	}
+	DisplayErrorLogs();
 	
 	/* ------------------------------------ functions ------------------------------------ */
 

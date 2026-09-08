@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
 ?>
 
 <html>
@@ -55,8 +56,14 @@
 	
 	/* determine action */
 	switch ($action) {
+		/* sendemail has a side effect (mass email) - use PRG so a refresh/Back doesn't re-send.
+		   SendEmail() returns a status string, so render it into the flash for the redirect. */
 		case 'sendemail':
-			SendEmail($emailbody, $emailsubject, $emailto);
+			ob_start();
+			$msg = SendEmail($emailbody, $emailsubject, $emailto);
+			if ($msg != "") Notice($msg);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminemail.php");
 			break;
 		default:
 			DisplayEmailForm();
@@ -68,7 +75,7 @@
 	/* ------- DisplayEmailForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayEmailForm() {
-		
+		ShowFlash(); /* show the send result from the PRG redirect */
 		?>
 		<form action="adminemail.php" method="post" name="theform">
 		<input type="hidden" name="action" value="sendemail">
@@ -90,16 +97,22 @@
 		$sqlstring = "select user_email from users where user_email <> ''";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result);
+
+		/* send to every recipient, then report once (the return must be AFTER the loop,
+		   otherwise only the first recipient is emailed) */
+		$sent = 0;
+		$failed = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$emailto = $row['user_email'];
-			/* send the email */
-			if (!SendGmail($emailto,$emailsubject,$emailbody, 1, 0)) {
-				return "System error. Unable to send email!";
-			}
-			else {
-				return "Message send successfully to $numrows recipients";
-			}
+			if (SendGmail($emailto, $emailsubject, $emailbody, 1, 0))
+				$sent++;
+			else
+				$failed[] = $emailto;
 		}
+
+		if (count($failed) > 0)
+			return "Message sent to $sent of $numrows recipients. Failed for: " . implode(", ", $failed);
+		return "Message sent successfully to $sent recipients";
 	}
 	
 ?>

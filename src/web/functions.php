@@ -3064,6 +3064,32 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
+	/* ------- RedirectTo (PRG) ------------------- */
+	/* -------------------------------------------- */
+	/* POST/Redirect/GET: discard any buffered page output and redirect to $url (a GET),
+	   so refreshing or hitting Back re-GETs the target instead of re-submitting the form.
+	   The page must have called ob_start() before emitting output for this to work. */
+	function RedirectTo($url) {
+		while (ob_get_level() > 0) ob_end_clean();
+		header("Location: " . $url);
+		exit;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ShowFlash (PRG) -------------------- */
+	/* -------------------------------------------- */
+	/* Render and clear any HTML message stashed in $_SESSION['flash'] by a mutating action
+	   before it redirected (see RedirectTo). Safe to call when no flash is present. */
+	function ShowFlash() {
+		if (isset($_SESSION['flash']) && ($_SESSION['flash'] !== '')) {
+			echo $_SESSION['flash'];
+			unset($_SESSION['flash']);
+		}
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ValidDOB --------------------------- */
 	/* -------------------------------------------- */
 	function ValidDOB($dob) {
@@ -4370,7 +4396,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	   refresh endpoint. One row per PatientID/StudyDatetime/SeriesNumber. */
 	function DicomArchivedSummaryHTML() {
 		ob_start();
-		$sqlstring = "select PatientID, StudyDatetime, SeriesNumber, min(file_datetime) 'oldestfile', max(file_datetime) 'newestfile', count(*) 'numfiles' from dicom_monitor where file_status = 'Archived' group by PatientID, StudyDatetime, SeriesNumber order by PatientID, StudyDatetime, SeriesNumber";
+		$sqlstring = "select PatientID, StudyDatetime, SeriesNumber, min(file_datetime) 'oldestfile', max(file_datetime) 'newestfile', count(*) 'numfiles' from dicom_monitor where file_status = 'Archived' group by PatientID, StudyDatetime, SeriesNumber order by StudyDatetime desc, SeriesNumber asc, PatientID asc";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		if (mysqli_num_rows($result) < 1) {
 			?><div class="ui basic segment">No archived files</div><?

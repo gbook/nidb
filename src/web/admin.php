@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
 ?>
 
 <html>
@@ -55,13 +56,18 @@
 		if ($action == "") {
 			DisplayAdminList();
 		}
+		/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 		elseif ($action == "addlink") {
+			ob_start();
 			AddLink($linkurl, $linktext, $linkdesc);
-			DisplayAdminList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("admin.php");
 		}
 		elseif ($action == "deletelink") {
+			ob_start();
 			DeleteLink($linkid);
-			DisplayAdminList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("admin.php");
 		}
 		else {
 			DisplayAdminList();
@@ -75,6 +81,7 @@
 	/* ------- DisplayAdminList ------------------- */
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
+		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
 
 		if (file_exists("/nidb/setup/dbupgrade")) {
 			?>
@@ -233,13 +240,12 @@
 	/* ------- AddLink ---------------------------- */
 	/* -------------------------------------------- */
 	function AddLink($linkurl, $linktext, $linkdesc) {
-		$linkurl = mysqli_real_escape_string($GLOBALS['linki'], $linkurl);
-		$linktext = mysqli_real_escape_string($GLOBALS['linki'], $linktext);
-		$linkdesc = mysqli_real_escape_string($GLOBALS['linki'], $linkdesc);
-		
-		$sqlstring = "insert into links (link_url, link_text, link_desc) values ('$linkurl', '$linktext', '$linkdesc')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+		$sqlstring = "insert into links (link_url, link_text, link_desc) values (?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sss', $linkurl, $linktext, $linkdesc);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$linkurl, $linktext, $linkdesc]);
+		mysqli_stmt_close($stmt);
+
 		Notice("Link Added");
 	}
 
@@ -249,10 +255,13 @@
 	/* -------------------------------------------- */
 	function DeleteLink($linkid) {
 		if (!ValidID($linkid,'Link ID')) { return; }
-		
-		$sqlstring = "delete from links where link_id = $linkid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+
+		$sqlstring = "delete from links where link_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $linkid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$linkid]);
+		mysqli_stmt_close($stmt);
+
 		Notice("Link deleted");
 	}
 	

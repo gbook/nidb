@@ -92,17 +92,25 @@
 	/* ------- DisplayAudit ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayAudit($orderby, $problemtype) {
+		/* ORDER BY is a column identifier and can't be a bound parameter, so whitelist it
+		   against the audit_results columns; anything unrecognized falls back to subject_uid */
+		$validColumns = array('auditresult_id','audit_num','compare_direction','problem','mismatch','mismatchcount','subject_id','enrollment_id','project_id','study_id','modality','series_id','subject_uid','study_num','series_num','data_type','file_numfiles','db_numfiles','file_string','db_string','audit_date');
+		if (!in_array($orderby, $validColumns, true))
+			$orderby = "subject_uid";
+
 		if ($problemtype != "") {
-			if ($orderby == "") { $sqlstring = "select * from audit_results where problem = '$problemtype' order by subject_uid"; }
-			else { $sqlstring = "select * from audit_results where problem = '$problemtype' order by $orderby"; }
+			/* problem is user input -> bind it; $orderby is already whitelisted */
+			$sqlstring = "select * from audit_results where problem = ? order by $orderby";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $problemtype);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$problemtype]);
+			mysqli_stmt_close($stmt);
 		}
 		else {
-			if ($orderby == "") { $sqlstring = "select * from audit_results order by subject_uid"; }
-			else { $sqlstring = "select * from audit_results order by $orderby"; }
+			$sqlstring = "select * from audit_results order by $orderby";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+
 		PrintSQLTable($result,"adminaudits.php?action=displaylog",$orderby,8);
 	}
 ?>

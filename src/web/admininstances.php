@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
 ?>
 
 <html>
@@ -63,28 +64,42 @@
 			case 'addform':
 				DisplayInstanceForm("add", "");
 				break;
+			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 			case 'update':
+				ob_start();
 				UpdateInstance($id, $instancename, $users);
-				DisplayInstanceList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			case 'add':
+				ob_start();
 				AddInstance($instancename);
-				DisplayInstanceList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			case 'setdefaultinstance':
+				ob_start();
 				SetDefaultInstance($defaultinstanceid);
-				DisplayInstanceList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			case 'acceptjoin':
+				ob_start();
 				AcceptJoin($userinstanceid);
-				DisplayInstanceList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			case 'rejectjoin':
+				ob_start();
 				RejectJoin($userinstanceid);
-				DisplayInstanceList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			case 'delete':
+				ob_start();
 				DeleteInstance($id);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("admininstances.php");
 				break;
 			default:
 				DisplayInstanceList();
@@ -98,20 +113,25 @@
 	/* ------- UpdateInstance --------------------- */
 	/* -------------------------------------------- */
 	function UpdateInstance($id, $instancename, $users) {
-		/* perform data checks */
-		$instancename = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
-		
 		/* update the instance */
-		$sqlstring = "update instance set instance_name = '$instancename' where instance_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+		$sqlstring = "update instance set instance_name = ? where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $instancename, $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instancename, $id]);
+		mysqli_stmt_close($stmt);
+
 		/* add the users to the user_instance table */
-		foreach ($users as $userid) {
-			$sqlstring = "insert ignore into user_instance (instance_id, user_id) values ($id, $userid)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (is_array($users)) {
+			foreach ($users as $userid) {
+				$sqlstring = "insert ignore into user_instance (instance_id, user_id) values (?, ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ii', $id, $userid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $userid]);
+				mysqli_stmt_close($stmt);
+			}
 		}
-		
-		?><div align="center"><span class="message"><?=$instancename?> updated</span></div><br><br><?
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($instancename)?> updated</span></div><br><br><?
 	}
 
 
@@ -119,27 +139,33 @@
 	/* ------- AddInstance ------------------------ */
 	/* -------------------------------------------- */
 	function AddInstance($instancename) {
-		/* perform data checks */
-		$instancename = mysqli_real_escape_string($GLOBALS['linki'], $instancename);
-		
 		# create a new instance uid
 		do {
 			$instanceuid = NIDB\CreateUID('I');
-			$sqlstring = "SELECT * FROM `instance` WHERE instance_uid = '$instanceuid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "SELECT * FROM `instance` WHERE instance_uid = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $instanceuid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceuid]);
 			$count = mysqli_num_rows($result);
+			mysqli_stmt_close($stmt);
 		} while ($count > 0);
-		
-		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$sqlstring = "select user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$GLOBALS['username']]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$ownerid = $row['user_id'];
-		
+		mysqli_stmt_close($stmt);
+
 		/* insert the new instance */
-		$sqlstring = "insert into instance (instance_uid, instance_name, instance_ownerid) values ('$instanceuid', '$instancename', '$ownerid')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		?><div align="center"><span class="message"><?=$instancename?> added</span></div><?
+		$sqlstring = "insert into instance (instance_uid, instance_name, instance_ownerid) values (?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sss', $instanceuid, $instancename, $ownerid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceuid, $instancename, $ownerid]);
+		mysqli_stmt_close($stmt);
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($instancename)?> added</span></div><?
 	}
 
 
@@ -147,29 +173,41 @@
 	/* ------- DeleteInstance --------------------- */
 	/* -------------------------------------------- */
 	function DeleteInstance($id) {
-		$sqlstring = "delete from instance where instance_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}	
+		$sqlstring = "delete from instance where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- SetDefaultInstance ----------------- */
 	/* -------------------------------------------- */
 	function SetDefaultInstance($id) {
-		$sqlstring = "update instance set instance_default = 1 where instance_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		$sqlstring = "update instance set instance_default = 0 where instance_id <> $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}	
+		$sqlstring = "update instance set instance_default = 1 where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+
+		$sqlstring = "update instance set instance_default = 0 where instance_id <> ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+	}
 
 	
 	/* -------------------------------------------- */
 	/* ------- AcceptJoin ------------------------- */
 	/* -------------------------------------------- */
 	function AcceptJoin($id) {
-		$sqlstring = "update user_instance set instance_joinrequest = 0 where userinstance_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update user_instance set instance_joinrequest = 0 where userinstance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		?><div class="message">Request accepted</div><?
 	}
 
@@ -178,9 +216,12 @@
 	/* ------- RejectJoin ------------------------- */
 	/* -------------------------------------------- */
 	function RejectJoin($id) {
-		$sqlstring = "delete from user_instance where userinstance_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><div class="message">Request accepted</div><?
+		$sqlstring = "delete from user_instance where userinstance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+		?><div class="message">Request rejected</div><?
 	}
 
 	
@@ -191,9 +232,12 @@
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from instance where instance_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select * from instance where instance_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$instanceid = $row['instance_id'];
 			$uid = $row['instance_uid'];
 			$name = $row['instance_name'];
@@ -253,11 +297,14 @@
 					</tr>
 					<?
 						$userids = array();
-						$sqlstring = "select user_id from user_instance where instance_id = $id";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select user_id from user_instance where instance_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $id);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$userids[] = $row['user_id'];
 						}
+						mysqli_stmt_close($stmt);
 						
 						$sqlstring = "select * from users order by username";
 						//echo "$sqlstring<br>";
@@ -302,6 +349,7 @@
 	/* ------- DisplayInstanceList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceList() {
+		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<table class="ui celled selectable grey compact table">

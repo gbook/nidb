@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -84,25 +85,37 @@
 			case 'addform':
 				DisplayUserForm("add", "");
 				break;
+			/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+			   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 			case 'enable':
+				ob_start();
 				EnableUser($id);
-				DisplayUserList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
 				break;
 			case 'disable':
+				ob_start();
 				DisableUser($id);
-				DisplayUserList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
 				break;
 			case 'update':
+				ob_start();
 				UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi);
-				DisplayUserList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
 				break;
 			case 'add':
+				ob_start();
 				AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid);
-				DisplayUserList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
 				break;
 			case 'delete':
+				ob_start();
 				DeleteUser($id);
-				DisplayUserList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
 				break;
 			default:
 				DisplayUserList();
@@ -750,6 +763,7 @@
 	/* ------- DisplayUserList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayUserList() {
+		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<script>
