@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -56,13 +57,18 @@
 		
 		/* determine action */
 		switch ($action) {
+			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'addprotocol':
+				ob_start();
 				AddProjectProtocol($projectid, $protocolgroupid, $criteria, $numpersession, $numtotal);
-				DisplayProjectProtocolList($projectid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojectprotocols.php?projectid=" . urlencode($projectid));
 				break;
 			case 'deleteprotocol':
+				ob_start();
 				DeleteProjectProtocol($projectprotocolid);
-				DisplayProjectProtocolList($projectid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojectprotocols.php?projectid=" . urlencode($projectid));
 				break;
 			default:
 				DisplayProjectProtocolList($projectid);
@@ -75,15 +81,12 @@
 	/* ------- AddProjectProtocol ----------------- */
 	/* -------------------------------------------- */
 	function AddProjectProtocol($projectid, $protocolgroupid, $criteria, $numpersession, $numtotal) {
-		/* perform data checks */
-		$criteria = mysqli_real_escape_string($GLOBALS['linki'], $criteria);
-		$numpersession = mysqli_real_escape_string($GLOBALS['linki'], $numpersession);
-		$numtotal = mysqli_real_escape_string($GLOBALS['linki'], $numtotal);
-		
-		/* insert the new project */
-		$sqlstring = "insert ignore into project_protocol (project_id, protocolgroup_id, pp_criteria, pp_perstudyquantity, pp_perprojectquantity) values ($projectid, $protocolgroupid, '$criteria', '$numpersession', '$numtotal')";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* insert the new project protocol */
+		$sqlstring = "insert ignore into project_protocol (project_id, protocolgroup_id, pp_criteria, pp_perstudyquantity, pp_perprojectquantity) values (?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iisss', $projectid, $protocolgroupid, $criteria, $numpersession, $numtotal);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $protocolgroupid, $criteria, $numpersession, $numtotal]);
+		mysqli_stmt_close($stmt);
 		Notice("Protocol added");
 	}
 
@@ -92,17 +95,20 @@
 	/* ------- DeleteProjectProtocol -------------- */
 	/* -------------------------------------------- */
 	function DeleteProjectProtocol($projectprotocolid) {
-		$sqlstring = "delete from project_protocol where projectprotocol_id = $projectprotocolid";
-		//PrintSQl($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "delete from project_protocol where projectprotocol_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectprotocolid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectprotocolid]);
+		mysqli_stmt_close($stmt);
 		Notice("Protocol deleted");
-	}	
+	}
 	
 
 	/* -------------------------------------------- */
 	/* ------- DisplayProjectProtocolList --------- */
 	/* -------------------------------------------- */
 	function DisplayProjectProtocolList($projectid) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<table class="ui table" width="100%">
@@ -144,9 +150,11 @@
 			</tr>
 			</form>
 			<?
-				$sqlstring = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = $projectid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from project_protocol a left join protocol_group b on a.protocolgroup_id = b.protocolgroup_id where a.project_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+				mysqli_stmt_close($stmt);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$projectprotocolid = $row['projectprotocol_id'];
 					//$projectid = $row['project_id'];
@@ -157,7 +165,7 @@
 					$name = $row['protocolgroup_name'];
 					$modality = strtoupper($row['protocolgroup_modality']);
 				?>
-				<tr style="<?=$style?>">
+				<tr>
 					<td><a href="adminmodalities.php?action=editprotocolgroups&id=<?=$protocolgroupid?>" target="_top"><?=$modality?></a> - <?=$name?></td>
 					<td><?=$criteria?></td>
 					<td><?=$numpersession?></td>

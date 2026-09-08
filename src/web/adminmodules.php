@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -53,33 +54,48 @@
 	
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 		case 'disable':
+			ob_start();
 			DisableModule($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'enable':
+			ob_start();
 			EnableModule($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'debug':
+			ob_start();
 			DebugModule($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'nodebug':
+			ob_start();
 			NoDebugModule($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'keeplog':
+			ob_start();
 			KeepLog($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'nokeeplog':
+			ob_start();
 			NoKeepLog($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'reset':
+			ob_start();
 			ResetModule($id);
-			DisplayModuleList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminmodules.php");
 			break;
 		case 'viewlogs':
 			ViewLogs($modulename);
@@ -92,45 +108,17 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- Updatemodule ---------------------- */
-	/* -------------------------------------------- */
-	function Updatemodule($id, $modulename, $moduledesc, $admin) {
-		/* perform data checks */
-		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
-		$moduledesc = mysqli_real_escape_string($GLOBALS['linki'], $moduledesc);
-		
-		/* update the module */
-		$sqlstring = "update modules set module_name = '$modulename', module_desc = '$moduledesc', module_admin = '$admin' where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("$modulename updated");
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- Addmodule ------------------------- */
-	/* -------------------------------------------- */
-	function Addmodule($modulename, $moduledesc, $admin) {
-		/* perform data checks */
-		$modulename = mysqli_real_escape_string($GLOBALS['linki'], $modulename);
-		$moduledesc = mysqli_real_escape_string($GLOBALS['linki'], $moduledesc);
-		
-		/* insert the new module */
-		$sqlstring = "insert into modules (module_name, module_desc, module_admin, module_createdate, module_status) values ('$modulename', '$moduledesc', '$admin', now(), 'active')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("$modulename added");
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- ViewLogs --------------------------- */
 	/* -------------------------------------------- */
 	function ViewLogs($modulename) {
 
-		$sqlstring = "select * from modules where module_name = '$modulename'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from modules where module_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $modulename);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modulename]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($row === null) { Error("Unknown module"); return; }
 		$id = $row['module_id'];
 		$module_name = $row['module_name'];
 		$module_status = $row['module_status'];
@@ -163,7 +151,9 @@
 				<div class="ui styled segment">
 					<div class="ui accordion">
 						<?
-						$systemstring = "ls -t " . $GLOBALS['cfg']['logdir'] . "/$modulename" . "*.log";
+						/* $modulename comes from the URL; quote the path pieces so it can't inject
+						   shell metacharacters, while leaving the *.log glob unquoted so it still expands */
+						$systemstring = "ls -t " . escapeshellarg($GLOBALS['cfg']['logdir']) . "/" . escapeshellarg($modulename) . "*.log";
 						//PrintVariable($systemstring);
 						$filelisting = shell_exec($systemstring);
 						$files = explode("\n", $filelisting);
@@ -237,8 +227,11 @@
 	/* ------- DebugModule ------------------------ */
 	/* -------------------------------------------- */
 	function DebugModule($id) {
-		$sqlstring = "update modules set module_debug = 1 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_debug = 1 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -246,8 +239,11 @@
 	/* ------- NoDebugModule ---------------------- */
 	/* -------------------------------------------- */
 	function NoDebugModule($id) {
-		$sqlstring = "update modules set module_debug = 0 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_debug = 0 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -255,8 +251,11 @@
 	/* ------- KeepLog ---------------------------- */
 	/* -------------------------------------------- */
 	function KeepLog($id) {
-		$sqlstring = "update modules set module_keeplog = 1 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_keeplog = 1 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -264,8 +263,11 @@
 	/* ------- NoKeepLog -------------------------- */
 	/* -------------------------------------------- */
 	function NoKeepLog($id) {
-		$sqlstring = "update modules set module_keeplog = 0 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_keeplog = 0 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 	
@@ -273,8 +275,11 @@
 	/* ------- EnableModule ----------------------- */
 	/* -------------------------------------------- */
 	function EnableModule($id) {
-		$sqlstring = "update modules set module_isactive = 1 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_isactive = 1 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -282,8 +287,11 @@
 	/* ------- DisableModule ---------------------- */
 	/* -------------------------------------------- */
 	function DisableModule($id) {
-		$sqlstring = "update modules set module_isactive = 0 where module_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_isactive = 0 where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 	
@@ -294,18 +302,24 @@
 		
 		if (($id <= 0) || ($id == "")) {
 			Error("ID was not valid [$id]");
+			return;
 		}
-		
+
 		/* get module name */
-		$sqlstring = "select module_name from modules where module_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select module_name from modules where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($row === null) { Error("Unknown module [$id]"); return; }
 		$scriptname = $row['module_name'];
-		
+
 		/* delete all lock files */
 		$path = $GLOBALS['cfg']['lockdir'] . "/$scriptname*";
 		//echo "$path<br>";
 		$files = glob($path);
+		if (!is_array($files)) { $files = array(); }
 		//print_r($files);
 		foreach ($files as $file) {
 			if (stripos($file, $scriptname) !== false) {
@@ -313,16 +327,19 @@
 				unlink($file);
 			}
 		}
-		
+
 		/* update DB to have 0 instances, status=stopped and lastfinish=now() */
-		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = '$id'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update modules set module_status = 'stopped', module_numrunning = 0, module_laststop = now() where module_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
-		$sqlstring = "delete from module_procs where module_name = '$scriptname'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
+		$sqlstring = "delete from module_procs where module_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $scriptname);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$scriptname]);
+		mysqli_stmt_close($stmt);
 	}
 
 	
@@ -330,10 +347,12 @@
 	/* ------- DisplayModuleList ------------------ */
 	/* -------------------------------------------- */
 	function DisplayModuleList() {
-	
+
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+
 		/* create the color lookup table */
 		$colors = GenerateColorGradient();
-		
+
 	?>
 
 	<!--NiDB version <b><? //echo GetNiDBVersion();?></b>-->
@@ -368,7 +387,8 @@
 						$module_laststop = $row['module_laststop'];
 						$module_isactive = $row['module_isactive'];
 						$module_debug = $row['module_debug'];
-						
+						$module_keeplog = $row['module_keeplog'];
+
 						/* calculate the status color */
 						if (!$module_isactive) { $color = "gray"; }
 						else {
@@ -440,8 +460,11 @@
 				</tr>
 				<? 
 						/* get the list of threads/processes that are running */
-						$sqlstringA = "select *, abs(time_to_sec(timediff(last_checkin, now()))) 'timediff', timediff(now(), last_checkin) 'timediff2' from module_procs where module_name = '$module_name' order by last_checkin";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						$sqlstringA = "select *, abs(time_to_sec(timediff(last_checkin, now()))) 'timediff', timediff(now(), last_checkin) 'timediff2' from module_procs where module_name = ? order by last_checkin";
+						$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+						mysqli_stmt_bind_param($stmtA, 's', $module_name);
+						$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$module_name]);
+						mysqli_stmt_close($stmtA);
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 							$lastcheckin = $rowA['last_checkin'];
 							$timediff = $rowA['timediff'];

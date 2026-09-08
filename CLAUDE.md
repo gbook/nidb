@@ -13,7 +13,7 @@ Project-specific conventions for working in this repo. These are loaded automati
 
 ## PHP patterns to apply on new/edited code (rolling out incrementally)
 Two project-wide conventions are being adopted file-by-file. **Whenever you create or edit a PHP page, bring the code you touch up to both**, and update the tracking doc when a page is completed:
-- **Post/Redirect/GET (PRG)** for mutating form handlers, so a refresh/Back can't re-submit: process the POST, stash the result in `$_SESSION['flash']`, then `RedirectTo("thispage.php")` to a GET; render messages with `ShowFlash()`. Requires `ob_start()` near the top of the page. Reference impl: `adminusers.php` + `functions.php` (`RedirectTo`/`ShowFlash`). Progress: `doc/post-redirect-get.md`.
+- **Post/Redirect/GET (PRG)** for mutating form handlers, so a refresh/Back can't re-submit: process the POST, stash the result in `$_SESSION['flash']`, then `RedirectTo("thispage.php")` to a GET; render messages with `ShowFlashMessage()`. Requires `ob_start()` near the top of the page. Reference impl: `adminusers.php` + `functions.php` (`RedirectTo`/`ShowFlashMessage`). Progress: `doc/post-redirect-get.md`.
 - **Prepared/bound statements** for any query that includes user input (idiom in the SQL section below). Progress: `doc/prepared-statements.md`.
 
 ## Line endings

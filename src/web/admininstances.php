@@ -24,7 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
-	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -253,6 +253,8 @@
 		}
 		
 	?>
+	<div class="ui container">
+		<h1 class="ui header"><?=$formtitle?></h1>
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="admininstances.php">
@@ -265,7 +267,11 @@
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="instancename" maxlength="50" size="35" value="<?=$name?>"></td>
+				<td>
+					<div class="ui input">
+						<input type="text" name="instancename" maxlength="50" size="35" value="<?=$name?>">
+					</div>
+				</td>
 			</tr>
 			<? if ($type == 'edit') { ?>
 			<tr>
@@ -342,6 +348,7 @@
 			</form>
 		</table>
 		</div>
+	</div>
 	<?
 	}
 
@@ -349,8 +356,18 @@
 	/* ------- DisplayInstanceList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayInstanceList() {
-		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
+
+	<div class="ui container">
+		<div class="ui two column grid">
+			<div class="column">
+				<h1 class="ui header">Instances</h1>
+			</div>
+			<div class="right aligned column">
+				<a href="admininstances.php?action=addform" class="ui primary button"><i class="plus icon"></i> Add instance</a>
+			</div>
+		</div>
 
 	<table class="ui celled selectable grey compact table">
 		<thead>
@@ -392,9 +409,9 @@
 		</tbody>
 		</form>
 	</table>
-	
-	<br><Br>
-	
+
+	<h2 class="ui header">Join requests</h2>
+
 	<table class="ui celled selectable grey compact table">
 		<thead>
 			<tr>
@@ -429,6 +446,7 @@
 			?>
 		</tbody>
 	</table>
+	</div>
 	<?
 	}
 ?>

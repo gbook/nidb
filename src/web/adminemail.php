@@ -24,7 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
-	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -75,7 +75,7 @@
 	/* ------- DisplayEmailForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayEmailForm() {
-		ShowFlash(); /* show the send result from the PRG redirect */
+		ShowFlashMessage(); /* show the send result from the PRG redirect */
 		?>
 		<form action="adminemail.php" method="post" name="theform">
 		<input type="hidden" name="action" value="sendemail">

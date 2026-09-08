@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -72,20 +73,30 @@
 			case 'addform':
 				DisplayProjectForm("add", "$username");
 				break;
+			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'update':
+				ob_start();
 				UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate);
-				DisplayProjectList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojects.php");
 				break;
 			case 'add':
+				ob_start();
 				AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers);
-				DisplayProjectList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojects.php");
 				break;
 			case 'delete':
+				ob_start();
 				DeleteProject($id);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojects.php");
 				break;
 			case 'copysettings':
+				ob_start();
 				CopyProjectSettings($projectid, $copyfromprojectid);
-				DisplayProjectForm("edit", $projectid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminprojects.php?action=editform&id=" . urlencode($projectid));
 				break;
 			default:
 				DisplayProjectList();
@@ -99,22 +110,17 @@
 	/* ------- UpdateProject ---------------------- */
 	/* -------------------------------------------- */
 	function UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate) {
-		/* perform data checks */
-		$projectname = mysqli_real_escape_string($GLOBALS['linki'], $projectname);
-		$projectdesc = mysqli_real_escape_string($GLOBALS['linki'], $projectdesc);
-		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
-		$admin = mysqli_real_escape_string($GLOBALS['linki'], $admin);
-		$pi = mysqli_real_escape_string($GLOBALS['linki'], $pi);
-		$sharing = mysqli_real_escape_string($GLOBALS['linki'], $sharing);
-		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], $costcenter);
-		$startdate = mysqli_real_escape_string($GLOBALS['linki'], $startdate);
-		$enddate = mysqli_real_escape_string($GLOBALS['linki'], $enddate);
+		$usecustomid = GetMySQLTinyInt($usecustomid);
 
 		/* update the project */
-		$sqlstring = "update projects set project_name = '$projectname', project_desc = '$projectdesc', project_usecustomid = '$usecustomid', project_admin = '$admin', project_pi = '$pi', instance_id = '$instanceid', project_sharing = '$sharing', project_costcenter = '$costcenter', project_startdate = '$startdate', project_enddate = '$enddate' where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update projects set project_name = ?, project_desc = ?, project_usecustomid = ?, project_admin = ?, project_pi = ?, instance_id = ?, project_sharing = ?, project_costcenter = ?, project_startdate = ?, project_enddate = ? where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = [$projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $id];
+		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
-		Notice("title", "$projectname updated");
+		Notice(htmlspecialchars($projectname) . " updated");
 	}
 
 
@@ -123,37 +129,30 @@
 	/* -------------------------------------------- */
 	function AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate, $datausers, $phiusers) {
 		/* perform data checks */
-		$projectname = mysqli_real_escape_string($GLOBALS['linki'], trim($projectname));
-		$projectdesc = mysqli_real_escape_string($GLOBALS['linki'], trim($projectdesc));
-		$usecustomid = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $usecustomid));
-		$admin = mysqli_real_escape_string($GLOBALS['linki'], trim($admin));
-		$pi = mysqli_real_escape_string($GLOBALS['linki'], trim($pi));
-		$sharing = mysqli_real_escape_string($GLOBALS['linki'], trim($sharing));
-		$costcenter = mysqli_real_escape_string($GLOBALS['linki'], trim($costcenter));
-		$startdate = mysqli_real_escape_string($GLOBALS['linki'], trim($startdate));
-		$enddate = mysqli_real_escape_string($GLOBALS['linki'], trim($enddate));
-		
-		echo "Checkpoint A<br>";
-		
+		$projectname = trim($projectname);
+		$projectdesc = trim($projectdesc);
+		$usecustomid = GetMySQLTinyInt($usecustomid);
+		$admin = trim($admin);
+		$pi = trim($pi);
+		$sharing = trim($sharing);
+		$costcenter = trim($costcenter);
+		$startdate = trim($startdate);
+		$enddate = trim($enddate);
+
 		if ($startdate == "") { $startdate = "0000-00-00"; }
 		if ($enddate == "") { $enddate = "0000-00-00"; }
-		echo "Checkpoint B<br>";
-		
-		$projectuid = NIDB\CreateUID('P',4);
-		echo "Checkpoint C<br>";
-	
-		// echo "project_admin: $admin, PI $pi";	
-		/* insert the new project */
-		$sqlstring = "insert into projects (project_uid, project_name, project_desc, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values ('$projectuid', '$projectname', '$projectdesc', '$usecustomid', '$admin', '$pi', '$instanceid', '$sharing', '$costcenter', '$startdate', '$enddate', 'active')";
-		PrintSQL($sqlstring);
-		echo "Checkpoint D<br>";
-		//exit(0);
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
-		echo "Checkpoint E<br>";
-		
-		Notice("title", "$projectname added");
+		$projectuid = NIDB\CreateUID('P',4);
+
+		/* insert the new project */
+		$sqlstring = "insert into projects (project_uid, project_name, project_desc, project_usecustomid, project_admin, project_pi, instance_id, project_sharing, project_costcenter, project_startdate, project_enddate, project_status) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = [$projectuid, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $sharing, $costcenter, $startdate, $enddate];
+		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		Notice(htmlspecialchars($projectname) . " added");
 	}
 
 
@@ -161,40 +160,53 @@
 	/* ------- DeleteProject ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteProject($id) {
-		$sqlstring = "delete from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}	
+		$sqlstring = "delete from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+		Notice("Project deleted");
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- CopyProjectSettings ---------------- */
 	/* -------------------------------------------- */
 	function CopyProjectSettings($projectid, $copyfromprojectid) {
-		$sourceprojectid = mysqli_real_escape_string($GLOBALS['linki'], $copyfromprojectid);
-		$destprojectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$sourceprojectid = $copyfromprojectid;
+		$destprojectid = $projectid;
 
-		$sqlstring = "select project_name from projects where project_id = $sourceprojectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select project_name from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$sourceprojectname = $row['project_name'];
+		mysqli_stmt_close($stmt);
+		$sourceprojectname = $row['project_name'] ?? '';
 
-		$sqlstring = "select project_name from projects where project_id = $destprojectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select project_name from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $destprojectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$destprojectid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$destprojectname = $row['project_name'];
-		
+		mysqli_stmt_close($stmt);
+		$destprojectname = $row['project_name'] ?? '';
+
 		?>
 		<div class="ui message">
-			<h2 class="ui header">Copying settings from <div class="ui big blue label"><?=$sourceprojectname?></div> to <div class="ui big blue label"><?=$destprojectname?></div></h2>
-			
+			<h2 class="ui header">Copying settings from <div class="ui big blue label"><?=htmlspecialchars($sourceprojectname)?></div> to <div class="ui big blue label"><?=htmlspecialchars($destprojectname)?></div></h2>
+
 			<ul>
 				<li>
 					<h3 class="ui header">Project checklists
 						<?
 						$numrows = 0;
 						$newvals = array();
-						$sqlstring = "select * from project_checklist where project_id = $sourceprojectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from project_checklist where project_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
+						mysqli_stmt_close($stmt);
 						$numrows = mysqli_num_rows($result);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$rowid = $row['projectchecklist_id'];
@@ -209,8 +221,11 @@
 						<?
 						$numrows = 0;
 						$newvals = array();
-						$sqlstring = "select * from bids_mapping where project_id = $sourceprojectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from bids_mapping where project_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
+						mysqli_stmt_close($stmt);
 						$numrows = mysqli_num_rows($result);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$rowid = $row['protocolmapping_id'];
@@ -225,17 +240,23 @@
 						<?
 						$numrows = 0;
 						$newvals = array();
-						$sqlstring = "select * from study_template where project_id = $sourceprojectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from study_template where project_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
+						mysqli_stmt_close($stmt);
 						$numrows = mysqli_num_rows($result);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$rowid = $row['studytemplate_id'];
 							$newvals['project_id'] = $destprojectid;
 							$newstudytemplateid = DuplicateSQLRow('study_template', 'studytemplate_id', $rowid, $newvals);
-							
+
 							$newvals2 = array();
-							$sqlstringA = "select * from study_templateitems where studytemplate_id = $rowid";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$sqlstringA = "select * from study_templateitems where studytemplate_id = ?";
+							$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+							mysqli_stmt_bind_param($stmtA, 'i', $rowid);
+							$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$rowid]);
+							mysqli_stmt_close($stmtA);
 							$numrows += mysqli_num_rows($resultA);
 							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 								$rowid2 = $rowA['studytemplateitem_id'];
@@ -257,11 +278,20 @@
 	/* -------------------------------------------- */
 	function DisplayProjectForm($type, $id) {
 
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG, e.g. copysettings) */
+
+		/* defaults so the "add" form (and any missing columns) don't reference undefined vars */
+		$name = $admin = $pi = $instanceid = $costcenter = $sharing = $desc = $startdate = $enddate = "";
+		$usecustomid = 0;
+
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from projects where project_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select * from projects where project_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			//$id = $row['project_id'];
 			$name = $row['project_name'];
 			$admin = $row['project_admin'];
@@ -285,12 +315,15 @@
 
 			// find userid, added Feb 1, 2017, OOO
 			$username = $id; // username and id are different things but i used it just not to change the old code too much
-			$sqlstring = "select * from users where username = '$username'";
-                	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-                	if (mysqli_num_rows($result) > 0) {
-                        	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-                        	$userid = $row['user_id'];
+			$sqlstring = "select * from users where username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+			if (mysqli_num_rows($result) > 0) {
+				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				$userid = $row['user_id'];
 			}
+			mysqli_stmt_close($stmt);
 		}
 		
 	?>
@@ -336,8 +369,11 @@
 					<select name="instanceid" required>
 						<option value="">Select Instance...</option>
 					<?
-						$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = ?)) order by instance_name";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$GLOBALS['username']]);
+						mysqli_stmt_close($stmt);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$instance_id = $row['instance_id'];
 							$instance_uid = $row['instance_uid'];
@@ -424,7 +460,6 @@
 						<option value="">Select project...</option>
 					<?
 						$sqlstringB = "select * from projects";
-						echo $sqlstringB;
 						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
 						while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 							$project_id = $rowB['project_id'];
@@ -485,16 +520,21 @@
 						</tr>
 				<?
 					$bgcolor = "#EEFFEE";
-					$sqlstring = "select * from users where user_id in (select user_id from user_instance where instance_id = $instanceid) order by username";
-					//echo "$sqlstring<br>";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sqlstring = "select * from users where user_id in (select user_id from user_instance where instance_id = ?) order by username";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $instanceid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceid]);
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$user_id = $row['user_id'];
 						$username = $row['username'];
 						$user_fullname = $row['user_fullname'];
-						
-						$sqlstringA = "select * from user_project where user_id = $user_id and project_id = '$id'";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+
+						$sqlstringA = "select * from user_project where user_id = ? and project_id = ?";
+						$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+						mysqli_stmt_bind_param($stmtA, 'ii', $user_id, $id);
+						$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$user_id, $id]);
+						mysqli_stmt_close($stmtA);
 						if (mysqli_num_rows($resultA) > 0) {
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$view_data = $rowA['view_data'];
@@ -532,13 +572,6 @@
 				<div class="ui segment">
 					Required protocols<br><br>
 					<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="100%" height="400px" frameborder="0"></iframe>
-					<?
-						$sqlstring = "select * from project_protocol where project_id = $id";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$user_id = $row['user_id'];
-						}
-					?>
 				</div>
 			</div>
 		<? } ?>
@@ -550,6 +583,7 @@
 	/* ------- DisplayProjectList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayProjectList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<div style="padding: 0px 50px">
@@ -571,14 +605,17 @@
 		</thead>
 		<tbody>
 			<?
+				$sessioninstanceid = $_SESSION['instanceid'];
 				if ($GLOBALS['issiteadmin']) {
-					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.instance_name from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id left join instance d on a.instance_id = d.instance_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
+					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.instance_name from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id left join instance d on a.instance_id = d.instance_id where a.project_status = 'active' and a.instance_id = ? order by a.project_name";
 				}
 				else {
-					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = " . $_SESSION['instanceid'] . " order by a.project_name";
+					$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = ? order by a.project_name";
 				}
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $sessioninstanceid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sessioninstanceid]);
+				mysqli_stmt_close($stmt);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['project_id'];
 					$projectuid = $row['project_uid'];

@@ -22,8 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -54,31 +55,36 @@
 		
 		/* determine action */
 		switch ($action) {
+			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'disable':
+				ob_start();
 				DisableModality($id);
-				DisplayModalityList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminmodalities.php");
 				break;
 			case 'enable':
+				ob_start();
 				EnableModality($id);
-				DisplayModalityList();
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminmodalities.php");
 				break;
 			case 'editprotocolgroups':
-				EditProtocolGroups($id,'');
+				EditProtocolGroups($id,$modality);
 				break;
 			case 'updateprotocolgroup':
+				ob_start();
 				UpdateProtocolGroup($protocols, $thegroup, $modality);
-				EditProtocolGroups($id,$modality);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminmodalities.php?action=editprotocolgroups&modality=" . urlencode($modality));
 				break;
 			case 'deleteprotocolgroupitem':
+				ob_start();
 				DeleteProtocolGroupItem($pgitemid);
-				EditProtocolGroups($id,$modality);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminmodalities.php?action=editprotocolgroups&modality=" . urlencode($modality));
 				break;
 			case 'edit':
 				EditModality($id);
-				break;
-			case 'reset':
-				ResetModality($id);
-				DisplayModalityList();
 				break;
 			default:
 				DisplayModalityList();
@@ -92,15 +98,14 @@
 	/* ------- Updatemodality --------------------- */
 	/* -------------------------------------------- */
 	function Updatemodality($id, $modalityname, $modalitydesc, $admin) {
-		/* perform data checks */
-		$modalityname = mysqli_real_escape_string($GLOBALS['linki'], $modalityname);
-		$modalitydesc = mysqli_real_escape_string($GLOBALS['linki'], $modalitydesc);
-		
 		/* update the modality */
-		$sqlstring = "update modalities set modality_name = '$modalityname', modality_desc = '$modalitydesc', modality_admin = '$admin' where modality_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		?><div align="center"><span class="message"><?=$modalityname?> updated</span></div><br><br><?
+		$sqlstring = "update modalities set modality_name = ?, modality_desc = ?, modality_admin = ? where modality_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssi', $modalityname, $modalitydesc, $admin, $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modalityname, $modalitydesc, $admin, $id]);
+		mysqli_stmt_close($stmt);
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($modalityname)?> updated</span></div><br><br><?
 	}
 
 
@@ -108,16 +113,14 @@
 	/* ------- Addmodality ------------------------ */
 	/* -------------------------------------------- */
 	function Addmodality($modalityname, $modalitydesc, $admin) {
-		/* perform data checks */
-		$modalityname = mysqli_real_escape_string($GLOBALS['linki'], $modalityname);
-		$modalitydesc = mysqli_real_escape_string($GLOBALS['linki'], $modalitydesc);
-		
 		/* insert the new modality */
-		$sqlstring = "insert into modalities (modality_name, modality_desc, modality_admin, modality_createdate, modality_status) values ('$modalityname', '$modalitydesc', '$admin', now(), 'active')";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		?><div align="center"><span class="message"><?=$modalityname?> added</span></div><br><br><?
+		$sqlstring = "insert into modalities (modality_name, modality_desc, modality_admin, modality_createdate, modality_status) values (?, ?, ?, now(), 'active')";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sss', $modalityname, $modalitydesc, $admin);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modalityname, $modalitydesc, $admin]);
+		mysqli_stmt_close($stmt);
+
+		?><div align="center"><span class="message"><?=htmlspecialchars($modalityname)?> added</span></div><br><br><?
 	}
 
 	
@@ -126,11 +129,16 @@
 	/* -------------------------------------------- */
 	function EditModality($id) {
 	
-		$sqlstring = "select mod_code from modalities where mod_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select mod_code from modalities where mod_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$modality = strtolower($row['mod_code']);
-	
+		mysqli_stmt_close($stmt);
+		$modality = strtolower($row['mod_code'] ?? '');
+		if ($modality == '') { Error("Unknown modality"); return; }
+
+		/* $modality is a DB-derived table name (an identifier), so it can't be bound */
 		$sqlstring = "show columns from $modality" . "_series";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
@@ -197,8 +205,11 @@
 	/* ------- EnableModality --------------------- */
 	/* -------------------------------------------- */
 	function EnableModality($id) {
-		$sqlstring = "update modalities set mod_enabled = 1 where mod_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "update modalities set mod_enabled = 1 where mod_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -206,8 +217,11 @@
 	/* ------- DisableModality -------------------- */
 	/* -------------------------------------------- */
 	function DisableModality($id) {
-		$sqlstring = "update modalities set mod_enabled = 0 where mod_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "update modalities set mod_enabled = 0 where mod_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 	
@@ -215,8 +229,11 @@
 	/* ------- DeleteProtocolGroupItem ------------ */
 	/* -------------------------------------------- */
 	function DeleteProtocolGroupItem($pgitemid) {
-		$sqlstring = "delete from protocolgroup_items where pgitem_id = $pgitemid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "delete from protocolgroup_items where pgitem_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $pgitemid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pgitemid]);
+		mysqli_stmt_close($stmt);
 	}
 
 	
@@ -224,32 +241,37 @@
 	/* ------- UpdateProtocolGroup ---------------- */
 	/* -------------------------------------------- */
 	function UpdateProtocolGroup($protocols, $thegroup, $modality) {
-		/* perform data checks */
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], strtoupper($modality));
-		$thegroup = mysqli_real_escape_string($GLOBALS['linki'], $thegroup);
-		
-		//PrintVariable($protocols, 'protocol');
-		
-		$sqlstring = "select * from protocol_group where protocolgroup_name = '$thegroup'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$modality = strtoupper($modality);
+
+		/* find (or create) the protocol group */
+		$sqlstring = "select * from protocol_group where protocolgroup_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $thegroup);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$thegroup]);
 		$numrows = mysqli_num_rows($result);
+		mysqli_stmt_close($stmt);
 		if ($numrows > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$protocolgroupid = $row['protocolgroup_id'];
 		}
 		else {
-			$sqlstring = "insert into protocol_group (protocolgroup_name, protocolgroup_modality) values ('$thegroup','$modality')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "insert into protocol_group (protocolgroup_name, protocolgroup_modality) values (?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ss', $thegroup, $modality);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$thegroup, $modality]);
+			mysqli_stmt_close($stmt);
 			$protocolgroupid = mysqli_insert_id($GLOBALS['linki']);
 		}
-		
-		foreach ($protocols as $protocol) {
-			$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
-			$sqlstring = "insert ignore into protocolgroup_items (protocolgroup_id, pgitem_protocol) values ($protocolgroupid,'$protocol')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* add each selected protocol to the group */
+		if (is_array($protocols)) {
+			foreach ($protocols as $protocol) {
+				$sqlstring = "insert ignore into protocolgroup_items (protocolgroup_id, pgitem_protocol) values (?, ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'is', $protocolgroupid, $protocol);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$protocolgroupid, $protocol]);
+				mysqli_stmt_close($stmt);
+			}
 		}
 	}
 	
@@ -259,13 +281,16 @@
 	/* -------------------------------------------- */
 	function EditProtocolGroups($id, $modality) {
 
-		/* perform data checks */
-		$modalityname = mysqli_real_escape_string($GLOBALS['linki'], $modalityname);
-		
-		$sqlstring = "select * from modalities where mod_id = '$id' or mod_code = '$modality'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+
+		$sqlstring = "select * from modalities where mod_id = ? or mod_code = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $id, $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $modality]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$modality = strtolower($row['mod_code']);
+		mysqli_stmt_close($stmt);
+		$modality = strtolower($row['mod_code'] ?? '');
+		if ($modality == '') { Error("Unknown modality"); return; }
 
 		$rows = array();
 		?>
@@ -288,29 +313,32 @@
 						<tbody>
 							<datalist id="protocolgroups">
 							<?
-							$sqlstring = "select distinct(`protocolgroup_name`) 'group' from protocol_group where protocolgroup_modality = '$modality'";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+							$sqlstring = "select distinct(`protocolgroup_name`) 'group' from protocol_group where protocolgroup_modality = ?";
+							$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+							mysqli_stmt_bind_param($stmt, 's', $modality);
+							$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modality]);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$group = $row['group'];
 								?><option value="<?=$group?>"><?
 							}
+							mysqli_stmt_close($stmt);
 							?>
 							</datalist>
 						<?
-							
+							/* $modality is a DB-derived table name (an identifier), so these can't be bound */
 						$sqlstring = "select distinct(series_desc), count(series_desc) 'count' from $modality" . "_series where trim(series_desc) <> '' group by series_desc order by series_desc";
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$seriesdesc = $row['series_desc'];
 							$count = $row['count'];
-							$rows[$seriesdesc] += $count;
+							$rows[$seriesdesc] = ($rows[$seriesdesc] ?? 0) + $count;
 						}
 						$sqlstring = "select distinct(series_protocol), count(series_protocol) 'count' from $modality" . "_series where trim(series_protocol) <> '' group by series_protocol order by series_protocol";
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$seriesprotocol = $row['series_protocol'];
 							$count = $row['count'];
-							$rows[$seriesprotocol] += $count;
+							$rows[$seriesprotocol] = ($rows[$seriesprotocol] ?? 0) + $count;
 						}
 						
 						ksort($rows);
@@ -341,14 +369,19 @@
 						</thead>
 						<tbody>
 						<?
-						$sqlstring = "select * from protocol_group where protocolgroup_modality = '$modality'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+						$sqlstring = "select * from protocol_group where protocolgroup_modality = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 's', $modality);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modality]);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$groupid = $row['protocolgroup_id'];
 							$groupname = $row['protocolgroup_name'];
-							
-							$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = $groupid";
-							$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+
+							$sqlstringA = "select * from protocolgroup_items where protocolgroup_id = ?";
+							$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+							mysqli_stmt_bind_param($stmtA, 'i', $groupid);
+							$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$groupid]);
+							mysqli_stmt_close($stmtA);
 							$count = mysqli_num_rows($resultA);
 							?>
 							<tr>
@@ -372,6 +405,7 @@
 							</tr>
 							<?
 						}
+						mysqli_stmt_close($stmt);
 						?>
 						</tbody>
 					</table>
@@ -386,7 +420,8 @@
 	/* ------- DisplayModalityList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayModalityList() {
-	
+
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<div class="ui container">
@@ -435,8 +470,8 @@
 						<td><a href="adminmodalities.php?action=edit&id=<?=$id?>"><?=$name?></a></td>
 						<td><i class="sitemap icon"></i> <a href="adminmodalities.php?action=editprotocolgroups&id=<?=$id?>">View</a></td>
 						<td><?=$desc?></td>
-						<td align="right"><?=number_format($rows,0)?></td>
-						<td align="right"><?=number_format($tablesize+$indexsize)?></td>
+						<td align="right"><?=number_format($rows ?? 0,0)?></td>
+						<td align="right"><?=number_format(($tablesize ?? 0)+($indexsize ?? 0))?></td>
 						<td>
 							<?
 								if ($enabled) {

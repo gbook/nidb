@@ -3077,11 +3077,11 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
-	/* ------- ShowFlash (PRG) -------------------- */
+	/* ------- ShowFlashMessage (PRG) -------------------- */
 	/* -------------------------------------------- */
 	/* Render and clear any HTML message stashed in $_SESSION['flash'] by a mutating action
 	   before it redirected (see RedirectTo). Safe to call when no flash is present. */
-	function ShowFlash() {
+	function ShowFlashMessage() {
 		if (isset($_SESSION['flash']) && ($_SESSION['flash'] !== '')) {
 			echo $_SESSION['flash'];
 			unset($_SESSION['flash']);

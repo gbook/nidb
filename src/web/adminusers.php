@@ -763,7 +763,7 @@
 	/* ------- DisplayUserList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayUserList() {
-		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 
 	<script>

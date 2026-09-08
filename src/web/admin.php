@@ -24,7 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
-	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlash) */
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -81,7 +81,7 @@
 	/* ------- DisplayAdminList ------------------- */
 	/* -------------------------------------------- */
 	function DisplayAdminList() {
-		ShowFlash(); /* show any message from a mutating action that redirected here (PRG) */
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 
 		if (file_exists("/nidb/setup/dbupgrade")) {
 			?>
