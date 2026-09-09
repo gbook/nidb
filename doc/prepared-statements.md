@@ -1,5 +1,7 @@
 # Prepared-statements tracking
 
+> **Procedure:** see `doc/conversion-recipe.md` for the per-file workflow and bind idioms.
+
 Goal: convert SQL queries that include user input to prepared/bound statements
 (`mysqli_prepare` + `mysqli_stmt_bind_param` + `MySQLiBoundQuery`). Parameterless
 queries may stay on `MySQLiQuery`. See CLAUDE.md for the exact idiom.
@@ -25,9 +27,9 @@ user input is fine as-is).
 | `adminqc.php` | 1 | 5 | ✅ |
 | `adminremoteimports.php` | 2 | 4 | ✅ |
 | `adminsites.php` | 1 | 4 | ✅ |
-| `adminstorage.php` | 1 | 5 | ⬜ |
-| `adminusers.php` | 37 | 6 | ⬜ |
-| `ajaxapi.php` | 34 | 47 | ⬜ |
+| `adminstorage.php` | 1 | 5 | ✅ |
+| `adminusers.php` | 4 | 27 | ✅ |
+| `ajaxapi.php` | 17 | 64 | ✅ |
 | `analysis.php` | 11 | 24 | ⬜ |
 | `analysisbuilder.php` | 29 | 0 | ⬜ |
 | `api.php` | 16 | 3 | ⬜ |

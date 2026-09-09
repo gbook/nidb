@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -64,9 +65,12 @@
 		if ($action == "editform") {
 			DisplayStorageForm($id);
 		}
+		/* the mutating action uses POST/Redirect/GET so a refresh/Back doesn't re-submit */
 		elseif ($action == "update") {
+			ob_start();
 			UpdateStorageTier($id, $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity);
-			DisplayStorageList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminstorage.php");
 		}
 		else {
 			DisplayStorageList();
@@ -91,23 +95,26 @@
 			/* the path always comes from the config, never from user input on this page */
 			$configpath = $GLOBALS['cfg'][$configname] ?? '';
 
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select storagetier_id from storage_tiers where storage_configname = ?");
+			$sqlstring = "select storagetier_id from storage_tiers where storage_configname = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 's', $configname);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$configname]);
 			$exists = (mysqli_num_rows($result) > 0);
 			mysqli_stmt_close($stmt);
 
 			if (!$exists) {
-				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into storage_tiers (storage_configname, storage_type, storage_path, storage_capacity) values (?, 'nfs', ?, 0)");
+				$sqlstring = "insert into storage_tiers (storage_configname, storage_type, storage_path, storage_capacity) values (?, 'nfs', ?, 0)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 				mysqli_stmt_bind_param($stmt, 'ss', $configname, $configpath);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$configname, $configpath]);
 				mysqli_stmt_close($stmt);
 			}
 			else {
 				/* keep the DB path mirror in sync with the config */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "update storage_tiers set storage_path = ? where storage_configname = ?");
+				$sqlstring = "update storage_tiers set storage_path = ? where storage_configname = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 				mysqli_stmt_bind_param($stmt, 'ss', $configpath, $configname);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$configpath, $configname]);
 				mysqli_stmt_close($stmt);
 			}
 		}
@@ -130,9 +137,10 @@
 		$storagepassword = ($storagepassword ?? '');
 		$storagetoken = ($storagetoken ?? '');
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "update storage_tiers set storage_type = ?, storage_username = ?, storage_password = ?, storage_token = ?, storage_capacity = ? where storagetier_id = ?");
+		$sqlstring = "update storage_tiers set storage_type = ?, storage_username = ?, storage_password = ?, storage_token = ?, storage_capacity = ? where storagetier_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ssssii', $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $id]);
 		mysqli_stmt_close($stmt);
 
 		?><div align="center"><span class="message">Storage tier updated</span></div><br><br><?
@@ -145,9 +153,10 @@
 	function DisplayStorageForm($id) {
 		$id = (int)$id;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from storage_tiers where storagetier_id = ?");
+		$sqlstring = "select * from storage_tiers where storagetier_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 
@@ -278,6 +287,7 @@
 	/* ------- DisplayStorageList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayStorageList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 	<div class="ui container">
 		<div class="ui two column grid">

@@ -1,5 +1,7 @@
 # Post/Redirect/GET (PRG) tracking
 
+> **Procedure:** see `doc/conversion-recipe.md` for the per-file workflow and PRG idiom.
+
 Goal: every PHP page that handles a **mutating** form submission should use the
 Post/Redirect/GET pattern, so a browser refresh or Back button does not re-submit
 the form. See `functions.php` `RedirectTo()` / `ShowFlashMessage()` and `adminusers.php`
@@ -24,7 +26,7 @@ for the reference implementation.
 | `adminqc.php` | 2 | ✅ |
 | `adminremoteimports.php` | 1 | ✅ |
 | `adminsites.php` | 1 | ✅ |
-| `adminstorage.php` | 1 | ⬜ |
+| `adminstorage.php` | 1 | ✅ |
 | `adminusers.php` | 1 | ✅ |
 | `analysis.php` | 4 | ⬜ |
 | `analysisbuilder.php` | 2 | ⬜ |

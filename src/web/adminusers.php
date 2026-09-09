@@ -129,40 +129,52 @@
 	/* ------- UpdateUser ------------------------- */
 	/* -------------------------------------------- */
 	function UpdateUser($id, $username, $password, $fullname, $email, $enabled, $isadmin, $apiaccess, $instanceid, $projectadmin, $modifydata, $viewdata, $modifyphi, $viewphi) {
-		/* perform data checks */
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
-		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
-		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
+		$id = (int)$id;
+		$isadmin = GetMySQLTinyInt($isadmin);
+		$enabled = GetMySQLTinyInt($enabled);
 
 		/* start a transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
+		$result = MySQLiQuery("start transaction", __FILE__, __LINE__);
+
 		/* determine their current login type */
-		$sqlstring = "select login_type from users where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select login_type from users where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$logintype = $row['login_type'];
-		if ($logintype != "Standard") {
-			$logintype = "NIS";
+		mysqli_stmt_close($stmt);
+		$logintype = (($row['login_type'] ?? '') == "Standard") ? "Standard" : "NIS";
+
+		/* update the user (only touch the password when a new one was entered) */
+		if ($password != "") {
+			$sqlstring = "update users set username = ?, password = sha1(?), user_fullname = ?, user_email = ?, user_enabled = ?, user_isadmin = ?, login_type = ? where user_id = ?";
+			$params = [$username, $password, $fullname, $email, $enabled, $isadmin, $logintype, $id];
+			$types = 'ssssiisi';
 		}
-		
-		/* update the user */
-		$sqlstring = "update users set username = '$username'";
-		if ($password != "") { $sqlstring .= ", password = sha1('$password')"; }
-		$sqlstring .= ", user_fullname = '$fullname', user_email = '$email', user_enabled = '$enabled', user_isadmin = '$isadmin', login_type = '$logintype' where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+		else {
+			$sqlstring = "update users set username = ?, user_fullname = ?, user_email = ?, user_enabled = ?, user_isadmin = ?, login_type = ? where user_id = ?";
+			$params = [$username, $fullname, $email, $enabled, $isadmin, $logintype, $id];
+			$types = 'sssiisi';
+		}
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
 		/* delete all previous rows from the user_instance table for this user */
-		$sqlstring = "delete from user_instance where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "delete from user_instance where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		/* and then insert the new user_instance rows */
 		foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, $instid, 0, 0)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$instid = (int)$instid;
+			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values (?, ?, 0, 0)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $id, $instid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $instid]);
+			mysqli_stmt_close($stmt);
 		}
 		
 		/* The user_project rows for this user are about to be deleted and rebuilt from the
@@ -189,99 +201,19 @@
 		mysqli_stmt_close($stmt);
 
 		/* delete all previous rows from the user_project table for this user */
-		$sqlstring = "delete from user_project where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* update/insert modify data rows */
-		if (!is_null($projectadmin)) {
-			if (count($projectadmin) > 0) {
-				foreach ($projectadmin as $projectid) {
-					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 0) {
-						$sqlstring = "update user_project set project_admin = 1 where user_id = $id and project_id = $projectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 1, 0, 0, 0, 0)";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-			}
-		}
-		
-		/* update/insert modify data rows */
-		if (!is_null($modifydata)) {
-			if (count($modifydata) > 0) {
-				foreach ($modifydata as $projectid) {
-					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 0) {
-						$sqlstring = "update user_project set write_data = 1 where user_id = $id and project_id = $projectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 1, 0, 0, 0)";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-			}
-		}
-		
-		/* update/insert view data rows */
-		if (!is_null($viewdata)) {
-			if (count($viewdata) > 0) {
-				foreach ($viewdata as $projectid) {
-					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 0) {
-						$sqlstring = "update user_project set view_data = 1 where user_id = $id and project_id = $projectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 1, 0, 0)";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-			}
-		}
-		
-		/* update/insert modify phi rows */
-		if (!is_null($modifyphi)) {
-			if (count($modifyphi) > 0) {
-				foreach ($modifyphi as $projectid) {
-					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 0) {
-						$sqlstring = "update user_project set write_phi = 1 where user_id = $id and project_id = $projectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 1, 0)";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-			}
-		}
-		
-		/* update/insert view phi rows */
-		if (!is_null($viewphi)) {
-			if (count($viewphi) > 0) {
-				foreach ($viewphi as $projectid) {
-					$sqlstring = "select * from user_project where user_id = $id and project_id = $projectid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 0) {
-						$sqlstring = "update user_project set view_phi = 1 where user_id = $id and project_id = $projectid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values ($id, $projectid, 0, 0, 0, 0, 1)";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-			}
-		}
-		
+		$sqlstring = "delete from user_project where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
+
+		/* rebuild the permission rows from the checkbox lists (SetUserProjectFlag whitelists the column) */
+		foreach ($projectadmin as $projectid) SetUserProjectFlag($id, $projectid, 'project_admin');
+		foreach ($modifydata as $projectid)   SetUserProjectFlag($id, $projectid, 'write_data');
+		foreach ($viewdata as $projectid)     SetUserProjectFlag($id, $projectid, 'view_data');
+		foreach ($modifyphi as $projectid)    SetUserProjectFlag($id, $projectid, 'write_phi');
+		foreach ($viewphi as $projectid)      SetUserProjectFlag($id, $projectid, 'view_phi');
+
 		/* Restore the favorites and last-viewed dates saved before the rebuild above. The update
 		   only touches rows the rebuild re-created, so a project the user no longer has any
 		   permission on stays absent - the row lifecycle is unchanged, only the lost columns are
@@ -323,7 +255,7 @@
 			mysqli_stmt_bind_param($stmt, 'ss', $username, $hash);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $hash]);
 			mysqli_stmt_close($stmt);
-			Notice("API access enabled for $username. API key (save this — it will not be shown again): <tt>$apiKey</tt>");
+			Notice("API access enabled for " . htmlspecialchars($username) . ". API key (save this — it will not be shown again): <tt>$apiKey</tt>");
 		} elseif ($apiaccess != '1' && $hasApiUser) {
 			$sqlstring = "delete from api_users where username = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -333,10 +265,48 @@
 		}
 
 		/* commit transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$result = MySQLiQuery("commit", __FILE__, __LINE__);
 
-		Notice("$username updated");
+		Notice(htmlspecialchars($username) . " updated");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetUserProjectFlag ----------------- */
+	/* -------------------------------------------- */
+	/* Ensure a user_project row exists for ($id, $projectid) and set one permission flag to 1.
+	   $column is whitelisted (it becomes a column identifier, which can't be bound). */
+	function SetUserProjectFlag($id, $projectid, $column) {
+		$valid = array('project_admin', 'write_data', 'view_data', 'write_phi', 'view_phi');
+		if (!in_array($column, $valid, true)) return;
+		$id = (int)$id;
+		$projectid = (int)$projectid;
+
+		$sqlstring = "select userproject_id from user_project where user_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $id, $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $projectid]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+
+		if ($exists) {
+			$sqlstring = "update user_project set $column = 1 where user_id = ? and project_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $id, $projectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $projectid]);
+			mysqli_stmt_close($stmt);
+		}
+		else {
+			/* insert a fresh row with every flag 0 except the target column */
+			$flags = array('project_admin' => 0, 'write_data' => 0, 'view_data' => 0, 'write_phi' => 0, 'view_phi' => 0);
+			$flags[$column] = 1;
+			$sqlstring = "insert into user_project (user_id, project_id, project_admin, write_data, view_data, write_phi, view_phi) values (?, ?, ?, ?, ?, ?, ?)";
+			$params = [$id, $projectid, $flags['project_admin'], $flags['write_data'], $flags['view_data'], $flags['write_phi'], $flags['view_phi']];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'iiiiiii', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
+		}
 	}
 
 
@@ -344,31 +314,29 @@
 	/* ------- AddUser ---------------------------- */
 	/* -------------------------------------------- */
 	function AddUser($username, $password, $fullname, $email, $enabled, $isadmin, $instanceid) {
-		/* perform data checks */
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$fullname = mysqli_real_escape_string($GLOBALS['linki'], $fullname);
-		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		$enabled = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $enabled));
-		$isadmin = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $isadmin));
-		
-		/* determine their current login type */
+		$isadmin = GetMySQLTinyInt($isadmin);
 		$logintype = "Standard";
-		
-		/* insert the new user */
-		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values ('$username', sha1('$password'), '$logintype','" . $_SESSION['instanceid'] . "', '$fullname', '', '', '', '', '', '$email', '', '', '', '', '', '', '', '', '', '', now(), 0, 1, $isadmin, 0)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sessioninstanceid = (int)$_SESSION['instanceid'];
+
+		/* insert the new user (a new user is always created enabled; the empty '' columns are literals) */
+		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values (?, sha1(?), ?, ?, ?, '', '', '', '', '', ?, '', '', '', '', '', '', '', '', '', '', now(), 0, 1, ?, 0)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = [$username, $password, $logintype, $sessioninstanceid, $fullname, $email, $isadmin];
+		mysqli_stmt_bind_param($stmt, 'sssissi', $username, $password, $logintype, $sessioninstanceid, $fullname, $email, $isadmin);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		$id = mysqli_insert_id($GLOBALS['linki']);
-		
-		/* and then insert the new user_instance rows */
-		//foreach ($instanceid as $instid) {
-			$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values ($id, " . $_SESSION['instanceid'] . ", 0, 0)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//}
-		
+
+		/* add the new user to the current instance */
+		$sqlstring = "insert into user_instance (user_id, instance_id, isdefaultinstance, instance_joinrequest) values (?, ?, 0, 0)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $id, $sessioninstanceid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $sessioninstanceid]);
+		mysqli_stmt_close($stmt);
+
 		/* don't assign any project permissions to a new user by default, it must be done manually */
 
-		Notice("$username added");
+		Notice(htmlspecialchars($username) . " added");
 	}
 
 
@@ -376,11 +344,14 @@
 	/* ------- DeleteUser ------------------------- */
 	/* -------------------------------------------- */
 	function DeleteUser($id) {
-		$sqlstring = "update users set user_deleted = 1, user_enabled = 0 where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update users set user_deleted = 1, user_enabled = 0 where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
 		$username = GetUsernameFromID($id);
-		Notice("$username deleted");
+		Notice(htmlspecialchars($username) . " deleted");
 	}
 
 
@@ -388,11 +359,14 @@
 	/* ------- EnableUser ------------------------- */
 	/* -------------------------------------------- */
 	function EnableUser($id) {
-		$sqlstring = "update users set user_enabled = 1 where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update users set user_enabled = 1 where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
 		$username = GetUsernameFromID($id);
-		Notice("$username enabled");
+		Notice(htmlspecialchars($username) . " enabled");
 	}
 
 
@@ -400,11 +374,14 @@
 	/* ------- DisableUser ------------------------ */
 	/* -------------------------------------------- */
 	function DisableUser($id) {
-		$sqlstring = "update users set user_enabled = 0 where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update users set user_enabled = 0 where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
 		$username = GetUsernameFromID($id);
-		Notice("$username disabled");
+		Notice(htmlspecialchars($username) . " disabled");
 	}
 
 
@@ -412,11 +389,14 @@
 	/* ------- MakeAdminUser ---------------------- */
 	/* -------------------------------------------- */
 	function MakeAdminUser($id) {
-		$sqlstring = "update users set user_isadmin = 1 where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update users set user_isadmin = 1 where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
 		$username = GetUsernameFromID($id);
-		Notice("$username set as admin");
+		Notice(htmlspecialchars($username) . " set as admin");
 	}
 
 
@@ -424,11 +404,14 @@
 	/* ------- MakeNotAdminUser ------------------- */
 	/* -------------------------------------------- */
 	function MakeNotAdminUser($id) {
-		$sqlstring = "update users set user_isadmin = 0 where user_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update users set user_isadmin = 0 where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 
 		$username = GetUsernameFromID($id);
-		Notice("$username unset as admin");
+		Notice(htmlspecialchars($username) . " unset as admin");
 	}
 	
 	
@@ -436,12 +419,22 @@
 	/* ------- DisplayUserForm -------------------- */
 	/* -------------------------------------------- */
 	function DisplayUserForm($type, $id) {
-	
+
+		/* defaults so the "add" form doesn't reference undefined vars */
+		$username = $email = $fullname = $login_type = "";
+		$enabled = $isadmin = 0;
+		$enabledcheck = $isadmincheck = $apiaccesscheck = "";
+
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from users where user_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$id = (int)$id;
+			$sqlstring = "select * from users where user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) { Error("User not found"); return; }
 			$username = $row['username'];
 			$email = $row['user_email'];
 			$fullname = $row['user_fullname'];
@@ -460,7 +453,7 @@
 			if (mysqli_num_rows($result) > 0) $apiaccesscheck = "checked";
 		
 			$formaction = "update";
-			$formtitle = "Updating $username";
+			$formtitle = "Updating " . htmlspecialchars($username);
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -508,7 +501,7 @@
 			<div class="field">
 				<label>Username</label>
 				<div class="field">
-					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<?=$username?>" required placeholder="Username or email address">
+					<input type="text" name="username" id="username" onKeyUp="CheckUserExists()" value="<?=htmlspecialchars($username)?>" required placeholder="Username or email address">
 					<span id="usercheckresult"></span>
 				</div>
 			</div>
@@ -517,7 +510,7 @@
 			<div class="field">
 				<label>Full name</label>
 				<div class="field">
-					<input type="text" name="fullname" value="<?=$fullname?>" required placeholder="Full name">
+					<input type="text" name="fullname" value="<?=htmlspecialchars($fullname)?>" required placeholder="Full name">
 				</div>
 			</div>
 			<? if (($login_type == "Standard") || ($type == "add")) { ?>
@@ -540,7 +533,7 @@
 			<div class="field">
 				<label>Email</label>
 				<div class="field">
-					<input type="text" name="email" value="<?=$email?>" required placeholder="Email">
+					<input type="text" name="email" value="<?=htmlspecialchars($email)?>" required placeholder="Email">
 				</div>
 			</div>
 			<div class="field">
@@ -646,11 +639,14 @@
 				<tbody>
 				<?
 					$instanceids = array();
-					$sqlstring = "select * from user_instance where user_id = '$id'";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sqlstring = "select * from user_instance where user_id = ?";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $id);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$instanceids[] = $row['instance_id'];
 					}
+					mysqli_stmt_close($stmt);
 					
 					/* start listing all instances and projects */
 					$sqlstring = "select * from instance order by instance_name";
@@ -677,17 +673,25 @@
 						</tr>
 						<?
 							$bgcolor = "#EEFFEE";
-							$sqlstringA = "select * from projects where instance_id = $instance_id order by project_name";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$sqlstringA = "select * from projects where instance_id = ? order by project_name";
+							$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+							mysqli_stmt_bind_param($stmtA, 'i', $instance_id);
+							$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$instance_id]);
+							mysqli_stmt_close($stmtA);
 							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-								
+
 								$project_id = $rowA['project_id'];
 								$project_name = $rowA['project_name'];
 								$project_costcenter = $rowA['project_costcenter'];
-								
+
+								/* defaults so the add form (no existing rows) doesn't hit undefined vars */
+								$project_admin = $view_data = $view_phi = $write_data = $write_phi = "";
 								if ($id != "") {
-									$sqlstringB = "select * from user_project where user_id = $id and project_id = $project_id";
-									$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+									$sqlstringB = "select * from user_project where user_id = ? and project_id = ?";
+									$stmtB = mysqli_prepare($GLOBALS['linki'], $sqlstringB);
+									mysqli_stmt_bind_param($stmtB, 'ii', $id, $project_id);
+									$resultB = MySQLiBoundQuery($stmtB, __FILE__, __LINE__, $sqlstringB, [$id, $project_id]);
+									mysqli_stmt_close($stmtB);
 									if (mysqli_num_rows($resultB) > 0) {
 										$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 										$project_admin = $rowB['project_admin'];
@@ -716,7 +720,7 @@
 								</script>
 
 								<tr style="color: darkblue; font-size:11pt;" class="projects<?=$instance_id?>">
-									<td><?=$project_name?> (<tt><?=$project_costcenter?></tt>)</td>
+									<td><?=htmlspecialchars($project_name)?> (<tt><?=htmlspecialchars($project_costcenter ?? '')?></tt>)</td>
 									<td class="projectadmin checkcell right aligned">
 										<label><input type="checkbox" class="chkInstance<?=$instance_id?> projectadmin<?=$project_id?>" name="projectadmin[]" value="<?=$project_id?>" <?if ($project_admin) echo "checked"; ?> <?if ($type == "add") echo "checked"; ?>></label>
 									</td>
@@ -745,7 +749,7 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<? if ($type == 'edit') { ?>
-						<input type="hidden" name="username" value="<?=$username?>">
+						<input type="hidden" name="username" value="<?=htmlspecialchars($username)?>">
 						<a class="ui red button" href="adminusers.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
 					<? } ?>
 				</div>
@@ -831,8 +835,12 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = '" . $_SESSION['instanceid'] . "' and (a.user_deleted is null or a.user_deleted <> 1) order by a.username";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sessioninstanceid = (int)$_SESSION['instanceid'];
+					$sqlstring = "select * from users a left join user_instance b on a.user_id = b.user_id where b.instance_id = ? and (a.user_deleted is null or a.user_deleted <> 1) order by a.username";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $sessioninstanceid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sessioninstanceid]);
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['user_id'];
 						$username = trim($row['username']);
@@ -847,10 +855,10 @@
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><?=htmlspecialchars($fullname)?></td>
+					<td><?=htmlspecialchars($email)?></td>
+					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
@@ -881,8 +889,12 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> '" . $_SESSION['instanceid'] . "' group by username order by username";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sessioninstanceid = (int)$_SESSION['instanceid'];
+					$sqlstring = "select a.* from users a left join user_instance b on a.user_id = b.user_id where b.instance_id <> ? group by username order by username";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $sessioninstanceid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sessioninstanceid]);
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['user_id'];
 						$username = trim($row['username']);
@@ -897,10 +909,10 @@
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><?=htmlspecialchars($fullname)?></td>
+					<td><?=htmlspecialchars($email)?></td>
+					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
@@ -947,10 +959,10 @@
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=$username?></td>
-					<td><?=$fullname?></td>
-					<td><?=$email?></td>
-					<td><?=$login_type?></td>
+					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><?=htmlspecialchars($fullname)?></td>
+					<td><?=htmlspecialchars($email)?></td>
+					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
