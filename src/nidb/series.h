@@ -31,7 +31,7 @@ class series
 {
 public:
     series();
-    series(qint64 id, QString m, nidb *a);
+    series(qint64 id, QString mod, nidb *a);
     nidb *n;
 
     void PrintSeriesInfo();

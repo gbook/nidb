@@ -494,7 +494,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     QSqlQuery q;
 
     subject s(n); /* get the subject info */
-    s.searchMethod = RowId;
+    s.searchMethod = SubjectSearchMethod::RowId;
     s.searchSubjectRowID = subjectid;
     if (!s.Load()) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
 
@@ -607,13 +607,13 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
 
     QSqlQuery q;
     study s(studyid, n); /* get the study info */
-    if (!s.valid()) { msg = "Study was not valid: [" + s.msg() + "]"; return false; }
-    QString modality = s.modality().toLower();
+    if (!s.isValid()) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
+    QString modality = s.modality.toLower();
 
-    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.GetUID()).arg(s.GetStudyNum()).arg(GenerateRandomString(10));
     QDir d;
-    if(d.rename(s.path(), newpath)) {
-        n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+    if(d.rename(s.GetPath(), newpath)) {
+        n->Log(QString("Moved [%1] to [%2]").arg(s.GetPath()).arg(newpath));
 
         // move all archive data to the deleted directory
         // delete all series
@@ -627,7 +627,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
     else {
-        msg = QString("Error in moving [%1] to [%2]").arg(s.path()).arg(newpath);
+        msg = QString("Error in moving [%1] to [%2]").arg(s.GetPath()).arg(newpath);
         n->Log(msg);
         return false;
     }
@@ -675,11 +675,11 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
     QStringList msgs;
     QSqlQuery q;
     study s(studyid, n); /* get the series info */
-    if (!s.valid()) { msg = "Study was not valid: [" + s.msg() + "]"; return false; }
+    if (!s.isValid()) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
 
     /* get instanceid */
     q.prepare("select instance_id from projects where project_id = :projectid");
-    q.bindValue(":projectid", s.projectRowID());
+    q.bindValue(":projectid", s.GetProjectRowID());
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     int instanceid;
     if (q.size() > 0) {
@@ -693,7 +693,7 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 
     /* create an import request, based on the current instance, project, and site & get next import ID */
     q.prepare("insert into import_requests (import_datatype, import_datetime, import_status, import_equipment, import_siteid, import_projectid, import_instanceid, import_uuid, import_anonymize, import_permanent, import_matchidonly) values ('dicom',now(),'uploading','',null,:projectid,:instanceid,'',null,null,:matchidonly)");
-    q.bindValue(":projectid", s.projectRowID());
+    q.bindValue(":projectid", s.GetProjectRowID());
     q.bindValue(":instanceid", instanceid);
     q.bindValue(":matchidonly", matchidonly);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -709,21 +709,21 @@ bool moduleFileIO::RearchiveStudy(int studyid, bool matchidonly, QString &msg) {
 
     /* move all DICOMs to the incomingdir */
     QString m;
-    if (!MoveAllFiles(s.path(),"*.dcm",outpath, m)) {
+    if (!MoveAllFiles(s.GetPath(),"*.dcm",outpath, m)) {
         msgs << n->Log(QString("Error moving DICOM files from archivedir to incomingdir [%1]").arg(m));
     }
     else {
-        n->Log(QString("Moved all .dcm files from [%1] to [%2]").arg(s.path()).arg(outpath));
+        n->Log(QString("Moved all .dcm files from [%1] to [%2]").arg(s.GetPath()).arg(outpath));
     }
 
     /* move the old study to the deleted directory */
-    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.UID()).arg(s.studyNum()).arg(GenerateRandomString(10));
+    QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.GetUID()).arg(s.GetStudyNum()).arg(GenerateRandomString(10));
     QDir d2;
-    if(d2.rename(s.path(), newpath)) {
-        n->Log(QString("Moved [%1] to [%2]").arg(s.path()).arg(newpath));
+    if(d2.rename(s.GetPath(), newpath)) {
+        n->Log(QString("Moved [%1] to [%2]").arg(s.GetPath()).arg(newpath));
     }
     else {
-        n->Log(QString("Unable to move [%1] to [%2]").arg(s.path()).arg(newpath));
+        n->Log(QString("Unable to move [%1] to [%2]").arg(s.GetPath()).arg(newpath));
     }
 
     /* update the import_requests table with the new uploadid */
@@ -756,7 +756,7 @@ bool moduleFileIO::RearchiveSubject(int subjectid, bool matchidonly, int project
     QStringList msgs;
     QSqlQuery q;
     subject s(n);
-    s.searchMethod = RowId;
+    s.searchMethod = SubjectSearchMethod::RowId;
     s.searchSubjectRowID = subjectid;
     if (!s.Load()) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
 
@@ -861,14 +861,14 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     QStringList msgs;
 
     study thestudy(studyid, n); /* get the original study info */
-    if (!thestudy.valid()) {
-        msg = n->Log("Original study was not valid: [" + thestudy.msg() + "]");
+    if (!thestudy.isValid()) {
+        msg = n->Log("Original study was not valid: [" + thestudy.msg + "]");
         return false;
     }
 
     subject origsubject(n); /* get the original subject info */
-    origsubject.searchMethod = RowId;
-    origsubject.searchSubjectRowID = thestudy.subjectRowID();
+    origsubject.searchMethod = SubjectSearchMethod::RowId;
+    origsubject.searchSubjectRowID = thestudy.GetSubjectRowID();
     if (!origsubject.Load()) {
         msg = n->Log("Original subject was not valid: [" + origsubject.msg + "]");
         return false;
@@ -878,7 +878,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     subject *newsubject;
     if ((newuid == "") && (newsubjectid > -1)) {
         newsubject = new subject(n); /* get the new subject info, by subjectID */
-        newsubject->searchMethod = RowId;
+        newsubject->searchMethod = SubjectSearchMethod::RowId;
         newsubject->searchSubjectRowID = newsubjectid;
         if (!newsubject->Load()) {
             msg = n->Log("New subject was not valid: [" + newsubject->msg + "]");
@@ -888,7 +888,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     }
     else {
         newsubject = new subject(n); /* get the new subject info, by UID */
-        newsubject->searchMethod = Uid;
+        newsubject->searchMethod = SubjectSearchMethod::Uid;
         newsubject->searchUID = newuid;
         if (!newsubject->Load()) {
             msg = n->Log("New subject was not valid: [" + newsubject->msg + "]");
@@ -898,20 +898,20 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     }
 
     QDateTime now = QDateTime::currentDateTime();
-    if (now < thestudy.dateTime().addDays(1)) {
+    if (now < thestudy.datetime.addDays(1)) {
         msg = n->Log("This study was collected in the past 24 hours. The study may not be completely archived so no changes can be made until 1 day after the study's start time");
         delete newsubject;
         return false;
     }
 
     /* all of the checks are ok, so lets do the move */
-    n->Log(QString("Moving study [%1%2] to subject [%3]").arg(thestudy.UID()).arg(thestudy.studyNum()).arg(newuid));
+    n->Log(QString("Moving study [%1%2] to subject [%3]").arg(thestudy.GetUID()).arg(thestudy.GetStudyNum()).arg(newuid));
 
     /* check if the new subject is enrolled in the old project, if not, enroll them */
     QSqlQuery q;
     q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
     q.bindValue(":subjectid", newsubject->GetSubjectRowID());
-    q.bindValue(":projectid", thestudy.projectRowID());
+    q.bindValue(":projectid", thestudy.GetProjectRowID());
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     int newenrollmentid;
     if (q.size() > 0) {
@@ -922,7 +922,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     else {
         q.prepare("insert into enrollment (subject_id, project_id, enroll_startdate) values (:subjectid, :projectid, now())");
         q.bindValue(":subjectid", newsubject->GetSubjectRowID());
-        q.bindValue(":projectid", thestudy.projectRowID());
+        q.bindValue(":projectid", thestudy.GetProjectRowID());
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         newenrollmentid = q.lastInsertId().toInt();
         n->Log(QString("Subject now enrolled in project. enrollmentid [%1]").arg(newenrollmentid));
@@ -947,7 +947,7 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* copy the data, don't move in case there is a problem */
-    QString oldpath = thestudy.path();
+    QString oldpath = thestudy.GetPath();
     QString newpath = QString("%1/%2").arg(newsubject->GetSubjectDataPath()).arg(newstudynum);
     if (!newsubject->DataPathExists()) {
         QString m;
@@ -968,10 +968,10 @@ bool moduleFileIO::MoveStudyToSubject(int studyid, QString newuid, int newsubjec
 
     msg = msgs.join(" | ");
     q.prepare("insert into changelog (affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, change_datetime, change_event, change_desc) values (:oldprojectid, :oldprojectid, :oldsubjectid, :newsubjectid, :oldenrollmentid, :newenrollmentid, :studyid, :studyid, now(), 'MoveStudyToSubject', :msg)");
-    q.bindValue(":oldprojectid", thestudy.projectRowID());
+    q.bindValue(":oldprojectid", thestudy.GetProjectRowID());
     q.bindValue(":oldsubjectid", origsubject.GetSubjectRowID());
     q.bindValue(":newsubjectid", newsubject->GetSubjectRowID());
-    q.bindValue(":oldenrollmentid", thestudy.enrollmentRowID());
+    q.bindValue(":oldenrollmentid", thestudy.GetEnrollmentRowID());
     q.bindValue(":newenrollmentid", newenrollmentid);
     q.bindValue(":studyid", studyid);
     q.bindValue(":msg", msg);
@@ -992,7 +992,7 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
     msg = "";
 
     subject targetSubject(n);
-    targetSubject.searchMethod = RowId;
+    targetSubject.searchMethod = SubjectSearchMethod::RowId;
     targetSubject.searchSubjectRowID = targetSubjectID;
     if (!targetSubject.Load()) { n->Log("targetSubject was invalid"); return false; }
 
@@ -1007,7 +1007,7 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
                 continue;
 
             subject sourceSubject(n);
-            sourceSubject.searchMethod = RowId;
+            sourceSubject.searchMethod = SubjectSearchMethod::RowId;
             sourceSubject.searchSubjectRowID = sourceSubjectID.toInt();
             if (!sourceSubject.Load()) { n->Log("sourceSubject was invalid"); return false; }
 
@@ -1148,8 +1148,9 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
 
     /* get info about first study */
     study s(studyid, n);
-    QString modality = s.modality().toLower();
-    int finalStudyNum = s.studyNum();
+    if (!s.isValid()) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
+    QString modality = s.modality.toLower();
+    int finalStudyNum = s.GetStudyNum();
 
     /* get list of all studyids */
     QList<int> allStudyIDs;
@@ -1247,13 +1248,17 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
 
                 /* check if this series number exists in the new study (on disk) */
                 study destStudy(destStudyID, n);
-                QString newPath(QString("%1/%2").arg(destStudy.path()).arg(seriesNum));
+                if (!destStudy.isValid()) {
+                    n->Log(QString("destStudy was not valid [%1]").arg(destStudy.msg), __FUNCTION__);
+                    continue;
+                }
+                QString newPath(QString("%1/%2").arg(destStudy.GetPath()).arg(seriesNum));
                 QFileInfo fi(newPath);
                 if (fi.exists()) {
                     int chkSeriesNum = 10000 + seriesNum;
                     n->Log(QString("New series path [%1] already exists. Checking if [%2] exists").arg(newPath).arg(chkSeriesNum));
                     while (1) {
-                        QString chkPath(QString("%1/%2").arg(destStudy.path()).arg(chkSeriesNum));
+                        QString chkPath(QString("%1/%2").arg(destStudy.GetPath()).arg(chkSeriesNum));
                         if (QDir(chkPath).exists()) {
                             n->Log(QString("Path [%1] already exists. Will check next one").arg(chkPath));
                             chkSeriesNum++;

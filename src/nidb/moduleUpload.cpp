@@ -661,7 +661,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
         /* Note: BIDS subject IDs will be extremely common, 01, 02, etc
          * so we must only match a subject that is already enrolled in this project */
         subject nidbSubj(n);
-        nidbSubj.searchMethod = AltUid;
+        nidbSubj.searchMethod = SubjectSearchMethod::AltUid;
         nidbSubj.searchAltUID = bidsSubjectID;
         nidbSubj.searchProjectRowID = upload.projectRowID;
         if (nidbSubj.Load()) {

@@ -579,16 +579,16 @@ bool archiveIO::ArchiveDICOMSeries(int importRowID, int existingSubjectID, int e
     /* copy the file to the archive, update db info */
     study *s = nullptr;
     s = new study(studyRowID, n);
-    if ((s == nullptr) || (!s->valid())) {
+    if ((s == nullptr) || (!s->isValid())) {
         AppendUploadLog(QString("Error getting study information. StudyRowID [%1] not valid").arg(studyRowID));
         delete s;
         return false;
     }
-    studynum = s->studyNum();
+    studynum = s->GetStudyNum();
 
     /* create data directory if it doesn't already exist */
-    QString outdir = QString("%1/%2/dicom").arg(s->path()).arg(SeriesNumber);
-    QString thumbdir = QString("%1/%2").arg(s->path()).arg(SeriesNumber);
+    QString outdir = QString("%1/%2/dicom").arg(s->GetPath()).arg(SeriesNumber);
+    QString thumbdir = QString("%1/%2").arg(s->GetPath()).arg(SeriesNumber);
 
     delete s;
 
@@ -939,18 +939,18 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
 
     /* get parent subject and study information */
     subject subj(n);
-    subj.searchMethod = RowId;
+    subj.searchMethod = SubjectSearchMethod::RowId;
     subj.searchSubjectRowID = subjectRowID;
     if (!subj.Load()) { n->Log(QString("subject not valid [%1]").arg(subj.msg)); return false; }
 
     study stud(studyRowID, n);
 
-    QString seriesPath = QString("%1/%2/nifti").arg(stud.path()).arg(seriesNumber);
+    QString seriesPath = QString("%1/%2/nifti").arg(stud.GetPath()).arg(seriesNumber);
     QSqlQuery q;
 
     /* check if this series already exists */
     if (seriesRowID < 0) {
-        n->Log(QString("Creating series [%1] [%2] [%3]").arg(subj.uid).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+        n->Log(QString("Creating series [%1] [%2] [%3]").arg(subj.uid).arg(stud.GetStudyNum()).arg(seriesNumber), __FUNCTION__);
 
         /* series doesn't exist, so we'll create it */
         AppendUploadLog(QString("MR series [%1] did not exist, creating").arg(seriesNumber));
@@ -963,7 +963,7 @@ bool archiveIO::ArchiveNiftiSeries(int subjectRowID, int studyRowID, int seriesR
         seriesRowID = q.lastInsertId().toInt();
     }
 
-    n->Log(QString("Updating series [%1 - %2 - %3]").arg(subj.uid).arg(stud.studyNum()).arg(seriesNumber), __FUNCTION__);
+    n->Log(QString("Updating series [%1 - %2 - %3]").arg(subj.uid).arg(stud.GetStudyNum()).arg(seriesNumber), __FUNCTION__);
 
     /* update (new or existing) series */
     QString sqlstring = "update mr_series set series_datetime = '" + tags["SeriesDateTime"] + "', series_desc = :SeriesDescription, series_protocol = :ProtocolName, series_sequencename = :SequenceName, series_tr = :RepetitionTime, series_te = :EchoTime,series_flip = :FlipAngle, phaseencodedir = :InPlanePhaseEncodingDirection, phaseencodeangle = :PhaseEncodeAngle, PhaseEncodingDirectionPositive = :PhaseEncodingDirectionPositive, series_spacingx = :pixelX,series_spacingy = :pixelY, series_spacingz = :SliceThickness, series_fieldstrength = :MagneticFieldStrength, img_rows = :Rows, img_cols = :Columns, img_slices = :zsize, series_ti = :InversionTime, percent_sampling = :PercentSampling, percent_phasefov = :PercentPhaseFieldOfView, acq_matrix = :AcquisitionMatrix, slicethickness = :SliceThickness, slicespacing = :SpacingBetweenSlices, bandwidth = :PixelBandwidth, image_type = :ImageType, image_comments = :ImageComments, bold_reps = :boldreps, numfiles = :numfiles, series_notes = :importSeriesNotes, series_status = 'complete' where mrseries_id = :seriesRowID";
@@ -2311,7 +2311,7 @@ bool archiveIO::GetOrCreateEnrollment(int subjectRowID, int projectRowID, int &e
     QSqlQuery q;
 
     subject s(n);
-    s.searchMethod = RowId;
+    s.searchMethod = SubjectSearchMethod::RowId;
     s.searchSubjectRowID = subjectRowID;
     if (!s.Load()) { n->Log("subject was invalid"); return false; }
 
@@ -2389,27 +2389,27 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
 
     if (existingSubjectID >= 0) {
         s = new subject(n);
-        s->searchMethod = RowId;
+        s->searchMethod = SubjectSearchMethod::RowId;
         s->searchSubjectRowID = existingSubjectID;
         if (!s->Load()) { n->Log("subject was invalid"); return false; }
     }
     else {
         if (((subjectMatchCriteria == "") || (subjectMatchCriteria == "patientid") || (subjectMatchCriteria == "specificpatientid") || (subjectMatchCriteria == "patientidfromdir")) && (projectID > -1)) {
             s = new subject(n);
-            s->searchMethod = AltUid;
+            s->searchMethod = SubjectSearchMethod::AltUid;
             s->searchProjectRowID = projectID;
             s->searchAltUID = PatientID;
             if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else if (subjectMatchCriteria == "uid") {
             s = new subject(n);
-            s->searchMethod = Uid;
+            s->searchMethod = SubjectSearchMethod::Uid;
             s->searchUID = PatientID;
             if (!s->Load()) { n->Log("subject was invalid"); return false; }
         }
         else if (subjectMatchCriteria == "uidoraltuid") {
             s = new subject(n);
-            s->searchMethod = UidOrAltUid;
+            s->searchMethod = SubjectSearchMethod::UidOrAltUid;
             s->searchProjectRowID = projectID;
             s->searchUID = PatientID;
             s->searchAltUID = PatientID;
@@ -2417,7 +2417,7 @@ bool archiveIO::GetSubject(QString subjectMatchCriteria, int existingSubjectID, 
         }
         else if (subjectMatchCriteria == "namesexdob") {
             s = new subject(n);
-            s->searchMethod = NameSexDob;
+            s->searchMethod = SubjectSearchMethod::NameSexDob;
             s->searchName = PatientName;
             s->searchSex = PatientSex;
             s->searchDOB = PatientBirthDate;
@@ -2537,50 +2537,96 @@ bool archiveIO::CreateSubject(QString PatientID, QString PatientName, QString Pa
 bool archiveIO::GetStudy(QString studyMatchCriteria, int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID, int &studyRowID, int &studyNumber) {
 
     studyMatchCriteria = studyMatchCriteria.toLower();
+    bool ret = false;
+    studyRowID = -1;
+    studyNumber = -1;
 
-    study *s = nullptr;
-
-    if (existingStudyID >= 0)
-        s = new study(existingStudyID, n);
+    if (existingStudyID >= 0) {
+        study s1(existingStudyID, n);
+        if (s1.isValid()) {
+            ret = true;
+        }
+        else {
+            AppendUploadLog(QString("Study not found by searching for studyRowID [%1]").arg(existingStudyID));
+        }
+    }
     else {
         if (studyMatchCriteria == "modalitystudydate") {
-            if (StudyDateTime != "")
-                s = new study(enrollmentRowID, StudyDateTime, Modality, n);
-            else
-                s = new study(StudyInstanceUID, n);
+            if (StudyDateTime == "") {
+                study s2(n);
+                s2.searchMethod = StudySearchMethod::StudyUid;
+                s2.searchStudyUID = StudyInstanceUID;
+                s2.Load();
+                if (s2.isValid()) {
+                    studyRowID = s2.GetStudyRowID();
+                    studyNumber = s2.GetStudyNum();
+                    ret = true;
+                }
+                else {
+                    AppendUploadLog(QString("Study not found by searching for studyInstanceUID [%1]").arg(StudyInstanceUID));
+                }
+            }
+            else {
+                study s3(n);
+                s3.searchMethod = StudySearchMethod::StudyDatetimeModality;
+                s3.searchEnrollmentRowID = enrollmentRowID;
+                s3.searchDatetime = QDateTime::fromString(StudyDateTime, "yyyy-MM-dd hh:mm:ss");
+                s3.searchModality = Modality;
+                s3.Load();
+                if (s3.isValid()) {
+                    studyRowID = s3.GetStudyRowID();
+                    studyNumber = s3.GetStudyNum();
+                    ret = true;
+                }
+                else {
+                    AppendUploadLog("Study not found by [" + studyMatchCriteria + "]");
+                }
+            }
         }
-        else if (studyMatchCriteria == "studyuid")
-            s = new study(StudyInstanceUID, n);
+        else if (studyMatchCriteria == "studyuid") {
+            study s4(n);
+            s4.searchMethod = StudySearchMethod::StudyUid;
+            s4.searchStudyUID = StudyInstanceUID;
+            s4.Load();
+            if (s4.isValid()) {
+                studyRowID = s4.GetStudyRowID();
+                studyNumber = s4.GetStudyNum();
+                ret = true;
+            }
+            else {
+                AppendUploadLog(QString("Study not found by searching for studyInstanceUID [%1]").arg(StudyInstanceUID));
+            }
+        }
         else {
-            studyRowID = -1;
             AppendUploadLog("Study not found. Invalid match criteria [" + studyMatchCriteria + "]");
-            return false;
         }
     }
 
-    if (s) {
-        if (s->valid()) {
-            studyRowID = s->studyRowID();
-            AppendUploadLog(QString("Study [%1%2] with studyRowID [%3] found by criteria [%4]").arg(s->UID()).arg(s->studyNum()).arg(s->studyRowID()).arg(studyMatchCriteria));
-            studyNumber = s->studyNum();
-            delete s;
-            return true;
-        }
-        else {
-            studyRowID = -1;
-            //int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID
-            AppendUploadLog(QString("Study not found by criteria [%1] using variables existingStudyID [%2], enrollmentRowID [%3], StudyDateTime [%4], Modality [%5], StudyInstanceUID [%6]").arg(studyMatchCriteria).arg(existingStudyID).arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StudyInstanceUID));
-            studyNumber = s->studyNum();
-            delete s;
-            return false;
-        }
-    }
-    else {
-        studyRowID = -1;
-        studyNumber = -1;
-        AppendUploadLog("Study not found. Study object is still NULL somehow");
-        return false;
-    }
+    //if (s) {
+    //    if (s->valid()) {
+    //        studyRowID = s->studyRowID();
+    //        AppendUploadLog(QString("Study [%1%2] with studyRowID [%3] found by criteria [%4]").arg(s->UID()).arg(s->studyNum()).arg(s->studyRowID()).arg(studyMatchCriteria));
+    //        studyNumber = s->studyNum();
+    //        //delete s;
+    //        return true;
+    //    }
+    //    else {
+    //        studyRowID = -1;
+    //        //int existingStudyID, int enrollmentRowID, QString StudyDateTime, QString Modality, QString StudyInstanceUID
+    //        AppendUploadLog(QString("Study not found by criteria [%1] using variables existingStudyID [%2], enrollmentRowID [%3], StudyDateTime [%4], Modality [%5], StudyInstanceUID [%6]").arg(studyMatchCriteria).arg(existingStudyID).arg(enrollmentRowID).arg(StudyDateTime).arg(Modality).arg(StudyInstanceUID));
+    //        studyNumber = s->studyNum();
+    //        //delete s;
+    //        return false;
+    //    }
+    //}
+    //else {
+    //    studyRowID = -1;
+    //    studyNumber = -1;
+    //    AppendUploadLog("Study not found. Study object is still NULL somehow");
+    //    return false;
+    //}
+
+    return ret;
 }
 
 
@@ -2835,10 +2881,16 @@ bool archiveIO::WriteBIDS(QList<qint64> seriesids, QStringList modalities, QStri
                     bidsSession = QString("ses-%1").arg(studyaltid);
 				}
 				else if (bidsflags.contains("BIDS_STUDYDIR_DATE",Qt::CaseInsensitive)) {
-					study std(QString("%1%2").arg(uid).arg(studynum), n);
-					QString studyDate = std.dateTime().toString("yyyyMMdd");
-					sessiondir = QString("ses-%1").arg(studyDate);
-                    bidsSession = QString("ses-%1").arg(studyDate);
+                    study stud(n);
+                    stud.searchMethod = StudySearchMethod::UidStudyNum;
+                    stud.searchUID = uid;
+                    stud.searchStudyNum = studynum;
+                    stud.Load();
+                    if (stud.isValid()) {
+                        QString studyDate = stud.datetime.toString("yyyyMMdd");
+                        sessiondir = QString("ses-%1").arg(studyDate);
+                        bidsSession = QString("ses-%1").arg(studyDate);
+                    }
 				}
 				if ((sessiondir == "") || (sessiondir == "ses-")) {
                     sessiondir = QString("ses-%1").arg(j, 4, 10, QChar('0'));
@@ -3130,7 +3182,7 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
         /* get the subject object by UID */
         subject subj(n);
-        subj.searchMethod = Uid;
+        subj.searchMethod = SubjectSearchMethod::Uid;
         subj.searchUID = uid;
         if (!subj.Load()) { n->Log("subject was invalid"); return false; }
 
@@ -3162,6 +3214,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
 
             int studyid = s[uid][studynum][0]["studyid"].toInt();
             study stdy(studyid, n);
+            if (!stdy.isValid()) {
+                n->Log(QString("%1() Study was not valid [%2]").arg(__FUNCTION__).arg(stdy.msg));
+                continue;
+            }
 
             /* create the squirrelStudy object, and populate extra fields */
             squirrelStudy sqrlStudy = stdy.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3171,11 +3227,11 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             qint64 squirrelStudyRowID = sqrlStudy.GetObjectID();
 
             /* update the subject enrollment info */
-            sqrlSubject.EnrollmentGroup = stdy.enrollmentGroup();
-            sqrlSubject.EnrollmentStatus = stdy.enrollmentStatus();
+            sqrlSubject.EnrollmentGroup = stdy.enrollmentGroup;
+            sqrlSubject.EnrollmentStatus = stdy.enrollmentStatus;
             sqrlSubject.Store();
 
-            n->Log(QString("stdy.enrollmentGroup [%1]  stdy.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stdy.enrollmentGroup()).arg(stdy.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
+            n->Log(QString("stdy.enrollmentGroup [%1]  stdy.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stdy.enrollmentGroup).arg(stdy.enrollmentStatus).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
 
             /* export analyses (study level) */
             if (downloadflags.contains("DOWNLOAD_ANALYSIS", Qt::CaseInsensitive)) {
@@ -3578,7 +3634,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get squirrel SUBJECT (create the object in the package if it doesn't already exist) */
         squirrelSubject sqrlSubject(sqrl.GetDatabaseUUID());
         subject subj(n);
-        subj.searchMethod = RowId;
+        subj.searchMethod = SubjectSearchMethod::RowId;
         subj.searchSubjectRowID = ser.subjectid;
         if (!subj.Load()) { n->Log("subject was invalid"); return false; }
 
@@ -3602,7 +3658,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
         study stud(ser.studyid, n);
-        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
+        if (!stud.isValid()) {
+            n->Log(QString("Study [%1] is invalid: [%2]").arg(ser.studyid).arg(stud.msg));
+            continue;
+        }
+        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.GetStudyNum());
         if (sqrlStudyRowID < 0) {
             //n->Log("Checkpoint D");
             /* ... create study if necessary */
@@ -3616,11 +3676,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         //n->Log("Checkpoint F");
 
         /* update the subject enrollment info */
-        sqrlSubject.EnrollmentGroup = stud.enrollmentGroup();
-        sqrlSubject.EnrollmentStatus = stud.enrollmentStatus();
+        sqrlSubject.EnrollmentGroup = stud.enrollmentGroup;
+        sqrlSubject.EnrollmentStatus = stud.enrollmentStatus;
         sqrlSubject.Store();
 
-        n->Debug(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup()).arg(stud.enrollmentStatus()).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
+        n->Debug(QString("stud.enrollmentGroup [%1]  stud.enrollmentStatus [%2]  sqrlSubject.EnrollmentGroup [%3]  sqrlSubject.EnrollmentStatus [%4]").arg(stud.enrollmentGroup).arg(stud.enrollmentStatus).arg(sqrlSubject.EnrollmentGroup).arg(sqrlSubject.EnrollmentStatus));
 
         /* create squirrel SERIES */
         if (!ser.isValid)
@@ -3660,11 +3720,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int projectRowID = q.value("project_id").toInt();
 
         study stud(studyRowID, n);
-        if (!stud.valid()) continue;
+        if (!stud.isValid()) continue;
 
         subject subj(n);
-        subj.searchMethod = RowId;
-        subj.searchSubjectRowID = stud.subjectRowID();
+        subj.searchMethod = SubjectSearchMethod::RowId;
+        subj.searchSubjectRowID = stud.GetSubjectRowID();
         if (!subj.Load()) { n->Log("subject was invalid"); continue; }
 
         //if (!subj.isValid()) continue;
@@ -3689,7 +3749,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
 
         /* get squirrel STUDY (create the object in the package if it doesn't already exist) */
         squirrelStudy sqrlStudy(sqrl.GetDatabaseUUID());
-        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.studyNum());
+        qint64 sqrlStudyRowID = sqrl.FindStudy(subjectID, stud.GetStudyNum());
         if (sqrlStudyRowID < 0) {
             /* ... create study if necessary */
             sqrlStudy = stud.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -3722,7 +3782,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int projectRowID = q.value("project_id").toInt();
 
         subject subj(n);
-        subj.searchMethod = RowId;
+        subj.searchMethod = SubjectSearchMethod::RowId;
         subj.searchSubjectRowID = subjectRowID;
         if (!subj.Load()) { n->Log("subject was invalid"); continue; }
         //if (!subj.isValid()) continue;
@@ -3777,7 +3837,7 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int projectRowID = q.value("project_id").toInt();
 
         subject subj(n);
-        subj.searchMethod = RowId;
+        subj.searchMethod = SubjectSearchMethod::RowId;
         subj.searchSubjectRowID = subjectRowID;
         if (!subj.Load()) { n->Log("subject was invalid"); continue; }
         //if (!subj.isValid()) continue;
@@ -4151,4 +4211,61 @@ BIDSMapping archiveIO::GetBIDSMapping(int projectRowID, QString protocol, QStrin
     //n->Log(QString("bidsTask: %1").arg(mapping.bidsTask));
 
     return mapping;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetStoragePath --------------------------------- */
+/* ---------------------------------------------------------- */
+bool archiveIO::GetStoragePath(QString obj, int objectRowID, QString modality, QString &path) {
+    bool success = false;
+    path = "";
+
+    if (obj == "analysis") {
+        analysis a(objectRowID, n);
+        if (a.isValid) {
+            if (a.analysispath != "") {
+                path = a.analysispath;
+                success = true;
+            }
+        }
+    }
+    else if (obj == "pipeline") {
+        pipeline p(objectRowID, n);
+        if (p.isValid) {
+            if (p.pipelineRootDir != "") {
+                path = p.pipelineRootDir;
+                success = true;
+            }
+        }
+    }
+    else if (obj == "series") {
+        series s1(objectRowID, modality, n);
+        if (s1.isValid) {
+            if (s1.seriespath != "") {
+                path = s1.seriespath;
+                success = true;
+            }
+        }
+    }
+    else if (obj == "study") {
+        study s2(objectRowID, n);
+        if (s2.isValid()) {
+            if (s2.GetPath() != "") {
+                path = s2.GetPath();
+                success = true;
+            }
+        }
+    }
+    else if (obj == "subject") {
+        subject s3(objectRowID, n);
+        if (s3.isValid()) {
+            if (s3.GetSubjectDataPath() != "") {
+                path = s3.GetSubjectDataPath();
+                success = true;
+            }
+        }
+    }
+
+    return success;
 }

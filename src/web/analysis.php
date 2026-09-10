@@ -81,6 +81,10 @@
 	$returnpage = GetVariable("returnpage");
 	
 	/* determine action */
+	/* PRG: mutating actions do their work, stash user-facing output in the flash, then
+	   redirect (302) back to the GET list view so a refresh/Back can't re-submit. The
+	   list render (DisplayAnalysisList) calls ShowFlashMessage() to print the message. */
+	$listurl = "analysis.php?action=viewanalyses&id=" . urlencode($id) . "&numperpage=" . urlencode($numperpage) . "&pagenum=" . urlencode($pagenum) . "&searchuid=" . urlencode($searchuid) . "&searchstatus=" . urlencode($searchstatus) . "&searchsuccess=" . urlencode($searchsuccess) . "&sortby=" . urlencode($sortby) . "&sortorder=" . urlencode($sortorder);
 	switch ($action) {
 		case 'viewjob': DisplayJob($id); break;
 		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
@@ -88,62 +92,90 @@
 		case 'exportanalysiscsv': ExportAnalysisCSV($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder); break;
 		case 'viewfailedanalyses': DisplayFailedAnalysisList($id, $numperpage, $pagenum); break;
 		case 'deleteanalyses':
+			ob_start();
 			DeleteAnalyses($id, $analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'copyanalyses':
+			ob_start();
 			CopyAnalyses($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'createlinks':
+			ob_start();
 			CreateLinks($analysisids, $destination);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'rerunresults':
+			ob_start();
 			RerunResults($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'runsupplement':
+			ob_start();
 			RunSupplement($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'markbad':
+			ob_start();
 			MarkAnalysis($analysisids, 'bad');
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'markgood':
+			ob_start();
 			MarkAnalysis($analysisids, 'good');
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'markcomplete':
+			ob_start();
 			MarkComplete($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'marksuccessful':
+			ob_start();
 			MarkSuccessful($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'markunsuccessful':
+			ob_start();
 			MarkUnsuccessful($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'rechecksuccess':
+			ob_start();
 			RecheckSuccess($analysisids);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'disable':
+			ob_start();
 			DisablePipeline($id);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'enable':
+			ob_start();
 			EnablePipeline($id);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'viewfiles': DisplayFiles($id, $analysisid, $fileviewtype); break;
 		case 'setanalysisnotes':
+			ob_start();
 			SetAnalysisNotes($analysisid, $analysisnotes);
-			DisplayAnalysisList($id, $numperpage, $pagenum, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
 			break;
 	}
 	
@@ -170,27 +202,35 @@
 	/* -------------------------------------------- */
 	/* ------- GetAnalysisListSQL ----------------- */
 	/* -------------------------------------------- */
-	function GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart = "", $limitcount = "") {
+	function GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart = "", $limitcount = "", &$types = '', &$params = array()) {
 
 		if (!ValidID($id,'Pipeline ID')) { return false; }
-		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], $searchuid);
-		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
-		$searchsuccess = mysqli_real_escape_string($GLOBALS['linki'], $searchsuccess);
+		/* build the bound parameters alongside the SQL (identifiers/keywords can't be bound) */
+		$types = '';
+		$params = array();
+		/* whitelist the sort direction - it goes into "order by" and can't be a bound param.
+		   Only explicit 'desc' descends; anything else (incl. blank) keeps the original ASC default. */
+		$dir = (strtolower($sortorder) === 'desc') ? 'desc' : 'asc';
+
+		$base = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ?";
+		$types .= 'i'; $params[] = $id;
 
 		if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
-			$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+			$sqlstring = $base . " and a.analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 		}
 		else {
-			$sqlstring = "select *, timediff(analysis_enddate, analysis_startdate) 'analysis_time', timediff(analysis_clusterenddate, analysis_clusterstartdate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
+			$sqlstring = $base;
 			if ($searchuid != "") {
-				$sqlstring .= " and d.uid like '%$searchuid%'";
+				$sqlstring .= " and d.uid like ?";
+				$types .= 's'; $params[] = '%' . $searchuid . '%';
 			}
 			if ($searchstatus != "") {
 				if ($searchstatus == "allothers") {
 					$sqlstring .= " and a.analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 				}
 				else {
-					$sqlstring .= " and a.analysis_status = '$searchstatus'";
+					$sqlstring .= " and a.analysis_status = ?";
+					$types .= 's'; $params[] = $searchstatus;
 				}
 			}
 			if ($searchsuccess == 1) {
@@ -203,53 +243,54 @@
 
 		switch ($sortby) {
 			case 'studynum':
-				$sqlstring .= " order by uid $sortorder, study_num $sortorder";
+				$sqlstring .= " order by uid $dir, study_num $dir";
 				break;
 			case 'visit':
-				$sqlstring .= " order by study_type $sortorder";
+				$sqlstring .= " order by study_type $dir";
 				break;
 			case 'pipelineversion':
-				$sqlstring .= " order by pipeline_version $sortorder";
+				$sqlstring .= " order by pipeline_version $dir";
 				break;
 			case 'studydate':
-				$sqlstring .= " order by study_datetime $sortorder";
+				$sqlstring .= " order by study_datetime $dir";
 				break;
 			case 'numseries':
-				$sqlstring .= " order by analysis_numseries $sortorder";
+				$sqlstring .= " order by analysis_numseries $dir";
 				break;
 			case 'status':
-				$sqlstring .= " order by analysis_status $sortorder";
+				$sqlstring .= " order by analysis_status $dir";
 				break;
 			case 'successful':
-				$sqlstring .= " order by analysis_iscomplete $sortorder";
+				$sqlstring .= " order by analysis_iscomplete $dir";
 				break;
 			case 'message':
-				$sqlstring .= " order by analysis_statusmessage $sortorder";
+				$sqlstring .= " order by analysis_statusmessage $dir";
 				break;
 			case 'size':
-				$sqlstring .= " order by analysis_disksize $sortorder";
+				$sqlstring .= " order by analysis_disksize $dir";
 				break;
 			case 'hostname':
-				$sqlstring .= " order by analysis_hostname $sortorder";
+				$sqlstring .= " order by analysis_hostname $dir";
 				break;
 			case 'setuptime':
-				$sqlstring .= " order by analysis_time $sortorder";
+				$sqlstring .= " order by analysis_time $dir";
 				break;
 			case 'setupcompletedate':
-				$sqlstring .= " order by analysis_enddate $sortorder";
+				$sqlstring .= " order by analysis_enddate $dir";
 				break;
 			case 'clustertime':
-				$sqlstring .= " order by cluster_time $sortorder";
+				$sqlstring .= " order by cluster_time $dir";
 				break;
 			case 'clustercompletedate':
-				$sqlstring .= " order by analysis_clusterenddate $sortorder";
+				$sqlstring .= " order by analysis_clusterenddate $dir";
 				break;
 			default:
 				$sqlstring .= " order by a.analysis_status desc, study_datetime desc";
 		}
 
 		if (($limitstart !== "") && ($limitcount !== "")) {
-			$sqlstring .= " limit $limitstart, $limitcount";
+			$sqlstring .= " limit ?, ?";
+			$types .= 'ii'; $params[] = (int)$limitstart; $params[] = (int)$limitcount;
 		}
 
 		return $sqlstring;
@@ -274,8 +315,12 @@
 			$pipeline_name = "analysis";
 		}
 
-		$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$types = ''; $params = array();
+		$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, "", "", $types, $params);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
 		while (ob_get_level() > 0) {
 			ob_end_clean();
@@ -406,9 +451,7 @@
 	/* ------- CopyAnalyses ----------------------- */
 	/* -------------------------------------------- */
 	function CopyAnalyses($analysisids, $destination) {
-	
-		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
-		
+
 		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -433,9 +476,7 @@
 	/* ------- CreateLinks ------------------------ */
 	/* -------------------------------------------- */
 	function CreateLinks($analysisids, $destination) {
-	
-		$destination = mysqli_real_escape_string($GLOBALS['linki'], $destination);
-		
+
 		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -651,10 +692,7 @@
 
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
-		$searchuid = mysqli_real_escape_string($GLOBALS['linki'], $searchuid);
-		$searchstatus = mysqli_real_escape_string($GLOBALS['linki'], $searchstatus);
-		$searchsuccess = mysqli_real_escape_string($GLOBALS['linki'], $searchsuccess);
-	
+
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
@@ -673,7 +711,10 @@
 		$isdebug = $row['pipeline_debug'];
 
 		DisplayPipelineStatus($pipeline_name, $pipeline_desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
-		
+
+		/* PRG: show any message stashed by a mutating action before it redirected here */
+		ShowFlashMessage();
+
 		/* prep the pagination */
 		if ($numperpage == "") { $numperpage = 500; }
 		if (($pagenum == "") || ($pagenum < 1)) { $pagenum = 1; }
@@ -689,20 +730,25 @@
 		$colors = GenerateColorGradient();
 		
 		/* run the sql query here to get the row count */
+		$types = ''; $params = array();
 		if (($searchuid == "") && ($searchstatus == "") && ($searchsuccess == "")) {
-			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id and analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status not in ('NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
+			$types .= 'i'; $params[] = $id;
 		}
 		else {
-			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $id";
+			$sqlstring = "select count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ?";
+			$types .= 'i'; $params[] = $id;
 			if ($searchuid != "") {
-				$sqlstring .= " and d.uid like '%$searchuid%'";
+				$sqlstring .= " and d.uid like ?";
+				$types .= 's'; $params[] = '%' . $searchuid . '%';
 			}
 			if ($searchstatus != "") {
 				if ($searchstatus == "allothers") {
 					$sqlstring .= " and analysis_status in ('','NoMatchingSeries','NoMatchingStudies','NoMatchingStudyDependency','IncompleteDependency','BadDependency')";
 				}
 				else {
-					$sqlstring .= " and analysis_status = '$searchstatus'";
+					$sqlstring .= " and analysis_status = ?";
+					$types .= 's'; $params[] = $searchstatus;
 				}
 			}
 		}
@@ -712,7 +758,10 @@
 		if ($searchsuccess == 2) {
 			$sqlstring .= " and a.analysis_iscomplete = 0 and a.analysis_status = 'complete'";
 		}
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numrows = $row['count'];
 		//$numrows = mysqli_num_rows($result);
@@ -901,9 +950,13 @@
 			<input type="hidden" name="analysisid" id="analysisid" value="">
 			<input type="hidden" name="id" value="<?=$id?>">
 				<?
-					$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart, $limitcount);
+					$types = ''; $params = array();
+					$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart, $limitcount, $types, $params);
 					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, $types, ...$params);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+					mysqli_stmt_close($stmt);
 					/* PHP 8: min()/max() on null or an empty array is fatal - initialize and guard */
 					$numcomplete = 0;
 					$analysistimes = array();

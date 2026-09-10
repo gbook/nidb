@@ -29,11 +29,11 @@
 /* ---------------------------------------------------------- */
 /* --------- series ----------------------------------------- */
 /* ---------------------------------------------------------- */
-series::series(qint64 id, QString m, nidb *a)
+series::series(qint64 id, QString mod, nidb *a)
 {
     n = a;
     seriesid = id;
-    modality = m.toLower();
+    modality = mod.toLower();
     LoadSeriesInfo();
 }
 
@@ -139,7 +139,11 @@ void series::PrintSeriesInfo() {
 /* ---------------------------------------------------------- */
 bool series::ChangeSeriesPath(int studyid, int newSeriesNum) {
     study s(studyid, n);
-    QString newSeriesPath = QString("%1/%2").arg(s.path()).arg(newSeriesNum);
+    if (!s.isValid()) {
+        n->Log(QString("Study was not valid [%1]").arg(s.msg), __FUNCTION__);
+        return false;
+    }
+    QString newSeriesPath = QString("%1/%2").arg(s.GetPath()).arg(newSeriesNum);
 
     n->Log("Changing series path from [" + seriespath + "] to [" + newSeriesPath + "]");
 

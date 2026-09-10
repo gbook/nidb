@@ -26,72 +26,73 @@
 #include "nidb.h"
 #include "squirrelStudy.h"
 
-enum criteria {rowid, uidstudynum, studydatetimemodality, studyuid};
+enum class StudySearchMethod { RowId, UidStudyNum, StudyDatetimeModality, StudyUid };
 
 class study
 {
 public:
-    study();
-    study(int studyRowID, nidb *a); /* get study by studyID */
-    study(QString uidStudyNum, nidb *a);
-    study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a);
-    study(int enrollmentRowID, QString studyUID, nidb *a);
-
-    nidb *n;
+    study(nidb *a);
+    study(int rowID, nidb *a);
+    //study(int studyRowID, nidb *a); /* get study by studyID */
+    //study(QString uidStudyNum, nidb *a);
+    //study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a);
+    //study(int enrollmentRowID, QString studyUID, nidb *a);
 
     void PrintStudyInfo();
     squirrelStudy GetSquirrelObject(QString databaseUUID);
+    bool isValid() { return valid; }
+    bool Load();
 
-    QDateTime dateTime() { return _studydatetime; }
-    QString UID() { return _uid; }
-    QString daynum() { return _daynum; }
-    QString desc() { return _desc; }
-    QString enrollmentGroup() { return _enrollmentgroup; }
-    QString enrollmentStatus() { return _enrollmentstatus; }
-    QString equipment() { return _equipment; }
-    QString modality() { return _modality; }
-    QString msg() { return _msg; }
-    QString path() { return _studypath; }
-    QString timepoint() { return _timepoint; }
-    QString type() { return _studytype; }
-    bool pathExists() { return _studyPathExists; }
-    double height() { return _height; }
-    double weight() { return _weight; }
-    int enrollmentRowID() { return _enrollmentid; }
-    int projectRowID() { return _projectid; }
-    int studyNum() { return _studynum; }
-    int studyRowID() { return _studyid; }
-    int subjectRowID() { return _subjectid; }
+    /* immutable information (rowids, etc) */
+    bool DataPathExists() { return studyPathExists; }
+    int GetEnrollmentRowID() { return enrollmentRowID; }
+    int GetProjectRowID() { return projectRowID; }
+    int GetStudyNum() { return studyNum; }
+    QString GetUID() { return uid; }
+    int GetStudyRowID() { return studyRowID; }
+    int GetSubjectRowID() { return subjectRowID; }
+    QString GetPath() { return studypath; }
 
-    bool valid() { return _isValid; }
+    /* study data */
+    QDateTime datetime;
+    QString daynum;
+    QString desc;
+    QString enrollmentGroup;
+    QString enrollmentStatus;
+    QString equipment;
+    QString modality;
+    QString timepoint;
+    QString type;
+    QString studyuid;
+    double height;
+    double weight;
+
+    /* object info */
+    StudySearchMethod searchMethod = StudySearchMethod::RowId;
+    int searchStudyRowID = -1;
+    int searchEnrollmentRowID = -1;
+    QString searchUID;
+    int searchStudyNum = -1;
+    QDateTime searchDatetime;
+    QString searchModality;
+    QString searchStudyUID;
+    QString msg;
 
 private:
-    criteria searchCriteria;
-    void LoadStudyInfo();
 
-    QDateTime _studydatetime;
-    QString _daynum = "";
-    QString _desc = "";
-    QString _enrollmentgroup = "";
-    QString _enrollmentstatus = "";
-    QString _equipment = "";
-    QString _modality = "";
-    QString _studypath = "";
-    QString _studytype = "";
-    QString _studyuid = "";
-    QString _timepoint = "";
-    QString _uid = "";
-    bool _studyPathExists = false;
-    double _height = 0.0;
-    double _weight = 0.0;
-    int _enrollmentid = -1;
-    int _projectid = -1;
-    int _studyid = -1;
-    int _studynum = -1;
-    int _subjectid = -1;
+    nidb *n;
 
-    bool _isValid = false;
-    QString _msg;
+    QString studypath = "";
+    bool studyPathExists = false;
+    QString uid;
+    int enrollmentRowID = -1;
+    int projectRowID = -1;
+    int studyRowID = -1;
+    int studyNum = -1;
+    int subjectRowID = -1;
+
+    bool pathExists = false;
+    bool valid = false;
 
 };
 

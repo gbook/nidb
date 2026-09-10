@@ -26,6 +26,8 @@
 #include "nidb.h"
 #include "squirrelSubject.h"
 
+enum class SubjectSearchMethod { RowId, Uid, AltUid, UidOrAltUid, NameSexDob };
+
 /**
  * @brief The subject class - databaseRowID, valid, datapath are private, all other subject info is public
  */
@@ -33,19 +35,18 @@ class subject
 {
 public:
     subject(nidb *a);
+    subject(int rowID, nidb *a);
 
     bool Load();
-    bool Update();
 
-    void PrintSubjectInfo();
-    squirrelSubject GetSquirrelObject(QString databaseUUID);
-
+    QString GetPrimaryAlternateID(int projectRowID);
     QString GetSubjectDataPath() { return subjectDataPath; }
     QStringList GetAllAlternateIDs();
-    QString GetPrimaryAlternateID(int projectRowID);
     bool DataPathExists() { return dataPathExists; }
     bool isValid() { return valid; }
     int GetSubjectRowID() { return subjectRowID; }
+    squirrelSubject GetSquirrelObject(QString databaseUUID);
+    void PrintSubjectInfo();
 
     /* subject data */
     QDate dob = QDate(0,0,0);
@@ -57,7 +58,7 @@ public:
     QString sex = "U";
     QString uid;
     QStringList altuids;
-    int searchProjectRowID = -1;
+    int searchProjectRowID = -1; /* needed to find the primary altuid */
 
     /* object information */
     SubjectSearchMethod searchMethod = SubjectSearchMethod::RowId;

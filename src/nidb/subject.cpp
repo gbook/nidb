@@ -33,6 +33,24 @@ subject::subject(nidb *a)
 
 
 /* ---------------------------------------------------------- */
+/* --------- subject ---------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief overloaded constructor - assumes a search criteria of
+ * the subjectRowID
+ * @param a
+ */
+subject::subject(int rowID, nidb *a)
+{
+    searchMethod = SubjectSearchMethod::RowId;
+    searchSubjectRowID = rowID;
+    n = a;
+
+    Load();
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- Load ------------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -45,7 +63,7 @@ bool subject::Load() {
     QSqlQuery q;
 
     /* ----- search by subjectRowID ----- */
-    if (searchMethod == RowId) {
+    if (searchMethod == SubjectSearchMethod::RowId) {
         if (searchSubjectRowID > 0) {
             q.prepare("select subject_id from subjects where subject_id = :subjectid");
             q.bindValue(":subjectid", searchSubjectRowID);
@@ -66,7 +84,7 @@ bool subject::Load() {
         }
     }
     /* ----- search by UID ----- */
-    else if (searchMethod == Uid) {
+    else if (searchMethod == SubjectSearchMethod::Uid) {
         if (searchUID == "") {
             msgs << "Searching by UID, but searchUID is not set";
             valid = false;
@@ -87,7 +105,7 @@ bool subject::Load() {
         }
     }
     /* ----- search by AltUID, projectRowID ----- */
-    else if (searchMethod == AltUid) {
+    else if (searchMethod == SubjectSearchMethod::AltUid) {
         if (searchAltUID == "") {
             msgs << "Searching by AltUID, but searchAltUID is not set";
             valid = false;
@@ -117,7 +135,7 @@ bool subject::Load() {
         }
     }
     /* ----- search by AltUID, UID ----- */
-    else if (searchMethod == UidOrAltUid) {
+    else if (searchMethod == SubjectSearchMethod::UidOrAltUid) {
         if ((searchAltUID == "") && (searchUID == "")) {
             msgs << "Searching by AltUID or UID, but neither is not set";
             valid = false;
@@ -142,7 +160,7 @@ bool subject::Load() {
         }
     }
     /* ----- search by Name, Sex, DOB ----- */
-    else if (searchMethod == NameSexDob) {
+    else if (searchMethod == SubjectSearchMethod::NameSexDob) {
         q.prepare("select subject_id from subjects where name = :name and birthdate = :dob and gender = :sex");
         q.bindValue(":name", searchName);
         q.bindValue(":sex", searchSex);
@@ -206,6 +224,7 @@ bool subject::LoadSubjectInfo() {
             if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; valid = false; }
             if (uid == "") { msgs << "uid was blank"; valid = false; }
 
+            /* subjects are always stored in the default archivedir */
             subjectDataPath = QString("%1/%2").arg(n->cfg["archivedir"]).arg(uid);
 
             QDir d(subjectDataPath);

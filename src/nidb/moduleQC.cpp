@@ -550,23 +550,23 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
     seriesRowIDs.append(seriesRowID);
     seriesModalities.append(modality);
 
-    n->Log(QString("Exporting series [%1] [%2] [%3] to [%4]").arg(seriesRowID).arg(modality).arg(format).arg(outputDir));
+    n->Log(QString("Exporting series [%1] [%2] [%3] to [%4]").arg(seriesRowID).arg(modality).arg(static_cast<int>(format)).arg(outputDir));
 
     switch (format) {
-        case Original:
-        case Dicom: {
+        case ExportFormat::Original:
+        case ExportFormat::Dicom: {
             /* copy the data */
             break;
         }
-        case DicomLite: {
+        case ExportFormat::DicomLite: {
             /* copy the data */
             break;
         }
-        case DicomFull: {
+        case ExportFormat::DicomFull: {
             /* copy the data */
             break;
         }
-        case Nifti3d: {
+        case ExportFormat::Nifti3d: {
             if (MakePath(tmpdir, m)) {
                 imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, QJsonObject(), numFilesConverted, numFilesRenamed, m)) {
@@ -575,7 +575,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case Nifti3dgz: {
+        case ExportFormat::Nifti3dgz: {
             if (MakePath(tmpdir, m)) {
                 imageIO img(n);
                 if (!img.ConvertDicom("nifti3d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, QJsonObject(), numFilesConverted, numFilesRenamed, m)) {
@@ -584,7 +584,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case Nifti4d: {
+        case ExportFormat::Nifti4d: {
             if (MakePath(tmpdir, m)) {
                 imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, false, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, QJsonObject(), numFilesConverted, numFilesRenamed, m)) {
@@ -593,7 +593,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case Nifti4dgz: {
+        case ExportFormat::Nifti4dgz: {
             if (MakePath(tmpdir, m)) {
                 imageIO img(n);
                 if (!img.ConvertDicom("nifti4d", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, QJsonObject(), numFilesConverted, numFilesRenamed, m)) {
@@ -602,7 +602,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case NiftiMe: {
+        case ExportFormat::NiftiMe: {
             if (MakePath(tmpdir, m)) {
                 imageIO img(n);
                 if (!img.ConvertDicom("niftime", s.datapath, tmpdir, binpath, true, false, s.uid, studyNumStr, seriesNumStr, "", "", s.bidsMapping, s.datatype, QJsonObject(), numFilesConverted, numFilesRenamed, m)) {
@@ -611,7 +611,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case BIDS: {
+        case ExportFormat::BIDS: {
             if (MakePath(tmpdir, m)) {
                 archiveIO *io = new archiveIO(n);
                 QStringList bidsFlags = { "BIDS_SUBJECTDIR_UID", "BIDS_STUDYDIR_STUDYNUM"};
@@ -620,7 +620,7 @@ bool moduleQC::ExportSeries(qint64 seriesRowID, QString modality, ExportFormat f
             }
             break;
         }
-        case Squirrel: {
+        case ExportFormat::Squirrel: {
             break;
         }
     }

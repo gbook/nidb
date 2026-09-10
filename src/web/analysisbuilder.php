@@ -82,10 +82,18 @@
 	/* determine action */
 	switch ($action) {
 		case 'savesearch':
+			/* PRG: process the mutating POST, stash its output as a flash, then
+			   redirect to a GET so a refresh/Back can't re-submit */
+			ob_start();
 			SaveSearch($projectid, $savedsearchname, $a);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("analysisbuilder.php?projectid=$projectid");
 			break;
 		case 'deletesavedsearch':
+			ob_start();
 			DeleteSavedSearch($savedsearchid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("analysisbuilder.php");
 			break;
 		case 'usesavedsearch':
 			$a = LoadSavedSearch($savedsearchid);
@@ -128,6 +136,7 @@
 	/* requires don't work inside of functions */
 	require "includes_html.php";
 	require "menu.php";
+	ShowFlashMessage();
 	DisplayAnalysisSummaryBuilder($projectid, $savedsearchid, $a);
 	
 	
@@ -137,11 +146,12 @@
 	/* ------- DeleteSavedSearch ------------------ */
 	/* -------------------------------------------- */
 	function DeleteSavedSearch($savedsearchid) {
-		$savedsearchid = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchid);
-		
-		$sqlstring = "delete from saved_search where savedsearch_id = $savedsearchid";
-		PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$savedsearchid = (int)$savedsearchid;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from saved_search where savedsearch_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $savedsearchid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 
 		echo "Search saved deleted [$savedsearchid]<br>";
 	}
@@ -151,142 +161,117 @@
 	/* ------- SaveSearch ------------------------- */
 	/* -------------------------------------------- */
 	function SaveSearch($projectid, $savedsearchname, $a) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$savedSearchName = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchname);
-		$MRprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['mr_protocols']));
-		$EEGprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['eeg_protocols']));
-		$ETprotocols = implode2(",", mysqli_real_escape_array($GLOBALS['linki'], $a['et_protocols']));
-		$pipelineid = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineid']);
-		$pipelineresultname = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineresultname']);
-		$pipelineseriesdatetime = mysqli_real_escape_string($GLOBALS['linki'], $a['pipelineseriesdatetime']);
-		$includeprotocolparms = mysqli_real_escape_string($GLOBALS['linki'], $a['includeprotocolparms']);
-		$includemrqa = mysqli_real_escape_string($GLOBALS['linki'], $a['includemrqa']);
-		$groupmrbyvisittype = mysqli_real_escape_string($GLOBALS['linki'], $a['groupmrbyvisittype']);
-		$includeallobservations = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallobservations']);
-		$includeinterventiondetails = mysqli_real_escape_string($GLOBALS['linki'], $a['includeinterventiondetails']);
-		$includetimesincedose = mysqli_real_escape_string($GLOBALS['linki'], $a['includetimesincedose']);
-		$doseVariable = mysqli_real_escape_string($GLOBALS['linki'], $a['dosevariable']);
-		$doseTimeRange = mysqli_real_escape_string($GLOBALS['linki'], $a['dosetimerange']);
-		$doseDisplayTime = mysqli_real_escape_string($GLOBALS['linki'], $a['dosedisplaytime']);
-		$groupByDate = mysqli_real_escape_string($GLOBALS['linki'], $a['groupbydate']);
-		$includeemptysubjects = mysqli_real_escape_string($GLOBALS['linki'], $a['includeemptysubjects']);
-		$reportformat = mysqli_real_escape_string($GLOBALS['linki'], $a['reportformat']);
-		$outputformat = mysqli_real_escape_string($GLOBALS['linki'], $a['outputformat']);
-		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $a['observationname']);
-		$interventionname = mysqli_real_escape_string($GLOBALS['linki'], $a['interventionname']);
-		$includeallinterventions = mysqli_real_escape_string($GLOBALS['linki'], $a['includeallinterventions']);
-		$blankValue = mysqli_real_escape_string($GLOBALS['linki'], $a['blankvalueplaceholder']);
-		$missingValue = mysqli_real_escape_string($GLOBALS['linki'], $a['missingvalueplaceholder']);
-		$includeduration = mysqli_real_escape_string($GLOBALS['linki'], $a['includeduration']);
-		$includeenddate = mysqli_real_escape_string($GLOBALS['linki'], $a['includeenddate']);
-		$includeheightweight = mysqli_real_escape_string($GLOBALS['linki'], $a['includeheightweight']);
-		$includedob = mysqli_real_escape_string($GLOBALS['linki'], $a['includedob']);
-		$collapsevariables = mysqli_real_escape_string($GLOBALS['linki'], $a['collapsevariables']);
-		$collapsebyexpression = mysqli_real_escape_string($GLOBALS['linki'], $a['collapsebyexpression']);
-
 		$userid = $_SESSION['userid'];
-		
-		if ($pipelineid == "") $pipelineid = "null";
-		if ($includeprotocolparms == "") $includeprotocolparms = "null";
-		if ($includemrqa == "") $includemrqa = "null";
-		if ($groupmrbyvisittype == "") $groupmrbyvisittype = "null";
-		if ($includeallobservations == "") $includeallobservations = "null";
-		if ($includeinterventiondetails == "") $includeinterventiondetails = "null";
-		if ($includetimesincedose == "") $includetimesincedose = "null";
-		if ($includeemptysubjects == "") $includeemptysubjects = "null";
-		if ($includeallinterventions == "") $includeallinterventions = "null";
-		if ($includeenddate == "") $includeenddate = "null";
-		if ($includeheightweight == "") $includeheightweight = "null";
-		if ($includedob == "") $includedob = "null";
-		if ($includeduration == "") $includeduration = "null";
-		if ($collapsevariables == "") $collapsevariables = "null";
 
-		$sqlstring = "select savedsearch_id from saved_search where saved_name = '$savedsearchname'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) > 0){
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		/* comma-joined protocol lists are stored in a single column; bound as one
+		   string each, so no per-element escaping is needed */
+		$MRprotocols  = implode2(",", $a['mr_protocols']);
+		$EEGprotocols = implode2(",", $a['eeg_protocols']);
+		$ETprotocols  = implode2(",", $a['et_protocols']);
+
+		/* blank flag/checkbox values map to SQL NULL in these (unquoted) columns */
+		$nn = function($v) { return (($v === "") || ($v === null)) ? null : $v; };
+
+		/* shared value list, in the same column order used by both the UPDATE and
+		   INSERT below (from search_mrincludeprotocolparams .. search_outputformat) */
+		$vals = array(
+			$nn($a['includeprotocolparms']),
+			$nn($a['includemrqa']),
+			($a['groupmrbyvisittype'] === "" ? "null" : $a['groupmrbyvisittype']),
+			$MRprotocols,
+			$EEGprotocols,
+			$ETprotocols,
+			$nn($a['pipelineid']),
+			$a['pipelineresultname'],
+			$a['pipelineseriesdatetime'],
+			$a['observationname'],
+			$nn($a['includeallobservations']),
+			$a['interventionname'],
+			$nn($a['includeallinterventions']),
+			$nn($a['includeinterventiondetails']),
+			$nn($a['includetimesincedose']),
+			$a['dosevariable'],
+			$a['dosetimerange'],
+			$a['dosedisplaytime'],
+			$a['groupbydate'],
+			$nn($a['collapsevariables']),
+			$a['collapsebyexpression'],
+			$nn($a['includeemptysubjects']),
+			$a['blankvalueplaceholder'],
+			$a['missingvalueplaceholder'],
+			$nn($a['includeduration']),
+			$nn($a['includeenddate']),
+			$nn($a['includeheightweight']),
+			$nn($a['includedob']),
+			$a['reportformat'],
+			$a['outputformat'],
+		);
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select savedsearch_id from saved_search where saved_name = ?");
+		mysqli_stmt_bind_param($stmt, 's', $savedsearchname);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$exists = ($result && (mysqli_num_rows($result) > 0));
+		$row = $exists ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+
+		if ($exists) {
 			$savedsearchid = $row['savedsearch_id'];
 
-			$sqlstring = "update saved_search 
-			set user_id = '$userid',
-			saved_datetime = now(), 
-			search_projectid = '$projectid', 
-			search_mrincludeprotocolparams = $includeprotocolparms, 
-			search_mrincludeqa = $includemrqa, 
-			search_groupmrbyvisittype = '$groupmrbyvisittype', 
-			search_mrprotocol = '$MRprotocols', 
-			search_eegprotocol = '$EEGprotocols', 
-			search_etprotocol = '$ETprotocols', 
-			search_pipelineid = $pipelineid, 
-			search_pipelineresultname = '$pipelineresultname', 
-			search_pipelineseries = '$pipelineseriesdatetime', 
-			search_observationname = '$observationname',
-			search_includeallobservations = $includeallobservations,
-			search_interventionname = '$interventionname',
-			search_includeallinterventions = $includeallinterventions, 
-			search_includeinterventiondetails = $includeinterventiondetails, 
-			search_includetimesincedose = $includetimesincedose, 
-			search_dosevariable = '$doseVariable', 
-			search_groupdosetime = '$doseTimeRange', 
-			search_displaytime = '$doseDisplayTime', 
-			search_groupbyeventdate = '$groupByDate', 
-			search_collapsevariables = '$collapsevariables', 
-			search_collapseexpression = '$collapsebyexpression', 
-			search_includeemptysubjects = $includeemptysubjects, 
-			search_blankvalue = '$blankValue', 
-			search_missingvalue = '$missingValue', 
-			search_includeeventduration = $includeduration, 
-			search_includeendate = $includeenddate, 
-			search_includeheightweight = $includeheightweight, 
-			search_includedob = $includedob, 
-			search_reportformat = '$reportformat', 
-			search_outputformat = '$outputformat'
-			where savedsearch_id = $savedsearchid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			
+			$sqlstring = "update saved_search
+			set user_id = ?,
+			saved_datetime = now(),
+			search_projectid = ?,
+			search_mrincludeprotocolparams = ?,
+			search_mrincludeqa = ?,
+			search_groupmrbyvisittype = ?,
+			search_mrprotocol = ?,
+			search_eegprotocol = ?,
+			search_etprotocol = ?,
+			search_pipelineid = ?,
+			search_pipelineresultname = ?,
+			search_pipelineseries = ?,
+			search_observationname = ?,
+			search_includeallobservations = ?,
+			search_interventionname = ?,
+			search_includeallinterventions = ?,
+			search_includeinterventiondetails = ?,
+			search_includetimesincedose = ?,
+			search_dosevariable = ?,
+			search_groupdosetime = ?,
+			search_displaytime = ?,
+			search_groupbyeventdate = ?,
+			search_collapsevariables = ?,
+			search_collapseexpression = ?,
+			search_includeemptysubjects = ?,
+			search_blankvalue = ?,
+			search_missingvalue = ?,
+			search_includeeventduration = ?,
+			search_includeendate = ?,
+			search_includeheightweight = ?,
+			search_includedob = ?,
+			search_reportformat = ?,
+			search_outputformat = ?
+			where savedsearch_id = ?";
+			$params = array_merge(array($userid, $projectid), $vals, array($savedsearchid));
+			$types = str_repeat('s', count($params) - 1) . 'i';
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
+
 			Notice("Search updated <b>$savedsearchname</b>");
 		}
 		else {
 			$sqlstring = "insert into saved_search (
 			user_id,saved_datetime, saved_name, search_projectid, search_mrincludeprotocolparams, search_mrincludeqa, search_groupmrbyvisittype, search_mrprotocol, search_eegprotocol, search_etprotocol, search_pipelineid, search_pipelineresultname, search_pipelineseries, search_observationname, search_includeallobservations, search_interventionname, search_includeallinterventions, search_includeinterventiondetails, search_includetimesincedose, search_dosevariable, search_groupdosetime, search_displaytime, search_groupbyeventdate, search_collapsevariables, search_collapseexpression, search_includeemptysubjects, search_blankvalue, search_missingvalue, search_includeeventduration, search_includeendate, search_includeheightweight, search_includedob, search_reportformat, search_outputformat)
-			values (
-				'$userid',
-				now(), 
-				'$savedSearchName',
-				'$projectid',
-				$includeprotocolparms,
-				$includemrqa,
-				'$groupmrbyvisittype',
-				'$MRprotocols',
-				'$EEGprotocols',
-				'$ETprotocols',
-				$pipelineid,
-				'$pipelineresultname',
-				'$pipelineseriesdatetime',
-				'$observationname',
-				$includeallobservations,
-				'$interventionname',
-				$includeallinterventions,
-				$includeinterventiondetails,
-				$includetimesincedose,
-				'$doseVariable',
-				'$doseTimeRange',
-				'$doseDisplayTime',
-				'$groupByDate',
-				'$collapsevariables',
-				'$collapsebyexpression',
-				$includeemptysubjects,
-				'$blankValue',
-				'$missingValue',
-				$includeduration,
-				$includeenddate,
-				$includeheightweight,
-				$includedob,
-				'$reportformat',
-				'$outputformat'
-			)";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			
+			values (?, now(), " . implode(", ", array_fill(0, 32, '?')) . ")";
+			$params = array_merge(array($userid, $savedsearchname, $projectid), $vals);
+			$types = str_repeat('s', count($params));
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
+
 			Notice("Search saved <b>$savedsearchname</b>");
 		}
 
@@ -297,14 +282,16 @@
 	/* ------- LoadSavedSearch -------------------- */
 	/* -------------------------------------------- */
 	function LoadSavedSearch($savedsearchid) {
-		$savedsearchid = mysqli_real_escape_string($GLOBALS['linki'], $savedsearchid);
-		
+		$savedsearchid = (int)$savedsearchid;
+
 		$a = array();
-		
+
 		if ($savedsearchid != 0) {
-			$sqlstring = "select * from saved_search where savedsearch_id = $savedsearchid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from saved_search where savedsearch_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $savedsearchid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 
 			$a['projectid'] = $row['search_projectid'];
 			$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);

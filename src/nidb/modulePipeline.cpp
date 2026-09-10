@@ -321,8 +321,8 @@ int modulePipeline::Run() {
 
                 /* get information about the study */
                 study s(sid, n);
-                if (!s.valid()) {
-                    n->Log(QString("Study was not valid [" + s.msg() + "]. Maybe this study was deleted after this pipeline started?").arg(p.name), __FUNCTION__);
+                if (!s.isValid()) {
+                    n->Log(QString("Study was not valid [" + s.msg + "]. Maybe this study was deleted after this pipeline started?").arg(p.name), __FUNCTION__);
                     //n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::error, 0, QString("Study was not valid [" + s.msg() + "]. Maybe this study was deleted after this pipeline started?"), "");
                     continue;
                 }
@@ -330,7 +330,7 @@ int modulePipeline::Run() {
                 //    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupStudyPrecheck, LogStatus::success, 0, "","");
                 //}
 
-                n->Log(QString(" ---------- Working on study [%2%3] (%4 of %5) for pipeline [%1] ----------").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(ii).arg(studyids.size()));
+                n->Log(QString(" ---------- Working on study [%2%3] (%4 of %5) for pipeline [%1] ----------").arg(p.name).arg(s.GetUID()).arg(s.GetStudyNum()).arg(ii).arg(studyids.size()));
 
                 /* check if the number of concurrent jobs is reached. the function also checks if this pipeline module is enabled */
                 int filled;
@@ -430,15 +430,15 @@ int modulePipeline::Run() {
                     //n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
 
                     QString analysispath = "";
-                    analysispath = GetAnalysisLocalPath(p.dirStructure, p.name, s.UID(), s.studyNum());
+                    analysispath = GetAnalysisLocalPath(p.dirStructure, p.name, s.GetUID(), s.GetStudyNum());
                     n->Debug(QString("[%1] analysispath is [" + analysispath + "]").arg(p.name));
 
                     /* get the nearest study for this subject that has the dependency */
                     int studyNumNearest(0);
                     q2.prepare("select analysis_id, study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(timestampdiff(minute, b.study_datetime, :studydatetime)) limit 1");
-                    q2.bindValue(":subjectid", s.subjectRowID());
+                    q2.bindValue(":subjectid", s.GetSubjectRowID());
                     q2.bindValue(":pipelinedep", pipelinedep);
-                    q2.bindValue(":studydatetime", s.dateTime().toString("yyyy-MM-dd hh:mm:ss"));
+                    q2.bindValue(":studydatetime", s.datetime.toString("yyyy-MM-dd hh:mm:ss"));
                     n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                     if (q2.size() > 0) {
                         q2.first();
@@ -471,11 +471,11 @@ int modulePipeline::Run() {
                     int numseriesdownloaded = 0;
                     /* get the data if we are not running a supplement, and not rerunning the results */
                     if ((!a.runSupplement) && (!a.rerunResults)) {
-                        if (!GetData(sid, analysispath, s.UID(), analysisRowID, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog)) {
+                        if (!GetData(sid, analysispath, s.GetUID(), analysisRowID, pipelineid, pipelinedep, p.depLevel, dataSteps, numseriesdownloaded, datalog)) {
                             n->Log(QString("[%1] GetData() returned false").arg(p.name), __FUNCTION__);
                         }
                         else {
-                            m = QString("Downloaded %1 series for %2%3").arg(numseriesdownloaded).arg(s.UID()).arg(s.studyNum());
+                            m = QString("Downloaded %1 series for %2%3").arg(numseriesdownloaded).arg(s.GetUID()).arg(s.GetStudyNum());
                             n->Debug(m, __FUNCTION__);
                             RecordPipelineEvent(pipelineid, runnum, -1, "analysisGetData", m);
                         }
@@ -491,19 +491,19 @@ int modulePipeline::Run() {
 
                     if (numseriesdownloaded > 0) {
                         okToRun = true; // there is data to download from this study
-                        setuplog << n->Log(QString("[%1] Study [%2%3] has [%4] matching series downloaded. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()).arg(numseriesdownloaded), __FUNCTION__);
+                        setuplog << n->Log(QString("[%1] Study [%2%3] has [%4] matching series downloaded. Beginning analysis.").arg(p.name).arg(s.GetUID()).arg(s.GetStudyNum()).arg(numseriesdownloaded), __FUNCTION__);
                     }
                     if (a.rerunResults) {
                         okToRun = true;
-                        setuplog << n->Log(QString("[%1] Study [%2%3] set to have results rerun. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()), __FUNCTION__);
+                        setuplog << n->Log(QString("[%1] Study [%2%3] set to have results rerun. Beginning analysis.").arg(p.name).arg(s.GetUID()).arg(s.GetStudyNum()), __FUNCTION__);
                     }
                     if (a.runSupplement) {
                         okToRun = true;
-                        setuplog << n->Log(QString("[%1] Study [%2%3] set to have supplement run. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()), __FUNCTION__);
+                        setuplog << n->Log(QString("[%1] Study [%2%3] set to have supplement run. Beginning analysis.").arg(p.name).arg(s.GetUID()).arg(s.GetStudyNum()), __FUNCTION__);
                     }
                     if ((pipelinedep != -1) && (p.depLevel == "study")) {
                         okToRun = true; // there is a parent pipeline and we're using the same study from the parent pipeline. may or may not have data to download
-                        setuplog << n->Log(QString("[%1] Study [%2%3] has a study-level parent pipeline. Beginning analysis.").arg(p.name).arg(s.UID()).arg(s.studyNum()), __FUNCTION__);
+                        setuplog << n->Log(QString("[%1] Study [%2%3] has a study-level parent pipeline. Beginning analysis.").arg(p.name).arg(s.GetUID()).arg(s.GetStudyNum()), __FUNCTION__);
                     }
 
                     /* one of the above criteria has been satisfied, so its ok to run the pipeline on this study and submit the cluster */
@@ -553,15 +553,15 @@ int modulePipeline::Run() {
                             if (pipelinedep != -1) {
                                 if (p.depLevel == "subject") {
                                     if (p.dirStructure == "b")
-                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(dependencyname).arg(s.UID()).arg(studyNumNearest);
+                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(dependencyname).arg(s.GetUID()).arg(studyNumNearest);
                                     else
-                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(s.UID()).arg(studyNumNearest).arg(dependencyname);
+                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(s.GetUID()).arg(studyNumNearest).arg(dependencyname);
                                 }
                                 else {
                                     if (p.dirStructure == "b")
-                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(dependencyname).arg(s.UID()).arg(s.studyNum());
+                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(dependencyname).arg(s.GetUID()).arg(s.GetStudyNum());
                                     else
-                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(s.UID()).arg(s.studyNum()).arg(dependencyname);
+                                        deppath = QString("%1/%2/%3/%4").arg(pipelinedirectory).arg(s.GetUID()).arg(s.GetStudyNum()).arg(dependencyname);
                                 }
 
                                 setuplog << n->Log("Dependency path is [" + deppath + "]", __FUNCTION__);
@@ -642,7 +642,7 @@ int modulePipeline::Run() {
                         localJobFilePath = analysispath + "/" + jobFilename;
                         clusterJobFilePath = clusteranalysispath + "/" + jobFilename;
 
-                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, p.clusterQueue, analysisRowID, s.UID(), s.studyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.dateTime().toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
+                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, p.clusterQueue, analysisRowID, s.GetUID(), s.GetStudyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.datetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
                             n->Debug("Created (local path) " + p.clusterType + " job submit file [" + localJobFilePath + "]");
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupWriteJobScript, LogStatus::success, 0, "", "");
                         }
@@ -681,7 +681,7 @@ int modulePipeline::Run() {
                         totalSubmitted++;
                         jobsWereSubmitted = true;
 
-                        SetPipelineStatusMessage(pipelineid, QString("Submitted %1%2").arg(s.UID()).arg(s.studyNum()));
+                        SetPipelineStatusMessage(pipelineid, QString("Submitted %1%2").arg(s.GetUID()).arg(s.GetStudyNum()));
 
                         /* check if this module should be running now or not */
                         if (!n->ModuleCheckIfActive()) {
@@ -832,13 +832,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
     /* get information about the study */
     study s(studyid, n);
-    if (!s.valid()) {
-        n->Log("Study was not valid: [" + s.msg() + "]", __FUNCTION__);
+    if (!s.isValid()) {
+        n->Log("Study was not valid: [" + s.msg + "]", __FUNCTION__);
         return false;
     }
-    QString firstModality = s.modality();
-    int studynum = s.studyNum();
-    QString studytype = s.type();
+    QString firstModality = s.modality;
+    int studynum = s.GetStudyNum();
+    QString studytype = s.type;
 
     dlog << QString("Working on study [%1%2]\nstudyid [%3]\nModality [%4]\n").arg(uid).arg(studynum).arg(studyid).arg(firstModality);
     dlog << QString("********** Checking if all required data exists **********");
@@ -923,8 +923,8 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             validComparisonStr = true;
 
         /* if its a subject level, check the subject for the protocol(s) */
-        int subjectid = s.subjectRowID();
-        QString studydate = s.dateTime().toString("yyyy-MM-dd hh:mm:ss");
+        int subjectid = s.GetSubjectRowID();
+        QString studydate = s.datetime.toString("yyyy-MM-dd hh:mm:ss");
         if (level == "subject") {
             //dlog << "   Note: this data step is subject level [" + protocol + "], association type [" + assoctype + "]";
 
@@ -1162,9 +1162,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 if (imagetypes != "''")
                     sqlstringA += QString("and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
-                sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(s.dateTime().toString("yyyy-MM-dd hh:mm:ss"));
+                sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(s.datetime.toString("yyyy-MM-dd hh:mm:ss"));
                 q2.prepare(sqlstringA);
-                q2.bindValue(":subjectid", s.subjectRowID());
+                q2.bindValue(":subjectid", s.GetSubjectRowID());
 
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 int otherstudyid(0);
@@ -1200,7 +1200,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     sqlstring += " order by series_num asc";
 
                 q.prepare(sqlstring);
-                q.bindValue(":subjectid", s.subjectRowID());
+                q.bindValue(":subjectid", s.GetSubjectRowID());
                 q.bindValue(":otherstudyid", otherstudyid);
             }
             else if ((assoctype == "all") || (assoctype == "entiresubject")) {
@@ -1214,7 +1214,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2))").arg(comparison).arg(num);
 
                 q.prepare(sqlstring);
-                q.bindValue(":subjectid", s.subjectRowID());
+                q.bindValue(":subjectid", s.GetSubjectRowID());
             }
             else {
                 /* find the data from the same subject and modality that has the same study_type */
@@ -1231,7 +1231,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 sqlstring += " and `studies`.study_type = :studytype";
 
                 q.prepare(sqlstring);
-                q.bindValue(":subjectid", s.subjectRowID());
+                q.bindValue(":subjectid", s.GetSubjectRowID());
                 q.bindValue(":studytype", studytype);
             }
         }

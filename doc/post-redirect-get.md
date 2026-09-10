@@ -28,8 +28,8 @@ for the reference implementation.
 | `adminsites.php` | 1 | ✅ |
 | `adminstorage.php` | 1 | ✅ |
 | `adminusers.php` | 1 | ✅ |
-| `analysis.php` | 4 | ⬜ |
-| `analysisbuilder.php` | 2 | ⬜ |
+| `analysis.php` | 4 | ✅ |
+| `analysisbuilder.php` | 2 | ✅ |
 | `batchupload.php` | 1 | ⬜ |
 | `calendar.php` | 1 | ⬜ |
 | `calendar_appointments.php` | 3 | ⬜ |

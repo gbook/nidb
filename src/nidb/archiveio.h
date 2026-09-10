@@ -74,6 +74,7 @@ public:
     bool GetProject(int destProjectID, QString StudyDescription, int &projectRowID);
     bool CreateThumbnail(QString f, QString outdir);
     void SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringList altuidlist);
+    bool GetStoragePath(QString obj, int objectRowID, QString modality, QString &path);
 
     /* object helper functions */
     void SetUploadID(int upid);
