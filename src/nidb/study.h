@@ -82,17 +82,18 @@ private:
 
     nidb *n;
 
+    QString storageTier = "";
+    QString storageStatus = "";
     QString studypath = "";
-    bool studyPathExists = false;
     QString uid;
+    bool pathExists = false;
+    bool studyPathExists = false;
+    bool valid = false;
     int enrollmentRowID = -1;
     int projectRowID = -1;
-    int studyRowID = -1;
     int studyNum = -1;
+    int studyRowID = -1;
     int subjectRowID = -1;
-
-    bool pathExists = false;
-    bool valid = false;
 
 };
 

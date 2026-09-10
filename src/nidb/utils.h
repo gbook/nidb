@@ -152,6 +152,7 @@ QStringList FindAllFiles(QString dir, QString pattern, bool recursive=false);
 QStringList ReadTextFileIntoArray(QString filepath, bool ignoreEmptyLines=true);
 QString ReadTextFileIntoString(QString filepath);
 bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession, BIDSMapping mapping, int &numfilesrenamed, QString &msg);
+bool RenameBIDSSubjectSession(QString dir, QString bidsSubject, QString bidsSession, int &numfilesrenamed, QString &msg);
 bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg);
 bool DirectoryExists(QString dir);
 bool FileDirectoryExists(QString f);

@@ -1675,6 +1675,67 @@ bool BatchRenameBIDSFiles(QString dir, QString bidsSubject, QString bidsSession,
 
 
 /* ---------------------------------------------------------- */
+/* --------- RenameBIDSSubjectSession ------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Rename only the sub-/ses- labels of already BIDS-shaped filenames, leaving
+ *        the rest of the filename (entities/suffix) untouched. Used when no BIDS
+ *        mapping is available for a series, since the entities/suffix can't be
+ *        rebuilt from an unknown mapping.
+ * @param dir Directory containing files to rename.
+ * @param bidsSubject BIDS sub label to substitute in (eg "sub-01").
+ * @param bidsSession BIDS ses label to substitute in (eg "ses-1").
+ * @param numfilesrenamed Receives the number of files renamed.
+ * @param msg Receives messages generated while renaming.
+ * @return true if the directory was valid and processing completed.
+ */
+bool RenameBIDSSubjectSession(QString dir, QString bidsSubject, QString bidsSession, int &numfilesrenamed, QString &msg) {
+
+    QDir dd;
+    if (!dd.exists(dir)) {
+        msg = "directory [" + dir + "] does not exist";
+        return false;
+    }
+
+    numfilesrenamed = 0;
+    QStringList exts;
+    exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.bvec" << "*.bval";
+
+    static const QRegularExpression reSub("^sub-[^_.]+");
+    static const QRegularExpression reSes("_ses-[^_.]+");
+
+    foreach (QString ext, exts) {
+        QDirIterator it(dir, QStringList() << ext, QDir::Files);
+
+        QStringList files;
+        while (it.hasNext())
+            files.append(it.next());
+
+        foreach (QString fname, files) {
+            QFileInfo fi(fname);
+            QString newBase = fi.fileName();
+
+            newBase.replace(reSub, bidsSubject);
+            if (newBase.contains(reSes))
+                newBase.replace(reSes, "_" + bidsSession);
+
+            QString newName = fi.path() + "/" + newBase;
+            if (newName == fname)
+                continue;
+
+            msg += QString(fname + " --> " + newName + "\n");
+            if (QFile::rename(fname, newName))
+                numfilesrenamed++;
+            else
+                msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]");
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetPatientAge ---------------------------------- */
 /* ---------------------------------------------------------- */
 /**

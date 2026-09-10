@@ -30,11 +30,6 @@
 study::study(nidb *a)
 {
     n = a;
-    //searchCriteria = rowid;
-
-    //_studyid = id;
-
-    //LoadStudyInfo();
 }
 
 
@@ -54,57 +49,6 @@ study::study(int rowID, nidb *a)
 
     Load();
 }
-
-
-/* ---------------------------------------------------------- */
-/* --------- study ------------------------------------------ */
-/* ---------------------------------------------------------- */
-/*    find study by UIDStudyNum (S1234ABC1)                   */
-/* ---------------------------------------------------------- */
-// study::study(QString uidStudyNum, nidb *a) {
-//     n = a;
-//     searchCriteria = uidstudynum;
-
-//     _uid = uidStudyNum.left(8);
-//     _studynum = uidStudyNum.mid(8).toInt();
-
-//     LoadStudyInfo();
-// }
-
-/* ---------------------------------------------------------- */
-/* --------- study ------------------------------------------ */
-/* ---------------------------------------------------------- */
-// study::study(int enrollmentRowID, QString studyDateTime, QString modality, nidb *a) {
-//     n = a;
-//     searchCriteria = studydatetimemodality;
-
-//     studyDateTime = studyDateTime.replace("T", " ");
-//     if (studyDateTime.contains(".")) /* if it ends with a .millisecond */
-//         studyDateTime.chop(4); /* remove last 4 characters */
-
-//     _enrollmentid = enrollmentRowID;
-//     _studydatetime = QDateTime::fromString(studyDateTime, "yyyy-MM-dd hh:mm:ss");
-//     _modality = modality;
-
-//     //n->WriteLog("studyDateTime [" + studyDateTime + "]");
-//     //n->WriteLog("_studyDateTime.toLocalTime().toString() [" + _studydatetime.toLocalTime().toString("yyyy-MM-dd hh:mm:ss") + "]");
-//     //n->WriteLog("_studyDateTime.toString() [" + _studydatetime.toString("yyyy-MM-dd hh:mm:ss") + "]");
-//     //PrintStudyInfo();
-//     LoadStudyInfo();
-// }
-
-
-/* ---------------------------------------------------------- */
-/* --------- study ------------------------------------------ */
-/* ---------------------------------------------------------- */
-// study::study(int enrollmentRowID, QString studyUID, nidb *a) {
-//     n = a;
-//     _enrollmentid = enrollmentRowID;
-//     _studyuid = studyUID;
-//     searchMethod = StudyUid;
-
-//     LoadStudyInfo();
-// }
 
 
 /* ---------------------------------------------------------- */
@@ -162,13 +106,30 @@ bool study::Load() {
         equipment = q.value("study_site").toString().trimmed();
         height = q.value("study_height").toDouble();
         weight = q.value("study_weight").toDouble();
+        storageTier = q.value("storage_tier").toString().trimmed();
+        storageStatus = q.value("storage_status").toString().trimmed();
 
         /* check to see if anything isn't valid or is blank */
         if ((n->cfg["archivedir"] == "") || (n->cfg["archivedir"] == "/")) { msgs << "cfg->archivedir was invalid"; valid = false; }
         if (uid == "") { msgs << "uid was blank"; valid = false; }
         if (studyNum < 1) { msgs << "studynum is not valid"; valid = false; }
 
-        studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(uid).arg(studyNum);
+        /* get the full path on disk */
+        if (storageTier == "archivedir1") {
+            studypath = QString("%1/%2/%3").arg(n->cfg["archivedir1"]).arg(uid).arg(studyNum);
+        }
+        else if (storageTier == "archivedir2") {
+            studypath = QString("%1/%2/%3").arg(n->cfg["archivedir2"]).arg(uid).arg(studyNum);
+        }
+        else if (storageTier == "archivedir3") {
+            studypath = QString("%1/%2/%3").arg(n->cfg["archivedir3"]).arg(uid).arg(studyNum);
+        }
+        else if (storageTier == "archivedir4") {
+            studypath = QString("%1/%2/%3").arg(n->cfg["archivedir4"]).arg(uid).arg(studyNum);
+        }
+        else {
+            studypath = QString("%1/%2/%3").arg(n->cfg["archivedir"]).arg(uid).arg(studyNum);
+        }
 
         QDir d(studypath);
         if (d.exists()) {

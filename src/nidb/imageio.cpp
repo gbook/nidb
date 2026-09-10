@@ -406,36 +406,6 @@ QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
 
 
 /* ---------------------------------------------------------- */
-/* --------- IsBIDSFilename --------------------------------- */
-/* ---------------------------------------------------------- */
-/* Return true if a filename is already BIDS-formatted: it starts with a
-   'sub-<label>' entity and ends with a non-entity suffix (eg
-   sub-01_ses-1_task-rest_bold.nii.gz). Used to decide whether an already-NIfTI
-   file needs BIDS renaming on export, or should be left as-is. */
-static bool IsBIDSFilename(const QString &filename) {
-    if (!filename.startsWith("sub-"))
-        return false;
-
-    /* strip the (possibly multi-part) extension */
-    QString stem = filename;
-    static const QStringList exts = { ".nii.gz", ".nii", ".json", ".bval", ".bvec", ".hdr", ".img" };
-    foreach (const QString &e, exts) {
-        if (stem.endsWith(e, Qt::CaseInsensitive)) { stem.chop(e.size()); break; }
-    }
-
-    const QStringList parts = stem.split('_', Qt::SkipEmptyParts);
-    if (parts.size() < 2)                 /* need at least sub-<label> plus a suffix */
-        return false;
-    if (!parts.first().startsWith("sub-"))
-        return false;
-    if (parts.last().contains('-'))       /* the trailing part must be a suffix, not an entity */
-        return false;
-
-    return true;
-}
-
-
-/* ---------------------------------------------------------- */
 /* --------- ConvertDicom ----------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -485,7 +455,8 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
        The series is already stored as NIfTI (eg imported from BIDS). dcm2niix reads
        DICOM only, so running it here would produce nothing. Instead, copy the existing
        images and sidecars into the output directory, and - for a BIDS export -
-       BIDS-rename them unless they are already BIDS-formatted. This branch runs before
+       always BIDS-rename them to this export's sub-/ses- scheme, so the output tree
+       is never a mix of NiDB and originally-imported labels. This branch runs before
        QDir::setCurrent() below, so the working directory is left unchanged. */
     if (datatype == "nifti") {
         QString m2;
@@ -502,7 +473,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         QString copycmd = QString("rsync --stats -r --include='*.nii' --include='*.nii.gz' --include='*.json' --include='*.bval' --include='*.bvec' --exclude='*' %1/ %2/").arg(indir).arg(outdir);
         msgs << SystemCommand(copycmd, true, true);
 
-        /* for BIDS, rename to BIDS naming unless every image is already BIDS-formatted */
+        /* for BIDS, always rename to this export's sub-/ses- scheme */
         if (filetype == "bids") {
             const QStringList primaryFiles = FindAllFiles(outdir, "*.nii*");
 
@@ -530,19 +501,20 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
                 }
             }
 
-            bool alreadyBids = !primaryFiles.isEmpty();
-            foreach (const QString &pf, primaryFiles) {
-                if (!IsBIDSFilename(QFileInfo(pf).fileName())) {
-                    alreadyBids = false;
-                    break;
-                }
-            }
-            if (alreadyBids)
-                msgs << "NIfTI files are already BIDS-formatted; leaving filenames unchanged";
-            else {
-                QString rm;
+            bool hasMapping = (bidsMapping.bidsEntity != "") && (bidsMapping.bidsEntity != "unknown") &&
+                              (bidsMapping.bidsSuffix != "") && (bidsMapping.bidsSuffix != "unknown");
+
+            QString rm;
+            if (hasMapping) {
                 BatchRenameBIDSFiles(outdir, bidsSubject, bidsSession, bidsMapping, numfilesrenamed, rm);
                 msgs << "Renamed NIfTI files to BIDS format [" + rm + "]";
+            }
+            else {
+                /* no BIDS mapping for this series - only fix up the sub-/ses- labels
+                   to match this export, and leave the rest of the (already
+                   BIDS-shaped) filename as imported */
+                RenameBIDSSubjectSession(outdir, bidsSubject, bidsSession, numfilesrenamed, rm);
+                msgs << "No BIDS mapping available; renamed only sub-/ses- labels [" + rm + "]";
             }
         }
 
