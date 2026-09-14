@@ -1962,7 +1962,7 @@
 										</div>
 										<br>
 										<div class="ui radio checkbox">
-											<input type="radio" name="deplevel" id="deplevel" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
+											<input type="radio" name="deplevel" id="deplevel2" value="subject" <?=$disabled?> <? if ($deplevel == "subject") { echo "checked"; } ?>>
 											<label>subject (Must be used with group option)<i class="question circle icon" title="Use dependencies from same subject (other studies). ** This option should be used with groups **"></i></label>
 										</div>
 									</td>
@@ -2072,7 +2072,17 @@
 				<h3 class="ui header">Data</h3>
 			</div>
 			<div class="ui attached fitted segment">
-			
+				<div class="ui right close rail" style="width: 350px">
+					<div class="ui blue segment" id="exportTreePanel">
+						<h3 class="ui header">
+							Sample data export
+							<div class="sub header">Sample directories/files for each analysis (relative to the analysis root). Uses placeholder subject <tt>S1234ABC</tt>, study <tt>1</tt>, series <tt>3</tt> and <tt>7</tt></div>
+						</h3>
+						<pre id="exportTree"></pre>
+						<div id="exportTreeWarnings"></div>
+					</div>
+				</div>
+
 				<table>
 					<tr>
 						<td>
@@ -2087,70 +2097,28 @@
 						</td>
 						<td>
 							<script>
+								/* estimate how many studies the pipeline would analyze, using the current (unsaved) form values */
 								function TestDataSearch() {
-									var xhttp = new XMLHttpRequest();
+									$('#searchwaiting').html("Searching... <img src='images/SpinningSquirrel.gif'>");
+									$('#testsearchresult').html("");
 
-									document.getElementById("searchwaiting").innerHTML = "Searching... <img src='images/SpinningSquirrel.gif'>";
-									
-									/* setup the callback function to get the response */
-									xhttp.onreadystatechange = function() {
-										if (this.readyState == 4 && this.status == 200) {
-											document.getElementById("testsearchresult").innerHTML = this.responseText;
-											document.getElementById("searchwaiting").innerHTML = "Done searching";
-										}
-									};
-									
-									/* create the XML http request */
-									var pipelineid = <?=$id?>;
-									var dependency = $('#dependency').val().join();
-									var deplevel = $('#deplevel').val();
-									var groupid = $('#groupid').val().join();
-									var projectid = $('#projectid').val().join();
-
-									var dd_isprimary = $('#dd_isprimary').val();
-									
-									var dd_enabled = $("input[name^='dd_enabled']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-									
-									var dd_optional = $("input[name^='dd_optional']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									var dd_order = $("input[name^='dd_order']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-									
-									var dd_protocol = $("input[name^='dd_protocol']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-									
-									var dd_modality = $("select[name^='dd_modality']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									var dd_datalevel = $("select[name^='dd_datalevel']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									var dd_studyassoc = $("select[name^='dd_studyassoc']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									var dd_imagetype = $("input[name^='dd_imagetype']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join("|");
-
-									var dd_seriescriteria = $("input[name^='dd_seriescriteria']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									var dd_numboldreps = $("input[name^='dd_numboldreps']").map(function (idx, ele) {
-									   return $(ele).val();
-									}).get().join();
-
-									xhttp.open("GET", "ajaxapi.php?action=pipelinetestsearch&pipelineid=" + pipelineid + "&dependency=" + dependency + "&deplevel=" + deplevel + "&groupid=" + groupid + "&projectid=" + projectid + "&dd_isprimary=" + dd_isprimary + "&dd_enabled=" + dd_enabled + "&dd_optional=" + dd_optional + "&dd_order=" + dd_order + "&dd_protocol=" + dd_protocol + "&dd_modality=" + dd_modality + "&dd_datalevel=" + dd_datalevel + "&dd_studyassoc=" + dd_studyassoc + "&dd_imagetype=" + dd_imagetype + "&dd_seriescriteria=" + dd_seriescriteria + "&dd_numboldreps=" + dd_numboldreps, true);
-									xhttp.send();
+									var form = $('#stepsform');
+									$.post("ajaxapi.php", {
+										action: "pipelinetestsearch",
+										pipelineid: <?=(int)$id?>,
+										dependency: ($('#dependency').val() || []).join(),
+										deplevel: form.find("input[name='deplevel']:checked").val() || "",
+										groupid: ($('#groupid').val() || []).join(),
+										projectid: ($('#projectid').val() || []).join(),
+										datasteps: JSON.stringify(ReadDataSteps())
+									})
+									.done(function(html) {
+										$('#testsearchresult').html(html);
+										$('#searchwaiting').html("Done searching");
+									})
+									.fail(function(xhr, status, error) {
+										$('#searchwaiting').text("Search failed: " + (error || status));
+									});
 								}
 							</script>
 							<div class="ui accordion">
@@ -2322,6 +2290,7 @@
 								$('#studycriteria<?=$neworder?>').hide();
 								$('#numboldreps<?=$neworder?>').hide();
 								$('#behdirname<?=$neworder?>').hide();
+								$('#preserveseries<?=$neworder?>').hide();
 								
 								ShowHideOptions<?=$neworder?>();
 							});
@@ -2346,6 +2315,14 @@
 									$('#numboldreps<?=$neworder?>').hide();
 								}
 								
+								/* preserve series numbers, only used with series directories */
+								if (document.getElementById('dd_useseriesdirs<?=$neworder?>').checked) {
+									$('#preserveseries<?=$neworder?>').show();
+								}
+								else {
+									$('#preserveseries<?=$neworder?>').hide();
+								}
+
 								/* beh directory */
 								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
 								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
@@ -2439,11 +2416,11 @@
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1" <? if ($dd_useseries) {echo "checked";} ?>>
+											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" id="dd_useseriesdirs<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="1" <? if ($dd_useseries) {echo "checked";} ?>>
 											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
-									<div class="field">
+									<div class="field" id="preserveseries<?=$neworder?>" style="margin-left: 25px">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1" <? if ($dd_preserveseries) {echo "checked";} ?>>
 											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
@@ -2547,6 +2524,7 @@
 								$('#studycriteria<?=$neworder?>').hide();
 								$('#numboldreps<?=$neworder?>').hide();
 								$('#behdirname<?=$neworder?>').hide();
+								$('#preserveseries<?=$neworder?>').hide();
 							});
 							
 							function ShowHideOptions<?=$neworder?>() {
@@ -2569,6 +2547,14 @@
 									$('#numboldreps<?=$neworder?>').hide();
 								}
 								
+								/* preserve series numbers, only used with series directories */
+								if (document.getElementById('dd_useseriesdirs<?=$neworder?>').checked) {
+									$('#preserveseries<?=$neworder?>').show();
+								}
+								else {
+									$('#preserveseries<?=$neworder?>').hide();
+								}
+
 								/* beh directory */
 								var element3 = document.getElementById('dd_behformat<?=$neworder?>');
 								if (element3.value == "behrootdir" || element3.value == "behseriesdir") {
@@ -2662,11 +2648,11 @@
 									</div>
 									<div class="field">
 										<div class="ui checkbox">
-											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" value="1">
+											<input type="checkbox" name="dd_useseriesdirs[<?=$neworder?>]" id="dd_useseriesdirs<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="1">
 											<label>Use series directories <i class="grey question outline circle icon" title="<b>Tip:</b> If you plan to download multiple series with the same name, you will want to use series directories. This option will place each series into its own directory (data/task/1, data/task/2, etc)"></i></label>
 										</div>
 									</div>
-									<div class="field">
+									<div class="field" id="preserveseries<?=$neworder?>" style="margin-left: 25px">
 										<div class="ui checkbox">
 											<input type="checkbox" name="dd_preserveseries[<?=$neworder?>]" value="1">
 											<label>Preserve series numbers <i class="grey question outline circle icon" title="If data is placed in a series directory, check this box to preserve the original series number. Otherwise the series number directories will be sequential starting at 1, regardless of the orignal series number"></i></label>
@@ -2707,6 +2693,342 @@
 					<? $neworder++; ?>
 					<? } ?>
 				</table>
+
+				<style>
+					#exportTreePanel { position: sticky; top: 10px; max-height: 95vh; overflow: auto; }
+					#exportTree { font-size: 9pt; line-height: 1.35; margin: 0; white-space: pre; overflow-x: auto; }
+					#exportTree .treedisabled { color: #bbb; }
+					#exportTree .treedir { color: #2360a5; font-weight: bold; }
+					#exportTree .treedir.treedisabled { color: #bbb; font-weight: normal; }
+					#exportTree .treenote { color: #999; font-style: italic; }
+					#exportTree .treeline { display: inline-block; min-width: 100%; }
+					#exportTree .treeline.treehighlight { background-color: #e6e0fa; }
+					#stepsform tr.stephighlight > td { border-top-color: #7e57c2 !important; }
+					/* inset shadows for the side borders, so the table layout doesn't shift */
+					#stepsform tr.stephighlight > td:first-child, #stepsform tr.stepoptionhighlight > td:first-child { box-shadow: inset 2px 0 0 #7e57c2; }
+					#stepsform tr.stephighlight > td:last-child, #stepsform tr.stepoptionhighlight > td:last-child { box-shadow: inset -2px 0 0 #7e57c2; }
+					#stepsform tr.stepoptionhighlight > td:only-child { box-shadow: inset 2px 0 0 #7e57c2, inset -2px 0 0 #7e57c2; }
+				</style>
+				<script>
+					/* Simulates the directories/files that modulePipeline::GetData() (C++) creates for one analysis.
+					   The path logic mirrors GetData(), GetBehPath(), imageIO::ConvertDicom(), BatchRenameFiles()
+					   and archiveIO::WriteBIDS(), including their quirks, so keep them in sync */
+					var simUID = "S1234ABC";
+					var simStudyNum = 1;
+					var simDicomModalities = ["MR", "CT", "PT", "NM", "US", "XA", "CR", "DX", "MG", "RF", "OT"];
+
+					/* read all data steps from the form. Also used by TestDataSearch() */
+					function ReadDataSteps() {
+						var form = $('#stepsform');
+						var steps = [];
+						form.find("input[name^='dd_order[']").each(function() {
+							var n = $(this).attr('name').match(/\[(\d+)\]/)[1];
+							var val = function(name) { var e = form.find("[name='" + name + "[" + n + "]']"); return e.length ? $.trim(e.val() || "") : ""; };
+							var chk = function(name) { return form.find("[name='" + name + "[" + n + "]']").is(':checked'); };
+							var protocol = val('dd_protocol');
+							if (protocol == "")
+								return;
+							steps.push({
+								num: n,
+								protocol: protocol,
+								enabled: chk('dd_enabled'),
+								optional: chk('dd_optional'),
+								primary: (form.find("input[name='dd_isprimary']:checked").val() == n),
+								modality: val('dd_modality'),
+								datalevel: val('dd_datalevel'),
+								studyassoc: val('dd_studyassoc'),
+								imagetype: val('dd_imagetype'),
+								numboldreps: val('dd_numboldreps'),
+								seriescriteria: val('dd_seriescriteria'),
+								location: val('dd_location'),
+								dataformat: val('dd_dataformat'),
+								gzip: chk('dd_gzip'),
+								useseries: chk('dd_useseriesdirs'),
+								preserveseries: chk('dd_preserveseries'),
+								usephasedir: chk('dd_usephasedir'),
+								behonly: chk('dd_behonly'),
+								behformat: val('dd_behformat'),
+								behdir: val('dd_behdir')
+							});
+						});
+						return steps;
+					}
+
+					/* placeholder series numbers matching the series criteria */
+					function SimSeriesNums(criteria) {
+						if ((criteria == "first") || (criteria == "largestsize") || (criteria == "smallestsize"))
+							return [3];
+						if (criteria == "last")
+							return [7];
+						return [3, 7];
+					}
+
+					/* join path parts, dropping empty parts (like MakePath does with '//') */
+					function SimJoin() {
+						var parts = [];
+						for (var i = 0; i < arguments.length; i++)
+							String(arguments[i]).split('/').forEach(function(p) { if (p != "") parts.push(p); });
+						return parts.join('/');
+					}
+
+					/* same logic as modulePipeline::GetBehPath() */
+					function SimBehPath(behformat, location, behdir, seriesnum) {
+						if (behformat == "behroot") return SimJoin(location);
+						if (behformat == "behrootdir") return SimJoin(location, behdir);
+						if (behformat == "behseries") return SimJoin(location, seriesnum);
+						if (behformat == "behseriesdir") return SimJoin(location, seriesnum, behdir);
+						return null;
+					}
+
+					/* build the flat list of {path, dir, note, enabled, step, series} entries */
+					function BuildExportPaths(steps, outputbids, bidsoutputdir) {
+						var entries = [];
+						var warnings = [];
+						var add = function(path, dir, note, step, series, beh) {
+							entries.push({ path: path, dir: dir, note: note || "", enabled: step.enabled, step: step.num, series: series, beh: !!beh });
+						};
+
+						steps.forEach(function(step) {
+							if (step.modality == "")
+								warnings.push("Step " + step.num + " has no modality and will be skipped");
+						});
+
+						if (outputbids) {
+							/* archiveIO::WriteBIDS() - per-step output options are ignored */
+							var root = SimJoin(bidsoutputdir);
+							var sub = "sub-" + simUID;
+							var ses = "ses-" + simStudyNum;
+							var any = false;
+							steps.forEach(function(step) {
+								if (step.modality == "")
+									return;
+								if (step.enabled) any = true;
+								SimSeriesNums(step.seriescriteria).forEach(function(s) {
+									var dir = SimJoin(root, sub, ses, "{entity}");
+									var label = "{" + step.protocol.replace(/[^a-zA-Z0-9]/g, "") + " suffix}";
+									add(dir, true, "entity/suffix/run come from the project BIDS mapping", step, s);
+									add(SimJoin(dir, sub + "_" + ses + "_" + label + ".nii.gz"), false, "series " + s, step, s);
+									add(SimJoin(dir, sub + "_" + ses + "_" + label + ".json"), false, "", step, s);
+									add(SimJoin(root, "sourcedata", "beh", simUID, simStudyNum, s, "*"), false, "behavioral files, if present", step, s, true);
+								});
+							});
+							if (any) {
+								var enabledStep = { enabled: true, num: 0 };
+								add(SimJoin(root, "dataset_description.json"), false, "", enabledStep, 0);
+								add(SimJoin(root, "participants.tsv"), false, "", enabledStep, 0);
+								add(SimJoin(root, "README"), false, "", enabledStep, 0);
+							}
+							else
+								warnings.push("No enabled steps. BIDS export will fail (no series found)");
+							return { entries: entries, warnings: warnings };
+						}
+
+						steps.forEach(function(step) {
+							if (step.modality == "")
+								return;
+
+							var datatype = (simDicomModalities.indexOf(step.modality.toUpperCase()) >= 0) ? "dicom" : step.modality.toLowerCase();
+							var newseriesnum = 1;
+
+							SimSeriesNums(step.seriescriteria).forEach(function(seriesnum) {
+								var imgdir = SimJoin(step.location);
+								var behoutdir;
+
+								if (step.useseries) {
+									if (step.preserveseries) {
+										imgdir = SimJoin(imgdir, seriesnum);
+										behoutdir = SimBehPath(step.behformat, step.location, step.behdir, seriesnum);
+									}
+									else {
+										imgdir = SimJoin(imgdir, newseriesnum);
+										behoutdir = SimBehPath(step.behformat, step.location, step.behdir, newseriesnum);
+										newseriesnum++;
+									}
+								}
+								else
+									behoutdir = SimBehPath(step.behformat, step.location, step.behdir, seriesnum);
+
+								if (step.usephasedir)
+									imgdir = SimJoin(imgdir, "AP");
+
+								if (imgdir != "")
+									add(imgdir, true, step.usephasedir ? "phase dir from data: AP|PA|RL|LR|COL|ROW|unknownPE" : "", step, seriesnum);
+
+								if (!step.behonly) {
+									var base = simUID + "_" + simStudyNum + "_" + seriesnum + "_";
+									var gz = step.gzip ? ".gz" : "";
+									if ((step.dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
+										if (datatype == "dicom")
+											add(SimJoin(imgdir, "*.dcm"), false, "archived DICOM files, series " + seriesnum, step, seriesnum);
+										else
+											add(SimJoin(imgdir, "*"), false, "archived " + datatype + " files, series " + seriesnum, step, seriesnum);
+									}
+									else if (step.dataformat == "nifti4d") {
+										add(SimJoin(imgdir, base + "00001.nii" + gz), false, "", step, seriesnum);
+									}
+									else if (step.dataformat == "nifti3d") {
+										add(SimJoin(imgdir, base + "00001.nii" + gz), false, "", step, seriesnum);
+										add(SimJoin(imgdir, base + "00002.nii" + gz), false, "", step, seriesnum);
+										add(SimJoin(imgdir, base + "NNNNN.nii" + gz), false, "one per volume", step, seriesnum);
+									}
+									else if (step.dataformat == "bids") {
+										/* per-step BIDS: ConvertDicom() gets an empty subject/session/mapping */
+										add(SimJoin(imgdir, "__.nii.gz"), false, "", step, seriesnum);
+										add(SimJoin(imgdir, "__.json"), false, "", step, seriesnum);
+									}
+									else if (imgdir != "") {
+										/* native/analyze3d/analyze4d: ConvertDicom() rejects the format, nothing is copied */
+										add(imgdir, true, "empty: " + step.dataformat + " conversion not supported", step, seriesnum);
+									}
+								}
+
+								if ((step.behformat != "behnone") && (behoutdir !== null)) {
+									if (behoutdir != "")
+										add(behoutdir, true, "", step, seriesnum, true);
+									add(SimJoin(behoutdir, "*"), false, "behavioral files, if present", step, seriesnum, true);
+								}
+							});
+						});
+
+						/* warn when image files from different series land in the same directory */
+						var dirsources = {};
+						entries.forEach(function(e) {
+							if (e.dir || !e.enabled || e.beh) return;
+							var d = e.path.indexOf('/') >= 0 ? e.path.substring(0, e.path.lastIndexOf('/')) : "(analysis root)";
+							var key = "step " + e.step + " series " + e.series;
+							dirsources[d] = dirsources[d] || [];
+							if (dirsources[d].indexOf(key) < 0) dirsources[d].push(key);
+						});
+						for (var d in dirsources) {
+							if (dirsources[d].length > 1)
+								warnings.push("<tt>" + d + "</tt> receives files from multiple series (" + dirsources[d].join(", ") + ")");
+						}
+
+						return { entries: entries, warnings: warnings };
+					}
+
+					function SimEscape(s) {
+						return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+					}
+
+					/* natural sort, like SortQStringListNaturally() */
+					function SimCompare(a, b) {
+						return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
+					}
+
+					/* render the entries like the Linux 'tree' command */
+					function RenderTree(entries) {
+						var root = { children: {} };
+						var numdirs = 0, numfiles = 0;
+
+						entries.forEach(function(e) {
+							var parts = e.path.split('/');
+							var node = root;
+							parts.forEach(function(p, i) {
+								var last = (i == parts.length - 1);
+								if (!node.children[p]) {
+									node.children[p] = { children: {}, dir: !last || e.dir, enabled: false, notes: [], steps: {} };
+									if (node.children[p].dir) numdirs++; else numfiles++;
+								}
+								node = node.children[p];
+								node.steps[e.step] = true;
+								if (e.enabled) node.enabled = true;
+								if (!last && !node.dir) { node.dir = true; numfiles--; numdirs++; }
+							});
+							if ((e.note != "") && (node.notes.indexOf(e.note) < 0))
+								node.notes.push(e.note);
+						});
+
+						var lines = ['<span class="treedir">.</span>'];
+						var walk = function(node, prefix) {
+							var names = Object.keys(node.children).sort(SimCompare);
+							names.forEach(function(name, i) {
+								var child = node.children[name];
+								var last = (i == names.length - 1);
+								var cls = (child.dir ? "treedir" : "") + (child.enabled ? "" : " treedisabled");
+								var line = SimEscape(prefix + (last ? "└── " : "├── ")) + '<span class="' + cls + '">' + SimEscape(name + (child.dir ? "/" : "")) + '</span>';
+								if (!child.enabled)
+									line += ' <span class="treenote">(disabled)</span>';
+								if (child.notes.length > 0)
+									line += ' <span class="treenote"># ' + SimEscape(child.notes.join("; ")) + '</span>';
+								/* tag the line with the data step(s) that create it, for highlighting */
+								lines.push('<span class="treeline" data-steps=" ' + Object.keys(child.steps).join(" ") + ' ">' + line + '</span>');
+								walk(child, prefix + (last ? "    " : "│   "));
+							});
+						};
+						walk(root, "");
+
+						if (entries.length == 0)
+							lines.push('<span class="treenote">(no data will be exported)</span>');
+						lines.push("");
+						lines.push(numdirs + " director" + (numdirs == 1 ? "y" : "ies") + ", " + numfiles + " file" + (numfiles == 1 ? "" : "s"));
+						return lines.join("\n");
+					}
+
+					/* highlight the tree lines for the data step being edited, or else the hovered step */
+					var hoverStep = null;
+					var focusStep = null;
+					function HighlightExportTree() {
+						var step = (focusStep !== null) ? focusStep : hoverStep;
+						$('#exportTree .treeline').removeClass('treehighlight');
+						$('#stepsform tr.stephighlight').removeClass('stephighlight');
+						$('#stepsform tr.stepoptionhighlight').removeClass('stepoptionhighlight');
+						if (step !== null) {
+							$('#exportTree .treeline[data-steps*=" ' + step + ' "]').addClass('treehighlight');
+							$('#stepsform tr.row' + step).addClass('stephighlight');
+							$('#stepsform tr.optionRow' + step).addClass('stepoptionhighlight');
+						}
+					}
+
+					/* data step number of a table row (rowN or optionRowN), or null */
+					function StepOfRow(tr) {
+						var m = ($(tr).attr('class') || "").match(/(?:^|\s)(?:row|optionRow)(\d+)(?:\s|$)/);
+						return m ? m[1] : null;
+					}
+
+					function UpdateExportTree() {
+						var outputbids = $("#stepsform input[name='outputbids']").is(':checked');
+						var bidsoutputdir = $.trim($("#stepsform input[name='bidsoutputdir']").val() || "");
+						var result = BuildExportPaths(ReadDataSteps(), outputbids, bidsoutputdir);
+						$('#exportTree').html(RenderTree(result.entries));
+						HighlightExportTree();
+						if (result.warnings.length > 0)
+							$('#exportTreeWarnings').html('<div class="ui small warning message"><ul class="list"><li>' + result.warnings.join('</li><li>') + '</li></ul></div>');
+						else
+							$('#exportTreeWarnings').html('');
+					}
+
+					$(document).ready(function() {
+						var timer = null;
+						/* dropdowns update their hidden inputs asynchronously, so debounce and re-read the whole form */
+						$('#stepsform').on('input change click keyup', function() {
+							clearTimeout(timer);
+							timer = setTimeout(UpdateExportTree, 150);
+						});
+						UpdateExportTree();
+
+						$('#stepsform').on('mouseenter', 'tr', function() {
+							var step = StepOfRow(this);
+							if (step !== null) { hoverStep = step; HighlightExportTree(); }
+						});
+						$('#stepsform').on('mouseleave', 'tr', function() {
+							if (StepOfRow(this) !== null) { hoverStep = null; HighlightExportTree(); }
+						});
+						$('#stepsform').on('focusin', 'tr', function(e) {
+							var step = StepOfRow(this);
+							if (step !== null) { focusStep = step; HighlightExportTree(); e.stopPropagation(); }
+						});
+						$('#stepsform').on('focusout', function() {
+							/* wait for focus to settle on the next element before clearing */
+							setTimeout(function() {
+								if (!$(document.activeElement).closest('tr').filter(function() { return StepOfRow(this) !== null; }).length) {
+									focusStep = null;
+									HighlightExportTree();
+								}
+							}, 0);
+						});
+					});
+				</script>
 				<?
 				//} /* end of the check to display the data specs */
 				?>

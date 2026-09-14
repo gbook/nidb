@@ -96,17 +96,7 @@
 	$s['deplevel'] = GetVariable("deplevel");
 	$s['groupid'] = GetVariable("groupid");
 	$s['projectid'] = GetVariable("projectid");
-	$s['dd_isprimary'] = GetVariable("dd_isprimary");
-	$s['dd_enabled'] = GetVariable("dd_enabled");
-	$s['dd_optional'] = GetVariable("dd_optional");
-	$s['dd_order'] = GetVariable("dd_order");
-	$s['dd_protocol'] = GetVariable("dd_protocol");
-	$s['dd_modality'] = GetVariable("dd_modality");
-	$s['dd_datalevel'] = GetVariable("dd_datalevel");
-	$s['dd_studyassoc'] = GetVariable("dd_studyassoc");
-	$s['dd_imagetype'] = GetVariable("dd_imagetype");
-	$s['dd_seriescriteria'] = GetVariable("dd_seriescriteria");
-	$s['dd_numboldreps'] = GetVariable("dd_numboldreps");
+	$s['datasteps'] = GetVariable("datasteps");
 
 	/* determine action */
 	switch($action) {
@@ -646,400 +636,413 @@
 	/* -------------------------------------------- */
 	/* ------- PipelineTestSearch ----------------- */
 	/* -------------------------------------------- */
+	/* Estimates which studies a (level 1) pipeline would analyze, using the unsaved values from the
+	   pipeline form. Mirrors modulePipeline::GetStudyToDoList() (steps A1-A4, B1, B2) and the
+	   data-check phase of modulePipeline::GetData() in the C++ backend, including its quirks, so
+	   keep them in sync. Data steps are posted as JSON in 'datasteps' */
 	function PipelineTestSearch($s) {
-		
+
 		set_time_limit(30);
-		
-		/* setup the variables */
-		$dd = array(); /* data definition */
-		$pipelineid = (int)trim($s['pipelineid']);
-		$dependency = trim($s['dependency']);
-		$deplevel = trim($s['deplevel']); // 'study' or 'subject'
-		/* sanitize the id lists to comma-separated positive ints so they can be safely inlined into `in (...)` clauses */
-		$groupids = implode(',', array_filter(array_map('intval', explode(',', trim($s['groupid']))), function($v) { return $v > 0; }));
-		$projectids = implode(',', array_filter(array_map('intval', explode(',', trim($s['projectid']))), function($v) { return $v > 0; }));
-		$dd['isprimary'] = trim($s['dd_isprimary']); // 'undefined' if not specified
-		if ($dd['isprimary'] == 'undefined')
-			$primaryindex = 0;
-		else
-			$primaryindex = $dd['isprimary'] - 1;
-		$dd['enabled'] = explode(",", trim($s['dd_enabled']));
-		$dd['optional'] = explode(",", trim($s['dd_optional']));
-		$dd['order'] = explode(",", trim($s['dd_order']));
-		$dd['protocol'] = explode(",", trim($s['dd_protocol']));
-		$dd['modality'] = explode(",", trim($s['dd_modality']));
-		$dd['datalevel'] = explode(",", trim($s['dd_datalevel']));
-		$dd['studyassoc'] = explode(",", trim($s['dd_studyassoc']));
-		$dd['imagetype'] = explode("|", trim($s['dd_imagetype']));
-		$dd['seriescriteria'] = explode(",", trim($s['dd_seriescriteria']));
-		$dd['numboldreps'] = explode(",", trim($s['dd_numboldreps']));
-		
-		/* reformat the datadef to be organized by step instead of by criteria */
-		foreach ($dd['protocol'] as $key => $protocol) {
-			$datadef[$key]['enabled'] = $dd['enabled'][$key];
-			$datadef[$key]['optional'] = $dd['optional'][$key];
-			$datadef[$key]['order'] = $dd['order'][$key];
-			$datadef[$key]['protocol'] = $dd['protocol'][$key];
-			$datadef[$key]['modality'] = $dd['modality'][$key];
-			$datadef[$key]['datalevel'] = $dd['datalevel'][$key];
-			$datadef[$key]['studyassoc'] = $dd['studyassoc'][$key];
-			$datadef[$key]['imagetype'] = $dd['imagetype'][$key];
-			$datadef[$key]['seriescriteria'] = $dd['seriescriteria'][$key];
-			$datadef[$key]['numboldreps'] = $dd['numboldreps'][$key];
+		$starttime = microtime(true);
+
+		$pipelineid = (int)trim($s['pipelineid'] ?? '');
+		$deplevel = trim($s['deplevel'] ?? '');
+		$depids = TestSearchIntList($s['dependency'] ?? '');
+		$groupids = TestSearchIntList($s['groupid'] ?? '');
+		$projectids = TestSearchIntList($s['projectid'] ?? '');
+		$steps = json_decode($s['datasteps'] ?? '', true);
+		if (!is_array($steps))
+			$steps = array();
+
+		/* the backend only uses the first dependency */
+		$pipelinedep = (count($depids) > 0) ? $depids[0] : -1;
+
+		/* primary modality is the first step's modality, unless a step is marked primary */
+		$modality = "";
+		if (count($steps) > 0)
+			$modality = trim($steps[0]['modality'] ?? '');
+		foreach ($steps as $step) {
+			if (!empty($step['primary'])) {
+				$modality = trim($step['modality'] ?? '');
+				break;
+			}
 		}
 
-		/* get names of projects, groups, and parent pipelines */
-		if ($dependency == "") {
-			$depname = "";
-		}
-		else {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select pipeline_name from pipelines where pipeline_id = ?");
-			mysqli_stmt_bind_param($stmt, 'i', $dependency);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			mysqli_stmt_close($stmt);
-			$depname = $row['pipeline_name'];
-		}
-		
-		if ($groupids == "") {
-			$groupname = "";
-		}
-		else {
-			$sqlstring = "select group_name from groups where group_id in ($groupids)";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$groupnames[] = $row['group_name'];
-			}
-			$groupname = implode2(",", $groupnames);
-		}
-		
-		if ($projectids == "") {
-			$projectname = "";
-		}
-		else {
-			$sqlstring = "select project_name from projects where project_id in ($projectids)";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$projectnames[] = $row['project_name'];
-			}
-			$projectname = implode2(",", $projectids);
-		}
-		
-		$primarymodality = $dd['modality'][$primaryindex];
-		
-		/* start printing the search results */
 		?>
 		<style>
 			.underlined { text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #888; }
 		</style>
-		
-		<table class="ui table">
+		<table class="ui very compact table">
 			<thead>
 				<tr>
 					<th>Criteria<br><span class="tiny">Mouseover for description</span></th>
 					<th>Value</th>
 					<th>Matches</th>
-					<th>Cumulative</th>
+					<th>Remaining</th>
 				</tr>
 			</thead>
 			<tbody>
-			<?
-			$studyids_existing = array();
-			$studyids = array();
-			$studyids_completedparent = array();
-			$studyids_groups = array();
-			$studyids_valid = array();
-			$studyids_remaining = array();
-			$studyids_step = array();
-			
-			/* ---------- LINE 1 - existing (already processed) studies for this pipeline ---------- */
-			$sqlstring = "select study_id, analysis_status from analysis where pipeline_id = $pipelineid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$numExisting = 0;
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyids['existing'][$row['analysis_status']][] = $row['study_id'];
-				$studyids_existing[] = $row['study_id'];
-			}
-			$studyids_existing = array_unique($studyids_existing);
-			//PrintVariable($studyids_existing);
-			PrintSearchRow("Existing (processed) studies", "Total number of studies that have already been processed for this pipeline... Not necessarily successful, but something has been done with them", "Total", count($studyids_existing), 0);
-			/* individual status for existing studies */
-			foreach ($studyids['existing'] as $status => $vals) {
-				$studyids['existing'][$status] = array_unique($studyids['existing'][$status]);
-				PrintSearchRow("$status", "Number of studies with a status of <b>$status</b>", "", count($studyids['existing'][$status],0), 0, false, true, true);
-			}
-			
-			/* ---------- LINE 2 - completed dependencies ---------- */
-			/* total completed studies from parent pipeline */
-			if ($dependency == "") {
-				PrintSearchRow("Completed dependent studies", "The total number of studies from the parent pipeline that are <b>complete</b> and are <b>not marked as bad</b>.", "No parent pipeline", "-", "-", false);
+		<?
+
+		if ($modality == "") {
+			TestSearchRow("Primary modality", "The primary data step (or the first data step) must have a modality", "Blank", "-", "-", "error");
+			TestSearchEnd($starttime);
+			return;
+		}
+
+		/* ---------- existing analyses (informational) ---------- */
+		$sqlstring = "select analysis_status, count(distinct study_id) 'count' from analysis where pipeline_id = ? group by analysis_status order by analysis_status";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($pipelineid));
+		$existing = array();
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)))
+			$existing[$row['analysis_status']] = $row['count'];
+		mysqli_stmt_close($stmt);
+		TestSearchRow("Existing analyses", "Studies that already have an analysis for this pipeline (any status). These are not searched again", "", array_sum($existing), "-", "bold");
+		foreach ($existing as $status => $count)
+			TestSearchRow($status, "", "", $count, "-", "indent");
+
+		/* ---------- A1 - valid studies of the primary modality without an existing analysis ---------- */
+		$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id not in (select study_id from analysis where pipeline_id = ?) and (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = ? and c.isactive = 1";
+		$todo = TestSearchIDs($sqlstring, 'is', array($pipelineid, $modality), 'study_id');
+		TestSearchRow("A1 - Valid $modality studies", "Studies of the primary modality, for active subjects, collected more than 6 hours ago, and without an existing analysis for this pipeline", "", count($todo), count($todo));
+
+		/* ---------- A2 - parent dependency ---------- */
+		if ($pipelinedep == -1) {
+			TestSearchRow("A2 - Dependency", "Studies with a complete, not-bad analysis from the parent pipeline", "No dependency", "-", count($todo), "gray");
+		}
+		else {
+			if ($deplevel == "subject") {
+				/* all studies of subjects who have at least one completed parent analysis */
+				$sqlstring = "select distinct s.study_id from studies s left join enrollment e on s.enrollment_id = e.enrollment_id where e.subject_id in (select c.subject_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.pipeline_id = ? and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null))";
 			}
 			else {
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select study_id from analysis where pipeline_id = ? and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)");
-				mysqli_stmt_bind_param($stmt, 'i', $dependency);
-				$resultA = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$studyids_completedparent[] = $rowA['study_id'];
-				}
-				mysqli_stmt_close($stmt);
-				$studyids_completedparent = array_unique($studyids_completedparent);
-				$cumtotal = count(array_diff($studyids_completedparent, $studyids_existing));
-				PrintSearchRow("Completed dependent studies", "The total number of studies from the parent pipeline that are <b>complete</b> and are <b>not marked as bad</b>.", "$depname", count($studyids_completedparent), $cumtotal, false);
+				$sqlstring = "select distinct a.study_id from analysis a where a.pipeline_id = ? and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null)";
 			}
-			
-			/* ---------- LINE 3 - groups ---------- */
-			if ($groupids == "") {
-				PrintSearchRow("Group", "Total number of studies in the selected groups", "No groups", "-", "-");
+			$depstudies = TestSearchIDs($sqlstring, 'i', array($pipelinedep), 'study_id');
+			$todo = TestSearchIntersect($todo, $depstudies);
+
+			$depname = TestSearchValue("select pipeline_name from pipelines where pipeline_id = ?", 'i', array($pipelinedep), 'pipeline_name');
+			$desc = ($deplevel == "subject") ? "All studies of subjects with at least one complete, not-bad analysis from the parent pipeline" : "Studies with a complete, not-bad analysis from the parent pipeline";
+			if (count($depids) > 1)
+				$desc .= ". Only the first dependency is used";
+			TestSearchRow("A2 - Dependency ($deplevel level)", $desc, $depname, count($depstudies), count($todo));
+		}
+
+		/* ---------- A3 - groups ---------- */
+		if (count($groupids) == 0) {
+			TestSearchRow("A3 - Groups", "Studies in the selected group(s)", "No groups", "-", count($todo), "gray");
+		}
+		else {
+			$place = implode(',', array_fill(0, count($groupids), '?'));
+			$groupstudies = TestSearchIDs("select data_id from group_data where group_id in ($place)", str_repeat('i', count($groupids)), $groupids, 'data_id');
+			$todo = TestSearchIntersect($todo, $groupstudies);
+			$names = TestSearchColumn("select group_name from groups where group_id in ($place) order by group_name", str_repeat('i', count($groupids)), $groupids, 'group_name');
+			TestSearchRow("A3 - Groups", "Studies in the selected group(s)", implode(", ", $names), count($groupstudies), count($todo));
+		}
+
+		/* ---------- A4 - projects ---------- */
+		if (count($projectids) == 0) {
+			TestSearchRow("A4 - Projects", "Studies of the primary modality in the selected project(s)", "No projects", "-", count($todo), "gray");
+		}
+		else {
+			$place = implode(',', array_fill(0, count($projectids), '?'));
+			$projectstudies = TestSearchIDs("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id where c.project_id in ($place) and a.study_modality = ?", str_repeat('i', count($projectids)) . 's', array_merge($projectids, array($modality)), 'study_id');
+			$todo = TestSearchIntersect($todo, $projectstudies);
+			$names = TestSearchColumn("select project_name from projects where project_id in ($place) order by project_name", str_repeat('i', count($projectids)), $projectids, 'project_name');
+			TestSearchRow("A4 - Projects", "Studies of the primary modality in the selected project(s)", implode(", ", $names), count($projectstudies), count($todo));
+		}
+
+		TestSearchRow("Studies to check for data", "Studies remaining after steps A1-A4. Each is checked for the required data", "", count($todo), count($todo), "bold");
+
+		/* ---------- data steps (GetData() check phase) ---------- */
+		/* subject and study type of each remaining study */
+		$studyinfo = array();
+		foreach (array_chunk($todo, 1000) as $chunk) {
+			$result = MySQLiQuery("select a.study_id, b.subject_id, a.study_type from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id in (" . implode(',', array_map('intval', $chunk)) . ")", __FILE__, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+				$studyinfo[(int)$row['study_id']] = array('subjectid' => (int)$row['subject_id'], 'studytype' => (string)$row['study_type']);
+		}
+
+		$passing = $todo;
+		foreach ($steps as $i => $step) {
+			$num = $step['num'] ?? ($i + 1);
+			$protocol = trim($step['protocol'] ?? '');
+			$stepmodality = strtolower(trim($step['modality'] ?? ''));
+			$level = trim($step['datalevel'] ?? '');
+			$assoctype = trim($step['studyassoc'] ?? '');
+			$imagetype = trim($step['imagetype'] ?? '');
+			$label = "Step $num - $protocol";
+
+			if (empty($step['enabled'])) {
+				TestSearchRow($label, "Step is not enabled", "Disabled - skipped", "-", count($passing), "gray");
+				continue;
 			}
-			else {
-				$sqlstring = "select data_id from group_data where group_id in ($groupids)";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$studyids_groups[] = $row['data_id'];
-				}
-				$studyids_groups = array_unique($studyids_groups);
-				if (count($studyids_completedparent) > 0) {
-					$cumtotal = count(array_diff(array_intersect($studyids_completedparent, $studyids_groups), $studyids_existing));
-				}
-				else {
-					$cumtotal = count(array_diff($studyids_groups, $studyids_existing));
-				}
-				PrintSearchRow("Group", "Total number of studies in the selected groups", $groupname, count($studyids_groups), $cumtotal);
+			if (!empty($step['optional'])) {
+				TestSearchRow($label, "Optional steps are not required to exist", "Optional - skipped", "-", count($passing), "gray");
+				continue;
 			}
-			
-			/* ---------- LINE 3.5 - projects ---------- */
-			//$sqlstring = "select study_id from group_data where group_id in ($projectids)";
-			//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			//while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//	$studyids['groups'][] = $row['data_id'];
-			//}
-			//$studyids['groups'] = array_unique($studyids['groups']);
-			//$cumtotal = count(array_intersect($studyids['completedparent'], $studyids['groups']));
-			//PrintSearchRow("Group", "Total number of studies in the selected groups", $groupname, $studyids['groups'], $cumtotal);
 
-			/* ---------- LINE 4 - valid studies of primary modality ---------- */
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where (a.study_datetime < date_sub(now(), interval 6 hour)) and a.study_modality = ? and c.isactive = 1");
-			mysqli_stmt_bind_param($stmt, 's', $primarymodality);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyids_valid[] = $row['study_id'];
+			/* the modality's series table must exist. Otherwise the step is invalid and checking stops */
+			$seriestable = GetSeriesTableName($stepmodality);
+			$tableexists = false;
+			if ($seriestable !== '')
+				$tableexists = (TestSearchValue("select table_name from information_schema.tables where table_schema = database() and table_name = ?", 's', array($seriestable), 'table_name') !== null);
+			if (!$tableexists) {
+				$passing = array();
+				TestSearchRow($label, "The modality's series table does not exist. The data check stops at this step", "Invalid modality [$stepmodality]", 0, 0, "error");
+				break;
 			}
-			mysqli_stmt_close($stmt);
-			$studyids_valid = array_unique($studyids_valid);
 
-			if ((count($studyids_groups) > 0) && (count($studyids_completedparent) > 0)) {
-				$studyids_remaining = array_diff(array_intersect($studyids_completedparent, $studyids_groups, $studyids_valid), $studyids_existing);
+			$seriesdescfield = ($stepmodality == "mr") ? "series_desc" : "series_protocol";
+
+			/* protocols - a quoted list, or the whole string as one protocol */
+			$protocols = array($protocol);
+			if (strpos($protocol, '"') !== false) {
+				try { $protocols = ShellWords($protocol); }
+				catch (Exception $e) { $protocols = array($protocol); }
 			}
-			elseif (count($studyids_groups) > 0) {
-				$studyids_remaining = array_diff(array_intersect($studyids_groups, $studyids_valid), $studyids_existing);
-			}
-			elseif (count($studyids_completedparent) > 0) {
-				$studyids_remaining = array_diff(array_intersect($studyids_completedparent, $studyids_valid), $studyids_existing);
-			}
-			else {
-				$studyids_remaining = array_diff($studyids_valid, $studyids_existing);
-			}
-			$cumtotal = count($studyids_remaining);
-			PrintSearchRow("Valid $primarymodality studies", "Valid studies for non-deleted subjects, collected more than 6 hours ago", "", count($studyids_valid), $cumtotal);
+			if (count($protocols) == 0)
+				$protocols = array($protocol);
+			$protplace = implode(',', array_fill(0, count($protocols), '?'));
 
-			/* ---------- LINE 5 - remaining studies to be processed ---------- */
-			PrintSearchRow("Remaining studies", "Remaining studies to be processed. These will be checked for valid data", "", $cumtotal, $cumtotal, true);
-			
-			/* ---------- LINE 6+ - check the data steps ---------- */
-			foreach ($datadef as $step => $details) {
-				$enabled = $details['enabled'];
-				//$optional = $details['optional']; /* doesn't matter if optional */
-				$order = $details['order'];
-				$protocol = $details['protocol'];
-				$modality = strtolower($details['modality']);
-				$datalevel = $details['datalevel'];
-				$studyassoc = $details['studyassoc'];
-				$imagetype = $details['imagetype'];
-				//$seriescriteria = $details['seriescriteria'];
-				$numboldreps = $details['numboldreps'];
-				
-				/* check if enabled */
-				if (!$enabled) {
-					PrintSearchRow("Data step $step", str_replace('"', "'", "$protocol"), "Not enabled", "-", "-", false, true, true);
-					continue;
-				}
-				if ($protocol == "")
-					continue;
+			/* image types - comma separated list */
+			if (strpos($imagetype, ',') !== false)
+				$imagetypes = preg_split('/,\s*/', $imagetype);
+			elseif ($imagetype != "")
+				$imagetypes = array($imagetype);
+			else
+				$imagetypes = array();
 
-				/* check if the modality exists. GetSeriesTableName validates the modality against
-				   ^[a-z0-9]+$ so the resulting table name is a safe identifier; SHOW cannot be
-				   prepared on all MariaDB versions, so query information_schema instead. */
-				$seriestable = GetSeriesTableName($modality);
-				if ($seriestable === '')
-					continue;
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select table_name from information_schema.tables where table_schema = database() and table_name = ?");
-				mysqli_stmt_bind_param($stmt, 's', $seriestable);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				$tableexists = (mysqli_num_rows($result) > 0);
-				mysqli_stmt_close($stmt);
-				if (!$tableexists)
-					continue;
-				
-				/* get the correct search description field */
-				$seriesdescfield = "series_protocol";
-				if ($modality == "mr")
-					$seriesdescfield = "series_desc";
-				
-				/* prepare the protocol name(s). Separate any protocols that have multiples. These are
-				   bound as `in (?, ?, ...)` placeholders below rather than inlined. */
-				if (contains($protocol,'"'))
-					$protsArr = ShellWords($protocol);
-				else
-					$protsArr = array($protocol);
-				$protsArr = array_values(array_filter($protsArr, function($p) { return trim($p) !== ''; }));
-				if (empty($protsArr))
-					continue;
-				$protPlace = implode(',', array_fill(0, count($protsArr), '?'));
+			$matched = array();
+			if ($level == "subject") {
+				/* nearest-in-time and entire-subject only need a match anywhere in the subject; otherwise the study type must also match */
+				$bytype = !in_array($assoctype, array("nearesttime", "nearestintime", "all", "entiresubject"));
+				$subjectids = array();
+				foreach ($passing as $studyid)
+					$subjectids[$studyinfo[$studyid]['subjectid'] ?? 0] = true;
+				$subjectids = array_keys($subjectids);
 
-				/* prepare image type(s), also bound as placeholders */
-				//PrintVariable($imagetype);
-				if (contains($imagetype, ","))
-					$typesArr = preg_split("/,[\s,]+/", $imagetype);
-				elseif (trim($imagetype) != "")
-					$typesArr = array($imagetype);
-				else
-					$typesArr = array();
-				$typesArr = array_values(array_filter($typesArr, function($t) { return trim($t) !== ''; }));
-
-				/* prepare the numboldreps comparison. $comp is a whitelisted operator; $num is bound. */
-				list($comp, $num) = GetSQLComparison($numboldreps);
-
-				/* check each of the studies from the previous list */
-				foreach ($studyids_remaining as $studyid) {
-					list($path, $uid, $studynum, $studyid, $subjectid, $modality, $studytype, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-					$modality = strtolower($modality);
-
-					/* validate the modality -> series table name; it is an identifier and cannot be bound */
-					$seriestable = GetSeriesTableName($modality);
-					if ($seriestable === '')
-						continue;
-
-					$params = array();
-					$types  = '';
-
-					if ($datalevel == "study") {
-						/* if study level, check the study for criteria */
-						$sqlstring = "select a.study_id from studies a left join $seriestable b on a.study_id = b.study_id where b.$seriesdescfield in ($protPlace)";
-						$types  .= str_repeat('s', count($protsArr));
-						$params  = array_merge($params, $protsArr);
-						if (count($typesArr) > 0) {
-							$imgPlace = implode(',', array_fill(0, count($typesArr), '?'));
-							$sqlstring .= " and b.image_type in ($imgPlace)";
-							$types  .= str_repeat('s', count($typesArr));
-							$params  = array_merge($params, $typesArr);
-						}
-						if ($numboldreps != "") {
-							$sqlstring .= " and b.numfiles $comp ?";
-							$types  .= 'd';
-							$params[] = (float)$num;
-						}
+				$found = array();
+				foreach (array_chunk($subjectids, 1000) as $chunk) {
+					$sqlstring = "select distinct c.subject_id, d.study_type from enrollment a join projects b on a.project_id = b.project_id join subjects c on c.subject_id = a.subject_id join studies d on d.enrollment_id = a.enrollment_id join `$seriestable` e on e.study_id = d.study_id where c.isactive = 1 and d.study_modality = ? and c.subject_id in (" . implode(',', array_map('intval', $chunk)) . ") and trim(e.$seriesdescfield) in ($protplace)";
+					$types = 's' . str_repeat('s', count($protocols));
+					$params = array_merge(array($stepmodality), $protocols);
+					if (count($imagetypes) > 0) {
+						$sqlstring .= " and e.image_type in (" . implode(',', array_fill(0, count($imagetypes), '?')) . ")";
+						$types .= str_repeat('s', count($imagetypes));
+						$params = array_merge($params, $imagetypes);
 					}
-					else {
-						/* if subject level, check the subject for the criteria */
-						if (($studyassoc == "nearesttime") || ($studyassoc == "nearestintime"))
-							echo "Searching for data from the same SUBJECT and modality that has the nearest (in time) matching scan<br>";
-						elseif ($studyassoc == "all")
-							echo "Searching for ALL data from the same SUBJECT and modality<br>";
+					foreach (TestSearchRows($sqlstring, $types, $params) as $row) {
+						if ($bytype)
+							$found[$row['subject_id'] . "|" . TestSearchNormalize($row['study_type'])] = true;
 						else
-							echo "Searching for data from the same SUBJECT, Modality, and StudyType<br>";
-
-						$sqlstring = "SELECT d.study_id FROM enrollment a JOIN projects b on a.project_id = b.project_id JOIN subjects c on c.subject_id = a.subject_id JOIN studies d on d.enrollment_id = a.enrollment_id JOIN $seriestable e on e.study_id = d.study_id WHERE c.isactive = 1 AND d.study_modality = ? AND c.subject_id = ? AND trim(e.$seriesdescfield) in ($protPlace)";
-						$types   .= 'si';
-						$params[] = $modality;
-						$params[] = (int)$subjectid;
-						$types   .= str_repeat('s', count($protsArr));
-						$params   = array_merge($params, $protsArr);
-
-						if (count($typesArr) > 0) {
-							$imgPlace = implode(',', array_fill(0, count($typesArr), '?'));
-							$sqlstring .= " and b.image_type in ($imgPlace)";
-							$types  .= str_repeat('s', count($typesArr));
-							$params  = array_merge($params, $typesArr);
-						}
-
-						/* the study_type variant (not nearesttime / all) adds this extra condition */
-						if (($studyassoc != "nearesttime") && ($studyassoc != "nearestintime") && ($studyassoc != "all") && ($studytype != "")) {
-							$sqlstring .= " and d.study_type = ?";
-							$types   .= 's';
-							$params[] = $studytype;
-						}
+							$found[$row['subject_id']] = true;
 					}
-					//PrintSQL($sqlstring);
-					//break;
-					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-					mysqli_stmt_bind_param($stmt, $types, ...$params);
-					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
-					if ($result && mysqli_num_rows($result) > 0) {
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$studyids_step[$step][] = $row['study_id'];
-						}
-					}
-					mysqli_stmt_close($stmt);
-					$studyids_step[$step] = array_unique($studyids_step[$step]);
-					$cumtotal = count(array_diff($studyids_step[$step], $studyids_existing));
 				}
-				PrintSearchRow("[$datalevel level] data step $step", $protocol, "-", count($studyids_step[$step]), $cumtotal);
-				
+				foreach ($passing as $studyid) {
+					$subjectid = $studyinfo[$studyid]['subjectid'] ?? 0;
+					$key = $bytype ? $subjectid . "|" . TestSearchNormalize($studyinfo[$studyid]['studytype'] ?? '') : $subjectid;
+					if (isset($found[$key]))
+						$matched[] = $studyid;
+				}
+				$desc = $bytype ? "Subject has matching data in a study with the same study type" : "Subject has matching data in any study";
 			}
-		// /* if it's a subject level dependency, but there is no data found, we don't want to copy any dependencies */
-		// if ((stepIsInvalid) && (deplevel == "subject")) {
-			// dlog << " ********** One of the required steps was invalid because no data was found based on the search criteria. (This was a subject-level dependency) No data will be downloaded. **********";
-			// datalog = dlog.join("\n");
-			// return false;
-		// }
+			else {
+				$comparison = TestSearchComparison($step['numboldreps'] ?? '');
+				foreach (array_chunk($passing, 1000) as $chunk) {
+					$sqlstring = "select distinct study_id from `$seriestable` where study_id in (" . implode(',', array_map('intval', $chunk)) . ") and trim($seriesdescfield) in ($protplace)";
+					$types = str_repeat('s', count($protocols));
+					$params = $protocols;
+					if (count($imagetypes) > 0) {
+						$sqlstring .= " and image_type in (" . implode(',', array_fill(0, count($imagetypes), '?')) . ")";
+						$types .= str_repeat('s', count($imagetypes));
+						$params = array_merge($params, $imagetypes);
+					}
+					if ($comparison !== null) {
+						/* operator is whitelisted by TestSearchComparison() */
+						$sqlstring .= " and ((numfiles " . $comparison[0] . " ?) or (dimT " . $comparison[0] . " ?))";
+						$types .= 'ii';
+						$params[] = $comparison[1];
+						$params[] = $comparison[1];
+					}
+					foreach (TestSearchRows($sqlstring, $types, $params) as $row)
+						$matched[] = (int)$row['study_id'];
+				}
+				$desc = "Study contains matching data" . (($comparison !== null) ? " with numfiles or dimT " . $comparison[0] . " " . $comparison[1] : "");
+			}
 
-		// /* if there is a dependency, don't worry about the previous checks */
-		// if (pipelinedep != -1)
-			// stepIsInvalid = false;
+			$passing = $matched;
+			$value = ($level == "subject") ? "subject level" : "study level";
+			TestSearchRow($label, "$desc. Studies without it are not checked further", "$stepmodality, $value", count($matched), count($passing));
+		}
 
-		// /* any bad data items, then the data spec didn't work out for this subject */
-		// if (stepIsInvalid) {
-			// dlog << " ********** One of the required steps was invalid because no data was found for the search criteria. No data will be downloaded.";
-			// datalog = dlog.join("\n");
-			// return false;
-		// }
+		/* dependency rules applied after the data check */
+		if ($deplevel == "subject") {
+			if (($pipelinedep != -1) && (count($passing) < count($todo)))
+				TestSearchRow("Subject-level dependency", "With a subject-level dependency, studies missing required data are not analyzed", "", "-", count($passing), "indent");
+		}
+		elseif ($pipelinedep != -1) {
+			if (count($passing) < count($todo))
+				TestSearchRow("Dependency override", "When the pipeline has a (study-level) dependency, studies missing required data are still analyzed", "", "-", count($todo), "indent");
+			$passing = $todo;
+		}
 
-		// /* ------ end checking the data steps --------------------------------------
-			// if we get to here, the data spec is valid for this study
-			// so we can assume all of the data exists, and start copying it
-		   // ------------------------------------------------------------------------- */
+		TestSearchRow("New analyses", "Studies that pass all checks and would get a new analysis", "", count($passing), count($passing), "bold");
+
+		/* ---------- B1, B2 - reruns and supplements ---------- */
+		$numrerun = (int)TestSearchValue("select count(*) 'count' from studies where study_id in (select study_id from analysis where pipeline_id = ? and analysis_rerunresults = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null))", 'i', array($pipelineid), 'count');
+		$numsupplement = (int)TestSearchValue("select count(*) 'count' from studies where study_id in (select study_id from analysis where pipeline_id = ? and analysis_runsupplement = 1 and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null))", 'i', array($pipelineid), 'count');
+		TestSearchRow("B1 - Rerun results", "Existing complete analyses flagged to have their results re-run (uses the saved pipeline)", "", $numrerun, "-", "indent");
+		TestSearchRow("B2 - Run supplement", "Existing complete analyses flagged to run supplement commands (uses the saved pipeline)", "", $numsupplement, "-", "indent");
+
+		$total = count($passing) + $numrerun + $numsupplement;
+		TestSearchRow("Total studies to be analyzed", "New analyses + reruns + supplements", "", $total, $total, "bold");
+
+		/* sample list of new analyses */
+		if (count($passing) > 0) {
+			$sample = array_slice($passing, 0, 50);
+			$result = MySQLiQuery("select concat(c.uid, a.study_num) 'uidstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . implode(',', array_map('intval', $sample)) . ") order by c.uid, a.study_num", __FILE__, __LINE__);
+			$uids = array();
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+				$uids[] = $row['uidstudynum'];
+			?>
+			<tr>
+				<td colspan="4" class="tiny"><b><?=(count($passing) > 50) ? "First 50 new analyses" : "New analyses"?>:</b> <?=htmlspecialchars(implode(", ", $uids))?></td>
+			</tr>
+			<?
+		}
+
+		TestSearchEnd($starttime);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchEnd ---------------------- */
+	/* -------------------------------------------- */
+	function TestSearchEnd($starttime) {
 		?>
 			</tbody>
 		</table>
+		<span class="tiny">Search took <?=number_format(microtime(true) - $starttime, 2)?> sec</span>
 		<?
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
-	/* ------- PrintSearchRow --------------------- */
+	/* ------- TestSearchRow ---------------------- */
 	/* -------------------------------------------- */
-	function PrintSearchRow($criteria, $title, $value, $nummatch, $cummatch, $bold=false, $indent=false, $gray=false) {
-		if ($title) { $title = "title='$title' class='underlined'"; } else { $title = ""; }
-		if ($bold) { $bold = "font-weight: bold;"; } else { $bold = ""; }
-		if ($indent) { $indent = "padding-left: 20px;"; } else { $indent = ""; }
-		if ($gray) { $gray = "color: #999; font-size: 9pt;"; } else { $gray = ""; }
-		
-		if ($nummatch != "-")
-			$nummatch = number_format($nummatch,0);
-		
-		if ($cummatch != "-")
-			$cummatch = number_format($cummatch,0);
-		
+	/* style: "", bold, indent, gray, error */
+	function TestSearchRow($criteria, $description, $value, $nummatch, $remaining, $style="") {
+		if (is_numeric($nummatch)) $nummatch = number_format((float)$nummatch, 0);
+		if (is_numeric($remaining)) $remaining = number_format((float)$remaining, 0);
+
+		$rowstyle = ($style == "bold") ? "font-weight: bold;" : "";
+		$cellstyle = "";
+		if ($style == "indent") $cellstyle = "color: #777; font-size: 9pt;";
+		if ($style == "gray") $cellstyle = "color: #999;";
+		if ($style == "error") $cellstyle = "color: darkred;";
+		$indent = ($style == "indent") ? "padding-left: 20px;" : "";
+		$title = ($description != "") ? 'title="' . htmlspecialchars($description) . '" class="underlined"' : "";
 		?>
-		<tr style="<?=$bold?>">
-			<td style="<?=$indent?> <?=$gray?>" <?=$title?>><?=$criteria?></td>
-			<td style="<?=$gray?>"><?=$value?></td>
-			<td style="<?=$gray?>"><?=$nummatch?></td>
-			<td style="<?=$gray?>"><?=$cummatch?></td>
+		<tr style="<?=$rowstyle?>">
+			<td style="<?=$indent?> <?=$cellstyle?>"><span <?=$title?>><?=htmlspecialchars($criteria)?></span></td>
+			<td style="<?=$cellstyle?>"><?=htmlspecialchars($value)?></td>
+			<td style="<?=$cellstyle?>"><?=htmlspecialchars($nummatch)?></td>
+			<td style="<?=$cellstyle?>"><?=htmlspecialchars($remaining)?></td>
 		</tr>
 		<?
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchRows --------------------- */
+	/* -------------------------------------------- */
+	/* run a bound query and return all rows */
+	function TestSearchRows($sqlstring, $types, $params) {
+		$rows = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if (($types != "") && ($stmt instanceof mysqli_stmt))
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)))
+			$rows[] = $row;
+		if ($stmt instanceof mysqli_stmt)
+			mysqli_stmt_close($stmt);
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchColumn ------------------- */
+	/* -------------------------------------------- */
+	function TestSearchColumn($sqlstring, $types, $params, $column) {
+		return array_map(function($row) use ($column) { return $row[$column]; }, TestSearchRows($sqlstring, $types, $params));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchIDs ---------------------- */
+	/* -------------------------------------------- */
+	function TestSearchIDs($sqlstring, $types, $params, $column) {
+		return array_values(array_unique(array_map('intval', TestSearchColumn($sqlstring, $types, $params, $column))));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchValue -------------------- */
+	/* -------------------------------------------- */
+	/* first value of a column, or null if no rows */
+	function TestSearchValue($sqlstring, $types, $params, $column) {
+		$rows = TestSearchRows($sqlstring, $types, $params);
+		return (count($rows) > 0) ? $rows[0][$column] : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchIntersect ---------------- */
+	/* -------------------------------------------- */
+	function TestSearchIntersect($a, $b) {
+		$lookup = array_flip($b);
+		return array_values(array_filter($a, function($id) use ($lookup) { return isset($lookup[$id]); }));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchIntList ------------------ */
+	/* -------------------------------------------- */
+	/* comma separated string (or array) to a list of positive ints, preserving order */
+	function TestSearchIntList($list) {
+		if (!is_array($list))
+			$list = explode(',', (string)$list);
+		return array_values(array_unique(array_filter(array_map('intval', $list), function($v) { return $v > 0; })));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchNormalize ---------------- */
+	/* -------------------------------------------- */
+	/* approximates MySQL's case-insensitive, trailing-space-insensitive string comparison */
+	function TestSearchNormalize($str) {
+		return strtolower(rtrim((string)$str));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TestSearchComparison --------------- */
+	/* -------------------------------------------- */
+	/* same rules as nidb::GetSQLComparison() in the backend. Returns [operator, number] or null if not valid */
+	function TestSearchComparison($c) {
+		$c = preg_replace('/\s+/', '', (string)$c);
+		if (!preg_match('/^(<=|>=|<|>|~|=)?([+-]?\d+)$/', $c, $m))
+			return null;
+		$comp = ($m[1] == "") ? "=" : $m[1];
+		if ($comp == "~")
+			$comp = "<>";
+		return array($comp, (int)$m[2]);
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- UpdateSubjectDetails --------------- */
