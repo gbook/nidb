@@ -2278,6 +2278,8 @@
 	// Function to calculate standard deviation (uses sd_square)    
 	function sd($array) {
 		// square root of sum of squares devided by N-1
+		/* sample SD is undefined for fewer than 2 values; guard against PHP 8 DivisionByZeroError / count(null) */
+		if (!is_array($array) || count($array) < 2) { return 0; }
 		return sqrt(array_sum(array_map("sd_square", $array, array_fill(0,count($array), (array_sum($array) / count($array)) ) ) ) / (count($array)-1) );
 	}
 	
@@ -3961,7 +3963,28 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">downloaddir</td>
 							<td><input type="text" name="downloaddir" value="<?=$downloaddir?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Directory which stores downloads available from the website</td>
+							<td>
+								Directory which stores downloads available from the website
+								<? if ($returnpage == "settings") { ?>
+								<br><br>
+								<?
+									/* show where the web download link currently points */
+									$weblink = rtrim($webdir, "/") . "/download";
+									$hweblink = htmlspecialchars($weblink);
+									if (is_link($weblink)) {
+										$weblinkstatus = "<code>$hweblink</code> &rarr; <code>" . htmlspecialchars(readlink($weblink)) . "</code>";
+									}
+									elseif (file_exists($weblink)) {
+										$weblinkstatus = "<code>$hweblink</code> is a regular directory/file, not a link";
+									}
+									else {
+										$weblinkstatus = "<code>$hweblink</code> does not exist";
+									}
+								?>
+								Current: <?=$weblinkstatus?><br>
+								<button type="submit" form="downloadlinkform" class="ui compact yellow button" onclick="return confirm('Create (or replace) the link [webdir]/download pointing to the SAVED [downloaddir]?')">Create download symlink</button>
+								<? } ?>
+							</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">publicdownloaddir</td>
@@ -4042,7 +4065,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 					</div>
 					<? } ?>
 					</form>
-					
+					<? if ($returnpage == "settings") { ?>
+					<!-- standalone form for the downloaddir 'Create download symlink' button (forms cannot be nested inside configform) -->
+					<form id="downloadlinkform" method="post" action="settings.php">
+						<input type="hidden" name="action" value="createdownloadlink">
+					</form>
+					<? } ?>
+
 				</div>
 			</div>
 		

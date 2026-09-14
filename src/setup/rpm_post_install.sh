@@ -206,15 +206,9 @@ else
     chown nidb:nidb /nidb/*
 fi
 
-# create the web download symlink only if it does not already exist. The package no longer ships
-# /var/www/html/download (see the RPM spec) so that upgrades never clobber a custom download path.
-# On a fresh install this points at the default /nidb/data/download; on an existing install a
-# pre-existing link (default or custom, even one whose target is currently unmounted) is left as-is.
-if [[ ! -e /var/www/html/download && ! -L /var/www/html/download ]]; then
-    echo 'Creating web download link /var/www/html/download -> /nidb/data/download...'
-    ln -s /nidb/data/download /var/www/html/download
-    chown -h nidb:nidb /var/www/html/download
-fi
+# NOTE: the web download symlink /var/www/html/download is NOT created here. It is handled by the
+# pre/posttrans scriptlets in the RPM spec, because on an upgrade from an older package that owned the
+# link, RPM erases it AFTER this script runs.
 
 # make sure nidb.cfg is owned by and writeable by the nidb account. settings.php (running as the
 # nidb php-fpm user) rewrites this file via WriteConfig(), so it must be nidb-writeable. RPM install

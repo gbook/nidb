@@ -44,6 +44,10 @@ rm -f  "$WEBDIR/download"             # do NOT package the download symlink; the
 # /nidb/setup too (parallel to the RPM), but the one that dpkg runs is DEBIAN/postinst
 cp -f  src/setup/deb_post_install.sh  "$DEBDIR/postinst"
 chmod 0755 "$DEBDIR/postinst"
+# the preinst saves the current download link target so the postinst can restore it after dpkg
+# removes a link shipped by an older package
+cp -f  src/setup/deb_pre_install.sh   "$DEBDIR/preinst"
+chmod 0755 "$DEBDIR/preinst"
 
 # ----- shared libraries -----
 echo 'Copying shared libraries...'

@@ -248,14 +248,20 @@ fi
 
 # create the web download symlink only if it does not already exist. The package no longer ships
 # /var/www/html/download (see makeInstallerDebian*.sh) so that upgrades never clobber a custom
-# download path. On a fresh install this points at the default /nidb/data/download; on an existing
-# install a pre-existing link (default or custom, even one whose target is currently unmounted) is
-# left as-is.
+# download path. When upgrading from an older package that did ship it, dpkg removes the link during
+# unpack, so restore the target saved by deb_pre_install.sh; otherwise use the default
+# /nidb/data/download. A pre-existing link (even one whose target is currently unmounted) is left as-is.
+DOWNLOAD_LINK_STATE=/var/lib/nidb/download_link
 if [[ ! -e /var/www/html/download && ! -L /var/www/html/download ]]; then
-    echo 'Creating web download link /var/www/html/download -> /nidb/data/download...'
-    ln -s /nidb/data/download /var/www/html/download
+    DOWNLOAD_TARGET=/nidb/data/download
+    if [[ -s "$DOWNLOAD_LINK_STATE" ]]; then
+        DOWNLOAD_TARGET="$(cat "$DOWNLOAD_LINK_STATE")"
+    fi
+    echo "Creating web download link /var/www/html/download -> $DOWNLOAD_TARGET..."
+    ln -s "$DOWNLOAD_TARGET" /var/www/html/download
     chown -h nidb:nidb /var/www/html/download
 fi
+rm -f "$DOWNLOAD_LINK_STATE"
 
 # make sure nidb.cfg is owned by and writeable by the nidb account. settings.php (running as the
 # nidb php-fpm user) rewrites this file via WriteConfig(), so it must be nidb-writeable. Package

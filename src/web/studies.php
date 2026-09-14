@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 <html>
 	<head>
@@ -121,7 +122,8 @@
 	$studydatetime = GetVariable("studydatetime");
 	$Sdate = GetVariable("Sdate");
 	$stmod = GetVariable("stmod");
-	
+	$studygroupid = GetVariable("studygroupid");
+
 	/* determine action */
 	switch($action) {
 		case 'editform':
@@ -235,12 +237,73 @@
 			SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod);
 			DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
 			break;
+		/* mutating action uses POST/Redirect/GET: run the handler, stash its message,
+		   then redirect back to the study so a refresh/Back doesn't re-submit */
+		case 'addtogroup':
+			ob_start();
+			AddStudyToGroup($studyid, $studygroupid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("studies.php?studyid=" . (int)$studyid);
+			break;
 		default:
+			ShowFlashMessage();
 			DisplayStudy($studyid);
 	}
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- AddStudyToGroup -------------------- */
+	/* -------------------------------------------- */
+	function AddStudyToGroup($studyid, $groupid) {
+		if (!ValidID($studyid,'Study ID')) { return; }
+		if (!ValidID($groupid,'Group ID')) { return; }
+		$studyid = (int)$studyid;
+		$groupid = (int)$groupid;
+
+		/* make sure the group exists and is a study group */
+		$sqlstring = "select group_name from groups where group_id = ? and group_type = 'study'";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $groupid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid]);
+		if (mysqli_num_rows($result) < 1) { mysqli_stmt_close($stmt); Error("Study group not found"); return; }
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupname = htmlspecialchars($row['group_name']);
+		mysqli_stmt_close($stmt);
+
+		/* get the study's UID, study number, and modality */
+		$sqlstring = "select a.study_num, a.study_modality, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $studyid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+		if (mysqli_num_rows($result) < 1) { mysqli_stmt_close($stmt); Error("Study not found"); return; }
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$studyname = htmlspecialchars(($row['uid'] ?? '') . $row['study_num']);
+		$modality = strtolower($row['study_modality'] ?? '');
+		mysqli_stmt_close($stmt);
+
+		/* check if it's already in the group (same matching as groups.php AddStudiesToGroup) */
+		$sqlstring = "select subjectgroup_id from group_data where group_id = ? and data_id = ? and modality = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid, $studyid, $modality]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if ($exists) {
+			Notice("$studyname is already in group <b>$groupname</b>");
+			return;
+		}
+
+		$sqlstring = "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $modality);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid, $studyid, $modality]);
+		mysqli_stmt_close($stmt);
+
+		Notice("Added $studyname to group <b>$groupname</b>");
+	}
 
 
 	 /* ------------------------------------ functions MAM------------------------------------ */
@@ -1963,6 +2026,59 @@
 					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary basic fluid button"><i class="edit icon"></i> Edit study</a>
 					<br>
 					<a href="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>" class="ui primary basic brown fluid button"><em data-emoji=":chipmunk:"></em> Add to Package</a>
+					<br>
+					<div class="ui primary basic fluid button" onclick="$('#addToGroupModal').modal('show')"><i class="user friends icon"></i> Add to group</div>
+
+					<div class="ui small modal" id="addToGroupModal">
+						<div class="header">Add study to group</div>
+						<div class="content">
+							<?
+								/* list study groups, flagging those this study already belongs to (same matching as AddStudyToGroup) */
+								$groupmodality = strtolower($study_modality ?? '');
+								$groupstudyid = (int)$studyid;
+								$sqlstring = "select a.group_id, a.group_name, count(b.subjectgroup_id) 'ingroup' from groups a left join group_data b on b.group_id = a.group_id and b.data_id = ? and b.modality = ? where a.group_type = 'study' group by a.group_id, a.group_name order by a.group_name";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'is', $groupstudyid, $groupmodality);
+								$groupresult = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupstudyid, $groupmodality]);
+								$numstudygroups = mysqli_num_rows($groupresult);
+							?>
+							<form action="studies.php" method="post" id="addToGroupForm" class="ui form">
+								<input type="hidden" name="action" value="addtogroup">
+								<input type="hidden" name="studyid" value="<?=(int)$studyid?>">
+								<div class="field">
+									<label>Study</label>
+									<b class="tt"><?=htmlspecialchars($uid . $study_num)?></b>
+								</div>
+								<div class="field">
+									<label>Group</label>
+									<? if ($numstudygroups > 0) { ?>
+									<select name="studygroupid" class="ui fluid dropdown" required>
+										<option value="">Select a study group...</option>
+										<?
+											while ($grouprow = mysqli_fetch_array($groupresult, MYSQLI_ASSOC)) {
+												if ($grouprow['ingroup'] > 0) {
+													?><option value="<?=(int)$grouprow['group_id']?>" disabled><?=htmlspecialchars($grouprow['group_name'])?> (already in group)</option><?
+												}
+												else {
+													?><option value="<?=(int)$grouprow['group_id']?>"><?=htmlspecialchars($grouprow['group_name'])?></option><?
+												}
+											}
+											mysqli_stmt_close($stmt);
+										?>
+									</select>
+									<? } else { ?>
+									No study groups exist. <a href="groups.php">Create a study group</a> first.
+									<? } ?>
+								</div>
+							</form>
+						</div>
+						<div class="actions">
+							<div class="ui cancel button">Cancel</div>
+							<? if ($numstudygroups > 0) { ?>
+							<button type="submit" form="addToGroupForm" class="ui primary button">Add to group</button>
+							<? } ?>
+						</div>
+					</div>
 
 					<? if ($GLOBALS['isadmin']) { ?>
 						<script>

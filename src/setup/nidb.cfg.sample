@@ -86,7 +86,7 @@
 [qcmoduledir] = /home/nidb/programs/qcmodules
 [problemdir] = /home/nidb/problem
 [scriptdir] = /home/nidb/programs
-[webdir] = /var/www/html/download
+[webdir] = /var/www/html
 [webdownloaddir] = 
 [downloaddir] = /home/nidb/download
 [uploadeddir] = /home/nidb/upload

@@ -30,7 +30,7 @@ mkdir -p %{buildroot}/var/www/html
 mkdir -p %{buildroot}/usr/local/share/dcmtk-3.7.0/
 cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM post-install script
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
-rm -f %{buildroot}/var/www/html/download # do NOT package the download symlink; the post-install creates it if absent so upgrades never clobber a custom download path
+rm -f %{buildroot}/var/www/html/download # do NOT package the download symlink; the posttrans scriptlet creates it if absent so upgrades never clobber a custom download path
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
@@ -87,5 +87,30 @@ cp -rf /usr/local/share/dcmtk-3.7.0/* %{buildroot}/usr/local/share/dcmtk-3.7.0/ 
 /usr/local/bin
 /usr/local/share/dcmtk-3.7.0
 
+%pre
+# remember the current web download link target (default or custom) so the posttrans scriptlet can restore it.
+# Upgrading from an older package that still owned /var/www/html/download, RPM erases that link
+# AFTER the post scriptlet has run, so the link must be (re)created in posttrans, not post.
+if [ -L /var/www/html/download ]; then
+    mkdir -p %{_localstatedir}/lib/rpm-state/nidb
+    readlink /var/www/html/download > %{_localstatedir}/lib/rpm-state/nidb/download_link
+fi
+
 %post
 /nidb/setup/rpm_post_install.sh
+
+%posttrans
+# create the web download symlink if it does not exist. Runs after the old package's files have been
+# erased. Restores the target saved in the pre scriptlet, otherwise uses the default /nidb/data/download. An
+# existing link (even one whose target is currently unmounted) is left as-is.
+STATEFILE=%{_localstatedir}/lib/rpm-state/nidb/download_link
+if [ ! -e /var/www/html/download ] && [ ! -L /var/www/html/download ]; then
+    TARGET=/nidb/data/download
+    if [ -s "$STATEFILE" ]; then
+        TARGET="$(cat "$STATEFILE")"
+    fi
+    echo "Creating web download link /var/www/html/download -> $TARGET..."
+    ln -s "$TARGET" /var/www/html/download
+    chown -h nidb:nidb /var/www/html/download || :
+fi
+rm -f "$STATEFILE"

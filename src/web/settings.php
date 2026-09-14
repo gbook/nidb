@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -211,7 +212,16 @@
 			DisplaySettings("settings");
 			DisplayConfig();
 			break;
+		/* mutating action uses POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-run it */
+		case 'createdownloadlink':
+			ob_start();
+			CreateDownloadLink();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("settings.php");
+			break;
 		default:
+			ShowFlashMessage();
 			DisplaySettings("settings");
 			DisplayConfig();
 	}
@@ -238,6 +248,73 @@
 		
 		$sqlstring = "update system_messages set message_status = 'deleted' where message_id = $msgid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateDownloadLink ----------------- */
+	/* -------------------------------------------- */
+	/* create (or replace) the symlink [webdir]/download pointing to the saved [downloaddir].
+	   Only an existing symlink is replaced; a real directory/file at that path is never touched. */
+	function CreateDownloadLink() {
+		if (!isSiteAdmin()) { Error("You do not have permissions to perform this action"); return; }
+
+		$webdir = rtrim(trim($GLOBALS['cfg']['webdir'] ?? ''), "/");
+		if ($webdir == "") { $webdir = "/var/www/html"; } /* same default as DisplaySettings() */
+		if ($webdir[0] != "/" || !is_dir($webdir)) {
+			Error("[webdir] <code>" . htmlspecialchars($webdir) . "</code> must be an existing directory (absolute path)");
+			return;
+		}
+
+		$link = "$webdir/download";
+		$target = rtrim(trim($GLOBALS['cfg']['downloaddir'] ?? ''), "/");
+		$hlink = htmlspecialchars($link);
+		$htarget = htmlspecialchars($target);
+
+		if ($target == "" || $target[0] != "/") {
+			Error("[downloaddir] must be set to an absolute path (and saved) before creating the link. Current value: <code>$htarget</code>");
+			return;
+		}
+		if (!is_dir($target)) {
+			Error("[downloaddir] <code>$htarget</code> does not exist or is not a directory. Create it first.");
+			return;
+		}
+		if (($target === $link) || (realpath($target) === realpath(dirname($link)))) {
+			Error("[downloaddir] <code>$htarget</code> cannot be the link itself or the web directory");
+			return;
+		}
+		if (file_exists($link) && !is_link($link)) {
+			Error("<code>$hlink</code> is a real directory or file, not a link. It will not be replaced automatically. Move or remove it manually, then try again.");
+			return;
+		}
+		if (is_link($link) && (readlink($link) === $target)) {
+			Notice("<code>$hlink</code> already points to <code>$htarget</code>");
+			return;
+		}
+
+		$manual = "<br><br>Run manually as root: <code>ln -sfn $htarget $hlink</code>";
+		if (!is_writable(dirname($link))) {
+			$procuser = function_exists('posix_geteuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? '') : '';
+			Error("The web server account (" . htmlspecialchars($procuser) . ") cannot write to <code>" . htmlspecialchars(dirname($link)) . "</code>.$manual");
+			return;
+		}
+
+		/* create the link under a temporary name, then rename() it over the old link. rename() is atomic
+		   and refuses to replace a directory, so the existing link is never left missing on failure */
+		$tmplink = dirname($link) . "/.download.tmp." . getmypid();
+		@unlink($tmplink);
+		if (!@symlink($target, $tmplink)) {
+			Error("Unable to create symlink: " . htmlspecialchars(error_get_last()['message'] ?? 'unknown error') . $manual);
+			return;
+		}
+		if (!@rename($tmplink, $link)) {
+			$err = error_get_last()['message'] ?? 'unknown error';
+			@unlink($tmplink);
+			Error("Unable to put symlink in place: " . htmlspecialchars($err) . $manual);
+			return;
+		}
+
+		Notice("Created link <code>$hlink</code> &rarr; <code>$htarget</code>", "Download link created");
 	}
 
 
