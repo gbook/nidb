@@ -192,28 +192,32 @@
 	
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-run it */
 		case 'updateconfig':
+			ob_start();
 			WriteConfig($c);
-			DisplaySettings("settings");
-			DisplayConfig();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("settings.php");
 			break;
 		case 'testemail':
+			ob_start();
 			TestEmail();
-			DisplaySettings("settings");
-			DisplayConfig();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("settings.php");
 			break;
 		case 'setsystemmessage':
+			ob_start();
 			SetSystemMessage($systemmessage);
-			DisplaySettings("settings");
-			DisplayConfig();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("settings.php");
 			break;
 		case 'deletesystemmessage':
+			ob_start();
 			DeleteSystemMessage($messageid);
-			DisplaySettings("settings");
-			DisplayConfig();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("settings.php");
 			break;
-		/* mutating action uses POST/Redirect/GET: run the handler, stash its message,
-		   then redirect to a GET so a refresh/Back doesn't re-run it */
 		case 'createdownloadlink':
 			ob_start();
 			CreateDownloadLink();
@@ -233,10 +237,17 @@
 	/* ------- SetSystemMessage ------------------- */
 	/* -------------------------------------------- */
 	function SetSystemMessage($msg) {
-		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-		
-		$sqlstring = "insert into system_messages (message, message_date, message_status) values ('$msg', now(), 'active')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$msg = trim($msg ?? '');
+		if ($msg == "") { Error("System message cannot be blank"); return; }
+
+		/* message is stored as-is (menu.php renders it as HTML); bound, so no pre-escaping */
+		$sqlstring = "insert into system_messages (message, message_date, message_status) values (?, now(), 'active')";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $msg);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$msg]);
+		mysqli_stmt_close($stmt);
+
+		Notice("System message set");
 	}
 
 
@@ -244,10 +255,16 @@
 	/* ------- DeleteSystemMessage ---------------- */
 	/* -------------------------------------------- */
 	function DeleteSystemMessage($msgid) {
-		if (!isInteger($msgid)) { echo "Invalid message ID [$msgid]"; return; }
-		
-		$sqlstring = "update system_messages set message_status = 'deleted' where message_id = $msgid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (!isInteger($msgid)) { Error("Invalid message ID [" . htmlspecialchars($msgid ?? '') . "]"); return; }
+		$msgid = (int)$msgid;
+
+		$sqlstring = "update system_messages set message_status = 'deleted' where message_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $msgid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$msgid]);
+		mysqli_stmt_close($stmt);
+
+		Notice("System message deleted");
 	}
 
 
@@ -327,10 +344,14 @@
 		$subject = "Testing email send from " . $GLOBALS['cfg']['sitename'] . " (" . $GLOBALS['cfg']['siteurl'] . ")";
 		$body = "If you receive this message, your NiDB email is working";
 		
+		if (trim($to ?? '') == "") { Error("[adminemail] is not set. Save an admin email address first."); return; }
+
 		/* send the email */
 		if (!SendEmail($to,$subject,$body, 1, 0)) {
-			return "System error. Unable to send email!";
+			Error("System error. Unable to send email!");
+			return;
 		}
+		Notice("Test email sent to " . htmlspecialchars($to));
 	}
 	
 	

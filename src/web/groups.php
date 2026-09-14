@@ -64,36 +64,44 @@
 
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-submit */
 		case 'add':
+			ob_start();
 			AddGroup($groupname, $grouptype, $GLOBALS['username']);
-			DisplayGroupList($displaytype);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgrouplist&displaytype=" . urlencode($displaytype ?? ''));
 			break;
-		case 'delete': DeleteGroup($id); break;
+		case 'delete':
+			ob_start();
+			DeleteGroup($id);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php");
+			break;
 		case 'addsubjectstogroup':
+			ob_start();
 			AddSubjectsToGroup($subjectgroupid, $uids, $seriesids, $modality);
-			ViewGroup($subjectgroupid, $observations, $columns, $groupobservations);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$subjectgroupid");
 			break;
 		case 'addstudiestogroup':
+			ob_start();
 			AddStudiesToGroup($studygroupid, $seriesids, $studyids, $modality);
-			ViewGroup($studygroupid, $observations, $columns, $groupobservations);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$studygroupid");
 			break;
 		case 'addseriestogroup':
+			ob_start();
 			AddSeriesToGroup($seriesgroupid, $seriesids, $modality);
-			ViewGroup($seriesgroupid, $observations, $columns, $groupobservations);
-			break;
-		case 'viewimagingsummary':
-			ViewImagingSummary($id);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$seriesgroupid");
 			break;
 		case 'removegroupitem':
+			ob_start();
 			RemoveGroupItem($itemid);
-			ViewGroup($id, $observations, $columns, $groupobservations);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$id");
 			break;
-		case 'viewgroup':
-			ShowFlashMessage();
-			ViewGroup($id, $observations, $columns, $groupobservations);
-			break;
-		/* mutating action uses POST/Redirect/GET: run the handler, stash its message,
-		   then redirect back to the group so a refresh/Back doesn't re-submit */
 		case 'renamegroup':
 			ob_start();
 			RenameGroup($id, $groupname);
@@ -101,13 +109,21 @@
 			RedirectTo("groups.php?action=viewgroup&id=$id");
 			break;
 		case 'updatestudygroup':
+			ob_start();
 			UpdateStudyGroup($id, $studylist);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$id");
+			break;
+		case 'viewimagingsummary':
+			ViewImagingSummary($id);
+			break;
+		case 'viewgroup':
+			ShowFlashMessage();
 			ViewGroup($id, $observations, $columns, $groupobservations);
 			break;
 		case 'viewgrouplist':
-			DisplayGroupList($displaytype);
-			break;
 		default:
+			ShowFlashMessage();
 			DisplayGroupList($displaytype);
 			break;
 	}
@@ -134,7 +150,7 @@
 		mysqli_stmt_bind_param($stmt, 'ssi', $groupname, $grouptype, $userid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
-		Notice("$groupname added");
+		Notice(htmlspecialchars($groupname ?? '') . " added");
 	}
 
 	/* -------------------------------------------- */
@@ -340,35 +356,44 @@
 		mysqli_stmt_close($stmt);
 
 		/* loop through all the studies and insert them */
+		$numadded = 0;
+		$notfound = array();
 		foreach ($studies as $study) {
 			if (trim($study) == "") { continue; }
 
 			$uid = substr($study,0,8);
 			$studynum = substr($study,8);
 
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select b.study_id from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = ? AND b.study_num = ?");
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select b.study_id, b.study_modality from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = ? AND b.study_num = ?");
 			mysqli_stmt_bind_param($stmt, 'ss', $uid, $studynum);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$studyid = trim($row['study_id']);
+				$studyid = (int)$row['study_id'];
+				$studymodality = strtolower($row['study_modality'] ?? '');
 				mysqli_stmt_close($stmt);
 
-				/* insert the studyids */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
-				mysqli_stmt_bind_param($stmt, 'ii', $id, $studyid);
+				/* insert the studyids (with the study's modality, same as AddStudiesToGroup, so membership checks match) */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality) values (?, ?, ?)");
+				mysqli_stmt_bind_param($stmt, 'iis', $id, $studyid, $studymodality);
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				mysqli_stmt_close($stmt);
+				$numadded++;
 			}
 			else {
 				mysqli_stmt_close($stmt);
-				echo "Study [$study] not found. Possibly invaliud studynum?<br>";
+				$notfound[] = htmlspecialchars($study);
 			}
 		}
 
 		/* commit the transaction */
 		$sqlstring = "commit";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		Notice("Group updated: <b>$numadded</b> studies in group");
+		if (count($notfound) > 0) {
+			Warning("Studies not found (possibly invalid study number?): <tt>" . implode(", ", $notfound) . "</tt>");
+		}
 
 	}
 	
@@ -379,6 +404,7 @@
 	function RemoveGroupItem($itemid) {
 		//PrintVariable($itemid,'ItemID');
 
+		$numremoved = 0;
 		$items = is_array($itemid) ? $itemid : array($itemid);
 		foreach ($items as $item) {
 			$item = (int)$item;
@@ -386,9 +412,10 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where subjectgroup_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $item);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$numremoved += mysqli_affected_rows($GLOBALS['linki']);
 			mysqli_stmt_close($stmt);
-			?><div align="center"><span class="message">Item <?=$item?> deleted</span></div><?
 		}
+		Notice("<b>$numremoved</b> item(s) removed from group");
 		return;
 	}
 
@@ -400,7 +427,9 @@
 		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from groups where group_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$numdeleted = mysqli_affected_rows($GLOBALS['linki']);
 		mysqli_stmt_close($stmt);
+		if ($numdeleted > 0) { Notice("Group deleted"); } else { Error("Group not found"); }
 	}
 
 
@@ -513,16 +542,41 @@
 	
 	
 	/* -------------------------------------------- */
+	/* ------- GetSeriesGroupMembers -------------- */
+	/* -------------------------------------------- */
+	/* returns array(buffered result or null, sql) of the series (with study/subject info) of one modality in a series group */
+	function GetSeriesGroupMembers($id, $modality) {
+		$id = (int)$id;
+		$modality = strtolower($modality);
+		$seriesTable = GetSeriesTableName($modality);
+		if ($seriesTable == '') { return array(null, ''); }
+		$seriesIdColumn = $modality . "series_id";
+
+		$sqlstring = "select a.subjectgroup_id, b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join $seriesTable b on a.data_id = b.$seriesIdColumn left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = ? and a.modality = ? and e.subject_id is not null";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $id, $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $modality]);
+		mysqli_stmt_close($stmt);
+
+		return array($result, $sqlstring);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ViewSeriesGroup -------------------- */
 	/* -------------------------------------------- */
 	function ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
-		$sqlstring = "select * from groups where group_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select * from groups where group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$groupname = $row['group_name'];
-		$grouptype = $row['group_type'];
+		mysqli_stmt_close($stmt);
+		$groupname = $row['group_name'] ?? '';
+		$grouptype = $row['group_type'] ?? '';
 
 		?>
 		<script>
@@ -551,18 +605,16 @@
 		$sqlstring = "select distinct(modality) from group_data where group_id = $id order by modality";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			/* modality is interpolated into a table name below; only allow simple identifiers */
-			if (preg_match('/^[a-z0-9]+$/i', $row['modality'] ?? '')) {
-				$modalities[] = $row['modality'];
+			/* modality becomes a table name below; GetSeriesTableName() rejects anything that isn't a simple identifier */
+			if (GetSeriesTableName($row['modality'] ?? '') != '') {
+				$modalities[] = strtolower($row['modality']);
 			}
 		}
 
 		foreach ($modalities as $modality) {
-			$modality = strtolower($modality);
 			/* get the demographics (series level) */
-			$sqlstring = "select a.subjectgroup_id, b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = $id and a.modality = '".$modality."' and e.subject_id is not null";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQL($sqlstring);
+			list($result, $sqlstring) = GetSeriesGroupMembers($id, $modality);
+			if (!$result) { continue; }
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$studyid = $row['study_id'];
 				$studynum = $row['study_num'];
@@ -685,11 +737,9 @@
 
 			/* reset the result pointer to 0 to iterate through the results again */
 			foreach ($modalities as $modality) {
-				$modality = strtolower($modality);
 				/* get the demographics (series level) */
-				$sqlstring = "select a.subjectgroup_id, b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join ".$modality."_series b on a.data_id = b.".$modality."series_id left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = $id and a.modality = '".$modality."' and e.subject_id is not null";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				mysqli_data_seek($result,0);
+				list($result) = GetSeriesGroupMembers($id, $modality);
+				if (!$result) { continue; }
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$seriesdesc = $row['series_desc'];
 					$seriesprotocol = $row['series_protocol'];
@@ -767,11 +817,15 @@
 	function ViewStudyGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
-		$sqlstring = "select * from groups where group_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select * from groups where group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$groupname = $row['group_name'];
-		$grouptype = $row['group_type'];
+		mysqli_stmt_close($stmt);
+		$groupname = $row['group_name'] ?? '';
+		$grouptype = $row['group_type'] ?? '';
 
 		?>
 		<script>
@@ -1262,11 +1316,15 @@
 	function ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
-		$sqlstring = "select * from groups where group_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select * from groups where group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$groupname = $row['group_name'];
-		$grouptype = $row['group_type'];
+		mysqli_stmt_close($stmt);
+		$groupname = $row['group_name'] ?? '';
+		$grouptype = $row['group_type'] ?? '';
 
 		?>
 		<script>
@@ -1677,7 +1735,8 @@
 					$ownerusername = $row['ownerusername'];
 					$grouptype = $row['group_type'];
 
-					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
+					$id = (int)$id;
+					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id"; /* int from db, safe to inline */
 					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
 					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
 					$count = $row2['count'];
@@ -1726,7 +1785,8 @@
 				$studies[$studyid]['calcstudyage'] = $calcStudyAge;
 				
 
-				$sqlstringA = "select b.* from mr_series a left join bids_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''";
+				$studyid = (int)$studyid;
+				$sqlstringA = "select b.* from mr_series a left join bids_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''"; /* int from db, safe to inline */
 				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$protocol = $rowA['shortname'];

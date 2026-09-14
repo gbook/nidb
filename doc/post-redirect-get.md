@@ -43,7 +43,7 @@ for the reference implementation.
 | `enrollment.php` | 1 | ⬜ |
 | `experiment.php` | 1 | ⬜ |
 | `functions.php` | 2 | ⬜ |
-| `groups.php` | 4 | ⬜ |
+| `groups.php` | 5 | ✅ |
 | `import.php` | 6 | ⬜ |
 | `importimaging.php` | 4 | ⬜ |
 | `importmeasures.php` | 1 | ⬜ |
@@ -69,7 +69,7 @@ for the reference implementation.
 | `remoteconnections.php` | 1 | ⬜ |
 | `remoteimportmapping.php` | 2 | ⬜ |
 | `search.php` | 5 | ⬜ |
-| `settings.php` | 1 | ⬜ |
+| `settings.php` | 1 | ✅ |
 | `setup.php` | 1 | ⬜ |
 | `signup.php` | 2 | ⬜ |
 | `status.php` | 1 | ⬜ |

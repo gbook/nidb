@@ -201,7 +201,7 @@
 					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
 					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
 					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Size <span class="tiny">bytes</span></td>
+					<td style="font-weight: bold; border-bottom:2px solid #999999; text-align: right">Size <span class="tiny">bytes</span></td>
 				</tr>
 			<?
 			foreach ($files as $line) {
@@ -301,13 +301,21 @@
 					<?
 								break;
 							default:
+								if (is_dir($file)) {
 					?>
 					<?=$displayfile?>
-					<? } ?>
+					<?
+								}
+								else {
+					?>
+					<a href="viewfile.php?file=<?=urlencode($file)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<?
+								}
+						} ?>
 					</td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format($size2)?></td>
 				</tr>
 				<?
 			}
@@ -317,14 +325,14 @@
 			
 			$files = explode("\n",trim($origfiles));
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="pipelines.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
+			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
 			<br><br>
 			<table cellspacing="0" cellpadding="2">
 				<tr>
 					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
 					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
 					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Size <span class="tiny">bytes</span></td>
+					<td style="font-weight: bold; border-bottom:2px solid #999999; text-align: right">Size <span class="tiny">bytes</span></td>
 				</tr>
 			<?
 			foreach ($files as $line) {
@@ -409,13 +417,21 @@
 					<?
 								break;
 							default:
+								if ($isdir1) {
 					?>
 					<?=$displayfile?>
-					<? } ?>
+					<?
+								}
+								else {
+					?>
+					<a href="viewfile.php?file=<?=urlencode($fullpath)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<?
+								}
+						} ?>
 					</td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
+					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
 				</tr>
 				<?
 			}
