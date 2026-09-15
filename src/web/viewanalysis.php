@@ -188,6 +188,9 @@
 			$path = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
 			#echo "(3) Path is [$path]<br>";
 		}
+		?>
+		<div class="ui container">
+		<?
 		
 		$origfileslog = $path . "origfiles.log";
 		$finfo = finfo_open(FILEINFO_MIME);
@@ -196,13 +199,15 @@
 			?>
 			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
-			<table cellspacing="0" cellpadding="2">
-				<tr>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999; text-align: right">Size <span class="tiny">bytes</span></td>
-				</tr>
+			<table class="ui very compact celled table">
+				<thead>
+					<tr>
+						<th>File</th>
+						<th>Timestamp</th>
+						<th>Permissions</th>
+						<th class="right aligned">Size <span class="tiny">bytes</span></th>
+					</tr>
+				</thead>
 			<?
 			foreach ($files as $line) {
 				//$file\t$mtime\t$perm\t$isdir\t$islink\t$size
@@ -297,7 +302,7 @@
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="niiview.php?type=<?=$filetype?>&filename=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="niiview.php?type=<?=$filetype?>&filename=<?=urlencode($file)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:
@@ -413,7 +418,7 @@
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="viewimage.php?type=<?=$filetype?>&filename=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="niiview.php?type=<?=$filetype?>&filename=<?=urlencode($fullpath)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:
@@ -439,6 +444,9 @@
 			</table>
 			<?
 		}
+		?>
+		</div>
+		<?
 	}
 	
 	

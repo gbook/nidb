@@ -61,19 +61,12 @@ if ($fileid > 0) {
 
 if ($file != "") {
 
-	$archivePath = $GLOBALS['cfg']['archivedir'];
-	$mountPath = $GLOBALS['cfg']['mountdir'];
-	
-	/* file must live within the archive directory or mount directory.
+	/* file must live within the archive, mount, or an analysis directory.
 	   realpath() resolves symlinks and ../ so traversal like archivedir/../../etc/passwd is rejected */
 	$realFile = realpath($file);
-	$realArchive = realpath($archivePath);
-	$realMount = realpath($mountPath);
-	$inArchive = (($realFile !== false) && ($realArchive !== false) && (strpos($realFile, $realArchive . DIRECTORY_SEPARATOR) === 0));
-	$inMount   = (($realFile !== false) && ($realMount !== false) && (strpos($realFile, $realMount . DIRECTORY_SEPARATOR) === 0));
-	if ($inArchive || $inMount) {
+	if (IsViewablePath($realFile)) {
 		$file = $realFile;
-		if (file_exists($file)) {
+		if (is_file($file)) {
 			if ($action == "download") {
 				$filename = basename($file);
 				
@@ -94,7 +87,8 @@ if ($file != "") {
 				//header("Content-length: " . filesize($file) . "\n\n");
 				//header("Content-Transfer-Encoding: binary");
 				
-				ob_end_flush();
+				/* discard any buffered output so it isn't prepended to the binary file */
+				while (ob_get_level() > 0) { ob_end_clean(); }
 				readfile($file);
 			}
 			else {
@@ -146,10 +140,11 @@ if ($file != "") {
 				}
 			}
 		}
-		else { echo "file [$file] does not exist"; }
+		else { http_response_code(404); echo "file [" . htmlspecialchars($file) . "] does not exist"; }
 	}
 	else {
-		echo "$file does not start with archive path";
+		http_response_code(403);
+		echo htmlspecialchars($file) . " is not within an archive, mount, or analysis directory";
 	}
 }
 else { echo "filename was blank"; }

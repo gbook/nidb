@@ -85,20 +85,42 @@
 ?>
 
 
-Viewing file <?=$filename?>
+Viewing file <?=htmlspecialchars($filename ?? '')?>
 <br>
+<div id="niivue-status" style="color: darkred"></div>
 <canvas id="gl" width="700" height="700"></canvas>
 
-<script src="https://niivue.github.io/niivue/features/niivue.umd.js"></script>
+<!-- NiiVue 0.69.0, hosted locally (the old niivue.github.io UMD URL no longer exists) -->
+<script src="scripts/niivue.umd.js"></script>
 
 <script>
-	var volumeList = [
-		{url: "getfile.php?action=download&file=<?=$filename?>", colorMap:"gray"},
-	]
-	var nv = new niivue.Niivue({isResizeCanvas: false})
-	nv.attachTo("gl") 
-	nv.loadVolumes(volumeList)
-	nv.opts.isColorbar = true
+	(async function() {
+		/* NiiVue picks the file format from the name's extension, so pass the real
+		   filename separately from the getfile.php URL (which ends in a query string) */
+		var file = {
+			url: "getfile.php?action=download&file=" + encodeURIComponent(<?=json_encode($filename ?? '')?>),
+			name: <?=json_encode(basename($filename ?? ''))?>
+		};
+		var isMesh = <?=json_encode($intype == 'mesh')?>;
+
+		try {
+			var nv = new niivue.Niivue({isResizeCanvas: false});
+			await nv.attachTo("gl");
+			if (isMesh) {
+				await nv.loadMeshes([file]);
+			}
+			else {
+				file.colormap = "gray";
+				await nv.loadVolumes([file]);
+				nv.opts.isColorbar = true;
+				nv.updateGLVolume();
+			}
+		}
+		catch (e) {
+			document.getElementById("niivue-status").textContent = "Unable to load image: " + e;
+			console.error(e);
+		}
+	})();
 </script>
 
 <? include("footer.php") ?>

@@ -72,35 +72,6 @@ else { echo "filename was blank"; }
 
 
 /* -------------------------------------------- */
-/* ------- IsViewablePath --------------------- */
-/* -------------------------------------------- */
-/* file must live within the archive, mount, or an analysis directory */
-function IsViewablePath($realfile) {
-	$dirs = array();
-	foreach (array('archivedir', 'mountdir', 'analysisdir', 'analysisdirb', 'groupanalysisdir') as $key) {
-		$dirs[] = $GLOBALS['cfg'][$key] ?? '';
-	}
-
-	/* level-0 pipelines write to their own pipeline_directory */
-	$result = MySQLiQuery("select distinct pipeline_directory from pipelines where pipeline_directory <> ''", __FILE__, __LINE__);
-	while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-		$dirs[] = $row['pipeline_directory'];
-	}
-
-	foreach ($dirs as $dir) {
-		$realdir = realpath(trim($dir));
-		/* skip unset/missing dirs, and never allow the filesystem root */
-		if (($realdir === false) || ($realdir == '/')) { continue; }
-
-		if (substr($realfile, 0, strlen($realdir) + 1) === $realdir . '/') {
-			return true;
-		}
-	}
-	return false;
-}
-
-
-/* -------------------------------------------- */
 /* ------- IsBinaryFile ----------------------- */
 /* -------------------------------------------- */
 /* treat the file as binary if the first 8KB contains a NUL byte */
