@@ -32,7 +32,7 @@ user input is fine as-is).
 | `ajaxapi.php` | 17 | 64 | ✅ |
 | `analysis.php` | 8 | 27 | ✅ |
 | `analysisbuilder.php` | 24 | 5 | ⬜ |
-| `api.php` | 16 | 3 | ⬜ |
+| `api.php` | 4 | 13 | ✅ |
 | `api2.php` | 4 | 17 | ⬜ |
 | `audit.php` | 6 | 0 | ⬜ |
 | `backup.php` | 3 | 0 | ⬜ |
@@ -120,7 +120,7 @@ user input is fine as-is).
 | `upload.php` | 4 | 0 | ⬜ |
 | `users.php` | 18 | 3 | ⬜ |
 | `v.php` | 4 | 0 | ⬜ |
-| `viewanalysis.php` | 25 | 0 | ⬜ |
+| `viewanalysis.php` | 25 | 0 | ✅ |
 | `viewimage.php` | 1 | 0 | ⬜ |
 
 _Regenerated 2026-09-08 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._

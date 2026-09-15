@@ -88,7 +88,10 @@
 Viewing file <?=htmlspecialchars($filename ?? '')?>
 <br>
 <div id="niivue-status" style="color: darkred"></div>
-<canvas id="gl" width="700" height="700"></canvas>
+<!-- NiiVue sizes the canvas to fill this div (and sets the div's background to black) -->
+<div style="width: 700px; height: 700px">
+	<canvas id="gl"></canvas>
+</div>
 
 <!-- NiiVue 0.69.0, hosted locally (the old niivue.github.io UMD URL no longer exists) -->
 <script src="scripts/niivue.umd.js"></script>
@@ -104,7 +107,11 @@ Viewing file <?=htmlspecialchars($filename ?? '')?>
 		var isMesh = <?=json_encode($intype == 'mesh')?>;
 
 		try {
-			var nv = new niivue.Niivue({isResizeCanvas: false});
+			/* leave isResizeCanvas at its default (true): NiiVue then matches the canvas
+			   pixel size to its CSS size * devicePixelRatio, which its mouse-to-voxel
+			   mapping assumes. With it off, clicks land offset from the crosshair on
+			   HiDPI screens or when the browser is zoomed */
+			var nv = new niivue.Niivue();
 			await nv.attachTo("gl");
 			if (isMesh) {
 				await nv.loadMeshes([file]);

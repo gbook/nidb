@@ -974,11 +974,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             //dlog << n->Debug("SQL used for this search (for debugging) [" +  + "]", __FUNCTION__);
             if (q.size() > 0) {
                 //dlog << QString("   Data FOUND for step [%1] (subject level)").arg(i);
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::success, i, "Data found", "");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::success, stepNum, "Data found", "");
             }
             else {
                 //dlog << QString("   Data NOT found for step [%1] (subject level)").arg(i);
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, i, "Data not found (subject-level). Stopping search", "");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, stepNum, "Data not found (subject-level). Stopping search", "");
                 stepIsInvalid = true;
                 break;
             }
@@ -1000,11 +1000,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 //dlog << QString("   Data found for step [%1] - protocol [%2] (study level)").arg(i).arg(protocol);
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::success, i, "Data found (study level)", "");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::success, stepNum, "Data found (study level)", "");
             }
             else {
                 //dlog << QString("   Data NOT found for step [%1] - protocol [%2] (study level). Stopping search for this step").arg(i).arg(protocol);
-                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, i, "Data not found (study-level). Stopping search", "");
+                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, stepNum, "Data not found (study-level). Stopping search", "");
                 stepIsInvalid = true;
                 break;
             }
@@ -1102,7 +1102,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         /* check to see if we should even run this step */
         if (!enabled) {
             //dlog << n->Debug(QString("This data step [" + protocol + "] is not enabled. Data step will not be downloaded."),__FUNCTION__);
-            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, stepNum, "Step %1 disabled", "");
+            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::neutral, stepNum, QString("Step %1 disabled").arg(stepNum), "");
             continue;
         }
 
@@ -1449,7 +1449,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             qint64 b;
                             GetDirSizeAndFileCount(behoutdir, c, b, true);
                             //dlog << n->Debug(QString("Behavioral output directory now contains [%1] files, and is [%2] bytes in size.").arg(c).arg(b), __FUNCTION__);
-                            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::success, i, QString("Behavioral data downloaded to [%1]. Directory contains %2 files and is %3 bytes in size").arg(behoutdir).arg(c).arg(b), "");
+                            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::success, stepNum, QString("Behavioral data downloaded to [%1]. Directory contains %2 files and is %3 bytes in size").arg(behoutdir).arg(c).arg(b), "");
                         }
                     }
 

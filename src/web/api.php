@@ -130,7 +130,7 @@
 		$username = trim($username);
 		$password = trim($password);
 
-		if (($username == "") || (password == "")) {
+		if (($username == "") || ($password == "")) {
 			return false;
 		}
 		
@@ -143,7 +143,7 @@
 		
 		//echo "[SQL: $sqlstring]";
 		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
+		if ($result && (mysqli_num_rows($result) > 0)) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$GLOBALS['userid'] = $row['user_id'];
 			return true;
@@ -167,7 +167,7 @@
 
 			if (trim(shell_exec("command -v ypmatch")) != "") {
 					
-				$autharray = explode(":",`ypmatch $username passwd`);
+				$autharray = explode(":",shell_exec("ypmatch " . escapeshellarg($username) . " passwd"));
 				if ($autharray[0] != $username) {
 					return false;
 				}
@@ -187,9 +187,12 @@
 	/* ------- StartTransaction ------------------- */
 	/* -------------------------------------------- */
 	function StartTransaction($u, $source="unknown") {
-		$sqlstring = "insert into import_transactions (transaction_startdate, transaction_source, transaction_status, transaction_username) values (now(), '$source', 'uploading', '$u')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into import_transactions (transaction_startdate, transaction_source, transaction_status, transaction_username) values (now(), ?, 'uploading', ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $source, $u);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$source, $u]);
 		$tid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		echo $tid;
 	}
 
@@ -198,8 +201,11 @@
 	/* ------- EndTransaction --------------------- */
 	/* -------------------------------------------- */
 	function EndTransaction($tid) {
-		$sqlstring = "update import_transactions set transaction_enddate = now(), transaction_status = 'uploadcomplete' where importtrans_id = $tid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$tid = (int)$tid;
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update import_transactions set transaction_enddate = now(), transaction_status = 'uploadcomplete' where importtrans_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $tid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		echo "Ok";
 	}
 
@@ -208,11 +214,16 @@
 	/* ------- GetTransactionStatus --------------- */
 	/* -------------------------------------------- */
 	function GetTransactionStatus($transactionid) {
-		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
+		$transactionid = (int)$transactionid;
 		
-		$sqlstring = "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = $transactionid order by import_datetime desc";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = ? order by import_datetime desc");
+		mysqli_stmt_bind_param($stmt, 'i', $transactionid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		/* null (not an empty array) so an empty result still prints "null", as before */
+		$a = null;
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 			$a[] = $row;
 		}
 
@@ -224,13 +235,18 @@
 	/* ------- GetArchiveStatus ------------------- */
 	/* -------------------------------------------- */
 	function GetArchiveStatus($transactionid) {
-		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
+		$transactionid = (int)$transactionid;
 
-		$sqlstring = "select * from import_requests where import_transactionid = $transactionid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$groupids[] = $row['importrequest_id'];
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select importrequest_id from import_requests where import_transactionid = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $transactionid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		$groupids = array();
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$groupids[] = (int)$row['importrequest_id'];
 		}
+		/* intval-sanitized ids from the database, safe to inline */
 		$grouplist = implode2(',',$groupids);
 		if ($grouplist == "") {
 			$grouplist = 'null';
@@ -238,6 +254,7 @@
 		
 		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in ($grouplist) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$a = null;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$a[] = $row;
 		}
@@ -250,14 +267,18 @@
 	/* ------- GetUIDFromAltUID ------------------- */
 	/* -------------------------------------------- */
 	function GetUIDFromAltUID($altuid) {
-		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
+		$altuid = (string)$altuid;
 
-		$sqlstring = "select uid from subjects where subject_id in (select subject_id from subject_altuid where altuid = '$altuid')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select uid from subjects where subject_id in (select subject_id from subject_altuid where altuid = ?)");
+		mysqli_stmt_bind_param($stmt, 's', $altuid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		$uids = array();
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 			$uids[] = $row['uid'];
 		}
-		if (is_array($uids)) {
+		if (count($uids) > 0) {
 			echo implode(',',$uids);
 		}
 	}
@@ -267,16 +288,20 @@
 	/* ------- GetInstanceList -------------------- */
 	/* -------------------------------------------- */
 	function GetInstanceList($u) {
-		$u = mysqli_real_escape_string($GLOBALS['linki'], $u);
+		$u = (string)$u;
 
-		$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '$u')) order by instance_name";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = ?)) order by instance_name");
+		mysqli_stmt_bind_param($stmt, 's', $u);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		$instances = array();
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 			$instanceuid = $row['instance_uid'];
 			$instancename = $row['instance_name'];
 			$instances[] = "$instanceuid|$instancename";
 		}
-		if (is_array($instances)) {
+		if (count($instances) > 0) {
 			echo implode(',',$instances);
 		}
 	}
@@ -286,20 +311,21 @@
 	/* ------- GetProjectList --------------------- */
 	/* -------------------------------------------- */
 	function GetProjectList($u, $instance) {
-		$u = mysqli_real_escape_string($GLOBALS['linki'], $u);
+		$u = (string)$u;
+		$instance = (string)$instance;
 		
-		if (!is_null($instance))
-			$instance = mysqli_real_escape_string($GLOBALS['linki'], $instance);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from projects a left join user_project b on a.project_id = b.project_id left join users c on b.user_id = c.user_id where c.username = ? and a.instance_id = (select instance_id from instance where instance_uid = ?) and (b.view_data = 1 or b.view_phi = 1 or b.write_data = 1 or b.write_phi = 1) order by a.project_name");
+		mysqli_stmt_bind_param($stmt, 'ss', $u, $instance);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
 		
-		$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id left join users c on b.user_id = c.user_id where c.username = '$u' and a.instance_id = (select instance_id from instance where instance_uid = '$instance') and (b.view_data = 1 or b.view_phi = 1 or b.write_data = 1 or b.write_phi = 1) order by a.project_name";
-		//echo "$sqlstring";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$projects = array();
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 			$projectid = $row['project_id'];
 			$projectname = $row['project_name'];
 			$projects[] = "$projectid|$projectname";
 		}
-		if (is_array($projects)) {
+		if (count($projects) > 0) {
 			echo implode(',',$projects);
 		}
 	}
@@ -309,18 +335,16 @@
 	/* ------- GetSiteList ------------------------ */
 	/* -------------------------------------------- */
 	function GetSiteList($u, $instance) {
-		$u = mysqli_real_escape_string($GLOBALS['linki'], $u);
-		$instance = mysqli_real_escape_string($GLOBALS['linki'], $instance);
-		
+		/* parameterless. $u and $instance are currently unused */
 		$sqlstring = "select * from nidb_sites order by site_name";
-		//echo "$sqlstring";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sites = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$siteid = $row['site_id'];
 			$sitename = $row['site_name'];
 			$sites[] = "$siteid|$sitename";
 		}
-		if (is_array($sites)) {
+		if (count($sites) > 0) {
 			echo implode(',',$sites);
 		}
 	}
@@ -331,15 +355,39 @@
 	/* -------------------------------------------- */
 	function GetEquipmentList() {
 		$sqlstring = "select distinct(study_site) 'equipment' from studies where study_site <> '' order by study_site";
-		//echo "$sqlstring";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sites = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$equipment = $row['equipment'];
 			$sites[] = "$equipment|$equipment";
 		}
-		if (is_array($sites)) {
+		if (count($sites) > 0) {
 			echo implode(',',$sites);
 		}
+	}
+	
+
+	/* -------------------------------------------- */
+	/* ------- LookupRowID ------------------------ */
+	/* -------------------------------------------- */
+	/* find a row ID from a value that may be either the numeric row ID or the UID.
+	   $table, $idcol, $uidcol are hardcoded by the callers, never user input */
+	function LookupRowID($table, $idcol, $uidcol, $value) {
+		$value = (string)$value;
+		if (isInteger($value)) {
+			$intvalue = (int)$value;
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select `$idcol` from `$table` where `$idcol` = ? or `$uidcol` = ?");
+			mysqli_stmt_bind_param($stmt, 'is', $intvalue, $value);
+		}
+		else {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select `$idcol` from `$table` where `$uidcol` = ?");
+			mysqli_stmt_bind_param($stmt, 's', $value);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		return $row[$idcol] ?? "";
 	}
 	
 
@@ -348,80 +396,59 @@
 	/* -------------------------------------------- */
 	function UploadDICOM($uuid, $dob, $age, $sex, $seriesnotes, $altuids, $anonymize, $dataformat, $modality, $numfiles, $equipmentid, $siteid, $projectid, $instanceid, $matchidonly, $transactionid) {
 		
-		//print_r($_POST);
-		//echo "\n";
+		/* values are bound below, so no escaping */
+		$uuid = (string)$uuid;
+		$sex = (string)$sex;
+		$anonymize = GetMySQLTinyInt($anonymize);
+		$dataformat = (string)$dataformat;
+		$modality = (string)$modality;
+		$equipmentid = (string)$equipmentid;
+		$matchidonly = GetMySQLTinyInt($matchidonly);
+		$seriesnotes = (string)$seriesnotes;
+		/* nullable columns: blank becomes SQL NULL */
+		$transactionid = (trim((string)$transactionid) === '') ? null : (int)$transactionid;
+		$dob = (trim((string)$dob) === '') ? null : (string)$dob;
+		$age = (trim((string)$age) === '') ? null : (float)$age;
 		
-		$uuid = mysqli_real_escape_string($GLOBALS['linki'], $uuid);
-		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob);
-		$age = mysqli_real_escape_string($GLOBALS['linki'], $age);
-		$sex = mysqli_real_escape_string($GLOBALS['linki'], $sex);
-		$anonymize = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $anonymize));
-		$dataformat = mysqli_real_escape_string($GLOBALS['linki'], $dataformat);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$equipmentid = mysqli_real_escape_string($GLOBALS['linki'], $equipmentid);
-		$siteid = mysqli_real_escape_string($GLOBALS['linki'], $siteid);
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$instanceid = mysqli_real_escape_string($GLOBALS['linki'], $instanceid);
-		$matchidonly = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $matchidonly));
-		$transactionid = mysqli_real_escape_string($GLOBALS['linki'], $transactionid);
-		$seriesnotes = mysqli_real_escape_string($GLOBALS['linki'], $seriesnotes);
-		$altuids = mysqli_real_escape_string($GLOBALS['linki'], $altuids);
-		$numfiles = mysqli_real_escape_string($GLOBALS['linki'], $numfiles);
-		
-		$altuidlist = explode(',',$altuids);
+		$altuidlist = explode(',',(string)$altuids);
 		$altuidlist = array_unique($altuidlist);
 		$altuids = implode(',',$altuidlist);
 		
 		/* get the instanceRowID */
-		if (isInteger($instanceid))
-			$sqlstring = "select instance_id from instance where instance_id = $instanceid or instance_uid = '$instanceid'";
-		else
-			$sqlstring = "select instance_id from instance where instance_uid = '$instanceid'";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instanceRowID = $row['instance_id'];
+		$instanceRowID = LookupRowID('instance', 'instance_id', 'instance_uid', $instanceid);
 		if ($instanceRowID == "") {
 			echo "ERROR_INVALID_INSTANCEID";
 			exit(0);
 		}
 		
 		/* get the projectRowID */
-		if (isInteger($projectid))
-			$sqlstring = "select project_id from projects where project_id = $projectid or project_uid = '$projectid'";
-		else
-			$sqlstring = "select project_id from projects where project_uid = '$projectid'";
-
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectRowID = $row['project_id'];
+		$projectRowID = LookupRowID('projects', 'project_id', 'project_uid', $projectid);
 		if ($projectRowID == "") {
 			echo "ERROR_INVALID_PROJECTID";
 			exit(0);
 		}
 		
 		/* get the siteRowID */
-		if (isInteger($siteid))
-			$sqlstring = "select site_id from nidb_sites where site_id = $siteid or site_uid = '$siteid'";
-		else
-			$sqlstring = "select site_id from nidb_sites where site_uid = '$siteid'";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$siteRowID = $row['site_id'];
+		$siteRowID = LookupRowID('nidb_sites', 'site_id', 'site_uid', $siteid);
 		if ($siteRowID == "") {
 			echo "ERROR_INVALID_SITEID";
 			exit(0);
 		}
+		
+		$md5list = array();
 		
 		/* check if there is anything in the FILES global variable */
 		if (isset($_FILES['files'])){
 			/* and check if we received at least 1 file */
 			if (count($_FILES['files']) > 0) {
 				/* get next import ID */
-				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_dob, import_sex, import_age, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_matchidonly) values ('$transactionid', '$dataformat','$modality',now(),'uploading',now(),'$equipmentid','$siteRowID','$projectRowID','$instanceRowID','$dob','$sex','$age', '$uuid','$seriesnotes','$altuids','$anonymize', '$matchidonly')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "insert into import_requests (import_transactionid, import_datatype, import_modality, import_datetime, import_status, import_startdate, import_equipment, import_siteid, import_projectid, import_instanceid, import_dob, import_sex, import_age, import_uuid, import_seriesnotes, import_altuids, import_anonymize, import_matchidonly) values (?, ?, ?, now(), 'uploading', now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				$params = [$transactionid, $dataformat, $modality, $equipmentid, $siteRowID, $projectRowID, $instanceRowID, $dob, $sex, $age, $uuid, $seriesnotes, $altuids, $anonymize, $matchidonly];
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'isssiiissdsssii', ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 				$uploadID = mysqli_insert_id($GLOBALS['linki']);
+				mysqli_stmt_close($stmt);
 				
 				$numfilessuccess = 0;
 				$numfilesfail = 0;
@@ -431,7 +458,6 @@
 				$numbehtotal = 0;
 				$report = "DateTime\tFilenameIn\tFilenameOutPath\tMD5\tFileSize\tStatusMessage\n";
 				
-				//echo "I'm still here\n";
 				$savepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID";
 				$behsavepath = $GLOBALS['cfg']['uploadeddir'] . "/$uploadID/beh";
 		
@@ -439,6 +465,8 @@
 				mkdir($savepath, 0777, true);
 				chmod($savepath, 0777);
 				foreach ($_FILES['files']['name'] as $i => $name) {
+					/* client-supplied filename: never allow directory components */
+					$name = basename($name);
 					$numfilestotal++;
 					$filemd5 = "";
 					$filesize = 0;
@@ -449,7 +477,6 @@
 							if ($GLOBALS['debug'] == 1) echo "RECEIVED $savepath/$name\n";
 							$numfilessuccess++;
 							chmod("$savepath/$name", 0777);
-							//echo date('c') . "\n";
 							$filemd5 = strtoupper(md5_file("$savepath/$name"));
 							$md5list[] = $filemd5;
 							if ($GLOBALS['debug'] == 1) echo date('c') . " [MD5: $filemd5]\n";
@@ -480,7 +507,10 @@
 					mkdir($behsavepath, 0777, true);
 					chmod($behsavepath, 0777);
 					foreach ($_FILES['behs']['name'] as $i => $name) {
+						$name = basename($name);
 						$numbehtotal++;
+						$filemd5 = "";
+						$filesize = 0;
 						if (move_uploaded_file($_FILES['behs']['tmp_name'][$i], "$behsavepath/$name")) {
 							$numbehsuccess++;
 							chmod("$behsavepath/$name", 0777);
@@ -489,19 +519,21 @@
 							$filesize = filesize("$behsavepath/$name");
 							$success = 1;
 							
-							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tFile successfully received\n";
+							$report .= date('c'). "\t$name\t$behsavepath/$name\t$filemd5\t$filesize\tFile successfully received\n";
 						}
 						else {
 							$numbehfail++;
 							$success = 0;
 
-							$report .= date('c'). "\t$name\t$savepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
+							$report .= date('c'). "\t$name\t$behsavepath/$name\t$filemd5\t$filesize\tUnable to copy file to output path\n";
 						}
 					}
 				}
-				$report = mysqli_real_escape_string($GLOBALS['linki'], $report);
-				$sqlstring = "update import_requests set import_status = 'pending', numfilestotal = '$numfilestotal', numfilessuccess = '$numfilessuccess', numfilesfail = '$numfilesfail', numbehtotal = '$numbehtotal', numbehsuccess = '$numbehsuccess', numbehfail = '$numbehfail', uploadreport = '$report' where importrequest_id = $uploadID";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "update import_requests set import_status = 'pending', numfilestotal = ?, numfilessuccess = ?, numfilesfail = ?, numbehtotal = ?, numbehsuccess = ?, numbehfail = ?, uploadreport = ? where importrequest_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'iiiiiisi', $numfilestotal, $numfilessuccess, $numfilesfail, $numbehtotal, $numbehsuccess, $numbehfail, $report, $uploadID);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
 			}
 			else {
 				echo "UPLOADERROR";

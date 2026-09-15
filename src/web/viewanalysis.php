@@ -67,8 +67,8 @@
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$pipelinename = $row['pipeline_name'];
-		$pipelineid = $row['pipeline_id'];
-		$pipelineversion = $row['pipeline_version'];
+		$pipelineid = (int)$row['pipeline_id'];
+		$pipelineversion = (int)$row['pipeline_version'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
 		$pipelinedirstructure = $row['pipeline_dirstructure'];
@@ -208,6 +208,7 @@
 						<th class="right aligned">Size <span class="tiny">bytes</span></th>
 					</tr>
 				</thead>
+				<tbody>
 			<?
 			foreach ($files as $line) {
 				//$file\t$mtime\t$perm\t$isdir\t$islink\t$size
@@ -217,7 +218,7 @@
 				$islink2 = '';
 				$isdir2 = '';
 				$size2 = 0;
-				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = explode("\t",$line);
+				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = array_pad(explode("\t",$line), 6, "");
 				
 				if (is_link($file)) { $islink2 = 1; }
 				if (is_dir($file)) { $isdir2 = 1; }
@@ -318,12 +319,16 @@
 								}
 						} ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=(is_numeric($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : $timestamp2)?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
 					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format($size2)?></td>
 				</tr>
 				<?
 			}
+			?>
+				</tbody>
+			</table>
+			<?
 		}
 		else {
 			$origfiles = file_get_contents($path . "origfiles.log");
@@ -348,7 +353,7 @@
 				$islink2 = '';
 				$isdir2 = '';
 				$size2 = 0;
-				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = explode("\t",$line);
+				list($file,$timestamp1,$perm1,$isdir1,$islink1,$size1) = array_pad(explode("\t",$line), 6, "");
 				
 				if (file_exists($GLOBALS['cfg']['mountdir'] . "/$file")) {
 					$filetype = "";
@@ -434,9 +439,9 @@
 								}
 						} ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp1)?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=(is_numeric($timestamp1) ? date("M j, Y H:i:s",$timestamp1) : "")?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
-					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format($size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
+					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format((float)$size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
 				</tr>
 				<?
 			}
@@ -633,7 +638,7 @@
 			?>
 			<tr>
 				<td><?=$cumtime?></td>
-				<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+				<td nowrap><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
 				<td><?=$pipeline_version?></td>
 				<td><?=$analysis_hostname?></td>
 				<td><?=$analysis_event?></td>
@@ -673,8 +678,8 @@
 		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$pipelineid = $row['pipeline_id'];
-		$studyid = $row['study_id'];
+		$pipelineid = (int)$row['pipeline_id'];
+		$studyid = (int)$row['study_id'];
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$pipelinename = $row['pipeline_name'];
@@ -862,7 +867,7 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
-					<td colspan="5" class="blue">
+					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
@@ -878,77 +883,79 @@
 									<th>Message</th>
 								</thead>
 							<?
-								foreach ($logs['setup_dataStepCheck'] as $step) {
+								/* modals are collected and printed after the table. A <div> inside a <table> is invalid HTML
+								   and the IDs must be unique, because a step number can appear in more than one log row */
+								$dataCheckModals = "";
+								$modalNum = 0;
+								foreach (($logs['setup_dataStepCheck'] ?? []) as $step) {
 									$i = $step['stepNumber'];
-									if ($i < 1)
-										continue;
-									
-									if (strlen($datadef[$i]['protocol']) > 40) {
-										$protocolShort = substr($datadef[$i]['protocol'], 0, 40) . "... <i class='large blue comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									$modalNum++;
+									$modalID = "dataCheckModal$modalNum";
+									$dd = $datadef[$i] ?? null;
+									$protocol = $dd['protocol'] ?? '';
+
+									if (strlen($protocol) > 40) {
+										$protocolShort = htmlspecialchars(substr($protocol, 0, 40)) . "... <i class='large blue comment alternate outline icon' title='" . htmlspecialchars($protocol, ENT_QUOTES) . "'></i>";
 									}
 									else {
-										$protocolShort = $datadef[$i]['protocol'];
+										$protocolShort = htmlspecialchars($protocol);
 									}
+
+									ob_start();
 									?>
-									
-									<script>
-										$(document).ready(function(){
-											$('#showDataCheckButton<?=$i?>').on('click', function(){
-												$('#dataCheckStep<?=$i?>').modal('show');
-											});
-										});
-									</script>
-									<div class="ui large modal" id ="dataCheckStep<?=$i?>">
+									<div class="ui large modal" id="<?=$modalID?>">
 										<i class="close icon"></i>
-										<p>
-											<h2 class="ui header">
-												Step <?=$i?>
-											</h2>
-											<div class="scrolling content">
-												<div class="header">Data step details</div>
-												<b>Search</b>
-												<ul>
-													<li><b>Association type</b> <tt><?=$datadef[$i]['associationType']?></tt>
-													<li><b>Enabled</b> <tt><?=$datadef[$i]['flagEnabled']?></tt>
-													<li><b>Optional</b> <tt><?=$datadef[$i]['flagOptional']?></tt>
-													<li><b>Image type</b> <tt><?=$datadef[$i]['imageType']?></tt>
-													<li><b>Data level</b> <tt><?=$datadef[$i]['level']?></tt>
-													<li><b>Modality</b> <tt><?=$datadef[$i]['modality']?></tt>
-													<li><b>BOLD reps</b> <tt><?=$datadef[$i]['numberBoldReps']?></tt>
-													<li><b>Protocol</b> <tt><?=$datadef[$i]['protocol']?></tt>
-													<li><b>Series criteria</b> <tt><?=$datadef[$i]['seriesCriteria']?></tt>
-													<li><b>Type</b> <tt><?=$datadef[$i]['type']?></tt>
-												</ul>
-												<b>Download</b>
-												<ul>
-													<li><b>Beh directory</b> <tt><?=$datadef[$i]['behDirectory']?></tt>
-													<li><b>Beh format</b> <tt><?=$datadef[$i]['behFormat']?></tt>
-													<li><b>Data format</b> <tt><?=$datadef[$i]['dataFormat']?></tt>
-													<li><b>g-zip</b> <tt><?=$datadef[$i]['flagGzip']?></tt>
-													<li><b>Preserve series num</b> <tt><?=$datadef[$i]['flagPreserveSeries']?></tt>
-													<li><b>Use PE direction</b> <tt><?=$datadef[$i]['flagUsePhaseDirection']?></tt>
-													<li><b>Directory</b> <tt><?=$datadef[$i]['location']?></tt>
-													<li><b>Use series numbers</b> <tt><?=$datadef[$i]['useSeries']?></tt>
-												</ul>
-											</div>
-										</p>
+										<div class="header">Step <?=$i?> - Data step details</div>
+										<div class="scrolling content">
+											<? if (is_null($dd)) { ?>
+											<p>No data definition found for step <?=$i?> in pipeline version <?=$pipelineversion?></p>
+											<? } else { ?>
+											<b>Search</b>
+											<ul>
+												<li><b>Association type</b> <tt><?=htmlspecialchars($dd['associationType'] ?? '')?></tt>
+												<li><b>Enabled</b> <tt><?=htmlspecialchars($dd['flagEnabled'] ?? '')?></tt>
+												<li><b>Optional</b> <tt><?=htmlspecialchars($dd['flagOptional'] ?? '')?></tt>
+												<li><b>Image type</b> <tt><?=htmlspecialchars($dd['imageType'] ?? '')?></tt>
+												<li><b>Data level</b> <tt><?=htmlspecialchars($dd['level'] ?? '')?></tt>
+												<li><b>Modality</b> <tt><?=htmlspecialchars($dd['modality'] ?? '')?></tt>
+												<li><b>BOLD reps</b> <tt><?=htmlspecialchars($dd['numberBoldReps'] ?? '')?></tt>
+												<li><b>Protocol</b> <tt><?=htmlspecialchars($dd['protocol'] ?? '')?></tt>
+												<li><b>Series criteria</b> <tt><?=htmlspecialchars($dd['seriesCriteria'] ?? '')?></tt>
+												<li><b>Type</b> <tt><?=htmlspecialchars($dd['type'] ?? '')?></tt>
+											</ul>
+											<b>Download</b>
+											<ul>
+												<li><b>Beh directory</b> <tt><?=htmlspecialchars($dd['behDirectory'] ?? '')?></tt>
+												<li><b>Beh format</b> <tt><?=htmlspecialchars($dd['behFormat'] ?? '')?></tt>
+												<li><b>Data format</b> <tt><?=htmlspecialchars($dd['dataFormat'] ?? '')?></tt>
+												<li><b>g-zip</b> <tt><?=htmlspecialchars($dd['flagGzip'] ?? '')?></tt>
+												<li><b>Preserve series num</b> <tt><?=htmlspecialchars($dd['flagPreserveSeries'] ?? '')?></tt>
+												<li><b>Use PE direction</b> <tt><?=htmlspecialchars($dd['flagUsePhaseDirection'] ?? '')?></tt>
+												<li><b>Directory</b> <tt><?=htmlspecialchars($dd['location'] ?? '')?></tt>
+												<li><b>Use series numbers</b> <tt><?=htmlspecialchars($dd['useSeries'] ?? '')?></tt>
+											</ul>
+											<? } ?>
+										</div>
 										<div class="actions">
 											<button class="ui approve button">Close</button>
 										</div>
 									</div>
-									
+									<?
+									$dataCheckModals .= ob_get_clean();
+									?>
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
 									<td><?=$step['stepNumber']?></td>
 									<td><tt><?=$protocolShort?></tt></td>
-									<td><a class="ui compact basic label" id="showDataCheckButton<?=$i?>">Details</a> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
+									<td><a class="ui compact basic label showModalButton" data-modal="<?=$modalID?>">Details</a></td>
 									<td><?=$step['message']?></td>
 									</tr>
 									<?
 								}
 							?>
 							</table>
-						</div>					
+							<?=$dataCheckModals?>
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -962,7 +969,7 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Data download steps</td>
-					<td colspan="5" class="blue">
+					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
@@ -978,7 +985,7 @@
 									<th>Datetime</th>
 								</thead>
 							<?
-								foreach ($logs['setup_dataStepDownload'] as $step) {
+								foreach (($logs['setup_dataStepDownload'] ?? []) as $step) {
 									$i = $step['stepNumber'];
 									
 									if (strlen($datadef[$i]['protocol']) > 40) {
@@ -1046,7 +1053,7 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
-					<td colspan="5" class="blue">
+					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
@@ -1063,9 +1070,13 @@
 									<th>Datetime</th>
 								</thead>
 							<?
-								foreach ($logs['status_analysisStepCheckin'] as $step) {
+								$scriptModals = "";
+								$modalNum = 0;
+								foreach (($logs['status_analysisStepCheckin'] ?? []) as $step) {
 									$i = $step['stepNumber'];
-									
+									$modalNum++;
+									$modalID = "scriptStepModal$modalNum";
+
 									$logfile = $path . "/Step" . $i;
 									$truncated = false;
 									
@@ -1087,54 +1098,47 @@
 										$fileExists = false;
 									}
 									
-									$description = $descriptions['reg'][$i];
-									$command = $commands['reg'][$i];
+									$description = $descriptions['reg'][$i] ?? '';
+									$command = $commands['reg'][$i] ?? '';
 
+									ob_start();
 									?>
-									<script>
-										$(document).ready(function(){
-											$('#showModalScriptButton<?=$i?>').on('click', function(){
-												$('#scriptStep<?=$i?>').modal('show');
-											});
-										});
-									</script>
-									<div class="ui large modal" id ="scriptStep<?=$i?>">
+									<div class="ui large modal" id="<?=$modalID?>">
 										<i class="close icon"></i>
-										<p>
-											<h2 class="ui header">
-												Step <?=$i?>
-											</h2>
-											<div class="scrolling content">
-												<p>
-													<b>Command</b>
-													<div class="code"><?=$command?> <span class="ui green text"># <?=$description?></span></div>
-												</p>
-												<? if ($fileExists) { ?>
-												<p>
-													<b>Log file path</b>
-													<br>
-													<tt><?=$logfile?></tt>
-												</p>
-												<p>
-													<b>Command output</b>
-													<? if ($truncated) { echo "&nbsp; &nbsp; <span class='ui red text'><b>Original log file ".HumanReadableFilesize($size).". Only displaying first 100,000 bytes</b></span>"; } ?>
-													<br>
-													<tt><pre class="code"><?=$fileStr?></pre></tt>
-												</p>
-												<? } else { ?>
-												<p>No log file</p>
-												<? } ?>
-											</div>
-										</p>
+										<div class="header">Step <?=$i?></div>
+										<div class="scrolling content">
+											<p>
+												<b>Command</b>
+												<div class="code"><?=htmlspecialchars($command)?> <span class="ui green text"># <?=htmlspecialchars($description)?></span></div>
+											</p>
+											<? if ($fileExists) { ?>
+											<p>
+												<b>Log file path</b>
+												<br>
+												<tt><?=$logfile?></tt>
+											</p>
+											<p>
+												<b>Command output</b>
+												<? if ($truncated) { echo "&nbsp; &nbsp; <span class='ui red text'><b>Original log file ".HumanReadableFilesize($size).". Only displaying first 100,000 bytes</b></span>"; } ?>
+												<br>
+												<tt><pre class="code"><?=htmlspecialchars($fileStr, ENT_QUOTES | ENT_SUBSTITUTE)?></pre></tt>
+											</p>
+											<? } else { ?>
+											<p>No log file</p>
+											<? } ?>
+										</div>
 										<div class="actions">
 											<button class="ui approve button">Close</button>
 										</div>
 									</div>
+									<?
+									$scriptModals .= ob_get_clean();
+									?>
 									<tr>
 										<td><?=GetStatusIcon($step['status'])?></td>
 										<td><?=$step['stepNumber']?></td>
 										<td><?=$step['message']?></td>
-										<td><div class="ui compact small button" id="showModalScriptButton<?=$i?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
+										<td><div class="ui compact small button showModalButton" data-modal="<?=$modalID?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
 										<td><?=$step['hostname']?></td>
 										<td><?=$step['datetime']?></td>
 									</tr>
@@ -1142,7 +1146,8 @@
 								}
 							?>
 							</table>
-						</div>					
+							<?=$scriptModals?>
+						</div>
 					</td>
 				</tr>
 				<tr>
@@ -1169,94 +1174,63 @@
 					<td><?=$logs['status_checkSuccessFiles'][0]['hostname']?></td>
 					<td><?=$logs['status_checkSuccessFiles'][0]['datetime']?></td>
 				</tr>
-				<tr>
-					<script>
-						$(document).ready(function(){
-							$('#showClusterOutputLogButton').on('click', function(){
-								$('#clusterOutputLogModal').modal('show');
-							});
-						});
-					</script>
-					<?
-						$logOutFiles = glob("$path/*.o*");
-						natsort($logOutFiles);
-						
-						$clusterOutputLogPath = end($logOutFiles);
-						$file = file_get_contents($clusterOutputLogPath);
-						$logsize = filesize($clusterOutputLogPath);
-						$filedate = date ("F d Y H:i:s", filemtime($clusterOutputLogPath));
-						
-					?>
-					<div class="ui large modal" id ="clusterOutputLogModal">
-						<i class="close icon"></i>
-						<p>
-							<h2 class="ui header">
-								Cluster output log
-							</h2>
+				<?
+					/* cluster output (.o) and error (.e) logs. Modals are printed after the table */
+					$clusterModals = "";
+					foreach (array('Output' => "$path/*.o*", 'Error' => "$path/*.e*") as $logType => $pattern) {
+						$modalID = "cluster{$logType}LogModal";
+						$logFiles = glob($pattern);
+						if (!is_array($logFiles)) { $logFiles = array(); }
+						natsort($logFiles);
+						$logPath = end($logFiles);
+
+						if (($logPath !== false) && is_file($logPath)) {
+							$logStr = file_get_contents($logPath);
+							$logsize = filesize($logPath);
+							$filedate = date("F d Y H:i:s", filemtime($logPath));
+						}
+						else {
+							$logPath = "";
+							$logStr = "";
+							$logsize = 0;
+							$filedate = "";
+						}
+
+						ob_start();
+						?>
+						<div class="ui large modal" id="<?=$modalID?>">
+							<i class="close icon"></i>
+							<div class="header">Cluster <?=strtolower($logType)?> log</div>
 							<div class="scrolling content">
 								<p>
-									<code><?=$clusterOutputLogPath?></code>
+									<code><?=$logPath?></code>
 								</p>
-								
-								<tt><pre><?=$file?></pre></tt>
+								<tt><pre><?=htmlspecialchars($logStr, ENT_QUOTES | ENT_SUBSTITUTE)?></pre></tt>
 							</div>
-						</p>
-						<div class="actions">
-							<button class="ui approve button">Close</button>
-						</div>
-					</div>
-					
-					<td class="rowspanned"></td>
-					<td>Cluster output log</td>
-					<td><?=GetStatusIcon('neutral')?></td>
-					<td><a class="ui compact basic label" id="showClusterOutputLogButton">View log</a> <span class='ui small text'>Log size <?=HumanReadableFilesize($logsize); ?></span></td>
-					<td><?=$analysisHostname?></td>
-					<td><?=$filedate?></td>
-				</tr>
-				<tr>
-					<script>
-						$(document).ready(function(){
-							$('#showClusterErrorLogButton').on('click', function(){
-								$('#clusterErrorLogModal').modal('show');
-							});
-						});
-					</script>
-					<?
-						$logErrorFiles = glob("$path/*.e*");
-						natsort($logErrorFiles);
-						
-						$clusterErrorLogPath = end($logErrorFiles);
-						$file = file_get_contents($clusterErrorLogPath);
-						$logsize = filesize($clusterErrorLogPath);
-						$filedate = date ("F d Y H:i:s", filemtime($clusterErrorLogPath));
-						
-					?>
-					<div class="ui large modal" id ="clusterErrorLogModal">
-						<i class="close icon"></i>
-						<p>
-							<h2 class="ui header">
-								Cluster error log
-							</h2>
-							<div class="scrolling content">
-								<p>
-									<code><?=$clusterErrorLogPath?></code>
-								</p>
-								
-								<tt><pre><?=$file?></pre></tt>
+							<div class="actions">
+								<button class="ui approve button">Close</button>
 							</div>
-						</p>
-						<div class="actions">
-							<button class="ui approve button">Close</button>
 						</div>
-					</div>
-					
-					<td class="rowspanned"></td>
-					<td>Cluster error log</td>
-					<td><?=GetStatusIcon('neutral')?></td>
-					<td><a class="ui compact basic label" id="showClusterErrorLogButton">View log</a> <span class='ui small text'>Log size <?=HumanReadableFilesize($logsize); ?></span></td>
-					<td><?=$analysisHostname?></td>
-					<td><?=$filedate?></td>
-				</tr>
+						<?
+						$clusterModals .= ob_get_clean();
+						?>
+						<tr>
+							<td class="rowspanned"></td>
+							<td>Cluster <?=strtolower($logType)?> log</td>
+							<td><?=GetStatusIcon('neutral')?></td>
+							<td>
+								<? if ($logPath != "") { ?>
+								<a class="ui compact basic label showModalButton" data-modal="<?=$modalID?>">View log</a> <span class='ui small text'>Log size <?=HumanReadableFilesize($logsize); ?></span>
+								<? } else { ?>
+								<span class='ui small grey text'>No log file found</span>
+								<? } ?>
+							</td>
+							<td><?=$analysisHostname?></td>
+							<td><?=$filedate?></td>
+						</tr>
+						<?
+					}
+				?>
 				<tr>
 					<td class="rowspanned"></td>
 					<td>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
@@ -1266,7 +1240,7 @@
 					<td><?=$logs['status_analysisComplete'][0]['datetime']?></td>
 				</tr>
 				<tr>
-					<td rowspan="6" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
+					<td rowspan="3" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
 					<td>File count</td>
 					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
 					<td><a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles">View all files</a></td>
@@ -1290,7 +1264,16 @@
 					<td><?=$logs['status_resultCount'][0]['datetime']?></td>
 				</tr>
 			</table>
+			<?=$clusterModals?>
 		</div>
+		<script>
+			/* one delegated handler for all Details/View log buttons. Each button's data-modal holds the (unique) modal ID */
+			$(document).ready(function(){
+				$(document).on('click', '.showModalButton', function(){
+					$('#' + $(this).data('modal')).modal('show');
+				});
+			});
+		</script>
 		<?
 		
 		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
@@ -1312,8 +1295,11 @@
 		$deps = $row['pipeline_dependency'];
 		$groupids = $row['pipeline_groupid'];
 		
-		if ($deps != '') {
-			$sqlstringA = "select * from pipelines where pipeline_id in ($deps)";
+		/* comma separated id lists stored in the pipelines table. intval-sanitized, so safe to inline */
+		$depnames = array();
+		$depids = array_filter(array_map('intval', explode(',', (string)$deps)));
+		if (count($depids) > 0) {
+			$sqlstringA = "select * from pipelines where pipeline_id in (" . implode(',', $depids) . ")";
 			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$depnames[] = $rowA['pipeline_name'];
@@ -1322,8 +1308,10 @@
 		$dependencylist = implode2("<br>", $depnames);
 		if ($dependencylist == "") { $dependencylist = "None"; }
 		
-		if ($groupids != '') {
-			$sqlstringA = "select * from groups where group_id in ($groupids)";
+		$groupnames = array();
+		$groupidlist = array_filter(array_map('intval', explode(',', (string)$groupids)));
+		if (count($groupidlist) > 0) {
+			$sqlstringA = "select * from groups where group_id in (" . implode(',', $groupidlist) . ")";
 			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$groupnames[] = $rowA['group_name'];
@@ -1555,7 +1543,7 @@
 								?>
 								<tr>
 									<td><?=$cumtime?></td>
-									<td nowrap"><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
+									<td nowrap><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
 									<td><?=$pipeline_version?></td>
 									<td><?=$analysis_hostname?></td>
 									<td><?=$analysis_event?></td>
@@ -1644,6 +1632,7 @@
 	/* ------- CreateGraphFromAnalysisID ---------- */
 	/* -------------------------------------------- */
 	function CreateGraphFromAnalysisID($analysisid) {
+		$analysisid = (int)$analysisid;
 
 		$dotfile = tempnam("/tmp",'DOTDOT');
 		$pngfile = tempnam("/tmp",'DOTPNG');
@@ -1721,6 +1710,8 @@
 		exec($systemstring);
 		//echo $dot;
 		$imdata = base64_encode(file_get_contents($pngfile));
+		unlink($dotfile);
+		unlink($pngfile);
 		return $imdata;
 	}
 	
@@ -1731,7 +1722,8 @@
 	function GetInfoFromAnalysisID($analysisid) {
 		
 		/* check for valid analysis ID */
-		if (!ValidID($analysisid,'Analysis ID - GetInfoFromAnalysisID()')) { return; }
+		if (!ValidID($analysisid,'Analysis ID - GetInfoFromAnalysisID()')) { return array('', '', '', ''); }
+		$analysisid = (int)$analysisid;
 		
 		$sqlstring = "select a.pipeline_version, d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
 		//echo "[$sqlstring]";
@@ -1750,13 +1742,23 @@
 	/* ------- DataDownloadTable ------------------ */
 	/* -------------------------------------------- */
 	function DataDownloadTable($studyid, $modality, $analysisid) {
+		$studyid = (int)$studyid;
+		$analysisid = (int)$analysisid;
 		
 		if (trim($modality) == "") {
 			echo "Blank modality<br>";
 			return 0;
 		}
 		
+		/* modality comes from pipeline_data_def and is used as a table name, which can't be bound */
+		$seriestable = GetSeriesTableName($modality);
+		if ($seriestable == "") {
+			echo "Invalid modality [" . htmlspecialchars($modality) . "]<br>";
+			return 0;
+		}
+		
 		/* get the information about what data was found for this analysis */
+		$dd = array();
 		$sqlstring = "select * from pipeline_data where analysis_id = $analysisid";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1784,7 +1786,7 @@
 			</thead>
 		<?
 		/* get all series in the study */
-		$sqlstring = "select * from $modality"."_series where study_id = $studyid order by series_num asc";
+		$sqlstring = "select * from `$seriestable` where study_id = $studyid order by series_num asc";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			
