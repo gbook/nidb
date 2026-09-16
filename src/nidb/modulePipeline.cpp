@@ -2057,8 +2057,8 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
         QRegularExpressionMatch match = regex.match(command);
         QString file = match.captured(1); /* first match */
         QString ext = match.captured(2); /* second match */
-        QString searchpattern = QString("%2*.%3").arg(clusteranalysispath).arg(file).arg(ext);
-        QStringList files = FindAllFiles(clusteranalysispath, searchpattern);
+        QString searchpattern = QString("%1/%2*.%3").arg(analysispath).arg(file).arg(ext);
+        QStringList files = FindAllFiles(analysispath, searchpattern);
         if (files.size() > 0) {
             QString replacement = files[0];
             replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
@@ -2596,7 +2596,7 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
             studyIDToDoList.append(studyid);
-            rerunStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
+            //rerunStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             numRerun++;
         }
         m = n->Log(QString("Step B1 - Found %1 studies marked to have results re-run").arg(numRerun), __FUNCTION__);
@@ -2613,11 +2613,12 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
         while (q.next()) {
             int studyid = q.value("study_id").toInt();
             studyIDToDoList.append(studyid);
-            supplementStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
+            //supplementStudyList << QString("%1%2").arg(q.value("uid").toString().replace('\u0000', "")).arg(q.value("study_num").toString());
             numSupplement++;
         }
-        m = QString("Step B2 - Found %1 studies marked to have supplement commands run. Studies [%2]").arg(numSupplement).arg(supplementStudyList.join(", "));
-        //QString("Found %1 studies to have supplement scripts run [" + supplementStudyList.join(", ") + "]").arg(supplementStudyList.size());
+        // TO-DO, fix this log message
+        //m = QString("Step B2 - Found %1 studies marked to have supplement commands run. Studies [%2]").arg(numSupplement).arg(supplementStudyList.join(", "));
+
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
     }
     else
