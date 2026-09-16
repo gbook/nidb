@@ -125,7 +125,7 @@ public:
     QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
     QString GetGroupListing(int groupid);
     bool isValidNiDBModality(QString m);
-    QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d=false, bool batch=false);
+    QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool *success = nullptr, bool batch=false);
     QString Log(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     QString Debug(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);

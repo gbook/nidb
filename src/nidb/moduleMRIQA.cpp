@@ -448,7 +448,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     q.bindValue(":dvarsmean",dvarsMean);
     q.bindValue(":dvarsstdev",dvarsStdev);
     q.bindValue(":mrqaid",mrqaid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__,true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     qint64 dirsize = 0;
     qint64 nfiles;
@@ -469,7 +469,7 @@ bool moduleMRIQA::QA(qint64 seriesid) {
     q.bindValue(":numfiles", nfiles);
     q.bindValue(":seriessize", dirsize);
 
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     msgs << n->Log("======================== Finished [" + indir + "] ========================");
 

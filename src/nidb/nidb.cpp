@@ -448,11 +448,11 @@ void nidb::ModuleRemoveLogFile(bool keepLog) {
  * @param function C++ function which called this function (for debugging purposes in case the SQL query fails). Pass the macro __FUNCTION__ as a parameter
  * @param file Source code file which called this function (for debugging purposes in case the SQL query fails). Pass the macro __FILE__ as a parameter
  * @param line Line in the source code file that called this function (for debugging purposes in case the SQL query fails). Pass the macro __LINE__ as a parameter
- * @param d true if debug (will write the executed statement to the Log file)
+ * @param success Optional pointer to a bool. If null (the default), the program exits on a SQL error. If non-null, it is set to the result of the query and the caller decides what to do. The error is written to the log and the error_log table either way
  * @param batch true if running in batch mode
  * @return The QString representation of the executed query
  */
-QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d, bool batch) {
+QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool *success, bool batch) {
 
     /* get the SQL string that will be run */
     QString sql = q.executedQuery();
@@ -462,24 +462,23 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
     }
 
     /* debugging */
-    if (cfg["debug"].toInt() || d) {
+    if (cfg["debug"].toInt()) {
         Log(sql);
     }
 
     /* run the query */
-    if (batch)
-        if (q.execBatch(QSqlQuery::ValuesAsRows))
-            return sql;
-    if (q.exec())
+    if (batch ? q.execBatch(QSqlQuery::ValuesAsRows) : q.exec()) {
+        if (success) *success = true;
         return sql;
+    }
 
-    /* if we get to this point, there is a SQL error */
+    /* if we get to this point, there is a SQL error. Always log it, whether or not the
+       caller is checking 'success' */
     QString err = QString("SQL ERROR (Module: %1 Function: %2 File: %3 Line: %4)\n\nSQL (1) [%5]\n\nSQL (2) [%6]\n\nDatabase error [%7]\n\nDriver error [%8]").arg(module).arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
     //SendEmail(cfg["adminemail"], "SQL error", err);
     qDebug() << err;
     qDebug() << q.lastError();
     Log(err);
-    Log("SQL error, exiting program");
 
     /* record error in error_log */
     QSqlQuery q2;
@@ -488,7 +487,14 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
     q2.bindValue(":msg", err);
     q2.exec();
 
-    exit(0);
+    /* the caller opted in to error checking, so let it decide what to do next */
+    if (success) {
+        *success = false;
+        return sql;
+    }
+
+    Log("SQL error, exiting program");
+    exit(1); // legacy behavior: nobody is checking 'success', so fail loudly
 }
 
 

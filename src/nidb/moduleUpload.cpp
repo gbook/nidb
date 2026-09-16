@@ -728,7 +728,7 @@ bool moduleUpload::ArchiveUploadedBIDS(bids::BidsDataset &dataset, int uploadRow
                 q.bindValue(":visit", sessionLabel);
                 q.bindValue(":studyid", studyRowID);
                 //n->Log("Checkpoint B");
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 //n->Log("Checkpoint C");
                 n->Log(QString("Created study [bids %1] for subject UID [%2]").arg(sessionLabel).arg(subjectUID));
             }
@@ -967,7 +967,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
             QSqlQuery q2;
             q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
             q2.bindValue(":uploadid", uploadRowID);
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             int numSeries = q2.size();
             int i(0);
             if (numSeries > 0) {
@@ -1133,7 +1133,7 @@ bool moduleUpload::ArchiveSelectedSquirrel() {
             QSqlQuery q2;
             q2.prepare("select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where a.uploadseries_status = 'import' and c.upload_id = :uploadid");
             q2.bindValue(":uploadid", uploadRowID);
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             int numSeries = q2.size();
             int i(0);
             if (numSeries > 0) {
@@ -1307,7 +1307,7 @@ void moduleUpload::SetUploadStatus(int uploadid, QString status, double percent)
     //if (percent < 0.0) q.bindValue(":pct", QVariant(QVariant::Double)); else q.bindValue(":pct", percent);
     if (percent < 0.0) q.bindValue(":pct", QVariant(QMetaType::fromType<double>())); else q.bindValue(":pct", percent);
     q.bindValue(":uploadid", uploadid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, false);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
 
 
@@ -1558,7 +1558,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_seriescriteria == "seriesdate") {
             /* update all series details except SeriesDateTime */
@@ -1576,7 +1576,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else if (upload_seriescriteria == "seriesuid") {
             /* update all series details except SeriesInstanceUID */
@@ -1594,7 +1594,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             q.bindValue(":cols", Columns);
             q.bindValue(":files", files.join(","));
             q.bindValue(":seriesid", parsedSeriesRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         }
         else
             msg = "Unspecified series criteria [" + upload_seriescriteria + "]";
@@ -1605,7 +1605,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_num = :seriesnum");
             q.bindValue(":studyid", studyRowID);
             q.bindValue(":seriesnum", SeriesNumber);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
@@ -1627,7 +1627,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_num) values (:studyid, :seriesnum)");
                 q.bindValue(":studyid", studyRowID);
                 q.bindValue(":seriesnum", SeriesNumber);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }
@@ -1635,7 +1635,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             /* check if the seriesid already exists ... */
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_date = '" + SeriesDateTime + "'");
             q.bindValue(":studyid", studyRowID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
@@ -1655,7 +1655,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 /* ... otherwise create a new series */
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_date) values (:studyid, '" + SeriesDateTime + "')");
                 q.bindValue(":studyid", studyRowID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }
@@ -1667,7 +1667,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
             q.prepare("select uploadseries_id, uploadseries_numfiles, uploadseries_filelist from upload_series where uploadstudy_id = :studyid and uploadseries_instanceuid = :seriesinstanceuid");
             q.bindValue(":studyid", studyRowID);
             q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 q.first();
                 parsedSeriesRowID = q.value("uploadseries_id").toInt();
@@ -1688,7 +1688,7 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
                 q.prepare("insert into upload_series (uploadstudy_id, uploadseries_instanceuid) values (:studyid, :seriesinstanceuid)");
                 q.bindValue(":studyid", studyRowID);
                 q.bindValue(":seriesinstanceuid", SeriesInstanceUID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 parsedSeriesRowID = q.lastInsertId().toInt();
             }
         }

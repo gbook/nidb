@@ -1090,7 +1090,7 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
             /* delete the subject that has just been merged */
             q.prepare("update subjects set isactive = 0 where subject_id = :sourcesubjectid");
             q.bindValue(":sourcesubjectid", sourceSubjectID.toInt());
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             n->Log(QString("Deleting subject [%1]").arg(sourceSubject.uid));
         }
     }
@@ -1168,7 +1168,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
         QMap<int, int> newSeriesNumMap;
         /* get list of all series sorted by series date */
         q.prepare(QString("select * from %1_series a left join studies b on a.study_id = b.study_id where b.study_id in (%2) order by a.series_datetime asc").arg(modality).arg(mergeIDList));
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             while (q.next()) {
                 /* renumber the series to tmp seriesNumbers, and move them to the new study */
@@ -1195,7 +1195,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                 q2.bindValue(":newstudyid", destStudyID);
                 q2.bindValue(":tmpseriesnum", tmpSeriesNum);
                 q2.bindValue(":seriesid", seriesID);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
                 tmpSeriesNum++;
                 newSeriesNum++;
@@ -1216,7 +1216,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                 q.prepare(QString("update %1_series set series_num = :seriesnum where %1series_id = :seriesid").arg(modality));
                 q.bindValue(":seriesnum", newSeriesNum);
                 q.bindValue(":seriesid", seriesID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             }
 
             /* delete the, now, extraneous studies */
@@ -1235,7 +1235,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
         int newSeriesNum = 0;
         /* get list of all series sorted by series date */
         q.prepare(QString("select * from %1_series a left join studies b on a.study_id = b.study_id where b.study_id in (%2) order by a.series_num asc").arg(modality).arg(mergeIDList));
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         if (q.size() > 0) {
             while (q.next()) {
 
@@ -1286,7 +1286,7 @@ bool moduleFileIO::MergeStudies(int studyid, QString mergeIDs, QString mergeMeth
                 q2.bindValue(":newstudyid", destStudyID);
                 q2.bindValue(":newseriesnum", newSeriesNum);
                 q2.bindValue(":seriesid", seriesID);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             }
 
             /* delete the, now, extraneous studies */

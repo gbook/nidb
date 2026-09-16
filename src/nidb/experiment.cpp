@@ -70,7 +70,7 @@ void experiment::LoadExperimentInfo() {
     q.prepare("select * from experiment_files where experiment_id = :experimentid");
     q.bindValue(":experimentid", experimentid);
     //q.bindValue(":version", version);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
             experimentFile f;

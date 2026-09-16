@@ -116,7 +116,7 @@ public:
 
 private:
     nidb *n;
-    imageIO *img;
+    std::unique_ptr<imageIO> img;
     QElapsedTimer runTimer;
 };
 

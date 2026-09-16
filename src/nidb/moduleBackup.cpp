@@ -174,7 +174,7 @@ int moduleBackup::Run() {
                 /* create new row with status of waitingForTapeA, and maxTapeNum+1. Also get the backup_id */
                 q.prepare("insert into backups (backup_tapenumber, backup_tapestatus) values (:tapenum, 'waitingForTapeA')");
                 q.bindValue(":tapenum", tapeNum+1);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
                 backupid = q.lastInsertId().toInt();
             }
             else if (status == "completeTapeA") {
@@ -203,7 +203,7 @@ int moduleBackup::Run() {
         n->Log("backupStageSize is less than tape size. Setting the status of tape 0 to idle");
         q.prepare("update backups set backup_tapestatus = 'idle', backup_enddateA = now(), backup_tapesizeA = :stagesize where backup_tapenumber = 0");
         q.bindValue(":stagesize", backupStageSize);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
     n->Log("backup module done");
@@ -315,7 +315,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
             break;
     }
     q.bindValue(":backupid", backupid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* write the tape (load, write, read contents, rewind, eject */
     QString systemstring;
@@ -422,7 +422,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
         }
         q.bindValue(":backupid", backupid);
         q.bindValue(":msg", errorMsgs.join("\n"));
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return false;
     }
     else {
@@ -440,7 +440,7 @@ bool moduleBackup::WriteTape(int tapeNum, char tapeLetter, int backupid) {
         }
         q.bindValue(":backupid", backupid);
         q.bindValue(":contents", tapeListing);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         return true;
     }
 }
@@ -456,5 +456,5 @@ void moduleBackup::SetBackupStatus(int backupid, QString status) {
     q.prepare("update backups set backup_tapestatus = :status where backup_id = :backupid");
     q.bindValue(":status", status);
     q.bindValue(":backupid", backupid);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }

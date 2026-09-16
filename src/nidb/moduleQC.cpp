@@ -72,7 +72,7 @@ int moduleQC::Run() {
             QSqlQuery q2;
             q2.prepare(QString("select %1series_id 'seriesid' from %1_series where %1series_id not in (select series_id from qc_moduleseries where qcmodule_id = :moduleid) order by series_datetime desc").arg(modality));
             q2.bindValue(":moduleid", moduleid);
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__,true);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
                 while (q2.next()) {
                     ret = 1;

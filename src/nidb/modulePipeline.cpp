@@ -39,6 +39,7 @@ modulePipeline::modulePipeline()
 modulePipeline::modulePipeline(nidb *a)
 {
     n = a;
+    img = std::make_unique<imageIO>(n);
 }
 
 
@@ -194,9 +195,13 @@ int modulePipeline::Run() {
             RecordPipelineEvent(pipelineid, runnum, -1, "getPipelineSteps", QString("Pipeline contains %1 script commands").arg(steps.size()));
 
         /* ------------------------------ level 0 ----------------------------- */
-        /* avoid using this, Level 0 is not maintained */
+        /* Level 0 is not maintained - ignore this section                      */
         /* -------------------------------------------------------------------- */
         if (p.level == 0) {
+            SetPipelineStopped(pipelineid, "Pipeline module stopped. Level 0 pipelines have been deprecated.");
+            SetPipelineProcessStatus("complete",0,0);
+            continue;
+
             /* check if this module should be running now or not */
             if (!n->ModuleCheckIfActive()) {
                 n->Log(QString("[%1] Module disabled. Exiting").arg(p.name), __FUNCTION__);
@@ -260,7 +265,7 @@ int modulePipeline::Run() {
 
             /* submit the cluster job file */
             QString qm, qresult;
-            int jobid;
+            int jobid(-1);
             if (n->SubmitClusterJob(jobFilePath, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, qm, jobid, qresult)) {
                 n->Log(QString("[%1] Successfully submitted job to cluster [" + qresult + "]").arg(p.name), __FUNCTION__);
                 UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.clusterQueue + "]", jobid, -1, "", true, false, 0, 0);
@@ -271,7 +276,7 @@ int modulePipeline::Run() {
                 UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qresult + "]", 0, -1, "", false, true, 0, 0);
                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::error, 0, QString("Error submitting job to cluster [" + qresult + "]"), "");
             }
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+            //n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
 
             jobsWereSubmitted = true;
         }
@@ -284,7 +289,7 @@ int modulePipeline::Run() {
             if (p.directory == "")
                 pipelinedirectory = analysisdir;
             else
-                pipelinedirectory = n->cfg["mountdir"] + pipelinedirectory;
+                pipelinedirectory = n->cfg["mountdir"] + p.directory;
 
             /* if there are multiple dependencies, we'll need to loop through all of them separately
              * NOPE... we don't allow multiple dependencies. Yet. */
@@ -322,7 +327,7 @@ int modulePipeline::Run() {
                 /* get information about the study */
                 study s(sid, n);
                 if (!s.isValid()) {
-                    n->Log(QString("Study was not valid [" + s.msg + "]. Maybe this study was deleted after this pipeline started?").arg(p.name), __FUNCTION__);
+                    n->Log("Study was not valid [" + s.msg + "]. Maybe this study was deleted after this pipeline started?");
                     //n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::error, 0, QString("Study was not valid [" + s.msg() + "]. Maybe this study was deleted after this pipeline started?"), "");
                     continue;
                 }
@@ -368,6 +373,10 @@ int modulePipeline::Run() {
                         //SetPipelineStopped(pipelineid, "Pipeline max jobs reached. Normal stop.");
                     }
                     if (filled == 2) {
+                        n->Log("Pipeline max concurrent jobs is not set", __FUNCTION__);
+                        RecordPipelineEvent(pipelineid, runnum, -1, "errorNoMaxConcurrentJobs", "max concurrent jobs not set");
+                        SetPipelineStopped(pipelineid, "Incorrect pipeline config - max concurrent jobs not set");
+                        SetPipelineProcessStatus("complete",0,0);
                         return 1;
                     }
                 } while (filled == 1);
@@ -465,7 +474,10 @@ int modulePipeline::Run() {
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::success, 0, "Study-level (will match dependency for the same study from the same subject)","");
                         }
                     }
-                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::neutral, 0, "No dependencies","");
+                    else {
+                        n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::neutral, 0, "No dependencies","");
+                    }
+
                     setuplog << n->Debug(QString("[%1] This analysis path is [" + analysispath + "]").arg(p.name), __FUNCTION__);
 
                     int numseriesdownloaded = 0;
@@ -515,7 +527,7 @@ int modulePipeline::Run() {
                          * the directory should not yet exist */
                         if ((!a.rerunResults) && (!a.runSupplement)) {
                             if (pipelinedep != -1) {
-                                setuplog << n->Log(QString("[%1] This pipeline depends on [%1]").arg(p.name).arg(pipelinedep), __FUNCTION__);
+                                setuplog << n->Log(QString("[%1] This pipeline depends on [%2]").arg(p.name).arg(pipelinedep), __FUNCTION__);
                                 q2.prepare("select pipeline_name from pipelines where pipeline_id = :pipelinedep");
                                 q2.bindValue(":pipelinedep", pipelinedep);
                                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
@@ -529,7 +541,7 @@ int modulePipeline::Run() {
                                     setuplog << n->Log(m, __FUNCTION__);
                                     RecordPipelineEvent(pipelineid, runnum, -1, "pipelineModuleDisabled", m);
                                     SetPipelineStopped(pipelineid, m);
-                                    continue;
+                                    break; /* leave the study loop */
                                 }
                                 n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "success", "This pipeline is dependent on [" + dependencyname + "]");
                             }
@@ -656,7 +668,7 @@ int modulePipeline::Run() {
 
                         /* submit the cluster job file */
                         QString qm, qresult;
-                        int jobid;
+                        int jobid(-1);
                         if (n->SubmitClusterJob(clusterJobFilePath, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, qm, jobid, qresult)) {
                             m = QString("Successfully submitted job %1 to %2 cluster. analysisRowID %3").arg(jobid).arg(p.clusterType).arg(analysisRowID);
                             n->Log(m, __FUNCTION__);
@@ -677,6 +689,7 @@ int modulePipeline::Run() {
                             submiterror = true;
                         }
 
+                        /* number submitted, regardless of success/failure */
                         numsubmitted++;
                         totalSubmitted++;
                         jobsWereSubmitted = true;
@@ -1324,7 +1337,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     /* start building the analysis path */
                     QString newanalysispath = analysispath + "/" + location;
 
-                    if (behformat == "none")
+                    if (behformat == "behnone")
                         dlog << n->Log(QString("Copying imaging data [%1] and behavioral data [%2] into [%3]").arg(indir).arg(behindir).arg(newanalysispath), __FUNCTION__);
                     else
                         dlog << n->Log("Copying imaging data from [" + indir + "] to [" + newanalysispath + "]", __FUNCTION__);
@@ -1361,12 +1374,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     }
 
                     //QString m;
-                    if (!MakePath(newanalysispath, m)) {
+                    if (MakePath(newanalysispath, m)) {
+                        dlog << n->Debug("Created imaging data output directory [" + newanalysispath + "]", __FUNCTION__);
+                    }
+                    else {
                         dlog << n->Log("Error: unable to create directory [" + newanalysispath + "] message [" + m + "]", __FUNCTION__);
                         UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", false, true, -1, -1);
+                        return false;
                     }
-                    else
-                        dlog << n->Debug("Created imaging data output directory [" + newanalysispath + "]", __FUNCTION__);
 
                     SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
 
@@ -1375,7 +1390,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                             QString systemstring;
                             if (p.dataCopyMethod == "scp")
-                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(clusteruser).arg(submithost).arg(newanalysispath);
                             else
                                 systemstring = QString("time cp -v %1/* %2").arg(indir).arg(newanalysispath);
                             n->Debug(SystemCommand(systemstring, true, true));
@@ -1390,23 +1405,30 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         else {
                             QString tmpdir = n->cfg["tmpdir"] + "/" + GenerateRandomString(10);
                             m = "";
-                            if (!MakePath(tmpdir, m)) {
+                            if (MakePath(tmpdir, m)) {
+                                dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
+                            }
+                            else {
                                 dlog << n->Log("Error: unable to create temp directory [" + tmpdir + "] message [" + m + "] for DICOM conversion", __FUNCTION__);
                                 UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + newanalysispath + "]", 0, -1, "", false, true, -1, -1);
+                                return false;
                             }
-                            else
-                                dlog << n->Debug("Created temp directory [" + tmpdir + "] for DICOM conversion", __FUNCTION__);
+
                             int numfilesconv(0);
                             int numfilesrenamed(0);
                             QString binpath = n->cfg["nidbdir"] + "/bin";
                             BIDSMapping mapping;
                             QString localStudyNumStr = QString("%1").arg(localstudynum);
                             QString seriesNumStr = QString("%1").arg(seriesnum);
-                            img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, localStudyNumStr, seriesNumStr, "", "", mapping, datatype, QJsonObject(), numfilesconv, numfilesrenamed, m);
+                            if (!img->ConvertDicom(dataformat, indir, tmpdir, binpath, gzip, false, uid, localStudyNumStr, seriesNumStr, "", "", mapping, datatype, QJsonObject(), numfilesconv, numfilesrenamed, m)) {
+                                dlog << n->Log("Error converting DICOM files [" + m + "]", __FUNCTION__);
+                                UpdateAnalysisStatus(analysisRowID, "error", "Error converting DICOM files [" + m + "]", 0, -1, "", false, true, -1, -1);
+                                return false;
+                            }
 
                             QString systemstring;
                             if (p.dataCopyMethod == "scp")
-                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(n->cfg["clusteruser"]).arg(p.clusterSubmitHost).arg(newanalysispath);
+                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(clusteruser).arg(submithost).arg(newanalysispath);
                             else
                                 systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
                             n->Log(SystemCommand(systemstring, true, true));
@@ -1670,12 +1692,13 @@ QStringList modulePipeline::GetGroupList(int pid) {
         if (groupids.size() > 0) {
             QSqlQuery q2;
             q2.prepare("select group_name from groups where group_id in (:groupids)");
-            q2.bindValue(":groupid", groupids.join(","));
+            q2.bindValue(":groupids", groupids.join(","));
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
-                q2.first();
-                QString groupname = q2.value("group_name").toString();
-                grouplist.append(groupname);
+                while (q2.next()) {
+                    QString groupname = q2.value("group_name").toString();
+                    grouplist.append(groupname);
+                }
             }
         }
     }
@@ -1720,24 +1743,28 @@ QString modulePipeline::CheckDependency(int sid, int pipelinedep) {
     q.bindValue(":sid", sid);
     q.bindValue(":pipelinedep", pipelinedep);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() < 1)
+    if (q.size() < 1) {
         status = "NoMatchingStudyDependency";
-
-    /* check if the dependency is complete */
-    q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and analysis_status = 'complete'");
-    q.bindValue(":sid", sid);
-    q.bindValue(":pipelinedep", pipelinedep);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() < 1)
-        status = "IncompleteDependency";
-
-    /* check if the dependency is marked as bad */
-    q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and (analysis_isbad <> 1 or analysis_isbad is null)");
-    q.bindValue(":sid", sid);
-    q.bindValue(":pipelinedep", pipelinedep);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() < 1)
-        status = "BadDependency";
+    }
+    else {
+        /* check if the dependency is complete */
+        q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and analysis_status = 'complete'");
+        q.bindValue(":sid", sid);
+        q.bindValue(":pipelinedep", pipelinedep);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() < 1) {
+            status = "IncompleteDependency";
+        }
+        else {
+            /* check if the dependency is marked as bad */
+            q.prepare("select * from analysis where study_id = :sid and pipeline_id = :pipelinedep and (analysis_isbad <> 1 or analysis_isbad is null)");
+            q.bindValue(":sid", sid);
+            q.bindValue(":pipelinedep", pipelinedep);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() < 1)
+                status = "BadDependency";
+        }
+    }
 
     return status;
 }
@@ -1962,7 +1989,6 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
             rec.exportBehavioralDirectoryName = q.value("pdd_behdir").toString().trimmed();
             rec.exportDataFormat = q.value("pdd_dataformat").toString().trimmed();
             rec.exportSubDirectoryName = q.value("pdd_location").toString().trimmed();
-            rec.flags.behOnly = q.value("pdd_behonly").toBool();
             rec.flags.behOnly = q.value("pdd_behonly").toBool();
             rec.flags.exportGzip = q.value("pdd_gzip").toBool();
             rec.flags.exportPreserveSeriesNumber = q.value("pdd_preserveseries").toBool();
@@ -2406,12 +2432,14 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
                 }
             }
 
-            /* ... find all studies for those subjects, because now all of these studies are valid because the SUBJECT has at least one study that has run through a parent pipeline */
-            q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (" + JoinIntArray(tmpSubjectRowIDs, ", ") + ")");
-            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-            if (q.size() > 0) {
-                while (q.next()) {
-                    dependencyStudyRowIDs.append(q.value("study_id").toInt());
+            if (tmpSubjectRowIDs.size() > 0) {
+                /* ... find all studies for those subjects, because now all of these studies are valid because the SUBJECT has at least one study that has run through a parent pipeline */
+                q.prepare("select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id in (" + JoinIntArray(tmpSubjectRowIDs, ", ") + ")");
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                if (q.size() > 0) {
+                    while (q.next()) {
+                        dependencyStudyRowIDs.append(q.value("study_id").toInt());
+                    }
                 }
             }
 
@@ -2612,65 +2640,6 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
 
 
 /* ---------------------------------------------------------- */
-/* --------- RecordDataDownload ----------------------------- */
-/* ---------------------------------------------------------- */
-qint64 modulePipeline::RecordDataDownload(qint64 id, qint64 analysisid, QString modality, int checked, int found, int seriesid, QString downloadpath, int step, QString msg) {
-
-    /* check if there are any variables to insert/update */
-    if ((modality == "") && (checked == -1) && (found == -1) && (seriesid == -1) && (downloadpath == "") && (step == -1) && (msg == ""))
-        return -1;
-
-    QSqlQuery q;
-    QString sql;
-    if (id < 0) {
-        /* do an insert */
-        q.prepare("insert into pipeline_data (analysis_id, pd_modality, pd_checked, pd_found, pd_seriesid, pd_downloadpath, pd_step, pd_msg) values (:analysisid, :modality, :checked, :found, :seriesid, :downloadpath, :step, :msg)");
-        q.bindValue(":analysisid",analysisid);
-
-        if (modality == "") q.bindValue(":modality", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":modality", analysisid);
-        if (checked == -1) q.bindValue(":checked", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":checked", checked);
-        if (found == -1) q.bindValue(":found", QVariant(QMetaType::fromType<bool>())); else q.bindValue(":found", found);
-        if (seriesid == -1) q.bindValue(":seriesid", QVariant(QMetaType::fromType<int>())); else q.bindValue(":seriesid", seriesid);
-        if (downloadpath == "") q.bindValue(":downloadpath", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":downloadpath", downloadpath);
-        if (step == -1) q.bindValue(":step", QVariant(QMetaType::fromType<int>())); else q.bindValue(":step", step);
-        if (msg.toInt() == -1) q.bindValue(":msg", QVariant(QMetaType::fromType<QString>())); else q.bindValue(":msg", msg);
-
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        return q.lastInsertId().toInt();
-    }
-    else {
-        /* do an update */
-        QStringList sqlsets;
-        if (modality != "") sqlsets.append("pd_modality = :modality");
-        if (checked > -1) sqlsets.append("pd_checked = :checked");
-        if (found > -1) sqlsets.append("pd_found = :found");
-        if (seriesid > -1) sqlsets.append("pd_seriesid = :seriesid");
-        if (downloadpath != "") sqlsets.append("pd_downloadpath = :downloadpath");
-        if (step > -1) sqlsets.append("pd_step = :step");
-        if (msg != "") sqlsets.append("pd_msg = :msg");
-
-        sql = "update pipeline_data set " + sqlsets.join(", ") + " where pipelinedata_id = :pipelinedataid";
-
-        q.prepare(sql);
-
-        if (modality != "") q.bindValue(":modality", modality);
-        if (checked > -1) q.bindValue(":checked", checked);
-        if (found > -1) q.bindValue(":found", found);
-        if (seriesid > -1) q.bindValue(":seriesid", seriesid);
-        if (downloadpath != "") q.bindValue(":downloadpath", downloadpath);
-        if (step > -1) q.bindValue(":step", step);
-        if (msg != "") q.bindValue(":msg", msg);
-
-        q.bindValue(":pipelinedataid",id);
-
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        return id;
-    }
-
-}
-
-
-/* ---------------------------------------------------------- */
 /* --------- RecordPipelineEvent ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -2695,6 +2664,7 @@ void modulePipeline::RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 
         analysisReRunResults
         analysisRunSupplement
         errorNoDataSteps
+        errorNoMaxConcurrentJobs
         errorNoPipelineSteps
         errorNoQueue
         errorNoSubmitHost
@@ -2729,7 +2699,7 @@ void modulePipeline::RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 
 
     /* do an insert */
     if (analysisid > 0) {
-        q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysid, :event, :msg)");
+        q.prepare("insert into pipeline_history (run_num, pipeline_id, pipeline_version, analysis_id, pipeline_event, event_message) values (:runnum, :pipelineid, :version, :analysisid, :event, :msg)");
         q.bindValue(":analysisid", analysisid);
     }
     else {

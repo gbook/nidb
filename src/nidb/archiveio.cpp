@@ -1256,7 +1256,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     QSqlQuery q;
     q.prepare(sqlstring);
     q.bindValue(":patientid", PatientID);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
         projectcount = q.value("projectcount").toInt();
@@ -1265,7 +1265,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
     sqlstring = QString("select count(*) 'subjectcount' from `subjects` a left join subject_altuid b on a.subject_id = b.subject_id where a.uid in (%1) or a.uid = SHA1(:patientid) or b.altuid in (%1) or b.altuid = SHA1(:patientid)").arg(SQLIDs);
     q.prepare(sqlstring);
     q.bindValue(":patientid", PatientID);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
         subjectcount = q.value("subjectcount").toInt();
@@ -1282,7 +1282,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
             QSqlQuery q2;
             q2.prepare(sqlstring2);
             q2.bindValue(":dob", PatientBirthDate);
-            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+            n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             if (q2.size() > 0) {
                 q2.first();
                 subjectUID = q2.value("uid").toString().replace('\u0000', "");
@@ -1420,7 +1420,7 @@ bool archiveIO::ArchiveParRecSeries(int importRowID, QString file) {
                 q2.bindValue(":subjectid", subjectRowID);
                 q2.bindValue(":altuid", altuid);
                 q2.bindValue(":enrollmentid", enrollmentRowID);
-                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             }
         }
     }
@@ -1759,7 +1759,7 @@ bool archiveIO::ArchiveEEGSeries(int importRowID, QString file) {
     QSqlQuery q;
     q.prepare(sqlstring);
     q.bindValue(":PatientID", PatientID);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, false);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
         subjectRowID = q.value("subject_id").toInt();
@@ -2359,7 +2359,7 @@ void archiveIO::SetAlternateIDs(int subjectRowID, int enrollmentRowID, QStringLi
                 q.bindValue(":subjectid", subjectRowID);
                 q.bindValue(":altuid", altuid);
                 q.bindValue(":enrollmentid", enrollmentRowID);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             }
         }
     }

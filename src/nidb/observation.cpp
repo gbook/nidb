@@ -438,7 +438,11 @@ bool observation::AddToDatabase() {
         q.addBindValue(ids);
         q.addBindValue(variables);
         q.addBindValue(values);
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, false, true);
+        bool ok=true;
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &ok, true);
+        if (!ok) {
+            n->Log("SQL error! check the error_log table");
+        }
     }
 
     //n->Log(QString("AddToDatabase() returning  isValid [%1]  observationRowID [%2]").arg(isValid).arg(observationRowID));

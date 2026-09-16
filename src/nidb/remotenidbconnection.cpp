@@ -50,7 +50,7 @@ void remoteNiDBConnection::LoadConnection() {
 		QSqlQuery q;
 		q.prepare("select * from remote_connections where remoteconn_id = :connid");
 		q.bindValue(":connid", connid);
-		n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 		if (q.size() < 1) {
 			msgs << "Query returned no results. Possibly invalid connection ID?";
 			isValid = false;

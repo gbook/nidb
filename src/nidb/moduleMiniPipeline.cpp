@@ -439,7 +439,7 @@ bool moduleMiniPipeline::InsertObservation(qint64 enrollmentid, qint64 studyid, 
     q.bindValue(":enddate", endDate.toString(Qt::ISODate));
     q.bindValue(":duration", duration);
 
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     numInserts = 1;
 
     return true;
@@ -480,7 +480,7 @@ int moduleMiniPipeline::InsertVital(qint64 enrollmentID, QString vitalName, QStr
     q.bindValue(":enddate", vitalEndDate);
     q.bindValue(":duration", duration);
 
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     return 1;
 }

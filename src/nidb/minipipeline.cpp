@@ -63,7 +63,7 @@ void minipipeline::LoadMiniPipelineInfo() {
     q.prepare("select * from minipipeline_scripts where minipipeline_id = :minipipelineid");
     q.bindValue(":minipipelineid", minipipelineid);
     //q.bindValue(":version", version);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, true);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
             miniPipelineScript mps;

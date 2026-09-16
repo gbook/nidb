@@ -19,6 +19,9 @@ Two project-wide conventions are being adopted file-by-file. **Whenever you crea
 ## Line endings
 - **Always use LF (Unix) line endings.** Never introduce CRLF. Some legacy files are CRLF/mixed — when touching one, convert it to LF (strip `\r`) as part of the change.
 
+## Markdown files
+- **Don't hard-wrap markdown.** Write each paragraph and list item as a single line; don't insert newlines to wrap text at a fixed column width.
+
 ## PHP version support
 - Code must run on **both PHP 7.2 (dev) and PHP 8 (production)**. Watch for PHP 8 fatals that were only warnings in 7.x:
   - `count()`, `min()`, `max()`, `sort()`, `array_diff()` on `null`/non-array → fatal `TypeError`. Initialize arrays before loops that populate them.
