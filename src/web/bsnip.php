@@ -57,6 +57,132 @@
 	/* ------- DisplayDownloads ------------------- */
 	/* -------------------------------------------- */
 	function DisplayDownloads() {
+
+		$bsnip2 = [];
+		$bsnip2['Boston']['EEG']['subjectCount'] = 215;
+		$bsnip2['Boston']['EEG']['unzippedSize'] = 279827856753;
+		$bsnip2['Boston']['ET']['subjectCount'] = 205;
+		$bsnip2['Boston']['ET']['unzippedSize'] = 3672197038;
+		$bsnip2['Boston']['MR']['subjectCount'] = 179;
+		$bsnip2['Boston']['MR']['unzippedSize'] = 24492051005;
+		$bsnip2['Boston']['NonImaging']['subjectCount'] = 275;
+		$bsnip2['Boston']['NonImaging']['unzippedSize'] = 0;
+		$bsnip2['Chicago']['EEG']['subjectCount'] = 327;
+		$bsnip2['Chicago']['EEG']['unzippedSize'] = 423193865093;
+		$bsnip2['Chicago']['ET']['subjectCount'] = 390;
+		$bsnip2['Chicago']['ET']['unzippedSize'] = 6871947674;
+		$bsnip2['Chicago']['MR']['subjectCount'] = 311;
+		$bsnip2['Chicago']['MR']['unzippedSize'] = 28894392484;
+		$bsnip2['Chicago']['NonImaging']['subjectCount'] = 436;
+		$bsnip2['Chicago']['NonImaging']['unzippedSize'] = 0;
+		$bsnip2['Dallas']['EEG']['subjectCount'] = 249;
+		$bsnip2['Dallas']['EEG']['unzippedSize'] = 311363654124;
+		$bsnip2['Dallas']['ET']['subjectCount'] = 247;
+		$bsnip2['Dallas']['ET']['unzippedSize'] = 4724464026;
+		$bsnip2['Dallas']['MR']['subjectCount'] = 171;
+		$bsnip2['Dallas']['MR']['unzippedSize'] = 14270028841;
+		$bsnip2['Dallas']['NonImaging']['subjectCount'] = 440;
+		$bsnip2['Dallas']['NonImaging']['unzippedSize'] = 0;
+		$bsnip2['Georgia']['EEG']['subjectCount'] = 336;
+		$bsnip2['Georgia']['EEG']['unzippedSize'] = 440244885258;
+		$bsnip2['Georgia']['ET']['subjectCount'] = 326;
+		$bsnip2['Georgia']['ET']['unzippedSize'] = 6227702579;
+		$bsnip2['Georgia']['MR']['subjectCount'] = 243;
+		$bsnip2['Georgia']['MR']['unzippedSize'] = 22419729285;
+		$bsnip2['Georgia']['NonImaging']['subjectCount'] = 431;
+		$bsnip2['Georgia']['NonImaging']['unzippedSize'] = 0;
+		$bsnip2['Hartford']['EEG']['subjectCount'] = 392;
+		$bsnip2['Hartford']['EEG']['unzippedSize'] = 511852727501;
+		$bsnip2['Hartford']['ET']['subjectCount'] = 393;
+		$bsnip2['Hartford']['ET']['unzippedSize'] = 8396661064;
+		$bsnip2['Hartford']['MR']['subjectCount'] = 357;
+		$bsnip2['Hartford']['MR']['unzippedSize'] = 380577052099;
+		$bsnip2['Hartford']['NonImaging']['subjectCount'] = 442;
+		$bsnip2['Hartford']['NonImaging']['unzippedSize'] = 0;
+		
+		$pardip = [];
+		$pardip['Boston']['EEG']['subjectCount'] = 76;
+		$pardip['Boston']['EEG']['unzippedSize'] = 94038308946;
+		$pardip['Boston']['ET']['subjectCount'] = 63;
+		$pardip['Boston']['ET']['unzippedSize'] = 1471026299;
+		$pardip['Boston']['MR']['subjectCount'] = 68;
+		$pardip['Boston']['MR']['unzippedSize'] = 7011534111;
+		$pardip['Boston']['NonImaging']['subjectCount'] = 65;
+		$pardip['Boston']['NonImaging']['unzippedSize'] = 0;
+		$pardip['Dallas']['ET']['subjectCount'] = 96;
+		$pardip['Dallas']['ET']['unzippedSize'] = 2630667469;
+		$pardip['Dallas']['MR']['subjectCount'] = 79;
+		$pardip['Dallas']['MR']['unzippedSize'] = 11972221338;
+		$pardip['Dallas']['NonImaging']['subjectCount'] = 75;
+		$pardip['Dallas']['NonImaging']['unzippedSize'] = 22523412;
+		$pardip['Georgia']['EEG']['subjectCount'] = 4;
+		$pardip['Georgia']['EEG']['unzippedSize'] = 5325759447;
+		$pardip['Georgia']['ET']['subjectCount'] = 4;
+		$pardip['Georgia']['ET']['unzippedSize'] = 71963771;
+		$pardip['Georgia']['MR']['subjectCount'] = 4;
+		$pardip['Georgia']['MR']['unzippedSize'] = 373848801;
+		$pardip['Georgia']['NonImaging']['subjectCount'] = 6;
+		$pardip['Georgia']['NonImaging']['unzippedSize'] = 0;
+		$pardip['Hartford']['EEG']['subjectCount'] = 121;
+		$pardip['Hartford']['EEG']['unzippedSize'] = 153985314980;
+		$pardip['Hartford']['ET']['subjectCount'] = 106;
+		$pardip['Hartford']['ET']['unzippedSize'] = 2748779069;
+		$pardip['Hartford']['MR']['subjectCount'] = 121;
+		$pardip['Hartford']['MR']['unzippedSize'] = 73422465925;
+		$pardip['Hartford']['NonImaging']['subjectCount'] = 116;
+		$pardip['Hartford']['NonImaging']['unzippedSize'] = 0;
+		
+		/* PARDIP */
+		$pardip_boston_mr = filesize("/nidb/data/bsnip/PARDIP-Boston-MR.sqrl");
+		$pardip_boston_eeg = filesize("/nidb/data/bsnip/PARDIP-Boston-EEG.sqrl");
+		$pardip_boston_et = filesize("/nidb/data/bsnip/PARDIP-Boston-ET.sqrl");
+		$pardip_boston_nonimaging = filesize("/nidb/data/bsnip/PARDIP-Boston-NonImaging.sqrl");
+
+		$pardip_dallas_mr = filesize("/nidb/data/bsnip/PARDIP-Dallas-MR.sqrl");
+		$pardip_dallas_eeg = filesize("/nidb/data/bsnip/PARDIP-Dallas-EEG.sqrl");
+		$pardip_dallas_et = filesize("/nidb/data/bsnip/PARDIP-Dallas-ET.sqrl");
+		$pardip_dallas_nonimaging = filesize("/nidb/data/bsnip/PARDIP-Dallas-NonImaging.sqrl");
+
+		$pardip_georgia_mr = filesize("/nidb/data/bsnip/PARDIP-Georgia-MR.sqrl");
+		$pardip_georgia_eeg = filesize("/nidb/data/bsnip/PARDIP-Georgia-EEG.sqrl");
+		$pardip_georgia_et = filesize("/nidb/data/bsnip/PARDIP-Georgia-ET.sqrl");
+		$pardip_georgia_nonimaging = filesize("/nidb/data/bsnip/PARDIP-Georgia-NonImaging.sqrl");
+
+		$pardip_hartford_mr = filesize("/nidb/data/bsnip/PARDIP-Hartford-MR.sqrl");
+		$pardip_hartford_eeg = filesize("/nidb/data/bsnip/PARDIP-Hartford-EEG.sqrl");
+		$pardip_hartford_et = filesize("/nidb/data/bsnip/PARDIP-Hartford-ET.sqrl");
+		$pardip_hartford_nonimaging = filesize("/nidb/data/bsnip/PARDIP-Hartford-NonImaging.sqrl");
+		
+		$pardip_total = ($pardip_boston_mr + $pardip_boston_eeg + $pardip_boston_et + $pardip_boston_nonimaging) + ($pardip_dallas_mr + $pardip_dallas_eeg + $pardip_dallas_et + $pardip_dallas_nonimaging) + ($pardip_georgia_mr + $pardip_georgia_eeg + $pardip_georgia_et + $pardip_georgia_nonimaging) + ($pardip_hartford_mr + $pardip_hartford_eeg + $pardip_hartford_et + $pardip_hartford_nonimaging);
+
+		/* BSNIP2 */
+		$bsnip2_boston_mr = filesize("/nidb/data/bsnip/BSNIP2-Boston-MR.sqrl");
+		$bsnip2_boston_eeg = filesize("/nidb/data/bsnip/BSNIP2-Boston-EEG.sqrl");
+		$bsnip2_boston_et = filesize("/nidb/data/bsnip/BSNIP2-Boston-ET.sqrl");
+		$bsnip2_boston_nonimaging = filesize("/nidb/data/bsnip/BSNIP2-Boston-NonImaging.sqrl");
+
+		$bsnip2_chicago_mr = filesize("/nidb/data/bsnip/BSNIP2-Chicago-MR.sqrl");
+		$bsnip2_chicago_eeg = filesize("/nidb/data/bsnip/BSNIP2-Chicago-EEG.sqrl");
+		$bsnip2_chicago_et = filesize("/nidb/data/bsnip/BSNIP2-Chicago-ET.sqrl");
+		$bsnip2_chicago_nonimaging = filesize("/nidb/data/bsnip/BSNIP2-Chicago-NonImaging.sqrl");
+
+		$bsnip2_dallas_mr = filesize("/nidb/data/bsnip/BSNIP2-Dallas-MR.sqrl");
+		$bsnip2_dallas_eeg = filesize("/nidb/data/bsnip/BSNIP2-Dallas-EEG.sqrl");
+		$bsnip2_dallas_et = filesize("/nidb/data/bsnip/BSNIP2-Dallas-ET.sqrl");
+		$bsnip2_dallas_nonimaging = filesize("/nidb/data/bsnip/BSNIP2-Dallas-NonImaging.sqrl");
+
+		$bsnip2_georgia_mr = filesize("/nidb/data/bsnip/BSNIP2-Georgia-MR.sqrl");
+		$bsnip2_georgia_eeg = filesize("/nidb/data/bsnip/BSNIP2-Georgia-EEG.sqrl");
+		$bsnip2_georgia_et = filesize("/nidb/data/bsnip/BSNIP2-Georgia-ET.sqrl");
+		$bsnip2_georgia_nonimaging = filesize("/nidb/data/bsnip/BSNIP2-Georgia-NonImaging.sqrl");
+
+		$bsnip2_hartford_mr = filesize("/nidb/data/bsnip/BSNIP2-Hartford-MR.sqrl");
+		$bsnip2_hartford_eeg = filesize("/nidb/data/bsnip/BSNIP2-Hartford-EEG.sqrl");
+		$bsnip2_hartford_et = filesize("/nidb/data/bsnip/BSNIP2-Hartford-ET.sqrl");
+		$bsnip2_hartford_nonimaging = filesize("/nidb/data/bsnip/BSNIP2-Hartford-NonImaging.sqrl");
+		
+		$bsnip2_total = ($bsnip2_boston_mr + $bsnip2_boston_eeg + $bsnip2_boston_et + $bsnip2_boston_nonimaging) + ($bsnip2_chicago_mr + $bsnip2_chicago_eeg + $bsnip2_chicago_et + $bsnip2_chicago_nonimaging) + ($bsnip2_dallas_mr + $bsnip2_dallas_eeg + $bsnip2_dallas_et + $bsnip2_dallas_nonimaging) + ($bsnip2_georgia_mr + $bsnip2_georgia_eeg + $bsnip2_georgia_et + $bsnip2_georgia_nonimaging) + ($bsnip2_hartford_mr + $bsnip2_hartford_eeg + $bsnip2_hartford_et + $bsnip2_hartford_nonimaging);
+		
 		?>
 		<br><br><br>
 		<div class="ui container">
@@ -183,45 +309,62 @@
 					<th>Non-imaging</th>
 					<th>Total</th>
 				</thead>
-				<tr>
-					<td><b>Boston</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Boston-MR.sqrl"><i class="ui download icon"></i> 68 subjects</a><div class="ui basic grey label">6.7 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Boston-EEG.sqrl"><i class="ui download icon"></i> 76 subjects</a><div class="ui basic grey label">35 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Boston-ET.sqrl"><i class="ui download icon"></i> 63 subjects</a><div class="ui basic grey label">467 MB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Boston-NonImaging.sqrl"><i class="ui download icon"></i> 64 subjects</a><div class="ui basic grey label">116 KB</div></div></td>
-					<td class="right aligned">42 GB</td>
-				</tr>
-				<tr>
-					<td><b>Dallas</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Dallas-MR.sqrl"><i class="ui download icon"></i> 79 subjects</a><div class="ui basic grey label">9.3 GB</div></div></td>
-					<td>-</td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Dallas-ET.sqrl"><i class="ui download icon"></i> 96 subjects</a><div class="ui basic grey label">2.0 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Dallas-NonImaging.sqrl"><i class="ui download icon"></i> 70 subjects</a><div class="ui basic grey label">395 KB</div></div></td>
-					<td class="right aligned">54 GB</td>
-				</tr>
-				<tr>
-					<td><b>Georgia</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Georgia-MR.sqrl"><i class="ui download icon"></i> 4 subjects</a><div class="ui basic grey label">369 MB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Georgia-EEG.sqrl"><i class="ui download icon"></i> 4 subjects</a><div class="ui basic grey label">2.6 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Georgia-ET.sqrl"><i class="ui download icon"></i> 4 subjects</a><div class="ui basic grey label">20 MB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Georgia-NonImaging.sqrl"><i class="ui download icon"></i> 6 subjects</a><div class="ui basic grey label">12 KB</div></div></td>
-					<td class="right aligned">3.0 GB</td>
-				</tr>
-				<tr>
-					<td><b>Hartford</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Hartford-MR.sqrl"><i class="ui download icon"></i> 121 subjects</a><div class="ui basic grey label">70 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Hartford-EEG.sqrl"><i class="ui download icon"></i> 121 subjects</a><div class="ui basic grey label">885 MB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Hartford-ET.sqrl"><i class="ui download icon"></i> 106 subjects</a><div class="ui basic grey label">3.3 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/PARDIP-Hartford-NonImaging.sqrl"><i class="ui download icon"></i> 120 subjects</a><div class="ui basic grey label">216 KB</div></div></td>
-					<td class="right aligned">126 GB</td>
-				</tr>
+				
+				<?
+					$totalSubjects = array();
+					$totalSizes = array();
+					$totalPardipSize = 0;
+					/* iterate over the sites */
+					foreach ($pardip as $site => $mod) {
+						$totalsitesize = 0;
+						?>
+						<tr>
+							<td><b><?=$site?></b></td>
+						<?
+						ksort($mod);
+						/* iterate over the modalities */
+						foreach (array('MR','EEG','ET','NonImaging') as $modality) {
+							if (array_key_exists($modality, $pardip[$site])) {
+								$subjectCount = $pardip[$site][$modality]['subjectCount'];
+								$unzippedSize = $pardip[$site][$modality]['unzippedSize'];
+								$webpath = "bsnip/PARDIP-$site-$modality.sqrl";
+								$filepath = "/nidb/data/$webpath";
+								$filesize = filesize($filepath);
+								$totalsitesize += $filesize;
+								$totalPardipSize += $filesize;
+								
+								$totalSizes[$modality] += $filesize;
+								$totalSubjects[$modality] += $subjectCount;
+								?>
+								<td>
+									<div class="ui fluid labeled button">
+										<a class="ui compact basic blue button" href="<?=$webpath?>"><i class="ui download icon"></i> <?=$subjectCount?> subjects</a>
+										<div class="ui basic grey label"><?=HumanReadableFilesize($filesize);?></div>
+									</div>
+								</td>
+								<?
+							}
+							else {
+								?>
+								<td>-</td>
+								<?
+							}
+						}
+						?>
+							<td class="right aligned"><?=HumanReadableFilesize($totalsitesize);?></td>
+						</tr>
+						<?
+					}
+				
+				?>
 				<tr>
 					<td>Total</td>
-					<td class="right aligned">272 subjects 89 GB</td>
-					<td class="right aligned">201 subjects, 93 GB</td>
-					<td class="right aligned">269 subjects, 2.2 GB</td>
-					<td class="right aligned">260 subjects 476 KB</td>
-					<td class="right aligned">183 GB</td>
+					<?
+						foreach (array('MR','EEG','ET','NonImaging') as $modality) {
+							?><td class="right aligned"><?=$totalSubjects[$modality]?> subjects, <?=HumanReadableFilesize($totalSizes[$modality])?></td><?
+						}
+					?>
+					<td class="right aligned"><?=HumanReadableFilesize($totalPardipSize)?></td>
 				</tr>
 			</table>
 
@@ -235,6 +378,7 @@
 								Bipolar and Schizophrenia Network for Intermediate Phenotypes 2
 							</div>
 						</h1>
+						Number of subjects (zipped file size)
 					</div>
 					<div class="right aligned column">
 						<a class="ui blue button" href="https://pubmed.ncbi.nlm.nih.gov/33622437/">Cite <i class="quote right icon"></i></a>
@@ -250,61 +394,66 @@
 					<th>Non-imaging</th>
 					<th>Total</th>
 				</thead>
-				<tr>
-					<td><b>Boston</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Boston-MR.sqrl"><i class="ui download icon"></i> 179 subjects</a><div class="ui basic grey label">24 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Boston-EEG.sqrl"><i class="ui download icon"></i> 206 subjects</a><div class="ui basic grey label">97 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Boston-ET.sqrl"><i class="ui download icon"></i> 205 subjects</a><div class="ui basic grey label">1.1 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Boston-NonImaging.sqrl"><i class="ui download icon"></i> 342 subjects</a><div class="ui basic grey label">608 KB</div></div></td>
-					<td class="right aligned">121 GB</td>
-				</tr>
-				<tr>
-					<td><b>Chicago</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Chicago-MR.sqrl"><i class="ui download icon"></i> 313 subjects</a><div class="ui basic grey label">29 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Chicago-EEG.sqrl"><i class="ui download icon"></i> 327 subjects</a><div class="ui basic grey label">158 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Chicago-ET.sqrl"><i class="ui download icon"></i> 390 subjects</a><div class="ui basic grey label">1.9 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Chicago-NonImaging.sqrl"><i class="ui download icon"></i> 662 subjects</a><div class="ui basic grey label">1.2 MB</div></div></td>
-					<td class="right aligned">189 GB</td>
-				</tr>
-				<tr>
-					<td><b>Dallas</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Dallas-MR.sqrl"><i class="ui download icon"></i> 171 subjects</a><div class="ui basic grey label">15 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Dallas-EEG.sqrl"><i class="ui download icon"></i> 249 subjects</a><div class="ui basic grey label">118 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Dallas-ET.sqrl"><i class="ui download icon"></i> 247 subjects</a><div class="ui basic grey label">1.4 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Dallas-NonImaging.sqrl"><i class="ui download icon"></i> 562 subjects</a><div class="ui basic grey label">900 KB</div></div></td>
-					<td class="right aligned">134 GB</td>
-				</tr>
-				<tr>
-					<td><b>Georgia</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Georgia-MR.sqrl"><i class="ui download icon"></i> 243 subjects</a><div class="ui basic grey label">22 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Georgia-EEG.sqrl"><i class="ui download icon"></i> 336 subjects</a><div class="ui basic grey label">215 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Georgia-ET.sqrl"><i class="ui download icon"></i> 327 subjects</a><div class="ui basic grey label">1.8 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Georgia-NonImaging.sqrl"><i class="ui download icon"></i> 580 subjects</a><div class="ui basic grey label">992 KB</div></div></td>
-					<td class="right aligned">239 GB</td>
-				</tr>
-				<tr>
-					<td><b>Hartford 1</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford1-MR.sqrl"><i class="ui download icon"></i> 210 subjects</a><div class="ui basic grey label">213 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford1-EEG.sqrl"><i class="ui download icon"></i> 23 subjects</a><div class="ui basic grey label">12 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford1-ET.sqrl"><i class="ui download icon"></i> 240 subjects</a><div class="ui basic grey label">1.2 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford1-NonImaging.sqrl"><i class="ui download icon"></i> 269 subjects</a><div class="ui basic grey label">528 KB</div></div></td>
-					<td class="right aligned">225 GB</td>
-				</tr>
-				<tr>
-					<td><b>Hartford 2</b></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford2-MR.sqrl"><i class="ui download icon"></i> 149 subjects</a><div class="ui basic grey label">146 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford2-EEG.sqrl"><i class="ui download icon"></i> 34 subjects</a><div class="ui basic grey label">17 GB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford2-ET.sqrl"><i class="ui download icon"></i> 131 subjects</a><div class="ui basic grey label">696 MB</div></div></td>
-					<td><div class="ui fluid labeled button"><a class="ui compact basic blue button" href="bsnip/BSNIP2-Hartford2-NonImaging.sqrl"><i class="ui download icon"></i> 278 subjects</a><div class="ui basic grey label">500 KB</div></div></td>
-					<td class="right aligned">163 GB</td>
-				</tr>
+				
+				<?
+					$totalSubjects = array();
+					$totalSizes = array();
+					$totalUnzippedSizes = array();
+					$totalPardipSize = 0;
+					/* iterate over the sites */
+					foreach ($bsnip2 as $site => $mod) {
+						$totalsitesize = 0;
+						$totalsiteunzipsize = 0;
+						?>
+						<tr>
+							<td><b><?=$site?></b></td>
+						<?
+						ksort($mod);
+						/* iterate over the modalities */
+						foreach (array('MR','EEG','ET','NonImaging') as $modality) {
+							if (array_key_exists($modality, $bsnip2[$site])) {
+								$subjectCount = $bsnip2[$site][$modality]['subjectCount'];
+								$unzippedSize = $bsnip2[$site][$modality]['unzippedSize'];
+								$webpath = "bsnip/BSNIP2-$site-$modality.sqrl";
+								$filepath = "/nidb/data/$webpath";
+								$filesize = filesize($filepath);
+								$totalsitesize += $filesize;
+								$totalsiteunzipsize += $unzippedSize;
+								$totalBsnip2Size += $filesize;
+								
+								$totalUnzippedSizes[$modality] += $unzippedSize;
+								$totalSizes[$modality] += $filesize;
+								$totalSubjects[$modality] += $subjectCount;
+								?>
+								<td>
+									<div class="ui fluid labeled button">
+										<a class="ui compact basic blue button" href="<?=$webpath?>"><i class="ui download icon"></i> <?=$subjectCount?> subjects</a>
+										<div class="ui basic grey label"><?=HumanReadableFilesize($filesize);?></div>
+									</div>
+								</td>
+								<?
+							}
+							else {
+								?>
+								<td>-</td>
+								<?
+							}
+						}
+						?>
+							<td class="right aligned"><?=HumanReadableFilesize($totalsitesize);?></td>
+						</tr>
+						<?
+					}
+				
+				?>
 				<tr>
 					<td>Total</td>
-					<td class="right aligned">1265 subjects 446 GB</td>
-					<td class="right aligned">1175 subjects, 615 GB</td>
-					<td class="right aligned">1540 subjects, 7.9 GB</td>
-					<td class="right aligned">2693 subjects 4.7 MB</td>
-					<td class="right aligned">1.1 TB</td>
+					<?
+						foreach (array('MR','EEG','ET','NonImaging') as $modality) {
+							?><td class="right aligned"><?=$totalSubjects[$modality]?> subjects, <?=HumanReadableFilesize($totalSizes[$modality])?></td><?
+						}
+					?>
+					<td class="right aligned"><?=HumanReadableFilesize($totalBsnip2Size)?></td>
 				</tr>
 			</table>
 			

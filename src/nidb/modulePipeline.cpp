@@ -2052,20 +2052,21 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
     command.replace("{numsubjects}", QString("%1").arg(alluidstudynums.size()), Qt::CaseInsensitive);
 
     /* not really sure of the utility of these commands... doing this from bash may be more straightforward */
-    QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
-    if (command.contains(regex)) {
-        QRegularExpressionMatch match = regex.match(command);
-        QString file = match.captured(1); /* first match */
-        QString ext = match.captured(2); /* second match */
-        QString searchpattern = QString("%1/%2*.%3").arg(analysispath).arg(file).arg(ext);
-        QStringList files = FindAllFiles(analysispath, searchpattern);
-        if (files.size() > 0) {
-            QString replacement = files[0];
-            replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
-            command.replace(regex, replacement);
-        }
-    }
+    //QRegularExpression regex("\\s+(\\S*)\\{first_(.*)_file\\}", QRegularExpression::CaseInsensitiveOption);
+    //if (command.contains(regex)) {
+    //    QRegularExpressionMatch match = regex.match(command);
+    //    QString file = match.captured(1); /* first match */
+    //    QString ext = match.captured(2); /* second match */
+    //    QString searchpattern = QString("%1/%2*.%3").arg(analysispath).arg(file).arg(ext);
+    //    QStringList files = FindAllFiles(analysispath, searchpattern);
+    //    if (files.size() > 0) {
+    //        QString replacement = files[0];
+    //        replacement.replace(clusteranalysispath, analysispath, Qt::CaseInsensitive);
+    //        command.replace(regex, replacement);
+    //    }
+    //}
     /* {first_n_ext_files} {last_ext_file} are not implemented in the compiled NiDB */
+
     command.replace("{command}", command, Qt::CaseInsensitive);
 
     /* if there is a semi-colon at the end of the line, remove it (it will prevent logging) */

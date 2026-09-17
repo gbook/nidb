@@ -2076,7 +2076,7 @@
 					<div class="ui blue segment" id="exportTreePanel">
 						<h3 class="ui header">
 							Sample data export
-							<div class="sub header">Sample directories/files for each analysis (relative to the analysis root). Uses placeholder subject <tt>S1234ABC</tt>, study <tt>1</tt>, series <tt>3</tt> and <tt>7</tt></div>
+							<div class="sub header">Sample directories/files for each analysis (relative to the analysis root). Uses placeholder subject <tt>S1234ABC</tt>, study <tt>1</tt>, series <tt>3</tt> and <tt>7</tt>. Multiple output files displayed if <i>series criteria</i> is <b>All</b></div>
 						</h3>
 						<pre id="exportTree"></pre>
 						<div id="exportTreeWarnings"></div>
@@ -3080,10 +3080,6 @@
 							<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{first_ext_file}');" title="Expands to first file found with extenstion. Replace ext with the extension">{first_ext_file}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{first_n_ext_files}');" title="Finds first file with extension">{first_n_ext_files}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{last_ext_file}');" title="Finds last file (alphabetically) with extension">{last_ext_file}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{all_ext_files}');" title="Finds all files matching the extension">{all_ext_files}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
@@ -3099,6 +3095,10 @@
 							<tr><td class="pipelinevariable" onclick="insertText('{NOLOG}');" title="Insert in the comment and the line will not be logged. Useful if the command is using the > or >> operators to write to a file">{NOLOG}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{NOCHECKIN}');" title="Insert in the comment and the step will not be reported. Useful for command line for-loops">{NOCHECKIN}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{PROFILE}');" title="Enable profiling (measure RAM, CPU, disk IO usage) for this step using the <tt>time<tt> command. Will not work with certain linux commands such as <tt>export, for, while</tt>, etc">{PROFILE}</td></tr>
+							<tr><td style="border-top: solid 1px #666" title="Expands to first file found with extenstion. Replace ext with the extension"><tt>{first_ext_file}</tt> (deprecated)</td></tr>
+							<tr><td title="Finds first file with extension"><tt>{first_n_ext_files}</tt> (deprecated)</td></tr>
+							<tr><td title="Finds last file (alphabetically) with extension"><tt>{last_ext_file}</tt> (deprecated)</td></tr>
+							<tr><td title="Finds all files matching the extension"><tt>{all_ext_files}</tt> (deprecated)</td></tr>
 						</table>
 					</div>
 				</div>
