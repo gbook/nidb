@@ -499,6 +499,39 @@ QString nidb::SQLQuery(QSqlQuery &q, QString function, QString file, int line, b
 
 
 /* ---------------------------------------------------------- */
+/* --------- BuildInClause ---------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Build a list of named placeholders for a SQL "in (...)" clause and record the values to bind
+ * @param prefix Placeholder prefix. "prot" gives ":prot0, :prot1, ..."
+ * @param values Values to bind, one placeholder each
+ * @param binds Placeholder → value map, appended to. Bind after prepare() with BindValues()
+ * @return The comma-separated placeholder list
+ */
+QString nidb::BuildInClause(QString prefix, QStringList values, QVariantMap &binds) {
+    QStringList placeholders;
+    for (int i=0; i<values.size(); i++) {
+        QString ph = QString(":%1%2").arg(prefix).arg(i);
+        placeholders << ph;
+        binds[ph] = values[i];
+    }
+    return placeholders.join(", ");
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- BindValues ------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Bind all placeholder/value pairs to a prepared query
+ */
+void nidb::BindValues(QSqlQuery &q, const QVariantMap &binds) {
+    for (auto it = binds.constBegin(); it != binds.constEnd(); ++it)
+        q.bindValue(it.key(), it.value());
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- ModuleCheckIfActive ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -968,14 +1001,18 @@ QString nidb::CreateUID(QString prefix, int numletters) {
  * @return true if valid, false otherwise
  */
 bool nidb::isValidNiDBModality(QString m) {
-    QSqlQuery q;
-    QString sqlstring = QString("show tables like '%1_series'").arg(m.toLower());
-    q.prepare(sqlstring);
-    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0)
-        return true;
-    else
+    m = m.toLower();
+
+    /* the modality becomes part of a table name, which can't be bound, so only allow simple identifiers */
+    static const QRegularExpression re("^[a-z0-9]+$");
+    if (!re.match(m).hasMatch())
         return false;
+
+    QSqlQuery q;
+    q.prepare("select table_name from information_schema.tables where table_schema = database() and table_name = :table");
+    q.bindValue(":table", m + "_series");
+    SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    return (q.size() > 0);
 }
 
 

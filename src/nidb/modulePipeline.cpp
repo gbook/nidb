@@ -364,13 +364,11 @@ int modulePipeline::Run() {
                         break;
 
                     if (filled == 1) {
-                        //m = n->WriteLog(QString("Concurrent analysis quota reached, waiting 15 seconds").arg(p.name), __FUNCTION__);
                         m = n->Log("Concurrent number of running jobs reached. Waiting 60 seconds to try again.", __FUNCTION__);
                         SetPipelineStatusMessage(pipelineid, m);
                         RecordPipelineEvent(pipelineid, runnum, -1, "maxJobsReached", m);
                         n->ModuleRunningCheckIn();
                         QThread::sleep(60); /* sleep for 15 seconds */
-                        //SetPipelineStopped(pipelineid, "Pipeline max jobs reached. Normal stop.");
                     }
                     if (filled == 2) {
                         n->Log("Pipeline max concurrent jobs is not set", __FUNCTION__);
@@ -403,7 +401,6 @@ int modulePipeline::Run() {
                 // b) -OR- there is an existing analysis and it needs the results rerun
                 // c) -OR- there is an existing analysis and it needs a supplement run
                 // ********************
-                //n->WriteLog(QString("Checking if we need to submit this analysis to the cluster [%1] [%2] [%3]").arg(a.runSupplement).arg(a.rerunResults).arg(analysisRowID));
                 if ((a.runSupplement) || (a.rerunResults) || (analysisRowID == -1)) {
                     /* if the analysis doesn't yet exist, insert a temporary row, to be updated later, in the analysis table as a placeholder so that no other pipeline processes try to run it */
                     if (analysisRowID == -1) {
@@ -427,7 +424,6 @@ int modulePipeline::Run() {
                             analysisRowID = q2.lastInsertId().toInt();
                         }
 
-                        //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysiscreated", "success", "Analysis created");
                         n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, QString("rowID %1").arg(analysisRowID), "");
                     }
 
@@ -435,8 +431,6 @@ int modulePipeline::Run() {
 
                     int dependencyanalysisid(0);
                     bool submiterror = false;
-
-                    //n->WriteLog(QString("StudyDateTime: [%1], Working on: [%2%3]").arg(s.studydatetime.toString("yyyy-MM-dd hh:mm:ss")).arg(s.uid).arg(s.studynum));
 
                     QString analysispath = "";
                     analysispath = GetAnalysisLocalPath(p.dirStructure, p.name, s.GetUID(), s.GetStudyNum());
@@ -541,20 +535,22 @@ int modulePipeline::Run() {
                                     setuplog << n->Log(m, __FUNCTION__);
                                     RecordPipelineEvent(pipelineid, runnum, -1, "pipelineModuleDisabled", m);
                                     SetPipelineStopped(pipelineid, m);
+                                    n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::error, 0, "Parent pipeline does not exist", "");
+                                    UpdateAnalysisStatus(analysisRowID, "error", "Parent pipeline does not exist", 0,-1,"",false,false,-1,-1);
                                     break; /* leave the study loop */
                                 }
-                                n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "success", "This pipeline is dependent on [" + dependencyname + "]");
+                                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::success, 0, "Parent pipeline exists", "");
                             }
                             else {
                                 setuplog << n->Debug(QString("This pipeline does not depend on any pipelines [%1]").arg(pipelinedep));
                             }
 
-                            //QString analysispath = p.pipelineRootDir + "/" + p.name;
-                            //QString m;
-                            if (!MakePath(analysispath + "/pipeline", m)) {
-                                n->Log("Error: unable to create directory [" + analysispath + "/pipeline] - B", __FUNCTION__);
-                                n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetup", "error", "Unable to create directory [" + analysispath + "/pipeline]");
-                                UpdateAnalysisStatus(analysisRowID, "error", "Unable to create directory [" + analysispath + "/pipeline]", 0, -1, "", false, true, -1, -1);
+                            QString analysisPipelinePath = analysispath + "/pipeline";
+                            if (!MakePath(analysisPipelinePath, m)) {
+                                QString errMsg = QString("Error creating directory [%1]").arg(analysisPipelinePath);
+                                n->Log(errMsg, __FUNCTION__);
+                                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateDirectory, LogStatus::error, 0, errMsg, "");
+                                UpdateAnalysisStatus(analysisRowID, "error", errMsg, 0, -1, "", false, true, -1, -1);
                                 continue;
                             }
                             else {
@@ -594,9 +590,6 @@ int modulePipeline::Run() {
                                 if (p.depLinkType == "hardlink") systemstring = "time cp -aulL "; /* L added to allow copying of softlinks */
                                 else if (p.depLinkType == "softlink") systemstring = "time cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "time cp -au ";
-                                //if (p.depLinkType == "hardlink") systemstring = "rsync -aH "; /* try rsync to overcome cp bug in CentOS8 Stream (update, rsync doesn't create hardlinks with -H) */
-                                //else if (p.depLinkType == "softlink") systemstring = "cp -aus ";
-                                //else if (p.depLinkType == "regularcopy") systemstring = "cp -au ";
                                 if (p.depDir == "subdir") {
                                     systemstring += deppath + " " + analysispath + "/";
                                     setuplog << n->Log("Parent pipeline will be copied to a subdir [" + systemstring + "]", __FUNCTION__);
@@ -606,10 +599,6 @@ int modulePipeline::Run() {
                                     setuplog << n->Log("Parent pipeline will be copied to the root dir [" + systemstring + "] ", __FUNCTION__);
                                 }
                                 setuplog << n->Log(SystemCommand(systemstring), __FUNCTION__);
-                                //setuplog << n->WriteLog(SystemCommand(systemstring, true, false, false));
-
-                                //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "success", "Parent pipeline copied by running [" + systemstring + "]");
-                                //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysisdependencyid", "success", QString("%1").arg(dependencyanalysisid));
 
                                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCopy, LogStatus::success, 0, "Parent pipeline copied by running [" + systemstring + "]", "");
 
@@ -621,7 +610,6 @@ int modulePipeline::Run() {
                             }
                             else {
                                 setuplog << n->Log("This pipeline is not dependent on another pipeline", __FUNCTION__);
-                                //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "success", "This pipeline does not depend on other pipelines");
                                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCopy, LogStatus::neutral, 0, "No dependencies", "");
                             }
 
@@ -674,7 +662,6 @@ int modulePipeline::Run() {
                             n->Log(m, __FUNCTION__);
                             n->Debug("Job submission result [" + qresult + "]", __FUNCTION__);
                             UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", false, true, 0, 0);
-                            //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmitted", "success", qresult);
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, QString("Submitted job %1 to %2 cluster. Result [%3]").arg(jobid).arg(p.clusterType).arg(qresult), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "submitAnalysis", m);
                         }
@@ -682,7 +669,6 @@ int modulePipeline::Run() {
                             m = QString("Error submitting job to %1 cluster. analysisRowID %2. Job submission message [%3]").arg(p.clusterType).arg(analysisRowID).arg(qresult);
                             n->Log(m, __FUNCTION__);
                             UpdateAnalysisStatus(analysisRowID, "error", "Submit error [" + qm + "]", 0, numseriesdownloaded, "", false, true, 0, 0);
-                            //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissubmit", "error", "Analysis submitted to cluster, but was rejected with errors [" + qm + "]");
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::error, 0, QString("Error submitting job %1 to %2 cluster.  Result [%3]  Error [%4]").arg(jobid).arg(p.clusterType).arg(qresult).arg(qm), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "errorSubmitAnalysis", m);
 
@@ -711,13 +697,11 @@ int modulePipeline::Run() {
                         n->Log("Not Ok to submit job - No data found", __FUNCTION__);
                         /* update the analysis table with the datalog so people can check later on why something didn't process */
                         UpdateAnalysisStatus(analysisRowID, "", "", -1, -1, datalog, false, false, -1, -1);
-                        //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysissetup", "error", "No data found, 0 series returned from search");
                         n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCheckIfOkToRun, LogStatus::error, 0, "Not ok to submit job - no data found", "");
                     }
                     n->Log(QString("Submitted [%1] jobs so far").arg(numsubmitted));
 
                     /* mark the study in the analysis table */
-                    //n->WriteLog(QString("numseriesdownloaded [%1]  pipelinedep [%2]  deplevel [%3]  runSupplement [%4]  rerunResults [%5]").arg(numseriesdownloaded).arg(pipelinedep).arg(p.depLevel).arg(a.runSupplement).arg(a.rerunResults));
                     if (!submiterror) {
                         if ((numseriesdownloaded > 0) || ((pipelinedep != -1) && (p.depLevel == "study")) || (a.runSupplement) || (a.rerunResults)) {
                             /* do nothing right here... :) */
@@ -726,14 +710,12 @@ int modulePipeline::Run() {
                         else {
                             /* save some database space, since most entries will be blank */
                             UpdateAnalysisStatus(analysisRowID, "NoMatchingSeries", "", -1, -1, "", false, false, -1, -1);
-                            //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "warning", "This study did not have any matching data");
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSummary, LogStatus::warning, 0, "No matching data", "");
                         }
                     }
                 }
                 else {
                     n->Log(QString("This analysis [%1] already has an entry in the analysis table").arg(analysisRowID), __FUNCTION__);
-                    //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, sid, "analysismessage", "warning", "This analysis already has an entry in the analysis table");
                     n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSummary, LogStatus::warning, 0, "Analysis already has database entry", "");
                 }
 
@@ -900,33 +882,30 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         dlog << QString("   Step [%1] Checking if the following data exist:   protocol [%2]  modality [%3]  imagetype [%4]  enabled [%5]  level [%6]  assoctype [%7]  optional [%8]  numboldreps [%9]").arg(i).arg(protocol).arg(modality).arg(imagetype).arg(enabled).arg(level).arg(assoctype).arg(optional).arg(numboldreps);
 
         /* make sure the requested modality table exists */
-        q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        if (q.size() < 1) {
+        if (!n->isValidNiDBModality(modality)) {
             dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, stepNum, "Modality [" + modality + "] is not valid", "");
             stepIsInvalid = true;
             break;
         }
 
-        /* seperate any protocols that are actually lists of protocols */
-        QString protocols;
-        if (protocol.contains("\"")) {
-            QStringList prots = ShellWords(protocol);
-            protocols = "'" + prots.join("','") + "'";
-        }
+        QVariantMap binds;
+
+        /* separate any protocols that are actually lists of protocols */
+        QStringList prots;
+        if (protocol.contains("\""))
+            prots = ShellWords(protocol);
         else
-            protocols = "'" + protocol + "'";
+            prots << protocol;
+        QString protocols = n->BuildInClause("prot", prots, binds);
+        if (prots.size() < 1) {
+            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepCheck, LogStatus::error, stepNum, "No protocols specified", "");
+            stepIsInvalid = true;
+            break;
+        }
 
         /* separate image types */
-        QString imagetypes;
-        if (imagetype.contains(",")) {
-            QStringList types = imagetype.split(QRegularExpression(",\\s*"));
-            for(int ii=0; ii<types.size(); ii++)
-                types[ii] = types[ii].replace("\\", "\\\\");
-            imagetypes = "'" + types.join("','") + "'";
-        }
-        else
-            imagetypes = "'" + imagetype.replace("\\", "\\\\") + "'";
+        QStringList types = imagetype.split(QRegularExpression(",\\s*"), Qt::SkipEmptyParts);
+        QString imagetypes = n->BuildInClause("imgtype", types, binds);
 
         /* expand the comparison into SQL */
         QString comparison;
@@ -948,24 +927,27 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
+                if (types.size() > 0)
                     sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
-                sqlstring += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(studydate);
+                sqlstring += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, :studydatetime ) ) LIMIT 1").arg(modality);
 
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", subjectid);
+                q.bindValue(":studydatetime", studydate);
+                n->BindValues(q, binds);
             }
             else if ((assoctype == "all") || (assoctype == "entiresubject")) {
                 dlog << QString("   Searching for ALL data from the same SUBJECT and modality");
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
+                if (types.size() > 0)
                     sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", subjectid);
+                n->BindValues(q, binds);
             }
             else {
                 /* find the data from the same subject and modality that has the same study_type */
@@ -973,7 +955,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
+                if (types.size() > 0)
                     sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
                 sqlstring += " and `studies`.study_type = :studytype";
@@ -981,6 +963,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", subjectid);
                 q.bindValue(":studytype", studytype);
+                n->BindValues(q, binds);
             }
 
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
@@ -999,17 +982,18 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         /* otherwise, check the study for the protocol(s) */
         else {
             QString sqlstring;
-            dlog << QString("   Checking the study [%1] for the protocol (%2)").arg(studyid).arg(protocols);
+            dlog << QString("   Checking the study [%1] for the protocol (%2)").arg(studyid).arg(prots.join(", "));
             /* get a list of series satisfying the search criteria, if it exists */
             sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
-            if (imagetypes != "''") {
-                sqlstring += " and image_type in (" + imagetypes + ")";
-            }
+            if (types.size() > 0)
+                sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
+
             if (validComparisonStr)
                 sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2))").arg(comparison).arg(num);
 
             q.prepare(sqlstring);
             q.bindValue(":studyid", studyid);
+            n->BindValues(q, binds);
             n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             if (q.size() > 0) {
                 //dlog << QString("   Data found for step [%1] - protocol [%2] (study level)").arg(i).arg(protocol);
@@ -1050,7 +1034,6 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
         so we can assume all of the data exists, and start copying it
        ------------------------------------------------------------------------- */
 
-    //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, studyid, "analysiscopydata", "success", "Started copying data to [<tt>" + analysispath + "</tt>]");
     n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataCheckSummary, LogStatus::success, 0, "", "");
 
     /* if global BIDS export, do that as one step */
@@ -1083,25 +1066,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
         QSqlQuery q;
 
-        /* seperate any protocols that have multiples */
-        QString protocols;
-        if (protocol.contains("\"")) {
-            QStringList prots = ShellWords(protocol);
-            protocols = "'" + prots.join("','") + "'";
-        }
+        QVariantMap binds;
+
+        /* separate any protocols that are actually lists of protocols */
+        QStringList prots;
+        if (protocol.contains("\""))
+            prots = ShellWords(protocol);
         else
-            protocols = "'" + protocol + "'";
+            prots << protocol;
+        QString protocols = n->BuildInClause("prot", prots, binds);
 
         /* separate image types */
-        QString imagetypes;
-        if (imagetype.contains(",")) {
-            QStringList types = imagetype.split(QRegularExpression(",\\s*"));
-            for(int ii=0; ii<types.size(); ii++)
-                types[ii] = types[ii].replace("\\", "\\\\");
-            imagetypes = "'" + types.join("','") + "'";
-        }
-        else
-            imagetypes = "'" + imagetype.replace("\\", "\\\\") + "'";
+        QStringList types = imagetype.split(QRegularExpression(",\\s*"), Qt::SkipEmptyParts);
+        QString imagetypes = n->BuildInClause("imgtype", types, binds);
 
         /* SQL comparison string */
         QString comparison;
@@ -1119,6 +1096,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             continue;
         }
 
+        if (prots.size() < 1) {
+            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "No protocols specified", "");
+            continue;
+        }
+
         int neareststudynum = -1;
 
         /* use the correct SQL schema column name for the series_desc... */
@@ -1127,22 +1109,19 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             seriesdescfield = "series_protocol";
 
         /* make sure the requested modality table exists */
-        q.prepare(QString("show tables like '%1_series'").arg(modality.toLower()));
-        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        if (q.size() < 1) {
-            //dlog << n->Log(QString("Error - Modality [" + modality + "] not found. Data step will not be downloaded.").arg(p.name), __FUNCTION__);
-            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Modality ["+modality+"] does not exist", "");
+        if (!n->isValidNiDBModality(modality)) {
+            dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Modality [" + modality + "] is not valid", "");
             continue;
         }
 
         QString sqlstring;
         /* get a list of series satisfying the search criteria, if it exists */
         if (level == "study") {
-            dlog << "\tGetting list of series that match this (STUDY-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
+            dlog << "\tGetting list of series that match this (STUDY-level) data step -  protocols [" + prots.join(", ") + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
 
             sqlstring = QString("select * from %1_series where study_id = :studyid and (trim(%2) in (%3))").arg(modality).arg(seriesdescfield).arg(protocols);
-            if (imagetypes != "''")
-                sqlstring += " and image_type in (" + imagetypes + ")";
+            if (types.size() > 0)
+                sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
             if (criteria == "first")
                 sqlstring += " order by series_num asc limit 1";
@@ -1159,9 +1138,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
             q.prepare(sqlstring);
             q.bindValue(":studyid", studyid);
+            n->BindValues(q, binds);
         }
         else {
-            dlog << "\tGetting list of series matching this (SUBJECT-level) data step -  protocols [" + protocols + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
+            dlog << "\tGetting list of series matching this (SUBJECT-level) data step -  protocols [" + prots.join(", ") + "]  criteria [" + criteria + "]  imagetype [" + imagetype + "]";
 
             if ((assoctype == "nearesttime") || (assoctype == "nearestintime")) {
                 /* find the data from the same subject and modality that has the nearest (in time) matching scan */
@@ -1172,12 +1152,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 QString sqlstringA;
                 sqlstringA = QString("SELECT `studies`.study_id, `studies`.study_num FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
-                    sqlstringA += QString("and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
+                if (types.size() > 0)
+                    sqlstringA += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
-                sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, '%2' ) ) LIMIT 1").arg(modality).arg(s.datetime.toString("yyyy-MM-dd hh:mm:ss"));
+                sqlstringA += QString(" ORDER BY ABS( DATEDIFF( `%1_series`.series_datetime, :studydatetime ) ) LIMIT 1").arg(modality);
                 q2.prepare(sqlstringA);
                 q2.bindValue(":subjectid", s.GetSubjectRowID());
+                q2.bindValue(":studydatetime", s.datetime.toString("yyyy-MM-dd hh:mm:ss"));
+                n->BindValues(q2, binds);
 
                 n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                 int otherstudyid(0);
@@ -1191,12 +1173,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     continue;
                 }
 
-                dlog << n->Log(QString("Preparing (subject-level) data search:  protocols [%1]  criteria [%2]  imagetype [%3]").arg(protocols).arg(criteria).arg(imagetypes), __FUNCTION__);
+                dlog << n->Log(QString("Preparing (subject-level) data search:  protocols [%1]  criteria [%2]  imagetype [%3]").arg(prots.join(", ")).arg(criteria).arg(types.join(", ")), __FUNCTION__);
 
                 /* base SQL string */
                 sqlstring = QString("select * from %1_series where study_id = :otherstudyid and trim(%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
-                if (imagetypes != "''")
-                    sqlstring += " and image_type in (" + imagetypes + ")";
+                if (types.size() > 0)
+                    sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
                 /* determine the ORDERing and LIMITs */
                 if (criteria == "first")
@@ -1215,12 +1197,13 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", s.GetSubjectRowID());
                 q.bindValue(":otherstudyid", otherstudyid);
+                n->BindValues(q, binds);
             }
             else if ((assoctype == "all") || (assoctype == "entiresubject")) {
                 dlog << n->Log("Searching for all subject-level data", __FUNCTION__);
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
+                if (types.size() > 0)
                     sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
                 if (validComparisonStr)
@@ -1228,6 +1211,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", s.GetSubjectRowID());
+                n->BindValues(q, binds);
             }
             else {
                 /* find the data from the same subject and modality that has the same study_type */
@@ -1235,7 +1219,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
 
                 sqlstring = QString("SELECT *, `%1_series`.%1series_id FROM `enrollment` JOIN `projects` on `enrollment`.project_id = `projects`.project_id JOIN `subjects` on `subjects`.subject_id = `enrollment`.subject_id JOIN `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id JOIN `%1_series` on `%1_series`.study_id = `studies`.study_id WHERE `subjects`.isactive = 1 AND `studies`.study_modality = '%1' AND `subjects`.subject_id = :subjectid AND trim(`%1_series`.%2) in (%3)").arg(modality).arg(seriesdescfield).arg(protocols);
 
-                if (imagetypes != "''")
+                if (types.size() > 0)
                     sqlstring += QString(" and `%1_series`.image_type in (%2)").arg(modality).arg(imagetypes);
 
                 if (validComparisonStr)
@@ -1246,6 +1230,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 q.prepare(sqlstring);
                 q.bindValue(":subjectid", s.GetSubjectRowID());
                 q.bindValue(":studytype", studytype);
+                n->BindValues(q, binds);
             }
         }
 
@@ -1518,8 +1503,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
             return false;
         }
     }
-    //n->Debug("Leaving GetData() successfully", __FUNCTION__);
-    //n->InsertAnalysisEvent(analysisRowID, pipelineid, p.version, studyid, "analysiscopydataend", "success", QString("Finished copying data [%1] series downloaded").arg(numdownloaded));
+
     n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataDownloadSummary, LogStatus::success, 0, QString("Downloaded %1 series").arg(numdownloaded), "");
 
     datalog = dlog.join("\n");
@@ -1688,18 +1672,23 @@ QStringList modulePipeline::GetGroupList(int pid) {
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         q.first();
-        QStringList groupids = q.value("pipeline_groupid").toString().split(",");
+
+        /* pipeline_groupid is a comma-separated list. Keep only valid integer IDs */
+        QStringList groupids;
+        foreach (QString id, q.value("pipeline_groupid").toString().split(",", Qt::SkipEmptyParts)) {
+            id = id.trimmed();
+            if (IsInt(id))
+                groupids << id;
+        }
+
         if (groupids.size() > 0) {
+            QVariantMap binds;
             QSqlQuery q2;
-            q2.prepare("select group_name from groups where group_id in (:groupids)");
-            q2.bindValue(":groupids", groupids.join(","));
+            q2.prepare("select group_name from groups where group_id in (" + n->BuildInClause("groupid", groupids, binds) + ")");
+            n->BindValues(q2, binds);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-            if (q2.size() > 0) {
-                while (q2.next()) {
-                    QString groupname = q2.value("group_name").toString();
-                    grouplist.append(groupname);
-                }
-            }
+            while (q2.next())
+                grouplist.append(q2.value("group_name").toString());
         }
     }
 

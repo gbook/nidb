@@ -125,12 +125,16 @@ public:
     QString GetPrimaryAlternateUID(qint64 subjectid, qint64 enrollmentid);
     QString GetGroupListing(int groupid);
     bool isValidNiDBModality(QString m);
-    QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool *success = nullptr, bool batch=false);
     QString Log(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     QString Debug(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);
-    bool GetSQLComparison(QString c, QString &comp, int &num);
     bool SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result);
+
+    /* SQL functions */
+    QString BuildInClause(QString prefix, QStringList values, QVariantMap &binds);
+    QString SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool *success = nullptr, bool batch=false);
+    bool GetSQLComparison(QString c, QString &comp, int &num);
+    void BindValues(QSqlQuery &q, const QVariantMap &binds);
 
     /* debug functions */
     QString GetSubjectStudySeriesMapString(const QMap<QString, QMap<int, QMap<int, QMap<QString, QString>>>> &data);
