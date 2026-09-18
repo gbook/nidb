@@ -10,19 +10,42 @@ As the **root** user, run
 
 `passwd nidb`
 
-\-or- as the **nidb** user, run
+-or- as the **nidb** user, run
 
 `passwd`
 
 ### How to change MariaDB passwords
 
-Login to http://localhost/phpMyAdmin using the root MySQL account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the `root` (or `nidb`) account that has a `‘%’` as the hostname. Then click **Change password** button at the top of the page. Enter a new password and click **Go**
+The MariaDB `root` account has the hostname `localhost`. The MariaDB `nidb` account has the hostname `%`.
+
+{% tabs %}
+{% tab title="Command line" %}
+Log in to MariaDB as root
+
+```bash
+mysql -uroot -p
+```
+
+Then change the password(s)
+
+```sql
+ALTER USER 'root'@'localhost' IDENTIFIED BY 'newpassword';
+ALTER USER 'nidb'@'%' IDENTIFIED BY 'newpassword';
+```
+{% endtab %}
+
+{% tab title="phpMyAdmin" %}
+If you have installed [phpMyAdmin](optional-software.md), login to http://localhost/phpMyAdmin using the root MariaDB account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the `root` account with the hostname `localhost`, or the `nidb` account with the hostname `%`. Then click **Change password** button at the top of the page. Enter a new password and click **Go**
+{% endtab %}
+{% endtabs %}
 
 {% hint style="info" %}
-Changed MariaDB passwords must also be updated in the config file. Use one of the following methods to edit the password
+If you change the MariaDB `nidb` password, it must also be updated in the config file. Use one of the following methods to change the `[mysqlpassword]` config variable
 
 * Edit `/nidb/nidb.cfg` to reflect the new password
 * Go to **Admin** --> **Settings** in the NiDB website to edit the config variables
+
+The MariaDB `root` password is not stored in the config file. It is entered on the setup page when installing or upgrading NiDB.
 {% endhint %}
 
 ### How to change NiDB `admin` password
