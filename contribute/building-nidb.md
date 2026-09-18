@@ -9,14 +9,16 @@ description: How to build NiDB and contribute to its development
 The following OS configurations have been tested to build nidb. It may be possible to build NiDB on other OS configurations, but only the below environments have been tested.
 
 * <mark style="color:green;">**Tested & Compatible**</mark>
+  * RHEL 10 compatible (Rocky Linux 10, AlmaLinux 10, RHEL 10)
   * RHEL 9 compatible (Rocky Linux 9, AlmaLinux 9, RHEL 9)
   * RHEL 8 compatible (Rocky Linux 8, AlmaLinux 8, CentOS 8, RHEL 8)
-  * Ubuntu 20
   * Debian 12
+  * Debian 13
 * <mark style="color:red;">**Incompatible**</mark>
   * RHEL-compatible 8.6 (RHEL 8.6, Rocky 8.6, AlmaLinux 8.6)
   * CentOS 8 Stream
 * **Unknown**
+  * Ubuntu - Previously built on Ubuntu 20, but Ubuntu is no longer tested and there is no Ubuntu package script.
   * Windows 10/11 - NiDB will compile and build on Windows, but NiDB uses Linux system calls to perform many background operations, and thus would not work on Windows.
 
 {% hint style="danger" %}
@@ -33,18 +35,20 @@ Run these commands as root (or sudo) based on your distribution
 {% tab title="RHEL 10" %}
 ```bash
 dnf group install 'Development Tools'
-dnf install cmake3
+dnf install cmake3 wget unzip
 dnf install rpmdevtools
 dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
 dnf install libxkbcommon-x11 libxcb-devel
 dnf install libX11-xcb
+dnf install git
+dnf install mesa-libGL-devel
 ```
 {% endtab %}
 
 {% tab title="RHEL 9" %}
 ```bash
 dnf group install 'Development Tools'
-dnf install cmake3
+dnf install cmake3 wget unzip
 dnf install rpmdevtools
 dnf install xcb-util-wm xcb-util-cursor xcb-util-keysyms
 dnf install libxkbcommon-x11
@@ -56,7 +60,7 @@ dnf install mesa-libGL-devel
 {% tab title="RHEL 8" %}
 ```bash
 dnf group install 'Development Tools'
-dnf install cmake3 wget
+dnf install cmake3 wget unzip
 dnf install rpmdevtools
 dnf install xcb-util-wm xcb-util-keysyms
 dnf install libxkbcommon-x11
@@ -66,38 +70,34 @@ dnf install libX11-xcb
 dnf install xcb-util*
 dnf install mesa-libGL-devel
 ```
+
+The build scripts automatically enable `gcc-toolset-10` on RHEL 8.
 {% endtab %}
 
-{% tab title="Ubuntu 20" %}
-```bash
-apt install build-essential
-apt install libxcb*
-apt install make
-apt install cmake
-apt install git
-```
-{% endtab %}
-
-{% tab title="Debian 12" %}
+{% tab title="Debian 12 / 13" %}
 ```bash
 apt install build-essential make cmake git
 apt install libxcb* libxkb* libX11-xcb*
 apt install libdbus-1*
 apt install libzstd-dev
 apt install libglib2.0-dev
-apt install wget   # if needed
+apt install wget unzip   # if needed
 ```
 {% endtab %}
 {% endtabs %}
 
 ### Step 2 - Build DCMTK
 
+{% hint style="warning" %}
+Use **DCMTK 3.7.0**. The package build scripts expect the DCMTK 3.7.0 libraries (`libdcm*.so.20.3.7.0`) and data dictionaries (`/usr/local/share/dcmtk-3.7.0`). A different version of DCMTK will cause the package build to fail.
+{% endhint %}
+
 {% tabs %}
 {% tab title="Linux" %}
 1. Install CMake
    1. RHEL `sudo dnf install cmake cmake-gui`
-   2. Debian/Ubuntu `sudo apt install cmake cmake-gui`
-2. Download dcmtk source code [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
+   2. Debian `sudo apt install cmake cmake-gui`
+2. Download the DCMTK 3.7.0 source code from [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
 3. Unzip the source code to a directory such as `~/dcmtk-source`. Make sure the source code exists at the root of that directory and is not unzipped into a sub-directory.
 4. Open CMake (GUI)
    1. Set source code directory to to `~/dcmtk-source`
@@ -124,35 +124,37 @@ apt install wget   # if needed
       2. libs - `/usr/local/lib64`
    2. Debian
       1. include - `/usr/local/include`
-      2. libs - `/usr/local/lib`&#x20;
+      2. libs - `/usr/local/lib`
+   3. data dictionaries - `/usr/local/share/dcmtk-3.7.0`
 
-#### Add /usr/local/lib64 to ldconfig
+#### Add /usr/local/lib64 to ldconfig (RHEL)
 
 ```bash
-sudo echo "/usr/local/lib64" > /etc/ld.so.conf.d/local-lib64.conf
+echo "/usr/local/lib64" | sudo tee /etc/ld.so.conf.d/local-lib64.conf
 sudo ldconfig
 ```
 {% endtab %}
 
 {% tab title="Windows" %}
 1. Install CMake - [https://cmake.org/download/](https://cmake.org/download/)
-2. Download dcmtk source code [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
-3. Unzip the source code to a directory such as `C:/dcmtk-source`. Make sure the source code exists at the root of that directory and is not unzipped into a sub-directory.&#x20;
+2. Download the DCMTK 3.7.0 source code from [https://github.com/DCMTK/dcmtk/releases](https://github.com/DCMTK/dcmtk/releases)
+3. Unzip the source code to a directory such as `C:/dcmtk-source`. Make sure the source code exists at the root of that directory and is not unzipped into a sub-directory.
 4. Open CMake (GUI)
    1. Set source code directory to to `C:/dcmtk-source`
    2. Set binary directory to `C:/dcmtk-bin`
    3. Make sure
       1. `BUILD_APPS` is unchecked
       2. `BUILD_SHARED_LIBS` is checked
-      3. &#x20;  `DCMTK_ENABLE_PRIVATE_FLAGS` is checked
+      3. `DCMTK_ENABLE_PRIVATE_TAGS` is checked
    4. Leave all other options the same
    5. Click **Configure**. Set the generator to Visual Studio 17, 2022
    6. The variable list will refresh. If any lines are <mark style="color:red;">**red**</mark>, fix those lines and click **Configure** again.
    7. Click **Generate**.
 5. Right-click **Visual Studio 2022** and select **Run as administrator**. Then open `C:/dcmtk-bin/DCMTK.sln`
    1. On the Solution explorer, right-click and select **Batch Build...**
-   2. For the ALL\_BUILD  and INSTALL rows check off the _Release_ option, and click **Build**.
+   2. For the ALL\_BUILD and INSTALL rows check off the _Release_ option, and click **Build**.
    3. Building will take some time.
+6. The NiDB project file expects DCMTK to be installed in `C:/Program Files (x86)/DCMTK`
 {% endtab %}
 {% endtabs %}
 
@@ -164,30 +166,17 @@ sudo ldconfig
 4. The Qt Maintenance Tool will start. An account is required to download Qt open source
 5. On the components screen, select the checkbox for **Qt 6.9.3 → Desktop gcc 64-bit**
 
+The build scripts expect Qt to be installed in `~/Qt/6.9.3/gcc_64`.
+
 ### Optional - Build MySQL/MariaDB driver for Qt
 
 Sometimes the MySQL/MariaDB driver supplied with Qt will not work correctly, and needs to be built manually. This happens on Debian 12, for example. If building is successful, the path to the driver should eventually be `~/Qt/6.9.3/gcc_64/plugins/sqldrivers/libqsqlmysql.so`
 
-1. On step 2 above (using the Qt MaintenanceTool), also select the checkbox for **Qt 6.9.3 → Sources**
+1. In step 3 above (using the Qt Maintenance Tool), also select the checkbox for **Qt 6.9.3 → Sources**
+2. Run the following commands
 
 {% tabs %}
-{% tab title="RHEL 9" %}
-```bash
-# need to fix this, don't use it yet.
-
-sudo apt install ninja-build
-sudo apt install libmariadb-dev*
-sudo apt install libglib2*
-cd ~
-mkdir build-sqldrivers
-cd build-sqldrivers
-~/Qt/6.9.3/gcc_64/bin/qt-cmake -G Ninja ~/Qt/6.9.3/Src/qtbase/src/plugins/sqldrivers -DCMAKE_INSTALL_PREFIX=~/Qt/6.9.3/gcc_64 -DMySQL_INCLUDE_DIR="/usr/include/mariadb" -DMySQL_LIBRARY="/usr/lib/x86_64-linux-gnu/libmariadbclient.so"
-cmake --build .
-cmake --install .
-```
-{% endtab %}
-
-{% tab title="Debian 12" %}
+{% tab title="Debian 12 / 13" %}
 ```bash
 sudo apt install ninja-build
 sudo apt install libmariadb-dev*
@@ -206,101 +195,74 @@ sudo cp -uv ~/Qt/6.9.3/gcc_64/plugins/sqldrivers/* /usr/local/bin/sqldrivers/
 {% endtab %}
 {% endtabs %}
 
-## Building the NiDB executable
+## Building NiDB
 
-Once the build environment is setup, the builds can be done by script. The `build.sh` script will build only the nidb executable, this is useful when testing. The `rpmbuildx.sh` scripts will build the rpm which will create releases.
+Once the build environment is set up, the builds are done by script. All scripts are run from the root of the NiDB source directory.
 
-{% tabs %}
-{% tab title="RHEL 9" %}
-**First time build** on this machine, perform the following
+| Script                                                                     | What it does                                                                                                                                                                                                                                                                                      |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `build.sh`                                                                 | Development build. Builds the bit7z library, the squirrel library, and the `nidb` and `nidbcluster` executables into `./bin`. It then uses `sudo` to copy `nidb` and `nidbcluster` to `/nidb/bin` and the squirrel library to `/lib64`. The copy steps are not required for the build to succeed. |
+| `build-rpm.sh` (`build-rpm8.sh` on RHEL 8)                                 | Package build. Builds bit7z, the squirrel library, the `squirrel` command-line utility, and `nidb` into `./bin`. This is the script run by the RPM spec file.                                                                                                                                     |
+| `makeInstallerRHEL8.sh`, `makeInstallerRHEL9.sh`, `makeInstallerRHEL10.sh` | Build the NiDB `.rpm` for a release, from the local source directory.                                                                                                                                                                                                                             |
+| `makeInstallerDebian12.sh`, `makeInstallerDebian13.sh`                     | Build the NiDB `.deb` for a release, from the binaries already built in `./bin`.                                                                                                                                                                                                                  |
+
+{% hint style="info" %}
+The `makeInstallerRHELx.sh` scripts build the .rpm from the git repository they are run from. They export all files tracked by git, **including uncommitted changes**, into a fresh `~/rpmbuild` directory. Files not tracked by git (for example a local `phpMyAdmin` or `vendor` directory under `src/web`) are not included in the .rpm. The script prints the commit it is building from, and whether uncommitted changes are included.
+{% endhint %}
+
+**First time build** on this machine, clone the source code (see [Cloning a new repository with SSH](building-nidb.md#cloning-a-new-repository-with-ssh) below), or download it
 
 ```bash
 cd ~
-wget https://github.com/gbook/nidb/archive/master.zip
-unzip master.zip
-mv nidb-master nidb
-cd nidb
-./build.sh      # build only the NiDB executable
-./rpmbuild9.sh  # build the nidb .rpm
+git clone https://github.com/gbook/nidb.git nidb
 ```
 
-All **subsequent builds** on this machine can be done with the following
+Then build, based on your distribution
 
+{% tabs %}
+{% tab title="RHEL 10" %}
 ```bash
 cd ~/nidb
-./build.sh      # build only the executable
-./rpmbuild9.sh  # build the .rpm
+./build.sh                # development build of nidb and nidbcluster
+./makeInstallerRHEL10.sh  # build the nidb .rpm
+```
+{% endtab %}
+
+{% tab title="RHEL 9" %}
+```bash
+cd ~/nidb
+./build.sh               # development build of nidb and nidbcluster
+./makeInstallerRHEL9.sh  # build the nidb .rpm
 ```
 {% endtab %}
 
 {% tab title="RHEL 8" %}
-**First time build** on this machine, perform the following
-
-```bash
-cd ~
-wget https://github.com/gbook/nidb/archive/master.zip
-unzip master.zip
-mv nidb-master nidb
-cd nidb
-./build.sh      # build only the NiDB executable
-./rpmbuild8.sh  # build the nidb .rpm
-```
-
-All **subsequent builds** on this machine can be done with the following
-
 ```bash
 cd ~/nidb
-./build.sh      # build only the executable
-./rpmbuild8.sh  # build the .rpm
+./build.sh               # development build of nidb and nidbcluster
+./makeInstallerRHEL8.sh  # build the nidb .rpm
 ```
 {% endtab %}
 
-{% tab title="Ubuntu 20" %}
-**First time build** on this machine, perform the following
-
-```bash
-cd ~
-wget https://github.com/gbook/nidb/archive/master.zip
-unzip master.zip
-mv nidb-master nidb
-cd nidb
-./build.sh      # build only the NiDB executable
-```
-
-All **subsequent builds** on this machine can be done with the following
-
+{% tab title="Debian 12 / 13" %}
 ```bash
 cd ~/nidb
-./build.sh      # build only the executable
-```
-{% endtab %}
+./build.sh                  # development build of nidb and nidbcluster
 
-{% tab title="Debian 12" %}
-**First time build** on this machine, perform the following
-
-```bash
-cd ~
-wget https://github.com/gbook/nidb/archive/master.zip
-unzip master.zip
-mv nidb-master nidb
-cd nidb
-./build.sh      # build only the NiDB executable
-```
-
-All **subsequent builds** on this machine can be done with the following
-
-```bash
-cd ~/nidb
-./build.sh      # build only the executable
+# build the nidb .deb
+./build-rpm.sh              # builds nidb and the squirrel utility into ./bin
+./makeInstallerDebian13.sh  # or ./makeInstallerDebian12.sh on Debian 12
 ```
 {% endtab %}
 {% endtabs %}
+
+The .rpm will be created in `~/rpmbuild/RPMS/x86_64/`. The .deb will be created in the NiDB source directory.
 
 ## Contributing to the NiDB Project
 
 ### Setting up a development server
 
-A development server can be a full server, a VM, or any installation of one of the supported Linux operating systems. Once you've been granted access to the nidb project on github, you'll need to add your SSH key under your account (github.com --> click your username --> Settings --> SSH and GPG keys). There are directions on the github site for how to do this. Then you can clone the current source code into your .
+A development server can be a full server, a VM, or any installation of one of the supported Linux operating systems. Once you've been granted access to the nidb project on github, you'll need to add your SSH key under your account (github.com --> click your username --> Settings --> SSH and GPG keys). There are directions on the github site for how to do this. Then you can clone the current source code into your home directory.
 
 ### Cloning a new repository with SSH
 
@@ -346,26 +308,26 @@ This error happens because of a kernel bug in Rocky Linux 8.6 and any qmake buil
 
 #### Library error when running nidb executable
 
-If you get an error similar to the following, you'll need to install the missing library
+If you get an error similar to the following, a shared library is missing or is not registered with `ldconfig`
 
 ```bash
-./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory./nidb: error while loading shared libraries: libsquirrel.so.1: cannot open shared object file: No such file or directory
+./nidb: error while loading shared libraries: libdcmdata.so.20: cannot open shared object file: No such file or directory
 ```
 
-You can check which libraries are missing by running `ldd` on the `nidb` executable
+You can check which libraries are missing by running `ldd` on the `nidb` executable, and looking for lines that say `not found`
 
 ```bash
-[nidb@ado2dev bin]$ ldd nidb
-        linux-vdso.so.1 (0x00007ffd07fe4000)
-        libSMTPEmail.so.1 => /lib/libSMTPEmail.so.1 (0x00007fdb4e2b0000)
-        libsquirrel.so.1 => not found
-        libgdcmMSFF.so.3.0 => /lib/libgdcmMSFF.so.3.0 (0x00007fdb4dd88000)
-        libgdcmCommon.so.3.0 => /lib/libgdcmCommon.so.3.0 (0x00007fdb4db60000)
-        libgdcmDICT.so.3.0 => /lib/libgdcmDICT.so.3.0 (0x00007fdb4d688000)
-        libgdcmDSED.so.3.0 => /lib/libgdcmDSED.so.3.0 (0x00007fdb4d348000)
+ldd /nidb/bin/nidb | grep "not found"
 ```
 
-Copy the missing library file(s) to `/lib` as root. Then run `ldconfig` to register any new libraries.
+The squirrel and bit7z libraries are built into the `nidb` executable, so the shared libraries that are usually missing are
+
+* **DCMTK** (`libdcm*`, `libofstd`, `liboflog`, etc) - installed in `/usr/local/lib64` (RHEL) or `/usr/local/lib` (Debian). On RHEL, make sure `/usr/local/lib64` has been added to ldconfig as described in Step 2.
+* **Qt** (`libQt6Core`, `libQt6Gui`, `libQt6Sql`, `libQt6Network`, `libQt6DBus`, `libicu*`) - located in `~/Qt/6.9.3/gcc_64/lib`
+
+Copy the missing library file(s) to `/usr/lib` (RHEL) or `/usr/lib/x86_64-linux-gnu` (Debian) as root. Then run `sudo ldconfig` to register any new libraries.
+
+If NiDB cannot connect to the database, the Qt MySQL driver `libqsqlmysql.so` may be missing. It should be in `/nidb/bin/sqldrivers`. See _Optional - Build MySQL/MariaDB driver for Qt_ above.
 
 #### Virtual Machine Has No Network
 
