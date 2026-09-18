@@ -10,10 +10,10 @@
 set -e
 cd "$(dirname "$0")"
 
-VERSION=2026.7.1502
+VERSION=2026.9.1602
 QTDIR=~/Qt/6.9.3/gcc_64
 
-PACKAGE=nidb_2026.9.1602
+PACKAGE=nidb_${VERSION}
 DEBDIR=$PACKAGE/DEBIAN
 LIBDIR=$PACKAGE/usr/lib/x86_64-linux-gnu           # multiarch shared-lib location
 BINDIR=$PACKAGE/usr/local/bin

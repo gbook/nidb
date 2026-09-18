@@ -9,7 +9,7 @@ URL:            http://github.com/gbook/nidb
 
 BuildArch:	x86_64
 BuildRequires:  gcc, cmake, make, mesa-libGL-devel
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, p7zip, p7zip-plugins, java
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, p7zip, p7zip-plugins, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
@@ -34,9 +34,9 @@ rm -f %{buildroot}/var/www/html/download # do NOT package the download symlink; 
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
+cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
 cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
-cp -f %{_builddir}/bin/squirrel/libsquirrel.so.1 %{buildroot}/usr/lib/ # copy squirrel lib
 cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
@@ -67,7 +67,8 @@ cp -f /usr/local/lib64/liboficonv.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk
 cp -f /usr/local/lib64/liboflog.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libofstd.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
-cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Core.so.6 %{buildroot}/usr/lib/ # copy Qt libs
+cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Gui.so.6 %{buildroot}/usr/lib/ # copy Qt libs (needed by QImage in utils.cpp)
+cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6DBus.so.6 %{buildroot}/usr/lib/ # copy Qt libs (needed by libQt6Gui)
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Network.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libQt6Sql.so.6 %{buildroot}/usr/lib/ # copy Qt libs
 cp -f ~/Qt/6.9.3/gcc_64/lib/libicudata.so.73 %{buildroot}/usr/lib/ # copy Qt libs
@@ -84,7 +85,7 @@ cp -rf /usr/local/share/dcmtk-3.7.0/* %{buildroot}/usr/local/share/dcmtk-3.7.0/ 
 /nidb
 /var/www/html
 /usr/lib/*
-/usr/local/bin
+/usr/local/bin/*
 /usr/local/share/dcmtk-3.7.0
 
 %pre
