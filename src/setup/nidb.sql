@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 14, 2026 at 07:22 PM
+-- Generation Time: Sep 18, 2026 at 01:07 AM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.31
 
@@ -2190,7 +2190,7 @@ CREATE TABLE `pipelines` (
   `pipeline_dynamicgroupid` int(11) DEFAULT NULL,
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
-  `pipeline_status` varchar(20) DEFAULT NULL,
+  `pipeline_status` enum('running','stopped','error') NOT NULL DEFAULT 'stopped',
   `pipeline_statusmessage` varchar(255) DEFAULT NULL,
   `pipeline_laststart` datetime DEFAULT NULL,
   `pipeline_lastfinish` datetime DEFAULT NULL,
@@ -2295,7 +2295,7 @@ CREATE TABLE `pipeline_history` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `analysis_id` bigint(11) DEFAULT NULL,
-  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps') NOT NULL,
+  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs') NOT NULL,
   `event_datetime` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
   `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;

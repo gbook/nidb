@@ -263,11 +263,16 @@ bool moduleExport::SetExportedPath(int exportRowID, QString path) {
 /* --------- GetExportSeriesList ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Obtain a list of series, given an exportRowID. Resulting list is stored in the private variable called 's'
+ * @brief Obtain a list of series, given an exportRowID. Resulting list replaces the contents of the private variable called 's'
  * @param exportid exportRowID
  * @return true if a series list was created
  */
 bool moduleExport::GetExportSeriesList(int exportid) {
+
+    /* Run() processes every queued export in a single pass, and the callers of this function iterate
+       the whole of 's' when writing out the data. Without this clear, each export would also write out
+       every series left over from the exports processed before it in the same run */
+    s.clear();
 
     QSqlQuery q;
     q.prepare("select * from exportseries where export_id = :exportid");

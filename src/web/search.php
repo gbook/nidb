@@ -6131,19 +6131,30 @@
 	/* ------- Anonymize -------------------------- */
 	/* -------------------------------------------- */
 	function Anonymize($r, $username) {
-		$seriesids = $r['seriesid'];
-		$modality = $r['modality'];
-		$dicomtags = mysqli_real_escape_string($GLOBALS['linki'], $r['dicomtags']);
-		
+		$seriesids = $r['seriesid'] ?? '';
+		$modality = strtolower($r['modality'] ?? '');
+		$dicomtags = $r['dicomtags'] ?? '';
+		$enrollmentids = $r['enrollmentid'] ?? '';
+
 		if (($seriesids == "") && ($enrollmentids == "")) {
 			echo "You didn't select any series or subjects to transfer! Go back and select something<br>";
 			return;
 		}
-		
+
+		/* the modality becomes part of a table name downstream, so only allow a valid one */
+		if (GetSeriesTableName($modality) == "") {
+			echo "Invalid modality [" . htmlspecialchars($modality) . "]. Nothing was submitted.<br>";
+			return;
+		}
+
+		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
 		foreach ($seriesids as $seriesid) {
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, anonymize_fields, request_status, username, requestdate) values ('anonymize','series',$seriesid,'$modality','$dicomtags','pending','$username',now())";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$seriesid = (int)$seriesid;
+			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, anonymize_fields, request_status, username, requestdate) values ('anonymize','series',?,?,?,'pending',?,now())";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'isss', $seriesid, $modality, $dicomtags, $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid, $modality, $dicomtags, $username]);
+			mysqli_stmt_close($stmt);
 		}
 	}
 	
@@ -6396,11 +6407,25 @@
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
 		
 		$modality = strtolower($modality);
-		
+
+		/* Validate the modality before recording it. The export module builds a table name from this
+		   value (<modality>_series) and looks the series IDs up in it. Series IDs are per-table
+		   auto-increment and collide across modalities, so an invalid or mismatched modality would
+		   silently export a different subject's series that happens to share the same numeric ID. */
+		if (GetSeriesTableName($modality) == "") {
+			echo "Invalid modality [" . htmlspecialchars($modality) . "]. Export not submitted.<br>";
+			return;
+		}
+
 		/* insert all of the series into the exportseries table */
+		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
 		foreach ($seriesids as $seriesid) {
-			$sqlstring = "insert into exportseries (export_id, series_id, modality, status) values ($exportRowID, $seriesid, '$modality', 'submitted')";
-			$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+			$seriesid = (int)$seriesid;
+			$sqlstring = "insert into exportseries (export_id, series_id, modality, status) values (?, ?, ?, 'submitted')";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'iis', $exportRowID, $seriesid, $modality);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$exportRowID, $seriesid, $modality]);
+			mysqli_stmt_close($stmt);
 		}
 		$numseries = count($seriesids);
 		
