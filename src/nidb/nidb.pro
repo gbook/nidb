@@ -169,13 +169,13 @@ unix: {
 
     # Location of squirrel Library and header
     INCLUDEPATH += ../squirrel
-    SQUIRRELBIN = ../../bin/squirrel
+    SQUIRRELBIN = $$OUT_PWD/../squirrel   # relative to the build dir, so any BUILDDIR works (bin/, bin/debian12/, rpmbuild)
     LIBS += -L$$SQUIRRELBIN/ -Wl,-Bstatic -lsquirrel -Wl,-Bdynamic
     INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 
     # bit7z (required by static libsquirrel)
-    BIT7ZBIN = ../../bin/bit7z
+    BIT7ZBIN = $$OUT_PWD/../bit7z
     LIBS += -L$$BIT7ZBIN -lbit7z64 -ldl
 
     LIBS += -L/usr/local/lib64/

@@ -11,7 +11,8 @@
 #          never share object files), then makeInstallerDebian<N>.sh packages it.
 #          The Debian version is read from the distro's /etc/os-release.
 #
-# Finished installers are collected into ./installers/ with distro-tagged names.
+# Finished installers are collected into ./installers/ with distro-tagged names,
+# along with a <distro>.log of each distro's build output.
 
 SRCDIR="$(pwd)"
 SHARED=/mnt/wsl/nidb-build
@@ -41,9 +42,9 @@ if [ ! -f makeAllInstallers.sh ]; then
 fi
 command -v wsl.exe >/dev/null 2>&1 || { echo "wsl.exe not found; this script must be run from WSL"; exit 1; }
 
-# start with an empty output dir so it only holds installers from this run
+# start with an empty output dir so it only holds installers and logs from this run
 mkdir -p "$OUTDIR"
-rm -f "$OUTDIR"/nidb*.rpm "$OUTDIR"/nidb*.deb
+rm -f "$OUTDIR"/nidb*.rpm "$OUTDIR"/nidb*.deb "$OUTDIR"/*.log
 
 echo "Mounting source at $SHARED (shared across all WSL2 distros)..."
 sudo mkdir -p $SHARED
@@ -61,7 +62,8 @@ for ENTRY in "${INSTALLERS[@]}"; do
 	# default shell first, which expands the \$ variables below to empty strings.
 	# --cd / avoids "Failed to translate" (this distro's cwd has no path in the other distros).
 	# ${VERSION_ID:?} aborts the command if os-release didn't provide a version.
-	case "$TYPE" in
+	# each distro's output is also saved to installers/<distro>.log for searching afterwards
+	{ case "$TYPE" in
 		rpm)
 			# The %{?dist} tag (el8/el9/el10) keeps the .rpm filenames distinct.
 			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
@@ -82,8 +84,8 @@ for ENTRY in "${INSTALLERS[@]}"; do
 				 mkdir -p $SHARED/installers && \
 				 mv -v $DEB_PACKAGE.deb $SHARED/installers/${DEB_PACKAGE}_\$TAG.deb"
 			;;
-	esac
-	if [ $? -eq 0 ]; then
+	esac; } 2>&1 | tee "$OUTDIR/$DISTRO.log"
+	if [ "${PIPESTATUS[0]}" -eq 0 ]; then
 		RESULTS[$DISTRO]="SUCCESS"
 	else
 		RESULTS[$DISTRO]="FAILED"
