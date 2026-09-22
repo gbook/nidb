@@ -102,4 +102,7 @@ else
 	dpkg-deb --build "$PACKAGE"
 fi
 
+# remove the staging tree now that the .deb is built (on failure set -e exits first, leaving it for inspection)
+rm -rf "$PACKAGE"
+
 echo "Built ${PACKAGE}.deb"
