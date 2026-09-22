@@ -5,13 +5,15 @@
 # ships a postinst maintainer script (src/setup/deb_post_install.sh) that dpkg
 # runs after unpacking -- the Debian equivalents of the spec's Requires: and
 # %post. Run from the project root AFTER building the binaries (build-rpm.sh or
-# equivalent), so bin/nidb/nidb and bin/squirrel/ exist.
+# equivalent), so bin/nidb/nidb and bin/squirrel/ exist. An optional first argument
+# names a different build directory (e.g. bin/debian12), as used by makeAllInstallers.sh.
 # ------------------------------------------------------------------------------
 set -e
 cd "$(dirname "$0")"
 
-VERSION=2026.9.1602
+VERSION=2026.9.1608
 QTDIR=~/Qt/6.9.3/gcc_64
+BUILDDIR=${1:-bin}                                  # where build-rpm.sh put the binaries
 
 PACKAGE=nidb_${VERSION}
 DEBDIR=$PACKAGE/DEBIAN
@@ -32,8 +34,8 @@ mkdir -p "$DEBDIR" "$LIBDIR" "$BINDIR" "$WEBDIR" "$DCMTKSHARE" \
 
 # ----- program files (mirrors the RPM %install) -----
 echo 'Copying NiDB binaries, web files, tools, qcmodules, and setup files...'
-cp -f  bin/nidb/nidb                  "$NIDBDIR/bin/"
-cp -f  bin/squirrel/squirrel          "$BINDIR/"          # squirrel command-line utility
+cp -f  $BUILDDIR/nidb/nidb  "$NIDBDIR/bin/"
+cp -f  $BUILDDIR/squirrel/squirrel  "$BINDIR/"          # squirrel command-line utility
 cp -rf tools/*                        "$NIDBDIR/bin/"     # bundled helper tools
 cp -rf src/qcmodules/*                "$NIDBDIR/qcmodules/"
 cp -f  src/setup/*                    "$NIDBDIR/setup/"
@@ -51,8 +53,8 @@ chmod 0755 "$DEBDIR/preinst"
 
 # ----- shared libraries -----
 echo 'Copying shared libraries...'
-cp -f bin/squirrel/libsquirrel*       "$LIBDIR/" 2>/dev/null || true
-cp -f bin/bit7z/libbit7z64.a          "$LIBDIR/" 2>/dev/null || true
+cp -f $BUILDDIR/squirrel/libsquirrel*  "$LIBDIR/" 2>/dev/null || true
+cp -f $BUILDDIR/bit7z/libbit7z64.a  "$LIBDIR/" 2>/dev/null || true
 # DCMTK (versioned .so files; wildcard tolerates version differences)
 cp -f /usr/local/lib/libcmr*          "$LIBDIR/" 2>/dev/null || true
 cp -f /usr/local/lib/libdcm*          "$LIBDIR/" 2>/dev/null || true

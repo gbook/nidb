@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 18, 2026 at 06:18 PM
+-- Generation Time: Sep 22, 2026 at 08:07 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2308,7 +2308,7 @@ CREATE TABLE `pipeline_history` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `analysis_id` bigint(11) DEFAULT NULL,
-  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs','errorNotEnoughSpace','pipelineModuleDisabled') NOT NULL,
+  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs') NOT NULL,
   `event_datetime` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
   `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;

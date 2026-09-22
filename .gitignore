@@ -143,3 +143,4 @@ src/nidb/nidb.pro.user
 
 # schema-export backup created by export_schema.sh
 src/setup/nidb.sql.bak
+/installers/
