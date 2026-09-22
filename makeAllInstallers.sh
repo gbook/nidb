@@ -57,12 +57,16 @@ for ENTRY in "${INSTALLERS[@]}"; do
 	echo "  $DISTRO: building .$TYPE"
 	echo "=========================================="
 
+	# --exec runs bash directly; with "--" wsl.exe passes the command through the distro's
+	# default shell first, which expands the \$ variables below to empty strings.
+	# --cd / avoids "Failed to translate" (this distro's cwd has no path in the other distros).
+	# ${VERSION_ID:?} aborts the command if os-release didn't provide a version.
 	case "$TYPE" in
 		rpm)
 			# The %{?dist} tag (el8/el9/el10) keeps the .rpm filenames distinct.
-			wsl.exe -d "$DISTRO" -- bash -c \
-				". /etc/os-release && cd $SHARED && \
-				 PATH=$CLEANPATH $GITSAFE sh makeInstallerRHEL\${VERSION_ID%%.*}.sh && \
+			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
+				". /etc/os-release && VERSION_ID=\${VERSION_ID%%.*} && cd $SHARED && \
+				 PATH=$CLEANPATH $GITSAFE sh makeInstallerRHEL\${VERSION_ID:?}.sh && \
 				 mkdir -p $SHARED/installers && \
 				 cp -v ~/rpmbuild/RPMS/x86_64/nidb-*.rpm $SHARED/installers/"
 			;;
@@ -70,8 +74,8 @@ for ENTRY in "${INSTALLERS[@]}"; do
 			# Build and package in one step, and delete the previous binaries first
 			# so a failed build can never package stale ones. Both Debian versions
 			# produce the same $DEB_PACKAGE.deb, so it is renamed with the distro tag.
-			wsl.exe -d "$DISTRO" -- bash -c \
-				". /etc/os-release && TAG=debian\$VERSION_ID && cd $SHARED && \
+			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
+				". /etc/os-release && TAG=debian\${VERSION_ID:?} && cd $SHARED && \
 				 rm -f bin/\$TAG/nidb/nidb bin/\$TAG/squirrel/squirrel && \
 				 PATH=$CLEANPATH bash build-rpm.sh $QMAKEBIN $SHARED/src $SHARED/bin/\$TAG && \
 				 PATH=$CLEANPATH bash makeInstallerDebian\$VERSION_ID.sh bin/\$TAG && \
