@@ -73,11 +73,14 @@ for ENTRY in "${INSTALLERS[@]}"; do
 				 cp -v ~/rpmbuild/RPMS/x86_64/nidb-*.rpm $SHARED/installers/"
 			;;
 		deb)
+			# Check for libgl-dev first (the Debian equivalent of the specs' BuildRequires
+			# mesa-libGL-devel) so a missing package fails fast instead of at the final link.
 			# Build and package in one step, and delete the previous binaries first
 			# so a failed build can never package stale ones. Both Debian versions
 			# produce the same $DEB_PACKAGE.deb, so it is renamed with the distro tag.
 			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
 				". /etc/os-release && TAG=debian\${VERSION_ID:?} && cd $SHARED && \
+				 { dpkg -s libgl-dev >/dev/null 2>&1 || { echo 'libgl-dev is required to link nidb (Qt adds -lGL). Install it with: sudo apt install libgl-dev'; exit 1; }; } && \
 				 rm -f bin/\$TAG/nidb/nidb bin/\$TAG/squirrel/squirrel && \
 				 PATH=$CLEANPATH bash build-rpm.sh $QMAKEBIN $SHARED/src $SHARED/bin/\$TAG && \
 				 PATH=$CLEANPATH bash makeInstallerDebian\$VERSION_ID.sh bin/\$TAG && \
