@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 18, 2026 at 01:07 AM
+-- Generation Time: Sep 18, 2026 at 06:18 PM
 -- Server version: 10.5.29-MariaDB
--- PHP Version: 8.3.31
+-- PHP Version: 8.3.33
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -1077,6 +1077,19 @@ CREATE TABLE `family_members` (
   `family_id` int(11) DEFAULT NULL,
   `subject_id` int(11) DEFAULT NULL,
   `fm_createdate` datetime DEFAULT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `favorites`
+--
+
+CREATE TABLE `favorites` (
+  `favorite_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `object_id` int(11) NOT NULL,
+  `object_type` enum('pipeline','group') NOT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -2295,7 +2308,7 @@ CREATE TABLE `pipeline_history` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `analysis_id` bigint(11) DEFAULT NULL,
-  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs') NOT NULL,
+  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs','errorNotEnoughSpace','pipelineModuleDisabled') NOT NULL,
   `event_datetime` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
   `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
@@ -4013,6 +4026,12 @@ ALTER TABLE `family_members`
   ADD PRIMARY KEY (`familymember_id`);
 
 --
+-- Indexes for table `favorites`
+--
+ALTER TABLE `favorites`
+  ADD PRIMARY KEY (`favorite_id`);
+
+--
 -- Indexes for table `fileio_requests`
 --
 ALTER TABLE `fileio_requests`
@@ -5196,6 +5215,12 @@ ALTER TABLE `families`
 --
 ALTER TABLE `family_members`
   MODIFY `familymember_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `favorites`
+--
+ALTER TABLE `favorites`
+  MODIFY `favorite_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `fileio_requests`

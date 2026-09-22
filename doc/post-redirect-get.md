@@ -61,7 +61,7 @@ for the reference implementation.
 | `ndarequests.php` | 1 | ⬜ |
 | `observations.php` | 1 | ⬜ |
 | `packages.php` | 18 | ⬜ |
-| `pipelines.php` | 5 | ⬜ |
+| `pipelines.php` | 4 | ✅ |
 | `projectchecklist.php` | 1 | ⬜ |
 | `projects.php` | 9 | ⬜ |
 | `ratings.php` | 1 | ⬜ |

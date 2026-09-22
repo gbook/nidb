@@ -2659,6 +2659,7 @@ void modulePipeline::RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 
         errorNoPipelineSteps
         errorNoQueue
         errorNoSubmitHost
+        errorNotEnoughSpace
         errorSubmitAnalysis
         getDataSteps
         getPipelineSteps

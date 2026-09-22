@@ -24,6 +24,86 @@
 	if (!defined("LEGIT_REQUEST")) die ("This page cannot be called directly.");
 	
 	/* -------------------------------------------- */
+	/* ------- PrintAceSearchHighlight ------------ */
+	/* -------------------------------------------- */
+	/* style and behavior for the Ace editor's Ctrl+F search, shared by the script editors and the version view.
+	   Print this once per page, before the script that creates the editors */
+	function PrintAceSearchHighlight() {
+		?>
+		<style>
+			/* Ace gives search matches the class ace_selected-word, but neither the base style nor the
+			   xcode theme colors it, so matches are nearly invisible. The current match stays blue (ace_selection) */
+			.ace_marker-layer .ace_selected-word {
+				background-color: #ffe97f !important;
+				border: 1px solid #e0a800 !important;
+			}
+		</style>
+		<script>
+			/* Ace clears the search matches on every selection change (Editor.onSelectionChange calls
+			   session.highlight(false)), so clicking in the text loses them while the search box is still
+			   open. Re-apply the search regexp after the selection changes, whenever the box is open */
+			function keepAceSearchHighlight(editor) {
+				editor.on('changeSelection', function() {
+					var searchbox = editor.searchBox;
+					if (searchbox && searchbox.active && searchbox.searchInput && searchbox.searchInput.value) {
+						editor.session.highlight(editor.$search.$options.re);
+					}
+				});
+			}
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PipelineFavoriteStar --------------- */
+	/* -------------------------------------------- */
+	/* print a star that toggles the pipeline in the current user's favorites. The click handler is
+	   printed once, with the first star on the page, and updates every star for that pipeline */
+	function PipelineFavoriteStar($id, $isfavorite) {
+		static $scriptprinted = false;
+
+		if ($isfavorite) {
+			$class = "yellow star";
+			$title = "Click to remove this pipeline from your favorites";
+		}
+		else {
+			$class = "grey star outline";
+			$title = "Click to add this pipeline to your favorites";
+		}
+		?><i class="<?=$class?> link icon pipelinefavorite" data-pipelineid="<?=(int)$id?>" data-favorite="<?=($isfavorite ? 1 : 0)?>" title="<?=$title?>"></i><?
+
+		if ($scriptprinted) { return; }
+		$scriptprinted = true;
+		?>
+		<script>
+			$(document).on('click', '.pipelinefavorite', function(e) {
+				e.preventDefault();
+				e.stopPropagation();
+				var star = $(this);
+				var favorite = (star.attr('data-favorite') == '1') ? 0 : 1;
+				$.post("ajaxapi.php", { action: "setpipelinefavorite", pipelineid: star.attr('data-pipelineid'), favorite: favorite }, null, "json")
+				.done(function(r) {
+					$('.pipelinefavorite[data-pipelineid="' + r.pipelineid + '"]').each(function() {
+						$(this).attr('data-favorite', r.favorite).removeClass('yellow grey outline');
+						if (r.favorite == 1) {
+							$(this).addClass('yellow').attr('title', 'Click to remove this pipeline from your favorites');
+						}
+						else {
+							$(this).addClass('grey outline').attr('title', 'Click to add this pipeline to your favorites');
+						}
+					});
+				})
+				.fail(function(xhr) {
+					alert("Unable to update favorite: " + ((xhr.responseJSON && xhr.responseJSON.error) || xhr.statusText));
+				});
+			});
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- EnablePipeline --------------------- */
 	/* -------------------------------------------- */
 	function EnablePipeline($id) {
@@ -81,6 +161,7 @@
 						<h1 class="ui header">
 							<!--<i class="small grey settings icon"></i>-->
 							<div class="content">
+								<? PipelineFavoriteStar($id, IsUserFavorite('pipeline', $id)); ?>
 								<a href="pipelines.php?action=editpipeline&id=<?=$id?>"><span style="font-size: larger"><?=$pipelinename?><span></a>
 								<div class="sub header"><?=$pipelinedesc?></div>
 							</div>
@@ -138,7 +219,7 @@
 								$date = $row['event_datetime'];
 								$msg = $row['event_message'];
 								
-								if ($event == "pipeline_started") {
+								if ($event == "pipelineStarted") {
 									$newrun = true;
 									$rowstyle = "font-weight: bold";
 									$cellclass = "green";

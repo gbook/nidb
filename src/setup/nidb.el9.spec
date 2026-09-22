@@ -9,7 +9,7 @@ URL:            http://github.com/gbook/nidb
 
 BuildArch:	x86_64
 BuildRequires:  gcc, cmake, make, mesa-libGL-devel
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, p7zip, p7zip-plugins, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, p7zip, p7zip-plugins, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, shellcheck
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.

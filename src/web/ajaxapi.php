@@ -247,6 +247,12 @@
 		case 'deleteanalyses':
 			DeleteSelectedAnalyses(GetVariable('analysisids'));
 			break;
+		case 'setpipelinefavorite':
+			SetPipelineFavorite(GetVariable('pipelineid'), GetVariable('favorite'));
+			break;
+		case 'checkbashsyntax':
+			CheckBashSyntax(GetVariable('script'));
+			break;
 	}
 	
 
@@ -260,6 +266,172 @@
 	function JsonHeader() {
 		while (ob_get_level() > 0) ob_end_clean();
 		header('Content-Type: application/json');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckBashSyntax -------------------- */
+	/* -------------------------------------------- */
+	/* Check a pipeline script for bash problems and return Ace editor annotations as JSON. Uses shellcheck
+	   if it is installed, otherwise falls back to 'bash -n' (syntax errors only). The script is only ever
+	   parsed, never run */
+	function CheckBashSyntax($script) {
+		JsonHeader();
+
+		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+			http_response_code(405);
+			echo json_encode(array('error' => 'POST required'));
+			return;
+		}
+
+		/* every checker is an external command, so say so plainly instead of reporting a clean script */
+		if (!function_exists('exec')) {
+			http_response_code(501);
+			echo json_encode(array('error' => 'This server does not allow PHP to run external commands (exec is disabled), so scripts cannot be checked'));
+			return;
+		}
+
+		$script = (string)$script;
+		if (strlen($script) > 1000000) {
+			http_response_code(413);
+			echo json_encode(array('error' => 'Script is too large to check'));
+			return;
+		}
+
+		/* pipeline variables like {analysisrootdir} are replaced on the server before the script runs, so
+		   they are not bash. Blank them out with a word of the same length, which keeps the line and column
+		   numbers the checker reports lined up with what the user sees in the editor */
+		$cleanscript = preg_replace_callback('/\{[A-Za-z_][A-Za-z0-9_]*\}/', function($m) { return str_repeat('x', strlen($m[0])); }, $script);
+
+		/* the leading shebang line keeps shellcheck from complaining about a missing one, and is removed
+		   from the reported line numbers below */
+		$tmpfile = tempnam(sys_get_temp_dir(), 'nidbsyntax');
+		if ($tmpfile === false) {
+			http_response_code(500);
+			echo json_encode(array('error' => 'Unable to create a temporary file to check the script'));
+			return;
+		}
+		file_put_contents($tmpfile, "#!/bin/bash\n" . $cleanscript . "\n");
+
+		/* a checker can report a problem at end-of-file, one line past the script. Ace cannot show an
+		   annotation there, so clamp everything to the last line of the editor */
+		$lastrow = max(0, substr_count(rtrim($script, "\r\n"), "\n"));
+
+		/* 'timeout' guards against a runaway checker, but is not required */
+		$timeout = "";
+		exec("command -v timeout 2>/dev/null", $timeoutpath, $rc);
+		if (($rc == 0) && (count($timeoutpath) > 0)) { $timeout = escapeshellarg(trim($timeoutpath[0])) . " 20 "; }
+
+		$annotations = array();
+		$error = "";
+		$shellcheckpath = array();
+		exec("command -v shellcheck 2>/dev/null", $shellcheckpath, $rc);
+		$shellcheck = (($rc == 0) && (count($shellcheckpath) > 0)) ? trim($shellcheckpath[0]) : "";
+
+		if ($shellcheck != "") {
+			$checker = "shellcheck";
+			$version = array();
+			exec(escapeshellarg($shellcheck) . " --version 2>/dev/null | grep version:", $version);
+			if (count($version) > 0) { $checker .= " " . trim(str_replace("version:", "", $version[0])); }
+
+			/* -S info keeps the checks worth having (SC2086 unquoted variables, SC2071 [ a > b ]) while
+			   dropping pure style nags. The excluded codes are ones that are expected in pipeline scripts:
+			   SC1090/SC1091 can't follow sourced files, SC2154 variable referenced but not assigned (they
+			   come from earlier steps or the environment), SC2012/SC2035 prefer find over ls. Edit this
+			   list to make the check stricter or quieter */
+			$output = array();
+			exec($timeout . escapeshellarg($shellcheck) . " -s bash -S info -e SC1090,SC1091,SC2154,SC2012,SC2035 -f json " . escapeshellarg($tmpfile) . " 2>&1", $output, $rc);
+
+			/* shellcheck exits 0 with no issues and 1 with issues. Anything else did not run properly */
+			$found = json_decode(implode("\n", $output), true);
+			if (!is_array($found)) {
+				$error = "shellcheck did not return a result (exit code $rc)";
+				if (count($output) > 0) { $error .= ": " . $output[0]; }
+			}
+			else {
+				foreach ($found as $f) {
+					$annotations[] = array(
+						'row'    => min($lastrow, max(0, ((int)$f['line']) - 2)),
+						'column' => max(0, ((int)$f['column']) - 1),
+						'type'   => (($f['level'] == 'error') ? 'error' : (($f['level'] == 'warning') ? 'warning' : 'info')),
+						'text'   => "SC" . $f['code'] . " (" . $f['level'] . "): " . $f['message'],
+					);
+				}
+			}
+		}
+		else {
+			/* syntax errors only. Output looks like: /tmp/nidbsyntaxXXX: line 4: syntax error near ... */
+			$checker = "bash -n";
+			$output = array();
+			exec($timeout . "bash -n " . escapeshellarg($tmpfile) . " 2>&1", $output, $rc);
+			if ($rc == 127) {
+				$error = "Neither shellcheck nor bash could be run on this server";
+			}
+			foreach ($output as $line) {
+				if (preg_match('/line (\d+):\s*(.*)$/', $line, $m)) {
+					$annotations[] = array(
+						'row'    => min($lastrow, max(0, ((int)$m[1]) - 2)),
+						'column' => 0,
+						'type'   => 'error',
+						'text'   => trim($m[2]),
+					);
+				}
+			}
+			/* bash reported a problem in a format we did not recognize - show it rather than saying the script is clean */
+			if (($rc != 0) && ($rc != 127) && (count($annotations) == 0)) {
+				$error = "bash -n failed (exit code $rc)";
+				if (count($output) > 0) { $error .= ": " . $output[0]; }
+			}
+		}
+
+		unlink($tmpfile);
+
+		if ($error != "") {
+			http_response_code(500);
+			echo json_encode(array('error' => $error, 'checker' => $checker));
+			return;
+		}
+
+		echo json_encode(array('checker' => $checker, 'annotations' => $annotations));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetPipelineFavorite ---------------- */
+	/* -------------------------------------------- */
+	/* add (favorite=1) or remove (favorite=0) a pipeline from the current user's favorites. Returns JSON */
+	function SetPipelineFavorite($pipelineid, $favorite) {
+		JsonHeader();
+
+		if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+			http_response_code(405);
+			echo json_encode(array('error' => 'POST required'));
+			return;
+		}
+
+		$pipelineid = (int)$pipelineid;
+		$favorite = ($favorite == 1);
+
+		/* only allow favoriting pipelines that exist */
+		$sqlstring = "select pipeline_id from pipelines where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$exists) {
+			http_response_code(404);
+			echo json_encode(array('error' => 'Pipeline not found'));
+			return;
+		}
+
+		if (!SetUserFavorite('pipeline', $pipelineid, $favorite)) {
+			http_response_code(403);
+			echo json_encode(array('error' => 'Not logged in'));
+			return;
+		}
+
+		echo json_encode(array('pipelineid' => $pipelineid, 'favorite' => ($favorite ? 1 : 0)));
 	}
 
 

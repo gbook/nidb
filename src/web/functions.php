@@ -4646,4 +4646,74 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		return array($rows, $pendingCount);
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- GetUserFavorites ------------------- */
+	/* -------------------------------------------- */
+	/* returns the object IDs (as array keys) the current user has favorited, for an object type ('pipeline' or 'group') */
+	function GetUserFavorites($objecttype) {
+		$favorites = array();
+		$userid = (int)($GLOBALS['userid'] ?? 0);
+		if ($userid < 1) { return $favorites; }
+
+		$sqlstring = "select object_id from favorites where user_id = ? and object_type = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $userid, $objecttype);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $objecttype]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$favorites[(int)$row['object_id']] = true;
+		}
+		mysqli_stmt_close($stmt);
+
+		return $favorites;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsUserFavorite --------------------- */
+	/* -------------------------------------------- */
+	/* returns true if the current user has favorited the object */
+	function IsUserFavorite($objecttype, $objectid) {
+		$userid = (int)($GLOBALS['userid'] ?? 0);
+		$objectid = (int)$objectid;
+		if ($userid < 1) { return false; }
+
+		$sqlstring = "select favorite_id from favorites where user_id = ? and object_type = ? and object_id = ? limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'isi', $userid, $objecttype, $objectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $objecttype, $objectid]);
+		$isfavorite = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+
+		return $isfavorite;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetUserFavorite -------------------- */
+	/* -------------------------------------------- */
+	/* add or remove an object from the current user's favorites. The favorites table has no unique key on
+	   (user_id, object_type, object_id), so always delete first to avoid duplicate rows */
+	function SetUserFavorite($objecttype, $objectid, $favorite) {
+		$userid = (int)($GLOBALS['userid'] ?? 0);
+		$objectid = (int)$objectid;
+		if ($userid < 1) { return false; }
+
+		$sqlstring = "delete from favorites where user_id = ? and object_type = ? and object_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'isi', $userid, $objecttype, $objectid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $objecttype, $objectid]);
+		mysqli_stmt_close($stmt);
+
+		if ($favorite) {
+			$sqlstring = "insert into favorites (user_id, object_type, object_id) values (?, ?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'isi', $userid, $objecttype, $objectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $objecttype, $objectid]);
+			mysqli_stmt_close($stmt);
+		}
+
+		return true;
+	}
+
 ?>

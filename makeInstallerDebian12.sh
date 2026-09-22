@@ -85,7 +85,7 @@ Section: science
 Priority: optional
 Architecture: amd64
 Maintainer: Greg Book <gregory.a.book@gmail.com>
-Depends: apache2, mariadb-server, mariadb-client, mariadb-backup, libmariadb3, php-fpm, php-cli, php-mysql, php-gd, php-mbstring, php-opcache, php-curl, imagemagick, libimage-exiftool-perl, openssl, zip, unzip, p7zip-full, default-jre, libgl1, libegl1, libx11-6, libxkbcommon0, libfontconfig1, libfreetype6, libglib2.0-0
+Depends: apache2, mariadb-server, mariadb-client, mariadb-backup, libmariadb3, php-fpm, php-cli, php-mysql, php-gd, php-mbstring, php-opcache, php-curl, imagemagick, libimage-exiftool-perl, openssl, zip, unzip, p7zip-full, default-jre, libgl1, libegl1, libx11-6, libxkbcommon0, libfontconfig1, libfreetype6, libglib2.0-0, shellcheck
 Description: NeuroInformatics Database
  NeuroInformatics Database (NiDB) is a full neuroimaging database system to
  store, retrieve, analyze, and distribute neuroscience data.

@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -140,82 +141,70 @@
 			DisplayPipelineForm("add", "", $returntab);
 			break;
 		case 'updatepipelineoptions':
-			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir);
-			DisplayPipelineForm("edit", $id, $returntab);
+			ob_start();
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, array(), $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'update':
+			ob_start();
 			UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'add':
+			ob_start();
 			$id = AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids, $bidsoutputdir);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			if ($id > 0)
+				RedirectTo(PipelineEditURL($id, $returntab));
+			else
+				RedirectTo("pipelines.php?action=addform");
 			break;
 		case 'changeowner':
+			ob_start();
 			ChangeOwner($id,$newuserid);
-			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'delete':
+			ob_start();
 			DeletePipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("pipelines.php");
 			break;
 		case 'copy':
+			ob_start();
 			CopyPipeline($id, $newname);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("pipelines.php");
 			break;
 		case 'reset':
+			ob_start();
 			ResetPipeline($id);
-			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("pipelines.php");
 			break;
 		case 'resetanalyses':
+			ob_start();
 			ResetAnalyses($id);
-			//DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'disable':
-			DisablePipeline($id);
-			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			}
-			elseif ($returnpage == "analysis") {
-				/* redirect to analysis page */
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
-			else {
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
-			break;
 		case 'enable':
-			EnablePipeline($id);
-			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			}
-			else {
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
-			break;
 		case 'disabledebug':
-			DisablePipelineDebug($id);
-			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			}
-			elseif ($returnpage == "analysis") {
-				/* redirect to analysis page */
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
-			else {
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
-			break;
 		case 'enabledebug':
-			EnablePipelineDebug($id);
-			if ($returnpage == "home") {
-				DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
-			}
-			else {
-				DisplayPipelineForm("edit", $id, $returntab);
-			}
+			ob_start();
+			if ($action == 'disable') DisablePipeline($id);
+			elseif ($action == 'enable') EnablePipeline($id);
+			elseif ($action == 'disabledebug') DisablePipelineDebug($id);
+			else EnablePipelineDebug($id);
+			$_SESSION['flash'] = ob_get_clean();
+			if ($returnpage == "home")
+				RedirectTo("pipelines.php");
+			else
+				RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'viewpipelinelist':
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
@@ -224,12 +213,16 @@
 			DisplayPipelineUsage();
 			break;
 		case 'exportpipeline':
+			ob_start();
 			ExportPipeline($id);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		case 'exportanalysisresults':
+			ob_start();
 			ExportAnalysisResults($id);
-			DisplayPipelineForm("edit", $id, $returntab);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
 		default:
 			DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid);
@@ -237,6 +230,17 @@
 	//PrintVariable($GLOBALS['t']);
 
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- PipelineEditURL -------------------- */
+	/* -------------------------------------------- */
+	/* GET url of the pipeline edit page, used as the PRG redirect target after a mutating action */
+	function PipelineEditURL($id, $returntab) {
+		$url = "pipelines.php?action=editpipeline&id=" . (int)$id;
+		if ($returntab != "") { $url .= "&returntab=" . urlencode($returntab); }
+		return $url;
+	}
 
 
 	/* -------------------------------------------- */
@@ -250,38 +254,106 @@
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
 		
 		/* perform data checks */
-		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetitle);
-		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
-		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], $pipelinegroup);
-		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumproc);
-		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclustertype);
-		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], $pipelineclusteruser);
-		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithost);
-		$pipelinesubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmithostuser);
-		$pipelinemaxwalltime = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelinemaxwalltime);
-		$pipelinesubmitdelay = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelinesubmitdelay);
-		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedatacopymethod);
-		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], $pipelinequeue);
-		$pipelinenumcores = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenumcores);
-		$pipelinememory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinememory);
-		$pipelineremovedata = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelineremovedata);
-		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirectory);
-		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedirstructure);
-		$pipelineusetmpdir = (int)mysqli_real_escape_string($GLOBALS['linki'], $pipelineusetmpdir);
-		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], $pipelinetmpdir);
-		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], $pipelinenotes);
-		$ishidden = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $ishidden));
+		$pipelinenumproc = (int)$pipelinenumproc;
+		$pipelinemaxwalltime = (int)$pipelinemaxwalltime;
+		$pipelinesubmitdelay = (int)$pipelinesubmitdelay;
+		$pipelineremovedata = (int)$pipelineremovedata;
+		$pipelineusetmpdir = (int)$pipelineusetmpdir;
+		$ishidden = GetMySQLTinyInt($ishidden);
 		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
 		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = '$pipelinetitle', pipeline_desc = '$pipelinedesc', pipeline_group = '$pipelinegroup', pipeline_numproc = $pipelinenumproc, pipeline_submithost = '$pipelinesubmithost', pipeline_submithostuser = '$pipelinesubmithostuser', pipeline_maxwalltime = '$pipelinemaxwalltime', pipeline_submitdelay = '$pipelinesubmitdelay', pipeline_datacopymethod = '$pipelinedatacopymethod', pipeline_queue = '$pipelinequeue', pipeline_numcores = '$pipelinenumcores', pipeline_memory = '$pipelinememory', pipeline_clustertype = '$pipelineclustertype', pipeline_clusteruser = '$pipelineclusteruser', pipeline_removedata = '$pipelineremovedata', pipeline_directory = '$pipelinedirectory', pipeline_dirstructure = '$pipelinedirstructure', pipeline_usetmpdir = '$pipelineusetmpdir', pipeline_tmpdir = '$pipelinetmpdir', pipeline_notes = '$pipelinenotes', pipeline_ishidden = '$ishidden' where pipeline_id = $id";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "update pipelines set pipeline_name = ?, pipeline_desc = ?, pipeline_group = ?, pipeline_numproc = ?, pipeline_submithost = ?, pipeline_submithostuser = ?, pipeline_maxwalltime = ?, pipeline_submitdelay = ?, pipeline_datacopymethod = ?, pipeline_queue = ?, pipeline_numcores = ?, pipeline_memory = ?, pipeline_clustertype = ?, pipeline_clusteruser = ?, pipeline_removedata = ?, pipeline_directory = ?, pipeline_dirstructure = ?, pipeline_usetmpdir = ?, pipeline_tmpdir = ?, pipeline_notes = ?, pipeline_ishidden = ? where pipeline_id = ?";
+		$params = [$pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineclustertype, $pipelineclusteruser, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $ishidden, $id];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssissiissssssississii', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
 		Notice("Pipeline info for <b>$pipelinetitle</b> updated");
 	}
 
 	
+	/* -------------------------------------------- */
+	/* ------- CanEditPipeline -------------------- */
+	/* -------------------------------------------- */
+	/* returns true if the current user owns the pipeline or is a site admin. Mirrors the $readonly check in DisplayPipelineForm() */
+	function CanEditPipeline($id) {
+		if ($GLOBALS['issiteadmin']) { return true; }
+
+		$id = (int)$id;
+		$sqlstring = "select b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) { return false; }
+
+		$owner = $row['username'] ?? '';
+		return (($owner != '') && (strtolower($owner) == strtolower($GLOBALS['username'])));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SplitStepLine ---------------------- */
+	/* -------------------------------------------- */
+	/* split an editor line into [command, description]. The description starts at the first '#' that
+	   begins a bash comment: preceded by whitespace, and not quoted or escaped. A leading '#' (disabled
+	   step) stays part of the command. Everything after the comment '#' is the description, including
+	   any further '#'. If the quotes are unbalanced, fall back to splitting at the first whitespace+'#' */
+	function SplitStepLine($line) {
+		$start = 0;
+		if (preg_match('/^\s*#/', $line, $m)) { $start = strlen($m[0]); }
+
+		$quote = '';
+		$len = strlen($line);
+		for ($i = $start; $i < $len; $i++) {
+			$c = $line[$i];
+			if ($quote == "'") {
+				if ($c == "'") { $quote = ''; }
+				continue;
+			}
+			if ($c == '\\') { $i++; continue; }
+			if ($quote == '"') {
+				if ($c == '"') { $quote = ''; }
+				continue;
+			}
+			if (($c == '"') || ($c == "'")) { $quote = $c; continue; }
+			if (($c == '#') && ($i > 0) && ctype_space($line[$i-1])) {
+				return array(rtrim(substr($line, 0, $i)), trim(substr($line, $i+1)));
+			}
+		}
+
+		if ($quote != '') {
+			$parts = preg_split('/\s+#/', substr($line, $start), 2);
+			if (count($parts) == 2) {
+				return array(rtrim(substr($line, 0, $start) . $parts[0]), trim($parts[1]));
+			}
+		}
+
+		return array(rtrim($line), '');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RenderStepLine --------------------- */
+	/* -------------------------------------------- */
+	/* build the editor line for a pipeline step, in the format SplitStepLine() parses back */
+	function RenderStepLine($command, $description, $enabled, $logged) {
+		$line = $command;
+		/* disabled steps are shown commented out. Older rows may be disabled without a leading '#' */
+		if (!$enabled && (substr(ltrim($command), 0, 1) != '#')) {
+			$line = "#$command";
+		}
+		$comment = trim(($logged ? '' : '{NOLOG}') . " $description");
+		if ($comment != '') {
+			$line .= "     # $comment";
+		}
+		return $line;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- UpdatePipelineOptions -------------- */
 	/* -------------------------------------------- */
@@ -290,6 +362,10 @@
 	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
+		if (!CanEditPipeline($id)) {
+			Error("You do not have permission to edit this pipeline. Only the pipeline owner or a site admin can make changes.");
+			return;
+		}
 
 		$msg = "<ol style='font-size:smaller'>";
 
@@ -301,7 +377,7 @@
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$oldversion = $row['pipeline_version'];
+		$oldversion = (int)$row['pipeline_version'];
 		$newversion = $oldversion + 1;
 		$msg .= "<li>Got new version number [$newversion]";
 
@@ -312,27 +388,21 @@
 		
 		/* the pipeline option information is updated in two tables, for backward compatibility...
 		   old pipelines do not do version control on the pipeline options */
-		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], $pipelineresultsscript);
-		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], $completefiles);
-		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], $deplevel);
-		$depdir = mysqli_real_escape_string($GLOBALS['linki'], $depdir);
-		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], $deplinktype);
-		$groupbysubject = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject));
-		$outputbids = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $outputbids));
-		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
+		$groupbysubject = GetMySQLTinyInt($groupbysubject);
+		$outputbids = GetMySQLTinyInt($outputbids);
 
-		if (is_array($dependency)) { $dependencies = implode(",",$dependency); }
-		else { $dependencies = $dependency; }
-
-		if (is_array($groupid)) { $groupids = implode(",",$groupid); }
-		else { $groupids = $groupid; }
-
-		if (is_array($projectid)) { $projectids = implode(",",$projectid); }
-		else { $projectids = $projectid; }
+		/* dependency, group, and project lists are comma-separated IDs. They are later inlined into 'in (...)' clauses, so keep only integers */
+		$dependencies = implode(",", array_filter(array_map('intval', is_array($dependency) ? $dependency : explode(",", (string)$dependency))));
+		$groupids = implode(",", array_filter(array_map('intval', is_array($groupid) ? $groupid : explode(",", (string)$groupid))));
+		$projectids = implode(",", array_filter(array_map('intval', is_array($projectid) ? $projectid : explode(",", (string)$projectid))));
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = '$pipelineresultsscript', pipeline_completefiles = '$completefiles', pipeline_dependency = '$dependencies', pipeline_groupid = '$groupids', pipeline_projectid = '$projectids', pipeline_dependencylevel = '$deplevel', pipeline_dependencydir = '$depdir', pipeline_deplinktype = '$deplinktype', pipeline_groupbysubject = $groupbysubject, pipeline_outputbids = $outputbids, pipeline_bidsoutputdir = '$bidsoutputdir' where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "update pipelines set pipeline_resultsscript = ?, pipeline_completefiles = ?, pipeline_dependency = ?, pipeline_groupid = ?, pipeline_projectid = ?, pipeline_dependencylevel = ?, pipeline_dependencydir = ?, pipeline_deplinktype = ?, pipeline_groupbysubject = ?, pipeline_outputbids = ?, pipeline_bidsoutputdir = ? where pipeline_id = ?";
+		$params = [$pipelineresultsscript, $completefiles, $dependencies, $groupids, $projectids, $deplevel, $depdir, $deplinktype, $groupbysubject, $outputbids, $bidsoutputdir, $id];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssssssiisi', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		$msg .= "<li>Updated pipelines table";
 		
 		/* delete any existing dependencies, and insert the current dependencies */
@@ -340,26 +410,25 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$msg .= "<li>Deleted old dependencies";
 
-		if ($dependency != '') {
-			if (is_array($dependency)) {
-				foreach ($dependency as $dep) {
-					if ($dep != "") {
-						$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dep')";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$msg .= "<li>Inserted dependency ($dep)";
-					}
-				}
+		if ($dependencies != '') {
+			$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values (?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			foreach (explode(",", $dependencies) as $dep) {
+				$dep = (int)$dep;
+				mysqli_stmt_bind_param($stmt, 'ii', $id, $dep);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $dep]);
+				$msg .= "<li>Inserted dependency ($dep)";
 			}
-			else {
-				$sqlstring = "insert into pipeline_dependencies (pipeline_id, parent_id) values ($id,'$dependency')";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				$msg .= "<li>Inserted dependency ($dependency)";
-			}
+			mysqli_stmt_close($stmt);
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values ($id, $newversion, '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$groupbysubject', '$outputbids', '$bidsoutputdir', '$completefiles', '$pipelineresultsscript')";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = [$id, $newversion, $dependencies, $deplevel, $depdir, $deplinktype, $groupids, $projectids, $groupbysubject, $outputbids, $bidsoutputdir, $completefiles, $pipelineresultsscript];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iissssssiisss', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		$msg .= "<li>Updated pipeline_options table";
 		
 		$steporder = array();
@@ -386,54 +455,31 @@
 			}
 			
 			/* check if the command should be enabled... or if the first character is a comment */
-			if (preg_match('/^\s*\#/', $line)) {
-				$stepenabled[$step] = 0;
-				$parts = preg_split("/\s+\#/", $line);
-				$command[$step] = $parts[0];
-				$description[$step] = $parts[1];
-				if ($command[$step] == "") {
-					$command[$step] = " ";
-				}
-			}
-			else {
-				$stepenabled[$step] = 1;
-				$parts = preg_split("/\s+\#/", $line);
-				$command[$step] = $parts[0];
-				$description[$step] = $parts[1];
-				if ($command[$step] == "") {
-					$command[$step] = $line;
-				}
-			}
+			$stepenabled[$step] = preg_match('/^\s*\#/', $line) ? 0 : 1;
+			list($command[$step], $description[$step]) = SplitStepLine($line);
 			
 			$workingdir[$step] = "";
 			$steporder[$step] = $step;
 			$step++;
 		}
 		/* insert all the new fields with NEW version # */
+		$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values (?, ?, 0, ?, ?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($command[$i]) != "") {
-				/* perform data checks */
-				$steporder[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $steporder[$i]));
-				$command[$i] = rtrim(mysqli_real_escape_string($GLOBALS['linki'], $command[$i]));
-				$workingdir[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $workingdir[$i]));
-				$description[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $description[$i]));
-				$stepenabled[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $stepenabled[$i]));
-				$logged[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $logged[$i]));
-
-				$description[$i] = str_replace("\r",'', $description[$i]);
-				
-				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 0, '$command[$i]', '$workingdir[$i]', '$steporder[$i]', '$description[$i]', '$stepenabled[$i]', '$logged[$i]')";
-				//printSQL($sqlstring);
-				$msg .= "<li>Inserted step $i: [$command[$i]]\n";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$cmd = rtrim($command[$i]);
+				$desc = str_replace("\r",'', trim($description[$i]));
+				$params = [$id, $newversion, $cmd, $workingdir[$i], $steporder[$i], $desc, $stepenabled[$i], $logged[$i]];
+				mysqli_stmt_bind_param($stmt, 'iissisii', ...$params);
+				$msg .= "<li>Inserted step $i: [" . htmlspecialchars($cmd) . "]\n";
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			}
 		}
+		mysqli_stmt_close($stmt);
 		
 		$steporder = array();
-		$command = array();
 		$supplementcommand = array();
 		$workingdir = array();
-		$description = array();
 		$supplementdescription = array();
 		$stepenabled = array();
 		$logged = array();
@@ -442,6 +488,9 @@
 		$supplementcommands = explode("\n",$supplementcommandlist);
 		$step = 1;
 		foreach ($supplementcommands as $line) {
+			/* remove any trailing carriage returns or whitespace */
+			$line = rtrim($line);
+
 			/* check if the line is blank */
 			if ($line == "") {
 				continue;
@@ -457,24 +506,8 @@
 			}
 			
 			/* check if the command should be enabled... or if the first character is a comment */
-			if (preg_match('/^\s*\#/', $line)) {
-				$stepenabled[$step] = 0;
-				$parts = preg_split("/\s+\#/", $line);
-				$supplementcommand[$step] = $parts[0];
-				$supplementdescription[$step] = $parts[1];
-				if ($supplementcommand[$step] == "") {
-					$supplementcommand[$step] = " ";
-				}
-			}
-			else {
-				$stepenabled[$step] = 1;
-				$parts = preg_split("/\s+\#/", $line);
-				$supplementcommand[$step] = $parts[0];
-				$supplementdescription[$step] = $parts[1];
-				if ($supplementcommand[$step] == "") {
-					$supplementcommand[$step] = $line;
-				}
-			}
+			$stepenabled[$step] = preg_match('/^\s*\#/', $line) ? 0 : 1;
+			list($supplementcommand[$step], $supplementdescription[$step]) = SplitStepLine($line);
 
 			$workingdir[$step] = "";
 			$steporder[$step] = $step;
@@ -482,61 +515,57 @@
 		}
 		
 		/* insert all the new fields with NEW version # */
+		$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values (?, ?, 1, ?, ?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		for($i=1; $i<=count($steporder); $i++) {
 			if (trim($supplementcommand[$i]) != "") {
-				/* perform data checks */
-				$steporder[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $steporder[$i]));
-				$supplementcommand[$i] = rtrim(mysqli_real_escape_string($GLOBALS['linki'], $supplementcommand[$i]));
-				$workingdir[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $workingdir[$i]));
-				$supplementdescription[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $supplementdescription[$i]));
-				$stepenabled[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $stepenabled[$i]));
-				$logged[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $logged[$i]));
-				
-				$supplementdescription[$i] = str_replace("\r",'', $supplementdescription[$i]);
-				$supplementdescription[$i] = str_replace('\r','', $supplementdescription[$i]);
-				
-				$sqlstring = "insert into pipeline_steps (pipeline_id, pipeline_version, ps_supplement, ps_command, ps_workingdir, ps_order, ps_description, ps_enabled, ps_logged) values ($id, $newversion, 1, '$supplementcommand[$i]', '$workingdir[$i]', '$steporder[$i]', '$supplementdescription[$i]', '$stepenabled[$i]', '$logged[$i]')";
-				//PrintSQL($sqlstring);
-				$msg .= "<li>Inserted supplement step $i: [$supplementcommand[$i]]\n";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$cmd = rtrim($supplementcommand[$i]);
+				$desc = str_replace("\r",'', trim($supplementdescription[$i]));
+				$params = [$id, $newversion, $cmd, $workingdir[$i], $steporder[$i], $desc, $stepenabled[$i], $logged[$i]];
+				mysqli_stmt_bind_param($stmt, 'iissisii', ...$params);
+				$msg .= "<li>Inserted supplement step $i: [" . htmlspecialchars($cmd) . "]\n";
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			}
 		}
+		mysqli_stmt_close($stmt);
 		
 		$msg .= "<li>Pipeline steps updated";
 
 		/* insert all the new PRIMARY data fields with NEW version # */
-		for($i=0; $i<=count($dd_protocol); $i++) {
-			if (trim($dd_protocol[$i]) != "") {
+		$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		foreach ($dd_protocol as $i => $protocol) {
+			if (trim($protocol) != "") {
 				/* perform data checks */
-				$dd_enabled[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_enabled[$i]));
-				$dd_order[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_order[$i]);
-				$dd_protocol[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_protocol[$i]);
-				$dd_modality[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_modality[$i]);
-				$dd_datalevel[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_datalevel[$i]);
-				$dd_studyassoc[$i] = trim(mysqli_real_escape_string($GLOBALS['linki'], $dd_studyassoc[$i]));
-				$dd_dataformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_dataformat[$i]);
-				$dd_imagetype[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_imagetype[$i]);
-				$dd_gzip[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_gzip[$i]));
-				$dd_location[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_location[$i]);
-				$dd_seriescriteria[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_seriescriteria[$i]);
-				$dd_numboldreps[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_numboldreps[$i]);
-				$dd_behformat[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behformat[$i]);
-				$dd_behdir[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_behdir[$i]);
-				$dd_useseriesdirs[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_useseriesdirs[$i]));
-				$dd_optional[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_optional[$i]));
-				//$dd_primary[$i] = mysqli_real_escape_string($GLOBALS['linki'], $dd_primary[$i]) + 0;
-				$dd_preserveseries[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_preserveseries[$i]));
-				$dd_usephasedir[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_usephasedir[$i]));
-				$dd_behonly[$i] = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $dd_behonly[$i]));
-				
-				if ($dd_isprimary == $dd_order[$i]) { $primary = "1"; } else { $primary = "0"; }
-				
-				$sqlstring = "insert into pipeline_data_def (pipeline_id, pipeline_version, pdd_isprimaryprotocol, pdd_order, pdd_seriescriteria, pdd_protocol, pdd_modality, pdd_dataformat, pdd_imagetype, pdd_gzip, pdd_location, pdd_useseries, pdd_preserveseries, pdd_usephasedir, pdd_behonly, pdd_behformat, pdd_behdir, pdd_enabled, pdd_optional, pdd_numboldreps, pdd_level, pdd_assoctype) values ($id, $newversion, $primary, '$dd_order[$i]', '$dd_seriescriteria[$i]', '$dd_protocol[$i]', '$dd_modality[$i]', '$dd_dataformat[$i]', '$dd_imagetype[$i]', $dd_gzip[$i], '$dd_location[$i]', $dd_useseriesdirs[$i], $dd_preserveseries[$i], $dd_usephasedir[$i], $dd_behonly[$i], '$dd_behformat[$i]', '$dd_behdir[$i]', $dd_enabled[$i], $dd_optional[$i], '$dd_numboldreps[$i]', '$dd_datalevel[$i]', '$dd_studyassoc[$i]')";
-				//PrintSQL($sqlstring);
-				$msg .= "<li>Inserted data definition [$dd_protocol[$i]]";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				$order = $dd_order[$i] ?? '';
+				$primary = ($dd_isprimary == $order) ? 1 : 0;
+				$params = [
+					$id, $newversion, $primary, $order,
+					$dd_seriescriteria[$i] ?? '',
+					$protocol,
+					$dd_modality[$i] ?? '',
+					$dd_dataformat[$i] ?? '',
+					$dd_imagetype[$i] ?? '',
+					GetMySQLTinyInt($dd_gzip[$i] ?? ''),
+					$dd_location[$i] ?? '',
+					GetMySQLTinyInt($dd_useseriesdirs[$i] ?? ''),
+					GetMySQLTinyInt($dd_preserveseries[$i] ?? ''),
+					GetMySQLTinyInt($dd_usephasedir[$i] ?? ''),
+					GetMySQLTinyInt($dd_behonly[$i] ?? ''),
+					$dd_behformat[$i] ?? '',
+					$dd_behdir[$i] ?? '',
+					GetMySQLTinyInt($dd_enabled[$i] ?? ''),
+					GetMySQLTinyInt($dd_optional[$i] ?? ''),
+					$dd_numboldreps[$i] ?? '',
+					$dd_datalevel[$i] ?? '',
+					trim($dd_studyassoc[$i] ?? '')
+				];
+				mysqli_stmt_bind_param($stmt, 'iiissssssisiiiissiisss', ...$params);
+				$msg .= "<li>Inserted data definition [" . htmlspecialchars($protocol) . "]";
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			}
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* update pipeline with new version */
 		$sqlstring = "update pipelines set pipeline_version = $newversion where pipeline_id = $id";
@@ -559,77 +588,77 @@
 	/* -------------------------------------------- */
 	function AddPipeline($pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $completefiles, $dependency, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $level, $groupbysubject, $outputbids, $bidsoutputdir) {
 		/* perform data checks */
-		$pipelinetitle = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetitle));
-		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedesc));
-		$pipelinegroup = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinegroup));
-		$pipelinenumproc = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenumproc));
-		$pipelineclustertype = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclustertype));
-		$pipelineclusteruser = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineclusteruser));
-		$pipelinesubmithost = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmithost));
-		$pipelinesubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmithostuser));
-		$pipelinemaxwalltime = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinemaxwalltime));
-		$pipelinesubmitdelay = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinesubmitdelay));
-		$pipelinedatacopymethod = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedatacopymethod));
-		$pipelinequeue = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinequeue));
-		$pipelinenumcores = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenumcores));
-		$pipelinememory = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinememory));
-		$pipelineremovedata = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineremovedata));
-		$pipelineresultsscript = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineresultsscript));
-		$pipelinedirectory = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedirectory));
-		$pipelinedirstructure = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinedirstructure));
-		$pipelineusetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelineusetmpdir));
-		$pipelinetmpdir = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinetmpdir));
-		$pipelinenotes = mysqli_real_escape_string($GLOBALS['linki'], trim($pipelinenotes));
-		$completefiles = mysqli_real_escape_string($GLOBALS['linki'], trim($completefiles));
-		$groupbysubject = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $groupbysubject));
-		$outputbids = GetMySQLTinyInt(mysqli_real_escape_string($GLOBALS['linki'], $outputbids));
-		$bidsoutputdir = mysqli_real_escape_string($GLOBALS['linki'], $bidsoutputdir);
-		$deplevel = mysqli_real_escape_string($GLOBALS['linki'], trim($deplevel));
-		$depdir = mysqli_real_escape_string($GLOBALS['linki'], trim($depdir));
-		$deplinktype = mysqli_real_escape_string($GLOBALS['linki'], trim($deplinktype));
-		if (is_array($dependency)) {
-			$dependencies = implode(",",$dependency);
-		}
-		else { $dependencies = $dependency; }
+		$pipelinetitle = trim($pipelinetitle);
+		$pipelinedesc = trim($pipelinedesc);
+		$pipelinegroup = trim($pipelinegroup);
+		$pipelinenumproc = trim($pipelinenumproc);
+		$pipelineclustertype = trim($pipelineclustertype);
+		$pipelineclusteruser = trim($pipelineclusteruser);
+		$pipelinesubmithost = trim($pipelinesubmithost);
+		$pipelinesubmithostuser = trim($pipelinesubmithostuser);
+		$pipelinedatacopymethod = trim($pipelinedatacopymethod);
+		$pipelinequeue = trim($pipelinequeue);
+		$pipelinenumcores = trim($pipelinenumcores);
+		$pipelinememory = trim($pipelinememory);
+		$pipelineresultsscript = "";
+		$pipelinedirectory = trim($pipelinedirectory);
+		$pipelinedirstructure = trim($pipelinedirstructure);
+		$pipelinetmpdir = trim($pipelinetmpdir);
+		$pipelinenotes = trim($pipelinenotes);
+		$completefiles = trim($completefiles);
+		$groupbysubject = GetMySQLTinyInt($groupbysubject);
+		$outputbids = GetMySQLTinyInt($outputbids);
+		$deplevel = trim($deplevel);
+		$depdir = trim($depdir);
+		$deplinktype = trim($deplinktype);
+		$level = (int)$level;
 
-		if (is_array($groupid))
-			$groupids = implode2(",",$groupid);
-		else { $groupids = $groupid; }
-
-		if (is_array($projectid))
-			$projectids = implode2(",",$projectid);
-		else { $projectids = $projectid; }
+		/* dependency, group, and project lists are comma-separated IDs. They are later inlined into 'in (...)' clauses, so keep only integers */
+		$dependencies = implode(",", array_filter(array_map('intval', is_array($dependency) ? $dependency : explode(",", (string)$dependency))));
+		$groupids = implode(",", array_filter(array_map('intval', is_array($groupid) ? $groupid : explode(",", (string)$groupid))));
+		$projectids = implode(",", array_filter(array_map('intval', is_array($projectid) ? $projectid : explode(",", (string)$projectid))));
 
 		if (!ctype_alnum($pipelinetitle)) {
 			Error("Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters");
 			return -1;
 		}
 		
-		if ($pipelinemaxwalltime == "") $pipelinemaxwalltime = "null";
-		if ($pipelinesubmitdelay == "") $pipelinesubmitdelay = "null";
-		if ($pipelineremovedata == "") $pipelineremovedata = "null";
-		if ($pipelineusetmpdir == "") $pipelineusetmpdir = "null";
+		/* blank -> NULL */
+		$pipelinemaxwalltime = (trim($pipelinemaxwalltime) === '') ? null : (int)$pipelinemaxwalltime;
+		$pipelinesubmitdelay = (trim($pipelinesubmitdelay) === '') ? null : (int)$pipelinesubmitdelay;
+		$pipelineremovedata = (trim($pipelineremovedata) === '') ? null : (int)$pipelineremovedata;
+		$pipelineusetmpdir = (trim($pipelineusetmpdir) === '') ? null : (int)$pipelineusetmpdir;
 
 		/* check if the pipeline name already exists */
-		$sqlstring = "select * from pipelines where pipeline_name = '$pipelinetitle'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select * from pipelines where pipeline_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $pipelinetitle);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelinetitle]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			Error("Pipeline name already in use. Please go back and fix it");
 			return -1;
 		}
 		else {
 			/* get userid */
-			$sqlstring = "select user_id from users where username = '$username'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$sqlstring = "select user_id from users where username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$userid = $row['user_id'];
+			mysqli_stmt_close($stmt);
+			$userid = (int)($row['user_id'] ?? 0);
 			
 			/* insert the new form */
-			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_submithostuser, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir) values ('$pipelinetitle', '$pipelinedesc', '$pipelinegroup', '$userid', now(), 'stopped', '$pipelinenumproc', '$pipelinesubmithost', '$pipelinesubmithostuser', $pipelinemaxwalltime, $pipelinesubmitdelay, '$pipelinedatacopymethod', '$pipelinequeue', '$pipelinenumcores', '$pipelinememory', '$pipelineclustertype', '$pipelineclusteruser', $pipelineremovedata, '$pipelineresultsscript', '$completefiles', '$dependencies', '$deplevel', '$depdir', '$deplinktype', '$groupids', '$projectids', '$level', '$pipelinedirectory', '$pipelinedirstructure', $pipelineusetmpdir, '$pipelinetmpdir', '$pipelinenotes', 0, $groupbysubject, $outputbids, '$bidsoutputdir')";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$sqlstring = "insert into pipelines (pipeline_name, pipeline_desc, pipeline_group, pipeline_admin, pipeline_createdate, pipeline_status, pipeline_numproc, pipeline_submithost, pipeline_submithostuser, pipeline_maxwalltime, pipeline_submitdelay, pipeline_datacopymethod, pipeline_queue, pipeline_numcores, pipeline_memory, pipeline_clustertype, pipeline_clusteruser, pipeline_removedata, pipeline_resultsscript, pipeline_completefiles, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_level, pipeline_directory, pipeline_dirstructure, pipeline_usetmpdir, pipeline_tmpdir, pipeline_notes, pipeline_ishidden, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir) values (?, ?, ?, ?, now(), 'stopped', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?)";
+			$params = [$pipelinetitle, $pipelinedesc, $pipelinegroup, $userid, $pipelinenumproc, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineclustertype, $pipelineclusteruser, $pipelineremovedata, $pipelineresultsscript, $completefiles, $dependencies, $deplevel, $depdir, $deplinktype, $groupids, $projectids, $level, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $groupbysubject, $outputbids, $bidsoutputdir];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'sssisssiissssssissssssssississiis', ...$params);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			$pipelineid = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
 			
-			Notice("$pipelinetitle added. Pipeline is disabled by default.");
+			Notice(htmlspecialchars($pipelinetitle) . " added. Pipeline is disabled by default.");
 			
 			return $pipelineid;
 		}
@@ -643,7 +672,7 @@
 		
 		if (!ValidID($id,'Pipeline ID - B')) { return; }
 
-		$newname = mysqli_real_escape_string($GLOBALS['linki'], trim($newname));
+		$newname = trim($newname);
 
 		if ($newname == "") {
 			echo "New pipeline name is blank. Please fix and try again";
@@ -657,8 +686,11 @@
 		}
 		
 		/* check if the new pipeline name already exists */
-		$sqlstring = "select * from pipelines where pipeline_name = '$newname'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select * from pipelines where pipeline_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $newname);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newname]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			echo "New pipeline name already exists";
 			return;
@@ -706,7 +738,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (is_array($result) && $result['error'] == 1) $error = true;
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newid = $row['newid'];
+		$newid = (int)$row['newid'];
 		echo "<li>Getting new pipeline ID [$newid] [$sqlstring]\n";
 		$history .= "3) Getting new pipeline ID [$newid] [$sqlstring]\n";
 
@@ -722,16 +754,20 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (is_array($result) && $result['error'] == 1) $error = true;
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$version = $row['pipeline_version'];
+		$version = (int)$row['pipeline_version'];
 		echo "<li>Getting pipeline version [$version] [$sqlstring]\n";
 		$history .= "4) Getting pipeline version [$version] [$sqlstring]\n";
 
 		/* make any changes to the new pipeline before inserting */
-		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = '$newname', pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = null, pipeline_lastfinish = null, pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = '" . $_SESSION['username'] . "')";
+		$sqlstring = "update tmp_pipeline$id set pipeline_id = $newid, pipeline_name = ?, pipeline_version = 1, pipeline_createdate = now(), pipeline_status = 'stopped', pipeline_statusmessage = '', pipeline_laststart = null, pipeline_lastfinish = null, pipeline_enabled = 0, pipeline_admin = (select user_id from users where username = ?)";
+		$params = [$newname, $_SESSION['username']];
 		echo "<li>Making changes to new pipeline in temp table [$sqlstring]\n";
-		$history .= "5) Making changes to new pipeline in temp table [$sqlstring]\n";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (is_array($result) && $result['error'] == 1) $error = true;
+		$history .= "5) Making changes to new pipeline in temp table [$sqlstring] [" . implode(", ", $params) . "]\n";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		if ($result === null) $error = true;
 		
 		/* insert the changed row into the pipeline table */
 		$sqlstring = "insert into pipelines select * from tmp_pipeline$id";
@@ -852,8 +888,8 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		if (is_array($result) && $result['error'] == 1) $error = true;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$parentid = $row['parent_id'];
-			$sqlstringA = "insert ignore into pipeline_dependencies (pipeline_id, parent_id) values ($newid,'$parentid')";
+			$parentid = (int)$row['parent_id'];
+			$sqlstringA = "insert ignore into pipeline_dependencies (pipeline_id, parent_id) values ($newid, $parentid)";
 			echo "<li>Copy dependency [$sqlstringA]\n";
 			$history .= "16) Copy dependency [$sqlstringA]\n";
 			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
@@ -886,9 +922,13 @@
 		echo "DEBUG - ignore this stuff<br>";
 		//PrintVariable($history);
 		
-		$history = mysqli_real_escape_string($GLOBALS['linki'], trim($history));
-		$sqlstring = "insert into changelog (performing_userid, change_datetime, change_event, change_desc) values (" . $GLOBALS['userid'] . ", now(), 'pipelinecopy', '$history')";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$history = trim($history);
+		$performinguserid = (int)$GLOBALS['userid'];
+		$sqlstring = "insert into changelog (performing_userid, change_datetime, change_event, change_desc) values (?, now(), 'pipelinecopy', ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $performinguserid, $history);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$performinguserid, '(history)']);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -922,8 +962,14 @@
 		$groupid = $row['maxgroupid'] + 1;
 		
 		/* insert a row in the fileio_requests table */
-		$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type,data_id,username,requestdate) values ('delete', $groupid,'pipeline',$id,'" . $GLOBALS['username'] . "',now())";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$groupid = (int)$groupid;
+		$id = (int)$id;
+		$sqlstring = "insert into fileio_requests (fileio_operation, group_id, data_type,data_id,username,requestdate) values ('delete', ?,'pipeline',?,?,now())";
+		$params = [$groupid, $id, $GLOBALS['username']];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iis', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		
 		$sqlstring = "update pipelines set pipeline_statusmessage = 'Queued for deletion' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -964,6 +1010,7 @@
 	/* -------------------------------------------- */
 	function DisplayPipelineForm($type, $id, $returntab) {
 		MarkTime("DisplayPipelineForm() start");
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 
 		if ($type != "add") { 
 			if (!ValidID($id,'Pipeline ID - L')) { return; }
@@ -994,7 +1041,7 @@
 			$clusteruser = $row['pipeline_clusteruser'];
 			$datacopymethod = $row['pipeline_datacopymethod'];
 			$remove = $row['pipeline_removedata'];
-			$version = $row['pipeline_version'];
+			$version = (int)$row['pipeline_version'];
 			$directory = $row['pipeline_directory'];
 			$dirstructure = $row['pipeline_dirstructure'];
 			$usetmpdir = $row['pipeline_usetmpdir'];
@@ -1264,8 +1311,10 @@
 						/* PHP 8: count() on null is fatal - ensure these are always arrays */
 						$parents = array();
 						$children = array();
-						if ($dependency != "") {
-							$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($dependency)";
+						/* ints (intval-sanitized) - safe to inline */
+						$depids = implode(",", array_filter(array_map('intval', explode(",", (string)$dependency))));
+						if ($depids != "") {
+							$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in ($depids)";
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$parentid = $row['pipeline_id'];
@@ -1274,7 +1323,7 @@
 								$parents[$parentid]['notes'] = $row['pipeline_notes'];
 							}
 						}
-						$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = '$id')";
+						$sqlstring = "select pipeline_name, pipeline_id, pipeline_desc, pipeline_notes from pipelines where pipeline_id in (select pipeline_id from pipeline_dependencies where parent_id = $id)";
 						//PrintSQL($sqlstring);
 						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2017,7 +2066,7 @@
 									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$g_name = $row['group_name'];
-										$g_id = $row['group_id'];
+										$g_id = (int)$row['group_id'];
 										
 										/* get the number of members of the group */
 										$sqlstringA = "select count(*) 'count' from group_data where group_id = $g_id";
@@ -2254,9 +2303,17 @@
 									$mod_desc = $rowA['mod_desc'];
 									
 									/* check if the modality table exists */
-									$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-									if (mysqli_num_rows($result2) > 0) {
+									$seriestable = GetSeriesTableName($mod_code);
+									$numtables = 0;
+									if ($seriestable != '') {
+										$sqlstring2 = "select table_name from information_schema.tables where table_schema = ? and table_name = ?";
+										$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
+										mysqli_stmt_bind_param($stmt2, 'ss', $GLOBALS['cfg']['mysqldatabase'], $seriestable);
+										$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring2, [$GLOBALS['cfg']['mysqldatabase'], $seriestable]);
+										$numtables = mysqli_num_rows($result2);
+										mysqli_stmt_close($stmt2);
+									}
+									if ($numtables > 0) {
 									
 										/* if the table does exist, allow the user to search on it */
 										if ($mod_code == $dd_modality) {
@@ -2496,9 +2553,17 @@
 									$mod_desc = $rowA['mod_desc'];
 									
 									/* check if the modality table exists */
-									$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-									$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-									if (mysqli_num_rows($result2) > 0) {
+									$seriestable = GetSeriesTableName($mod_code);
+									$numtables = 0;
+									if ($seriestable != '') {
+										$sqlstring2 = "select table_name from information_schema.tables where table_schema = ? and table_name = ?";
+										$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
+										mysqli_stmt_bind_param($stmt2, 'ss', $GLOBALS['cfg']['mysqldatabase'], $seriestable);
+										$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring2, [$GLOBALS['cfg']['mysqldatabase'], $seriestable]);
+										$numtables = mysqli_num_rows($result2);
+										mysqli_stmt_close($stmt2);
+									}
+									if ($numtables > 0) {
 										?>
 										<option value="<?=$mod_code?>"><?=$mod_code?></option>
 										<?
@@ -3063,6 +3128,8 @@
 						<h3 class="ui header">Main Script Commands &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
+						<span id="syntaxstatus-main" style="font-weight:normal"></span> &nbsp;
+						<div class="ui tiny basic button" title="Check the script for bash syntax errors and common mistakes. Command names are not checked, so a misspelled command is not reported" onClick="CheckAceSyntax(editor, 'main'); return;"><i class="check circle outline icon"></i>Check syntax</div>
 						<div class="ui tiny basic button" onClick="toggleWrap(); return;">Toggle text wrap</div>
 					</div>
 				</div>
@@ -3129,24 +3196,8 @@
 					?>
 					<textarea name="commandlist" style="font-weight:normal"><?
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$pipelinestep_id = $row['pipelinestep_id'];
-							$ps_desc = $row['ps_description'];
-							$ps_order = $row['ps_order'];
-							$ps_command = $row['ps_command'];
-							$ps_workingdir = $row['ps_workingdir'];
-							$ps_enabled = $row['ps_enabled'];
-							$ps_logged = $row['ps_logged'];
-							if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-							if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-							if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
-echo "$ps_command $logged $ps_desc\n";
-							}
-							elseif ($ps_enabled) {
-echo "$ps_command     # $logged $ps_desc\n";
-							}
-							else {
-echo "#$ps_command     $logged $ps_desc\n";
-							}
+							$line = RenderStepLine($row['ps_command'], $row['ps_description'], ($row['ps_enabled'] == 1), ($row['ps_logged'] == 1));
+							echo htmlspecialchars("$line\n", ENT_QUOTES | ENT_SUBSTITUTE);
 						}
 					?></textarea>
 					<div id="commandlist" style="border: 1px solid #666; font-weight: normal"></div>
@@ -3157,13 +3208,15 @@ echo "#$ps_command     $logged $ps_desc\n";
 						<h3 class="ui header">Supplement script &nbsp; <span class="tiny" style="font-weight:normal">Ctrl+S to save</span></h3>
 					</div>
 					<div class="ui right aligned column">
+						<span id="syntaxstatus-supplement" style="font-weight:normal"></span> &nbsp;
+						<div class="ui tiny basic button" title="Check the script for bash syntax errors and common mistakes. Command names are not checked, so a misspelled command is not reported" onClick="CheckAceSyntax(editor2, 'supplement'); return;"><i class="check circle outline icon"></i>Check syntax</div>
 						<div class="ui tiny basic button" onClick="toggleWrap2(); return;">Toggle text wrap</div>
 					</div>
 				</div>
 			</div>
 			<div class="ui attached segment">
 				<?
-					$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = '$version' and ps_supplement = 1 order by ps_order + 0";
+					$sqlstring2 = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement = 1 order by ps_order + 0";
 					$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
 					if (mysqli_num_rows($result2) > 0) {
 						$open = "active";
@@ -3175,24 +3228,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
 				<textarea name="supplementcommandlist" hidden><?
 					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-						$pipelinestep_id = $row2['pipelinestep_id'];
-						$ps_desc = $row2['ps_description'];
-						$ps_order = $row2['ps_order'];
-						$ps_command = $row2['ps_command'];
-						$ps_workingdir = $row2['ps_workingdir'];
-						$ps_enabled = $row2['ps_enabled'];
-						$ps_logged = $row2['ps_logged'];
-						if ($ps_enabled == 1) { $enabled = ""; } else { $enabled = "#"; }
-						if ($ps_logged == 1) { $logged = ""; } else { $logged = "{NOLOG}"; }
-						if ((substr(trim($ps_command),0,1) == '#') || (trim($ps_command) == '')) {
-echo "$ps_command $logged $ps_desc\n";
-						}
-						elseif ($ps_enabled) {
-echo "$ps_command     # $logged $ps_desc\n";
-						}
-						else {
-echo "#$ps_command     $logged $ps_desc\n";
-						}
+						$line = RenderStepLine($row2['ps_command'], $row2['ps_description'], ($row2['ps_enabled'] == 1), ($row2['ps_logged'] == 1));
+						echo htmlspecialchars("$line\n", ENT_QUOTES | ENT_SUBSTITUTE);
 					}
 				?></textarea>
 			</div>
@@ -3201,7 +3238,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 			</div>
 			</form>
 			<!--<script src="scripts/aceeditor/ace.js" type="text/javascript" charset="utf-8"></script>-->
-			<script src="https://cdn.jsdelivr.net/npm/ace-builds/src/ace.js"></script>
+			<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src/ace.js"></script>
+			<? PrintAceSearchHighlight(); ?>
 
 			<script>
 				var editor = ace.edit("commandlist");
@@ -3211,7 +3249,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 				editor.getSession().setUseWrapMode(false);
 				editor.getSession().setValue(textarea.val());
 				<?if ($readonly) { ?>
-				editor.setReadOnly();
+				editor.setReadOnly(true);
 				<? } ?>
 				editor.getSession().on('change', function(){
 				  textarea.val(editor.getSession().getValue());
@@ -3229,17 +3267,22 @@ echo "#$ps_command     $logged $ps_desc\n";
 						editor.getSession().setUseWrapMode(true);
 					}
 				}
+				<?if (!$readonly) { ?>
 				$(window).bind('keydown', function(event) {
 					if (event.ctrlKey || event.metaKey) {
 						switch (String.fromCharCode(event.which).toLowerCase()) {
 							case 's':
+								/* only save when the Data & Scripts tab is showing, so Ctrl+S on another tab doesn't discard its edits */
+								if (!$('#stepsform').is(':visible')) {
+									break;
+								}
 								event.preventDefault();
-								//alert('ctrl-s');
 								document.getElementById('stepsform').submit();
 								break;
 						}
 					}
 				});
+				<? } ?>
 				
 				var editor2 = ace.edit("supplementcommandlist");
 				var textarea2 = $('textarea[name="supplementcommandlist"]').hide();
@@ -3248,12 +3291,56 @@ echo "#$ps_command     $logged $ps_desc\n";
 				editor2.getSession().setUseWrapMode(false);
 				editor2.getSession().setValue(textarea2.val());
 				<?if ($readonly) { ?>
-				editor2.setReadOnly();
+				editor2.setReadOnly(true);
 				<? } ?>
 				editor2.getSession().on('change', function(){
 				  textarea2.val(editor2.getSession().getValue());
 				});
 				editor2.setTheme("ace/theme/xcode");
+				
+				keepAceSearchHighlight(editor);
+				keepAceSearchHighlight(editor2);
+				
+				/* check the script with shellcheck (server side) and show the results as Ace gutter annotations */
+				function CheckAceSyntax(whicheditor, key) {
+					var status = $('#syntaxstatus-' + key);
+					status.css('color', '#888').text('Checking...');
+					$.post("ajaxapi.php", { action: "checkbashsyntax", script: whicheditor.getSession().getValue() }, null, "json")
+					.done(function(r) {
+						whicheditor.getSession().setAnnotations(r.annotations);
+						var errors = 0;
+						var warnings = 0;
+						var suggestions = 0;
+						r.annotations.forEach(function(a) {
+							if (a.type == 'error') { errors++; }
+							else if (a.type == 'warning') { warnings++; }
+							else { suggestions++; }
+						});
+						if (r.annotations.length == 0) {
+							status.css('color', '#21ba45').html('<i class="check icon"></i>No problems found (' + r.checker + ')').attr('title', 'Command names are not checked');
+						}
+						else {
+							var parts = [];
+							if (errors > 0) { parts.push(errors + (errors == 1 ? ' error' : ' errors')); }
+							if (warnings > 0) { parts.push(warnings + (warnings == 1 ? ' warning' : ' warnings')); }
+							if (suggestions > 0) { parts.push(suggestions + (suggestions == 1 ? ' suggestion' : ' suggestions')); }
+							status.css('color', (errors > 0 ? '#db2828' : '#f2711c')).text(parts.join(', ') + ' - hover the gutter icons for details');
+							/* jump to the first problem */
+							whicheditor.gotoLine(r.annotations[0].row + 1, r.annotations[0].column, true);
+						}
+					})
+					.fail(function(xhr) {
+						status.css('color', '#db2828').text("Unable to check the script: " + ((xhr.responseJSON && xhr.responseJSON.error) || xhr.statusText));
+					});
+				}
+				
+				/* editing invalidates the annotations, so clear them once the script changes */
+				[[editor, 'main'], [editor2, 'supplement']].forEach(function(pair) {
+					pair[0].getSession().on('change', function() {
+						if (pair[0].getSession().getAnnotations().length > 0) { pair[0].getSession().clearAnnotations(); }
+						$('#syntaxstatus-' + pair[1]).text('');
+					});
+				});
 				
 				function insertText2(text) {
 					editor2.insert(text);
@@ -3556,232 +3643,286 @@ echo "#$ps_command     $logged $ps_desc\n";
 	function DisplayVersion($id, $version) {
 		/* check the parameters */
 		if (!ValidID($id,'Pipeline ID - N')) { return; }
-	
-		$sqlstring = "select * from pipelines where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$title = $row['pipeline_name'];
-		$desc = $row['pipeline_desc'];
-		if ($version == 0) {
-			$version = $row['pipeline_version'];
+		$id = (int)$id;
+		$version = (int)$version;
+
+		$pipeline = VersionQueryRows("select * from pipelines where pipeline_id = ?", 'i', [$id], __LINE__);
+		if (count($pipeline) == 0) {
+			Error("Pipeline [$id] not found");
+			return;
+		}
+		$pipeline = $pipeline[0];
+		$currentversion = (int)$pipeline['pipeline_version'];
+		if ($version < 1) { $version = $currentversion; }
+
+		$versions = VersionQueryRows("select * from pipeline_version where pipeline_id = ? order by version desc", 'i', [$id], __LINE__);
+		$versioninfo = null;
+		foreach ($versions as $v) {
+			if ((int)$v['version'] == $version) { $versioninfo = $v; }
 		}
 
-		?>
-		<form method="post" action="pipelines.php" name="versionform">
-		<input type="hidden" name="action" value="viewversion">
-		<input type="hidden" name="id" value="<?=$id?>">
-		<b>View previous version</b>
-		<select name="version" onchange='versionform.submit()'>
-			<option value="">(select version)</option>
-		<?
-		$sqlstring = "select * from pipeline_version where pipeline_id = $id order by version desc";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$versionnumber = $row['version'];
-			$versiondatetime = date("M n, Y H:i:s", strtotime($row['version_datetime']));
-			$versionnotes = $row['version_notes'];
-			?>
-			<option value="<?=$versionnumber?>"><b><?=$versionnumber?></b> - <?=$versiondatetime?>
-			<?
+		$options = VersionQueryRows("select * from pipeline_options where pipeline_id = ? and pipeline_version = ?", 'ii', [$id, $version], __LINE__);
+		$options = $options[0] ?? null;
+		$datasteps = VersionQueryRows("select * from pipeline_data_def where pipeline_id = ? and pipeline_version = ? order by pdd_order + 0", 'ii', [$id, $version], __LINE__);
+		$steps = VersionQueryRows("select * from pipeline_steps where pipeline_id = ? and pipeline_version = ? order by ps_order + 0", 'ii', [$id, $version], __LINE__);
+
+		$mainlines = array();
+		$supplementlines = array();
+		foreach ($steps as $s) {
+			$line = RenderStepLine($s['ps_command'], $s['ps_description'], ($s['ps_enabled'] == 1), ($s['ps_logged'] == 1));
+			if ($s['ps_supplement'] == 1) { $supplementlines[] = $line; }
+			else { $mainlines[] = $line; }
 		}
+
+		DisplayPipelineStatus($pipeline['pipeline_name'], $pipeline['pipeline_desc'], $pipeline['pipeline_enabled'], $pipeline['pipeline_debug'], $id, "pipelines", $pipeline['pipeline_status'], $pipeline['pipeline_statusmessage'], $pipeline['pipeline_laststart'], $pipeline['pipeline_lastfinish'], $pipeline['pipeline_lastcheck']);
 		?>
-		</select>
-		</form>
-		
-		<table class="entrytable">
-			<tr>
-				<td class="label">Pipeline</td>
-				<td>
-					<?=$title?> version <?=$version?>
-					<br>
-					<?=$desc?>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Options</td>
-				<td>
-					<?
-						$sqlstring = "select a.*, b.group_name, c.pipeline_name from pipeline_options a left join groups b on a.pipeline_groupid = b.group_id left join pipelines c on a.pipeline_dependency = c.pipeline_id where a.pipeline_id = $id and a.pipeline_version = $version";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$dependency = $row['pipeline_dependency'];
-						$dependencylevel = $row['pipeline_dependencylevel'];
-						$dependencydir = $row['pipeline_dependencydir'];
-						$deplinktype = $row['pipeline_deplinktype'];
-						$groupid = $row['pipeline_groupid'];
-						$projectid = $row['pipeline_projectid'];
-						//$grouptype = $row['pipeline_grouptype'];
-						$groupbysubject = $row['pipeline_groupbysubject'];
-						$outputbids = $row['pipeline_outputbids'];
-						$bidsoutputdir = $row['pipeline_bidsoutputdir'];
-						$dynamicgroupid = $row['pipeline_dynamicgroupid'];
-						$completefiles = $row['pipeline_completefiles'];
-						$resultsscript = $row['pipeline_resultsscript'];
-						$groupname = $row['group_name'];
-						$parentname = $row['pipeline_name'];
-						?>
-						<table class="twocoltable">
-							<tr>
-								<td>Dependency<br><span class="tiny">parent pipeline</span></td>
-								<td><?=$parentname?></td>
-							</tr>
-							<tr>
-								<td>Dependency matching criteria</td>
-								<td><?=$dependencylevel?></td>
-							</tr>
-							<tr>
-								<td>Dependency Dir</td>
-								<td><?=$dependencydir?></td>
-							</tr>
-							<tr>
-								<td>Dependency Copy method</td>
-								<td><?=$deplinktype?></td>
-							</tr>
-							<tr>
-								<td>Group</td>
-								<td><?=$groupname?></td>
-							</tr>
-							<tr>
-								<td>Group type</td>
-								<td><?=$grouptype?></td>
-							</tr>
-							<tr>
-								<td>Group by subject</td>
-								<td><?=$groupbysubject?></td>
-							</tr>
-							<tr>
-								<td>Output BIDS</td>
-								<td><?=$outputbids?></td>
-							</tr>
-							<tr>
-								<td>BIDS output directory</td>
-								<td><?=$bidsoutputdir?></td>
-							</tr>
-							<tr>
-								<td>Dependency Dir</td>
-								<td><?=$completefiles?></td>
-							</tr>
-							<tr>
-								<td>Results script</td>
-								<td><?=$resultsscript?></td>
-							</tr>
-						</table>
-						<?
-					?>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Data</td>
-				<td>
-					<table class="displaytable">
-						<thead>
+		<div class="ui container">
+			<br>
+			<div class="ui segment">
+				<div class="ui two column middle aligned grid">
+					<div class="column">
+						<h2 class="ui header">
+							<i class="code branch icon"></i>
+							<div class="content">
+								Version <?=$version?>
+								<? if ($version == $currentversion) { ?><div class="ui green label">Current</div><? } else { ?><div class="ui orange label">Previous version</div><? } ?>
+								<div class="sub header">
+									<? if ($versioninfo) { ?>
+										Saved <?=date("M j, Y H:i:s", strtotime($versioninfo['version_datetime']))?>
+										<? if (trim($versioninfo['version_notes'] ?? '') != '') { ?><br><?=htmlspecialchars($versioninfo['version_notes'] ?? '')?><? } ?>
+									<? } ?>
+								</div>
+							</div>
+						</h2>
+					</div>
+					<div class="right aligned column">
+						<form method="get" action="pipelines.php" name="versionform" class="ui form" style="display:inline-block">
+							<input type="hidden" name="action" value="viewversion">
+							<input type="hidden" name="id" value="<?=$id?>">
+							<select class="ui search dropdown" name="version" onchange="this.form.submit()">
+								<? foreach ($versions as $v) { ?>
+								<option value="<?=(int)$v['version']?>" <?=((int)$v['version'] == $version ? "selected" : "")?>>Version <?=(int)$v['version']?> &nbsp; <?=date("M j, Y H:i", strtotime($v['version_datetime']))?></option>
+								<? } ?>
+							</select>
+						</form>
+						<a href="pipelines.php?action=editpipeline&id=<?=$id?>" class="ui basic button"><i class="arrow left icon"></i> Back to pipeline</a>
+					</div>
+				</div>
+			</div>
+
+			<? if (!$versioninfo && !$options && (count($datasteps) == 0) && (count($steps) == 0)) { ?>
+			<div class="ui warning message">Version <?=$version?> of this pipeline was not found.</div>
+			<? } ?>
+
+			<!-- ---------- options ---------- -->
+			<div class="ui blue secondary top attached segment">
+				<h3 class="ui header">Options</h3>
+			</div>
+			<div class="ui bottom attached segment">
+				<? if ($options) { ?>
+				<table class="ui very basic compact collapsing table">
+					<tr>
+						<td><b>Dependency</b><br><span class="tiny">parent pipeline</span></td>
+						<td><?=VersionNameList("select pipeline_id 'id', pipeline_name 'name' from pipelines where pipeline_id = ?", $options['pipeline_dependency'], "pipelines.php?action=editpipeline&id=")?></td>
+					</tr>
+					<tr>
+						<td><b>Dependency matching criteria</b></td>
+						<td><?=htmlspecialchars($options['pipeline_dependencylevel'] ?? '')?></td>
+					</tr>
+					<tr>
+						<td><b>Dependency directory</b></td>
+						<td><?=htmlspecialchars($options['pipeline_dependencydir'] ?? '')?></td>
+					</tr>
+					<tr>
+						<td><b>Dependency copy method</b></td>
+						<td><?=htmlspecialchars($options['pipeline_deplinktype'] ?? '')?></td>
+					</tr>
+					<tr>
+						<td><b>Group</b></td>
+						<td><?=VersionNameList("select group_id 'id', group_name 'name' from `groups` where group_id = ?", $options['pipeline_groupid'], "")?></td>
+					</tr>
+					<tr>
+						<td><b>Project</b></td>
+						<td><?=VersionNameList("select project_id 'id', project_name 'name' from projects where project_id = ?", $options['pipeline_projectid'], "projects.php?id=")?></td>
+					</tr>
+					<tr>
+						<td><b>Group by subject</b></td>
+						<td><?=VersionYesNo($options['pipeline_groupbysubject'])?></td>
+					</tr>
+					<tr>
+						<td><b>Output BIDS</b></td>
+						<td><?=VersionYesNo($options['pipeline_outputbids'])?></td>
+					</tr>
+					<tr>
+						<td><b>BIDS output directory</b></td>
+						<td><tt><?=htmlspecialchars($options['pipeline_bidsoutputdir'] ?? '')?></tt></td>
+					</tr>
+					<tr>
+						<td><b>Completed files</b></td>
+						<td><tt><?=htmlspecialchars($options['pipeline_completefiles'] ?? '')?></tt></td>
+					</tr>
+					<tr>
+						<td><b>Results script</b></td>
+						<td><tt><?=htmlspecialchars($options['pipeline_resultsscript'] ?? '')?></tt></td>
+					</tr>
+				</table>
+				<? } else { ?>
+				<span style="color:#999">No options were saved for this version</span>
+				<? } ?>
+			</div>
+
+			<!-- ---------- data ---------- -->
+			<div class="ui blue secondary top attached segment">
+				<h3 class="ui header">Data</h3>
+			</div>
+			<div class="ui bottom attached segment" style="overflow-x: auto">
+				<? if (count($datasteps) > 0) { ?>
+				<table class="ui very compact small celled table">
+					<thead>
 						<tr>
-							<th></th>
-							<th>Enabled</th>
-							<th>Optional</th>
+							<th>Order</th>
 							<th>Protocol</th>
 							<th>Modality</th>
 							<th>Image type</th>
 							<th>Data format</th>
 							<th>Series criteria</th>
-							<th>Type</th>
 							<th>Level</th>
-							<th>Association type</th>
-							<th>Num BOLD reps</th>
-							<th>gzip</th>
+							<th>Association</th>
 							<th>Directory</th>
-							<th>Use series?</th>
-							<th>Preserve series?</th>
-							<th>Use phase dir?</th>
-							<th>Beh only?</th>
-							<th>Beh format</th>
-							<th>Beh dir</th>
+							<th>Options</th>
 						</tr>
-						</thead>
-						<?
-						$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$pipelinedatadef_id = $row['pipelinedatadef_id'];
-							$pdd_order = $row['pdd_order'];
-							$pdd_isprimaryprotocol = $row['pdd_isprimaryprotocol'];
-							$pdd_seriescriteria = $row['pdd_seriescriteria'];
-							$pdd_type = $row['pdd_type'];
-							$pdd_level = $row['pdd_level'];
-							$pdd_assoctype = $row['pdd_assoctype'];
-							$pdd_protocol = $row['pdd_protocol'];
-							$pdd_imagetype = $row['pdd_imagetype'];
-							$pdd_modality = $row['pdd_modality'];
-							$pdd_dataformat = $row['pdd_dataformat'];
-							$pdd_gzip = $row['pdd_gzip'];
-							$pdd_location = $row['pdd_location'];
-							$pdd_useseries = $row['pdd_useseries'];
-							$pdd_preserveseries = $row['pdd_preserveseries'];
-							$pdd_usephasedir = $row['pdd_usephasedir'];
-							$pdd_behonly = $row['pdd_behonly'];
-							$pdd_behformat = $row['pdd_behformat'];
-							$pdd_behdir = $row['pdd_behdir'];
-							$pdd_enabled = $row['pdd_enabled'];
-							$pdd_optional = $row['pdd_optional'];
-							$pdd_numboldreps = $row['pdd_numboldreps'];
-							?>
-							<tr style="color:<? if (!$pdd_enabled) { echo "#BBBBBB"; } else { echo "#000000"; } ?>">
-								<td><?=$pdd_order?></td>
-								<td><? if ($pdd_enabled) { echo "&#10003"; } ?></td>
-								<td><? if ($pdd_optional) { echo "&#10003"; } ?></td>
-								<td><? if ($pdd_isprimaryprotocol) { echo "&#10003"; } ?></td>
-								<td><b><?=$pdd_protocol?></b></td>
-								<td><?=$pdd_modality?></td>
-								<td><tt><?=$pdd_imagetype?></tt></td>
-								<td><?=$pdd_dataformat?></td>
-								<td><?=$pdd_seriescriteria?></td>
-								<td><?=$pdd_type?></td>
-								<td><?=$pdd_level?></td>
-								<td><?=$pdd_assoctype?></td>
-								<td><?=$pdd_numboldreps?></td>
-								<td><? if ($pdd_gzip) { echo "&#10003"; } ?></td>
-								<td><tt><?=$pdd_location?></tt></td>
-								<td><? if ($pdd_useseries) { echo "&#10003"; } ?></td>
-								<td><? if ($pdd_preserveseries) { echo "&#10003"; } ?></td>
-								<td><? if ($pdd_usephasedir) { echo "&#10003"; } ?></td>
-								<td><? if ($pdd_behonly) { echo "&#10003"; } ?></td>
-								<td><?=$pdd_behformat?></td>
-								<td><tt><?=$pdd_behdir?></tt></td>
-							</tr>
-							<?
-						}
-						?>
-					</table>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Script</td>
-				<td style="border-radius: 4px; padding: 10px">
-					<style>
-						ol.code { background-color: #ccc; margin-right: 5px; font-family: courier new; font-size:10pt; white-space: pre; border: 1px solid black; }
-						li.code { counter-increment: custom; background-color: #fff; padding: 1px}
-					</style>
-					<ol class="code"><?
-						/* display all other rows, sorted by order */
-						$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version order by ps_order + 0";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$pipelinestep_id = $row['pipelinestep_id'];
-							$ps_desc = $row['ps_description'];
-							$ps_order = $row['ps_order'];
-							$ps_command = $row['ps_command'];
-							$ps_workingdir = $row['ps_workingdir'];
-							$ps_enabled = $row['ps_enabled'];
-							$ps_logged = $row['ps_logged'];
-							?><li class="code"><?=$ps_command?> <span style="color:green"># <?=$ps_desc?></span><?
-						}
-					?></ol>
-				</td>
-			</tr>
-		</table>
+					</thead>
+					<tbody>
+					<? foreach ($datasteps as $d) { ?>
+						<tr class="<?=($d['pdd_enabled'] ? '' : 'disabled')?>" valign="top">
+							<td><?=htmlspecialchars($d['pdd_order'] ?? '')?></td>
+							<td>
+								<b><?=htmlspecialchars($d['pdd_protocol'] ?? '')?></b>
+								<? if ($d['pdd_isprimaryprotocol']) { ?><div class="ui tiny blue label">Primary</div><? } ?>
+								<? if ($d['pdd_optional']) { ?><div class="ui tiny label">Optional</div><? } ?>
+								<? if (!$d['pdd_enabled']) { ?><div class="ui tiny grey label">Disabled</div><? } ?>
+							</td>
+							<td><?=htmlspecialchars($d['pdd_modality'] ?? '')?></td>
+							<td><tt><?=htmlspecialchars($d['pdd_imagetype'] ?? '')?></tt></td>
+							<td><?=htmlspecialchars($d['pdd_dataformat'] ?? '')?></td>
+							<td>
+								<?=htmlspecialchars($d['pdd_seriescriteria'] ?? '')?>
+								<? if ($d['pdd_numboldreps'] != '') { ?><br><span class="tiny">BOLD reps <?=htmlspecialchars($d['pdd_numboldreps'] ?? '')?></span><? } ?>
+							</td>
+							<td><?=htmlspecialchars($d['pdd_level'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['pdd_assoctype'] ?? '')?></td>
+							<td>
+								<tt><?=htmlspecialchars($d['pdd_location'] ?? '')?></tt>
+								<? if ($d['pdd_behformat'] != '') { ?><br><span class="tiny">Beh format <?=htmlspecialchars($d['pdd_behformat'] ?? '')?></span><? } ?>
+								<? if ($d['pdd_behdir'] != '') { ?><br><span class="tiny">Beh dir <tt><?=htmlspecialchars($d['pdd_behdir'] ?? '')?></tt></span><? } ?>
+							</td>
+							<td>
+								<? if ($d['pdd_gzip']) { ?><div class="ui tiny basic label">gzip</div><? } ?>
+								<? if ($d['pdd_useseries']) { ?><div class="ui tiny basic label">Use series dirs</div><? } ?>
+								<? if ($d['pdd_preserveseries']) { ?><div class="ui tiny basic label">Preserve series</div><? } ?>
+								<? if ($d['pdd_usephasedir']) { ?><div class="ui tiny basic label">Phase dir</div><? } ?>
+								<? if ($d['pdd_behonly']) { ?><div class="ui tiny basic label">Beh only</div><? } ?>
+							</td>
+						</tr>
+					<? } ?>
+					</tbody>
+				</table>
+				<? } else { ?>
+				<span style="color:#999">No data steps in this version</span>
+				<? } ?>
+			</div>
+
+			<!-- ---------- scripts ---------- -->
+			<div class="ui blue secondary top attached segment">
+				<h3 class="ui header">Main Script Commands</h3>
+			</div>
+			<div class="ui bottom attached segment">
+				<? if (count($mainlines) > 0) { ?>
+				<div id="versionmainscript" style="border: 1px solid #666"><?=htmlspecialchars(implode("\n", $mainlines), ENT_QUOTES | ENT_SUBSTITUTE)?></div>
+				<? } else { ?>
+				<span style="color:#999">No commands in this version</span>
+				<? } ?>
+			</div>
+
+			<div class="ui blue secondary top attached segment">
+				<h3 class="ui header">Supplement script</h3>
+			</div>
+			<div class="ui bottom attached segment">
+				<? if (count($supplementlines) > 0) { ?>
+				<div id="versionsupplementscript" style="border: 1px solid #666"><?=htmlspecialchars(implode("\n", $supplementlines), ENT_QUOTES | ENT_SUBSTITUTE)?></div>
+				<? } else { ?>
+				<span style="color:#999">No supplement commands in this version</span>
+				<? } ?>
+			</div>
+		</div>
+
+		<script src="https://cdn.jsdelivr.net/npm/ace-builds@1.44.0/src/ace.js"></script>
+		<? PrintAceSearchHighlight(); ?>
+		<script>
+			/* read-only Ace editors, styled like the Data & Scripts tab, sized to fit the script */
+			['versionmainscript', 'versionsupplementscript'].forEach(function(elid) {
+				if (!document.getElementById(elid)) { return; }
+				var editor = ace.edit(elid);
+				editor.setTheme("ace/theme/xcode");
+				editor.session.setMode("ace/mode/sh");
+				editor.setOptions({ readOnly: true, fontSize: 12, maxLines: Infinity, minLines: 3, highlightActiveLine: false });
+				keepAceSearchHighlight(editor);
+			});
+		</script>
 		<br><br>
 	<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- VersionQueryRows ------------------- */
+	/* -------------------------------------------- */
+	/* run a bound select and return all rows. Used by DisplayVersion() */
+	function VersionQueryRows($sqlstring, $types, $params, $line) {
+		$rows = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, $line, $sqlstring, $params);
+		if ($result) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$rows[] = $row;
+			}
+		}
+		mysqli_stmt_close($stmt);
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- VersionNameList -------------------- */
+	/* -------------------------------------------- */
+	/* turn a comma separated list of IDs (as stored in pipeline_options) into a list of names. $sqlstring
+	   selects 'id' and 'name' for one bound ID. If $link is given, each name links to $link . id */
+	function VersionNameList($sqlstring, $idlist, $link) {
+		$names = array();
+		foreach (explode(",", $idlist ?? '') as $objid) {
+			$objid = (int)trim($objid);
+			if ($objid < 1) { continue; }
+			$rows = VersionQueryRows($sqlstring, 'i', [$objid], __LINE__);
+			if (count($rows) == 0) {
+				$names[] = "<span style='color:#999'>(deleted, ID $objid)</span>";
+			}
+			elseif ($link != "") {
+				$names[] = "<a href='$link$objid'>" . htmlspecialchars($rows[0]['name']) . "</a>";
+			}
+			else {
+				$names[] = htmlspecialchars($rows[0]['name']);
+			}
+		}
+		return implode("<br>", $names);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- VersionYesNo ----------------------- */
+	/* -------------------------------------------- */
+	function VersionYesNo($value) {
+		return $value ? "<i class='green check icon'></i> Yes" : "No";
 	}
 
 	
@@ -3855,27 +3996,11 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* ------- DisplayPipelineTree ---------------- */
 	/* -------------------------------------------- */
 	function DisplayPipelineTree($viewname, $viewlevel, $viewowner, $viewstatus, $viewenabled, $viewall, $viewhidden, $viewuserid) {
-	
 		MarkTime("DisplayPipelineTree()");
-		
-		$username = $GLOBALS['username'];
-		$viewuserid = $_SESSION['viewuserid'];
-		
-		if ($viewuserid != "all") {
-			if (($viewuserid == 0) || ($viewuserid < 0)) {
-				$viewuserid = $GLOBALS['userid'];
-			}
-		}
-		
-		/* get list of userids and usernames */
-		$userids[$GLOBALS['userid']] = $GLOBALS['username'];
-		$sqlstring = "select b.username, a.pipeline_admin 'userid' from pipelines a left join users b on a.pipeline_admin = b.user_id group by a.pipeline_admin order by b.username";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			if ($row['username'] != "")
-				$userids[$row['userid']] = $row['username'];
-		}
-		
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+
+		$myuserid = (int)$GLOBALS['userid'];
+
 		global $imgdata;
 		/* create the graphs for each pipeline group */
 		$sqlstring = "select distinct(pipeline_group) 'pipeline_group' from pipelines where pipeline_group <> ''";
@@ -3885,16 +4010,28 @@ echo "#$ps_command     $logged $ps_desc\n";
 			//$imgdata[$group] = CreatePipelineGraph($group);
 		}
 		list($myusage,$maxsize) = GetPipelineInfo(false);
-		//$myusage = "";
-		//$maxsize = "";
-		
+		$allinfo = $GLOBALS['info'] ?? array();
+
+		/* the trees for both tabs. The 'mine' tree can include parent pipelines owned by other users, to show where the user's pipelines attach */
+		$minetree = GetPipelineTree(false, $viewhidden, $myuserid);
+		$alltree = GetPipelineTree(false, $viewhidden, 0);
+
+		/* counts are distinct pipelines, since a pipeline with several parents appears in the tree more than once */
+		$countMine = 0;
+		$countAll = 0;
+		foreach ($allinfo as $id => $p) {
+			if ($p['ishidden'] && !$viewhidden) { continue; }
+			$countAll++;
+			if ($p['adminid'] == $myuserid) { $countMine++; }
+		}
+
+		/* favorite pipelines, including hidden ones */
+		$favorites = array();
+		foreach ($allinfo as $id => $p) {
+			if ($p['favorite']) { $favorites[] = $p; }
+		}
+		usort($favorites, function($a, $b) { return strcasecmp($a['title'], $b['title']); });
 	?>
-	<!--<span style="font-size: 10pt">
-		<b>My usage</b><br>
-		<b>Disk</b> <?=number_format(($myusage['totaldisk']/1024/1024/1024),1) . '&nbsp;GB';?><br>
-		<b># running</b> <?=$myusage['totalrunning']?><br>
-		<b># complete</b> <?=$myusage['totalcomplete']?><br>
-	</span>-->
 	<div class="ui container">
 		<div class="ui two column grid">
 			<div class="column">
@@ -3904,85 +4041,139 @@ echo "#$ps_command     $logged $ps_desc\n";
 				<a href="pipelines.php?action=addform" class="ui primary large button"><i class="plus square outline icon"></i>New Pipeline</a>
 			</div>
 		</div>
-		<h3 class="ui header">View</h3>
-			<a href="pipelines.php?viewuserid=all" class="ui button">All Pipelines</a>
-			<a href="pipelines.php?action=viewusage" class="ui button"><i class="hdd icon"></i> Disk Usage (slow)</a>
-			<a href="visualization.php?action=visualize&type=ica" class="ui button"><i class="images icon"></i> Visualization</a>
+		<a href="pipelines.php?action=viewusage" class="ui button"><i class="hdd icon"></i> Disk Usage (slow)</a>
+		<a href="visualization.php?action=visualize&type=ica" class="ui button"><i class="images icon"></i> Visualization</a>
+		<? if ($viewhidden) { ?>
+		<a href="pipelines.php" class="ui button"><i class="eye slash icon"></i> Hide hidden pipelines</a>
+		<? } else { ?>
+		<a href="pipelines.php?viewhidden=1" class="ui button"><i class="eye icon"></i> Show hidden pipelines</a>
+		<? } ?>
 		<br><br>
-		<h3 class="ui header">View pipelines owned by</h3>
-		<?
-			$viewuserid = $_SESSION['viewuserid'];
-			$i = 0;
-			foreach ($userids as $userid => $username) {
-				if ($i == 0)
-					$buttoncolor = "green";
-				else if ($userid == $viewuserid)
-					$buttoncolor = "blue";
-				else
-					$buttoncolor = "";
-				?> <a href="pipelines.php?viewuserid=<?=$userid?>" class="ui <?=$buttoncolor?> button"><i class="user icon"></i> <?=$username?></a><?
-				$i++;
-			}
 
-			if ($viewuserid == "all") {
-				foreach ($userids as $userid => $username)
-					$useridlist[] = $userid;
-			}
-			else {
-				$useridlist[] = $viewuserid;
-			}
-			
-			foreach ($useridlist as $userid) {
-				$username = $userids[$userid];
-				$pipelinetree = GetPipelineTree($viewall, $viewhidden, $userid);
-				if (trim($username) == "") { $username = "(blank)"; }
-				?>
-				<br><br>
-				<a href="pipelines.php?viewhidden=1">View hidden pipelines</a>
-				<table class="ui single line selectable table" id="pipelinetable<?=$username?>" width="100%">
-					<thead>
-						<tr style="vertical-align: top;text-align:left">
-							<th style="font-size:12pt">Pipeline Group</th>
-							<th style="font-size:12pt">Name <input id="pipelinenamefilter<?=$username?>" type="text" class="ui input" placeholder="Filter by pipeline name"/></th>
-							<th style="font-size:12pt" align="right">Level</th>
-							<th style="font-size:12pt">Owner<br></th>
-							<th style="font-size:12pt">Status</th>
-							<!--<th style="font-size:12pt" align="right" title="processing / complete">Analyses</th>
-							<th style="font-size:12pt" align="right">Disk size</th>
-							<th style="font-size:12pt" align="left">Path</th>
-							<th style="font-size:12pt">Queue</th>-->
-						</tr>
-					</thead>
-					<script type="text/javascript">
-						function filterTable(event) {
-							var filter = event.target.value.toUpperCase();
-							var rows = document.querySelector("#pipelinetable<?=$username?> tbody").rows;
-							
-							for (var i = 0; i < rows.length; i++) {
-								var firstCol = rows[i].cells[0].textContent.toUpperCase();
-								var secondCol = rows[i].cells[1].textContent.toUpperCase();
-								if (firstCol.indexOf(filter) > -1 || secondCol.indexOf(filter) > -1) {
-									rows[i].style.display = "";
-								} else {
-									rows[i].style.display = "none";
-								}      
-							}
+		<script>
+			$(document).ready(function() {
+				/* remember the selected tab, so enabling/disabling a pipeline (which reloads the page) returns to the same tab */
+				$('#pipelinetabs .item').tab({
+					onVisible: function(tab) { try { sessionStorage.setItem('pipelinelisttab', tab); } catch (e) {} }
+				});
+				var lasttab = null;
+				try { lasttab = sessionStorage.getItem('pipelinelisttab'); } catch (e) {}
+				if (lasttab) { $('#pipelinetabs .item').tab('change tab', lasttab); }
+			});
+
+			/* filter both pipeline trees. A matching row is shown along with its ancestor rows (dimmed) so the tree
+			   structure is kept. The badge counts distinct matching pipelines */
+			function filterPipelines() {
+				var term = document.getElementById('pipelineSearch').value.toLowerCase().trim();
+				['mine', 'all'].forEach(function(tab) {
+					var rows = document.querySelectorAll('#table-' + tab + ' tbody tr[data-rowkey]');
+					var badge = document.getElementById('badge-' + tab);
+					if (term === '') {
+						rows.forEach(function(row) { row.style.display = ''; row.classList.remove('treecontext'); });
+						badge.style.display = 'none';
+						return;
+					}
+					var show = {};
+					var matchrows = {};
+					var matchpipelines = {};
+					rows.forEach(function(row) {
+						if ((row.dataset.search || '').indexOf(term) !== -1) {
+							matchrows[row.dataset.rowkey] = true;
+							matchpipelines[row.dataset.pipelineid] = true;
+							show[row.dataset.rowkey] = true;
+							(row.dataset.ancestors || '').split(' ').forEach(function(k) { if (k) show[k] = true; });
 						}
-
-						document.querySelector("#pipelinenamefilter<?=$username?>").addEventListener('keyup', filterTable, false);
-					</script>
-					<tbody>
-						<?
-							PrintTree($pipelinetree,0);
-						?>
-					</tbody>
-				</table>
-				<?
+					});
+					rows.forEach(function(row) {
+						var key = row.dataset.rowkey;
+						row.style.display = show[key] ? '' : 'none';
+						row.classList.toggle('treecontext', show[key] && !matchrows[key]);
+					});
+					var count = Object.keys(matchpipelines).length;
+					badge.className = count > 0 ? 'ui red label' : 'ui grey label';
+					badge.textContent = count;
+					badge.style.display = '';
+				});
 			}
-		?>
+		</script>
+		<style>
+			tr.treecontext { opacity: 0.45; }
+		</style>
+
+		<? if (count($favorites) > 0) { ?>
+		<div class="ui segment" style="margin-bottom:16px">
+			<h4 class="ui header" style="margin-bottom:10px"><i class="yellow star icon"></i>Favorite pipelines</h4>
+			<table class="ui very basic compact collapsing table">
+				<thead>
+					<th>Pipeline</th>
+					<th>Owner</th>
+					<th>Status</th>
+				</thead>
+				<tbody>
+					<? foreach ($favorites as $p) { ?>
+					<tr>
+						<td><a href="pipelines.php?action=editpipeline&id=<?=$p['id']?>"><?=$p['title']?></a> <span class="tiny">v<?=$p['version']?></span></td>
+						<td><?=$p['creatorusername']?></td>
+						<td><?=PipelineDisplayStatus($p)?></td>
+					</tr>
+					<? } ?>
+				</tbody>
+			</table>
+		</div>
+		<? } ?>
+
+		<div class="ui top attached tabular menu large" id="pipelinetabs">
+			<a class="item active" data-tab="mine">My Pipelines &nbsp;<span class="ui label"><?=$countMine?></span> <span id="badge-mine" class="ui label" style="display:none"></span></a>
+			<a class="item" data-tab="all">All Pipelines &nbsp;<span class="ui label"><?=$countAll?></span> <span id="badge-all" class="ui label" style="display:none"></span></a>
+			<div class="right menu">
+				<div class="item">
+					<div class="ui icon input" style="width:360px">
+						<input type="text" id="pipelineSearch" oninput="filterPipelines()" placeholder="Search name, group, owner, description"/>
+						<i class="search icon"></i>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<? foreach (array('mine' => $minetree, 'all' => $alltree) as $tab => $tree) { ?>
+		<div class="ui bottom attached tab segment <?=($tab == 'mine' ? 'active' : '')?>" data-tab="<?=$tab?>">
+			<table class="ui single line selectable table" id="table-<?=$tab?>" width="100%">
+				<thead>
+					<tr style="vertical-align: top;text-align:left">
+						<th style="font-size:12pt">Pipeline Group</th>
+						<th style="font-size:12pt">Name</th>
+						<th style="font-size:12pt" align="right">Level</th>
+						<th style="font-size:12pt">Owner</th>
+						<th style="font-size:12pt">Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?
+						if (is_array($tree)) {
+							PrintTree($tree, 0);
+						}
+						else {
+							?><tr><td colspan="5" style="color:#999; text-align:center; padding:20px"><?=($tab == 'mine' ? "You do not own any pipelines." : "No pipelines found.")?></td></tr><?
+						}
+					?>
+				</tbody>
+			</table>
+		</div>
+		<? } ?>
 	</div>
 	<br><br><br><br><br>
 	<?
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- PipelineDisplayStatus -------------- */
+	/* -------------------------------------------- */
+	/* the status shown in the pipeline lists: Disabled, Idle (enabled but stopped), or the pipeline's status */
+	function PipelineDisplayStatus($info) {
+		if (!$info['isenabled']) { return "Disabled"; }
+		if ($info['status'] == "stopped") { return "Idle"; }
+		return $info['status'];
 	}
 
 	
@@ -3994,6 +4185,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 		
 		//PrintVariable($viewhidden);
 		$arr = array();
+		$userid = (int)$userid;
+		$whereclause = "";
 		
 		/* get list of pipelines owned by this username */
 		if ($viewall) {
@@ -4073,16 +4266,23 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- PrintTree -------------------------- */
 	/* -------------------------------------------- */
-	function PrintTree($tree, $level) {
+	function PrintTree($tree, $level, $ancestors = array()) {
 		MarkTime("PrintTree()");
 
-		if (is_null($tree) || $tree < 1)
+		if (!is_array($tree))
 			return $level;
 		
 		$level++;
 		foreach($tree as $node) {
-			PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level);
-			$level = PrintTree($node['child_id'], $level);
+			/* a dependency on a pipeline that no longer exists has no row, but its children are still printed */
+			if (!isset($GLOBALS['info'][$node['pipeline_id']])) {
+				$level--;
+				$level = PrintTree($node['child_id'], $level, $ancestors);
+				$level++;
+				continue;
+			}
+			$rowkey = PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level, $ancestors);
+			$level = PrintTree($node['child_id'], $level, array_merge($ancestors, array($rowkey)));
 		}
 		$level--;
 
@@ -4110,11 +4310,17 @@ echo "#$ps_command     $logged $ps_desc\n";
 	/* -------------------------------------------- */
 	/* ------- PrintPipelineRow ------------------- */
 	/* -------------------------------------------- */
-	function PrintPipelineRow($info, $level) {
+	/* returns a key unique to this row on the page. $ancestors are the keys of the rows above it in the tree, used by the search filter */
+	function PrintPipelineRow($info, $level, $ancestors = array()) {
+		static $rownum = 0;
+		$rownum++;
+		$rowkey = "pr$rownum";
 		
 		//PrintVariable($info);
 		
 		MarkTime("PrintPipelineRow()");
+		$class = '';
+		$bgcolor = '';
 		if ($level > 1) {
 			$class = 'child';
 		}
@@ -4129,26 +4335,18 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$fontcolor = "black";
 		}
 		
-		$dispstatus = $info['status'];
-		/* get the correct display status */
-		if ($info['isenabled']) {
-			if ($info['status'] == "stopped") {
-				$dispstatus = "Idle";
-			}
-		}
-		else {
-			$dispstatus = "Disabled";
-		}
+		$dispstatus = PipelineDisplayStatus($info);
+		$search = htmlspecialchars(strtolower(trim("{$info['title']} {$info['pipelinegroup']} {$info['creatorusername']} {$info['desc']}")));
 		
 		$imgdata = $GLOBALS['imgdata'];
 		?>
-		<tr style="color: <?=$fontcolor?>">
+		<tr style="color: <?=$fontcolor?>" data-rowkey="<?=$rowkey?>" data-pipelineid="<?=(int)$info['id']?>" data-ancestors="<?=implode(' ', $ancestors)?>" data-search="<?=$search?>">
 			<? if (($info['pipelinegroup'] == '') || ($level > 1)) { ?>
 			<td valign="top" align="left" class="<?=$class?>">&nbsp;</td>
 			<? } else { ?>
-			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']]?>'>"><?=$info['pipelinegroup']?></td>
+			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']] ?? ''?>'>"><?=$info['pipelinegroup']?></td>
 			<? } ?>
-			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
 			<td valign="top" align="right"><?=$info['level']?></td>
 			<td valign="top"><?=$info['creatorusername']?></td>
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
@@ -4182,6 +4380,7 @@ echo "#$ps_command     $logged $ps_desc\n";
 			<td valign="top"><?=$info['queue']?></td>-->
 		</tr>
 		<?
+		return $rowkey;
 	}
 
 
@@ -4264,10 +4463,11 @@ echo "#$ps_command     $logged $ps_desc\n";
 		global $info;
 		
 		$maxsize = 0;
+		$favorites = GetUserFavorites('pipeline');
 		$sqlstring = "select a.*,timediff(pipeline_lastfinish, pipeline_laststart) 'run_time', b.username 'creatorusername', b.user_fullname 'creatorfullname' from pipelines a left join users b on a.pipeline_admin = b.user_id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$id = $row['pipeline_id'];
+			$id = (int)$row['pipeline_id'];
 
 			MarkTime("GetPipelineInfo($id)");
 			
@@ -4275,8 +4475,10 @@ echo "#$ps_command     $logged $ps_desc\n";
 			
 			$info[$id]['id'] = $row['pipeline_id'];
 			$info[$id]['title'] = $row['pipeline_name'];
+			$info[$id]['favorite'] = isset($favorites[(int)$id]);
 			$info[$id]['desc'] = $row['pipeline_desc'];
 			$info[$id]['creatorusername'] = $row['creatorusername'];
+			$info[$id]['adminid'] = (int)$row['pipeline_admin'];
 			$info[$id]['creatorfullname'] = $row['creatorfullname'];
 			$info[$id]['createdate'] = date("M n,Y", strtotime($row['pipeline_createdate']));
 			$info[$id]['isenabled'] = $row['pipeline_enabled'];
@@ -4378,12 +4580,16 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$d = array();
 		
 		$d[] = "digraph G {";
-		$sqlstring = "select * from pipelines where pipeline_group = '$g'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select * from pipelines where pipeline_group = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $g);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$g]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$pipelinename = $row['pipeline_name'];
-			$deps = $row['pipeline_dependency'];
-			$groupids = $row['pipeline_groupid'];
+			/* ints (intval-sanitized) - safe to inline */
+			$deps = implode(",", array_filter(array_map('intval', explode(",", (string)$row['pipeline_dependency']))));
+			$groupids = implode(",", array_filter(array_map('intval', explode(",", (string)$row['pipeline_groupid']))));
 			$projectids = $row['pipeline_projectid'];
 			
 			if ($deps != '') {
@@ -4488,6 +4694,8 @@ echo "#$ps_command     $logged $ps_desc\n";
 
 		/* PHP 8: count()/foreach() on null is fatal - ensure these are always arrays */
 		if (!is_array($dependencies)) $dependencies = array();
+		$pipelineid = (int)$pipelineid;
+		$version = (int)$version;
 		$dd = array();
 		$subject = array();
 		$study = array();
@@ -4676,22 +4884,23 @@ echo "#$ps_command     $logged $ps_desc\n";
 			$squirrelflagstr = "null";
 		
 		/* get pipeline details */
+		$id = (int)$id;
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$pipelinename = $row['pipeline_name'];
-		$pipelinedesc = $row['pipeline_desc'];
+		$pipelinename = $row['pipeline_name'] ?? '';
+		$pipelinedesc = $row['pipeline_desc'] ?? '';
 		
-		$pipelinename = mysqli_real_escape_string($GLOBALS['linki'], $pipelinename);
-		$pipelinedesc = mysqli_real_escape_string($GLOBALS['linki'], $pipelinedesc);
-		
-		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, 'web', 'squirrel', $squirrelflagstr, '$pipelinename', '$pipelinedesc', now(), 'submitted')";
-		PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		/* $downloadflagstr and $squirrelflagstr are built above from constant flag names - safe to inline */
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, squirrel_flags, squirrel_title, squirrel_desc, submitdate, status) values (?, ?, $downloadflagstr, 'web', 'squirrel', $squirrelflagstr, ?, ?, now(), 'submitted')";
+		$params = [$username, $ip, $pipelinename, $pipelinedesc];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssss', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$exportid = (int)mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		
 		$sqlstring = "insert into exportseries (export_id, pipeline_id, status) values ($exportid, $id, 'submitted')";
-		PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		
 		Notice("Pipeline queued for export. Download squirrel file from the <a href='requeststatus.php'>Exports</a> page");
@@ -4708,16 +4917,20 @@ echo "#$ps_command     $logged $ps_desc\n";
 		$username = $_SESSION['username'];
 		
 		/* get pipeline details */
+		$id = (int)$id;
 		$sqlstring = "select * from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$pipelinename = $row['pipeline_name'];
+		$pipelinename = $row['pipeline_name'] ?? '';
 		
-		$pipelinename = mysqli_real_escape_string($GLOBALS['linki'], $pipelinename);
-		
-		$sqlstring = "insert into export_nonimaging (username, ip, export_type, pipeline_id, export_destinationtype, export_status, export_statusmessage, export_startdate) values ('$username', '$ip', 'analysisresults', $id, 'web', 'submitted', 'Submitted analysis results export for $pipelinename', now())";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$statusmessage = "Submitted analysis results export for $pipelinename";
+		$sqlstring = "insert into export_nonimaging (username, ip, export_type, pipeline_id, export_destinationtype, export_status, export_statusmessage, export_startdate) values (?, ?, 'analysisresults', ?, 'web', 'submitted', ?, now())";
+		$params = [$username, $ip, $id, $statusmessage];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssis', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		
 		Notice("Analysis results queued for export. Download from this page.");
 	}
