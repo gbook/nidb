@@ -4,6 +4,11 @@
 # tracked files are exported, including uncommitted changes; untracked files are not included.
 set -e
 
+if ! command -v rpmbuild >/dev/null 2>&1; then
+	echo "rpmbuild not found. Install it with: sudo dnf install rpm-build"
+	exit 1
+fi
+
 SRCDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$SRCDIR"
 SNAPSHOT=$(git stash create) # commit object of the working tree, or empty if there are no local changes
@@ -16,7 +21,7 @@ fi
 
 cd ~
 rm -rfv rpmbuild
-rpmdev-setuptree
+mkdir -p rpmbuild/BUILD rpmbuild/RPMS rpmbuild/SOURCES rpmbuild/SPECS rpmbuild/SRPMS
 git -C "$SRCDIR" archive "$SNAPSHOT" | tar -x -C rpmbuild/SOURCES/
 cp -v rpmbuild/SOURCES/src/setup/nidb.el8.spec rpmbuild/SPECS/
 cd rpmbuild/SPECS

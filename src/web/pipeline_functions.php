@@ -193,61 +193,6 @@
 					</div>
 				</div>
 			</div>
-			<div class="ui vertically fitted attached very short scrolling segment">
-				<div class="ui accordion" style="font-size:smaller">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						Pipeline history
-					</div>
-					<div class="content">
-						Displaying last 25 entries
-						<table class="ui very compact small table">
-							<thead>
-								<th>Version</th>
-								<th>AnalysisID</th>
-								<th>Event</th>
-								<th>Date</th>
-								<th>Message</th>
-							</thead>
-						<?
-							$sqlstring = "select * from pipeline_history where pipeline_id = $id order by run_num desc, event_datetime asc limit 25";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$version = $row['pipeline_version'];
-								$analysisid = $row['analysis_id'];
-								$event = $row['pipeline_event'];
-								$date = $row['event_datetime'];
-								$msg = $row['event_message'];
-								
-								if ($event == "pipelineStarted") {
-									$newrun = true;
-									$rowstyle = "font-weight: bold";
-									$cellclass = "green";
-								}
-								else {
-									$newrun = false;
-									$rowstyle = "";
-									$cellclass = "";
-								}
-								
-								if (contains($event,"error")) {
-									$rowstyle = "color: red";
-								}
-								?>
-								<tr style="<?=$rowstyle?>">
-									<td><?=$version?></td>
-									<td><?=$analysisid?></td>
-									<td class="<?=$cellclass?>"><?=$event?></td>
-									<td><?=$date?></td>
-									<td><?=$msg?></td>
-								</tr>
-								<?
-							}
-						?>
-						</table>
-					</div>
-				</div>
-			</div>
 			<? if ($pipeline_status == "running") { ?>
 			<div class="ui three bottom attached mini steps">
 				<div class="step" style="padding: 5px">
