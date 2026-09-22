@@ -368,14 +368,21 @@
 		}
 
 		$msg = "<ol style='font-size:smaller'>";
+		$error = false; /* set if any query fails, so the whole new version is rolled back instead of committed half-written */
 
 		$sqlstring = "start transaction";
 		$msg .= "<li><b>Starting transaction</b>";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result)) { $error = true; }
 		
 		/* get the current and next pipeline version # */
 		$sqlstring = "select pipeline_version from pipelines where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if ($error || is_array($result)) {
+			MySQLiQuery("rollback",__FILE__,__LINE__);
+			Error("Unable to start the pipeline update. No changes were saved");
+			return;
+		}
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$oldversion = (int)$row['pipeline_version'];
 		$newversion = $oldversion + 1;
@@ -384,6 +391,7 @@
 		/* insert row in the pipeline version table */
 		$sqlstring = "insert into pipeline_version (pipeline_id, version, version_datetime, version_notes) values ($id, $newversion, now(), '')";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result)) { $error = true; }
 		$msg .= "<li>Updated pipeline_version table";
 		
 		/* the pipeline option information is updated in two tables, for backward compatibility...
@@ -402,12 +410,14 @@
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ssssssssiisi', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		if ($result === null) { $error = true; }
 		mysqli_stmt_close($stmt);
 		$msg .= "<li>Updated pipelines table";
 		
 		/* delete any existing dependencies, and insert the current dependencies */
 		$sqlstring = "delete from pipeline_dependencies where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result)) { $error = true; }
 		$msg .= "<li>Deleted old dependencies";
 
 		if ($dependencies != '') {
@@ -417,6 +427,7 @@
 				$dep = (int)$dep;
 				mysqli_stmt_bind_param($stmt, 'ii', $id, $dep);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $dep]);
+				if ($result === null) { $error = true; }
 				$msg .= "<li>Inserted dependency ($dep)";
 			}
 			mysqli_stmt_close($stmt);
@@ -428,6 +439,7 @@
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'iissssssiisss', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		if ($result === null) { $error = true; }
 		mysqli_stmt_close($stmt);
 		$msg .= "<li>Updated pipeline_options table";
 		
@@ -473,6 +485,7 @@
 				mysqli_stmt_bind_param($stmt, 'iissisii', ...$params);
 				$msg .= "<li>Inserted step $i: [" . htmlspecialchars($cmd) . "]\n";
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				if ($result === null) { $error = true; }
 			}
 		}
 		mysqli_stmt_close($stmt);
@@ -525,6 +538,7 @@
 				mysqli_stmt_bind_param($stmt, 'iissisii', ...$params);
 				$msg .= "<li>Inserted supplement step $i: [" . htmlspecialchars($cmd) . "]\n";
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				if ($result === null) { $error = true; }
 			}
 		}
 		mysqli_stmt_close($stmt);
@@ -538,7 +552,8 @@
 			if (trim($protocol) != "") {
 				/* perform data checks */
 				$order = $dd_order[$i] ?? '';
-				$primary = ($dd_isprimary == $order) ? 1 : 0;
+				/* the primary radio button's value is the row index, not the (user-editable) order number */
+				$primary = ((string)$dd_isprimary === (string)$i) ? 1 : 0;
 				$params = [
 					$id, $newversion, $primary, $order,
 					$dd_seriescriteria[$i] ?? '',
@@ -563,6 +578,7 @@
 				mysqli_stmt_bind_param($stmt, 'iiissssssisiiiissiisss', ...$params);
 				$msg .= "<li>Inserted data definition [" . htmlspecialchars($protocol) . "]";
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				if ($result === null) { $error = true; }
 			}
 		}
 		mysqli_stmt_close($stmt);
@@ -570,12 +586,24 @@
 		/* update pipeline with new version */
 		$sqlstring = "update pipelines set pipeline_version = $newversion where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result)) { $error = true; }
 		
 		/* ------ all done ------ */
+		if ($error) {
+			MySQLiQuery("rollback",__FILE__,__LINE__);
+			$msg .= "<li><b>Error. Rolled back the transaction</b></ol>";
+			Error("Pipeline [$id] was NOT updated because a database error occurred. The pipeline is unchanged at version $oldversion $msg");
+			return;
+		}
+
 		$sqlstring = "commit";
 		//PrintSQL("$sqlstring");
 		$msg .= "<li><b>Commit the transaction</b>";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		if (is_array($result)) {
+			Error("Pipeline [$id] update failed on commit $msg</ol>");
+			return;
+		}
 		
 		$msg .= "</ol> Data specification [$id] updated";
 		
@@ -1385,41 +1413,33 @@
 					<td><h3 class="ui header">Data location</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
 						<?
-							$dfmount = "";
-							if ($directory != "") {
-								$dfmount = $directory;
-								//echo $directory;
-							} else {
-								if ($dirstructure == "b") {
-									$dfmount = $GLOBALS['cfg']['analysisdirb'];
-									//echo $GLOBALS['cfg']['analysisdirb'];
-									$nidbpath = $dfmount . "/<b>ThePipeline</b>/S1234ABC/1";
-									$clusterpath = $GLOBALS['cfg']['clusteranalysisdirb'] . "/<b>ThePipeline</b>/S1234ABC/1";
-								}
-								elseif ($dirstructure == "a") {
-									$dfmount = $GLOBALS['cfg']['analysisdir'];
-									//echo $GLOBALS['cfg']['analysisdir'];
-									$nidbpath .= $dfmount . "/S1234ABC/1/<b>ThePipeline</b>";
-									$clusterpath .= $GLOBALS['cfg']['clusteranalysisdir'] . "/S1234ABC/1/<b>ThePipeline</b>";
-								}
-								elseif (is_integer($dirstructure)) {
-									$sqlstring = "select * from analysisdirs where analysisdir_id = $dirstructure";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-									$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-									$nidbpath = $row['nidbpath'];
-									$clusterpath = $row['clusterpath'];
-									$dirformat = $row['dirformat'];
-									if ($dirformat == "uidfirst") {
-										$nidbpath .= "/S1234ABC/1/<b>ThePipeline</b>";
-										$clusterpath .= "/S1234ABC/1/<b>ThePipeline</b>";
-									}
-									else {
-										$nidbpath .= "/<b>ThePipeline</b>/S1234ABC/1";
-										$clusterpath .= "/<b>ThePipeline</b>/S1234ABC/1";
-									}
-									
-								}
+							/* build the analysis path the same way modulePipeline.cpp does (GetAnalysisLocalPath/GetAnalysisClusterPath):
+							   'b' = analysisdirb, an integer = a row in analysisdirs, anything else = analysisdir */
+							$nidbbase = "";
+							$clusterbase = "";
+							$uidfirst = true;
+							if ($dirstructure == "b") {
+								$nidbbase = $GLOBALS['cfg']['analysisdirb'];
+								$clusterbase = $GLOBALS['cfg']['clusteranalysisdirb'];
+								$uidfirst = false;
 							}
+							elseif (ctype_digit((string)$dirstructure)) {
+								$analysisdirid = (int)$dirstructure;
+								$sqlstring = "select * from analysisdirs where analysisdir_id = $analysisdirid";
+								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+								$nidbbase = $row['nidbpath'] ?? '';
+								$clusterbase = $row['clusterpath'] ?? '';
+								$uidfirst = (($row['dirformat'] ?? '') == "uidfirst");
+							}
+							else {
+								$nidbbase = $GLOBALS['cfg']['analysisdir'];
+								$clusterbase = $GLOBALS['cfg']['clusteranalysisdir'];
+							}
+							$pathsuffix = $uidfirst ? "/S1234ABC/1/<b>ThePipeline</b>" : "/<b>ThePipeline</b>/S1234ABC/1";
+							$nidbpath = htmlspecialchars($nidbbase) . $pathsuffix;
+							$clusterpath = htmlspecialchars($clusterbase) . $pathsuffix;
+							$dfmount = $nidbbase;
 
 							if (is_dir($dfmount)) {
 								$freespace = disk_free_space($dfmount);
@@ -1454,7 +1474,7 @@
 							else {
 								$diskcolor = "red";
 								$diskicon = "exclamation circle icon";
-								$diskmsg = "<tt>$dfmount</tt> does not exist";
+								$diskmsg = "<tt>" . htmlspecialchars($dfmount) . "</tt> does not exist";
 							}
 						?>
 						<table class="ui very basic compact collapsing table">
@@ -1621,7 +1641,7 @@
 					<td class="label" valign="top" align="right">Name</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinetitle" required value="<?=$title?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?>>
+							<input type="text" name="pipelinetitle" required value="<?=htmlspecialchars($title ?? '', ENT_QUOTES)?>" maxlength="50" size="60" onKeyPress="return AlphaNumeric(event)" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;'"; } ?>>
 						</div>
 					</td>
 				</tr>
@@ -1629,7 +1649,7 @@
 					<td class="label" valign="top" align="right">Description</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=$desc?>" size="60">
+							<input type="text" <?=$disabled?> name="pipelinedesc" value="<?=htmlspecialchars($desc ?? '', ENT_QUOTES)?>" size="60">
 						</div>
 					</td>
 				</tr>
@@ -1654,7 +1674,7 @@
 					<td class="label" valign="top" align="right">Directory</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=$directory?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;"; } ?> >
+							<input type="text" name="pipelinedirectory" <?=$disabled?> value="<?=htmlspecialchars($directory ?? '', ENT_QUOTES)?>" maxlength="255" size="60" <? if ($type == "edit") { echo "readonly style='background-color: #EEE;'"; } ?> >
 						</div>
 					</td>
 				</tr>
@@ -1662,7 +1682,7 @@
 					<td class="label" valign="top" align="right">Directory structure</td>
 					<td valign="top">
 						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="pipelinedirstructure" value="<?=$dirstructure?>">
+							<input type="hidden" name="pipelinedirstructure" value="<?=htmlspecialchars($dirstructure ?? '', ENT_QUOTES)?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Directory...</div>
 							<div class="scrollhint menu">
@@ -1696,7 +1716,7 @@
 					<td class="label" valign="top" align="right">Pipeline group</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=$pipelinegroup?>" maxlength="255" size="60">
+							<input type="text" name="pipelinegroup" list="grouplist" <?=$disabled?> value="<?=htmlspecialchars($pipelinegroup ?? '', ENT_QUOTES)?>" maxlength="255" size="60">
 						</div>
 					</td>
 					<datalist id="grouplist">
@@ -1714,7 +1734,7 @@
 					<td class="label" valign="top" align="right">Notes</td>
 					<td valign="top">
 						<div class="ui input">
-							<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=$pipelinenotes?></textarea>
+							<textarea name="pipelinenotes" <?=$disabled?> rows="8" cols="60"><?=htmlspecialchars($pipelinenotes ?? '', ENT_QUOTES)?></textarea>
 						</div>
 					</td>
 				</tr>
@@ -1762,7 +1782,7 @@
 							<input type="checkbox" name="pipelineusetmpdir" <?=$disabled?> value="1" <? if ($usetmpdir == "1") { echo "checked"; } ?>>
 						</div>
 						<div class="ui input">
-							<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=$tmpdir?>" size="60" placeholder="/path/to/tmp/dir">
+							<input type="text" name="pipelinetmpdir" <?=$disabled?> value="<?=htmlspecialchars($tmpdir ?? '', ENT_QUOTES)?>" size="60" placeholder="/path/to/tmp/dir">
 						</div>
 					</td>
 				</tr>
@@ -1786,7 +1806,7 @@
 					<td class="label" valign="top" align="right">Cluster type</td>
 					<td valign="top">
 						<div class="ui selection dropdown">
-							<input type="hidden" name="pipelineclustertype" id="pipelineclustertype" <?=$disabled?> value="<?=$clustertype?>" onChange="CheckHostnameStatus()">
+							<input type="hidden" name="pipelineclustertype" id="pipelineclustertype" <?=$disabled?> value="<?=htmlspecialchars($clustertype ?? '', ENT_QUOTES)?>" onChange="CheckHostnameStatus()">
 							<i class="dropdown icon"></i>
 							<div class="default text">Cluster...</div>
 							<div class="scrollhint menu">
@@ -1806,7 +1826,7 @@
 						$checks['Cluster submit host']['level'] = 'ok';
 					}
 					
-					if ($submithost == "") {
+					if ($submithostuser == "") {
 						$checks['Cluster submit host username']['level'] = 'error';
 						$checks['Cluster submit host username']['message'] = "Cluster submit host username is blank";
 						$checks['Cluster submit host username']['description'] = "The cluster submit host username must be specified. This is the username used to login to the submit server to submit jobs.";
@@ -1856,7 +1876,7 @@
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=$clusteruser?>" id="pipelineclusteruser" onChange="CheckHostnameStatus()">
+							<input type="text" name="pipelineclusteruser" <?=$disabled?> value="<?=htmlspecialchars($clusteruser ?? '', ENT_QUOTES)?>" id="pipelineclusteruser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -1864,7 +1884,7 @@
 					<td class="label" valign="top" align="right">Submit hostname</td>
 					<td valign="top">
 						<div class="ui error input" id="pipelinesubmithostinput">
-							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
+							<input type="text" name="pipelinesubmithost" id="pipelinesubmithost" <?=$disabled?> value="<?=htmlspecialchars($submithost ?? '', ENT_QUOTES)?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
 							<div id="hostup"></div>
 						</div>
 					</td>
@@ -1873,7 +1893,7 @@
 					<td class="label" valign="top" align="right">Submit host username</td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinesubmithostuser" <?=$disabled?> value="<?=$submithostuser?>" id="pipelinesubmithostuser" onChange="CheckHostnameStatus()">
+							<input type="text" name="pipelinesubmithostuser" <?=$disabled?> value="<?=htmlspecialchars($submithostuser ?? '', ENT_QUOTES)?>" id="pipelinesubmithostuser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -1881,7 +1901,7 @@
 					<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
 					<td valign="top">
 						<div class="ui input">
-							<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=$queue?>" required>
+							<input type="text" name="pipelinequeue" <?=$disabled?> value="<?=htmlspecialchars($queue ?? '', ENT_QUOTES)?>" required>
 						</div>
 					</td>
 				</tr>
@@ -1889,7 +1909,7 @@
 					<td class="label" valign="top" align="right">Number of cores per job</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinenumcores" <?=$disabled?> value="<?=$numcores?>">
+							<input type="number" name="pipelinenumcores" <?=$disabled?> value="<?=htmlspecialchars($numcores ?? '', ENT_QUOTES)?>">
 							<div class="ui basic label">cores</div>
 						</div>
 					</td>
@@ -1898,7 +1918,7 @@
 					<td class="label" valign="top" align="right">Memory</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinememory" step="0.1" <?=$disabled?> value="<?=$memory?>">
+							<input type="number" name="pipelinememory" step="0.1" <?=$disabled?> value="<?=htmlspecialchars($memory ?? '', ENT_QUOTES)?>">
 							<div class="ui basic label">GB</div>
 						</div>
 					</td>
@@ -1907,7 +1927,7 @@
 					<td class="label" valign="top" align="right">Max wall time</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinemaxwalltime" <?=$disabled?> value="<?=$maxwalltime?>">
+							<input type="number" name="pipelinemaxwalltime" <?=$disabled?> value="<?=htmlspecialchars($maxwalltime ?? '', ENT_QUOTES)?>">
 							<div class="ui basic label">mins</div>
 						</div>
 					</td>
@@ -1916,7 +1936,7 @@
 					<td class="label" valign="top" align="right">Submit delay</td>
 					<td valign="top">
 						<div class="ui right labeled input">
-							<input type="number" name="pipelinesubmitdelay" <?=$disabled?> value="<?=$submitdelay?>">
+							<input type="number" name="pipelinesubmitdelay" <?=$disabled?> value="<?=htmlspecialchars($submitdelay ?? '', ENT_QUOTES)?>">
 							<div class="ui basic label">hrs</div>
 						</div>
 					</td>
@@ -1954,7 +1974,7 @@
 							Successful files <i class="grey question outline circle icon" title="<b>Successful files</b><br><br>The analysis is marked as successful if ALL of the files specified exist at the end of the analysis. If left blank, the analysis will always be marked as successful.<br>Example: <tt>analysis/T1w/T1w_acpc_dc_restore_brain.nii.gz</tt>"></i>
 						</td>
 						<td valign="top">
-							<textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=$completefiles?></textarea><br>
+							<textarea name="completefiles" <?=$disabled?> rows="4" cols="60"><?=htmlspecialchars($completefiles ?? '', ENT_QUOTES)?></textarea><br>
 							<span class="tiny">Comma seperated list of files (relative paths)</span>
 						</td>
 					</tr>
@@ -1963,7 +1983,7 @@
 							Results script <i class="grey question outline circle icon" title="<b>Results script</b><br><br>This script will be executed last and can be re-run separate from the analysis pipeline. The results script would often be used to create thumbnails of images and parse text files, and reinsert those results back into the database. The same pipeline variables available in the script command section below are available here to be passed as parameters to the results script"></i>
 						</td>
 						<td valign="top">
-							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=$resultscript?></textarea>
+							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=htmlspecialchars($resultscript ?? '', ENT_QUOTES)?></textarea>
 						</td>
 					</tr>
 					<tr class="level1">
@@ -2207,7 +2227,7 @@
 						<th>
 							Output &nbsp; <input type="checkbox" name="outputbids" value="1" <? if ($outputbids) { echo "checked"; } ?>> BIDS<i class="grey question outline circle icon" title="If this option is checked, all data will be written in BIDS format. Output formats for individual data items will be ignored."></i>
 							<div class="ui small input">
-								<input type="text" name="bidsoutputdir" value="<?=$bidsoutputdir?>" placeholder="BIDS output directory">
+								<input type="text" name="bidsoutputdir" value="<?=htmlspecialchars($bidsoutputdir ?? '', ENT_QUOTES)?>" placeholder="BIDS output directory">
 							</div>
 						</th>
 					</thead>
@@ -2290,7 +2310,7 @@
 							<input type="text" name="dd_order[<?=$neworder?>]" size="2" maxlength="3" value="<?=$neworder?>">
 						</td>
 						<td style="border-top: 2px solid #999;" class="center aligned middle aligned">
-							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=$dd_protocol?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
+							<input type="text" name="dd_protocol[<?=$neworder?>]" size="50" value='<?=htmlspecialchars($dd_protocol ?? '', ENT_QUOTES)?>' title='Enter exact protocol name(s). Use quotes if entering a protocol with spaces or entering more than one protocol: "Task1" "Task 2" "Etc". Use multiple protocol names ONLY if you do not expect the protocols to occur in the same study'>
 						</td>
 						<td id="row<?=$neworder?>" style="border-top: 2px solid #999;">
 							<select class="ui fluid dropdown" name="dd_modality[<?=$neworder?>]">
@@ -2400,7 +2420,7 @@
 										<div class="field">
 											<label>Data source <i class="grey question outline circle icon" title="<b>Data Source - Should we search only within this study or search within the entire subject?</b><br>Analyses are run on the <u>study</u> level. If you want data from this <u>subject</u>, but the data was collected in a different study, select the Subject data level. For example, the subject has been scanned on three different dates but only one of them has a T1."></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="<?=$dd_datalevel?>" onLoad="ShowHideOptions<?=$neworder?>()">
+												<input type="hidden" name="dd_datalevel[<?=$neworder?>]" id="dd_datalevel<?=$neworder?>" onChange="ShowHideOptions<?=$neworder?>()" value="<?=htmlspecialchars($dd_datalevel ?? '', ENT_QUOTES)?>" onLoad="ShowHideOptions<?=$neworder?>()">
 												<div class="default text">Where to search for data?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2413,7 +2433,7 @@
 										<div class="field" id="studycriteria<?=$neworder?>">
 											<label>Study criteria <i class="grey question outline circle icon" title="<b>Data Level</b><br>Only use this option to search for your data in another study (same subject)"></i></label>
 											<div class="ui fluid search selection dropdown">
-												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]" value="<?=$dd_assoctype?>">
+												<input type="hidden" name="dd_studyassoc[<?=$neworder?>]" value="<?=htmlspecialchars($dd_assoctype ?? '', ENT_QUOTES)?>">
 												<div class="default text">Which studies to search?</div>
 												<i class="dropdown icon"></i>
 												<div class="menu">
@@ -2426,7 +2446,7 @@
 									</div>
 									<div class="field">
 										<label>Image type <i class="grey question outline circle icon" title="Comma separated list of image types. Useful to differentiate intensity normalized vs non-normalized data on Siemens MRIs. For example <tt>ORIGINALPRIMARYMND</tt> or <tt>ORIGINAL/PRIMARY/M/ND/NORM</tt>"></i></label>
-										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=$dd_imagetype?>">
+										<input type="text" name="dd_imagetype[<?=$neworder?>]" value="<?=htmlspecialchars($dd_imagetype ?? '', ENT_QUOTES)?>">
 									</div>
 									<div class="two fields">
 										<div class="field">
@@ -2442,7 +2462,7 @@
 										</div>
 										<div class="field" id="numboldreps<?=$neworder?>">
 											<label>Number of BOLD reps <i class="grey question outline circle icon" title="<b>Must be an integer or a criteria:</b><ul><li><i>N</i> (exactly N)<li>> <i>N</i> (greater than)<li>>= <i>N</i> (greater than or equal to)<li>< <i>N</i> (less than)<li><= <i>N</i> (less than or equal to)<li>~ <i>N</i> (not)</ul>"></i></label>
-											<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=$dd_numboldreps?>">
+											<input type="text" name="dd_numboldreps[<?=$neworder?>]" value="<?=htmlspecialchars($dd_numboldreps ?? '', ENT_QUOTES)?>">
 										</div>
 									</div>
 								</div>
@@ -2451,7 +2471,7 @@
 
 									<div class="field">
 										<label>Directory <i class="grey question outline circle icon" title="<b>Tip:</b> choose a directory called 'data/<i>taskname</i>'. If converting data or putting into a new directory structure, this data directory can be used as a staging area and can then be deleted later in your script"></i> <span class="tiny">Relative to analysis root</span></label>
-										<input type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=$dd_location?>">
+										<input type="text" name="dd_location[<?=$neworder?>]" size="30" value="<?=htmlspecialchars($dd_location ?? '', ENT_QUOTES)?>">
 									</div>
 									<div class="field">
 										<label>Data format</label>
@@ -2508,7 +2528,7 @@
 										</div>
 										<div class="field" id="behdirname<?=$neworder?>">
 											<label>Behavioral data directory name</label>
-											<input type="text" name="dd_behdir[<?=$neworder?>]" value="<?=$dd_behdir?>">
+											<input type="text" name="dd_behdir[<?=$neworder?>]" value="<?=htmlspecialchars($dd_behdir ?? '', ENT_QUOTES)?>">
 										</div>
 									</div>
 								</div>
