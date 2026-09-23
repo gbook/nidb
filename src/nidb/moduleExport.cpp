@@ -1270,6 +1270,7 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
     QStringList msgs;
     if (!GetExportSeriesList(exportid)) {
         msg = "Unable to get a series list";
+        exportstatus = "error";
         return false;
     }
 
@@ -1291,13 +1292,15 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
         ae_hostname = q.value("ae_hostname").toString();
         ae_ip = q.value("ae_ip").toString();
         ae_port = q.value("ae_port").toInt();
+
+        if (ae_hostname == "")
+            ae_hostname = ae_ip;
     }
     else {
         msg = "Invalid dicomae_id";
+        exportstatus = "error";
         return false;
     }
-
-    QString exportStatus = "complete";
 
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
@@ -1332,29 +1335,38 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
                 QString datadir = s[uid][studynum][seriesnum]["datadir"];
                 bool datadirExists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
 
+                QString seriesstatus = "complete";
                 if (datadirExists) {
                     /* get all files within this directory */
                     QStringList dcms = FindAllFiles(datadir, "*", false);
 
-                    DicomSender s;
-                    s.setRemoteHost(ae_hostname);
-                    s.setRemotePort(ae_port);
-                    s.setRemoteAETitle(ae_title);
-                    s.setLocalAETitle("NIDB");
-                    const QList<DicomSendResult> results = s.sendFiles(dcms);  // blocking
+                    DicomSender sender;
+                    sender.setRemoteHost(ae_hostname);
+                    sender.setRemotePort(ae_port);
+                    sender.setRemoteAETitle(ae_title);
+                    sender.setLocalAETitle("NIDB");
+                    const QList<DicomSendResult> results = sender.sendFiles(dcms);  // blocking
 
                     for (const DicomSendResult &r : results) {
                         if (r.success()) {
                             msgs << n->Log(QString("OK  %1").arg(r.file));
-                            n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "complete", "OK");
                         }
                         else {
-                            msgs << n->Log(QString("FAIL  %1  - %2 (status 0x%3)").arg(r.file).arg(r.error).arg(r.dimseStatus, 4, 16, QChar('0')));
-                            n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "error", "FAIL");
-                            exportStatus = "error";
+                            msgs << n->Log(QString("FAIL  %1  - %2 (status 0x%3)").arg(r.file).arg(r.error).arg((uint)r.dimseStatus, 4, 16, QChar('0')));
+                            exportstatus = "error";
+                            seriesstatus = "error";
                         }
                     }
                 }
+                else {
+                    seriesstatus = "error";
+                    msgs << "series directory does not exist";
+                }
+                /* update the series status */
+                if (seriesstatus == "complete")
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "complete", "OK");
+                else
+                    n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "error", "FAIL");
             }
         }
     }
