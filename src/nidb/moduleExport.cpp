@@ -1317,7 +1317,7 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
             /* iterate through the seriesnums */
             for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
                 n->ModuleRunningCheckIn();
-                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); exportstatus = "error"; msg = msgs.join("\n") + "\nModule stopped before the export finished"; return false; }
 
                 int seriesnum = c.key();
 
