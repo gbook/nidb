@@ -74,7 +74,7 @@ for the reference implementation.
 | `setup.php` | 1 | ⬜ |
 | `signup.php` | 2 | ⬜ |
 | `status.php` | 1 | ⬜ |
-| `studies.php` | 14 | ⬜ |
+| `studies.php` | 16 | ⬜ |
 | `subjects.php` | 10 | ⬜ |
 | `system.php` | 1 | ⬜ |
 | `templates.php` | 4 | ⬜ |

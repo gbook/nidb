@@ -224,6 +224,7 @@
 				case "remotenidb": $deststr = "<em data-emoji=':chipmunk:'></em> Remote NiDB"; break;
 				case "nfs": $deststr = "<i class='server icon'></i> NFS"; break;
 				case "ndar": $deststr = "<i class='server icon'></i> NDA"; break;
+				case "dicomae": $deststr = "<i class='paper plane outline icon'></i> DICOM AE (PACS)"; break;
 				default: $deststr = ucfirst($destinationtype);
 			}
 			

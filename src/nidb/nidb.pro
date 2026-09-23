@@ -37,6 +37,7 @@ win32-g++ {
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    DicomSender.cpp \
     analysis.cpp \
     archiveio.cpp \
     bids.cpp \
@@ -84,6 +85,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
+    DicomSender.h \
     analysis.h \
     archiveio.h \
     bids.h \

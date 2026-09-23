@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 23, 2026 at 05:23 PM
+-- Generation Time: Sep 23, 2026 at 07:06 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -716,6 +716,8 @@ CREATE TABLE `diagnosis` (
 CREATE TABLE `dicom_ae` (
   `dicomae_id` int(11) NOT NULL,
   `ae_title` varchar(255) NOT NULL,
+  `ae_hostname` varchar(255) NOT NULL,
+  `ae_ip` varchar(255) NOT NULL,
   `ae_port` int(11) NOT NULL DEFAULT 104,
   `ae_tls` tinyint(1) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='DICOM AE end points';
@@ -974,7 +976,7 @@ CREATE TABLE `exports` (
   `username` varchar(50) DEFAULT NULL,
   `ip` varchar(30) DEFAULT NULL,
   `download_flags` set('DOWNLOAD_IMAGING','DOWNLOAD_BEH','DOWNLOAD_QC','DOWNLOAD_EXPERIMENTS','DOWNLOAD_ANALYSIS','DOWNLOAD_PIPELINES','DOWNLOAD_VARIABLES','DOWNLOAD_MINIPIPELINES','DOWNLOAD_PACKAGE') DEFAULT NULL,
-  `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp',
+  `destinationtype` varchar(20) DEFAULT NULL COMMENT 'nfs, localftp, remoteftp, dicomae',
   `filetype` varchar(20) DEFAULT NULL,
   `do_gzip` tinyint(1) DEFAULT NULL,
   `do_preserveseries` tinyint(1) DEFAULT NULL,
@@ -1000,6 +1002,7 @@ CREATE TABLE `exports` (
   `remotenidb_transactionid` int(11) DEFAULT NULL,
   `publicdownloadid` int(11) DEFAULT NULL,
   `publicdatasetid` int(11) DEFAULT NULL,
+  `dicomae_id` int(11) DEFAULT NULL,
   `bidsreadme` longtext DEFAULT NULL,
   `nifti_flags` set('NIFTI_3D','NIFTI_4D','NIFTI_GZIP','NIFTI_JSON','NIFTI_BIDS') DEFAULT NULL,
   `bids_flags` set('BIDS_USEUID','BIDS_USESTUDYID','BIDS_SUBJECTDIR_INCREMENT','BIDS_SUBJECTDIR_UID','BIDS_SUBJECTDIR_ALTUID','BIDS_STUDYDIR_INCREMENT','BIDS_STUDYDIR_STUDYNUM','BIDS_STUDYDIR_ALTSTUDYID','BIDS_STUDYDIR_DATE') DEFAULT NULL,

@@ -123,6 +123,7 @@
 	$Sdate = GetVariable("Sdate");
 	$stmod = GetVariable("stmod");
 	$studygroupid = GetVariable("studygroupid");
+	$dicomaeid = GetVariable("dicomaeid");
 
 	/* determine action */
 	switch($action) {
@@ -245,6 +246,12 @@
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("studies.php?studyid=" . (int)$studyid);
 			break;
+		case 'sendtopacs':
+			ob_start();
+			QueueDICOMTransfer($modality, $seriesids, $dicomaeid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("studies.php?studyid=" . (int)$studyid);
+			break;
 		default:
 			ShowFlashMessage();
 			DisplayStudy($studyid);
@@ -252,6 +259,86 @@
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- QueueDICOMTransfer ----------------- */
+	/* -------------------------------------------- */
+	/* queue the selected series to be sent to a remote DICOM AE (PACS). Only series with
+	   data_type 'dicom' are queued; the export module does the actual DICOM send */
+	function QueueDICOMTransfer($modality, $seriesids, $dicomaeid) {
+		if ($_SERVER['REQUEST_METHOD'] != 'POST') { Error("DICOM transfers must be submitted from the study page"); return; }
+
+		$dicomaeid = (int)$dicomaeid;
+		$modality = strtolower($modality ?? '');
+
+		/* the export module builds the table name from this modality (<modality>_series), so validate it */
+		$seriestable = GetSeriesTableName($modality);
+		if (($seriestable == "") || !IsNiDBModality($modality)) {
+			Error("Invalid modality [" . htmlspecialchars($modality) . "]. DICOM transfer not queued");
+			return;
+		}
+
+		/* get the destination AE */
+		$sqlstring = "select ae_title, ae_hostname, ae_ip, ae_port from dicom_ae where dicomae_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $dicomaeid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$dicomaeid]);
+		$aerow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$aerow) { Error("DICOM AE end point not found. DICOM transfer not queued"); return; }
+		$aehost = ($aerow['ae_hostname'] != "") ? $aerow['ae_hostname'] : $aerow['ae_ip'];
+
+		/* keep only the series that exist and are DICOM */
+		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
+		$dicomseriesids = array();
+		$skipped = array();
+		foreach ($seriesids as $seriesid) {
+			$seriesid = (int)$seriesid;
+			$sqlstring = "select series_num, data_type from $seriestable where $modality" . "series_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row)
+				$skipped[] = "series ID $seriesid (not found)";
+			elseif (strtolower($row['data_type'] ?? '') != "dicom")
+				$skipped[] = "series " . $row['series_num'] . " (" . ($row['data_type'] ?? 'unknown') . ")";
+			else
+				$dicomseriesids[] = $seriesid;
+		}
+		$dicomseriesids = array_values(array_unique($dicomseriesids));
+
+		if (count($dicomseriesids) < 1) {
+			Error("None of the selected series are DICOM. DICOM transfer not queued" . ((count($skipped) > 0) ? "<br>Skipped: " . htmlspecialchars(implode(", ", $skipped)) : ""));
+			return;
+		}
+
+		/* create the export, then add the series to it */
+		$username = $GLOBALS['username'];
+		$ip = getenv('REMOTE_ADDR');
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, dicomae_id, submitdate, status) values (?, ?, 'DOWNLOAD_IMAGING', 'dicomae', 'dicom', ?, now(), 'submitted')";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssi', $username, $ip, $dicomaeid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $ip, $dicomaeid]);
+		$exportid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+
+		foreach ($dicomseriesids as $seriesid) {
+			$sqlstring = "insert into exportseries (export_id, series_id, modality, status) values (?, ?, ?, 'submitted')";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'iis', $exportid, $seriesid, $modality);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$exportid, $seriesid, $modality]);
+			mysqli_stmt_close($stmt);
+		}
+
+		$msg = count($dicomseriesids) . " series queued for transfer to <b>" . htmlspecialchars($aerow['ae_title']) . "</b> (" . htmlspecialchars($aehost) . ":" . (int)$aerow['ae_port'] . ")";
+		if (count($skipped) > 0)
+			$msg .= "<br>Skipped non-DICOM series: " . htmlspecialchars(implode(", ", $skipped));
+		$msg .= "<br><br><a href='requeststatus.php' class='ui small primary button'><i class='external alternate icon'></i> View export status</a>";
+		Notice($msg, "DICOM transfer queued");
+	}
 
 
 	/* -------------------------------------------- */
@@ -2762,7 +2849,7 @@
 									?>
 									</span>
 								</td>
-								<td class="allseries center aligned" align="center" style="background-color: Lavender"><input type="checkbox" name="seriesids[]" value="<?=$mrseries_id?>"></td>
+								<td class="allseries center aligned" align="center" style="background-color: Lavender"><input type="checkbox" name="seriesids[]" value="<?=$mrseries_id?>" data-seriesnum="<?=htmlspecialchars($series_num)?>" data-datatype="<?=htmlspecialchars($data_type ?? '')?>"></td>
 							</tr>
 							<?
 							$lastseriesnum = $series_num;
@@ -2828,7 +2915,9 @@
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetmriqc';document.serieslist.submit();" title="Reset the mriqc metrics for this series. New QC metrics will be re-generated"><i class="redo alternate icon"></i> Reset advanced mriqc</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
-							
+
+							<div class="ui item" onclick="ShowSendToPACSModal();" title="Send the selected DICOM series to a remote DICOM AE (PACS)"><i class="paper plane outline icon"></i> Send to PACS</div>
+
 							<div class="ui item"></div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete series</div>
@@ -2856,8 +2945,86 @@
 				<button class="ui fluid red button" name="deleteseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
 			<? } ?>
 		</div>-->
-		
+
 		</form>
+
+		<?
+			/* DICOM AE end points for the "Send to PACS" modal. The modal has its own form, outside of the serieslist form */
+			$sqlstring = "select dicomae_id, ae_title, ae_hostname, ae_ip, ae_port, ae_tls from dicom_ae order by ae_title";
+			$aeresult = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$numaes = mysqli_num_rows($aeresult);
+		?>
+		<div class="ui small modal" id="sendToPACSModal">
+			<div class="header">Send series to PACS</div>
+			<div class="content">
+				<form action="studies.php" method="post" id="sendToPACSForm" class="ui form">
+					<input type="hidden" name="action" value="sendtopacs">
+					<input type="hidden" name="studyid" value="<?=(int)$studyid?>">
+					<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+					<div id="sendToPACSSeriesIDs"></div>
+					<div class="field">
+						<label>Selected series</label>
+						<div id="sendToPACSSummary"></div>
+					</div>
+					<div class="field">
+						<label>Destination DICOM AE</label>
+						<? if ($numaes > 0) { ?>
+						<select name="dicomaeid" class="ui fluid dropdown" required>
+							<option value="">Select a DICOM AE...</option>
+							<?
+								while ($aerow = mysqli_fetch_array($aeresult, MYSQLI_ASSOC)) {
+									$aehost = ($aerow['ae_hostname'] != "") ? $aerow['ae_hostname'] : $aerow['ae_ip'];
+									?><option value="<?=(int)$aerow['dicomae_id']?>"><?=htmlspecialchars($aerow['ae_title'])?> (<?=htmlspecialchars($aehost)?>:<?=(int)$aerow['ae_port']?><? if ($aerow['ae_tls']) { echo ", TLS"; } ?>)</option><?
+								}
+							?>
+						</select>
+						<? } else { ?>
+						<div class="ui warning visible message">No DICOM AE end points are defined. <? if (isSiteAdmin()) { ?><a href="admindicomae.php">Add a DICOM AE</a><? } else { ?>Ask an administrator to add one.<? } ?></div>
+						<? } ?>
+					</div>
+				</form>
+			</div>
+			<div class="actions">
+				<div class="ui cancel button">Cancel</div>
+				<button type="submit" form="sendToPACSForm" class="ui primary button" id="sendToPACSButton"><i class="paper plane icon"></i> Queue DICOM transfer</button>
+			</div>
+		</div>
+		<script>
+			/* show the Send to PACS modal for the checked series. Only DICOM series are sent; others are listed as skipped */
+			function ShowSendToPACSModal() {
+				var hasAEs = <?=($numaes > 0) ? 'true' : 'false'?>;
+				var dicom = [], nondicom = [];
+				$("#serieslist input[name='seriesids[]']:checked").each(function() {
+					var datatype = String($(this).data('datatype') || '');
+					var seriesnum = String($(this).data('seriesnum'));
+					if (datatype.toLowerCase() == 'dicom')
+						dicom.push({id: parseInt(this.value, 10), num: seriesnum});
+					else
+						nondicom.push({id: parseInt(this.value, 10), num: seriesnum, type: (datatype == '' ? 'unknown' : datatype)});
+				});
+
+				if ((dicom.length + nondicom.length) == 0) {
+					alert('No series selected');
+					return;
+				}
+
+				/* only the DICOM series are submitted */
+				var ids = $('#sendToPACSSeriesIDs').empty();
+				$.each(dicom, function(i, s) { ids.append($('<input type="hidden" name="seriesids[]">').val(s.id)); });
+
+				var summary = $('#sendToPACSSummary').empty();
+				if (dicom.length > 0)
+					summary.append($('<div class="ui positive visible message">').text(dicom.length + ' DICOM series will be sent: ' + $.map(dicom, function(s) { return s.num; }).join(', ')));
+				else
+					summary.append($('<div class="ui negative visible message">').text('None of the selected series are DICOM. Only DICOM series can be sent to a PACS'));
+				if (nondicom.length > 0)
+					summary.append($('<div class="ui warning visible message">').text(nondicom.length + ' non-DICOM series will be skipped: ' + $.map(nondicom, function(s) { return s.num + ' (' + s.type + ')'; }).join(', ')));
+
+				var canSend = (dicom.length > 0) && hasAEs;
+				$('#sendToPACSButton').toggleClass('disabled', !canSend).prop('disabled', !canSend);
+				$('#sendToPACSModal').modal('show');
+			}
+		</script>
 		<?
 	}
 

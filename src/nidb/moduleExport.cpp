@@ -23,6 +23,7 @@
 #include "moduleExport.h"
 #include <QSqlQuery>
 #include <QJsonObject>
+#include "DicomSender.h"
 
 
 /* ---------------------------------------------------------- */
@@ -102,6 +103,7 @@ int moduleExport::Run() {
             int publicdatasetdownloadid = q.value("publicdatasetid").toInt();
             int publicdownloadid = q.value("publicdownloadid").toInt();
             int remotenidbconnid = q.value("remotenidb_connectionid").toInt();
+            int dicomaeid = q.value("dicomae_id").toInt();
 
             n->Log(QString("SQUIRREL flags [%1]").arg(q.value("squirrel_flags").toString()));
             n->Log(QString("BIDS flags [%1]").arg(q.value("bids_flags").toString()));
@@ -146,6 +148,9 @@ int moduleExport::Run() {
             }
             else if (exporttype == "export") {
                 //found = ExportNiDB(exportid);
+            }
+            else if (exporttype == "dicomae") {
+                found = ExportDicomAE(exportid, dicomaeid, status, log);
             }
             else if (exporttype == "ndar") {
                 found = ExportNDA(exportid, 0, ndaflags, status, log);
@@ -1256,7 +1261,108 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
 
 
 /* ---------------------------------------------------------- */
-/* --------- ExportNDA ------------------------------------- */
+/* --------- ExportDicomAE ---------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportstatus, QString &msg) {
+    n->Log("Entering ExportDicomAE()...");
+    exportstatus = "complete";
+
+    QStringList msgs;
+    if (!GetExportSeriesList(exportid)) {
+        msg = "Unable to get a series list";
+        return false;
+    }
+
+    /* get DICOM AE info */
+    QString ae_hostname;
+    QString ae_ip;
+    QString ae_title;
+    //bool ae_tls(false);
+    int ae_port;
+
+    QSqlQuery q;
+    q.prepare("select * from dicom_ae where dicomae_id = :dicomid");
+    q.bindValue(":dicomid", dicomaeid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.size() > 0) {
+        n->Log(QString("Found [%1] rows for exportID [%2]").arg(q.size()).arg(exportid));
+        q.first();
+        ae_title = q.value("ae_title").toString();
+        ae_hostname = q.value("ae_hostname").toString();
+        ae_ip = q.value("ae_ip").toString();
+        ae_port = q.value("ae_port").toInt();
+    }
+    else {
+        msg = "Invalid dicomae_id";
+        return false;
+    }
+
+    /* iterate through the UIDs */
+    for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
+        QString uid = a.key();
+
+        n->Log(QString("Subject %1").arg(uid));
+
+        /* iterate through the studynums */
+        for(QMap<int, QMap<int, QMap<QString, QString> > >::iterator b = s[uid].begin(); b != s[uid].end(); ++b) {
+            int studynum = b.key();
+
+            n->Log(QString("Study %1-%2").arg(uid).arg(studynum));
+
+            /* iterate through the seriesnums */
+            for(QMap<int, QMap<QString, QString> >::iterator c = s[uid][studynum].begin(); c != s[uid][studynum].end(); ++c) {
+                n->ModuleRunningCheckIn();
+                if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return 0; }
+
+                int seriesnum = c.key();
+
+                n->Log(QString("Series %1-%2-%3").arg(uid).arg(studynum).arg(seriesnum));
+
+                qint64 exportseriesid = s[uid][studynum][seriesnum]["exportseriesid"].toLongLong();
+                n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "processing");
+
+                //QString seriesStatus = "complete";
+                //QString statusMessage;
+
+                //qint64 seriesRowID = s[uid][studynum][seriesnum]["seriesid"].toLongLong();
+                //QString modality = s[uid][studynum][seriesnum]["modality"];
+                //QString datatype = s[uid][studynum][seriesnum]["datatype"];
+                QString datadir = s[uid][studynum][seriesnum]["datadir"];
+                bool datadirExists = s[uid][studynum][seriesnum]["datadirexists"].toInt();
+
+                if (datadirExists) {
+                    /* get all files within this directory */
+                    QStringList dcms = FindAllFiles(datadir, "*", false);
+
+                    DicomSender s;
+                    s.setRemoteHost(ae_hostname);
+                    s.setRemotePort(ae_port);
+                    s.setRemoteAETitle(ae_title);
+                    s.setLocalAETitle("NIDB");
+                    const QList<DicomSendResult> results = s.sendFiles(dcms);  // blocking
+
+                    for (const DicomSendResult &r : results) {
+                        if (r.success()) {
+                            msgs << n->Log(QString("OK  %1").arg(r.file));
+                        }
+                        else {
+                            msgs << n->Log(QString("FAIL  %1  - %2 (status 0x%3)").arg(r.file).arg(r.error).arg(r.dimseStatus, 4, 16, QChar('0')));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    n->Log("Leaving ExportDicomAE()...");
+    msg = msgs.join("\n");
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ExportNDA -------------------------------------- */
 /* ---------------------------------------------------------- */
 bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, QString &exportstatus, QString &msg) {
 

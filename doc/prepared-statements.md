@@ -17,7 +17,7 @@ user input is fine as-is).
 |------|-------:|---------:|:----:|
 | `admin.php` | 1 | 2 | ✅ |
 | `adminaudits.php` | 2 | 1 | ✅ |
-| `admindicomae.php` | 1 | 5 | ✅ |
+| `admindicomae.php` | 1 | 6 | ✅ |
 | `adminemail.php` | 1 | 0 | ✅ |
 | `adminerrorlogs.php` | 1 | 0 | ✅ |
 | `admininstances.php` | 3 | 12 | ✅ |
@@ -112,7 +112,7 @@ user input is fine as-is).
 | `signup.php` | 9 | 0 | ⬜ |
 | `stats.php` | 12 | 0 | ✅ |
 | `status.php` | 4 | 2 | ⬜ |
-| `studies.php` | 83 | 0 | ⬜ |
+| `studies.php` | 84 | 9 | ⬜ |
 | `subjects.php` | 74 | 6 | ⬜ |
 | `system.php` | 3 | 0 | ⬜ |
 | `tags.php` | 12 | 0 | ⬜ |
