@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 23, 2026 at 02:46 PM
+-- Generation Time: Sep 23, 2026 at 05:23 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -706,6 +706,19 @@ CREATE TABLE `diagnosis` (
   `start_date` date DEFAULT NULL,
   `end_date` date DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `dicom_ae`
+--
+
+CREATE TABLE `dicom_ae` (
+  `dicomae_id` int(11) NOT NULL,
+  `ae_title` varchar(255) NOT NULL,
+  `ae_port` int(11) NOT NULL DEFAULT 104,
+  `ae_tls` tinyint(1) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='DICOM AE end points';
 
 -- --------------------------------------------------------
 
@@ -3895,6 +3908,12 @@ ALTER TABLE `diagnosis`
   ADD UNIQUE KEY `enrollment_id` (`enrollment_id`,`icd10_id`);
 
 --
+-- Indexes for table `dicom_ae`
+--
+ALTER TABLE `dicom_ae`
+  ADD PRIMARY KEY (`dicomae_id`);
+
+--
 -- Indexes for table `dicom_monitor`
 --
 ALTER TABLE `dicom_monitor`
@@ -5108,6 +5127,12 @@ ALTER TABLE `data_requests`
 --
 ALTER TABLE `diagnosis`
   MODIFY `diagnosis_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `dicom_ae`
+--
+ALTER TABLE `dicom_ae`
+  MODIFY `dicomae_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `dicom_monitor`

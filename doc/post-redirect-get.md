@@ -18,6 +18,7 @@ for the reference implementation.
 | File | POST forms | PRG |
 |------|-----------:|:---:|
 | `admin.php` | 1 | ✅ |
+| `admindicomae.php` | 2 | ✅ |
 | `adminemail.php` | 1 | ✅ |
 | `admininstances.php` | 2 | ✅ |
 | `adminmodalities.php` | 1 | ✅ |

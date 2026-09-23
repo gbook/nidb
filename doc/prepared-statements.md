@@ -17,6 +17,7 @@ user input is fine as-is).
 |------|-------:|---------:|:----:|
 | `admin.php` | 1 | 2 | ✅ |
 | `adminaudits.php` | 2 | 1 | ✅ |
+| `admindicomae.php` | 1 | 5 | ✅ |
 | `adminemail.php` | 1 | 0 | ✅ |
 | `adminerrorlogs.php` | 1 | 0 | ✅ |
 | `admininstances.php` | 3 | 12 | ✅ |
