@@ -1030,9 +1030,311 @@
 		
 		$sqlstring = "update pipelines set pipeline_status = 'stopped' where pipeline_id = $id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-	}	
-	
-	
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddPipelineCheck ------------------- */
+	/* -------------------------------------------- */
+	function AddPipelineCheck(&$checks, $name, $level, $message, $description = "") {
+		$checks[$name] = array('level' => $level, 'message' => $message, 'description' => $description);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetPipelineChecks ------------------ */
+	/* -------------------------------------------- */
+	/* Validity checks for the Checks tab. Each check mirrors a condition in modulePipeline.cpp/pipeline.cpp
+	   that stops the pipeline (error) or makes it run differently than intended (warning). Returns an
+	   array of [name] => (level, message, description) where level is ok, warning, or error */
+	function GetPipelineChecks($id) {
+		$checks = array();
+
+		$rows = VersionQueryRows("select * from pipelines where pipeline_id = ?", 'i', [$id], __LINE__);
+		if (count($rows) < 1) { return $checks; }
+		$p = $rows[0];
+
+		$version = (int)$p['pipeline_version'];
+		$level = (int)$p['pipeline_level'];
+		$clustertype = trim($p['pipeline_clustertype'] ?? '');
+		if ($clustertype == "") { $clustertype = "sge"; }
+		$numproc = (int)$p['pipeline_numproc'];
+		$numcores = (int)$p['pipeline_numcores'];
+		$memory = (float)$p['pipeline_memory'];
+		$queue = trim($p['pipeline_queue'] ?? '');
+		$deplevel = $p['pipeline_dependencylevel'] ?? '';
+		$dirstructure = $p['pipeline_dirstructure'] ?? '';
+		$directory = trim($p['pipeline_directory'] ?? '');
+		$dependencyids = array_values(array_filter(array_map('intval', explode(",", (string)$p['pipeline_dependency']))));
+		$groupids = array_values(array_filter(array_map('intval', explode(",", (string)$p['pipeline_groupid']))));
+		$projectids = array_values(array_filter(array_map('intval', explode(",", (string)$p['pipeline_projectid']))));
+
+		/* ---------- pipeline state ---------- */
+		if (($p['pipeline_enabled'] ?? 0) || ($p['pipeline_testing'] ?? 0)) {
+			AddPipelineCheck($checks, 'Pipeline enabled', 'ok', "Pipeline is enabled");
+		}
+		else {
+			AddPipelineCheck($checks, 'Pipeline enabled', 'warning', "Pipeline is disabled", "The pipeline module only runs enabled pipelines. Enable it from the pipeline list or the Operations tab when it is ready to run.");
+		}
+
+		$rows = VersionQueryRows("select module_isactive from modules where module_name = ?", 's', ['pipeline'], __LINE__);
+		if ((count($rows) > 0) && (!$rows[0]['module_isactive'])) {
+			AddPipelineCheck($checks, 'Pipeline module', 'warning', "The pipeline module is disabled", "The system-wide <tt>pipeline</tt> module is disabled, so no pipelines will run until an administrator enables it on the Admin &rarr; Modules page.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Pipeline module', 'ok', "The pipeline module is enabled");
+		}
+
+		if ($level == 1) {
+			AddPipelineCheck($checks, 'Pipeline level', 'ok', "First level pipeline");
+		}
+		else {
+			AddPipelineCheck($checks, 'Pipeline level', 'error', "Level $level pipelines are not supported", "Only first level pipelines are run by NiDB. Level 0 (one-shot) and level 2 (group) pipelines are deprecated and the pipeline module will skip this pipeline. Change the level to <i>First</i> on the Settings tab.");
+		}
+
+		/* ---------- settings ---------- */
+		if ($numproc < 1) {
+			AddPipelineCheck($checks, 'Concurrent jobs', 'error', "Concurrent processes is $numproc", "<tt>Concurrent processes</tt> must be at least 1. With 0, no jobs will ever be submitted.");
+		}
+		elseif ($numproc == 1) {
+			AddPipelineCheck($checks, 'Concurrent jobs', 'warning', "Only 1 concurrent process allowed", "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Concurrent jobs', 'ok', "$numproc concurrent processes", "Jobs will run in parallel");
+		}
+
+		if (($p['pipeline_usetmpdir'] ?? 0) && (trim($p['pipeline_tmpdir'] ?? '') == "")) {
+			AddPipelineCheck($checks, 'Temporary directory', 'error', "Temporary directory is enabled but blank", "<tt>Use temporary directory</tt> is checked, but no directory is specified. Either enter a path (usually <tt>/tmp</tt>) or uncheck the option.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Temporary directory', 'ok', ($p['pipeline_usetmpdir'] ?? 0) ? "Using <tt>" . htmlspecialchars($p['pipeline_tmpdir']) . "</tt>" : "Not used");
+		}
+
+		/* analysis directory - same logic as GetAnalysisLocalPath() in modulePipeline.cpp */
+		if ($dirstructure == "b") {
+			$analysisdir = $GLOBALS['cfg']['analysisdirb'] ?? '';
+		}
+		elseif (ctype_digit((string)$dirstructure)) {
+			$rows = VersionQueryRows("select nidbpath from analysisdirs where analysisdir_id = ?", 'i', [(int)$dirstructure], __LINE__);
+			$analysisdir = (count($rows) > 0) ? ($rows[0]['nidbpath'] ?? '') : '';
+		}
+		else {
+			$analysisdir = $GLOBALS['cfg']['analysisdir'] ?? '';
+		}
+		$analysisdirhtml = "<tt>" . htmlspecialchars($analysisdir) . "</tt>";
+
+		if (($analysisdir == "") || (!is_dir($analysisdir))) {
+			AddPipelineCheck($checks, 'Disk space', 'error', "Analysis directory $analysisdirhtml does not exist", "The analysis root directory (Settings &rarr; Directory structure) could not be found from the web server. Analyses cannot be written to a directory that does not exist.");
+		}
+		else {
+			$freespace = disk_free_space($analysisdir);
+			$totalspace = disk_total_space($analysisdir);
+			/* PHP 8: division by zero is fatal */
+			$percentfree = ($totalspace > 0) ? ($freespace / $totalspace) * 100.0 : 0;
+			$freemsg = number_format($percentfree, 1) . "% (" . HumanReadableFilesize($freespace) . ") free on $analysisdirhtml";
+
+			if ($percentfree > 10) {
+				AddPipelineCheck($checks, 'Disk space', 'ok', $freemsg, "No issues with disk space");
+			}
+			elseif ($percentfree >= 1) {
+				AddPipelineCheck($checks, 'Disk space', 'warning', $freemsg, "The disk is running out of free space. It is possible that this pipeline will fail with an out of space error. The pipeline will stop if free space drops below 1%");
+			}
+			else {
+				AddPipelineCheck($checks, 'Disk space', 'error', $freemsg, "Less than 1% free space. The pipeline module will not run this pipeline until space is freed.");
+			}
+		}
+
+		if ($directory != "") {
+			$customdir = ($GLOBALS['cfg']['mountdir'] ?? '') . $directory;
+			if (is_dir($customdir)) {
+				AddPipelineCheck($checks, 'Pipeline directory', 'ok', "<tt>" . htmlspecialchars($customdir) . "</tt> exists");
+			}
+			else {
+				AddPipelineCheck($checks, 'Pipeline directory', 'warning', "<tt>" . htmlspecialchars($customdir) . "</tt> does not exist", "The custom pipeline directory is used to find the parent (dependency) analyses. If it does not exist, dependency data will not be found.");
+			}
+		}
+
+		/* ---------- cluster ---------- */
+		/* the submit host, submit user, and cluster user fall back to the nidb.cfg values when blank (pipeline.cpp, nidb.cpp SubmitClusterJob) */
+		$clusterfields = array(
+			'Cluster submit host' => array('pipeline_submithost', 'clustersubmithost', "This is the hostname of the server to which cluster jobs are submitted."),
+			'Cluster submit host username' => array('pipeline_submithostuser', 'clustersubmituser', "This is the username used to login to the submit server to submit jobs."),
+			'Cluster user' => array('pipeline_clusteruser', 'clusteruser', "This is the username under which a job is run on the cluster."),
+		);
+		foreach ($clusterfields as $name => list($field, $cfgkey, $desc)) {
+			$value = trim($p[$field] ?? '');
+			$default = trim($GLOBALS['cfg'][$cfgkey] ?? '');
+			if ($value != "") {
+				AddPipelineCheck($checks, $name, 'ok', "<tt>" . htmlspecialchars($value) . "</tt>", $desc);
+			}
+			elseif ($default != "") {
+				AddPipelineCheck($checks, $name, 'ok', "Using system default <tt>" . htmlspecialchars($default) . "</tt>", "Not specified for this pipeline, so the <tt>[$cfgkey]</tt> value from the NiDB config is used. $desc");
+			}
+			else {
+				AddPipelineCheck($checks, $name, 'error', "$name is blank", "$name is not specified for this pipeline and there is no system default (<tt>[$cfgkey]</tt> in the NiDB config). $desc");
+			}
+		}
+
+		if ($queue == "") {
+			AddPipelineCheck($checks, 'Cluster queue', 'error', "Cluster queue is blank", "The cluster queue must be specified. This is the queue (SGE) or partition (slurm) under which a job is run on the cluster.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Cluster queue', 'ok', "<tt>" . htmlspecialchars($queue) . "</tt>");
+		}
+
+		/* cores and memory are only written to slurm job files */
+		if ($clustertype != "slurm") {
+			AddPipelineCheck($checks, 'Number of cores', 'ok', "Not used by " . htmlspecialchars($clustertype) . " clusters");
+			AddPipelineCheck($checks, 'Memory', 'ok', "Not used by " . htmlspecialchars($clustertype) . " clusters");
+		}
+		else {
+			if ($numcores < 1) {
+				AddPipelineCheck($checks, 'Number of cores', 'error', "Cluster number of cores is not specified", "This is the number of cores allocated per job on the cluster. This must be specified when submitting to a slurm cluster.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Number of cores', 'ok', "$numcores core(s) per job");
+			}
+			if ($memory <= 0) {
+				AddPipelineCheck($checks, 'Memory', 'error', "Cluster memory is not specified", "This is the memory (in GB) per core requested for each job. This must be specified when submitting to a slurm cluster.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Memory', 'ok', "{$memory}GB per core");
+			}
+		}
+
+		/* ---------- dependency ---------- */
+		if (($deplevel == "subject") && (count($dependencyids) > 0) && (count($groupids) == 0)) {
+			AddPipelineCheck($checks, 'Dependency criteria', 'error', "Subject dependency without group specified", "When using the Data & Scripts &rarr; Pipeline dependency &rarr; Matching criteria &rarr; subject, a group must be specified. Matching dependencies based on subject may result in far more analyses than expected, and thus a group must be specified to narrow down the matches");
+		}
+		else {
+			AddPipelineCheck($checks, 'Dependency criteria', 'ok', (count($dependencyids) > 0) ? "Matching on <tt>" . htmlspecialchars($deplevel ?: 'study') . "</tt>" : "No dependency");
+		}
+
+		/* modulePipeline.cpp only uses the first dependency */
+		if (count($dependencyids) > 0) {
+			$depid = $dependencyids[0];
+			$rows = VersionQueryRows("select pipeline_name, pipeline_enabled, (select count(*) from analysis where pipeline_id = ? and analysis_status = 'complete' and (analysis_isbad <> 1 or analysis_isbad is null)) 'numcomplete' from pipelines where pipeline_id = ?", 'ii', [$depid, $depid], __LINE__);
+			if (count($rows) < 1) {
+				AddPipelineCheck($checks, 'Dependency', 'warning', "Parent pipeline [$depid] does not exist", "The parent (dependency) pipeline has been deleted. No studies will match the dependency, so nothing will run. Select a different dependency or remove it.");
+			}
+			else {
+				$deplink = "<a href='pipelines.php?action=editpipeline&id=$depid'>" . htmlspecialchars($rows[0]['pipeline_name']) . "</a>";
+				$numcomplete = (int)$rows[0]['numcomplete'];
+				$problems = array();
+				if (!$rows[0]['pipeline_enabled']) { $problems[] = "is disabled"; }
+				if ($numcomplete == 0) { $problems[] = "has no completed analyses"; }
+				if (count($problems) > 0) {
+					AddPipelineCheck($checks, 'Dependency', 'warning', "Parent pipeline $deplink " . implode(" and ", $problems), "Only studies with a completed (and not bad) analysis in the parent pipeline are run. Until the parent pipeline produces completed analyses, this pipeline will find nothing to do.");
+				}
+				else {
+					AddPipelineCheck($checks, 'Dependency', 'ok', "Parent pipeline $deplink has $numcomplete completed analyses");
+				}
+			}
+		}
+
+		/* ---------- groups and projects ---------- */
+		if (count($groupids) > 0) {
+			$problems = array();
+			foreach ($groupids as $gid) {
+				$rows = VersionQueryRows("select group_name, group_type, (select count(*) from group_data where group_id = ?) 'count' from groups where group_id = ?", 'ii', [$gid, $gid], __LINE__);
+				if (count($rows) < 1) { $problems[] = "Group [$gid] does not exist"; }
+				elseif ($rows[0]['group_type'] != "study") { $problems[] = "Group <i>" . htmlspecialchars($rows[0]['group_name']) . "</i> is a " . htmlspecialchars($rows[0]['group_type']) . " group, not a study group"; }
+				elseif ($rows[0]['count'] == 0) { $problems[] = "Group <i>" . htmlspecialchars($rows[0]['group_name']) . "</i> has no members"; }
+			}
+			if (count($problems) > 0) {
+				AddPipelineCheck($checks, 'Groups', 'warning', implode("<br>", $problems), "Only studies in the selected study group(s) are run. Missing, empty, or non-study groups will match few or no studies.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Groups', 'ok', count($groupids) . " study group(s) selected");
+			}
+		}
+
+		if (count($projectids) > 0) {
+			$problems = array();
+			foreach ($projectids as $pid) {
+				$rows = VersionQueryRows("select project_name from projects where project_id = ?", 'i', [$pid], __LINE__);
+				if (count($rows) < 1) { $problems[] = "Project [$pid] does not exist"; }
+			}
+			if (count($problems) > 0) {
+				AddPipelineCheck($checks, 'Projects', 'warning', implode("<br>", $problems), "Only studies in the selected project(s) are run. A deleted project will match no studies.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Projects', 'ok', count($projectids) . " project(s) selected");
+			}
+		}
+
+		/* ---------- data items ---------- */
+		$datadefs = VersionQueryRows("select * from pipeline_data_def where pipeline_id = ? and pipeline_version = ? order by pdd_order + 0", 'ii', [$id, $version], __LINE__);
+		$primaries = array();
+		$blankmodality = array();
+		foreach ($datadefs as $dd) {
+			if ($dd['pdd_isprimaryprotocol']) { $primaries[] = $dd; }
+			if ($dd['pdd_enabled'] && (trim($dd['pdd_modality'] ?? '') == "")) { $blankmodality[] = (int)$dd['pdd_order']; }
+		}
+
+		if (count($datadefs) == 0) {
+			if (count($dependencyids) > 0) {
+				AddPipelineCheck($checks, 'Data items', 'error', "No data items", "The pipeline has a dependency but no data items. At least one data item is required, because its modality determines which studies are searched.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Data items', 'error', "No data items and no dependency", "The pipeline has nothing to run on. Add data items on the Data & Scripts tab, or select a dependency.");
+			}
+		}
+		else {
+			AddPipelineCheck($checks, 'Data items', 'ok', count($datadefs) . " data item(s)");
+		}
+
+		$primarydesc = "The primary data item determines the root imaging study from which other data can be associated and downloaded. Its modality is used to find the studies to run.";
+		if (count($primaries) == 0) {
+			AddPipelineCheck($checks, 'Primary data item', 'error', "Primary data item not specified", $primarydesc);
+		}
+		elseif (count($primaries) > 1) {
+			AddPipelineCheck($checks, 'Primary data item', 'warning', count($primaries) . " data items are marked primary", "Only the first primary data item (by order) is used. $primarydesc");
+		}
+		elseif (!$primaries[0]['pdd_enabled']) {
+			AddPipelineCheck($checks, 'Primary data item', 'warning', "Primary data item is disabled", "The primary data item's modality is still used to find studies, but its data will not be downloaded. $primarydesc");
+		}
+		else {
+			AddPipelineCheck($checks, 'Primary data item', 'ok', "Data item " . (int)$primaries[0]['pdd_order'] . " is primary", $primarydesc);
+		}
+
+		/* the study search uses the modality of the first primary item, or of the first item if none is primary */
+		if (count($datadefs) > 0) {
+			$searchdd = (count($primaries) > 0) ? $primaries[0] : $datadefs[0];
+			$searchmodality = trim($searchdd['pdd_modality'] ?? '');
+			if ($searchmodality == "") {
+				AddPipelineCheck($checks, 'Search modality', 'error', "Modality of data item " . (int)$searchdd['pdd_order'] . " is blank", "Studies are found by the modality of the primary data item (or the first data item if none is primary). With a blank modality, no studies will be found.");
+			}
+			else {
+				AddPipelineCheck($checks, 'Search modality', 'ok', "Searching <tt>" . htmlspecialchars($searchmodality) . "</tt> studies");
+			}
+		}
+
+		if (count($blankmodality) > 0) {
+			AddPipelineCheck($checks, 'Blank modality', 'error', "Data item(s) " . implode(", ", $blankmodality) . " missing a modality", "Modality must be specified for all enabled data items. An item without a modality will fail its data search.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Blank modality', 'ok', "All enabled data items have a modality");
+		}
+
+		/* ---------- script ---------- */
+		$rows = VersionQueryRows("select count(*) 'total', coalesce(sum(ps_enabled = 1), 0) 'enabled' from pipeline_steps where pipeline_id = ? and pipeline_version = ? and ps_supplement <> 1", 'ii', [$id, $version], __LINE__);
+		$numsteps = (int)($rows[0]['total'] ?? 0);
+		$numenabledsteps = (int)($rows[0]['enabled'] ?? 0);
+		if ($numsteps == 0) {
+			AddPipelineCheck($checks, 'Script', 'error', "Main script has no commands", "The pipeline has no script commands to run. Add commands to the main script on the Data & Scripts tab.");
+		}
+		elseif ($numenabledsteps == 0) {
+			AddPipelineCheck($checks, 'Script', 'warning', "All $numsteps main script commands are disabled", "Every command in the main script is disabled, so jobs will run but do nothing.");
+		}
+		else {
+			AddPipelineCheck($checks, 'Script', 'ok', "$numenabledsteps of $numsteps main script commands enabled");
+		}
+
+		return $checks;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayPipelineForm ---------------- */
 	/* -------------------------------------------- */
@@ -1128,17 +1430,7 @@
 		}
 		
 		if ($numproc == "") { $numproc = 1; }
-		
-		/* perform validity checks on the pipeline */
-		if (($deplevel == "subject") && ($dependency != "") && ($groupid == "")) {
-			$checks['Dependency criteria']['level'] = 'error';
-			$checks['Dependency criteria']['message'] = "Subject dependency without group specified";
-			$checks['Dependency criteria']['description'] = "When using the Data & Scripts &rarr; Pipeline dependency &rarr; Matching criteria &rarr; subject, a group must be specified. Matching dependencies based on subject may result in far more analyses than expected, and thus a group must be specified to narrow down the matches";
-		}
-		else {
-			$checks['Dependency criteria']['level'] = 'ok';
-		}
-		
+
 	?>
 	
 		<script type="text/javascript">
@@ -1268,7 +1560,21 @@
 				<tr>
 					<td><h3 class="ui header">View</h3></td>
 					<td valign="top" style="padding-bottom: 10pt">
-						<p><a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a> View running and completed analyses</p>
+						<?
+							$rows = VersionQueryRows("select count(*) 'numerror' from analysis where pipeline_id = ? and analysis_status = 'error'", 'i', [$id], __LINE__);
+							$numerror = (int)($rows[0]['numerror'] ?? 0);
+						?>
+						<p>
+							<? if ($numerror > 0) { ?>
+							<span class="ui right labeled button">
+								<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a>
+								<a href="analysis.php?action=viewanalyses&id=<?=$id?>&searchstatus=error" class="ui red left pointing label" title="View analyses in the error state"><i class="exclamation circle icon"></i><?=$numerror?> error<?=($numerror == 1 ? '' : 's')?></a>
+							</span>
+							<? } else { ?>
+							<a href="analysis.php?action=viewanalyses&id=<?=$id?>" class="ui green button" style="width:170px">Analyses</a>
+							<? } ?>
+							View running and completed analyses
+						</p>
 
 						<p><a href="pipeline_history.php?pipelineid=<?=$id?>" class="ui green button" style="width:170px">History</a> View pipeline event history</p>
 
@@ -1451,23 +1757,14 @@
 								if ($percentfree > 10) {
 									$diskcolor = "green";
 									$diskicon = "check icon";
-									$checks['Disk space']['level'] = 'ok';
-									$checks['Disk space']['message'] = "More than 10% disk free space on $clusterpath";
-									$checks['Disk space']['description'] = "No issues with disk space";
 								}
-								elseif ($percentfree > 1) {
+								elseif ($percentfree >= 1) {
 									$diskcolor = "orange";
 									$diskicon = "exclamation";
-									$checks['Disk space']['level'] = 'warning';
-									$checks['Disk space']['message'] = "Less than 10% disk free space on $clusterpath";
-									$checks['Disk space']['description'] = "The disk is running out of free space. It is possible that this pipeline will fail with an out of space error";
 								} 
 								else {
 									$diskcolor = "red";
 									$diskicon = "exclamation circle icon";
-									$checks['Disk space']['level'] = 'error';
-									$checks['Disk space']['message'] = "Less than 1% disk free space on $clusterpath";
-									$checks['Disk space']['description'] = "The disk is nearly full. It is probable that this pipeline will fail with an out of space error";
 								}
 								$diskmsg = number_format($percentfree,1) . "% free <div class='detail'>(" . HumanReadableFilesize($freespace) . " free)</div>";
 							}
@@ -1761,18 +2058,6 @@
 						<div class="ui input">
 							<input type="number" name="pipelinenumproc" <?=$disabled?> value="<?=$numproc?>" min="1" max="350">
 						</div>
-						<?
-							if ($numproc > 1) {
-								$checks['Concurrent jobs']['level'] = 'ok';
-								$checks['Concurrent jobs']['message'] = "More than 1 concurrent process";
-								$checks['Concurrent jobs']['description'] = "Jobs will run in parallel";
-							}
-							else {
-								$checks['Concurrent jobs']['level'] = 'warning';
-								$checks['Concurrent jobs']['message'] = "Only 1 concurrent process allowed";
-								$checks['Concurrent jobs']['description'] = "Setting <tt>concurrent processes</tt> to 1 will only allow one cluster job to run at a time. Each job must finish before another can start. If a job errors or gets stuck, no other jobs will run.";
-							}
-						?>
 					</td>
 				</tr>
 				<tr>
@@ -1816,62 +2101,6 @@
 						</div>
 					</td>
 				</tr>
-				<?
-					if ($submithost == "") {
-						$checks['Cluster submit host']['level'] = 'error';
-						$checks['Cluster submit host']['message'] = "Cluster submit host is blank";
-						$checks['Cluster submit host']['description'] = "The cluster submit host must be specified. This is the hostname of the server to which cluster jobs are submitted.";
-					}
-					else {
-						$checks['Cluster submit host']['level'] = 'ok';
-					}
-					
-					if ($submithostuser == "") {
-						$checks['Cluster submit host username']['level'] = 'error';
-						$checks['Cluster submit host username']['message'] = "Cluster submit host username is blank";
-						$checks['Cluster submit host username']['description'] = "The cluster submit host username must be specified. This is the username used to login to the submit server to submit jobs.";
-					}
-					else {
-						$checks['Cluster submit host username']['level'] = 'ok';
-					}
-
-					if ($clusteruser == "") {
-						$checks['Cluster user']['level'] = 'error';
-						$checks['Cluster user']['message'] = "Cluster user is blank";
-						$checks['Cluster user']['description'] = "The cluster user must be specified. This is the username under which a job is run on the cluster.";
-					}
-					else {
-						$checks['Cluster user']['level'] = 'ok';
-					}
-					
-					if ($queue == "") {
-						$checks['Cluster queue']['level'] = 'error';
-						$checks['Cluster queue']['message'] = "Cluster queue is blank";
-						$checks['Cluster queue']['description'] = "The cluster queue must be specified. This is the queue (SGE) or partition (slurm) under which a job is run on the cluster.";
-					}
-					else {
-						$checks['Cluster queue']['level'] = 'ok';
-					}
-					
-					if ($numcores < 1) {
-						$checks['Number of cores']['level'] = 'error';
-						$checks['Number of cores']['message'] = "Cluster number of cores is not specified";
-						$checks['Number of cores']['description'] = "This the number of cores allocated per job on the cluster. This must be specified when submitting to a slurm cluster.";
-					}
-					else {
-						$checks['Number of cores']['level'] = 'ok';
-					}
-					
-					if ($memory == "") {
-						$checks['Memory']['level'] = 'error';
-						$checks['Memory']['message'] = "Cluster memory is blank";
-						$checks['Memory']['description'] = "This is the memory needed (in GB) by each job submitted to the cluster. This must be specified when submitting to a slurm cluster.";
-					}
-					else {
-						$checks['Memory']['level'] = 'ok';
-					}
-					
-				?>
 				<tr>
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
@@ -2233,8 +2462,6 @@
 					</thead>
 				<?
 				$neworder = 1;
-				$hasprimary = false;
-				$blankmodality = true;
 				/* display all other rows, sorted by order */
 				$sqlstring = "select * from pipeline_data_def where pipeline_id = $id and pipeline_version = $version order by pdd_order + 0";
 				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -2282,9 +2509,6 @@
 					$dd[$dd_order]['optional'] = $row['pdd_optional'];
 					$dd[$dd_order]['datalevel'] = $row['pdd_level'];
 					$dd[$dd_order]['numimagescriteria'] = $row['pdd_numimagescriteria'];
-
-					if ($dd_isprimaryprotocol) $hasprimary = true;
-					if ($dd_modality) $blankmodality = false;
 					
 					?>
 					<style>
@@ -3118,29 +3342,6 @@
 				//} /* end of the check to display the data specs */
 				?>
 			</div>
-			
-			<?
-				if ($hasprimary == false) {
-					$checks['Primary data item']['level'] = 'error';
-					$checks['Primary data item']['message'] = "Primary data item not specified";
-					$checks['Primary data item']['description'] = "A primary data item must be specified. This determines the root imaging study from which other data can be associated and downloaded.";
-				}
-				else {
-					$checks['Primary data item']['level'] = 'ok';
-					$checks['Primary data item']['description'] = "A primary data item must be specified. This determines the root imaging study from which other data can be associated and downloaded.";
-				}
-				
-				if ($blankmodality == true) {
-					$checks['Blank modality']['level'] = 'error';
-					$checks['Blank modality']['message'] = "A data item is missing a modality";
-					$checks['Blank modality']['description'] = "Modality must be specified for all data items.";
-				}
-				else {
-					$checks['Blank modality']['level'] = 'ok';
-					$checks['Blank modality']['description'] = "Modality must be specified for all data items";
-				}
-				
-			?>
 
 			<div class="ui blue secondary attached segment">
 				<div class="ui two column grid">
@@ -3574,7 +3775,13 @@
 				</thead>
 				<?
 					$pipelineErrors = 0;
-					ksort($checks);
+					$checks = GetPipelineChecks($id);
+					/* errors first, then warnings, then ok; alphabetical within each level */
+					$severity = array('error' => 0, 'warning' => 1, 'ok' => 2);
+					uksort($checks, function($a, $b) use ($checks, $severity) {
+						$cmp = ($severity[$checks[$a]['level']] ?? 0) <=> ($severity[$checks[$b]['level']] ?? 0);
+						return ($cmp != 0) ? $cmp : strcasecmp($a, $b);
+					});
 					foreach ($checks as $check => $value) {
 						if ($value['level'] == 'ok') {
 							$color = "green";
@@ -3604,6 +3811,7 @@
 							<td>
 								<?=$value['description']?>
 							</td>
+						</tr>
 						<?
 					}
 				?>
@@ -4039,10 +4247,14 @@
 		/* counts are distinct pipelines, since a pipeline with several parents appears in the tree more than once */
 		$countMine = 0;
 		$countAll = 0;
+		$errorPipelinesMine = 0;
 		foreach ($allinfo as $id => $p) {
 			if ($p['ishidden'] && !$viewhidden) { continue; }
 			$countAll++;
-			if ($p['adminid'] == $myuserid) { $countMine++; }
+			if ($p['adminid'] == $myuserid) {
+				$countMine++;
+				if ($p['numerror'] > 0) { $errorPipelinesMine++; }
+			}
 		}
 
 		/* favorite pipelines, including hidden ones */
@@ -4143,7 +4355,7 @@
 		<? } ?>
 
 		<div class="ui top attached tabular menu large" id="pipelinetabs">
-			<a class="item active" data-tab="mine">My Pipelines &nbsp;<span class="ui label"><?=$countMine?></span> <span id="badge-mine" class="ui label" style="display:none"></span></a>
+			<a class="item active" data-tab="mine">My Pipelines &nbsp;<span class="ui label"><?=$countMine?></span> <? if ($errorPipelinesMine > 0) { ?><span class="ui red label" title="<?=$errorPipelinesMine?> of your pipelines have analyses in the error state"><i class="exclamation circle icon"></i><?=$errorPipelinesMine?></span> <? } ?><span id="badge-mine" class="ui label" style="display:none"></span></a>
 			<a class="item" data-tab="all">All Pipelines &nbsp;<span class="ui label"><?=$countAll?></span> <span id="badge-all" class="ui label" style="display:none"></span></a>
 			<div class="right menu">
 				<div class="item">
@@ -4170,7 +4382,8 @@
 				<tbody>
 					<?
 						if (is_array($tree)) {
-							PrintTree($tree, 0);
+							/* analysis error counts are only shown on the 'My pipelines' tab */
+							PrintTree($tree, 0, array(), ($tab == 'mine'));
 						}
 						else {
 							?><tr><td colspan="5" style="color:#999; text-align:center; padding:20px"><?=($tab == 'mine' ? "You do not own any pipelines." : "No pipelines found.")?></td></tr><?
@@ -4286,7 +4499,7 @@
 	/* -------------------------------------------- */
 	/* ------- PrintTree -------------------------- */
 	/* -------------------------------------------- */
-	function PrintTree($tree, $level, $ancestors = array()) {
+	function PrintTree($tree, $level, $ancestors = array(), $showerrors = false) {
 		MarkTime("PrintTree()");
 
 		if (!is_array($tree))
@@ -4297,12 +4510,12 @@
 			/* a dependency on a pipeline that no longer exists has no row, but its children are still printed */
 			if (!isset($GLOBALS['info'][$node['pipeline_id']])) {
 				$level--;
-				$level = PrintTree($node['child_id'], $level, $ancestors);
+				$level = PrintTree($node['child_id'], $level, $ancestors, $showerrors);
 				$level++;
 				continue;
 			}
-			$rowkey = PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level, $ancestors);
-			$level = PrintTree($node['child_id'], $level, array_merge($ancestors, array($rowkey)));
+			$rowkey = PrintPipelineRow($GLOBALS['info'][$node['pipeline_id']], $level, $ancestors, $showerrors);
+			$level = PrintTree($node['child_id'], $level, array_merge($ancestors, array($rowkey)), $showerrors);
 		}
 		$level--;
 
@@ -4330,8 +4543,9 @@
 	/* -------------------------------------------- */
 	/* ------- PrintPipelineRow ------------------- */
 	/* -------------------------------------------- */
-	/* returns a key unique to this row on the page. $ancestors are the keys of the rows above it in the tree, used by the search filter */
-	function PrintPipelineRow($info, $level, $ancestors = array()) {
+	/* returns a key unique to this row on the page. $ancestors are the keys of the rows above it in the tree, used by the search filter.
+	   $showerrors shows the number of analyses in the error state, for pipelines owned by the current user */
+	function PrintPipelineRow($info, $level, $ancestors = array(), $showerrors = false) {
 		static $rownum = 0;
 		$rownum++;
 		$rowkey = "pr$rownum";
@@ -4366,7 +4580,7 @@
 			<? } else { ?>
 			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']] ?? ''?>'>"><?=$info['pipelinegroup']?></td>
 			<? } ?>
-			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=$info['version']?></span><? if ($showerrors && ($info['adminid'] == (int)$GLOBALS['userid']) && (($info['numerror'] ?? 0) > 0)) { ?> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=(int)$info['id']?>&searchstatus=error" class="ui mini red label" title="View analyses in the error state"><i class="exclamation circle icon"></i><?=$info['numerror']?> error<?=($info['numerror'] == 1 ? '' : 's')?></a><? } ?></td>
 			<td valign="top" align="right"><?=$info['level']?></td>
 			<td valign="top"><?=$info['creatorusername']?></td>
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
@@ -4483,7 +4697,17 @@
 		global $info;
 		
 		$maxsize = 0;
+		$myusage = array('totaldisk' => 0, 'totalcomplete' => 0, 'totalrunning' => 0);
 		$favorites = GetUserFavorites('pipeline');
+
+		/* number of analyses in the error state, for all pipelines in one query */
+		$errorcounts = array();
+		$sqlstring = "select pipeline_id, count(*) 'numerror' from analysis where analysis_status = 'error' group by pipeline_id";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$errorcounts[(int)$row['pipeline_id']] = (int)$row['numerror'];
+		}
+
 		$sqlstring = "select a.*,timediff(pipeline_lastfinish, pipeline_laststart) 'run_time', b.username 'creatorusername', b.user_fullname 'creatorfullname' from pipelines a left join users b on a.pipeline_admin = b.user_id";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -4529,6 +4753,7 @@
 			$info[$id]['start'] = $row['pipeline_laststart'];
 			$info[$id]['finish'] = $row['pipeline_lastfinish'];
 			$info[$id]['lastcheck'] = $row['pipeline_lastcheck'];
+			$info[$id]['numerror'] = $errorcounts[$id] ?? 0;
 
 			MarkTime("GetPipelineInfo($id) pre size");
 			
@@ -4577,7 +4802,7 @@
 			if ($info[$id]['creatorusername'] == $GLOBALS['username']) {
 				$myusage['totaldisk'] += $info[$id]['disksize'];
 				$myusage['totalcomplete'] += $info[$id]['numcomplete'];
-				$myusage['totalrunning'] += $info[$id]['numrunning'];
+				$myusage['totalrunning'] += $info[$id]['numprocessing'];
 			}
 			
 			MarkTime("GetPipelineInfo($id) post counts");

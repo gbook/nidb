@@ -285,7 +285,8 @@
 				$sqlstring .= " order by analysis_clusterenddate $dir";
 				break;
 			default:
-				$sqlstring .= " order by a.analysis_status desc, study_datetime desc";
+				/* error analyses first, then the original status/date ordering */
+				$sqlstring .= " order by (a.analysis_status = 'error') desc, a.analysis_status desc, study_datetime desc";
 		}
 
 		if (($limitstart !== "") && ($limitcount !== "")) {
@@ -1039,7 +1040,10 @@
 								$notescolor = "red";
 							}
 							
-							if ($analysis_isbad) {
+							if ($analysis_status == "error") {
+								$rowcolor = "#ffb3b3";
+							}
+							elseif ($analysis_isbad) {
 								$rowcolor = "#f2d7d7";
 							}
 							else {
@@ -1072,10 +1076,12 @@
 									<?
 								}
 								else {
-									if (($analysis_qsubid == 0) && ($analysis_status != 'complete')) {
+									/* an error can happen before a job is submitted (qsubid 0), so don't report it as copying data */
+									if (($analysis_qsubid == 0) && ($analysis_status != 'complete') && ($analysis_status != 'error')) {
 										echo "[$analysis_status] Copying data?";
 									}
 									else {
+										$tip = "";
 										switch ($analysis_status) {
 											case 'pending':
 												$tip = "Data has finished copying for this analysis, and job has been submitted. Waiting for the job to check in with NiDB";
@@ -1084,10 +1090,11 @@
 												$tip = "Analysis is complete";
 												break;
 											case 'error':
-												$tip = "An unspecified error has occured";
+												$tip = "An error occurred. See the status message and analysis logs for details";
 												break;
 										}
-										?><span style="text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
+										$statusstyle = ($analysis_status == 'error') ? "font-weight: bold; color: darkred; " : "";
+										?><span style="<?=$statusstyle?>text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
 									}
 								}
 								
