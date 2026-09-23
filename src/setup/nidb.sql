@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 22, 2026 at 08:07 PM
+-- Generation Time: Sep 23, 2026 at 02:46 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -4712,7 +4712,8 @@ ALTER TABLE `studies`
   ADD KEY `fk_studies_subject_project1` (`enrollment_id`),
   ADD KEY `study_datetime` (`study_datetime`),
   ADD KEY `study_modality` (`study_modality`),
-  ADD KEY `subject_id` (`study_num`);
+  ADD KEY `subject_id` (`study_num`),
+  ADD KEY `study_site` (`study_site`);
 
 --
 -- Indexes for table `study_template`
