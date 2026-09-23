@@ -1297,6 +1297,8 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
         return false;
     }
 
+    QString exportStatus = "complete";
+
     /* iterate through the UIDs */
     for(QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > >::iterator a = s.begin(); a != s.end(); ++a) {
         QString uid = a.key();
@@ -1344,9 +1346,12 @@ bool moduleExport::ExportDicomAE(int exportid, int dicomaeid, QString &exportsta
                     for (const DicomSendResult &r : results) {
                         if (r.success()) {
                             msgs << n->Log(QString("OK  %1").arg(r.file));
+                            n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "complete", "OK");
                         }
                         else {
                             msgs << n->Log(QString("FAIL  %1  - %2 (status 0x%3)").arg(r.file).arg(r.error).arg(r.dimseStatus, 4, 16, QChar('0')));
+                            n->SetExportSeriesStatus(exportseriesid, -1, -1, "", "error", "FAIL");
+                            exportStatus = "error";
                         }
                     }
                 }
