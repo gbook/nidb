@@ -21,7 +21,7 @@ setup_dcmrcv_service() {
         cp /nidb/setup/dcmrcv.service /etc/systemd/system/
         systemctl daemon-reload
         systemctl enable dcmrcv.service
-        systemctl start dcmrcv.service
+        systemctl restart dcmrcv.service
         return
     fi
 
