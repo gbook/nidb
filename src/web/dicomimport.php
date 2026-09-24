@@ -74,7 +74,7 @@
 		<div class="ui container">
 
 			<div class="ui grid">
-				<div class="twelve wide column">
+				<div class="ten wide column">
 					<h2 class="ui header">
 						<div class="content">
 							DICOM receiver monitor
@@ -82,8 +82,11 @@
 						</div>
 					</h2>
 				</div>
-				<div class="four wide right aligned column" style="color:#888">
+				<div class="six wide right aligned column" style="color:#888">
 					Last refreshed <span id="lastrefresh"></span>
+					<div style="margin-top: 0.5em">
+						<div id="svc_import" class="ui label" style="cursor: help">Import module <div class="detail"></div></div> <div id="svc_dcmrcv" class="ui label" style="cursor: help">Dicom receiver <div class="detail"></div></div>
+					</div>
 				</div>
 			</div>
 
@@ -127,6 +130,23 @@
 					/* the data on the page was rendered by the server as this page loaded */
 					document.getElementById('lastrefresh').textContent = new Date().toLocaleTimeString();
 
+					/* import module and dcmrcv status. stopped is normal for the import module (it
+					   runs periodically), but means dcmrcv is not receiving anything */
+					var svcColors = {
+						import: { running: 'green', idle: 'blue', disabled: 'grey' },
+						dcmrcv: { running: 'green', stopped: 'red',  disabled: 'grey' }
+					};
+					function showServices(s) {
+						['import', 'dcmrcv'].forEach(function(name) {
+							if (!s || !s[name]) return;
+							var label = document.getElementById('svc_' + name);
+							label.querySelector('.detail').textContent = s[name].status;
+							label.className = 'ui ' + (svcColors[name][s[name].status] || '') + ' label';
+							label.title = s[name].desc;
+						});
+					}
+					showServices(<?=json_encode(DicomReceiverServiceStatus())?>);
+
 					function refreshCounts() {
 						return fetch('ajaxapi.php?action=dicomreceivercounts', { cache: 'no-store' })
 							.then(function(r) { return r.ok ? r.json() : null; })
@@ -136,6 +156,7 @@
 								document.getElementById('count_parsed').textContent   = Number(d.parsed).toLocaleString();
 								document.getElementById('count_error').textContent    = Number(d.error).toLocaleString();
 								document.getElementById('count_total').textContent    = Number(d.total).toLocaleString();
+								showServices(d.services);
 								/* stamp the time only on a successful update, so it reflects when the
 								   displayed data was actually last refreshed */
 								document.getElementById('lastrefresh').textContent = new Date().toLocaleTimeString();

@@ -1276,6 +1276,8 @@
 		</script>
 		<?
 		
+		return; /* ignore the rest of this code */
+		
 		if (!ValidID($pipelineid,'Pipeline ID')) { return; }
 		if (!ValidID($studyid,'Study ID')) { return; }
 		

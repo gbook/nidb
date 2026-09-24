@@ -2785,7 +2785,8 @@
 	/* -------------------------------------------- */
 	/* ------- GetDicomReceiverCounts ------------- */
 	/* -------------------------------------------- */
-	/* counts of files in the dicom_monitor table by status, for the DICOM receiver monitor page */
+	/* counts of files in the dicom_monitor table by status, and the import module/dcmrcv status,
+	   for the DICOM receiver monitor page */
 	function GetDicomReceiverCounts() {
 		JsonHeader();
 		$counts = array('Received' => 0, 'Parsed' => 0, 'Error' => 0);
@@ -2799,7 +2800,8 @@
 			'received' => $counts['Received'],
 			'parsed'   => $counts['Parsed'],
 			'error'    => $counts['Error'],
-			'total'    => $counts['Received'] + $counts['Parsed'] + $counts['Error']
+			'total'    => $counts['Received'] + $counts['Parsed'] + $counts['Error'],
+			'services' => DicomReceiverServiceStatus()
 		));
 	}
 

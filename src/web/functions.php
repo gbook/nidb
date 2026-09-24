@@ -4450,6 +4450,61 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
+	/* ------- DicomReceiverServiceStatus --------- */
+	/* -------------------------------------------- */
+	/* Returns the status of the import module and the dcmrcv service for the DICOM receiver
+	   monitor (dicomimport.php), used by both the initial page render and the ajax refresh.
+	   Each entry is array('status' => running|stopped/idle|disabled, 'desc' => mouseover text). */
+	function DicomReceiverServiceStatus() {
+
+		/* ----- import module (same fields as adminmodules.php) ----- */
+		$importstatus = "disabled";
+		$sqlstring = "select module_status, module_isactive from modules where module_name = 'import'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if (!$row['module_isactive'])
+				$importstatus = "disabled";
+			elseif ($row['module_status'] == "running")
+				$importstatus = "running";
+			else
+				$importstatus = "idle";
+		}
+		$importdesc = array(
+			'running'  => "The import module is currently archiving received DICOM files",
+			'idle'  => "The import module is idle. This is normal; it starts periodically to archive received DICOM files",
+			'disabled' => "The import module is disabled (Admin > Modules). Received DICOM files will not be archived"
+		);
+
+		/* ----- dcmrcv (same process check as status.php) ----- */
+		$dcmrcvstatus = "stopped";
+		$ps = trim(`ps -ef | grep '/nidb/bin/dcm4che'` ?? '');
+		foreach (explode("\n", $ps) as $line) {
+			if (contains($line, "java -cp")) {
+				$dcmrcvstatus = "running";
+				break;
+			}
+		}
+		/* not running and not set to start at boot. is-enabled works for both the systemd unit and
+		   the sysv init script; any other output (e.g. no systemctl) is treated as enabled */
+		if ($dcmrcvstatus != "running") {
+			$enabled = trim(`systemctl is-enabled dcmrcv 2>/dev/null` ?? '');
+			if (($enabled == "disabled") || ($enabled == "masked"))
+				$dcmrcvstatus = "disabled";
+		}
+		$dcmrcvdesc = array(
+			'running'  => "The DICOM receiver (dcmrcv) is running and accepting DICOM files",
+			'stopped'  => "The DICOM receiver (dcmrcv) is not running. DICOM files sent to NiDB will not be received",
+			'disabled' => "The DICOM receiver (dcmrcv) service is disabled and not running. DICOM files sent to NiDB will not be received"
+		);
+
+		return array(
+			'import' => array('status' => $importstatus, 'desc' => $importdesc[$importstatus]),
+			'dcmrcv' => array('status' => $dcmrcvstatus, 'desc' => $dcmrcvdesc[$dcmrcvstatus])
+		);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DicomArchivedSummaryHTML ----------- */
 	/* -------------------------------------------- */
 	/* Returns the archived-files summary table for the DICOM receiver monitor (dicomimport.php) as
