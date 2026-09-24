@@ -7,9 +7,10 @@
 # WSL2 distros in the same VM), where it is bind-mounted.
 #
 #   rpm -> makeInstallerRHEL<N>.sh, which rebuilds from source inside rpmbuild
-#   deb -> build-rpm.sh into bin/debian<N>/ (a per-distro build dir, so distros
-#          never share object files), then makeInstallerDebian<N>.sh packages it.
-#          The Debian version is read from the distro's /etc/os-release.
+#   deb -> build-rpm.sh into bin/<distro><N>/ (e.g. bin/debian12, bin/ubuntu24; a
+#          per-distro build dir, so distros never share object files), then
+#          makeInstaller<Distro><N>.sh (e.g. makeInstallerUbuntu24.sh) packages it.
+#          The distro ID and major version are read from the distro's /etc/os-release.
 #
 # Finished installers are collected into ./installers/ with distro-tagged names,
 # along with a <distro>.log of each distro's build output.
@@ -33,6 +34,8 @@ INSTALLERS=(
 	"AlmaLinux-9:rpm"
 	"AlmaLinux-10:rpm"
 	"Debian:deb"
+	"Ubuntu-22.04:deb"
+	"Ubuntu:deb"
 )
 declare -A RESULTS
 
@@ -76,14 +79,15 @@ for ENTRY in "${INSTALLERS[@]}"; do
 			# Check for libgl-dev first (the Debian equivalent of the specs' BuildRequires
 			# mesa-libGL-devel) so a missing package fails fast instead of at the final link.
 			# Build and package in one step, and delete the previous binaries first
-			# so a failed build can never package stale ones. Both Debian versions
-			# produce the same $DEB_PACKAGE.deb, so it is renamed with the distro tag.
+			# so a failed build can never package stale ones. Every Debian/Ubuntu version
+			# produces the same $DEB_PACKAGE.deb, so it is renamed with the distro tag.
+			# ID is debian or ubuntu; VERSION_ID is trimmed to the major version (24.04 -> 24).
 			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
-				". /etc/os-release && TAG=debian\${VERSION_ID:?} && cd $SHARED && \
+				". /etc/os-release && VERSION_ID=\${VERSION_ID%%.*} && TAG=\${ID:?}\${VERSION_ID:?} && cd $SHARED && \
 				 { dpkg -s libgl-dev >/dev/null 2>&1 || { echo 'libgl-dev is required to link nidb (Qt adds -lGL). Install it with: sudo apt install libgl-dev'; exit 1; }; } && \
 				 rm -f bin/\$TAG/nidb/nidb bin/\$TAG/squirrel/squirrel && \
 				 PATH=$CLEANPATH bash build-rpm.sh $QMAKEBIN $SHARED/src $SHARED/bin/\$TAG && \
-				 PATH=$CLEANPATH bash makeInstallerDebian\$VERSION_ID.sh bin/\$TAG && \
+				 PATH=$CLEANPATH bash makeInstaller\${ID^}\$VERSION_ID.sh bin/\$TAG && \
 				 mkdir -p $SHARED/installers && \
 				 mv -v $DEB_PACKAGE.deb $SHARED/installers/${DEB_PACKAGE}_\$TAG.deb"
 			;;

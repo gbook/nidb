@@ -17,8 +17,10 @@ sed -i "s/^Version:.*/Version:        ${VERSION}/" src/setup/nidb.el8.spec
 sed -i "s/^Version:.*/Version:        ${VERSION}/" src/setup/nidb.el9.spec
 sed -i "s/^Version:.*/Version:        ${VERSION}/" src/setup/nidb.el10.spec
 
-# Debian installer scripts
+# Debian/Ubuntu installer scripts
 sed -i "s/^VERSION=.*/VERSION=${VERSION}/" makeInstallerDebian12.sh
 sed -i "s/^VERSION=.*/VERSION=${VERSION}/" makeInstallerDebian13.sh
+sed -i "s/^VERSION=.*/VERSION=${VERSION}/" makeInstallerUbuntu22.sh
+sed -i "s/^VERSION=.*/VERSION=${VERSION}/" makeInstallerUbuntu24.sh
 
 echo "Done."
