@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -39,6 +40,7 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "nidbapi.php";
+	require "tus_functions.php";
 	require "menu.php";
 
 	//PrintVariable($_POST);
@@ -46,8 +48,7 @@
 	//PrintVariable($_FILES);
 	$username = $_SESSION['username'];
 	$instanceid = $_SESSION['instanceid'];
-	session_write_close();
-	
+
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$datalocation = GetVariable("datalocation");
@@ -67,18 +68,43 @@
 	$keyword = GetVariable("keyword");
 	$userspecifiedpatientid = GetVariable("userspecifiedpatientid");
 	
+	ShowFlashMessage();
+
 	/* determine action */
 	switch ($action) {
 		case 'newimportform':
 			DisplayNewImportForm($username, $instanceid);
 			break;
 		case 'newimport':
-			NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflags);
-			DisplayImportList($displayall);
+			ob_start();
+			$newuploadid = 0;
+			if (VerifyCSRFToken())
+				$newuploadid = NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflags);
+			$_SESSION['flash'] = ob_get_clean();
+			/* files from the local computer are sent by the browser from the upload page */
+			if (($newuploadid > 0) && ($datalocation == "web"))
+				RedirectTo("importimaging.php?action=uploadfiles&uploadid=$newuploadid");
+			RedirectTo("importimaging.php");
+			break;
+		case 'uploadfiles':
+			DisplayUploadFiles($uploadid, $userid);
+			break;
+		case 'finalizeupload':
+			ob_start();
+			$finalized = false;
+			if (VerifyCSRFToken())
+				$finalized = FinalizeUpload($uploadid, $userid);
+			$_SESSION['flash'] = ob_get_clean();
+			if ($finalized)
+				RedirectTo("importimaging.php?action=displayimport&uploadid=$uploadid");
+			RedirectTo("importimaging.php?action=uploadfiles&uploadid=$uploadid");
 			break;
 		case 'queueforarchive':
-			QueueUploadForArchive($uploadid, $uploadseriesid);
-			DisplayImport($uploadid);
+			ob_start();
+			if (VerifyCSRFToken())
+				QueueUploadForArchive($uploadid, $uploadseriesid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("importimaging.php?action=displayimport&uploadid=$uploadid");
 			break;
 		case 'displayimportlist':
 			DisplayImportList($displayall);
@@ -90,11 +116,17 @@
 			DisplayImport($uploadid);
 			break;
 		case 'cancel':
+			ob_start();
 			CancelUpload($uploadid);
-			DisplayImportList($displayall);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("importimaging.php");
+			break;
 		case 'reparse':
-			ReparseUpload($uploadid);
-			DisplayImport($uploadid);
+			ob_start();
+			if (VerifyCSRFToken())
+				ReparseUpload($uploadid, $subjectcriteria, $studycriteria, $seriescriteria);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("importimaging.php?action=displayimport&uploadid=$uploadid");
 			break;
 		default:
 			DisplayImportList($displayall);
@@ -113,8 +145,9 @@
 			<div class="ui top attached grey segment">
 				<h2 class="ui header">New Import</h2>
 			</div>
-			<form method="post" action="importimaging.php" name="importform" enctype="multipart/form-data" class="ui form attached fluid segment">
+			<form method="post" action="importimaging.php" name="importform" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="newimport">
+				<?=CSRFTokenField()?>
 				<div class="ui grid">
 					
 					<div class="three wide column"><h3 class="ui grey right aligned header">Data Location</h3></div>
@@ -122,7 +155,7 @@
 						<div class="field">
 							<div style="display:flex; align-items:center; gap:1em">
 								<label style="white-space:nowrap"><input type="radio" name="datalocation" value="web" checked onchange="updateDataLocation()"> Local Computer</label>
-								<input type="file" name="imagingfiles[]" id="datalocation_web" multiple>
+								<span class="ui grey text" id="datalocation_web">Files are selected on the next page. Large uploads can be resumed if interrupted</span>
 							</div>
 						</div>
 						<div class="field">
@@ -439,7 +472,17 @@
 				<br>
 				<div style="text-align: right">
 					<button class="ui button" onClick="window.location.href='importimaging.php'; return false;">Cancel</button>
-					<input type="submit" class="ui primary button" value="Upload" onclick="inputform.submit();">
+					<input type="submit" class="ui primary button" value="Next">
+					<script>
+						/* the NFS path is only required when importing from NFS */
+						document.importform.addEventListener('submit', function(e) {
+							var loc = document.querySelector('input[name="datalocation"]:checked');
+							if (loc && (loc.value == 'nfs') && (document.getElementById('datalocation_nfs').value.trim() == '')) {
+								alert('Enter the NFS path to import from');
+								e.preventDefault();
+							}
+						});
+					</script>
 				</div>
 			
 			</form>
@@ -451,18 +494,19 @@
 	/* -------------------------------------------- */
 	/* ------- NewImport -------------------------- */
 	/* -------------------------------------------- */
+	/* create the upload. NFS imports go straight to the upload module. Imports from the local
+	   computer are created with status 'uploading' and an empty directory, which the browser then
+	   fills through tusupload.php (see DisplayUploadFiles). Returns the new upload_id, or 0 on error */
 	function NewImport($datalocation, $nfspath, $projectid, $modality, $filetype, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflags = null) {
 
-		/* prepare fields for SQL */
-		$datalocation = mysqli_real_escape_string($GLOBALS['linki'], $datalocation);
-		$nfspath = mysqli_real_escape_string($GLOBALS['linki'], $nfspath);
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $filetype);
-		$subjectcriteria = mysqli_real_escape_string($GLOBALS['linki'], $subjectcriteria);
-		$studycriteria = mysqli_real_escape_string($GLOBALS['linki'], $studycriteria);
-		$seriescriteria = mysqli_real_escape_string($GLOBALS['linki'], $seriescriteria);
-		$userspecifiedpatientid = mysqli_real_escape_string($GLOBALS['linki'], $userspecifiedpatientid);
+		if (($datalocation != "web") && ($datalocation != "nfs")) {
+			Error("Invalid data location [" . htmlspecialchars($datalocation) . "]");
+			return 0;
+		}
+		if (($datalocation == "web") && ($GLOBALS['cfg']['uploaddir'] == "")) {
+			Error("NiDB Configuration Error - Variable [uploaddir] is not set. Contact NiDB system administrator.");
+			return 0;
+		}
 
 		/* BIDS flags: whitelist the posted checkbox values against the allowed SET members,
 		   then join with commas for the upload_bidsflags SET column (empty string = no flags) */
@@ -474,77 +518,613 @@
 					$bidsflagslist[] = $flag;
 			}
 		}
-		$bidsflagsstr = mysqli_real_escape_string($GLOBALS['linki'], implode(",", $bidsflagslist));
-		
-		if ($modality == "unknown")
-			$guessmodality = 1;
-		else
-			$guessmodality = 'null';
-		
-		/* uploads table:
-		   upload_startdate, upload_enddate, upload_status, upload_source, upload_nfsdir, upload_destprojectid, upload_modality, upload_guessmodality
-		  */
-		
-		/* create the upload and get the upload_id */
-		$sqlstring = "insert into uploads (upload_startdate, upload_status, upload_source, upload_type, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid, upload_bidsflags) values (now(), 'uploading', '$datalocation', '$filetype', '$nfspath', $projectid, '$modality', $guessmodality, '$subjectcriteria', '$studycriteria', '$seriescriteria', '$userspecifiedpatientid', '$bidsflagsstr')";
-		PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$uploadid = mysqli_insert_id($GLOBALS['linki']);
-		
-		AppendUploadLog($uploadid, "Beginning upload from IP address [" . $_SERVER['REMOTE_ADDR'] . "]");
-		
-		/* create a temp directory in upload */
-		if ($GLOBALS['cfg']['uploaddir'] == "") {
-			AppendUploadLog($uploadid, "NiDB upload directory [uploaddir] is not set");
-			
-			Error("NiDB Configuration Error - Variable [uploaddir] is not set. Contact NiDB system administrator.");
-			return;
-		}
-		$savepath = $GLOBALS['cfg']['uploaddir'] . "/" . date("YmdHisv") . "_$uploadid";
-		mkdir($savepath, 0, true);
-		chmod($savepath, 0777);
-		
-		if ($datalocation == "web") {
-			$sqlstring = "update uploads set upload_datapath = '$savepath' where upload_id = $uploadid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$bidsflagsstr = implode(",", $bidsflagslist);
+
+		$projectid = (int)$projectid;
+		$guessmodality = ($modality == "unknown") ? 1 : null;
+
+		/* NFS data is already in place, so it is ready for the upload module right away */
+		if ($datalocation == "nfs") {
+			$status = "uploadcomplete";
+			$datapath = $nfspath;
 		}
 		else {
-			$sqlstring = "update uploads set upload_datapath = '$nfspath' where upload_id = $uploadid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$status = "uploading";
+			$datapath = "";
 		}
-		
-		$status = "uploadcomplete";
-		if ($datalocation == "web") {		
-			echo "<ul>";
-			/* go through all the files and save them */
-			foreach ($_FILES['imagingfiles']['name'] as $i => $name) {
-				$files[] = $name;
-				if (move_uploaded_file($_FILES['imagingfiles']['tmp_name'][$i], "$savepath/$name")) {
-					
-					$msg = "Received file [$name]. Size is [" . number_format($_FILES['imagingfiles']['size'][$i]) . "] bytes";
-					echo "<li>$msg";
-					chmod("$savepath/$name", 0777);
-					
-					AppendUploadLog($uploadid, $msg);
+
+		/* create the upload and get the upload_id */
+		$sqlstring = "insert into uploads (upload_startdate, upload_enddate, upload_status, upload_source, upload_type, upload_datapath, upload_destprojectid, upload_modality, upload_guessmodality, upload_subjectcriteria, upload_studycriteria, upload_seriescriteria, upload_patientid, upload_bidsflags) values (now(), if(? = 'uploadcomplete', now(), null), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = array($status, $status, $datalocation, $filetype, $datapath, $projectid, $modality, $guessmodality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflagsstr);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssisisssss', $status, $status, $datalocation, $filetype, $datapath, $projectid, $modality, $guessmodality, $subjectcriteria, $studycriteria, $seriescriteria, $userspecifiedpatientid, $bidsflagsstr);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$uploadid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+
+		if ($uploadid < 1) {
+			Error("Unable to create the import");
+			return 0;
+		}
+
+		AppendUploadLog($uploadid, "Import created from IP address [" . $_SERVER['REMOTE_ADDR'] . "]");
+
+		if ($datalocation == "nfs") {
+			AppendUploadLog($uploadid, "Importing from NFS path [$nfspath]");
+			Notice("Import from <code>" . htmlspecialchars($nfspath) . "</code> has been queued");
+			return $uploadid;
+		}
+
+		/* create the directory the browser uploads into. The .tus subdirectory holds the resumable
+		   upload state (see tus_functions.php) and records who may add files to this upload */
+		$savepath = $GLOBALS['cfg']['uploaddir'] . "/" . date("YmdHisv") . "_$uploadid";
+		if (!TusInitDir($savepath, $GLOBALS['userid'])) {
+			AppendUploadLog($uploadid, "Unable to create upload directory [$savepath]");
+			SetUploadStatus($uploadid, "uploaderror");
+			Error("Unable to create upload directory <code>$savepath</code>. Contact NiDB system administrator.");
+			return 0;
+		}
+
+		$sqlstring = "update uploads set upload_datapath = ? where upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $savepath, $uploadid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($savepath, $uploadid));
+		mysqli_stmt_close($stmt);
+
+		AppendUploadLog($uploadid, "Waiting for files from the browser. Upload directory is [$savepath]");
+
+		return $uploadid;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetResumableUploadPath ------------- */
+	/* -------------------------------------------- */
+	/* returns the upload directory if this is a web upload that is still receiving files, and was
+	   created by this user. Otherwise displays an error and returns "" */
+	function GetResumableUploadPath($uploadid, $userid) {
+		$sqlstring = "select upload_status, upload_source, upload_datapath from uploads where upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $uploadid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($uploadid));
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+
+		if (!$row) {
+			Error("Import [$uploadid] not found");
+			return "";
+		}
+		if (($row['upload_status'] != "uploading") || ($row['upload_source'] != "web")) {
+			Error("Import [$uploadid] is not accepting files. Its status is [" . htmlspecialchars($row['upload_status']) . "]");
+			return "";
+		}
+
+		$savepath = $row['upload_datapath'];
+		$owner = TusReadOwner($savepath);
+		if ($owner === null) {
+			Error("Import [$uploadid] can not be resumed. It was started before resumable uploads were available, or its upload directory is missing");
+			return "";
+		}
+		if ($owner != (int)$userid) {
+			Error("Import [$uploadid] was started by another user. Only that user can add files to it");
+			return "";
+		}
+
+		return $savepath;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayUploadFiles ----------------- */
+	/* -------------------------------------------- */
+	/* page where the user selects files from their computer and the browser uploads them in resumable
+	   chunks to tusupload.php. Also used to resume an interrupted upload */
+	function DisplayUploadFiles($uploadid, $userid) {
+		$savepath = GetResumableUploadPath($uploadid, $userid);
+		if ($savepath == "") return;
+
+		$sqlstring = "select a.upload_type, a.upload_startdate, b.project_name, b.project_costcenter from uploads a left join projects b on a.upload_destprojectid = b.project_id where a.upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $uploadid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($uploadid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		list($complete, $incomplete) = TusGetFileStates($savepath, "tusupload.php", $uploadid);
+		/* natural, case-insensitive order, so scan2 comes before scan10 */
+		usort($complete, function($a, $b) { return strnatcasecmp($a['filename'], $b['filename']); });
+		$completebytes = 0;
+		foreach ($complete as $file)
+			$completebytes += $file['length'];
+		?>
+		<script src="scripts/tus.min.js"></script>
+		<div class="ui container">
+			<div class="ui top attached grey segment">
+				<h2 class="ui header">
+					Upload Files
+					<div class="sub header">Import <b>#<?=$uploadid?></b> into <b><?=htmlspecialchars($row['project_name'] ?? '')?> (<?=htmlspecialchars($row['project_costcenter'] ?? '')?>)</b> &nbsp; File format <b><?=htmlspecialchars($row['upload_type'] ?? '')?></b> &nbsp; Started <?=htmlspecialchars($row['upload_startdate'] ?? '')?></div>
+				</h2>
+			</div>
+			<div class="ui attached segment">
+				<? if (count($incomplete) > 0) { ?>
+				<div class="ui warning message">
+					<div class="header"><?=count($incomplete)?> file(s) did not finish uploading</div>
+					Select the same files again below to resume them from where they stopped, or discard them.
+					<table class="ui very basic compact table">
+						<? foreach ($incomplete as $file) { ?>
+						<tr>
+							<td><?=htmlspecialchars($file['filename'])?></td>
+							<td><?=HumanReadableFilesize($file['offset'])?> of <?=HumanReadableFilesize($file['length'])?> (<?=($file['length'] > 0) ? number_format(100 * $file['offset'] / $file['length'], 1) : 0?>%)</td>
+							<td class="right aligned"><button class="ui mini basic red button" onClick="DiscardFile('<?=$file['url']?>'); return false;">Discard</button></td>
+						</tr>
+						<? } ?>
+					</table>
+				</div>
+				<? } ?>
+
+				<? if (count($complete) > 0) { ?>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						<b><?=count($complete)?></b> file(s) already received (<?=HumanReadableFilesize($completebytes)?>)
+					</div>
+					<div class="content">
+						<div style="max-height: 300px; overflow-y: auto">
+							<table class="ui small very compact basic table" style="width: 100%; margin: 0">
+								<thead>
+									<tr>
+										<th style="padding: 0.3em 1.5em 0.3em 0.5em">File</th>
+										<th class="right aligned" style="padding: 0.3em 1.5em 0.3em 0.5em; width: 1%; white-space: nowrap">Size</th>
+										<th style="padding: 0.3em 0.5em; width: 1%; white-space: nowrap" title="When the server finished receiving the file">Received</th>
+									</tr>
+								</thead>
+								<? foreach ($complete as $file) { ?>
+								<tr>
+									<td style="padding: 0.2em 1.5em 0.2em 0.5em"><tt><?=htmlspecialchars($file['filename'])?></tt></td>
+									<td class="right aligned" style="padding: 0.2em 1.5em 0.2em 0.5em; white-space: nowrap"><?=HumanReadableFilesize($file['length'])?></td>
+									<td style="padding: 0.2em 0.5em; white-space: nowrap"><?=($file['received'] !== null) ? date("Y-m-d H:i:s", $file['received']) : "-"?></td>
+								</tr>
+								<? } ?>
+							</table>
+						</div>
+					</div>
+				</div>
+				<br>
+				<? } ?>
+
+				<style>
+					#dropzone { border: 2px dashed #c0c0c0; border-radius: 0.5em; padding: 1.5em; text-align: center; color: #767676; transition: background-color 0.1s, border-color 0.1s; }
+					#dropzone.dragover { border-color: #2185D0; background-color: #EEF6FC; color: #2185D0; }
+				</style>
+				<div id="dropzone">
+					<i class="big cloud upload icon"></i>
+					<div style="font-size: 1.15em; margin: 0.5em 0">Drag files or folders here</div>
+					<div style="margin-bottom: 0.5em">or</div>
+					<button class="ui button" onClick="document.getElementById('tusfiles').click(); return false;">Choose Files</button>
+					<input type="file" id="tusfiles" multiple style="display: none">
+				</div>
+				<div class="ui checkbox" style="margin: 1em 0">
+					<input type="checkbox" id="autofinish">
+					<label>Start the import automatically when all files are uploaded</label>
+				</div>
+
+				<style>
+					/* compact file list: one line per file, thin progress bars, scrolls when there are many files */
+					#filetablewrap { max-height: 400px; overflow-y: auto; margin-bottom: 1em; }
+					#filetable { table-layout: fixed; margin: 0; }
+					#filetable th { position: sticky; top: 0; z-index: 1; padding: 0.4em 0.6em; }
+					#filetable td { padding: 0.3em 0.6em; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+					#filetable .ui.progress { margin: 0; }
+					#filetable .ui.progress .bar { height: 0.75em; min-width: 0; }
+					/* step buttons are plain grey until they are enabled, then show their color */
+					#startbutton:disabled, #finishbutton:disabled { background-color: #e0e1e2 !important; color: rgba(0,0,0,0.6) !important; }
+				</style>
+				<div id="filetablewrap" style="display: none">
+					<table class="ui small very compact celled striped table" id="filetable">
+						<thead>
+							<tr><th>File</th><th style="width: 7em">Size</th><th style="width: 25%">Progress</th><th style="width: 30%">Status</th></tr>
+						</thead>
+						<tbody></tbody>
+					</table>
+				</div>
+
+				<div class="ui progress" id="totalprogress" style="display: none">
+					<div class="bar"><div class="progress"></div></div>
+					<div class="label" id="totallabel"></div>
+				</div>
+
+				<div style="display: flex; justify-content: space-between; align-items: center">
+					<a class="ui basic red button" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>" onClick="return confirm('Cancel this import? Files uploaded so far will not be imported');">Cancel Import</a>
+					<div>
+						<button class="ui primary button" id="startbutton" disabled onClick="StartUploads(); return false;">Step 1 - Upload</button>
+						<button class="ui green button" id="finishbutton" <?=(count($complete) > 0) ? "" : "disabled"?> onClick="FinishUpload(); return false;">Step 2 - Import</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<form method="post" action="importimaging.php" name="finalizeform">
+			<input type="hidden" name="action" value="finalizeupload">
+			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+			<?=CSRFTokenField()?>
+		</form>
+
+		<script>
+			var uploadid = <?=(int)$uploadid?>;
+			var numcomplete = <?=count($complete)?>;
+			/* files the server already has, and files it has partially. Selected files are matched against
+			   these by name and size, so completed files are skipped and partial ones resume */
+			var serverComplete = <?=json_encode($complete)?>;
+			var serverIncomplete = <?=json_encode($incomplete)?>;
+
+			var MAXPARALLEL = 3;
+			var CHUNKSIZE = 50 * 1024 * 1024; /* each PATCH request stays well under Apache's 1 GiB LimitRequestBody default */
+			var items = [];
+			var active = 0;
+
+			$('.ui.accordion').accordion();
+			$('.ui.checkbox').checkbox();
+
+			document.getElementById('tusfiles').addEventListener('change', function() {
+				AddFiles(this.files);
+				this.value = '';
+			});
+
+			/* drag and drop. dragenter/dragleave also fire for child elements, so count the depth to know
+			   when the pointer has really left the drop zone */
+			var dropzone = document.getElementById('dropzone');
+			var dragdepth = 0;
+			dropzone.addEventListener('dragenter', function(e) {
+				e.preventDefault();
+				dragdepth++;
+				dropzone.classList.add('dragover');
+			});
+			dropzone.addEventListener('dragleave', function(e) {
+				dragdepth--;
+				if (dragdepth <= 0) {
+					dragdepth = 0;
+					dropzone.classList.remove('dragover');
 				}
-				else {
-					$msg = "An error occured moving file [" . $_FILES['imagingfiles']['tmp_name'][$i] . "] to [$savepath/$name]. Error message [" . $_FILES['imagingfiles']['error'][$i] . "]";
-					echo "<li>$msg";
-					$status = "uploaderror";
-					
-					AppendUploadLog($uploadid, $msg);
+			});
+			dropzone.addEventListener('dragover', function(e) {
+				e.preventDefault();
+				e.dataTransfer.dropEffect = 'copy';
+			});
+			dropzone.addEventListener('drop', function(e) {
+				e.preventDefault();
+				dragdepth = 0;
+				dropzone.classList.remove('dragover');
+				ReadDroppedItems(e.dataTransfer).then(AddFiles);
+			});
+			/* a file dropped outside the drop zone would otherwise make the browser open it and leave the page */
+			window.addEventListener('dragover', function(e) { e.preventDefault(); });
+			window.addEventListener('drop', function(e) { e.preventDefault(); });
+
+			/* get the files from a drop, expanding any folders (recursively) into the files they contain.
+			   The entries must be taken from dataTransfer during the drop event, before anything async */
+			function ReadDroppedItems(dt) {
+				var entries = [];
+				if (dt.items && (dt.items.length > 0) && dt.items[0].webkitGetAsEntry) {
+					for (var i = 0; i < dt.items.length; i++) {
+						var entry = dt.items[i].webkitGetAsEntry();
+						if (entry) entries.push(entry);
+					}
+					return ReadEntries(entries);
 				}
+				return Promise.resolve(Array.prototype.slice.call(dt.files));
 			}
-			echo "</ul>";
+
+			function ReadEntries(entries) {
+				return Promise.all(entries.map(ReadEntry)).then(function(lists) {
+					return [].concat.apply([], lists);
+				});
+			}
+
+			function ReadEntry(entry) {
+				/* skip hidden files such as .DS_Store inside dropped folders */
+				if (entry.name.charAt(0) == '.')
+					return Promise.resolve([]);
+
+				if (entry.isFile) {
+					return new Promise(function(resolve) {
+						entry.file(function(file) { resolve([file]); }, function() { resolve([]); });
+					});
+				}
+				if (entry.isDirectory) {
+					/* readEntries returns the folder's contents in batches, until it returns an empty batch */
+					var reader = entry.createReader();
+					var children = [];
+					return new Promise(function(resolve) {
+						function ReadBatch() {
+							reader.readEntries(function(batch) {
+								if (batch.length == 0) {
+									ReadEntries(children).then(resolve);
+								}
+								else {
+									children = children.concat(batch);
+									ReadBatch();
+								}
+							}, function() { resolve([]); });
+						}
+						ReadBatch();
+					});
+				}
+				return Promise.resolve([]);
+			}
+
+			/* warn before leaving the page while files are uploading */
+			window.addEventListener('beforeunload', function(e) {
+				if (active > 0) {
+					e.preventDefault();
+					e.returnValue = '';
+				}
+			});
+
+			function HumanSize(bytes) {
+				var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+				var i = 0;
+				while ((bytes >= 1024) && (i < units.length - 1)) { bytes /= 1024; i++; }
+				return bytes.toFixed(1) + ' ' + units[i];
+			}
+
+			function FindServerFile(list, file) {
+				for (var i = 0; i < list.length; i++) {
+					if ((list[i].filename == file.name) && (list[i].length == file.size) && (!list[i].claimed))
+						return list[i];
+				}
+				return null;
+			}
+
+			function AddFiles(files) {
+				var tbody = document.querySelector('#filetable tbody');
+				for (var i = 0; i < files.length; i++) {
+					var file = files[i];
+
+					/* ignore a file that is already in the list */
+					var dup = false;
+					for (var j = 0; j < items.length; j++) {
+						if ((items[j].file.name == file.name) && (items[j].file.size == file.size) && (items[j].file.lastModified == file.lastModified)) dup = true;
+					}
+					if (dup) continue;
+
+					var row = tbody.insertRow();
+					var namecell = row.insertCell();
+					namecell.textContent = file.name;
+					namecell.title = file.name;
+					row.insertCell().textContent = HumanSize(file.size);
+					row.insertCell().innerHTML = '<div class="ui tiny progress"><div class="bar" style="width: 0%"></div></div>';
+					row.insertCell();
+
+					var item = { file: file, row: row, state: 'queued', sent: 0, upload: null, resumeurl: null };
+
+					var done = FindServerFile(serverComplete, file);
+					var partial = FindServerFile(serverIncomplete, file);
+					if (done) {
+						done.claimed = true;
+						item.state = 'skipped';
+						item.sent = file.size;
+						SetRow(item, 'Already uploaded', 100, 'success');
+					}
+					else if (partial) {
+						partial.claimed = true;
+						item.resumeurl = partial.url;
+						item.sent = partial.offset;
+						SetRow(item, 'Will resume at ' + HumanSize(partial.offset), (file.size > 0) ? 100 * partial.offset / file.size : 0, '');
+					}
+					else {
+						SetRow(item, 'Waiting', 0, '');
+					}
+					items.push(item);
+				}
+				document.getElementById('filetablewrap').style.display = (items.length > 0) ? '' : 'none';
+				document.getElementById('startbutton').disabled = !HasState('queued') || (active > 0);
+				UpdateTotal();
+			}
+
+			function HasState(state) {
+				for (var i = 0; i < items.length; i++)
+					if (items[i].state == state) return true;
+				return false;
+			}
+
+			/* status colors: green for complete, red for error, blue for everything else */
+			var STATUSCOLORS = { green: '#21BA45', red: '#DB2828', blue: '#2185D0' };
+			function StatusColor(cls) {
+				if (cls == 'success') return 'green';
+				if (cls == 'error') return 'red';
+				return 'blue';
+			}
+
+			function SetRow(item, status, percent, cls) {
+				var color = StatusColor(cls);
+				var progress = item.row.cells[2].firstChild;
+				progress.className = 'ui tiny ' + color + ' progress' + ((cls == 'active') ? ' active' : '');
+				progress.firstChild.style.width = percent.toFixed(1) + '%';
+				/* Fomantic UI makes the bar transparent unless data-percent is set, which would hide the color */
+				progress.setAttribute('data-percent', percent.toFixed(1));
+				item.row.cells[3].textContent = status;
+				item.row.cells[3].title = status; /* long error messages are cut off; the full text shows on hover */
+				item.row.cells[3].style.color = STATUSCOLORS[color];
+				item.row.className = (cls == 'error') ? 'negative' : '';
+			}
+
+			function UpdateTotal() {
+				var total = 0, sent = 0;
+				for (var i = 0; i < items.length; i++) {
+					total += items[i].file.size;
+					sent += items[i].sent;
+				}
+				var bar = document.getElementById('totalprogress');
+				if (items.length == 0) { bar.style.display = 'none'; return; }
+				bar.style.display = '';
+				var percent = (total > 0) ? 100 * sent / total : 100;
+				/* red if any file failed, green when everything is uploaded, blue while in progress */
+				var color = HasState('error') ? 'red' : ((HasState('queued') || HasState('uploading')) ? 'blue' : 'green');
+				bar.className = 'ui ' + color + ' progress';
+				bar.setAttribute('data-percent', percent.toFixed(1));
+				bar.querySelector('.bar').style.width = percent.toFixed(1) + '%';
+				bar.querySelector('.progress').textContent = percent.toFixed(1) + '%';
+				document.getElementById('totallabel').textContent = HumanSize(sent) + ' of ' + HumanSize(total);
+			}
+
+			function StartUploads() {
+				/* retry anything that failed before */
+				for (var i = 0; i < items.length; i++) {
+					if (items[i].state == 'error') {
+						items[i].state = 'queued';
+						SetRow(items[i], 'Waiting', (items[i].file.size > 0) ? 100 * items[i].sent / items[i].file.size : 0, '');
+					}
+				}
+				document.getElementById('startbutton').disabled = true;
+				document.getElementById('finishbutton').disabled = true;
+				UpdateTotal();
+				Pump();
+			}
+
+			/* keep up to MAXPARALLEL uploads running until the queue is empty */
+			function Pump() {
+				for (var i = 0; (i < items.length) && (active < MAXPARALLEL); i++) {
+					if (items[i].state == 'queued')
+						StartOne(items[i]);
+				}
+				if (active == 0)
+					AllDone();
+			}
+
+			function StartOne(item) {
+				active++;
+				item.state = 'uploading';
+				SetRow(item, 'Uploading', (item.file.size > 0) ? 100 * item.sent / item.file.size : 0, 'active');
+
+				var options = {
+					endpoint: 'tusupload.php',
+					chunkSize: CHUNKSIZE,
+					retryDelays: [0, 1000, 3000, 5000, 10000, 20000, 30000, 60000],
+					metadata: { filename: item.file.name, context: String(uploadid) },
+					/* resume points come from the server (serverIncomplete), not the browser's localStorage,
+					   so an upload can be resumed from a different browser or computer */
+					storeFingerprintForResuming: false,
+					onProgress: function(sent, total) {
+						item.sent = sent;
+						SetRow(item, 'Uploading ' + HumanSize(sent) + ' of ' + HumanSize(total), (total > 0) ? 100 * sent / total : 100, 'active');
+						UpdateTotal();
+					},
+					onError: function(err) {
+						var msg = (err.originalResponse && err.originalResponse.getBody()) ? err.originalResponse.getBody() : String(err.message || err);
+						item.state = 'error';
+						SetRow(item, 'Error: ' + msg, (item.file.size > 0) ? 100 * item.sent / item.file.size : 0, 'error');
+						UpdateTotal();
+						active--;
+						Pump();
+					},
+					onSuccess: function() {
+						item.state = 'done';
+						item.sent = item.file.size;
+						numcomplete++;
+						SetRow(item, 'Complete', 100, 'success');
+						UpdateTotal();
+						active--;
+						Pump();
+					}
+				};
+				if (item.resumeurl)
+					options.uploadUrl = item.resumeurl;
+
+				item.upload = new tus.Upload(item.file, options);
+				item.upload.start();
+			}
+
+			function AllDone() {
+				if (HasState('error')) {
+					var start = document.getElementById('startbutton');
+					start.textContent = 'Step 1 - Retry Failed Files';
+					start.disabled = false;
+					document.getElementById('finishbutton').disabled = (numcomplete == 0);
+					return;
+				}
+				document.getElementById('finishbutton').disabled = (numcomplete == 0);
+				if ((numcomplete > 0) && (document.getElementById('autofinish').checked) && (items.length > 0))
+					FinishUpload();
+			}
+
+			function FinishUpload() {
+				if (active > 0) {
+					alert('Wait for the current uploads to finish');
+					return;
+				}
+				document.finalizeform.submit();
+			}
+
+			/* tus termination: delete a partial file from the server */
+			function DiscardFile(url) {
+				if (!confirm('Discard this partially uploaded file?')) return;
+				fetch(url, { method: 'DELETE', headers: { 'Tus-Resumable': '1.0.0' } }).then(function(response) {
+					if (!response.ok) {
+						return response.text().then(function(text) { alert('Unable to discard file: ' + text); });
+					}
+					window.location.reload();
+				});
+			}
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FinalizeUpload --------------------- */
+	/* -------------------------------------------- */
+	/* all files are uploaded: remove the tus state and hand the upload to the upload module.
+	   Returns true on success */
+	function FinalizeUpload($uploadid, $userid) {
+		$savepath = GetResumableUploadPath($uploadid, $userid);
+		if ($savepath == "") return false;
+
+		list($complete, $incomplete) = TusGetFileStates($savepath, "tusupload.php", $uploadid);
+		if (count($incomplete) > 0) {
+			$names = array();
+			foreach ($incomplete as $file)
+				$names[] = htmlspecialchars($file['filename']);
+			Error(count($incomplete) . " file(s) have not finished uploading: " . implode(", ", $names) . "<br>Select the same files again to resume them, or discard them.");
+			return false;
 		}
-		
-		/* update the upload_status, upload_enddate, and upload_originalfilelist */
-		$msg = mysqli_real_escape_string($GLOBALS['linki'], $msg);
-		$filelist = mysqli_real_escape_string($GLOBALS['linki'], implode2(",", $files));
-		$sqlstring = "update uploads set upload_status = '$status', upload_enddate = now(), upload_originalfilelist = '$filelist' where upload_id = $uploadid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* the file list is what is actually in the directory, which are the final (possibly renamed) filenames */
+		$files = TusListFiles($savepath);
+		$totalbytes = 0;
+		foreach ($files as $file)
+			$totalbytes += filesize("$savepath/$file");
+		if (count($files) < 1) {
+			Error("No files have been uploaded yet");
+			return false;
+		}
+
+		/* remove the tus state, so the upload module only sees the uploaded data */
+		TusRemoveState($savepath);
+
+		$filelist = implode(",", $files);
+		$sqlstring = "update uploads set upload_status = 'uploadcomplete', upload_enddate = now(), upload_originalfilelist = ? where upload_id = ? and upload_status = 'uploading'";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $filelist, $uploadid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($filelist, $uploadid));
+		mysqli_stmt_close($stmt);
+
+		$msg = "Upload complete. Received [" . count($files) . "] files totaling [" . number_format($totalbytes) . "] bytes";
+		AppendUploadLog($uploadid, $msg);
+		Notice($msg . ". The files will now be parsed");
+
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetUploadStatus -------------------- */
+	/* -------------------------------------------- */
+	function SetUploadStatus($uploadid, $status) {
+		$sqlstring = "update uploads set upload_status = ? where upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $status, $uploadid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($status, $uploadid));
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -678,7 +1258,14 @@
 						$buttonlabel = "View Cancelled Import";
 						$label = "";
 						break;
-					
+
+					case 'uploading':
+						$statuscolor = "secondary blue";
+						$buttoncolor = "blue";
+						$buttonlabel = "View Import";
+						$label = ($source == "web") ? "<a class='ui blue ribbon label' href='importimaging.php?action=uploadfiles&uploadid=$uploadid'>Upload / Resume Files</a>" : "";
+						break;
+
 					default:
 						$statuscolor = "secondary blue";
 						$buttoncolor = "";
@@ -767,15 +1354,12 @@
 	/* -------------------------------------------- */
 	function ReparseUpload($uploadid, $subjectcriteria, $studycriteria, $seriescriteria) {
 		if (!ValidID($uploadid,'UploadID')) { return; }
-		$subjectcriteria = mysqli_real_escape_string($GLOBALS['linki'], $subjectcriteria);
-		$studycriteria = mysqli_real_escape_string($GLOBALS['linki'], $studycriteria);
-		$seriescriteria = mysqli_real_escape_string($GLOBALS['linki'], $seriescriteria);
-		
-		$sqlstring = "update uploads set upload_status = 'reparse' where upload_id = $uploadid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		$sqlstring = "update uploads set upload_subjectcriteria = '$subjectcriteria', upload_studycriteria = '$studycriteria', upload_seriescriteria = '$seriescriteria'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$sqlstring = "update uploads set upload_status = 'reparse', upload_subjectcriteria = ?, upload_studycriteria = ?, upload_seriescriteria = ? where upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssi', $subjectcriteria, $studycriteria, $seriescriteria, $uploadid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($subjectcriteria, $studycriteria, $seriescriteria, $uploadid));
+		mysqli_stmt_close($stmt);
 		
 		Notice("Upload will be re-parsed");
 	}
@@ -959,7 +1543,7 @@
 									<tt><?=implode2("<br>", $filelist)?></tt>
 								</div>
 								<?
-									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = 33 and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
+									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = $uploadid and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
 									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
 									$errorfiles = array();
 									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
@@ -1005,6 +1589,9 @@
 				</table>
 				<h3 class="ui attached inverted header">Operations</h3>
 				<div class="ui bottom attached segment">
+					<? if (($status == "uploading") && ($source == "web")) { ?>
+					<a class="ui primary button" title="Select files to upload, or resume an interrupted upload" href="importimaging.php?action=uploadfiles&uploadid=<?=$uploadid?>"><i class="cloud upload icon"></i> Upload / Resume Files</a>
+					<? } ?>
 					<a class="ui red button" title="Cancel the upload" href="importimaging.php?action=cancel&uploadid=<?=$uploadid?>">Cancel Import</a>
 				</div>
 				<!--
@@ -1013,6 +1600,7 @@
 					<form class="ui form" method="post" action="importimaging.php" name="reparseform">
 					<input type="hidden" name="action" value="reparse">
 					<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+					<?=CSRFTokenField()?>
 					<div class="field">
 						<label>Subject Matching Criteria</label>
 						<select class="ui dropdown" name="subjectcriteria">
@@ -1060,6 +1648,7 @@
 			<form method="post" action="importimaging.php">
 			<input type="hidden" name="action" value="queueforarchive">
 			<input type="hidden" name="uploadid" value="<?=$uploadid?>">
+			<?=CSRFTokenField()?>
 			Select series for archiving. (All series are selected by default) &nbsp; &nbsp; <input type="submit" class="ui primary button" value="Archive">
 			<? } ?>
 			
@@ -1460,6 +2049,7 @@
 	/* --------- CancelUpload ----------------------------------- */
 	/* ---------------------------------------------------------- */
 	function CancelUpload($uploadid) {
+		if (!ValidID($uploadid,'UploadID')) { return; }
 		$sqlstring = "update uploads set upload_status = 'cancelled' where upload_id = $uploadid";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		

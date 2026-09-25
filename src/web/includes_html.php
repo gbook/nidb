@@ -90,6 +90,11 @@
 		background: #222;
 		color: #fff;
 		border-radius: 5px;
+		/* jQuery UI caps tooltips at 300px. Allow wider, and break long unspaced text (filenames,
+		   paths, URLs) so it wraps inside the dark box instead of overflowing as white-on-white */
+		max-width: 500px;
+		overflow-wrap: anywhere;
+		word-wrap: break-word;
 	}
 </style>
 

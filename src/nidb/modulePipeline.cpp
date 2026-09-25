@@ -2168,6 +2168,19 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     jobfile += "echo Hostname: `hostname`\n";
     jobfile += "echo Username: `whoami`\n\n";
 
+    /* create a new per-analysis token for analysisapi.php (the HTTP alternative to 'nidb cluster').
+     * Only the SHA-256 of the token is stored; the raw token is only in the job script */
+    QByteArray tokenBytes(32, 0);
+    QRandomGenerator::system()->fillRange(reinterpret_cast<quint32*>(tokenBytes.data()), tokenBytes.size()/sizeof(quint32));
+    QString apiToken = QString(tokenBytes.toHex());
+    q.prepare("update analysis set analysis_apitoken = :tokenhash where analysis_id = :analysisid");
+    q.bindValue(":tokenhash", QString(QCryptographicHash::hash(apiToken.toUtf8(), QCryptographicHash::Sha256).toHex()));
+    q.bindValue(":analysisid", analysisid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    jobfile += QString("NIDB_ANALYSISID=%1; export NIDB_ANALYSISID;\n").arg(analysisid);
+    jobfile += QString("NIDB_APITOKEN=%1; export NIDB_APITOKEN;\n").arg(apiToken);
+    jobfile += QString("NIDB_APIURL=%1/analysisapi.php; export NIDB_APIURL;\n\n").arg(n->cfg["siteurl"]);
+
     /* do the first checkin from the cluster */
     if ((resultscript != "") && (rerunresults))
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedrerun -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);

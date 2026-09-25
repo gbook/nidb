@@ -1,7 +1,5 @@
 # Post/Redirect/GET (PRG) tracking
 
-> **Procedure:** see `doc/conversion-recipe.md` for the per-file workflow and PRG idiom.
-
 Goal: every PHP page that handles a **mutating** form submission should use the
 Post/Redirect/GET pattern, so a browser refresh or Back button does not re-submit
 the form. See `functions.php` `RedirectTo()` / `ShowFlashMessage()` and `adminusers.php`
@@ -43,10 +41,10 @@ for the reference implementation.
 | `diagnosis.php` | 1 | ⬜ |
 | `enrollment.php` | 1 | ⬜ |
 | `experiment.php` | 1 | ⬜ |
-| `functions.php` | 2 | ⬜ |
+| `functions.php` | 3 | ⬜ |
 | `groups.php` | 5 | ✅ |
 | `import.php` | 6 | ⬜ |
-| `importimaging.php` | 4 | ⬜ |
+| `importimaging.php` | 5 | ✅ |
 | `importmeasures.php` | 1 | ⬜ |
 | `importnonimaging.php` | 2 | ⬜ |
 | `importremote.php` | 2 | ⬜ |
@@ -82,4 +80,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-09-08 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-09-25 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

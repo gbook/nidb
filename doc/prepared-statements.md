@@ -1,7 +1,5 @@
 # Prepared-statements tracking
 
-> **Procedure:** see `doc/conversion-recipe.md` for the per-file workflow and bind idioms.
-
 Goal: convert SQL queries that include user input to prepared/bound statements
 (`mysqli_prepare` + `mysqli_stmt_bind_param` + `MySQLiBoundQuery`). Parameterless
 queries may stay on `MySQLiQuery`. See CLAUDE.md for the exact idiom.
@@ -17,7 +15,7 @@ user input is fine as-is).
 |------|-------:|---------:|:----:|
 | `admin.php` | 1 | 2 | ✅ |
 | `adminaudits.php` | 2 | 1 | ✅ |
-| `admindicomae.php` | 1 | 6 | ✅ |
+| `admindicomae.php` | 1 | 5 | ✅ |
 | `adminemail.php` | 1 | 0 | ✅ |
 | `adminerrorlogs.php` | 1 | 0 | ✅ |
 | `admininstances.php` | 3 | 12 | ✅ |
@@ -30,8 +28,9 @@ user input is fine as-is).
 | `adminsites.php` | 1 | 4 | ✅ |
 | `adminstorage.php` | 1 | 5 | ✅ |
 | `adminusers.php` | 4 | 27 | ✅ |
-| `ajaxapi.php` | 17 | 64 | ✅ |
+| `ajaxapi.php` | 14 | 62 | ✅ |
 | `analysis.php` | 8 | 27 | ✅ |
+| `analysisapi.php` | 0 | 8 | ✅ |
 | `analysisbuilder.php` | 24 | 5 | ⬜ |
 | `api.php` | 4 | 13 | ✅ |
 | `api2.php` | 4 | 17 | ⬜ |
@@ -57,12 +56,12 @@ user input is fine as-is).
 | `experiment.php` | 15 | 0 | ⬜ |
 | `filesio.php` | 2 | 0 | ⬜ |
 | `footer.php` | 3 | 0 | ⬜ |
-| `functions.php` | 67 | 5 | ⬜ |
+| `functions.php` | 69 | 9 | ⬜ |
 | `getfile.php` | 0 | 1 | ✅ |
 | `groups.php` | 14 | 29 | ✅ |
 | `icd10.php` | 0 | 1 | ✅ |
 | `import.php` | 28 | 0 | ⬜ |
-| `importimaging.php` | 27 | 3 | ⬜ |
+| `importimaging.php` | 21 | 10 | ⬜ |
 | `importlog.php` | 9 | 0 | ⬜ |
 | `importmeasures.php` | 13 | 0 | ⬜ |
 | `importnonimaging.php` | 21 | 0 | ⬜ |
@@ -89,9 +88,9 @@ user input is fine as-is).
 | `packages.php` | 74 | 2 | ⬜ |
 | `pd.php` | 2 | 0 | ⬜ |
 | `pipeline_functions.php` | 5 | 0 | ⬜ |
-| `pipeline_history.php` | 2 | 0 | ⬜ |
+| `pipeline_history.php` | 0 | 2 | ✅ |
 | `pipeline_performance.php` | 11 | 0 | ⬜ |
-| `pipelines.php` | 74 | 21 | ✅ |
+| `pipelines.php` | 75 | 21 | ✅ |
 | `projectchecklist.php` | 3 | 14 | ⬜ |
 | `projectreport.php` | 13 | 0 | ⬜ |
 | `projects.php` | 99 | 2 | ⬜ |
@@ -106,7 +105,7 @@ user input is fine as-is).
 | `remoteimportmapping.php` | 0 | 16 | ✅ |
 | `reports.php` | 7 | 0 | ⬜ |
 | `requeststatus.php` | 16 | 3 | ⬜ |
-| `search.php` | 67 | 0 | ⬜ |
+| `search.php` | 65 | 2 | ⬜ |
 | `settings.php` | 1 | 2 | ✅ |
 | `setup.php` | 9 | 0 | ⬜ |
 | `signup.php` | 9 | 0 | ⬜ |
@@ -118,10 +117,11 @@ user input is fine as-is).
 | `tags.php` | 12 | 0 | ⬜ |
 | `templates.php` | 30 | 0 | ⬜ |
 | `timeline.php` | 4 | 1 | ⬜ |
+| `tusupload.php` | 0 | 2 | ✅ |
 | `upload.php` | 4 | 0 | ⬜ |
 | `users.php` | 18 | 3 | ⬜ |
 | `v.php` | 4 | 0 | ⬜ |
 | `viewanalysis.php` | 25 | 0 | ✅ |
 | `viewimage.php` | 1 | 0 | ⬜ |
 
-_Regenerated 2026-09-08 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._
+_Regenerated 2026-09-25 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._
