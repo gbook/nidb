@@ -121,7 +121,7 @@
 			else {
 				/* update */
 				$sqlstring = "update users set";
-				if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
+				if ($password != "") { $hashedPassword = password_hash($password, PASSWORD_BCRYPT); $sqlstring .= " password = '" . mysqli_real_escape_string($GLOBALS['linki'], $hashedPassword) . "', "; }
 				$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				
