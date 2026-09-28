@@ -60,7 +60,7 @@ public:
     int StartRemoteNiDBTransaction(QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m);
     void EndRemoteNiDBTransaction(int tid, QString remotenidbserver, QString remotenidbusername, QString remotenidbpassword, QString &m);
 
-    int GetNDAMapping(int projectRowID, QString protocol, QString modality);
+    QString GetNDAMapping(int projectRowID, QString protocol, QString modality);
 
     /* create a multilevel hash s[uid][study][series]['attribute'] to store the series */
     QMap<QString, QMap<int, QMap<int, QMap<QString, QString> > > > s;

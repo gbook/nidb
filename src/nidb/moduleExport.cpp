@@ -2313,7 +2313,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             }
             QTextStream fs(&f);
 
-            int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
+            QString ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
 
             /* create the modality specific line for the csv */
             if (modality == "MRI") {
@@ -2392,54 +2392,54 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
                 if (AcqParts.size() >= 4)
                     FOV = QString("%1mm x %2mm").arg((AcqParts[0].toDouble() * seriesspacingx * PercentPhaseFieldOfView.toDouble())/100.0).arg((AcqParts[3].toDouble() * seriesspacingy * PercentPhaseFieldOfView.toDouble())/100.0);
 
-                int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
+                //QString ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
                 QString str;
                 QTextStream(&str) << guid << "," << srcsubjectid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << "," << imagetype << "," << imagefile << ",," << seriesdesc << "," << datatype << "," << modality << "," << Manufacturer << "," << ManufacturersModelName << "," << SoftwareVersion << "," << seriesfieldstrength << "," << seriestr << "," << serieste << "," << seriesflip << "," << AcquisitionMatrix << "," << FOV << "," << PatientPosition << "," << PhotometricInterpretation << ",," << TransmitCoilName << ",No,,," << numdim << "," << imgcols << "," << imgrows << "," << imgslices << "," << boldreps << ",timeseries,,,Millimeters,Millimeters,Millimeters,Milliseconds,," << seriesspacingx << "," << seriesspacingy << "," << seriesspacingz << "," << seriestr << ",," << seriesspacingz << ",Axial,,,,,,,,,,,,," << scantype << ",Live," << behfile << "," << behdesc << "," << ProtocolName << "," << ndaExperimentID << "," << seriessequence << ",1,,,0,Yes,Yes\n";
 
                 fs << str;
             }
             else if (modality == "EEG") {
-                int expid = 0;
+                //int expid = 0;
 
-                QString sp = seriesprotocol.toLower();
+                //QString sp = seriesprotocol.toLower();
 
                 /* NDA experiment ID lookup */
-                if (sp.contains("domino",Qt::CaseInsensitive)) expid = 115;
-                if (sp.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
-                if (sp.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
-                if (sp.contains("HNumber",Qt::CaseInsensitive)) expid = 113;
-                if (sp.contains("HPain", Qt::CaseInsensitive)) expid = 113;
+                //if (sp.contains("domino",Qt::CaseInsensitive)) expid = 115;
+                //if (sp.contains("SPMain",Qt::CaseInsensitive)) expid = 114;
+                //if (sp.contains("SPGender", Qt::CaseInsensitive)) expid = 114;
+                //if (sp.contains("HNumber",Qt::CaseInsensitive)) expid = 113;
+                //if (sp.contains("HPain", Qt::CaseInsensitive)) expid = 113;
 
-                if ((sp == "gating") || (sp == "gating2") || (sp == "gating3")) expid = 530;
-                if ((sp == "resteyesopen") || (sp == "rest") || (sp == "rest - eyes open")) expid = 528;
-                if ((sp == "resteyesclosed") || (sp == "rest - eyes closed")) expid = 556;
-                if ((sp == "oddball") || (sp == "oddball - beh data")) expid = 529;
+                //if ((sp == "gating") || (sp == "gating2") || (sp == "gating3")) expid = 530;
+                //if ((sp == "resteyesopen") || (sp == "rest") || (sp == "rest - eyes open")) expid = 528;
+                //if ((sp == "resteyesclosed") || (sp == "rest - eyes closed")) expid = 556;
+                //if ((sp == "oddball") || (sp == "oddball - beh data")) expid = 529;
 
                 /* PARDIP */
-                if ((projectid == 173) || (projectid == 174) || (projectid == 176)) {
-                    if (sp == "auditory steady state") expid = 538;
-                    else if (sp == "rmr") expid = 575;
-                    else if (sp == "rest - eyes open") expid = 531;
-                    else if (sp == "pro-saccade") expid = 566;
-                    else if (sp == "anti-saccade") expid = 569;
-                    else if (sp == "iaps") expid = 537;
-                    else if (sp == "visual steady state") expid = 539;
-                    else if (sp == "oddball") expid = 532;
-                    else if (sp == "gating") expid = 536;
-                }
+                //if ((projectid == 173) || (projectid == 174) || (projectid == 176)) {
+                //    if (sp == "auditory steady state") expid = 538;
+                //    else if (sp == "rmr") expid = 575;
+                //    else if (sp == "rest - eyes open") expid = 531;
+                //    else if (sp == "pro-saccade") expid = 566;
+                //    else if (sp == "anti-saccade") expid = 569;
+                //    else if (sp == "iaps") expid = 537;
+                //    else if (sp == "visual steady state") expid = 539;
+                //    else if (sp == "oddball") expid = 532;
+                //    else if (sp == "gating") expid = 536;
+                //}
 
                 /* BSNIP2 */
-                if ((projectid == 185) || (projectid == 187) || (projectid == 191) || (projectid == 192) || (projectid == 194)) {
-                    if (sp == "rest - eyes open") expid = 549;
-                    else if (sp == "rmr") expid = 587;
-                    else if (sp == "anti-saccade") expid = 559;
-                    else if (sp == "pro-saccade") expid = 558;
-                    else if (sp == "iaps") expid = 582;
-                    else if (sp == "visual steady state") expid = 584;
-                    else if (sp == "auditory steady state") expid = 583;
-                    else if (sp == "oddball") expid = 550;
-                    else if (sp == "gating") expid = 581;
-                }
+                //if ((projectid == 185) || (projectid == 187) || (projectid == 191) || (projectid == 192) || (projectid == 194)) {
+                //    if (sp == "rest - eyes open") expid = 549;
+                //    else if (sp == "rmr") expid = 587;
+                //    else if (sp == "anti-saccade") expid = 559;
+                //    else if (sp == "pro-saccade") expid = 558;
+                //    else if (sp == "iaps") expid = 582;
+                //    else if (sp == "visual steady state") expid = 584;
+                //    else if (sp == "auditory steady state") expid = 583;
+                //    else if (sp == "oddball") expid = 550;
+                //    else if (sp == "gating") expid = 581;
+                //}
 
                 //int ndaExperimentID = GetNDAMapping(projectid, seriesdesc, modality);
 
@@ -2567,7 +2567,7 @@ void moduleExport::EndRemoteNiDBTransaction(int tid, QString remotenidbserver, Q
  * @param modality Modality (currently not used in the lookup)
  * @return The NDA experiment ID, or 0 if no mapping was found
  */
-int moduleExport::GetNDAMapping(int projectRowID, QString protocol, QString modality) {
+QString moduleExport::GetNDAMapping(int projectRowID, QString protocol, QString modality) {
 
     int experimentID(0);
 
@@ -2582,5 +2582,9 @@ int moduleExport::GetNDAMapping(int projectRowID, QString protocol, QString moda
         experimentID = q.value("experiment_id").toInt();
     }
 
-    return experimentID;
+    /* return an empty value instead of a 0 */
+    if (experimentID < 1)
+        return QString("");
+    else
+        return QString("%1").arg(experimentID);
 }

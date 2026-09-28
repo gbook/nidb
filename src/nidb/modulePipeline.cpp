@@ -2181,6 +2181,16 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     jobfile += QString("NIDB_APITOKEN=%1; export NIDB_APITOKEN;\n").arg(apiToken);
     jobfile += QString("NIDB_APIURL=%1/analysisapi.php; export NIDB_APIURL;\n\n").arg(n->cfg["siteurl"]);
 
+    /* helper function to call analysisapi.php. Exported so child bash scripts (such as the result script) can call it.
+     * Prints the JSON response and returns non-zero if the call failed. See doc/analysis-api.md */
+    jobfile += "nidbapi() {\n";
+    jobfile += "    local response\n";
+    jobfile += "    response=$(curl -sS \"$NIDB_APIURL\" -d \"analysisid=$NIDB_ANALYSISID\" --data-urlencode \"token=$NIDB_APITOKEN\" \"$@\")\n";
+    jobfile += "    echo \"$response\"\n";
+    jobfile += "    echo \"$response\" | grep -q '\"success\":true'\n";
+    jobfile += "}\n";
+    jobfile += "export -f nidbapi\n\n";
+
     /* do the first checkin from the cluster */
     if ((resultscript != "") && (rerunresults))
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedrerun -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
