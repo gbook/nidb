@@ -47,6 +47,7 @@ SOURCES += \
     intervention.cpp \
     main.cpp \
     minipipeline.cpp \
+    moduleAudit.cpp \
     moduleBackup.cpp \
     moduleCluster.cpp \
     moduleExport.cpp \
@@ -94,6 +95,7 @@ HEADERS += \
     imageio.h \
     intervention.h \
     minipipeline.h \
+    moduleAudit.h \
     moduleBackup.h \
     moduleCluster.h \
     moduleExport.h \

@@ -24,13 +24,22 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 
-	/* serve the IRB consent BLOB before any HTML output */
+	/* serve the IRB consent BLOB before any HTML output. The consent form is PHI belonging to the
+	   enrollment, so it requires View PHI on the enrollment's project */
 	if (isset($_GET['action']) && $_GET['action'] == 'viewirb') {
 		require "functions.php";
 		require "includes_php.php";
 		$id = (int)(isset($_GET['id']) ? $_GET['id'] : 0);
-		if ($id > 0) {
+		$enrollment = ($id > 0) ? GetEnrollment($id) : null;
+		if ($enrollment != null) {
+			$perms = GetCurrentUserProjectPermissions(array($enrollment['project_id']));
+			if (!GetPerm($perms, 'viewphi', $enrollment['project_id'])) {
+				while (ob_get_level() > 0) ob_end_clean();
+				header('HTTP/1.1 403 Forbidden');
+				exit;
+			}
 			$sqlstring = "select irb_consent from enrollment where enrollment_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -38,6 +47,7 @@
 			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			if (!empty($row['irb_consent'])) {
+				while (ob_get_level() > 0) ob_end_clean();
 				$finfo = new finfo(FILEINFO_MIME_TYPE);
 				$mime = $finfo->buffer($row['irb_consent']);
 				header('Content-Type: ' . $mime);
@@ -46,6 +56,7 @@
 				exit;
 			}
 		}
+		while (ob_get_level() > 0) ob_end_clean();
 		header('HTTP/1.1 404 Not Found');
 		exit;
 	}
@@ -75,22 +86,30 @@
 	$enrollstatus = GetVariable("enrollstatus");
 	$tags = GetVariable("tags");
 
-	if (trim($enrollmentid) == "")
+	if (trim($enrollmentid ?? '') == "")
 		$enrollmentid = $id;
+	$enrollmentid = (int)$enrollmentid;
 	
-	/* determine action */
+	/* determine action. Actions that change data run inside an output buffer, stash their messages
+	   in $_SESSION['flash'], and redirect to a GET (Post/Redirect/GET) so a refresh can't re-submit */
 	switch ($action) {
 		case 'update':
+			ob_start();
 			UpdateEnrollment($enrollmentid, $completed, $enrollgroup, $enrollstatus, $tags);
-			DisplayEnrollment($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("enrollment.php?enrollmentid=$enrollmentid");
 			break;
 		case 'setitemcomplete':
+			ob_start();
 			SetItemComplete($enrollmentid, $checklistitemid);
-			DisplayEnrollment($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("enrollment.php?enrollmentid=$enrollmentid");
 			break;
 		case 'setitemincomplete':
+			ob_start();
 			SetItemIncomplete($enrollmentid, $checklistitemid);
-			DisplayEnrollment($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("enrollment.php?enrollmentid=$enrollmentid");
 			break;
 		case 'displayenrollment':
 			DisplayEnrollment($enrollmentid);
@@ -104,11 +123,51 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CanEditEnrollment ------------------ */
+	/* -------------------------------------------- */
+	/* returns the enrollment row if it exists and the user has Edit Data on its project, otherwise
+	   displays an error and returns null */
+	function CanEditEnrollment($enrollmentRowID) {
+		if ((int)$enrollmentRowID < 1) { Error("Enrollment ID blank"); return null; }
+
+		$enrollment = GetEnrollment($enrollmentRowID);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return null;
+		}
+		$perms = GetCurrentUserProjectPermissions(array($enrollment['project_id']));
+		if (!GetPerm($perms, 'modifydata', $enrollment['project_id'])) {
+			Error("You do not have permission to edit this enrollment");
+			return null;
+		}
+		return $enrollment;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsProjectChecklistItem ------------- */
+	/* -------------------------------------------- */
+	/* true if checklist item $checklistItemID belongs to project $projectRowID */
+	function IsProjectChecklistItem($checklistItemID, $projectRowID) {
+		$checklistItemID = (int)$checklistItemID;
+		$projectRowID = (int)$projectRowID;
+		$sqlstring = "select projectchecklist_id from project_checklist where projectchecklist_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $checklistItemID, $projectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$checklistItemID, $projectRowID]);
+		$found = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		return $found;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- SetItemComplete -------------------- */
 	/* -------------------------------------------- */
 	function SetItemComplete($enrollmentRowID, $checklistItemID) {
-		if (($enrollmentRowID == '') || ($enrollmentRowID == 0)) { Error("Enrollment ID blank"); return; }
-		if (($checklistItemID == '') || ($checklistItemID == 0)) { Error("Checklist item ID blank"); return; }
+		$enrollment = CanEditEnrollment($enrollmentRowID);
+		if ($enrollment == null) { return; }
+		if (!IsProjectChecklistItem($checklistItemID, $enrollment['project_id'])) { Error("Invalid checklist item"); return; }
 		
 		$enrollmentRowID = (int)$enrollmentRowID;
 		$checklistItemID = (int)$checklistItemID;
@@ -127,8 +186,9 @@
 	/* ------- SetItemIncomplete ------------------ */
 	/* -------------------------------------------- */
 	function SetItemIncomplete($enrollmentRowID, $checklistItemID) {
-		if (($enrollmentRowID == '') || ($enrollmentRowID == 0)) { Error("Enrollment ID blank"); return; }
-		if (($checklistItemID == '') || ($checklistItemID == 0)) { Error("Checklist item ID blank"); return; }
+		$enrollment = CanEditEnrollment($enrollmentRowID);
+		if ($enrollment == null) { return; }
+		if (!IsProjectChecklistItem($checklistItemID, $enrollment['project_id'])) { Error("Invalid checklist item"); return; }
 		
 		$enrollmentRowID = (int)$enrollmentRowID;
 		$checklistItemID = (int)$checklistItemID;
@@ -146,26 +206,40 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateEnrollment ------------------- */
 	/* -------------------------------------------- */
+	/* group, status, and tags are project data (Edit Data on the enrollment's project). The IRB consent
+	   file is PHI (Edit PHI on the enrollment's project). Fields the user can't edit are left unchanged */
 	function UpdateEnrollment($id, $completed, $enrollgroup, $enrollstatus, $tags) {
-		if (($id == '') || ($id == 0)) {
-			Error("Enrollment ID blank");
+		if ((int)$id < 1) { Error("Enrollment ID blank"); return; }
+		$id = (int)$id;
+
+		$enrollment = GetEnrollment($id);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
 			return;
 		}
-		$id = (int)$id;
+		$perms = GetCurrentUserProjectPermissions(array($enrollment['project_id']));
+		$modifydata = GetPerm($perms, 'modifydata', $enrollment['project_id']);
+		$modifyphi = GetPerm($perms, 'modifyphi', $enrollment['project_id']);
+		if ((!$modifydata) && (!$modifyphi)) {
+			Error("You do not have permission to edit this enrollment");
+			return;
+		}
 
 		/* start a transaction */
 		$sqlstring = "start transaction";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		/* update the main enrollment items (group, status) */
-		$sqlstring = "update enrollment set enroll_subgroup = ?, enroll_status = ? where enrollment_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ssi', $enrollgroup, $enrollstatus, $id);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollgroup, $enrollstatus, $id]);
-		mysqli_stmt_close($stmt);
+		if ($modifydata) {
+			$sqlstring = "update enrollment set enroll_subgroup = ?, enroll_status = ? where enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ssi', $enrollgroup, $enrollstatus, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollgroup, $enrollstatus, $id]);
+			mysqli_stmt_close($stmt);
+		}
 
 		/* replace IRB consent BLOB if a new file was uploaded */
-		if (isset($_FILES['irbconsent']) && $_FILES['irbconsent']['error'] == UPLOAD_ERR_OK) {
+		if ($modifyphi && isset($_FILES['irbconsent']) && $_FILES['irbconsent']['error'] == UPLOAD_ERR_OK) {
 			$irbconsent = file_get_contents($_FILES['irbconsent']['tmp_name']);
 			$sqlstring = "update enrollment set irb_consent = ? where enrollment_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -179,8 +253,10 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 
 		/* update the tags (outside of the above transaction) */
-		$taglist = explode(',',$tags);
-		SetTags('enrollment', $id, $taglist);
+		if ($modifydata) {
+			$taglist = explode(',', (string)$tags);
+			SetTags('enrollment', $id, $taglist);
+		}
 
 		Notice("Enrollment updated");
 	}
@@ -228,7 +304,12 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayEnrollment ------------------ */
 	/* -------------------------------------------- */
+	/* Enrollment details and checklist are project data: shown with View Data, editable with Edit Data
+	   on the enrollment's project. The IRB consent file is PHI: View/Edit PHI on the enrollment's project. Otherwise each value is
+	   replaced by the 'no view permissions' box */
 	function DisplayEnrollment($id) {
+		ShowFlashMessage();
+
 		if (($id == '') || ($id == 0)) {
 			Error("Enrollment ID blank");
 			return;
@@ -236,23 +317,55 @@
 		$id = (int)$id;
 
 		/* get all the information about the enrollment */
-		$sqlstring = "select * from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = ?";
+		$sqlstring = "select a.*, b.project_name, b.project_costcenter, c.uid from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectname = $row['project_name'];
-		$projectnumber = $row['project_costcenter'];
-		$projectid = $row['project_id'];
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
-		$enrollmentid = $row['enrollment_id'];
+		if (!$row) {
+			Error("Enrollment not found");
+			return;
+		}
+		$projectname = htmlspecialchars($row['project_name'] ?? '');
+		$projectnumber = htmlspecialchars($row['project_costcenter'] ?? '');
+		$projectid = (int)$row['project_id'];
+		$uid = htmlspecialchars($row['uid'] ?? '');
+		$subjectid = (int)$row['subject_id'];
+		$enrollmentid = (int)$row['enrollment_id'];
 		$enroll_startdate = $row['enroll_startdate'];
-		$enroll_enddate = $row['enroll_enddate'];
 		$enrollgroup = $row['enroll_subgroup'];
 		$enrollstatus = $row['enroll_status'];
 		$has_irb_consent = !empty($row['irb_consent']);
+
+		/* permissions */
+		$sp = GetSubjectPermissions($subjectid);
+		$noperm = NoViewPermission();
+
+		/* users with no permissions on any of the subject's projects may only see that the subject exists */
+		if (!$sp['hasaccess']) {
+			?>
+			<div class="ui text container">
+				<h1 class="ui top attached header center aligned black segment" style="background-color: #ffffcc"><span class="tt"><?=$uid?></span></h1>
+				<div class="ui bottom attached segment">
+					You do not have permissions on any of the projects this subject is enrolled in.
+				</div>
+			</div>
+			<?
+			return;
+		}
+
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		$viewdata = GetPerm($perms, 'viewdata', $projectid);
+		$modifydata = GetPerm($perms, 'modifydata', $projectid);
+		$projectadmin = GetPerm($perms, 'projectadmin', $projectid);
+		/* the IRB consent file is PHI belonging to this enrollment, so it uses the PHI permissions on the
+		   enrollment's project (not the subject-level PHI used for demographics) */
+		$viewphi = GetPerm($perms, 'viewphi', $projectid);
+		$modifyphi = GetPerm($perms, 'modifyphi', $projectid);
+		$canedit = ($modifydata || $modifyphi);
+		DisplayPermissions($perms);
+
 		$previousenrollment = GetAdjacentEnrollmentInProject($enrollmentid, $projectid, "previous");
 		$nextenrollment = GetAdjacentEnrollmentInProject($enrollmentid, $projectid, "next");
 
@@ -262,19 +375,23 @@
 		$altuids = GetAlternateUIDs($subjectid, $enrollmentid);
 
 		/* display the enrollment table */
+		if ($modifydata) {
+			?>
+			<datalist id="enrollsubgroup">
+			<?
+				$sqlstring = "select distinct(enroll_subgroup) from enrollment where project_id = ? order by enroll_subgroup";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					?><option value="<?=htmlspecialchars($row['enroll_subgroup'] ?? '')?>"><?
+				}
+				mysqli_stmt_close($stmt);
+			?>
+			</datalist>
+			<?
+		}
 		?>
-		<datalist id="enrollsubgroup">
-		<?
-			$sqlstring = "select distinct(enroll_subgroup) from enrollment where project_id = ? order by enroll_subgroup";
-			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-			mysqli_stmt_bind_param($stmt, 'i', $projectid);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				?><option value="<?=$row['enroll_subgroup']?>"><?
-			}
-			mysqli_stmt_close($stmt);
-		?>
-		</datalist>
 		
 		<div class="ui text container">
 			<div class="ui top attached segment header">
@@ -284,7 +401,7 @@
 							<div class="ui three column grid">
 								<div class="left aligned column">
 									<? if ($previousenrollment) { ?>
-									<a class="ui compact basic yellow icon button" href="enrollment.php?enrollmentid=<?=$previousenrollment['enrollmentRowID']?>" title="Previous subject <?=$previousenrollment['uid']?> in <?=$projectname?>"><i class="chevron left icon"></i></a>
+									<a class="ui compact basic yellow icon button" href="enrollment.php?enrollmentid=<?=$previousenrollment['enrollmentRowID']?>" title="Previous subject <?=htmlspecialchars($previousenrollment['uid'] ?? '')?> in <?=$projectname?>"><i class="chevron left icon"></i></a>
 									<? } else { ?>
 									<div class="ui compact basic yellow disabled icon button" title="No previous subject in <?=$projectname?>"><i class="chevron left icon"></i></div>
 									<? } ?>
@@ -294,15 +411,18 @@
 								</div>
 								<div class="right aligned column">
 									<? if ($nextenrollment) { ?>
-									<a class="ui compact basic yellow icon button" href="enrollment.php?enrollmentid=<?=$nextenrollment['enrollmentRowID']?>" title="Next subject <?=$nextenrollment['uid']?> in <?=$projectname?>"><i class="chevron right icon"></i></a>
+									<a class="ui compact basic yellow icon button" href="enrollment.php?enrollmentid=<?=$nextenrollment['enrollmentRowID']?>" title="Next subject <?=htmlspecialchars($nextenrollment['uid'] ?? '')?> in <?=$projectname?>"><i class="chevron right icon"></i></a>
 									<? } else { ?>
 									<div class="ui compact basic yellow disabled icon button" title="No next subject in <?=$projectname?>"><i class="chevron right icon"></i></div>
 									<? } ?>
 								</div>
 							</div>
-							<? if (count($altuids) > 0) { ?>
+							<? if (!$viewdata) { ?>
 							<br>
-							<tt><?=implode2('<br>', $altuids)?></tt>
+							<?=$noperm?>
+							<? } elseif (count($altuids) > 0) { ?>
+							<br>
+							<tt><?=implode2('<br>', array_map('htmlspecialchars', $altuids))?></tt>
 							<? } ?>
 						</div>
 					</div>
@@ -317,21 +437,28 @@
 					Enrollment Details
 				</h2>
 			</div>
+			<? if ($canedit) { ?>
 			<form method="post" action="enrollment.php" class="ui form" enctype="multipart/form-data">
 			<input type="hidden" name="action" value="update">
 			<input type="hidden" name="id" value="<?=$enrollmentid?>">
+			<? } ?>
 			<table class="ui basic celled attached table">
 				<tr>
 					<td class="right aligned"><b>Enrollment date</b></td>
-					<td><?=$enroll_startdate?></td>
+					<td><?=($viewdata ? htmlspecialchars($enroll_startdate ?? '') : $noperm)?></td>
 				</tr>
 				<tr>
 					<td class="right aligned"><b>Enrollment group</b></td>
-					<td><input type="text" name="enrollgroup" list="enrollsubgroup" value="<?=$enrollgroup?>"></td>
+					<td>
+						<? if ($modifydata) { ?>
+						<input type="text" name="enrollgroup" list="enrollsubgroup" value="<?=htmlspecialchars($enrollgroup ?? '')?>">
+						<? } elseif ($viewdata) { echo htmlspecialchars($enrollgroup ?? ''); } else { echo $noperm; } ?>
+					</td>
 				</tr>
 				<tr>
 					<td class="right aligned"><b>Enrollment status</b></td>
 					<td>
+						<? if ($modifydata) { ?>
 						<select name="enrollstatus" class="ui dropdown">
 							<option value="" <? if ($enrollstatus == "") { echo "selected"; } ?>>(Select status)</option>
 							<option value="consented" <? if ($enrollstatus == "consented") { echo "selected"; } ?>>Consented</option>
@@ -339,55 +466,43 @@
 							<option value="completed" <? if ($enrollstatus == "completed") { echo "selected"; } ?>>Completed</option>
 							<option value="excluded" <? if ($enrollstatus == "excluded") { echo "selected"; } ?>>EXCLUDED</option>
 						</select>
+						<? } elseif ($viewdata) { echo htmlspecialchars($enrollstatus ?? ''); } else { echo $noperm; } ?>
 					</td>
 				</tr>
 				<tr>
 					<td class="right aligned"><b>IRB Consent</b></td>
 					<td>
-						<? if ($has_irb_consent) { ?><a href="enrollment.php?action=viewirb&id=<?=$enrollmentid?>" target="_blank">View current file</a><br><? } ?>
-						<div class="ui file input">
-							<input type="file" name="irbconsent">
-						</div>
+						<? if (!$viewphi) { echo $noperm; } else { ?>
+							<? if ($has_irb_consent) { ?><a href="enrollment.php?action=viewirb&id=<?=$enrollmentid?>" target="_blank">View current file</a><br><? } elseif (!$modifyphi) { ?>None<? } ?>
+							<? if ($modifyphi) { ?>
+							<div class="ui file input">
+								<input type="file" name="irbconsent">
+							</div>
+							<? } ?>
+						<? } ?>
 					</td>
 				</tr>
 				<tr>
 					<td class="right aligned"><b>Tags</b></td>
-					<td><input type="text" name="tags" value="<?=implode2(', ', $tags)?>"></td>
+					<td>
+						<? if ($modifydata) { ?>
+						<input type="text" name="tags" value="<?=htmlspecialchars(implode2(', ', $tags))?>">
+						<? } elseif ($viewdata) { echo DisplayTags($tags, 'enrollment'); } else { echo $noperm; } ?>
+					</td>
 				</tr>
 			</table>
+			<? if ($canedit) { ?>
 			<div class="ui bottom attached right aligned segment">
 				<input class="ui primary button" type="submit" value="Save">
 			</div>
 			</form>
+			<? } ?>
 		</div>
 		
 		<br>
 		
 		<div class="ui container">
 			<!-- *********** Checklist *********** -->
-			<?
-				/* get the main checklist items */
-				$sqlstring = "select * from project_checklist where project_id = ? order by item_order asc";
-				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-				mysqli_stmt_bind_param($stmt, 'i', $projectid);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
-				mysqli_stmt_close($stmt);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					
-					$item['enrollmentRowID'] = $enrollmentid;
-					$item['itemRowID'] = $row['projectchecklist_id'];
-					$item['itemOrder'] = $row['item_order'];
-					$item['itemName'] = $row['item_name'];
-					$item['itemDesc'] = $row['item_desc'];
-					$item['itemType'] = $row['item_type'];
-					$item['imagingModality'] = $row['imaging_modality'];
-					$item['mappedName'] = $row['mapped_name'];
-					$item['expectedCount'] = $row['expected_count'];
-					$item['instrumentId'] = $row['instrument_id'];
-					
-					$checklist[] = $item;
-				}
-			?>
 			<div class="ui black top attached segment">
 				<div class="ui two column grid">
 					<div class="ui column">
@@ -396,48 +511,86 @@
 						</h2>
 					</div>
 					<div class="ui right aligned column">
+						<? if ($projectadmin) { ?>
 						<a href="projectchecklist.php?action=editchecklist&projectid=<?=$projectid?>" class="ui basic green button">Edit checklist</a>
+						<? } ?>
 					</div>
 				</div>
 			</div>
-			<table class="ui very compact celled selectable bottom attached table">
-				<thead>
-					<tr>
-						<th>Item</th>
-						<th>Type</th>
-						<th>Date</th>
-						<th>Experimenter</th>
-						<th>Matched Data</th>
-						<th>Completed</th>
-					</tr>
-				</thead>
+			<?
+			if (!$viewdata) {
+				?>
+				<div class="ui bottom attached center aligned segment">
+					<?=$noperm?>
+				</div>
 				<?
-				foreach ($checklist as $item) {
-					switch ($item['itemType']) {
-						case "Checkbox":
-							DisplayChecklistItemCheckbox($item);
-							break;
-						case "Imaging":
-							DisplayChecklistItemImaging($item);
-							break;
-						case "Intervention":
-							DisplayChecklistItemIntervention($item);
-							break;
-						case "Observation":
-							DisplayChecklistItemObservation($item);
-							break;
-						case "Diagnosis":
-							DisplayChecklistItemDiagnosis($item);
-							break;
-						case "Instrument":
-							DisplayChecklistItemInstrument($item);
-							break;
-						default:
-							DisplayChecklistItemDefault($item);
-					}
+			}
+			else {
+				/* get the main checklist items */
+				$checklist = array();
+				$sqlstring = "select * from project_checklist where project_id = ? order by item_order asc";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+				mysqli_stmt_close($stmt);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$item = array();
+					$item['enrollmentRowID'] = $enrollmentid;
+					$item['itemRowID'] = (int)$row['projectchecklist_id'];
+					$item['itemOrder'] = $row['item_order'];
+					$item['itemName'] = $row['item_name'];
+					$item['itemDesc'] = $row['item_desc'];
+					$item['itemType'] = $row['item_type'];
+					$item['imagingModality'] = $row['imaging_modality'];
+					$item['mappedName'] = $row['mapped_name'];
+					$item['expectedCount'] = $row['expected_count'];
+					$item['instrumentId'] = $row['instrument_id'];
+					$item['canEdit'] = $modifydata;
+					
+					$checklist[] = $item;
 				}
 				?>
-			</table>
+				<table class="ui very compact celled selectable bottom attached table">
+					<thead>
+						<tr>
+							<th>Item</th>
+							<th>Type</th>
+							<th>Date</th>
+							<th>Experimenter</th>
+							<th>Matched Data</th>
+							<th>Completed</th>
+						</tr>
+					</thead>
+					<?
+					foreach ($checklist as $item) {
+						switch ($item['itemType']) {
+							case "Checkbox":
+								DisplayChecklistItemCheckbox($item);
+								break;
+							case "Imaging":
+								DisplayChecklistItemImaging($item);
+								break;
+							case "Intervention":
+								DisplayChecklistItemIntervention($item);
+								break;
+							case "Observation":
+								DisplayChecklistItemObservation($item);
+								break;
+							case "Diagnosis":
+								DisplayChecklistItemDiagnosis($item);
+								break;
+							case "Instrument":
+								DisplayChecklistItemInstrument($item);
+								break;
+							default:
+								DisplayChecklistItemDefault($item);
+						}
+					}
+					?>
+				</table>
+				<?
+			}
+			?>
 			<script>
 				$(function() {
 					$('.checklist-html-tooltip').tooltip({
@@ -450,6 +603,27 @@
 			</script>
 		</div>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ChecklistToggle -------------------- */
+	/* -------------------------------------------- */
+	/* completed/not-completed icon for a manually checked item. Users with Edit Data get a button
+	   (POST) that toggles it, everyone else just sees the icon */
+	function ChecklistToggle($item, $isComplete) {
+		$icon = $isComplete ? "green check circle" : "grey circle outline";
+		if (!($item['canEdit'] ?? false)) {
+			return "<i class='$icon icon'></i>";
+		}
+		$action = $isComplete ? "setitemincomplete" : "setitemcomplete";
+		$title = $isComplete ? "Mark as incomplete" : "Mark as complete";
+		return "<form method='post' action='enrollment.php' style='display: inline; margin: 0px'>
+			<input type='hidden' name='action' value='$action'>
+			<input type='hidden' name='enrollmentid' value='" . (int)$item['enrollmentRowID'] . "'>
+			<input type='hidden' name='checklistitemid' value='" . (int)$item['itemRowID'] . "'>
+			<button type='submit' title='$title' style='background: none; border: none; padding: 0px; cursor: pointer'><i class='$icon icon'></i></button>
+		</form>";
 	}
 
 
@@ -546,12 +720,12 @@
 					<tbody>
 						<? foreach ($data as $d) { ?>
 						<tr>
-							<td><?=$d['StudyNumber']?></td>
-							<td><a href="studies.php?studyid=<?=$d['StudyRowID']?>"><?=$d['StudyDescription']?></a></td>
-							<td><?=$d['StudyDatetime']?></td>
-							<td><?=$d['SeriesNumber']?></td>
-							<td><?=$d['SeriesDescription']?></td>
-							<td><?=$d['SeriesDatetime']?></td>
+							<td><?=htmlspecialchars($d['StudyNumber'] ?? '')?></td>
+							<td><a href="studies.php?id=<?=(int)$d['StudyRowID']?>"><?=htmlspecialchars($d['StudyDescription'] ?? '')?></a></td>
+							<td><?=htmlspecialchars($d['StudyDatetime'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['SeriesNumber'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['SeriesDescription'] ?? '')?></td>
+							<td><?=htmlspecialchars($d['SeriesDatetime'] ?? '')?></td>
 						</tr>
 						<? } ?>
 					</tbody>
@@ -691,8 +865,15 @@
 		- This item is checked to indicate the item has been completed
 	*/
 	function DisplayChecklistItemCheckbox($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 		
 		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -708,12 +889,12 @@
 		}
 		?>
 			<tr>
-				<td><?=$item['itemName']?></td>
+				<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 				<td>Checkbox <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
-				<td><?=$completedDate?></td>
-				<td><?=$completedBy?></td>
+				<td><?=htmlspecialchars($completedDate ?? '')?></td>
+				<td><?=htmlspecialchars($completedBy ?? '')?></td>
 				<td></td>
-				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
+				<td><?=ChecklistToggle($item, $isComplete)?></td>
 			</tr>
 		<?
 	}
@@ -727,8 +908,15 @@
 		- This is checked if the series_desc exists at least once in one of the enrolled studies
 	*/
 	function DisplayChecklistItemImaging($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 		
 		/* get the mapped names */
 		[$names, $logic] = GetMappedNameList($item['mappedName']);
@@ -799,7 +987,7 @@
 						
 						$data[] = $d;
 					}
-					$completedDate = implode2('<br>',array_unique($completedates));
+					$completedDate = implode2('<br>', array_map('htmlspecialchars', array_unique($completedates)));
 					$isComplete = true;
 				}
 				else {
@@ -809,15 +997,15 @@
 		}
 		?>
 		<tr>
-			<td><?=$item['itemName']?></td>
+			<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 			<td>
 				Imaging <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
 			</td>
 			<td><?=$completedDate?></td>
-			<td><?=$completedBy?></td>
+			<td><?=htmlspecialchars($completedBy ?? '')?></td>
 			<? if (count($data) > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
-				<?=count($data)?> <?=$item['imagingModality']?> series
+				<?=count($data)?> <?=htmlspecialchars($item['imagingModality'] ?? '')?> series
 				<? DisplayFoundImagingModal($data, $item); ?>
 			</td>
 			<? } else { ?>
@@ -845,8 +1033,15 @@
 		- The table will display a checkmark for complete, if the variables in the observations table match the mapped_names
 	*/
 	function DisplayChecklistItemObservation($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 
 		/* get the mapped names */
 		[$observations, $logic] = GetMappedNameList($item['mappedName']);
@@ -892,7 +1087,7 @@
 				$completedates[] = date('M j, Y', strtotime($row['observation_startdate']));
 				$raters[] = $row['observation_rater'];
 			}
-			$completedDate = implode2(',',array_unique($completedates));
+			$completedDate = htmlspecialchars(implode2(',', array_unique($completedates)));
 			$completedBy = implode2(',',array_unique($raters));
 			$isComplete = true;
 		}
@@ -901,12 +1096,12 @@
 		}
 		?>
 		<tr>
-			<td><?=$item['itemName']?></td>
+			<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 			<td>
 				Observation <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
 			</td>
 			<td><?=$completedDate?></td>
-			<td><?=$completedBy?></td>
+			<td><?=htmlspecialchars($completedBy ?? '')?></td>
 			<? if (count($data) > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
 				<?=count($data)?> observations
@@ -937,8 +1132,15 @@
 		- Displays a checkmark if any observations exist for this enrollment with the linked instrument
 	*/
 	function DisplayChecklistItemInstrument($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 		$instrumentId = (int)($item['instrumentId'] ?? 0);
 
 		$completedDate = '';
@@ -960,7 +1162,7 @@
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$isComplete = (bool)$row['iscomplete'];
-			$completedDate = $row['completedate'];
+			$completedDate = $row['date_completed'];
 			$completedBy = $row['completedby'];
 		}
 		else {
@@ -999,7 +1201,7 @@
 						$completedates[] = date('M j, Y', strtotime($row['observation_startdate']));
 						$raters[] = $row['observation_rater'];
 					}
-					$completedDate = implode2(',', array_unique($completedates));
+					$completedDate = htmlspecialchars(implode2(',', array_unique($completedates)));
 					$completedBy = implode2(',', array_unique($raters));
 				}
 
@@ -1016,12 +1218,12 @@
 		}
 		?>
 		<tr>
-			<td><?=$item['itemName']?></td>
+			<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 			<td>
 				Instrument <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
 			</td>
 			<td><?=$completedDate?></td>
-			<td><?=$completedBy?></td>
+			<td><?=htmlspecialchars($completedBy ?? '')?></td>
 			<? if ($totalItems > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#instrument-progress-modal-<?=$itemRowID?>').modal('show')">
 				<?=$pct?>% (<?=$completedItems?>/<?=$totalItems?> items)
@@ -1052,8 +1254,15 @@
 		- The table will display a checkmark for complete, if the variables in the interventions table match the mapped_names
 	*/
 	function DisplayChecklistItemIntervention($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 
 		/* get the mapped names */
 		[$interventions, $logic] = GetMappedNameList($item['mappedName']);
@@ -1095,7 +1304,7 @@
 				$completedates[] = date('M j, Y', strtotime($row['startdate']));
 				$raters[] = $row['rater'];
 			}
-			$completedDate = implode2(',',array_unique($completedates));
+			$completedDate = htmlspecialchars(implode2(',', array_unique($completedates)));
 			$completedBy = implode2(',',array_unique($raters));
 			$isComplete = true;
 		}
@@ -1104,12 +1313,12 @@
 		}
 		?>
 		<tr>
-			<td><?=$item['itemName']?></td>
+			<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 			<td>
 				Intervention <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
 			</td>
 			<td><?=$completedDate?></td>
-			<td><?=$completedBy?></td>
+			<td><?=htmlspecialchars($completedBy ?? '')?></td>
 			<? if (count($data) > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
 				<?=count($data)?> interventions
@@ -1139,8 +1348,15 @@
 		Items come from the diagnosis table
 	*/
 	function DisplayChecklistItemDiagnosis($item) {
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 
 		$completedDate = '';
 		$completedBy = '';
@@ -1156,7 +1372,7 @@
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$isComplete = (bool)$row['iscomplete'];
-			$completedDate = $row['completedate'];
+			$completedDate = $row['date_completed'];
 			$completedBy = $row['completedby'];
 		}
 		else {
@@ -1179,12 +1395,12 @@
 		}
 		?>
 		<tr>
-			<td><?=$item['itemName']?></td>
+			<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
 			<td>
 				Diagnosis <i class="ui list icon right floated" style="cursor:pointer" onclick="$('#item-modal-<?=$itemRowID?>').modal('show')"></i>
 			</td>
 			<td><?=$completedDate?></td>
-			<td><?=$completedBy?></td>
+			<td><?=htmlspecialchars($completedBy ?? '')?></td>
 			<? if (count($data) > 0) { ?>
 			<td style="cursor:pointer; text-decoration: underline dotted blue" onclick="$('#found-data-modal-<?=$itemRowID?>').modal('show')">
 				<?=count($data)?> diagnoses
@@ -1215,8 +1431,15 @@
 	*/
 	function DisplayChecklistItemDefault($item) {
 		/* unknown checklist item type */
-		$enrollmentRowID = $item['enrollmentRowID'];
-		$itemRowID = $item['itemRowID'];
+		$enrollmentRowID = (int)$item['enrollmentRowID'];
+		$itemRowID = (int)$item['itemRowID'];
+		$completedDate = '';
+		$completedBy = '';
+		$isComplete = false;
+		$data = array();
+		$descs = array();
+		$completedates = array();
+		$raters = array();
 		//$item['itemOrder']
 		//$item['itemName']
 		//$item['itemDesc']
@@ -1225,19 +1448,26 @@
 		//$item['mappedName']
 		//$item['expectedCount']
 
-		/* first check if this item is marked in the enrollment_checklist table,
-		   then check if the item exists in the imaging series table,
-		   display both, but the checklist table supercedes the imaging table
-		*/
+		/* unknown types can only be marked complete manually, in the enrollment_checklist table */
+		$sqlstring = "select * from enrollment_checklist where enrollment_id = ? and projectchecklist_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $itemRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $itemRowID]);
+		mysqli_stmt_close($stmt);
+		if ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$isComplete = (bool)$row['iscomplete'];
+			$completedDate = $row['date_completed'];
+			$completedBy = $row['completedby'];
+		}
 		
 		?>
 			<tr>
-				<td><?=$item['itemName']?></td>
-				<td><?=htmlspecialchars($item['itemType'])?> (unknown) <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
-				<td><?=$completedDate?></td>
-				<td><?=$completedBy?></td>
+				<td><?=htmlspecialchars($item['itemName'] ?? '')?></td>
+				<td><?=htmlspecialchars($item['itemType'] ?? '')?> (unknown) <i class="checklist-html-tooltip ui list icon right floated" data-html="<?=BuildItemTooltip($item)?>"></i></td>
+				<td><?=htmlspecialchars($completedDate ?? '')?></td>
+				<td><?=htmlspecialchars($completedBy ?? '')?></td>
 				<td></td>
-				<td><? if ($isComplete) { echo "<a href='enrollment.php?action=setitemincomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='green check circle icon'></i></a>"; } else { echo "<a href='enrollment.php?action=setitemcomplete&enrollmentid=$enrollmentRowID&checklistitemid=$itemRowID'><i class='grey circle outline icon'></i></a>"; } ?></td>
+				<td><?=ChecklistToggle($item, $isComplete)?></td>
 			</tr>
 		<?
 	}

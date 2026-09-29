@@ -215,7 +215,7 @@
 			
 			$body = "$oFullname,<br><br><b>$uFullname ($uEmail)</b> has requested to join your Neuroinformatics Database (NiDB) instance: <b>$instancename</b>\n\nTo accept or reject this request, login to NiDB and go to Admin->Instances and click Accept or Reject";
 			
-			if (!SendGmail($oEmail,'NiDB instance join request',$body,0)) {
+			if (!SendEmail($oEmail,'NiDB instance join request',$body,0)) {
 				echo "System error. Unable to send email!";
 			}
 			else {

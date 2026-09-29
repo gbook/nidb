@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so the redirect-after-action (PRG) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -47,27 +48,108 @@
 	$requestid = (int)GetVariable("requestid");
 	$viewall = GetVariable("viewall");
 	
+	/* actions on a specific export are limited to the export's owner or a site admin */
+	if (in_array($action, array('resetexport', 'cancelexport', 'retryerrors', 'viewexport')) && !CanAccessExport($exportid)) {
+		Error("Export [$exportid] not found or you do not have access to it");
+		$action = "";
+	}
+
+	/* the mutating actions are GET links; redirect afterwards so a refresh doesn't repeat the action */
 	switch ($action) {
 		case 'viewdetails':
-			ViewDetails($exportid);
+			ViewDetails($requestid);
 			break;
 		case 'resetexport':
+			ob_start();
 			ResetExport($exportid);
-			ViewExport($exportid, $page);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("requeststatus.php?action=viewexport&exportid=$exportid");
 			break;
 		case 'cancelexport':
+			ob_start();
 			CancelExport($exportid);
-			ShowItemList($viewall);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("requeststatus.php");
 			break;
 		case 'retryerrors':
+			ob_start();
 			RetryErrors($exportid);
-			ShowItemList($viewall);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("requeststatus.php");
 			break;
 		case 'viewexport':
-			ViewExport($exportid, $page);
+			ViewExport($exportid);
 			break;
 		default:
 			ShowItemList($viewall);
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- CanAccessExport --------------------------- */
+	/* --------------------------------------------------- */
+	/* true if the export exists and the current user is a site admin or requested it */
+	function CanAccessExport($exportid) {
+		if ($exportid < 1) return false;
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select username from exports where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		if (!$result || (mysqli_num_rows($result) < 1)) return false;
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+		return ($GLOBALS['issiteadmin'] || ($row['username'] == $GLOBALS['username']));
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- GetExportSeriesTotals --------------------- */
+	/* --------------------------------------------------- */
+	/* returns array(total series, per-status counts, total bytes) for an export */
+	function GetExportSeriesTotals($exportid) {
+		$total = 0;
+		$totalbytes = 0;
+		$totals = array('submitted' => 0, 'processing' => 0, 'complete' => 0, 'error' => 0);
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select modality, series_id, status from exportseries where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$seriestable = GetSeriesTableName($row['modality'] ?? '');
+			if ($seriestable != "") {
+				$modality = strtolower($row['modality']);
+				$stmtB = mysqli_prepare($GLOBALS['linki'], "select series_size from `$seriestable` where `$modality" . "series_id` = ?");
+				if ($stmtB) {
+					mysqli_stmt_bind_param($stmtB, "i", $row['series_id']);
+					$resultB = MySQLiBoundQuery($stmtB, __FILE__, __LINE__);
+					mysqli_stmt_close($stmtB);
+					$rowB = $resultB ? mysqli_fetch_array($resultB, MYSQLI_ASSOC) : null;
+					$totalbytes += (int)($rowB['series_size'] ?? 0);
+				}
+			}
+
+			$total++;
+			if (isset($totals[$row['status']])) $totals[$row['status']]++;
+		}
+
+		return array($total, $totals, $totalbytes);
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- GetNumExportsAhead ------------------------ */
+	/* --------------------------------------------------- */
+	/* number of queued/processing exports submitted before $submitdate */
+	function GetNumExportsAhead($submitdate) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) 'count' from exports where status in ('processing','submitted') and submitdate < ?");
+		mysqli_stmt_bind_param($stmt, "s", $submitdate);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+
+		return (int)($row['count'] ?? 0);
 	}
 
 	
@@ -78,7 +160,8 @@
 		$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'cancelled' where export_id = ?");
 		mysqli_stmt_bind_param($stmt, "i", $exportid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		
+		mysqli_stmt_close($stmt);
+
 		Notice("Export [$exportid] cancelled");
 	}
 
@@ -91,11 +174,13 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'submitted', log = '' where export_id = ?");
 			mysqli_stmt_bind_param($stmt, "i", $exportid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			
+			mysqli_stmt_close($stmt);
+
 			$stmt = mysqli_prepare($GLOBALS['linki'], "update exportseries set status = 'submitted' where export_id = ?");
 			mysqli_stmt_bind_param($stmt, "i", $exportid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			
+			mysqli_stmt_close($stmt);
+
 			Notice("Status reset for export [$exportid]");
 		}
 		else {
@@ -108,25 +193,30 @@
 	/* ------- RetryErrors ------------------------------- */
 	/* --------------------------------------------------- */
 	function RetryErrors($exportid) {
-		$sqlstring = "select destinationtype from data_requests where req_groupid = $exportid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$desttype = $row['req_destinationtype'];
-		
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select destinationtype from exports where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		$desttype = $row['destinationtype'] ?? '';
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], "update exports set status = 'submitted' where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
 		/* the only download type that can resend single series is the remote NiDB. All others
 		   may have consecutive/renumbered series and must be completely rerun */
 		if ($desttype == "remotenidb") {
-			$sqlstring = "update exports set status = 'submitted' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid and status in ('error', 'cancelled')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exportseries set status = 'submitted' where export_id = ? and status in ('error', 'cancelled')");
 		}
 		else {
-			$sqlstring = "update exports set status = 'submitted' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$sqlstring = "update exportseries set status = 'submitted' where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update exportseries set status = 'submitted' where export_id = ?");
 		}
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
 		Notice("Export $exportid re-queued");
 	}
 	
@@ -136,23 +226,25 @@
 	/* --------------------------------------------------- */
 	function ViewDetails($requestid) {
 		
-		$sqlstring = "select * from data_requests where request_id = $requestid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from data_requests where request_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $requestid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
 
-		$fields_num = mysqli_num_fields($result);
-		for($i=0; $i<$fields_num; $i++)
-		{
-			$field = mysqli_fetch_field($result);
-			$fields[] = $field->name;
+		/* only the requester or a site admin may view the request */
+		if (!$row || (!$GLOBALS['issiteadmin'] && ($row['req_username'] != $GLOBALS['username']))) {
+			Error("Request [$requestid] not found or you do not have access to it");
+			return;
 		}
-		?><div style="column-count 3; -moz-column-count:3; -webkit-column-count:3"><?
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		foreach ($fields as $f) {
+
+		?><div style="column-count: 3; -moz-column-count:3; -webkit-column-count:3"><?
+		foreach ($row as $f => $v) {
 			if (($f != 'req_results') && (stripos($f,'password') === false)) {
-				echo "<b>$f</b> - " . $row[$f] . "<br>";
+				echo "<b>" . htmlspecialchars($f) . "</b> - " . htmlspecialchars($v ?? '') . "<br>";
 			}
 		}
-		echo "</div><pre><b>Request results</b><br>" . $row['req_results'] . "</pre>";
+		echo "</div><pre><b>Request results</b><br>" . htmlspecialchars($row['req_results'] ?? '') . "</pre>";
 	}
 
 
@@ -160,64 +252,66 @@
 	/* ------- ShowItemList ------------------------------ */
 	/* --------------------------------------------------- */
 	function ShowItemList($viewall) {
+		ShowFlashMessage();
 		?>
 		<div class="ui container">
+			<div class="ui two column grid">
+				<div class="column">
+					<h3 class="ui header"><?=($viewall ? "All exports" : "30 most recent exports")?></h3>
+				</div>
+				<div class="right aligned column">
+					<? if ($viewall) { ?>
+					<a class="ui small basic button" href="requeststatus.php?viewall=0">Show last 30 exports</a>
+					<? } else { ?>
+					<a class="ui small basic button" href="requeststatus.php?viewall=1">Show all</a>
+					<? } ?>
+				</div>
+			</div>
+			<script>
+				$(document).ready(function() {
+					$('.ui .progress').progress();
+				});
+			</script>
+
+			<table class="ui very compact celled selectable table">
+				<thead>
+					<tr>
+						<th>Submitted</th>
+						<? if ($GLOBALS['issiteadmin']) { ?><th>Requested by</th><? } ?>
+						<th>Destination</th>
+						<th class="right aligned">Objects</th>
+						<th class="right aligned">Size</th>
+						<th style="min-width: 180px">Status</th>
+						<th>Output</th>
+						<th class="center aligned">Actions</th>
+					</tr>
+				</thead>
+				<tbody>
 		<?
-		if ($viewall) {
-			?>
-			<h3 class="ui header">Showing all exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=0">Show last 30 exports</a>
-			<?
-		}
-		else {
-			?>
-			<h3 class="ui header">Showing 30 most recent exports</h3> <a class="ui basic button" href="requeststatus.php?viewall=1">Show all</a>
-			<?
-		}
-		?>
-		<script>
-			$(document).ready(function() {
-				$('.ui .progress').progress();
-			});
-		</script>
-		<?
-		$completecolor = "66AAFF";
-		$processingcolor = "AAAAFF";
-		$errorcolor = "FF6666";
-		$othercolor = "EFEFFF";
-		
+		$limit = $viewall ? "" : " limit 30";
 		if ($GLOBALS['issiteadmin']) {
-			if ($viewall) {
-				$sqlstring = "select * from exports order by submitdate desc";
-			}
-			else {
-				$sqlstring = "select * from exports order by submitdate desc limit 30";
-			}
+			$sqlstring = "select * from exports order by submitdate desc$limit";
+			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		}
 		else {
-			if ($viewall) {
-				$sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc";
-			}
-			else {
-				$sqlstring = "select * from exports where username = '" . $GLOBALS['username'] . "' order by submitdate desc limit 30";
-			}
+			$sqlstring = "select * from exports where username = ? order by submitdate desc$limit";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, "s", $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($GLOBALS['username']));
+			mysqli_stmt_close($stmt);
 		}
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$numrows = 0;
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$numrows++;
 			$exportid = $row['export_id'];
 			$submitdate = $row['submitdate'];
 			$username = $row['username'];
-			$downloadflags = $row['download_flags'];
 			$destinationtype = $row['destinationtype'];
-			$filetype = $row['filetype']; /* squirrel, bids, package */
-			$nfsdir = $row['nfsdir'];
-			$niftiFlags = explode(",", $row['nifti_flags']);
-			$bidsFlags = explode(",", $row['bids_flags']);
-			$squirrelFlags = explode(",", $row['squirrel_flags']);
-			$ndaFlags = explode(",", $row['nda_flags']);
+			$ndaFlags = explode(",", $row['nda_flags'] ?? "");
 			$exportstatus = $row['status'];
 			$connectionid = $row['remotenidb_connectionid'];
 			$transactionid = $row['remotenidb_transactionid'];
-			
+
 			switch ($destinationtype) {
 				case "web": $deststr = "<i class='cloud download alternate icon'></i> Web"; break;
 				case "publicdownload": $deststr = "<i class='people carry icon'></i> Public Download"; break;
@@ -225,263 +319,121 @@
 				case "nfs": $deststr = "<i class='server icon'></i> NFS"; break;
 				case "ndar": $deststr = "<i class='server icon'></i> NDA"; break;
 				case "dicomae": $deststr = "<i class='paper plane outline icon'></i> DICOM AE (PACS)"; break;
-				default: $deststr = ucfirst($destinationtype);
+				default: $deststr = htmlspecialchars(ucfirst($destinationtype ?? ''));
 			}
-			
-			switch ($exportstatus) {
-				case "submitted":
-				case "pending":
-					$statusstr = "";
-					break;
-				case "complete": $statusstr = "<i class='big green check icon'></i>Complete"; $iconcolor = "green"; break;
-				case "error": $statusstr = "<i class='big red exclamation circle icon'></i>Complete"; $iconcolor = "red"; break;
-				case "processing": $statusstr = "<i class='big blue spinner loading icon'></i>Processing"; $iconcolor = "grey"; break;
-				default: $statusstr = $exportstatus; $iconcolor = "";
-			}
-			
-			$total = 0;
-			$totalbytes = 0;
-			unset($totals);
-			$totals['submitted'] = 0;
-			$totals['processing'] = 0;
-			$totals['complete'] = 0;
-			$totals['error'] = 0;
-			$sqlstringA = "select * from exportseries where export_id = $exportid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($resultA);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				//PrintVariable($rowA);
-				$modality = strtolower($rowA['modality']);
-				$seriesid = $rowA['series_id'];
-				$status = $rowA['status'];
-				if ($modality != "") {
-					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-					$totalbytes += $rowB['series_size'];
-				}
-				
-				$total++;
-				switch ($status) {
-					case 'submitted': $totals['submitted']++; break;
-					case 'processing': $totals['processing']++; break;
-					case 'complete': $totals['complete']++; break;
-					case 'error': $totals['error']++; break;
-				}
-			}
-				
-			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
-			
-			if ($totals['error'] > 0) {
-				$error = "error";
-				$witherrors = "<br><span style='font-size: 8pt; color:red'>with " . $totals['error'] . " errors</span>";
-			}
-			else {
-				$error = "";
-				$witherrors = "";
-			}
-			
-			if ($destinationtype == 'remotenidb') {
-				$completelabel = 'sent';
-			}
-			else {
-				$completelabel = 'complete';
-			}
-			
+
+			list($total, $totals, $totalbytes) = GetExportSeriesTotals($exportid);
+			$pctcomplete = ($total > 0) ? ($totals['complete']/$total)*100 : 100;
+			$complete = (($totals['complete'] >= $total) || (($totals['submitted'] == 0) && ($totals['processing'] == 0)));
+
 			/* get exports in queue ahead of this one */
 			$numahead = 0;
-			if (($status == 'submitted') || ($status == 'pending')) {
-				$sqlstringA = "select count(*) 'count' from exports where status in ('processing','submitted') and submitdate < '$submitdate'";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-				$numahead = $rowA['count'];
+			if (($exportstatus == 'submitted') || ($exportstatus == 'pending')) {
+				$numahead = GetNumExportsAhead($submitdate);
 			}
-			
+
+			switch ($exportstatus) {
+				case "submitted":
+				case "pending": $statuslabel = "<div class='ui small grey label'><i class='clock outline icon'></i>Queued</div>"; $rowclass = ""; break;
+				case "processing": $statuslabel = "<div class='ui small blue label'><i class='spinner loading icon'></i>Processing</div>"; $rowclass = ""; break;
+				case "complete": $statuslabel = "<div class='ui small green label'><i class='check icon'></i>Complete</div>"; $rowclass = ""; break;
+				case "error": $statuslabel = "<div class='ui small red label'><i class='exclamation circle icon'></i>Error</div>"; $rowclass = "negative"; break;
+				case "cancelled": $statuslabel = "<div class='ui small label'><i class='times icon'></i>Cancelled</div>"; $rowclass = "disabled"; break;
+				default: $statuslabel = "<div class='ui small label'>" . htmlspecialchars(ucfirst($exportstatus ?? '')) . "</div>"; $rowclass = "";
+			}
 			?>
-			<div class="ui styled black top attached segment">
-				<div class="ui two column very compact grid">
-					<div class="column">
-						<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
-						<div class="ui meta">
-							<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> objects &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
-							<p>Requested by <?=$username?></p>
-							<? if ($numahead > 0) {
-								echo "<p>$numahead exports queued ahead of this export</p>";
-							} ?>
-						</div>
-						<div class="ui description">
-							<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
-							<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
-							<? }
-							
-							if ((($totals['complete']/$total)*100) < 100) {
-							?>
-							<div class="ui orange image label">
-								Exporting object <?=number_format($totals['complete'])?> of <?=number_format($total)?>
-								<div class="detail"><?=number_format(($totals['complete']/$total)*100, 1)?>%</div>
-							</div>
-							<?
-							}
-							else {
-								echo $totals['complete'] . " objects exported";
-							}
-							?>
-						</div>
+			<tr class="<?=$rowclass?>">
+				<td style="white-space: nowrap"><a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>"><?=date("M j, Y g:ia", strtotime($submitdate))?></a></td>
+				<? if ($GLOBALS['issiteadmin']) { ?><td><?=htmlspecialchars($username ?? "")?></td><? } ?>
+				<td style="white-space: nowrap"><?=$deststr?></td>
+				<td class="right aligned"><?=number_format($total)?></td>
+				<td class="right aligned" style="white-space: nowrap"><?=HumanReadableFilesize($totalbytes)?></td>
+				<td>
+					<?=$statuslabel?>
+					<? if ($totals['error'] > 0) { ?>
+						<span style="font-size: smaller; color: red"><?=number_format($totals['error'])?> errors</span>
+					<? } ?>
+					<? if ($pctcomplete < 100) { ?>
+					<div class="ui tiny <?=($totals['error'] > 0 ? "error" : "blue")?> progress" data-percent="<?=$pctcomplete?>" style="margin: 0.5em 0 0 0" title="<?=number_format($totals['complete'])?> of <?=number_format($total)?> objects exported (<?=number_format($pctcomplete, 1)?>%)">
+						<div class="bar"></div>
 					</div>
-					<div class="right aligned column">
-						<script>
-							$(document).ready(function() {
-								$('#popupbutton<?=$exportid?>').popup({ popup : $('#popupmenu<?=$exportid?>'), on : 'click'	});
-							});
-						</script>
-						<div class="ui vertical labeled spaced buttons">
-							<a href="requeststatus.php?action=viewexport&exportid=<?=$exportid?>" title="View status" class="ui basic compact button"><i class="list alternate outline icon"></i> View Details</a>
-							<? if ($exportstatus == "error") { ?>
-							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui basic compact button"><i class="sync alternate icon"></i> Retry</a>
-							<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-							<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui basic compact button"><i class="file import icon"></i> Resend</a>
-							<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-							<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui basic red compact button"><i class="times circle icon"></i> Cancel</a>
-							<? } ?>
-							<br>
-						</div>
+					<span style="font-size: smaller; color: gray"><?=number_format($totals['complete'])?> of <?=number_format($total)?></span>
+					<? } ?>
+					<? if ($numahead > 0) { ?>
+					<br><span style="font-size: smaller; color: gray"><?=$numahead?> queued ahead</span>
+					<? } ?>
+				</td>
+				<td>
+					<? DisplayExportOutput($row, $destinationtype, $ndaFlags, $complete); ?>
+					<? if (($destinationtype == "remotenidb") && ($connectionid != "") && ($transactionid != "")) { ?>
+					<iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="300px" height="50px" style="border: 0px">Checking with remote server...</iframe>
+					<? } ?>
+				</td>
+				<td class="center aligned" style="white-space: nowrap">
+					<div class="ui mini basic icon buttons">
+						<? if ($exportstatus == "error") { ?>
+						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui button"><i class="sync alternate icon"></i></a>
+						<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
+						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui button"><i class="redo icon"></i></a>
+						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
+						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui button" onClick="return confirm('Cancel this export?')"><i class="red times circle icon"></i></a>
+						<? } ?>
 					</div>
-				</div>
-			</div>
-
-			<div class="ui bottom attached compact segment">
-				<div class="ui two column very compact grid">
-					<div class="column">
-						<b><?=$statusstr?></b> <?=$witherrors?>						
-					</div>
-					<div class="right aligned column">
-						<?
-							$complete = false;
-							if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-								$complete = true;
-							}
-						
-							/* display download link - destinationtype is 'web' or (destinationtype is 'ndar' and ndaflags contains NDA_WEBDOWNLOAD) */
-							if ($destinationtype == "web") {
-								if ($complete) {
-									$zipFileName = "NIDB-$exportid.zip";
-									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
-									if (file_exists($zipFilePath)) {
-										$filesize = filesize($zipFilePath);
-									}
-									else {
-										$filesize = 0;
-									}
-
-									if ($filesize == 0) {
-										echo "Zipping download... ($zipFilePath)";
-									}
-									else {
-										$fsize = HumanReadableFilesize($filesize);
-										?>
-											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=$fsize?></span></a>
-											<br>
-										<?
-									}
-									
-								}
-								else {
-									?>Preparing download...<?
-								}
-							}
-							elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
-								if (in_array('NDA_WEBDOWNLOAD', $ndaFlags)) {
-									?>NDA web download...<?
-									$zipFileName = "NIDB-$exportid.zip";
-									$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
-									if (file_exists($zipFilePath)) { $filesize = filesize($zipFilePath); }
-									else { $filesize = 0; }
-
-									if ($filesize == 0) {
-										echo "Zipping download... ($zipFilePath)";
-									}
-									else {
-										?>
-											<a class="ui blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
-											<br>
-										<?
-									}
-								}
-								else {
-									if (!$complete) {
-										?>NDA ftp download...<br>Preparing export...<?
-									}
-									else {
-										$exportedPath = $row['exported_path'];
-										if ($exportedPath != "") {
-											$scphost = gethostname();
-											?>NDA ftp download<br>Available at <span style="font-family: monospace; user-select: all">scp://<?=htmlspecialchars($scphost)?><?=htmlspecialchars($exportedPath)?></span><?
-										}
-										else {
-											?>NDA ftp download<br><span style="color: gray">Export path was not recorded for this export; look in <span style="font-family: monospace"><?=htmlspecialchars($GLOBALS['cfg']['exportdir'])?></span> on the server.</span><?
-										}
-									}
-								}
-							}
-							elseif ($destinationtype == "remotenidb") {
-								?>Remote NiDB export<?
-							}
-							elseif ($destinationtype == "nfs") {
-							}
-							elseif ($destinationtype == "publicdownload") {
-							}
-							
-							
-							//if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel") || ($destinationtype == "ndar")) {
-							//if (($destinationtype == "web") || ($destinationtype == "ndar")) {
-								//if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-									
-									//if ($destinationtype == "squirrel") {
-									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NiDB-Squirrel-$exportid.zip";
-									//	if (file_exists($zipfile)) {
-									//		$output = shell_exec("du -sb $zipfile");
-									//		list($filesize, $fname) = preg_split('/\s+/', $output);
-									//		$zipfilename = "NiDB-Squirrel-$exportid.zip";
-									//		//echo $zipfilename;
-									//	}
-									//	else {
-									//		$filesize = 0;
-									//	}
-									//}
-									//else {
-									//	$zipfile = $GLOBALS['cfg']['webdir'] . "/download/NIDB-$exportid.zip";
-									//	if (file_exists($zipfile)) {
-									//		$output = shell_exec("du -sb $zipfile");
-									//		list($filesize, $fname) = preg_split('/\s+/', $output);
-									//		$zipfilename = "NIDB-$exportid.zip";
-									//	}
-									//	else {
-									//		$filesize = 0;
-									//	}
-									//}
-									
-									//echo "[$zipfilename] [$zipfile]";
-									//if ($filesize == 0) {
-									//	echo "Zipping download... ($zipfile)";
-									//}
-									//else {
-										?><!--
-											<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-size: smaller"><?=HumanReadableFilesize($filesize)?></span></a>
-											<br>-->
-										<?
-									//}
-								//}
-							//}
-						?>
-					</div>
-				</div>
-			</div>
-			<br>
+				</td>
+			</tr>
 			<?
-			}
+		}
+		if ($numrows == 0) {
+			?><tr><td colspan="<?=($GLOBALS['issiteadmin'] ? 8 : 7)?>" class="center aligned" style="color: gray">No exports found</td></tr><?
+		}
 		?>
+				</tbody>
+			</table>
 		</div>
 		<?
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- DisplayExportOutput ----------------------- */
+	/* --------------------------------------------------- */
+	/* the 'Output' cell of the export list: download link, NDA location, etc */
+	function DisplayExportOutput($row, $destinationtype, $ndaFlags, $complete) {
+		$exportid = $row['export_id'];
+
+		/* web download: destinationtype is 'web', or 'ndar' with NDA_WEBDOWNLOAD */
+		$webdownload = (($destinationtype == "web") || ((($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) && in_array('NDA_WEBDOWNLOAD', $ndaFlags)));
+
+		if ($webdownload) {
+			if (!$complete) {
+				?><span style="color: gray">Preparing download...</span><?
+				return;
+			}
+			$zipFileName = "NIDB-$exportid.zip";
+			$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
+			$filesize = file_exists($zipFilePath) ? filesize($zipFilePath) : 0;
+
+			if ($filesize == 0) {
+				?><span style="color: gray" title="<?=htmlspecialchars($zipFilePath)?>"><i class="spinner loading icon"></i> Zipping...</span><?
+			}
+			else {
+				?><a class="ui mini fluid blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-weight: normal"><?=HumanReadableFilesize($filesize)?></span></a><?
+			}
+		}
+		elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
+			if (!$complete) {
+				?><span style="color: gray">Preparing NDA export...</span><?
+			}
+			elseif (($row['exported_path'] ?? "") != "") {
+				?><span style="font-family: monospace; font-size: smaller; user-select: all">scp://<?=htmlspecialchars(gethostname())?><?=htmlspecialchars($row['exported_path'])?></span><?
+			}
+			else {
+				?><span style="color: gray; font-size: smaller" title="Export path was not recorded for this export">Look in <span style="font-family: monospace"><?=htmlspecialchars($GLOBALS['cfg']['exportdir'])?></span></span><?
+			}
+		}
+		elseif (($destinationtype == "nfs") && (($row['nfsdir'] ?? "") != "")) {
+			?><span style="font-family: monospace; font-size: smaller"><?=htmlspecialchars($row['nfsdir'])?></span><?
+		}
 	}
 	
 	
@@ -490,22 +442,24 @@
 	/* ---Contribution: Muhammad Asim Mubeen (Dec 2023)--- */
 	/* --------------------------------------------------- */
 	function ViewExport($exportid) {
+		ShowFlashMessage();
 
-		$sqlstring = "select * from exports where export_id = $exportid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exports where export_id = ?");
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		if (!$row) {
+			Error("Export [$exportid] not found");
+			return;
+		}
 		$log = $row['log'];
-		$status = ucfirst($row['status']);
 		$submitdate = $row['submitdate'];
 		$username = $row['username'];
 		$destinationtype = $row['destinationtype'];
 		$exportstatus = $row['status'];
 		$connectionid = $row['remotenidb_connectionid'];
 		$transactionid = $row['remotenidb_transactionid'];
-
-		if ($status == "Complete") { $color = "green"; }
-		elseif ($status == "Error") { $color = "red"; }
-		else { $color = "blue"; }
 		?>
 		<div class="ui container">
 			<?
@@ -514,7 +468,7 @@
 				case "web": $deststr = "<i class='cloud download alternate icon'></i> Web"; break;
 				case "publicdownload": $deststr = "<i class='people carry icon'></i> Public Download"; break;
 				case "remotenidb": $deststr = "<em data-emoji=':chipmunk:'></em> Remote NiDB"; break;
-				case "nfs": $deststr = "<i class='server icon'></i> Remote NiDB"; break;
+				case "nfs": $deststr = "<i class='server icon'></i> NFS"; break;
 				default: $deststr = ucfirst($destinationtype);
 			}
 			
@@ -529,39 +483,11 @@
 				default: $statusstr = $exportstatus; $iconcolor = "";
 			}
 			
-			$total = 0;
-			$totalbytes = 0;
-			unset($totals);
-			$totals['submitted'] = 0;
-			$totals['processing'] = 0;
-			$totals['complete'] = 0;
-			$totals['error'] = 0;
-			$sqlstringA = "select * from exportseries where export_id = $exportid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($resultA);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				//PrintVariable($rowA);
-				$modality = strtolower($rowA['modality']);
-				$seriesid = $rowA['series_id'];
-				$status = $rowA['status'];
-				if ($modality != "") {
-					$sqlstringB = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-					$totalbytes += $rowB['series_size'];
-				}
-				
-				$total++;
-				switch ($status) {
-					case 'submitted': $totals['submitted']++; break;
-					case 'processing': $totals['processing']++; break;
-					case 'complete': $totals['complete']++; break;
-					case 'error': $totals['error']++; break;
-				}
-			}
-				
-			$leftovers = $total - $totals['complete'] - $totals['processing'] - $totals['error'];
-			
+			list($total, $totals, $totalbytes) = GetExportSeriesTotals($exportid);
+			$numseries = $total;
+			$pctcomplete = ($total > 0) ? ($totals['complete']/$total)*100 : 100;
+			$complete = (($totals['complete'] >= $total) || (($totals['submitted'] == 0) && ($totals['processing'] == 0)));
+
 			if ($totals['error'] > 0) {
 				$error = "error";
 				$witherrors = "<br><span style='font-size: 8pt; color:red'>with " . $totals['error'] . " errors</span>";
@@ -580,11 +506,8 @@
 			
 			/* get exports in queue ahead of this one */
 			$numahead = 0;
-			if (($status == 'submitted') || ($status == 'pending')) {
-				$sqlstringA = "select count(*) 'count' from exports where status in ('processing','submitted') and submitdate < '$submitdate'";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-				$numahead = $rowA['count'];
+			if (($exportstatus == 'submitted') || ($exportstatus == 'pending')) {
+				$numahead = GetNumExportsAhead($submitdate);
 			}
 			
 			?>
@@ -597,7 +520,7 @@
 					<div class="ui header"><?=date("D M j, Y h:ia",strtotime($submitdate))?></div>
 					<div class="ui meta">
 						<?=$deststr?> &nbsp; &nbsp; <?=$numseries?> series &nbsp; &nbsp; <?=HumanReadableFilesize($totalbytes)?>
-						<p>Requested by <?=$username?></p>
+						<p>Requested by <?=htmlspecialchars($username ?? "")?></p>
 						<? if ($numahead > 0) {
 							echo "<p>$numahead exports queued ahead of this export</p>";
 						} ?>
@@ -607,9 +530,9 @@
 						<br><iframe src="ajaxapi.php?action=remoteexportstatus&connectionid=<?=$connectionid?>&transactionid=<?=$transactionid?>&detail=0&total=<?=$total?>" width="650px" height="50px" style="border: 0px">Checking with remote server...</iframe>
 						<? }
 						
-						if ((($totals['complete']/$total)*100) < 100) {
+						if ($pctcomplete < 100) {
 						?>
-						<div class="ui small progress <?=$error?>" data-percent="<?=($totals['complete']/$total)*100?>">
+						<div class="ui small progress <?=$error?>" data-percent="<?=$pctcomplete?>">
 							<div class="bar">
 								<div class="centered progress"></div>
 							</div>
@@ -644,27 +567,18 @@
 							<div class="right aligned column">
 								<?
 									if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
-										if ((round($totals['complete']/$total)*100 == 100) || (($totals['submitted'] == 0) && ($totals['processing'] == 0))) {
-											$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NIDB-$exportid.zip";
-											if (file_exists($zipfile)) {
-												$output = shell_exec("du -sb $zipfile");
-												list($filesize, $fname) = preg_split('/\s+/', $output);
-												$zipfilename = "NIDB-$exportid.zip";
-											}
-											else {
-												$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/NiDB-Squirrel-$exportid.zip";
+										if ($complete) {
+											$filesize = 0;
+											$zipfilename = "";
+											foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.zip") as $f) {
+												$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/$f";
 												if (file_exists($zipfile)) {
-													$output = shell_exec("du -sb $zipfile");
-													list($filesize, $fname) = preg_split('/\s+/', $output);
-													$zipfilename = "NiDB-Squirrel-$exportid.zip";
-													//echo $zipfilename;
-												}
-												else {
-													$filesize = 0;
+													$filesize = filesize($zipfile);
+													$zipfilename = $f;
+													break;
 												}
 											}
-											
-											//echo "[$zipfilename] [$zipfile]";
+
 											if ($filesize == 0) {
 												echo "Zipping download...";
 											}
@@ -695,7 +609,7 @@
 						View Export Log
 					</div>
 					<div class="content">
-						<tt><pre><?=$log?></pre></tt>
+						<tt><pre><?=htmlspecialchars($log ?? '')?></pre></tt>
 					</div>
 				</div>
 			</div>
@@ -722,46 +636,55 @@
 					<th align="left">Message</th>
 				</thead>
 			<?
-			$sqlstring = "select * from exportseries where export_id = $exportid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$modality = strtolower($row['modality']);
-				$seriesid = $row['series_id'];
-				$status = $row['status'];
-				$statusmessage = $row['statusmessage'];
-				
-				if ($modality != "") {
-					$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.$modality" . "series_id = $seriesid order by uid, study_num, series_num";
-					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-					$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-					$seriesdesc = $rowB['series_desc'];
-					if ($modality != "mr") {
-						$seriesdesc = $rowB['series_protocol'];
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from exportseries where export_id = ?");
+			mysqli_stmt_bind_param($stmt, "i", $exportid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+				$modality = strtolower($row['modality'] ?? '');
+				$seriesid = (int)$row['series_id'];
+				$status = $row['status'] ?? '';
+				$statusmessage = $row['statusmessage'] ?? '';
+
+				/* reset per row so a missing series doesn't show the previous row's values */
+				$seriesdesc = $subjectid = $studyid = $uid = $seriesnum = $studynum = '';
+				$seriessize = 0;
+
+				$seriestable = GetSeriesTableName($modality);
+				if ($seriestable != "") {
+					$sqlstringB = "select a.*, b.*, d.project_name, e.uid, e.subject_id from `$seriestable` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join projects d on c.project_id = d.project_id left join subjects e on e.subject_id = c.subject_id where a.`$modality" . "series_id` = ? order by uid, study_num, series_num";
+					$stmtB = mysqli_prepare($GLOBALS['linki'], $sqlstringB);
+					if ($stmtB) {
+						mysqli_stmt_bind_param($stmtB, "i", $seriesid);
+						$resultB = MySQLiBoundQuery($stmtB, __FILE__, __LINE__, $sqlstringB, array($seriesid));
+						mysqli_stmt_close($stmtB);
+						$rowB = $resultB ? mysqli_fetch_array($resultB, MYSQLI_ASSOC) : null;
+						if ($rowB) {
+							$seriesdesc = ($modality == "mr") ? $rowB['series_desc'] : $rowB['series_protocol'];
+							$subjectid = $rowB['subject_id'];
+							$studyid = $rowB['study_id'];
+							$uid = $rowB['uid'];
+							$seriesnum = $rowB['series_num'];
+							$studynum = $rowB['study_num'];
+							$seriessize = (int)($rowB['series_size'] ?? 0);
+						}
 					}
-					$subjectid = $rowB['subject_id'];
-					$studyid = $rowB['study_id'];
-					$uid = $rowB['uid'];
-					$seriesnum = $rowB['series_num'];
-					$studynum = $rowB['study_num'];
-					$seriessize = $rowB['series_size'];
-					$totalbytes += $rowB['series_size'];
 				}
-				
-				$total++;
+
 				switch ($status) {
-					case 'submitted': $totals['submitted']++; $class=""; break;
-					case 'processing': $totals['processing']++; $class="blue"; $bgcolor = "#526FAA"; $color="#fff"; break;
-					case 'complete': $totals['complete']++; $class="green"; $bgcolor = "#229320"; $color="#fff"; break;
-					case 'error': $totals['error']++; $class="red"; $bgcolor = "#8E3023"; $color="#fff"; break;
+					case 'processing': $class="blue"; break;
+					case 'complete': $class="green"; break;
+					case 'error': $class="red"; break;
+					default: $class="";
 				}
 				?>
 				<tr>
-					<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td><?=$seriesnum?> - <?=$seriesdesc?></td>
+					<td><a href="subjects.php?id=<?=$subjectid?>"><?=htmlspecialchars($uid ?? '')?></a></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=htmlspecialchars("$uid$studynum")?></a></td>
+					<td><?=$seriesnum?> - <?=htmlspecialchars($seriesdesc ?? '')?></td>
 					<td class="right aligned"><?=number_format($seriessize)?></td>
 					<td class="<?=$class?>"> <?=ucfirst($status)?></td>
-					<td><?=$statusmessage?></td>
+					<td><?=htmlspecialchars($statusmessage)?></td>
 				</tr>
 				<?
 			}

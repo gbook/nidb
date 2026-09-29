@@ -207,6 +207,10 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		mysqli_stmt_close($stmt);
 
+		/* Edit permission implies View permission */
+		$viewdata = array_unique(array_merge($viewdata, $modifydata));
+		$viewphi = array_unique(array_merge($viewphi, $modifyphi));
+
 		/* rebuild the permission rows from the checkbox lists (SetUserProjectFlag whitelists the column) */
 		foreach ($projectadmin as $projectid) SetUserProjectFlag($id, $projectid, 'project_admin');
 		foreach ($modifydata as $projectid)   SetUserProjectFlag($id, $projectid, 'write_data');
@@ -582,24 +586,57 @@
 						$(".modifydata").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
+						/* Edit implies View */
+						if (checked_status) {
+							$("#allviewdata").prop("checked", true);
+							$(".viewdata").find("input[type='checkbox']").prop("checked", true);
+						}
 					});
 					$("#allviewdata").click(function() {
 						var checked_status = this.checked;
 						$(".viewdata").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
+						/* can't have Edit without View */
+						if (!checked_status) {
+							$("#allmodifydata").prop("checked", false);
+							$(".modifydata").find("input[type='checkbox']").prop("checked", false);
+						}
 					});
 					$("#allmodifyphi").click(function() {
 						var checked_status = this.checked;
 						$(".modifyphi").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
+						/* Edit implies View */
+						if (checked_status) {
+							$("#allviewphi").prop("checked", true);
+							$(".viewphi").find("input[type='checkbox']").prop("checked", true);
+						}
 					});
 					$("#allviewphi").click(function() {
 						var checked_status = this.checked;
 						$(".viewphi").find("input[type='checkbox']").each(function() {
 							this.checked = checked_status;
 						});
+						/* can't have Edit without View */
+						if (!checked_status) {
+							$("#allmodifyphi").prop("checked", false);
+							$(".modifyphi").find("input[type='checkbox']").prop("checked", false);
+						}
+					});
+					/* per-project: checking Edit also checks View, unchecking View also unchecks Edit */
+					$(".modifydata input[type='checkbox']").change(function() {
+						if (this.checked) $(this).closest("tr").find(".viewdata input[type='checkbox']").prop("checked", true);
+					});
+					$(".viewdata input[type='checkbox']").change(function() {
+						if (!this.checked) $(this).closest("tr").find(".modifydata input[type='checkbox']").prop("checked", false);
+					});
+					$(".modifyphi input[type='checkbox']").change(function() {
+						if (this.checked) $(this).closest("tr").find(".viewphi input[type='checkbox']").prop("checked", true);
+					});
+					$(".viewphi input[type='checkbox']").change(function() {
+						if (!this.checked) $(this).closest("tr").find(".modifyphi input[type='checkbox']").prop("checked", false);
 					});
 					/* show/hide projects for each instance */
 					$(".instances").click(function() {
@@ -624,15 +661,15 @@
 					<tr>
 						<th></th>
 						<th></th>
-						<th colspan="2" class="center aligned">Imaging Data</th>
-						<th colspan="2" class="center aligned">PHI</th>
+						<th colspan="2" class="center aligned">Data</th>
+						<th colspan="2" class="center aligned">PHI &amp; Demographics</th>
 					</tr>
 					<tr>
 						<th>Select/unselect all</th>
 						<th class="right aligned">Project admin <label><input type="checkbox" id="allprojectadmin"></label></th>
-						<th class="right aligned">Full &nbsp;<label><input type="checkbox" id="allmodifydata"></label></th>
+						<th class="right aligned">Edit &nbsp;<label><input type="checkbox" id="allmodifydata"></label></th>
 						<th class="right aligned">View &nbsp;<label><input type="checkbox" id="allviewdata"></label></th>
-						<th class="right aligned">Full &nbsp;<label><input type="checkbox" id="allmodifyphi"></label></th>
+						<th class="right aligned">Edit &nbsp;<label><input type="checkbox" id="allmodifyphi"></label></th>
 						<th class="right aligned">View &nbsp;<label><input type="checkbox" id="allviewphi"></label></th>
 					</tr>
 				</thead>
@@ -708,6 +745,9 @@
 										$write_phi = "";
 									}
 								}
+								/* Edit implies View - show View checked even if an older row only has the write flag */
+								if ($write_data) $view_data = 1;
+								if ($write_phi) $view_phi = 1;
 								
 								?>
 								<script type="text/javascript">

@@ -52,15 +52,14 @@
 	$action = GetVariable("action");
 	$emailbody = GetVariable("emailbody");
 	$emailsubject = GetVariable("emailsubject");
-	$emailto = GetVariable("emailto");
 	
 	/* determine action */
 	switch ($action) {
 		/* sendemail has a side effect (mass email) - use PRG so a refresh/Back doesn't re-send.
-		   SendEmail() returns a status string, so render it into the flash for the redirect. */
+		   SendMassEmail() returns a status string, so render it into the flash for the redirect. */
 		case 'sendemail':
 			ob_start();
-			$msg = SendEmail($emailbody, $emailsubject, $emailto);
+			$msg = SendMassEmail($emailbody, $emailsubject);
 			if ($msg != "") Notice($msg);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("adminemail.php");
@@ -90,9 +89,13 @@
 		
 	
 	/* -------------------------------------------- */
-	/* ------- SendEmail -------------------------- */
+	/* ------- SendMassEmail ---------------------- */
 	/* -------------------------------------------- */
-	function SendEmail($emailbody, $emailsubject, $emailto) {
+	/* Sends the message to every user with an email address. Named SendMassEmail because
+	   functions.php already defines SendEmail(), and redeclaring it is a fatal error. Uses the shared
+	   SendEmail() (the site's configured SMTP server) rather than SendGmail(), which is hard-wired
+	   to Gmail (SSL port 465 with a login) */
+	function SendMassEmail($emailbody, $emailsubject) {
 
 		$sqlstring = "select user_email from users where user_email <> ''";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
@@ -104,14 +107,15 @@
 		$failed = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$emailto = $row['user_email'];
-			if (SendGmail($emailto, $emailsubject, $emailbody, 1, 0))
+			/* debug = 0: debug mode prints a table (including the whole body) for every recipient */
+			if (SendEmail($emailto, $emailsubject, $emailbody, 0, 0))
 				$sent++;
 			else
 				$failed[] = $emailto;
 		}
 
 		if (count($failed) > 0)
-			return "Message sent to $sent of $numrows recipients. Failed for: " . implode(", ", $failed);
+			return "Message sent to $sent of $numrows recipients. Failed for: " . htmlspecialchars(implode(", ", $failed));
 		return "Message sent successfully to $sent recipients";
 	}
 	

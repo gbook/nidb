@@ -83,16 +83,16 @@
 	/* ------- Validate --------------------------- */
 	/* -------------------------------------------- */
 	function Validate($k) {
-		$k = mysqli_real_escape_string($GLOBALS['linki'], $k);
-
-		if (trim($k) == "") {
+		if (trim($k ?? '') == "") {
 			return 0;
 		}
 		
 		/* check if the key exists in the users_pending table */
-		$sqlstring = "select * from users_pending where emailkey = '$k'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from users_pending where emailkey = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $k);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$k]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$userpendingid = $row['user_id'];
@@ -107,7 +107,8 @@
 			$email = $row['user_email'];
 			
 			$nameparts = explode(" ", $fullname);
-			elseif (count($nameparts) == 1) {
+			$fname = $mname = $lname = "";
+			if (count($nameparts) == 1) {
 				$fname = $nameparts[0];
 			}
 			elseif (count($nameparts) == 2) {
@@ -122,7 +123,7 @@
 			elseif (count($nameparts) > 3) {
 				$fname = $nameparts[0];
 				$mname = $nameparts[1];
-				$lname = implode(" ", array_slice(2, count($nameparts)-1));
+				$lname = implode(" ", array_slice($nameparts, 2));
 			}
 			else {
 				$fname = "Name not";
@@ -134,23 +135,31 @@
 		}
 
 		/* if no errors were found so far, insert the row, with the user disabled */
-		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$username','$password','Standard','$fullname','$institution','$country','$email',1)";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values (?, ?, 'Standard', ?, ?, ?, ?, 1)";
+		$params = [$username, $password, $fullname, $institution, $country, $email];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		$userid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		
-		$sqlstring = "delete from users_pending where user_id = $userpendingid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$userpendingid = (int)$userpendingid;
+		$sqlstring = "delete from users_pending where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userpendingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userpendingid]);
+		mysqli_stmt_close($stmt);
 		
 		/* insert a row into the instance permissions for the default instance */
-		$sqlstring = "insert into user_instance (user_id, instance_id) values ($userid, (select instance_id from instance where instance_default = 1))";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into user_instance (user_id, instance_id) values (?, (select instance_id from instance where instance_default = 1))";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		mysqli_stmt_close($stmt);
 		
 		$body = "<b>Your NiDB account on " . $GLOBALS['cfg']['siteurl'] . " account is active and you are joined to the main instance</b><br><br>Login now: " . $GLOBALS['cfg']['siteurl'] . "/login.php<br><br>Follow these steps to join other instances<ol><li>Login to NiDB: " . $GLOBALS['cfg']['siteurl'] . "/login.php<li>Click your username at the top of the page<li>Find the instance you want to join on the list of available instances<li>The owner of the instance will receive notification that you want to join<li>You will receive a notifiication of the owners response to your join request</ol><br><br>";
 		/* send the email */
-		SendGmail($email,'Your NiDB account has been acitvated',$body, 0);
+		SendEmail($email,'Your NiDB account has been acitvated',$body, 0);
 		
 		return 1;
 	}

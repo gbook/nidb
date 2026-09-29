@@ -39,7 +39,7 @@ for the reference implementation.
 | `datadictionary.php` | 4 | ⬜ |
 | `datasetrequests.php` | 1 | ⬜ |
 | `diagnosis.php` | 1 | ⬜ |
-| `enrollment.php` | 1 | ⬜ |
+| `enrollment.php` | 2 | ✅ |
 | `experiment.php` | 1 | ⬜ |
 | `functions.php` | 3 | ⬜ |
 | `groups.php` | 5 | ✅ |
@@ -73,11 +73,11 @@ for the reference implementation.
 | `signup.php` | 2 | ⬜ |
 | `status.php` | 1 | ⬜ |
 | `studies.php` | 16 | ⬜ |
-| `subjects.php` | 10 | ⬜ |
+| `subjects.php` | 11 | ✅ |
 | `system.php` | 1 | ⬜ |
 | `templates.php` | 4 | ⬜ |
 | `timeline.php` | 1 | ⬜ |
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-09-25 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-09-29 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

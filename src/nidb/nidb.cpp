@@ -869,32 +869,54 @@ QString nidb::Debug(QString msg, QString func, int wrap, bool timeStamp) {
  */
 bool nidb::SendEmail(QString to, QString subject, QString body) {
 
-    /* get email config variables */
-    QString smtpServer = cfg["emailserver"].replace("tls://","");
-    //int smtpPort = cfg["emailport"].toInt();
+    /* get email config variables. Copy the server name first; calling replace() directly on cfg[...]
+       would modify the stored config value */
+    QString smtpServer = cfg["emailserver"];
+    smtpServer.replace("tls://","");
+    int smtpPort = cfg["emailport"].toInt();
     QString fromEmail = cfg["emailfrom"];
     //QString smtpUsername = cfg["emailusername"];
     //QString smtpPassword = cfg["emailpassword"];
     QString siteName = cfg["sitename"];
-    QString tmpMailFilePath = "/tmp/" + GenerateRandomString(15) + ".txt";
 
-    /* create the curl command */
-    QString curlCmd = QString("curl smtp://%1 --mail-from %2 --mail-rcpt %3 --upload-file %4").arg(smtpServer).arg(fromEmail).arg(to).arg(tmpMailFilePath);
-    QString message = QString("From: NiDB (%1) <%2>\nTo: %3\nSubject: %4\nDate: %5\nContent-Type: text/html; charset=\"utf-8\"\n\n").arg(siteName).arg(fromEmail).arg(to).arg(subject).arg(QDateTime::currentDateTime().toString(Qt::RFC2822Date));
-    message += body;
-    message += "\r\n.\r\n";
+    /* write the message under tmpdir, so SafeDeletePath (which only deletes within tmpdir) can remove it */
+    QString tmpMailFilePath = cfg["tmpdir"] + "/" + GenerateRandomString(15) + ".eml";
 
-    WriteTextFile(tmpMailFilePath, message, false);
+    /* a newline in the subject would end the header early (header injection) */
+    subject.replace(QRegularExpression("[\\r\\n]+"), " ");
 
-    /* send the email */
+    /* create the curl command. Arguments are quoted because SystemCommand runs through sh -c */
+    QString smtpUrl = QString("smtp://%1").arg(smtpServer);
+    if (smtpPort > 0)
+        smtpUrl += QString(":%1").arg(smtpPort);
+    QString curlCmd = QString("curl -sS %1 --mail-from %2 --mail-rcpt %3 --upload-file %4 2>&1").arg(ShellQuote(smtpUrl), ShellQuote(fromEmail), ShellQuote(to), ShellQuote(tmpMailFilePath));
+
+    /* SMTP requires CRLF line endings and a blank CRLF line between the headers and the body. curl uploads
+       the file as-is, so with bare LFs there is no header/body separator: strict servers treat the whole
+       message as headers, keep the Subject, and drop the body. curl adds the terminating "." line itself */
+    QString message = QString("From: NiDB (%1) <%2>\r\nTo: %3\r\nSubject: %4\r\nDate: %5\r\nMIME-Version: 1.0\r\nContent-Type: text/html; charset=\"utf-8\"\r\n\r\n").arg(siteName, fromEmail, to, subject, QDateTime::currentDateTime().toString(Qt::RFC2822Date));
+    QString crlfBody = body;
+    crlfBody.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\r\n");
+    message += crlfBody + "\r\n";
+
+    if (!WriteTextFile(tmpMailFilePath, message, false)) {
+        Log(QString("Unable to write temporary email file [%1]").arg(tmpMailFilePath));
+        return false;
+    }
+
+    /* send the email. With -sS, curl prints nothing on success and "curl: (N) ..." on error (to stderr,
+       hence the 2>&1 - SystemCommand only captures stdout) */
     QString result = SystemCommand(curlCmd, true).trimmed();
     Print(result);
+    bool sent = !result.contains("curl: (");
+    if (!sent)
+        Log(QString("Error sending email to [%1]: %2").arg(to).arg(result));
 
     QString m;
     if (!SafeDeletePath(tmpMailFilePath, cfg["tmpdir"], m))
         Log(QString("Error deleting path [%1]  error message [%2]").arg(tmpMailFilePath).arg(m));
 
-    return true;
+    return sent;
 }
 
 

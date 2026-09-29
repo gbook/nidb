@@ -447,6 +447,7 @@
 			$subject = "$calendar cancellation $startdate";
 			
 			/* get a list of users who care about this calendar and send an email */
+			$recipients = array();
 			$sqlstring = "select b.user_email 'email' from calendar_notifications a left join users b on a.not_userid = b.user_id where not_calendarid = $calid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -466,27 +467,23 @@
 	/* ----------------------------------------------- */
 	/* --------- Sendmail ---------------------------- */
 	/* ----------------------------------------------- */
+	/* send the notification to each recipient through the site's SMTP server (SendEmail() in
+	   functions.php). This used to use PHPMailer with hard-coded Gmail settings */
 	function Sendmail($body, $recipients, $subject) {
-		$mail             = new PHPMailer();
-		//$body             = "This is a test message!";
-		$body             = preg_replace('/[\\\\]/','',$body);
-		$mail->IsSMTP(); // telling the class to use SMTP
-		$mail->SMTPAuth   = true;                  // enable SMTP authentication
-		$mail->SMTPSecure = "tls";                 // sets the prefix to the servier
-		$mail->Host       = "smtp.gmail.com";      // sets GMAIL as the SMTP server
-		$mail->Port       = 587;                   // set the SMTP port for the GMAIL server
-		$mail->Username   = "email@gmail.com";  // GMAIL username
-		$mail->Password   = "password";            // GMAIL password
-		$mail->SetFrom('email@gmail.com', 'Calendar');
-		$mail->Subject    = $subject;
-		$mail->MsgHTML($body);
+		$body = preg_replace('/[\\\\]/','',$body);
+		$sent = 0;
+		$failed = array();
 		foreach ($recipients as $email) {
-			$mail->AddAddress($email, $email);
+			if (trim($email ?? '') == '') continue;
+			if (SendEmail($email, $subject, $body, 0))
+				$sent++;
+			else
+				$failed[] = $email;
 		}
-		if(!$mail->Send()) {
-		  echo "Mailer Error: " . $mail->ErrorInfo;
+		if (count($failed) > 0) {
+			echo "Unable to send email to: " . htmlspecialchars(implode(", ", $failed));
 		} else {
-		  echo "Emails sent!";
+			echo "Emails sent!";
 		}
 	}
 

@@ -37,6 +37,7 @@
 #include "moduleCluster.h"
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
+#include "moduleAudit.h"
 #include <iostream>
 #ifdef Q_OS_UNIX
 #include <sys/resource.h>
@@ -86,7 +87,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup");
+    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup  audit");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -152,6 +153,7 @@ int main(int argc, char *argv[])
     QString paramSubModule = p.value(optSubModule).trimmed();
 
     QStringList modules = {
+        "audit",
         "backup",
         "cluster",
         "export",
@@ -311,6 +313,11 @@ int main(int argc, char *argv[])
                         }
                         else if (module == "backup") {
                             moduleBackup *m = new moduleBackup(n);
+                            keepLog = m->Run();
+                            delete m;
+                        }
+                        else if (module == "audit") {
+                            moduleAudit *m = new moduleAudit(n);
                             keepLog = m->Run();
                             delete m;
                         }

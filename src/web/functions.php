@@ -174,95 +174,13 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- SendGmail -------------------------- */
-	/* -------------------------------------------- */
-	function SendGmail($to,$subject,$body,$debug,$usebcc=0) {
-	
-		$from = $GLOBALS['cfg']['emailfrom'];
-
-		if ($usebcc) {
-			$headers = array(
-				'From' => $from,
-				'To' => $from,
-				'Subject' => $subject,
-				'Bcc' => $to
-			);
-		}
-		else {
-			$headers = array(
-				'From' => $from,
-				'To' => $to,
-				'Subject' => $subject
-			);
-		}
-		
-		$mime = new Mail_mime();
-		$mime->setHTMLBody($body);
-
-		$body = $mime->get();
-        $headers = $mime->headers($headers);
-
-		$host = $GLOBALS['cfg']['emailserver'];
-		if (substr($host,0,6) == "tls://")
-			$host = str_replace("tls://","",$host);
-		if (substr($host,0,6) != "ssl://")
-			$host = "ssl://$host";
-
-		$smtp = Mail::factory('smtp', array(
-				//'host' => "ssl://" . $GLOBALS['cfg']['emailserver'],
-				'host' => $host,
-				'port' => 465,
-				'debug' => false,
-				'auth' => true,
-				'username' => $GLOBALS['cfg']['emailusername'],
-				'password' => $GLOBALS['cfg']['emailpassword']
-			));
-	
-		/* wrap the body in an HTML mime type and copywrite footer */
-		//$body = "MIME-Version: 1.0\nContent-Type: multipart/mixed; BOUNDARY=\"$boundry\"\n\n--$boundry\nContent-Type: text/html\n"
-		$body = "<html><body style=\"font-family: arial, helvetica, sans-serif\">" . $body . "<br><br><br><hr><small style='font-size:8pt; color: #666'>Email sent from " . $GLOBALS['cfg']['siteurl'] . ". If you received this email in error, please disregard it.<br><br>&copy; 2004-" . date("Y") . " " . $GLOBALS['cfg']['sitename'] . ", powered by NiDB http://github.com/gbook/nidb</small></body></html>";
-		$mail = $smtp->send($to, $headers, $body);
-
-		if ($debug) {
-			?>
-			<table border="1">
-				<tr>
-					<td>To</td>
-					<td><?=$to?></td>
-				</tr>
-				<tr>
-					<td>From</td>
-					<td><?=$from?></td>
-				</tr>
-				<tr>
-					<td>Subject</td>
-					<td><?=$subject?></td>
-				</tr>
-				<tr>
-					<td>Body</td>
-					<td><?=$body?></td>
-				</tr>
-			</table>
-			<?
-		}
-		
-		if (PEAR::isError($mail)) {
-			if ($debug) {
-				echo('<p>' . $mail->getMessage() . ' | ' . $mail->getUserInfo() . '</p>');
-			}
-			return 0;
-		} else {
-			if ($debug) {
-				echo('<p>Message successfully sent!</p>');
-			}
-			return 1;
-		}	
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- SendEmail -------------------------- */
 	/* -------------------------------------------- */
+	/* Send an HTML email through the SMTP server in the config ([emailserver], [emailport], and optionally
+	   [emailusername]/[emailpassword] for servers that require a login). This is the only email sender;
+	   the old Gmail sender (SendGmail) was removed. Returns 1 on success, 0 on failure. If $debug is set,
+	   the message details and the result are displayed. If $usebcc is set, the recipient(s) are sent as
+	   Bcc and the To header is the sending address */
 	function SendEmail($to,$subject,$body,$debug,$usebcc=0) {
 	
 		$from = $GLOBALS['cfg']['emailfrom'];
@@ -282,31 +200,35 @@
 				'Subject' => $subject
 			);
 		}
-		
-		$mime = new Mail_mime();
-		$mime->setHTMLBody($body);
 
-		$body = $mime->get();
-        $headers = $mime->headers($headers);
-
-		$host = $GLOBALS['cfg']['emailserver'];
-		//if (substr($host,0,6) == "tls://")
-		//	$host = str_replace("tls://","",$host);
-		//if (substr($host,0,6) != "ssl://")
-		//	$host = "ssl://$host";
-
-		$smtp = Mail::factory('smtp', array(
-				'host' => $host,
-				'port' => 25,
-				'debug' => false,
-				'auth' => false
-				//'username' => $GLOBALS['cfg']['emailusername'],
-				//'password' => $GLOBALS['cfg']['emailpassword']
-			));
-	
-		/* wrap the body in an HTML mime type and copywrite footer */
-		//$body = "MIME-Version: 1.0\nContent-Type: multipart/mixed; BOUNDARY=\"$boundry\"\n\n--$boundry\nContent-Type: text/html\n"
+		/* wrap the body in an HTML page with the site footer. This must happen before the body is
+		   MIME-encoded below, otherwise the wrapper is added as raw text around the encoded body */
 		$body = "<html><body style=\"font-family: arial, helvetica, sans-serif\">" . $body . "<br><br><br><hr><small style='font-size:8pt; color: #666'>Email sent from " . $GLOBALS['cfg']['siteurl'] . ". If you received this email in error, please disregard it.<br><br>&copy; 2004-" . date("Y") . " " . $GLOBALS['cfg']['sitename'] . ", powered by NiDB http://github.com/gbook/nidb</small></body></html>";
+		$htmlbody = $body;
+
+		$mime = new Mail_mime(array('eol' => "\r\n", 'html_charset' => 'UTF-8', 'text_charset' => 'UTF-8', 'head_charset' => 'UTF-8'));
+		$mime->setHTMLBody($body);
+		$body = $mime->get();
+		$headers = $mime->headers($headers);
+
+		/* SMTP server from the config. A tls:// prefix is dropped (STARTTLS is used automatically when the
+		   server offers it); an ssl:// prefix is kept for servers that use implicit SSL */
+		$host = $GLOBALS['cfg']['emailserver'];
+		if (substr($host,0,6) == "tls://")
+			$host = substr($host, 6);
+		$port = (int)($GLOBALS['cfg']['emailport'] ?? 0);
+		if ($port <= 0)
+			$port = 25;
+
+		/* log in only if a username is configured (an internal relay usually doesn't need one) */
+		$params = array('host' => $host, 'port' => $port, 'debug' => false, 'auth' => false);
+		if (trim($GLOBALS['cfg']['emailusername'] ?? '') != '') {
+			$params['auth'] = true;
+			$params['username'] = $GLOBALS['cfg']['emailusername'];
+			$params['password'] = $GLOBALS['cfg']['emailpassword'];
+		}
+
+		$smtp = Mail::factory('smtp', $params);
 		$mail = $smtp->send($to, $headers, $body);
 
 		if ($debug) {
@@ -314,19 +236,23 @@
 			<table border="1">
 				<tr>
 					<td>To</td>
-					<td><?=$to?></td>
+					<td><?=htmlspecialchars($to)?></td>
 				</tr>
 				<tr>
 					<td>From</td>
-					<td><?=$from?></td>
+					<td><?=htmlspecialchars($from)?></td>
+				</tr>
+				<tr>
+					<td>Server</td>
+					<td><?=htmlspecialchars("$host:$port")?></td>
 				</tr>
 				<tr>
 					<td>Subject</td>
-					<td><?=$subject?></td>
+					<td><?=htmlspecialchars($subject)?></td>
 				</tr>
 				<tr>
 					<td>Body</td>
-					<td><?=$body?></td>
+					<td><?=$htmlbody?></td>
 				</tr>
 			</table>
 			<?
@@ -334,7 +260,7 @@
 		
 		if (PEAR::isError($mail)) {
 			if ($debug) {
-				echo('<p>' . $mail->getMessage() . ' | ' . $mail->getUserInfo() . '</p>');
+				echo('<p>' . htmlspecialchars($mail->getMessage() . ' | ' . $mail->getUserInfo()) . '</p>');
 			}
 			return 0;
 		} else {
@@ -519,7 +445,7 @@
 			}
 			
 			if ($GLOBALS['cfg']['emailonerror']) {
-				$gm = SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+				$gm = SendEmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			}
 			
 			$file = mysqli_real_escape_string($GLOBALS['linki'], $file);
@@ -620,7 +546,7 @@
 			<b>SQL:</b> " . htmlspecialchars($sqlstring) . "<br>
 			<b>Username:</b> $username<br>
 			<b>Note:</b> mysqli_prepare() returned an invalid statement. Common causes: a column or table that does not exist, or a statement type that cannot be prepared on this MySQL/MariaDB version (e.g. SHOW).";
-			//SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			//SendEmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			if ($GLOBALS['cfg']['hideerrors']) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
 			}
@@ -665,7 +591,7 @@
 			<b>SERVER</b> <pre>" . print_r($_SERVER,true) . "</pre><br>
 			<b>POST</b> <pre>" . print_r($_POST,true) . "</pre><br>
 			<b>GET</b> <pre>" . print_r($_GET,true) . "</pre>";
-			//SendGmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
+			//SendEmail($GLOBALS['cfg']['adminemail'],"User encountered error in $file",$body, 0);
 			
 			if ($GLOBALS['cfg']['hideerrors']) {
 				die("<div width='100%' style='border:1px solid red; background-color: #FFC; margin:10px; padding:10px; border-radius:5px; text-align: center'><b>Internal NiDB error.</b><br>The site administrator has been notified. Contact the administrator &lt;".$GLOBALS['cfg']['adminemail']."&gt; if you can provide additional information that may have led to the error<br><br><img src='images/topmen.png'></div>");
@@ -1425,77 +1351,164 @@
 	/* -------------------------------------------- */
 	/* ------- GetPerm ---------------------------- */
 	/* -------------------------------------------- */
-	function GetPerm($perms, $perm, $projectid) {
-		
-		//echo "Inside GetPerm() A<br>";
-		//PrintVariable($perms);
-		//PrintVariable($projectid);
-		//echo "Inside GetPerm() B<br>";
-		
-		$hasperm = 0;
-		foreach ($perms as $pid => $p) {
-			if ($p[$perm] == 1) {
-				$hasperm = 1;
-				break;
-			}
+	/* Returns 1 if $perms (from GetCurrentUserProjectPermissions) grants $perm for $projectid. If
+	   $projectid is blank/0, returns 1 if $perm is granted on any project in $perms. */
+	function GetPerm($perms, $perm, $projectid = "") {
+		if (!is_array($perms))
+			return 0;
+
+		$projectid = (int)$projectid;
+		if ($projectid > 0) {
+			return (($perms[$projectid][$perm] ?? 0) == 1) ? 1 : 0;
 		}
-		return $hasperm;
+
+		foreach ($perms as $pid => $p) {
+			if (($p[$perm] ?? 0) == 1)
+				return 1;
+		}
+		return 0;
 	}
 
-	
+
+	/* -------------------------------------------- */
+	/* ------- IsAdminUser ------------------------ */
+	/* -------------------------------------------- */
+	/* true if the current user is an admin or siteadmin. Admins have every permission on every project */
+	function IsAdminUser() {
+		return ((bool)($GLOBALS['isadmin'] ?? false) || (bool)($GLOBALS['issiteadmin'] ?? false));
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- GetCurrentUserProjectPermissions --- */
 	/* -------------------------------------------- */
+	/* Returns [projectid => [projectname, projectadmin, viewdata, viewphi, modifydata, modifyphi]] for
+	   the current user. Data and PHI are independent permissions. Edit implies View within each
+	   (modifydata -> viewdata, modifyphi -> viewphi), and project admins and site/system admins
+	   have all permissions. Projects the user has no user_project row for are omitted. */
 	function GetCurrentUserProjectPermissions($projectids) {
 		$perms = array();
-		$userid = $_SESSION['userid'];
-		
-		if (is_null($projectids))
-			return array();
-			
-		$projectids = array_filter($projectids);
-		$projectidlist = implode2(',', $projectids);
-		
-		if ($projectidlist != "") {
-			$sqlstring = "select a.*, b.project_name from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and a.project_id in ($projectidlist)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$projectid = $row['project_id'];
-					$perms[$projectid]['projectname'] = $row['project_name'];
-					$perms[$projectid]['projectadmin'] = GetMySQLTinyInt($row['project_admin']);
-					$perms[$projectid]['viewdata'] = GetMySQLTinyInt($row['view_data']);
-					$perms[$projectid]['viewphi'] = GetMySQLTinyInt($row['view_phi']);
-					$perms[$projectid]['modifydata'] = GetMySQLTinyInt($row['write_data']);
-					$perms[$projectid]['modifyphi'] = GetMySQLTinyInt($row['write_phi']);
-					
-					/* fill in the implied permissions */
-					if ($perms[$projectid]['projectadmin']) {
-						$perms[$projectid]['modifyphi'] = 1;
-						$perms[$projectid]['viewphi'] = 1;
-						$perms[$projectid]['modifydata'] = 1;
-						$perms[$projectid]['viewdata'] = 1;
-					}
-					if ($perms[$projectid]['modifyphi']) {
-						$perms[$projectid]['viewphi'] = 1;
-						$perms[$projectid]['modifydata'] = 1;
-						$perms[$projectid]['viewdata'] = 1;
-					}
-					if ($perms[$projectid]['viewphi']) {
-						$perms[$projectid]['viewphi'] = 1;
-						$perms[$projectid]['viewdata'] = 1;
-					}
-					if ($perms[$projectid]['modifydata']) {
-						$perms[$projectid]['viewdata'] = 1;
-					}
-				}
+
+		if (!is_array($projectids))
+			return $perms;
+
+		$projectids = array_values(array_unique(array_filter(array_map('intval', $projectids))));
+		if (count($projectids) == 0)
+			return $perms;
+
+		$placeholders = implode(',', array_fill(0, count($projectids), '?'));
+
+		/* admins get every permission on every project */
+		if (IsAdminUser()) {
+			$sqlstring = "select project_id, project_name from projects where project_id in ($placeholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$types = str_repeat('i', count($projectids));
+			mysqli_stmt_bind_param($stmt, $types, ...$projectids);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $projectids);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$perms[$row['project_id']] = array('projectname' => $row['project_name'], 'projectadmin' => 1, 'viewdata' => 1, 'viewphi' => 1, 'modifydata' => 1, 'modifyphi' => 1);
+			}
+			mysqli_stmt_close($stmt);
+			return $perms;
+		}
+
+		$userid = (int)$_SESSION['userid'];
+		$sqlstring = "select a.*, b.project_name from user_project a left join projects b on a.project_id = b.project_id where a.user_id = ? and a.project_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$params = array_merge(array($userid), $projectids);
+		$types = str_repeat('i', count($params));
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$projectid = $row['project_id'];
+			$perms[$projectid]['projectname'] = $row['project_name'];
+			$perms[$projectid]['projectadmin'] = GetMySQLTinyInt($row['project_admin']);
+			$perms[$projectid]['viewdata'] = GetMySQLTinyInt($row['view_data']);
+			$perms[$projectid]['viewphi'] = GetMySQLTinyInt($row['view_phi']);
+			$perms[$projectid]['modifydata'] = GetMySQLTinyInt($row['write_data']);
+			$perms[$projectid]['modifyphi'] = GetMySQLTinyInt($row['write_phi']);
+
+			/* fill in the implied permissions. Data and PHI are independent; Edit implies View */
+			if ($perms[$projectid]['projectadmin']) {
+				$perms[$projectid]['modifyphi'] = 1;
+				$perms[$projectid]['viewphi'] = 1;
+				$perms[$projectid]['modifydata'] = 1;
+				$perms[$projectid]['viewdata'] = 1;
+			}
+			if ($perms[$projectid]['modifyphi']) {
+				$perms[$projectid]['viewphi'] = 1;
+			}
+			if ($perms[$projectid]['modifydata']) {
+				$perms[$projectid]['viewdata'] = 1;
 			}
 		}
-		
+		mysqli_stmt_close($stmt);
+
 		return $perms;
 	}
-	
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSubjectPermissions -------------- */
+	/* -------------------------------------------- */
+	/* Subject-level permissions for the current user. Subject information (demographics/PHI) is global
+	   to the subject, so View/Edit PHI on any project the subject is enrolled in applies to the subject.
+	   Data permissions are per-project; use GetPerm($sp['projects'], 'viewdata', $projectid) for those.
+	   The subject-level viewdata/modifydata flags mean "on at least one of the subject's projects".
+	     hasaccess - may see non-PHI subject information (sex, IDs, tags, family, enrollments). Users
+	                 without it may only see the subject's UID
+	     canedit   - may edit non-PHI subject information */
+	function GetSubjectPermissions($subjectid) {
+		$subjectid = (int)$subjectid;
+		$sp = array('isadmin' => IsAdminUser(), 'projectids' => array(), 'projects' => array(), 'viewphi' => 0, 'modifyphi' => 0, 'viewdata' => 0, 'modifydata' => 0, 'hasaccess' => 0, 'canedit' => 0);
+
+		$sqlstring = "select distinct project_id from enrollment where subject_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if ($row['project_id'] > 0)
+				$sp['projectids'][] = $row['project_id'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$sp['projects'] = GetCurrentUserProjectPermissions($sp['projectids']);
+		foreach (array('viewphi', 'modifyphi', 'viewdata', 'modifydata') as $perm) {
+			$sp[$perm] = ($sp['isadmin'] || GetPerm($sp['projects'], $perm)) ? 1 : 0;
+		}
+		$sp['hasaccess'] = ($sp['viewphi'] || $sp['viewdata']) ? 1 : 0;
+		$sp['canedit'] = ($sp['modifyphi'] || $sp['modifydata']) ? 1 : 0;
+
+		return $sp;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetEnrollment ---------------------- */
+	/* -------------------------------------------- */
+	/* returns the enrollment row (enrollment_id, subject_id, project_id), or null if it doesn't exist */
+	function GetEnrollment($enrollmentid) {
+		$enrollmentid = (int)$enrollmentid;
+		$sqlstring = "select enrollment_id, subject_id, project_id from enrollment where enrollment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return $row ? $row : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NoViewPermission ------------------- */
+	/* -------------------------------------------- */
+	/* Placeholder shown in place of a value the user does not have permission to see. The label
+	   for the value should still be displayed */
+	function NoViewPermission($text = "no view permissions") {
+		return "<span class='noviewperm' style='display: inline-block; background-color: #e8e8e8; color: #888; font-size: 7pt; line-height: 1.6; padding: 0px 6px; border-radius: 3px; white-space: nowrap'>$text</span>";
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayPermissions ----------------- */
 	/* -------------------------------------------- */
@@ -1505,17 +1518,17 @@
 		if (count($perms) > 0) {
 			foreach ($perms as $projectid => $data) {
 				$admin = $data['projectadmin'];
-				$projectname = $data['projectname'];
+				$projectname = htmlspecialchars($data['projectname'] ?? '');
 				$viewdata = $perms[$projectid]['viewdata'];
 				$viewphi = $perms[$projectid]['viewphi'];
 				$modifydata = $perms[$projectid]['modifydata'];
 				$modifyphi = $perms[$projectid]['modifyphi'];
 				
 				if ($admin) { $admin = "Admin"; }
-				if ($modifyphi) { $modifyphi = "Modify PHI"; }
-				if ($modifydata) { $modifydata = "Modify data"; }
-				if ($viewphi) { $viewphi = "View PHI"; }
-				if ($viewdata) { $viewdata = "View data"; }
+				if ($modifyphi) { $modifyphi = "Edit PHI &amp; Demographics"; }
+				if ($modifydata) { $modifydata = "Edit Data"; }
+				if ($viewphi) { $viewphi = "View PHI &amp; Demographics"; }
+				if ($viewdata) { $viewdata = "View Data"; }
 				
 				if (($admin == '') && ($modifyphi == '') && ($modifydata == '') && ($viewphi == '') && ($viewdata == '')) {
 					$msg .= "<div class='item'>No permissions to access $projectname</div>";
@@ -3483,12 +3496,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td colspan="4" class="active"><h3>Email &nbsp; &nbsp;<a href="settings.php?action=testemail" class="ui compact yellow button">Send test email</a></h3></td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">emaillib</td>
-							<td><input type="text" name="emaillib" value="<?=$GLOBALS['cfg']['emaillib']?>"></td>
-							<td></td>
-							<td>Net-SMTP-TLS or Email-Send-SMTP-Gmail</td>
-						</tr>
-						<tr>
 							<td class="right aligned tt">emailusername</td>
 							<td><input type="text" name="emailusername" value="<?=$GLOBALS['cfg']['emailusername']?>"></td>
 							<td></td>
@@ -3504,7 +3511,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td class="right aligned tt">emailserver</td>
 							<td><input type="text" name="emailserver" value="<?=$GLOBALS['cfg']['emailserver']?>"></td>
 							<td></td>
-							<td>Email server for sending email. For gmail, it should be <code>tls://smtp.gmail.com</code></td>
+							<td>SMTP server for sending email, for example <code>smtp.example.org</code>. Use <code>ssl://</code> in front of the name for servers that require implicit SSL. Set <tt>emailusername</tt>/<tt>emailpassword</tt> only if the server requires a login</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">emailport</td>
@@ -4278,7 +4285,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [moduleuploadthreads] = $moduleuploadthreads
 
 # ----- E-mail -----
-# emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
 [emailusername] = $emailusername
 [emailpassword] = $emailpassword
 [emailserver] = $emailserver

@@ -257,7 +257,7 @@
 		$body = "If you receive this message, your NiDB email is working";
 		
 		/* send the email */
-		if (!SendGmail($to,$subject,$body, 1, 0)) {
+		if (!SendEmail($to,$subject,$body, 1, 0)) {
 			return "System error. Unable to send email!";
 		}
 	}

@@ -172,7 +172,7 @@
 		
 		$body = "<b>Thank for you signing up for NiDB</b><br><br>Click the link below to activate your account (or copy and paste into a browser)\n" . $GLOBALS['cfg']['siteurl'] . "/v.php?k=$emailkey";
 		/* send the email */
-		if (!SendGmail($email,'Acitvate your NiDB account',$body, 0)) {
+		if (!SendEmail($email,'Acitvate your NiDB account',$body, 0)) {
 			return "System error. Unable to send email!";
 			$sqlstring = "delete from users_pending where user_id = $userpendingid";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -644,7 +644,7 @@
 		/* send a password reset email */
 		$body = "Your password has been temporarily reset to '$newpass'. Please login to " . $GLOBALS['cfg']['siteurl'] . " and change your password";
 		/* send the email */
-		if (!SendGmail($email,'NiDB password reset',$body, 0)) {
+		if (!SendEmail($email,'NiDB password reset',$body, 0)) {
 			echo "System error. Unable to send email!";
 			//$sqlstring = "delete from users_pending where user_id = $rowid";
 			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
