@@ -118,7 +118,6 @@
 	$c['modulebackupthreads'] = GetVariable("modulebackupthreads");
 	$c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
 	
-	$c['emaillib'] = GetVariable("emaillib");
 	$c['emailusername'] = GetVariable("emailusername");
 	$c['emailpassword'] = GetVariable("emailpassword");
 	$c['emailserver'] = GetVariable("emailserver");

@@ -83,7 +83,6 @@
     $c['moduleqcthreads'] = GetVariable("moduleqcthreads");
     $c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
 	
-    $c['emaillib'] = GetVariable("emaillib");
     $c['emailusername'] = GetVariable("emailusername");
     $c['emailpassword'] = GetVariable("emailpassword");
     $c['emailserver'] = GetVariable("emailserver");
