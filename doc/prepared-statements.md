@@ -37,7 +37,6 @@ user input is fine as-is).
 | `audit.php` | 6 | 0 | ⬜ |
 | `backup.php` | 3 | 0 | ⬜ |
 | `batchupload.php` | 2 | 0 | ⬜ |
-| `beh.php` | 15 | 0 | ⬜ |
 | `calendar.php` | 6 | 0 | ⬜ |
 | `calendar_appointments.php` | 16 | 0 | ⬜ |
 | `calendar_calendars.php` | 1 | 4 | ⬜ |
