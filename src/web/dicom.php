@@ -107,29 +107,77 @@
 	/* -------------------------------------------- */
 	/* ------- ValidateDicomRequest --------------- */
 	/* -------------------------------------------- */
+	/* Checks the series exists, the current user has View Data on the series' project, and the
+	   series directory is inside the archive. Returns [valid, message, path, seriesid, modality,
+	   httpstatus, viewphi]. viewphi is the user's View PHI on the subject, for the subject overlay */
 	function ValidateDicomRequest($seriesid, $modality) {
 		$seriesid = (int)$seriesid;
-		$modality = strtolower(trim($modality));
-		
+		$modality = strtolower(trim($modality ?? ''));
+
 		if ($seriesid < 1) {
-			return array(false, "Invalid series ID", "", 0, "");
+			return array(false, "Invalid series ID", "", 0, "", 400, 0);
 		}
-		if (!preg_match('/^[a-z0-9]+$/', $modality)) {
-			return array(false, "Invalid modality", "", 0, "");
+
+		/* the modality is used in a table name, so it must have a <modality>_series table */
+		$tablename = GetSeriesTableName($modality);
+		if ($tablename == '') {
+			return array(false, "Invalid modality", "", 0, "", 400, 0);
 		}
-		
-		list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
+		$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $tablename);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$tablename]);
+		$tableexists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$tableexists) {
+			return array(false, "Invalid modality", "", 0, "", 400, 0);
+		}
+
+		$sqlstring = "select a.series_num, a.data_type, b.study_num, c.project_id, d.subject_id, d.uid from $tablename a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			return array(false, "Series not found", "", $seriesid, $modality, 404, 0);
+		}
+
+		/* raw imaging data requires View Data on the series' project. PHI alone does not give access */
+		$projectid = (int)$row['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		if (!GetPerm($perms, 'viewdata', $projectid)) {
+			return array(false, "You do not have permissions to view this series", "", $seriesid, $modality, 403, 0);
+		}
+
+		/* subject demographics are global to the subject: View PHI on any of its projects */
+		$sp = GetSubjectPermissions($row['subject_id']);
+		$viewphi = $sp['viewphi'];
+
+		$uid = trim($row['uid'] ?? '');
+		$studynum = trim($row['study_num'] ?? '');
+		$seriesnum = trim($row['series_num'] ?? '');
+		$datatype = $row['data_type'] ?? '';
+		if ($modality == "pr")
+			$datatype = "dicom";
+		if ($datatype == "")
+			$datatype = $modality;
+		if (($uid == '') || ($studynum == '') || ($seriesnum == '')) {
+			return array(false, "DICOM path does not exist for this series", "", $seriesid, $modality, 404, 0);
+		}
+
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
 		$realpath = realpath($path);
 		if (($realpath === false) || !is_dir($realpath)) {
-			return array(false, "DICOM path does not exist for this series", "", $seriesid, $modality);
+			return array(false, "DICOM path does not exist for this series", "", $seriesid, $modality, 404, 0);
 		}
-		
+
 		$archivepath = realpath($GLOBALS['cfg']['archivedir']);
-		if (($archivepath !== false) && (substr($realpath, 0, strlen($archivepath)) !== $archivepath)) {
-			return array(false, "DICOM path is outside the archive directory", "", $seriesid, $modality);
+		if (($archivepath === false) || (substr($realpath, 0, strlen($archivepath) + 1) !== $archivepath . "/")) {
+			return array(false, "DICOM path is outside the archive directory", "", $seriesid, $modality, 400, 0);
 		}
-		
-		return array(true, "", $realpath, $seriesid, $modality);
+
+		return array(true, "", $realpath, $seriesid, $modality, 200, $viewphi);
 	}
 
 	
@@ -173,9 +221,9 @@
 	/* ------- OutputDicomSeriesList -------------- */
 	/* -------------------------------------------- */
 	function OutputDicomSeriesList($seriesid, $modality) {
-		list($valid, $message, $path, $seriesid, $modality) = ValidateDicomRequest($seriesid, $modality);
+		list($valid, $message, $path, $seriesid, $modality, $httpstatus) = ValidateDicomRequest($seriesid, $modality);
 		if (!$valid) {
-			OutputJson(array("error" => $message), 400);
+			OutputJson(array("error" => $message), $httpstatus);
 			return;
 		}
 		
@@ -198,9 +246,9 @@
 	/* ------- OutputDicomFile -------------------- */
 	/* -------------------------------------------- */
 	function OutputDicomFile($seriesid, $modality, $instance) {
-		list($valid, $message, $path, $seriesid, $modality) = ValidateDicomRequest($seriesid, $modality);
+		list($valid, $message, $path, $seriesid, $modality, $httpstatus) = ValidateDicomRequest($seriesid, $modality);
 		if (!$valid) {
-			http_response_code(400);
+			http_response_code($httpstatus);
 			echo $message;
 			return;
 		}
@@ -225,7 +273,7 @@
 	/* ------- DisplayDicomViewer ----------------- */
 	/* -------------------------------------------- */
 	function DisplayDicomViewer($seriesid, $modality) {
-		list($valid, $message, $path, $seriesid, $modality) = ValidateDicomRequest($seriesid, $modality);
+		list($valid, $message, $path, $seriesid, $modality, $httpstatus, $viewphi) = ValidateDicomRequest($seriesid, $modality);
 		$filecount = 0;
 		if ($valid) {
 			$filecount = count(GetDicomFiles($path));
@@ -242,9 +290,12 @@
 						<div id="dicomOverlay">
 							<div id="dicomOverlayTop">
 								<div id="dicomOverlayLeft">
+									<? /* subject information from the DICOM header requires View PHI */ ?>
+									<? if ($viewphi) { ?>
 									<div id="overlayPatientName"></div>
 									<div id="overlayPatientID"></div>
 									<div id="overlayPatientAgeSex"></div>
+									<? } ?>
 									<div id="overlayStudyDescription"></div>
 								</div>
 								<div id="dicomOverlayRight">
@@ -342,6 +393,9 @@
 						const overlayStationName           = document.getElementById("overlayStationName");
 						const overlayManufacturerModelName = document.getElementById("overlayManufacturerModelName");
 
+						/* subject information (patient name, ID, age/sex) is only shown with View PHI */
+						const showSubjectInfo = <?=($viewphi ? 'true' : 'false')?>;
+
 						/* Viewer state */
 						let imageIds = [];
 						let renderingEngine = null;
@@ -410,16 +464,18 @@
 								   registered, so they are read directly from the raw dicom-parser
 								   dataset via the image cache. */
 								element.addEventListener(cs.Enums.Events.IMAGE_RENDERED, () => {
-									const patient      = cs.metaData.get("patientModule", imageIds[0]);
-									const patientStudy = cs.metaData.get("patientStudyModule", imageIds[0]);
+									if (showSubjectInfo) {
+										const patient      = cs.metaData.get("patientModule", imageIds[0]);
+										const patientStudy = cs.metaData.get("patientStudyModule", imageIds[0]);
 
-									/* DICOM stores name components separated by ^; replace with spaces */
-									overlayPatientName.textContent  = (patient?.patientName ?? "").replace(/\^/g, " ").trim();
-									overlayPatientID.textContent    = patient?.patientID ?? "";
+										/* DICOM stores name components separated by ^; replace with spaces */
+										overlayPatientName.textContent  = (patient?.patientName ?? "").replace(/\^/g, " ").trim();
+										overlayPatientID.textContent    = patient?.patientID ?? "";
 
-									const age = patientStudy?.patientAge ?? "";
-									const sex = patientStudy?.patientSex ?? "";
-									overlayPatientAgeSex.textContent = [age && age + "Y", sex].filter(Boolean).join(" ");
+										const age = patientStudy?.patientAge ?? "";
+										const sex = patientStudy?.patientSex ?? "";
+										overlayPatientAgeSex.textContent = [age && age + "Y", sex].filter(Boolean).join(" ");
+									}
 
 									const generalStudy = cs.metaData.get("generalStudyModule", imageIds[0]);
 									overlayStudyDescription.textContent = generalStudy?.studyDescription ?? "";

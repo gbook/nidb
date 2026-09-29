@@ -34,7 +34,7 @@ for the reference implementation.
 | `calendar_appointments.php` | 3 | ⬜ |
 | `calendar_calendars.php` | 2 | ⬜ |
 | `checklist.php` | 1 | ⬜ |
-| `cleanup.php` | 4 | ⬜ |
+| `cleanup.php` | 4 | ✅ |
 | `clustersettings.php` | 2 | ⬜ |
 | `datadictionary.php` | 4 | ⬜ |
 | `datasetrequests.php` | 1 | ⬜ |

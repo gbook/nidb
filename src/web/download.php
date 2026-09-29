@@ -62,20 +62,45 @@
 		}
 	}
 	else {
-		if (IsNiDBModality($modality)) {
-			/* get the path to the QA info */
-			$sqlstring = "select a.*, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = $seriesid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* the modality is used in a table name, so it must be a valid NiDB modality with a series table */
+		$tablename = GetSeriesTableName($modality);
+		if (($tablename != '') && IsNiDBModality($modality)) {
+			/* get the path to the series data, and the project it belongs to */
+			$sqlstring = "select a.*, b.study_num, c.project_id, d.uid from $tablename a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$series_num = $row['series_num'];
-			$study_num = $row['study_num'];
-			$uid = $row['uid'];
-			$datatype = $row['data_type'];
+			mysqli_stmt_close($stmt);
+
+			if (!$row) {
+				Error("Series not found");
+				exit(0);
+			}
+
+			/* raw imaging (and behavioral) series data requires View Data on the series' project */
+			$projectid = (int)$row['project_id'];
+			$perms = GetCurrentUserProjectPermissions(array($projectid));
+			if (!GetPerm($perms, 'viewdata', $projectid)) {
+				Error("You do not have permissions to download this data");
+				exit(0);
+			}
+
+			$series_num = trim($row['series_num'] ?? '');
+			$study_num = trim($row['study_num'] ?? '');
+			$uid = trim($row['uid'] ?? '');
+			$datatype = $row['data_type'] ?? '';
+
+			/* a blank UID, study, or series number would point the zip at a parent directory */
+			if (($uid == '') || ($study_num == '') || ($series_num == '')) {
+				Error("The archive path for this series is incomplete");
+				exit(0);
+			}
 
 			if ($datatype == "") {
 				$datatype = "$modality";
 			}
-			
+
 			if ($type == "beh") {
 				$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh";
 				$zipfilename = "$uid-$study_num-$series_num-beh.zip";
@@ -88,7 +113,7 @@
 			/* create the zip file in the tmp directory .... */
 			$zipfilepath = $GLOBALS['cfg']['downloaddir'] . "/$zipfilename";
 			/* create zip object */
-			$systemstring = "zip -j $zipfilepath $datapath/*";
+			$systemstring = "zip -j " . escapeshellarg($zipfilepath) . " " . escapeshellarg($datapath) . "/*";
 			//echo "$systemstring<br><br>";
 			$junk = exec($systemstring);
 			
