@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 24, 2026 at 03:32 PM
+-- Generation Time: Sep 29, 2026 at 08:41 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -54,7 +54,8 @@ CREATE TABLE `analysis` (
   `analysis_startdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterstartdate` timestamp NULL DEFAULT NULL,
   `analysis_clusterenddate` timestamp NULL DEFAULT NULL,
-  `analysis_enddate` timestamp NULL DEFAULT NULL
+  `analysis_enddate` timestamp NULL DEFAULT NULL,
+  `analysis_apitoken` varchar(255) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
