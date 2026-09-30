@@ -187,6 +187,9 @@
 		   which turns "const groupedData = <false>;" into a JS syntax error. */
 		$debug = (trim(GetVariable('debug')) != "") && !empty($GLOBALS['isadmin']);
 		$debugSQL = array();
+		/* debug mode also times each step (ms), to tell slow SQL apart from slow rendering */
+		$debugTime = array();
+		$debugStart = microtime(true);
 
 		/* get subject's info and project for the breadcrumb/form */
 		list(,,,,$projectid) = GetEnrollmentInfo($enrollmentid);
@@ -560,7 +563,10 @@
 		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
 		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, s.survey_status, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = $enrollmentid order by a.observation_name";
 		$debugSQL['main observations query'] = $sqlstring;
+		$t = microtime(true);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if ($debug) $debugTime['main observations query (' . mysqli_num_rows($result) . ' rows)'] = (microtime(true) - $t) * 1000;
+		$t = microtime(true);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$observationid = $row['observation_id'];
 			/* states 1-4: use the canonical item_name from the DB; states 5-8: fall back to the stored observation_name */
@@ -610,6 +616,8 @@
 			}
 		}
 
+		if ($debug) $debugTime['build $groups from main query rows'] = (microtime(true) - $t) * 1000;
+
 		/* sort instrument groups alphabetically; move __none__ to end */
 		ksort($groups);
 		if (isset($groups['__none__'])) {
@@ -618,7 +626,9 @@
 			$groups['__none__'] = $noneGroups;
 		}
 
+		$t = microtime(true);
 		$groupsJson = json_encode($groups, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		if ($debug) $debugTime['json_encode($groups)'] = (microtime(true) - $t) * 1000;
 		if ($debug) $debugSQL['json_encode($groups)'] = ($groupsJson === false ? "FAILED: " . json_last_error_msg() . " -- this is almost certainly why the page is blank (invalid UTF-8 in an observation value)" : "ok (" . strlen($groupsJson) . " bytes)");
 
 		/* Coded-value labels for this enrollment's items.
@@ -632,6 +642,7 @@
 		 * int_val is a varchar: codes are not always numeric (a REDCap checkbox
 		 * choice may be alphanumeric), so keys stay strings. */
 		$valueMaps = array();
+		$t = microtime(true);
 		$stmt = mysqli_prepare($GLOBALS['linki'],
 			"select m.instrumentitem_id, m.int_val, m.string_val
 			 from instrumentitem_map m
@@ -652,6 +663,7 @@
 			}
 		}
 		mysqli_stmt_close($stmt);
+		if ($debug) $debugTime['value-map query'] = (microtime(true) - $t) * 1000;
 		/* force an object so JS can index it even when empty */
 		$valueMapsJson = json_encode($valueMaps ?: new stdClass(), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
 		if ($debug) $debugSQL['json_encode($valueMaps)'] = ($valueMapsJson === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($valueMapsJson) . " bytes)");
@@ -665,6 +677,7 @@
 		$instrumentCount = 0;
 		/* __none__ group holds states 7-8; sum across survey sub-groups for the summary line */
 		$unaffiliatedCount = 0;
+		$tInstr = $tLegacy = $tItemCount = 0;
 		if (isset($groups['__none__'])) {
 			foreach ($groups['__none__'] as $sRows) {
 				$unaffiliatedCount += count($sRows);
@@ -678,20 +691,24 @@
 			$instrumentCount++;
 
 			/* check whether a formal instrument record exists for this group name (distinguishes states 1-4 from 5-6) */
+			$t = microtime(true);
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
 			$instrResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$hasInstrument = (mysqli_num_rows($instrResult) > 0);
 			$instrRow = $hasInstrument ? mysqli_fetch_array($instrResult, MYSQLI_ASSOC) : false;
 			mysqli_stmt_close($stmt);
+			$tInstr += microtime(true) - $t;
 
 			/* count legacy rows project-wide: observations that reference this instrument by free text (states 5-6)
 			   but have no instrumentitem_id FK set — these are the observations the Formalize action will convert */
+			$t = microtime(true);
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from observations o join enrollment e on o.enrollment_id = e.enrollment_id where e.project_id = ? and o.observation_instrument = ? and o.instrumentitem_id is null");
 			mysqli_stmt_bind_param($stmt, 'is', $projectid, $key);
 			$cntResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$cntRow = mysqli_fetch_array($cntResult, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
+			$tLegacy += microtime(true) - $t;
 
 			/* remove duplicate observation names in this group — used to populate the Formalize modal */
 			$uniqueItems = array_values(array_unique(array_column($rows, 'observationName')));
@@ -702,10 +719,12 @@
 			/* count items in the instrument template — used for completeness display in survey sub-headers */
 			$itemCount = 0;
 			if ($hasInstrument && $instrRow) {
+				$t = microtime(true);
 				$iid = (int)$instrRow['instrument_id'];
 				$itemCountResult = MySQLiQuery("select count(*) as cnt from instrument_items where instrument_id = $iid", __FILE__, __LINE__);
 				$itemCountRow = mysqli_fetch_array($itemCountResult, MYSQLI_ASSOC);
 				$itemCount = (int)$itemCountRow['cnt'];
+				$tItemCount += microtime(true) - $t;
 			}
 
 			$groupMeta[$key] = array(
@@ -719,6 +738,11 @@
 		$groupMetaJson  = json_encode($groupMeta,  JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
 		$surveyMetaJson = json_encode($surveyMeta, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
 		if ($debug) {
+			$debugTime["instrument lookup queries (x$instrumentCount groups)"] = $tInstr * 1000;
+			$debugTime["legacy count queries, project-wide (x$instrumentCount groups)"] = $tLegacy * 1000;
+			$debugTime['instrument item count queries'] = $tItemCount * 1000;
+			$debugTime['TOTAL server time in DisplayObservationList (to this point)'] = (microtime(true) - $debugStart) * 1000;
+			$debugTime['JSON sent to browser: ' . number_format(strlen((string)$groupsJson) + strlen((string)$valueMapsJson) + strlen((string)$groupMetaJson) + strlen((string)$surveyMetaJson)) . ' bytes'] = null;
 			$debugSQL['json_encode($groupMeta)']  = ($groupMetaJson  === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($groupMetaJson) . " bytes)");
 			$debugSQL['json_encode($surveyMeta)'] = ($surveyMetaJson === false ? "FAILED: " . json_last_error_msg() : "ok (" . strlen($surveyMetaJson) . " bytes)");
 		}
@@ -737,6 +761,17 @@
 				<div style="white-space:pre-wrap; word-break:break-all; color:<?=$isfail ? '#ff9c9c' : '#c0c0c0'?>"><?=htmlspecialchars($sql)?></div>
 			</div>
 			<? } ?>
+			<div style="color:#fbbd08; font-weight:bold; margin:12px 0 6px 0">DEBUG — timing</div>
+			<table style="color:#c0c0c0">
+			<? foreach ($debugTime as $label => $ms) { ?>
+				<tr><td style="padding-right:2em"><?=htmlspecialchars($label)?></td><td align="right"><?=($ms === null ? '' : number_format($ms, 1) . ' ms')?></td></tr>
+			<? } ?>
+				<tr><td colspan="2" style="padding-top:6px; color:#fbbd08">Browser</td></tr>
+				<tr><td style="padding-right:2em">page request start &rarr; script start (server + download + parse)</td><td align="right" id="debugTimeScriptStart"></td></tr>
+				<tr><td style="padding-right:2em" id="debugGridLabel">build accordion + grids</td><td align="right" id="debugTimeGrids"></td></tr>
+				<tr><td style="padding-right:2em">build search grid</td><td align="right" id="debugTimeSearchGrid"></td></tr>
+				<tr><td style="padding-right:2em">page request start &rarr; done</td><td align="right" id="debugTimeTotal"></td></tr>
+			</table>
 		</div>
 		<? } ?>
 		<div style="margin: 8px 0; display:flex; align-items:center; gap:1em; flex-wrap:wrap">
@@ -1424,6 +1459,7 @@
 			$(document).ready(function() {
 				/* defer accordion build so the browser paints the loading message before JS runs */
 				setTimeout(function() {
+				const debugT0 = performance.now();
 
 				const accordion = document.getElementById('observationAccordion');
 
@@ -1554,40 +1590,48 @@
 						surveyContentDiv.appendChild(gridDiv);
 						innerAccordion.appendChild(surveyContentDiv);
 
-						//import { themeBalham } from 'ag-grid-community';
-
-						const gridApi = agGrid.createGrid(gridDiv, {
-							theme: agGrid.themeBalham,
-							/* __none__ instrument group (states 7-8): editable Instrument column included */
-							columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
-							rowData: rows,
-							defaultColDef: { sortable: true, filter: true, resizable: true },
+						/* the grid is created the first time its section is opened (see initVisibleGrids).
+						   An enrollment can have hundreds of survey sections, and creating every grid up
+						   front made the page take tens of seconds to load */
+						gridDiv._createGrid = function() {
+							const gridApi = agGrid.createGrid(gridDiv, {
+								theme: agGrid.themeBalham,
+								/* __none__ instrument group (states 7-8): editable Instrument column included */
+								columnDefs: isNoneInstr ? noneColDefs : instrColDefs,
+								rowData: rows,
+								defaultColDef: { sortable: true, filter: true, resizable: true },
 								animateRows: false,
-							suppressMovableColumns: true,
-							rowSelection: { mode: 'multiRow' },
-							onCellValueChanged: onCellValueChanged,
-							onSelectionChanged: onGridSelectionChanged
-						});
-						gridDiv._gridApi = gridApi;
-						gridApis.push(gridApi);
+								suppressMovableColumns: true,
+								rowSelection: { mode: 'multiRow' },
+								onCellValueChanged: onCellValueChanged,
+								onSelectionChanged: onGridSelectionChanged
+							});
+							gridDiv._gridApi = gridApi;
+							gridApis.push(gridApi);
+						};
 					});
 
 					outerContent.appendChild(innerAccordion);
 					accordion.appendChild(outerContent);
 				});
 
-				function sizeAllVisibleGrids() {
+				const debugT1 = performance.now();
+
+				/* create any visible grids that haven't been created yet, then fit the columns of all visible grids */
+				function initVisibleGrids() {
 					document.querySelectorAll('#observationAccordion [id^="grid_"]').forEach(function(el) {
-						if (el._gridApi && el.offsetWidth > 0) el._gridApi.sizeColumnsToFit();
+						if (el.offsetWidth == 0) return;
+						if (!el._gridApi) el._createGrid();
+						el._gridApi.sizeColumnsToFit();
 					});
 				}
 
 				/* initialize outer accordion (exclusive:false allows multiple sections open simultaneously) */
-				$('#observationAccordion').accordion({ exclusive: false, duration: 0, onOpen: sizeAllVisibleGrids });
+				$('#observationAccordion').accordion({ exclusive: false, duration: 0, onOpen: initVisibleGrids });
 				/* initialize each inner survey-level accordion; stopPropagation on inner title clicks
 				   prevents them from bubbling up to the outer accordion and collapsing the parent section */
 				innerAccordionIds.forEach(function(id) {
-					$('#' + id).accordion({ exclusive: false, duration: 0, onOpen: sizeAllVisibleGrids });
+					$('#' + id).accordion({ exclusive: false, duration: 0, onOpen: initVisibleGrids });
 					$('#' + id).on('click', '> .title', function(e) { e.stopPropagation(); });
 					/* edit-survey-link is inside .title; intercept here (closer to target than .title) so
 					   stopPropagation fires before Fomantic's accordion title handler toggles the panel */
@@ -1801,6 +1845,7 @@
 					deleteColDef
 				];
 
+				const debugT2 = performance.now();
 				const searchGridApi = agGrid.createGrid(document.getElementById('searchGrid'), {
 					theme: agGrid.themeBalham,
 					columnDefs: searchColDefs,
@@ -1813,6 +1858,16 @@
 					onSelectionChanged: onGridSelectionChanged
 				});
 				gridApis.push(searchGridApi);
+				<? if ($debug) { ?>
+				const debugT3 = performance.now();
+				const debugGridCount = document.querySelectorAll('#observationAccordion [id^="grid_"]').length;
+				$('#debugTimeScriptStart').text(debugT0.toFixed(1) + ' ms');
+				$('#debugGridLabel').text('build accordion (' + debugGridCount + ' grids, created when opened)');
+				$('#debugTimeGrids').text((debugT1 - debugT0).toFixed(1) + ' ms');
+				$('#debugTimeSearchGrid').text((debugT3 - debugT2).toFixed(1) + ' ms');
+				/* wait for the browser to lay out and paint the grids before taking the total */
+				requestAnimationFrame(function() { setTimeout(function() { $('#debugTimeTotal').text(performance.now().toFixed(1) + ' ms'); }, 0); });
+				<? } ?>
 
 				document.getElementById('obsSearchInput').addEventListener('input', function() {
 					const term     = this.value.trim();

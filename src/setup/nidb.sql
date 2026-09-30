@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 29, 2026 at 08:41 PM
+-- Generation Time: Sep 30, 2026 at 03:07 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2241,6 +2241,7 @@ CREATE TABLE `pipelines` (
   `pipeline_useprofile` tinyint(1) DEFAULT NULL,
   `pipeline_removedata` tinyint(1) DEFAULT NULL,
   `pipeline_resultsscript` longtext DEFAULT NULL,
+  `pipeline_scriptcomment` text DEFAULT NULL,
   `pipeline_enabled` tinyint(1) DEFAULT 0,
   `pipeline_testing` tinyint(1) DEFAULT NULL,
   `pipeline_debug` tinyint(1) DEFAULT NULL,
@@ -2352,7 +2353,8 @@ CREATE TABLE `pipeline_options` (
   `pipeline_outputbids` tinyint(1) DEFAULT NULL,
   `pipeline_bidsoutputdir` varchar(255) DEFAULT NULL,
   `pipeline_completefiles` longtext DEFAULT NULL,
-  `pipeline_resultsscript` longtext DEFAULT NULL
+  `pipeline_resultsscript` longtext DEFAULT NULL,
+  `pipeline_scriptcomment` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------

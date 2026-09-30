@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -42,21 +43,27 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$diagnosisid = GetVariable("diagnosisid");
-	$enrollmentid = GetVariable("enrollmentid");
+	$diagnosisid = (int)GetVariable("diagnosisid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$icd10id = GetVariable("icd10_id");
 	$startdate = GetVariable("startdate");
 	$enddate = GetVariable("enddate");
 
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 		case 'adddiagnosis':
+			ob_start();
 			AddDiagnosis($enrollmentid, $icd10id, $startdate, $enddate);
-			DisplayDiagnosisList($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("diagnosis.php?enrollmentid=$enrollmentid");
 			break;
 		case 'deletediagnosis':
-			DeleteDiagnosis($diagnosisid);
-			DisplayDiagnosisList($enrollmentid);
+			ob_start();
+			DeleteDiagnosis($diagnosisid, $enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("diagnosis.php?enrollmentid=$enrollmentid");
 			break;
 		default:
 			DisplayDiagnosisList($enrollmentid);
@@ -67,11 +74,48 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetEnrollmentDataPerms ------------- */
+	/* -------------------------------------------- */
+	/* Diagnoses are project data: View Data on the enrollment's project to view them, Edit Data to
+	   add or delete. Returns [enrollment row or null, viewdata, modifydata] */
+	function GetEnrollmentDataPerms($enrollmentid) {
+		$enrollment = ((int)$enrollmentid > 0) ? GetEnrollment($enrollmentid) : null;
+		if ($enrollment == null)
+			return array(null, 0, 0);
+
+		$projectid = (int)$enrollment['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return array($enrollment, GetPerm($perms, 'viewdata', $projectid), GetPerm($perms, 'modifydata', $projectid));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddDiagnosis ----------------------- */
 	/* -------------------------------------------- */
 	function AddDiagnosis($enrollmentid, $icd10id, $startdate, $enddate) {
 		$enrollmentid = (int)$enrollmentid;
 		$icd10id = (int)$icd10id;
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return;
+		}
+		if (!$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
+		}
+
+		/* the ICD10 code must exist */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select icd10_id from icd10 where icd10_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $icd10id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$icd10exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$icd10exists) {
+			Error("Invalid ICD10 code");
+			return;
+		}
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into diagnosis (enrollment_id, icd10_id, start_date, end_date) values (?, ?, ?, ?)");
 		mysqli_stmt_bind_param($stmt, 'iiss', $enrollmentid, $icd10id, $startdate, $enddate);
@@ -83,8 +127,31 @@
 	/* -------------------------------------------- */
 	/* ------- DeleteDiagnosis -------------------- */
 	/* -------------------------------------------- */
-	function DeleteDiagnosis($diagnosisid) {
+	function DeleteDiagnosis($diagnosisid, $enrollmentid) {
 		$diagnosisid = (int)$diagnosisid;
+		$enrollmentid = (int)$enrollmentid;
+
+		/* the diagnosis must belong to the enrollment in the request */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select enrollment_id from diagnosis where diagnosis_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $diagnosisid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row || ((int)$row['enrollment_id'] != $enrollmentid)) {
+			Error("Invalid diagnosis");
+			return;
+		}
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return;
+		}
+		if (!$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
+		}
+
 		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from diagnosis where diagnosis_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $diagnosisid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -100,17 +167,21 @@
 	function DisplayDiagnosisList($enrollmentid) {
 		$enrollmentid = (int)$enrollmentid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
-		$projectname = $row['project_name'];
+		ShowFlashMessage();
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Enrollment not found");
+			return;
+		}
+		if (!$viewdata) {
+			Error("You do not have permission to view data in this project");
+			return;
+		}
 		?>
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 
+		<? if ($modifydata) { ?>
 		<div class="ui segment">
 			<form action="diagnosis.php" method="post" class="ui form" id="diagnosisform">
 				<input type="hidden" name="action" value="adddiagnosis">
@@ -137,6 +208,7 @@
 				</div>
 			</form>
 		</div>
+		<? } ?>
 
 		<?
 		$rowdata = array();
@@ -164,6 +236,7 @@
 
 		<script>
 			const rowData = <?=$data?>;
+			const canEdit = <?=($modifydata ? 'true' : 'false')?>;
 			let gridApi;
 
 			function updateDisplayedRowCount() {
@@ -183,6 +256,7 @@
 					{
 						headerName: 'Delete',
 						field: 'diagnosisid',
+						hide: !canEdit,
 						width: 90,
 						minWidth: 90,
 						maxWidth: 90,

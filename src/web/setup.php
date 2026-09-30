@@ -27,6 +27,7 @@
 	
 	define("LEGIT_REQUEST", true);
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -46,47 +47,49 @@
 	require "includes_html.php";
 
 	/* check if the .cfg file exists, and what type of installation this is: setup/upgrade */
+	/* LoadConfig searches the same locations the rest of the site uses; quiet=true returns null if none found */
 	$cfgexists = false;
 	$installtype = "install";
-	if ( (file_exists('/nidb/nidb.cfg')) || (file_exists('nidb.cfg')) || (file_exists('../nidb.cfg')) || (file_exists('../programs/nidb.cfg')) || (file_exists('/home/nidb/programs/nidb.cfg')) || (file_exists('/nidb/programs/nidb.cfg')) ) {
-		/* if so, load the config, but still treat the page as a setup */
-		$cfg = LoadConfig();
-		if ($cfg != null) {
-			$cfgexists = true;
-			/* probably need to prompt the user if the nidbdir variable is blank */
-			if ($cfg['nidbdir'] == null)
-				if (file_exists("/nidb")) {
-					$cfg['nidbdir'] = "/nidb";
-					$installtype = "upgrade";
-				}
-			else
-				if (file_exists($cfg['nidbdir']))
-					$installtype = "upgrade";
+	$cfg = LoadConfig(true);
+	if ($cfg != null) {
+		/* load the config, but still treat the page as a setup */
+		$cfgexists = true;
+		/* probably need to prompt the user if the nidbdir variable is blank */
+		if (($cfg['nidbdir'] ?? '') == '') {
+			if (file_exists("/nidb")) {
+				$cfg['nidbdir'] = "/nidb";
+				$installtype = "upgrade";
+			}
+		}
+		elseif (file_exists($cfg['nidbdir'])) {
+			$installtype = "upgrade";
 		}
 	}
-	
+	else {
+		$cfg = array();
+	}
+
 	/* check if the client can run this page. ie, is it in the list of safe IPs */
-	$cfg['setupips'] .= ",::1,127.0.0.1,localhost";
-	/* if this is a first time install, allow the requestor's IP address */
-	if ($installtype == "install") {
+	$cfg['setupips'] = ($cfg['setupips'] ?? '') . ",::1,127.0.0.1,localhost";
+	/* if this is a first time install (no config file yet), allow the requestor's IP address. Remember it
+	   in the session so the installer can still reach the completion page after the config file is written */
+	if (!$cfgexists) {
+		$_SESSION['setupinstallip'] = $_SERVER['REMOTE_ADDR'];
+	}
+	if (($_SESSION['setupinstallip'] ?? '') === $_SERVER['REMOTE_ADDR']) {
 		$cfg['setupips'] .= "," . $_SERVER['REMOTE_ADDR'];
 	}
-	
-	if ($cfg['setupips'] != "") {
-		$valid = false;
-		$iplist = explode(",", $cfg['setupips']);
 
-		foreach ($iplist as $ip) {
-			//echo "Checking IP from list [$ip] against REMOTE_ADDR [" . $_SERVER['REMOTE_ADDR'] . "]<br>";
-			
-			if (trim($ip) == $_SERVER['REMOTE_ADDR'])
-				$valid = true;
-		}
-		if (!$valid) {
-			echo "<br><br>";
-			Notice("<b>You are not allowed to access this page.</b> Setup/upgrade functionality is only available to localhost and specified IP addresses. Your IP is " . $_SERVER['REMOTE_ADDR']);
-			exit(0);
-		}
+	$valid = false;
+	$iplist = explode(",", $cfg['setupips']);
+	foreach ($iplist as $ip) {
+		if (trim($ip) == $_SERVER['REMOTE_ADDR'])
+			$valid = true;
+	}
+	if (!$valid) {
+		echo "<br><br>";
+		Notice("<b>You are not allowed to access this page.</b> Setup/upgrade functionality is only available to localhost and specified IP addresses. Your IP is " . $_SERVER['REMOTE_ADDR']);
+		exit(0);
 	}
 	
 	
@@ -117,6 +120,7 @@
 	$c['moduleuploadthreads'] = GetVariable("moduleuploadthreads");
 	$c['modulebackupthreads'] = GetVariable("modulebackupthreads");
 	$c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
+	$c['moduleexportnonimagingthreads'] = GetVariable("moduleexportnonimagingthreads");
 	
 	$c['emailusername'] = GetVariable("emailusername");
 	$c['emailpassword'] = GetVariable("emailpassword");
@@ -125,6 +129,7 @@
 	$c['emailfrom'] = GetVariable("emailfrom");
 	
 	$c['adminemail'] = GetVariable("adminemail");
+	$c['emailonerror'] = GetVariable("emailonerror");
 	$c['siteurl'] = GetVariable("siteurl");
 	$c['version'] = GetVariable("version");
 	$c['sitename'] = GetVariable("sitename");
@@ -133,6 +138,8 @@
 	$c['ispublic'] = GetVariable("ispublic");
 	$c['sitetype'] = GetVariable("sitetype");
 	$c['allowphi'] = GetVariable("allowphi");
+	$c['redcapurl'] = GetVariable("redcapurl");
+	$c['redcaptoken'] = GetVariable("redcaptoken");
 	$c['uploadsizelimit'] = GetVariable("uploadsizelimit");
 	$c['displayrecentstudies'] = GetVariable("displayrecentstudies");
 	$c['displayrecentstudydays'] = GetVariable("displayrecentstudydays");
@@ -146,6 +153,10 @@
 	$c['enablewebexport'] = GetVariable("enablewebexport");
 
 	$c['setupips'] = GetVariable("setupips");
+
+	$c['backupsize'] = GetVariable("backupsize");
+	$c['backupdevice'] = GetVariable("backupdevice");
+	$c['backupserver'] = GetVariable("backupserver");
 	
 	$c['enablecsa'] = GetVariable("enablecsa");
 	$c['importchunksize'] = GetVariable("importchunksize");
@@ -160,9 +171,12 @@
 	$c['queuename'] = GetVariable("queuename");
 	$c['queueuser'] = GetVariable("queueuser");
 	$c['clustersubmithost'] = GetVariable("clustersubmithost");
+	$c['clustersubmituser'] = GetVariable("clustersubmituser");
 	$c['qsubpath'] = GetVariable("qsubpath");
 	$c['clusteruser'] = GetVariable("clusteruser");
 	$c['clusternidbpath'] = GetVariable("clusternidbpath");
+	$c['qcpath'] = GetVariable("qcpath");
+	$c['clusterqcpath'] = GetVariable("clusterqcpath");
 
 	$c['enablecas'] = GetVariable("enablecas");
 	$c['casserver'] = GetVariable("casserver");
@@ -181,6 +195,10 @@
 	$c['qcmoduledir'] = GetVariable("qcmoduledir");
 
 	$c['archivedir'] = GetVariable("archivedir");
+	$c['archivedir1'] = GetVariable("archivedir1");
+	$c['archivedir2'] = GetVariable("archivedir2");
+	$c['archivedir3'] = GetVariable("archivedir3");
+	$c['archivedir4'] = GetVariable("archivedir4");
 	$c['backupdir'] = GetVariable("backupdir");
 	$c['backupstagingdir'] = GetVariable("backupstagingdir");
 	$c['exportdir'] = GetVariable("exportdir");
@@ -189,8 +207,11 @@
 	$c['incoming2dir'] = GetVariable("incoming2dir");
 	$c['packageimportdir'] = GetVariable("packageimportdir");
 	$c['problemdir'] = GetVariable("problemdir");
+	$c['publicdownloaddir'] = GetVariable("publicdownloaddir");
+	$c['publicwebdir'] = GetVariable("publicwebdir");
 	$c['webdownloaddir'] = GetVariable("webdownloaddir");
 	$c['downloaddir'] = GetVariable("downloaddir");
+	$c['uploaddir'] = GetVariable("uploaddir");
 	$c['uploadeddir'] = GetVariable("uploadeddir");
 	$c['uploadstagingdir'] = GetVariable("uploadstagingdir");
 	$c['tmpdir'] = GetVariable("tmpdir");
@@ -207,15 +228,19 @@
 	$messageid = GetVariable("messageid");
 
 	$rootpassword = GetVariable("rootpassword");
-	$rowlimit = GetVariable("rowlimit");
-	$debugonly = GetVariable("debugonly");
-	//$userpassword = GetVariable("userpassword");
-	//$userpassword2 = GetVariable("userpassword2");
+	$rowlimit = (int)(GetVariable("rowlimit") ?? 0);
+	$debugonly = (bool)GetVariable("debugonly");
+	$renameorphans = (bool)GetVariable("renameorphans");
+	/* scrub the root password from the request so SQL error dumps (which print/log/email $_POST) can't leak it */
+	unset($_POST['rootpassword'], $_GET['rootpassword'], $_REQUEST['rootpassword']);
 	
-	/* determine the setup step */
+	/* determine the setup step. The two mutating steps (database2 = schema install/upgrade,
+	   setupcomplete = write config) use POST/Redirect/GET: run the handler, stash its output,
+	   then redirect to a GET of the same step so a refresh/Back doesn't re-run it */
+	$ispost = ($_SERVER['REQUEST_METHOD'] === 'POST');
 	switch ($step) {
 		case 'testemail':
-			TestEmail();
+			echo TestEmail();
 			break;
 		case 'welcome':
 			DisplayWelcomePage();
@@ -227,7 +252,13 @@
 			DisplayDatabase1Page();
 			break;
 		case 'database2':
-			DisplayDatabase2Page($rootpassword, $rowlimit, $debugonly); //, $userpassword, $userpassword2);
+			if ($ispost) {
+				ob_start();
+				SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("setup.php?step=database2");
+			}
+			DisplayDatabase2Page();
 			break;
 		case 'config':
 			DisplayConfigPage();
@@ -236,7 +267,12 @@
 			DisplaySetupCompletePage();
 			break;
 		case 'setupcomplete':
-			WriteConfig($c, "setup");
+			if ($ispost) {
+				ob_start();
+				WriteConfig($c);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("setup.php?step=setupcomplete");
+			}
 			DisplaySetupCompletePage();
 			break;
 		default:
@@ -259,6 +295,7 @@
 		if (!SendEmail($to,$subject,$body, 1, 0)) {
 			return "System error. Unable to send email!";
 		}
+		return "Test email sent to " . htmlspecialchars($to ?? '');
 	}
 	
 	
@@ -308,7 +345,7 @@
 				
 				<br><br><br>
 				
-				<? if ($installtype == "install") {
+				<? if ($GLOBALS['installtype'] == "install") {
 					$disabled = "";
 				?>
 				<div class="ui message">
@@ -324,14 +361,14 @@
 					
 					<div class="ui <?=$color1?> message">
 						<i class="large exclamation circle icon"></i> <b>Disable access to NiDB during the upgrade</b>
-						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath']?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
+						<p style="color: black">This can be done by setting the config file <code><?=$GLOBALS['cfg']['cfgpath'] ?? ''?></code> variable <code>[offline] = 1</code>. Change it back to 0 to enable NiDB.</p>
 					</div>
 						
 					<div class="ui <?=$color2?> message" style="text-align: left">
 						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
 						<p style="color: black"> Upgrade cannot continue until the backup <code><?=$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
 						<div class="ui fluid action input">
-							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser']?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase']?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
+							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser'] ?? 'nidb'?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase'] ?? 'nidb'?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
 							<button class="ui button" onClick="CopyToClipboard('backuptxt')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 						</div>
 						<p style="color: black">Run the above command, then come back to this page and refresh.</p>
@@ -453,7 +490,7 @@
 				<?
 				
 				if ($GLOBALS['cfgexists']) {
-					if (is_null($GLOBALS['cfg']['nidbdir'])) {
+					if (($GLOBALS['cfg']['nidbdir'] ?? '') == '') {
 						?>
 						The NiDB root directory was not defined in the config file. Go to <a href="settings.php">NiDB Settings</a> to update the <code>nidbrootdir</code> variable to reflect the installation directory of NiDB. This should be something similar to <code>/nidb</code>. The new <code>nidb.sql</code> schema file should then be located in that directory.
 						<?
@@ -522,7 +559,7 @@
 					<tr>
 						<td>MariaDB server</td>
 						<td>
-							<? if ( ($GLOBALS['cfg']['mysqlhost'] == "") || ($GLOBALS['cfg']['mysqlhost'] == null) ) { ?>
+							<? if (($GLOBALS['cfg']['mysqlhost'] ?? '') == "") { ?>
 							localhost
 							<? } else { ?>
 							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqlhost']?></span><br>
@@ -533,7 +570,7 @@
 					<tr>
 						<td>Database name</td>
 						<td>
-							<? if ( ($GLOBALS['cfg']['mysqldatabase'] == "") || ($GLOBALS['cfg']['mysqldatabase'] == null) ) { ?>
+							<? if (($GLOBALS['cfg']['mysqldatabase'] ?? '') == "") { ?>
 							nidb
 							<? } else { ?>
 							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqldatabase']?></span><br>
@@ -544,7 +581,7 @@
 					<tr>
 						<td>MariaDB root password<br><span class="tiny" style="font-weight: normal">root access to DB required to setup tables</span></td>
 						<td>
-							<? if ( ($GLOBALS['cfg']['mysqlpassword'] == "") || ($GLOBALS['cfg']['mysqlpassword'] == null) || ($GLOBALS['cfg']['mysqluser'] != 'root') ) { ?>
+							<? if ( (($GLOBALS['cfg']['mysqlpassword'] ?? '') == "") || (($GLOBALS['cfg']['mysqluser'] ?? '') != 'root') ) { ?>
 							<input class="ui input" type="password" required name="rootpassword"><br><span class="tiny">Password is <tt>password</tt> if this is the <u>first</u> NiDB installation.<br>Otherwise enter the current MariaDB root password</span>
 							<? } else {
 								$len = strlen($GLOBALS['cfg']['mysqlpassword']);
@@ -558,7 +595,7 @@
 					<tr>
 						<td>MariaDB username<br><span class="tiny" style="font-weight: normal">NiDB will run as this user</span></td>
 						<td>
-							<? if ( ($GLOBALS['cfg']['mysqluser'] == "") || ($GLOBALS['cfg']['mysqluser'] == null) ) { ?>
+							<? if (($GLOBALS['cfg']['mysqluser'] ?? '') == "") { ?>
 							nidb
 							<? } else { ?>
 							<span style="color: darkred; font-weight: bold"><?=$GLOBALS['cfg']['mysqluser']?></span><br>
@@ -577,15 +614,15 @@
 						<td>Debug Only<br><span class="tiny" style="font-weight: normal">This will not update the database</span></td>
 						<td><input class="ui input" type="checkbox" value="1" name="debugonly"></td>
 					</tr>
+					<tr>
+						<td>Rename tables not in schema<br><span class="tiny" style="font-weight: normal">Tables in the database but not in <code>nidb.sql</code> are renamed to <code>deprecated_*</code>.<br>Unchecked, they are only listed</span></td>
+						<td><input class="ui input" type="checkbox" value="1" name="renameorphans"></td>
+					</tr>
 				</table>
 				</form>
 				<br><br>
 				<?
-				$schemafile = "";
-				if (file_exists("/nidb/setup/nidb.sql"))
-					$schemafile = "/nidb/setup/nidb.sql";
-				elseif (file_exists("/nidb/nidb.sql"))
-					$schemafile = "/nidb/nidb.sql";
+				$schemafile = FindSchemaFile();
 				
 				if ($schemafile == "") {
 					?>
@@ -626,176 +663,24 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayDatabase2Page --------------- */
 	/* -------------------------------------------- */
-	function DisplayDatabase2Page($rootpassword, $rowlimit, $debugonly) {
-
-		if ( ($GLOBALS['cfg']['mysqlpassword'] != "") && ($GLOBALS['cfg']['mysqluser'] == "root") )
-			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
-		
-		$schemafile = "/nidb/setup/nidb.sql";
-		$sqldatafile = "/nidb/setup/nidb-data.sql";
-		
-		if ( (is_null($GLOBALS['cfg']['mysqldatabase'])) || ($GLOBALS['cfg']['mysqldatabase'] == "") ) {
-			$database = "nidb";
-		}
-		else {
-			$database = $GLOBALS['cfg']['mysqldatabase'];
-		}
-		
-		$ignoredtables = array();
+	function DisplayDatabase2Page() {
+		$hasresults = isset($_SESSION['flash']) && ($_SESSION['flash'] !== '');
 		?>
 		<?=DisplaySetupMenu("database2")?>
 		<br><br><br><br><br>
 		<div class="ui container">
 			<div class="ui segment" style="border: 2px solid #222; overflow: auto;">
-				<h2>Performing database setup... <? if ($debugonly) { echo "DEBUG only. No database changes"; } ?></h2>
-
+				<h2>Database setup</h2>
 				<?
-				
-				if (is_null($rootpassword)) {
-					?>
-					<div class="ui error message">
-						<h3>Unable to connect to database</h3>
-						<p>
-						root MySQL password was blank
-						</p>
-					</div>
-					<?
+				if ($hasresults) {
+					ShowFlashMessage();
 				}
 				else {
-					
-					$GLOBALS['linki'] = mysqli_connect('localhost', 'root', $rootpassword);
-					
-					if (!$GLOBALS['linki']) {
-						?>
-						<div class="ui error message"><h3>Unable to connect to database</h3>
-							<p>
-							Error number: <?=mysqli_connect_errno()?><br>
-							Error message: <?=mysqli_connect_error()?>
-							</p>
-						</div>
-						<?
-					}
-					else {
-						?>
-						<div class="ui success message"><i class="check circle icon"></i> Successfully connected to the database server</div>
-						<?
-						
-						/* check if the database itself exists */
-						$sqlstring = "show databases like '$database'";
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-						if (mysqli_num_rows($result) > 0) {
-							?><div class="ui success message"><i class="check circle icon"></i> Database '<?=$database?>' exists</div><?
-							
-							/* check if there are any tables */
-							$sqlstring = "SELECT COUNT(DISTINCT `table_name`) FROM `information_schema`.`columns` WHERE `table_schema` = '$database'";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							if (mysqli_num_rows($result) > 0) {
-								?>
-								<div class="ui success message"><i class="check circle icon"></i> Existing tables found in '<?=$database?>' database. Upgrading SQL schema</div>
-								<?
-								list($ignoredtables, $errors) = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly);
-								//PrintVariable($errors);
-								
-								if (count($errors) > 0) {
-									?>
-									<script>
-										$(document).ready(function() {
-											$('body').toast({
-												displayTime: 0,
-												class: 'error',
-												position: 'bottom right',
-												message: "Upgrade encountered errors. Scroll to bottom of this page to see errors. (Click this message to close it)"
-											});
-										});
-									</script>
-									
-									<div class="ui error message" style="text-align: left !important;">
-										<div class="header"><i class="exclamation circle icon"></i>Upgrade Errors</div>
-										Fix these errors then refresh this page
-										
-										<ul>
-											<?
-												foreach ($errors as $err) {
-													echo "<li>$err\n";
-												}
-											?>
-										</ul>
-									</div>
-									<?
-								}
-								else {
-
-								}
-
-								if (file_exists($sqldatafile)) {
-									$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
-									shell_exec($systemstring);
-								}
-								else {
-									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
-								}
-
-								RunTimeseriesPartitionMaintenance($rootpassword, $database);
-							}
-							else {
-								?><li>No tables found in '<?=$database?>' database. Running full SQL script<?
-								/* load the sql file(s) */
-								if (file_exists($schemafile)) {
-									$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
-									shell_exec($systemstring);
-
-									if (file_exists($sqldatafile)) {
-										$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
-										shell_exec($systemstring);
-									}
-									else {
-										?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
-									}
-
-									RunTimeseriesPartitionMaintenance($rootpassword, $database);
-								}
-								else {
-									?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
-								}
-
-							}
-						}
-						else {
-							$sqlstring = "create database `$database`";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							?><div class="ui success message">Created database '<?=$database?>'</div><?
-							
-							/* load the sql file(s) */
-							if (file_exists($schemafile)) {
-								$systemstring = "mysql -uroot -p$rootpassword $database < $schemafile";
-								shell_exec($systemstring);
-
-								if (file_exists($sqldatafile)) {
-									$systemstring = "mysql -uroot -p$rootpassword $database < $sqldatafile";
-									shell_exec($systemstring);
-								}
-								else {
-									?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
-								}
-
-								RunTimeseriesPartitionMaintenance($rootpassword, $database);
-							}
-							else {
-								?><div class="ui error message"><code><?=$schemafile?></code> not found. This file should have been provided by the installer</div><?
-							}
-						}
-					}
+					?>
+					<div class="ui message">No database setup results to display. Go <a href="setup.php?step=database1">Back</a> to run the database setup again.</div>
+					<?
 				}
 				?>
-				</ol>
-				<? if (count($ignoredtables) > 0) {?>
-				<br>
-				<b>Ignored tables</b><br>
-				The following tables were not updated because they have too many rows. They must be upgraded manually via phpMyAdmin.<br>
-				<?
-					echo implode2("<br>", $ignoredtables);
-				?>
-				<? } ?>
 			</div>
 		</div>
 		<br><br><br><br><br>
@@ -812,6 +697,230 @@
 		</div>
 		<?
 		
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FindSchemaFile --------------------- */
+	/* -------------------------------------------- */
+	/* returns the path to nidb.sql, or "" if not found */
+	function FindSchemaFile() {
+		if (file_exists("/nidb/setup/nidb.sql"))
+			return "/nidb/setup/nidb.sql";
+		elseif (file_exists("/nidb/nidb.sql"))
+			return "/nidb/nidb.sql";
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RunMySQLFile ----------------------- */
+	/* -------------------------------------------- */
+	/* load a .sql file with the mysql CLI (needed for files with DELIMITER blocks, and for the
+	 * full schema load). All arguments are shell-escaped, and the password is passed through the
+	 * environment instead of the command line so it isn't visible in the process list. Any
+	 * output (errors) from mysql is displayed. */
+	function RunMySQLFile($rootpassword, $database, $sqlfile) {
+		$systemstring = "MYSQL_PWD=" . escapeshellarg((string)$rootpassword) . " mysql -uroot " . escapeshellarg($database) . " < " . escapeshellarg($sqlfile) . " 2>&1";
+		$output = trim((string)shell_exec($systemstring));
+		if ($output != "") {
+			?><div class="ui error message">Loading <code><?=htmlspecialchars($sqlfile)?></code> produced the following output<pre><?=htmlspecialchars($output)?></pre></div><?
+			return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetupDatabase ---------------------- */
+	/* -------------------------------------------- */
+	/* creates or upgrades the database schema. All output is captured into the flash message by the caller (PRG) */
+	function SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans) {
+
+		if ( (($GLOBALS['cfg']['mysqlpassword'] ?? '') != "") && (($GLOBALS['cfg']['mysqluser'] ?? '') == "root") )
+			$rootpassword = $GLOBALS['cfg']['mysqlpassword'];
+		
+		$schemafile = FindSchemaFile();
+		$sqldatafile = "/nidb/setup/nidb-data.sql";
+		
+		if (($GLOBALS['cfg']['mysqldatabase'] ?? '') == "") {
+			$database = "nidb";
+		}
+		else {
+			$database = $GLOBALS['cfg']['mysqldatabase'];
+		}
+		
+		$ignoredtables = array();
+		?>
+		<h3>Performing database setup... <? if ($debugonly) { echo "DEBUG only. No database changes"; } ?></h3>
+
+		<?
+		
+		/* the database name is used as an identifier (create database, mysql CLI), so it can't be bound. Validate it instead */
+		if (!preg_match('/^[A-Za-z0-9_]+$/', $database)) {
+			?>
+			<div class="ui error message">
+				<h3>Invalid database name</h3>
+				<p>The database name <code><?=htmlspecialchars($database)?></code> may only contain letters, numbers, and underscores</p>
+			</div>
+			<?
+			return;
+		}
+		
+		if (is_null($rootpassword)) {
+			?>
+			<div class="ui error message">
+				<h3>Unable to connect to database</h3>
+				<p>
+				root MySQL password was blank
+				</p>
+			</div>
+			<?
+			return;
+		}
+		
+		/* PHP 8.1+ mysqli throws mysqli_sql_exception on a failed connect, so catch it explicitly */
+		try {
+			$GLOBALS['linki'] = mysqli_connect('localhost', 'root', (string)$rootpassword);
+		} catch (Throwable $e) { $GLOBALS['linki'] = false; }
+		
+		if (!$GLOBALS['linki']) {
+			?>
+			<div class="ui error message"><h3>Unable to connect to database</h3>
+				<p>
+				Error number: <?=mysqli_connect_errno()?><br>
+				Error message: <?=htmlspecialchars((string)mysqli_connect_error())?>
+				</p>
+			</div>
+			<?
+			return;
+		}
+		
+		?>
+		<div class="ui success message"><i class="check circle icon"></i> Successfully connected to the database server</div>
+		<?
+		
+		if ($schemafile == "") {
+			?><div class="ui error message"><code>nidb.sql</code> not found in <code>/nidb</code> or <code>/nidb/setup</code>. This file should have been provided by the installer</div><?
+			return;
+		}
+		
+		/* check if the database itself exists */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select schema_name from information_schema.schemata where schema_name = ?");
+		mysqli_stmt_bind_param($stmt, 's', $database);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$dbexists = ($result && (mysqli_num_rows($result) > 0));
+		mysqli_stmt_close($stmt);
+		
+		if ($dbexists) {
+			?><div class="ui success message"><i class="check circle icon"></i> Database '<?=$database?>' exists</div><?
+			
+			/* check if there are any tables */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) 'count' from information_schema.tables where table_schema = ?");
+			mysqli_stmt_bind_param($stmt, 's', $database);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+			$numtables = (int)($row['count'] ?? 0);
+			mysqli_stmt_close($stmt);
+			
+			if ($numtables > 0) {
+				?>
+				<div class="ui success message"><i class="check circle icon"></i> <?=$numtables?> existing tables found in '<?=$database?>' database. Upgrading SQL schema</div>
+				<?
+				list($ignoredtables, $errors) = UpgradeDatabase($GLOBALS['linki'], $database, $schemafile, $rowlimit, $debugonly, $renameorphans);
+				
+				if (count($errors) > 0) {
+					?>
+					<script>
+						$(document).ready(function() {
+							$('body').toast({
+								displayTime: 0,
+								class: 'error',
+								position: 'bottom right',
+								message: "Upgrade encountered errors. Scroll to bottom of this page to see errors. (Click this message to close it)"
+							});
+						});
+					</script>
+					
+					<div class="ui error message" style="text-align: left !important;">
+						<div class="header"><i class="exclamation circle icon"></i>Upgrade Errors</div>
+						Fix these errors then run the database setup again
+						
+						<ul>
+							<?
+								foreach ($errors as $err) {
+									echo "<li>$err\n";
+								}
+							?>
+						</ul>
+					</div>
+					<?
+				}
+
+				if (!$debugonly) {
+					if (file_exists($sqldatafile)) {
+						RunMySQLFile($rootpassword, $database, $sqldatafile);
+					}
+					else {
+						?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
+					}
+
+					RunTimeseriesPartitionMaintenance($rootpassword, $database);
+				}
+			}
+			else {
+				?><div class="ui message">No tables found in '<?=$database?>' database. Running full SQL script</div><?
+				LoadFullSchema($rootpassword, $database, $schemafile, $sqldatafile, $debugonly);
+			}
+		}
+		else {
+			if ($debugonly) {
+				?><div class="ui message">DEBUG only. Database '<?=$database?>' does not exist and would be created</div><?
+			}
+			else {
+				$sqlstring = "create database `$database`";
+				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+				if (is_array($result)) {
+					?><div class="ui error message">Unable to create database '<?=$database?>'</div><?
+					return;
+				}
+				?><div class="ui success message">Created database '<?=$database?>'</div><?
+			}
+			
+			LoadFullSchema($rootpassword, $database, $schemafile, $sqldatafile, $debugonly);
+		}
+		
+		if (count($ignoredtables) > 0) {
+			?>
+			<br>
+			<b>Ignored tables</b><br>
+			The following tables were not updated because they have too many rows. They must be upgraded manually via phpMyAdmin.<br>
+			<?
+			echo implode2("<br>", $ignoredtables);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- LoadFullSchema --------------------- */
+	/* -------------------------------------------- */
+	/* load the full schema + data files into an empty database */
+	function LoadFullSchema($rootpassword, $database, $schemafile, $sqldatafile, $debugonly) {
+		if ($debugonly) {
+			?><div class="ui message">DEBUG only. Would load <code><?=$schemafile?></code> and <code><?=$sqldatafile?></code></div><?
+			return;
+		}
+		
+		RunMySQLFile($rootpassword, $database, $schemafile);
+
+		if (file_exists($sqldatafile)) {
+			RunMySQLFile($rootpassword, $database, $sqldatafile);
+		}
+		else {
+			?><div class="ui error message"><code><?=$sqldatafile?></code> not found. This file should have been provided by the installer</div><?
+		}
+
+		RunTimeseriesPartitionMaintenance($rootpassword, $database);
 	}
 
 
@@ -835,7 +944,7 @@
 					<a class="ui inverted large button" href="setup.php?step=database1"><i class="arrow alternate circle left icon"></i>&nbsp;Back</a>
 				</div>
 				<div class="item">
-					<button class="ui inverted large button" onclick="document.configform.submit();">Write Config <i class="arrow alternate circle right icon"></i></a>
+					<button class="ui inverted large button" onclick="document.configform.submit();">Write Config <i class="arrow alternate circle right icon"></i></button>
 				</div>
 			</div>
 		</div>
@@ -850,11 +959,12 @@
 	function DisplaySetupCompletePage() {
 		
 		?>
-		<?=DisplaySetupMenu("config")?>
+		<?=DisplaySetupMenu("setupcomplete")?>
 
 		<br><br><br><br><br>
 
 		<div class="ui container">
+			<? ShowFlashMessage(); ?>
 			<div class="ui segment" style="border: 2px solid #222; overflow: auto;">
 				<h2>Setup Complete</h2>
 				Visit the <b>Admin</b> menu option to administer this instance of NiDB
@@ -875,7 +985,8 @@
 		<?
 		
 		/* remove /nidb/setup/dbupgrade file */
-		unlink("/nidb/setup/dbupgrade");
+		if (file_exists("/nidb/setup/dbupgrade"))
+			unlink("/nidb/setup/dbupgrade");
 		
 	}
 
@@ -902,7 +1013,7 @@
 				<div class="item">System Check</div>
 			<? } ?>
 			
-			<? if ($step == "database") { ?>
+			<? if (in_array($step, array("database1","database2"))) { ?>
 				<div class="active item">Database</div>
 			<? } else if (in_array($step, array("config","setupcomplete"))) { ?>
 				<div class="item"><i class="inverted check circle icon"></i> Database</div>
@@ -941,9 +1052,9 @@
 	function RunTimeseriesPartitionMaintenance($rootpassword, $database) {
 		$maintenancefile = "/nidb/setup/timeseries_partition_maintenance.sql";
 		if (file_exists($maintenancefile)) {
-			$systemstring = "mysql -uroot -p$rootpassword $database < $maintenancefile";
-			shell_exec($systemstring);
-			?><div class="ui success message"><i class="check circle icon"></i> Timeseries partition maintenance event installed</div><?
+			if (RunMySQLFile($rootpassword, $database, $maintenancefile)) {
+				?><div class="ui success message"><i class="check circle icon"></i> Timeseries partition maintenance event installed</div><?
+			}
 		}
 		else {
 			?><div class="ui error message"><code><?=$maintenancefile?></code> not found. This file should have been provided by the installer</div><?
@@ -961,7 +1072,7 @@
 			echo "<code>$sqlstring</code><br>";
 		else {
 			$result = MySQLiQuery($sqlstring, $file, $line, true);
-			if ($result['error'] == 1) {
+			if (is_array($result) && ($result['error'] == 1)) {
 				$ret = $result['errormsg'] . " (" . $result['sql'] . ")";
 			}
 		}
@@ -971,20 +1082,91 @@
 	
 
 	/* -------------------------------------------- */
+	/* ------- ParseSchemaTableName --------------- */
+	/* -------------------------------------------- */
+	/* returns the table name from a CREATE TABLE line, or "" if it can't be parsed */
+	function ParseSchemaTableName($line) {
+		if (preg_match('/^CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?`?([^`\s(]+)`?/i', $line, $m))
+			return $m[1];
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidateSchemaFile ----------------- */
+	/* -------------------------------------------- */
+	/* Pre-flight check of the schema file, run before UpgradeDatabase changes anything. A wrong,
+	 * truncated, or differently-formatted file would otherwise produce bad ALTERs and cause every
+	 * real table to be treated as "not in schema". Returns a list of problems (empty = OK). */
+	function ValidateSchemaFile($sqlfile) {
+		$problems = array();
+		$contents = file_get_contents($sqlfile);
+		if (($contents === false) || (trim($contents) == "")) {
+			return array("Schema file [$sqlfile] is empty or unreadable");
+		}
+		
+		/* the file must be complete (mysqldump/phpMyAdmin exports end with COMMIT;) */
+		if (!preg_match('/^\s*COMMIT;\s*$/m', $contents)) {
+			$problems[] = "Schema file [$sqlfile] does not contain a COMMIT; line. The file may be truncated";
+		}
+		
+		/* count CREATE TABLE statements independently of the upgrade parser, which only recognizes
+		   lines beginning with an upper-case "CREATE TABLE" */
+		$numcreate = preg_match_all('/^\s*CREATE\s+TABLE\b/im', $contents);
+		$tables = array();
+		foreach (preg_split('/\R/', $contents) as $line) {
+			$line = trim($line);
+			if (substr($line,0,12) == "CREATE TABLE") {
+				$tables[] = ParseSchemaTableName($line);
+			}
+		}
+		if (count($tables) != $numcreate) {
+			$problems[] = "Found $numcreate CREATE TABLE statements, but only " . count($tables) . " could be parsed";
+		}
+		if ($numcreate == 0) {
+			$problems[] = "No CREATE TABLE statements found in [$sqlfile]";
+		}
+		
+		/* every table name must be a plain identifier */
+		foreach ($tables as $t) {
+			if (!preg_match('/^[a-z0-9_]+$/', $t)) {
+				$problems[] = "Unexpected table name [" . htmlspecialchars($t) . "] parsed from schema file";
+			}
+		}
+		
+		/* core tables must be present */
+		foreach (array("users", "subjects", "enrollment", "studies", "projects") as $t) {
+			if (!in_array($t, $tables, true)) {
+				$problems[] = "Core table [$t] not found in schema file";
+			}
+		}
+		
+		return $problems;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- UpgradeDatabase -------------------- */
 	/* -------------------------------------------- */
-	function UpgradeDatabase($linki, $database, $sqlfile, $rowlimit, $debug) {
+	function UpgradeDatabase($linki, $database, $sqlfile, $rowlimit, $debug, $renameorphans) {
 		?>
 		<div class="ui message">
 		<?
 		
 		if (!file_exists($sqlfile)) {
-			echo "[$sqlfile] not found<br>";
+			echo "[$sqlfile] not found<br></div>";
 			return array(array(), array("SQL file [$sqlfile] not found"));
 		}
 
+		/* validate the schema file before making any changes */
+		$problems = ValidateSchemaFile($sqlfile);
+		if (count($problems) > 0) {
+			echo "Schema file <code>$sqlfile</code> failed validation. <b>No changes were made to the database</b><br></div>";
+			return array(array(), $problems);
+		}
+
 		if (!mysqli_select_db($linki, $database)) {
-			echo "Unable to select database [$database]<br>";
+			echo "Unable to select database [$database]<br></div>";
 			return array(array(), array("Unable to select database [$database]"));
 		}
 		
@@ -996,8 +1178,9 @@
 		$schematables = array();
 		$err = array();
 
-		/* disable strict mode to prevent truncation errors */
-		$sqlstring = "SET @@global.sql_mode= ''";
+		/* disable strict mode to prevent truncation errors. SESSION only; @@global would leave strict mode
+		   off for every connection to the server until MariaDB restarts */
+		$sqlstring = "SET SESSION sql_mode = ''";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
 
 		/* load the file, loop through the lines */
@@ -1026,20 +1209,23 @@
 			
 			/* create table section */
 			if (substr($line,0,12) == "CREATE TABLE") {
-				$table = str_replace("`", "", preg_split('/\s+/', $line)[2]);
+				$table = ParseSchemaTableName($line);
 				$schematables[] = $table;
 
-				/* check if this table exists */
-				$sqlstring = "show tables like '$table'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
+				/* check if this table exists (exact match; SHOW TABLES LIKE treated _ as a wildcard) */
+				$stmt = mysqli_prepare($linki, "select table_name from information_schema.tables where table_schema = ? and table_name = ?");
+				mysqli_stmt_bind_param($stmt, 'ss', $database, $table);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+				$exists = ($result && (mysqli_num_rows($result) > 0));
+				mysqli_stmt_close($stmt);
 				
-				if (mysqli_num_rows($result) > 0) {
+				if ($exists) {
 					$tableexists = true;
-					/* get the table row count */
-					$sqlstring = "select count(*) 'count' from $table";
+					/* get the table row count. $table is an identifier from the installer's schema file, so it can't be bound */
+					$sqlstring = "select count(*) 'count' from `$table`";
 					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__, true);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$tablerowcount = intval($row['count']);
+					$row = is_array($result) ? null : mysqli_fetch_array($result, MYSQLI_ASSOC);
+					$tablerowcount = intval($row['count'] ?? 0);
 				}
 				else {
 					$tableexists = false;
@@ -1061,7 +1247,6 @@
 			
 			/* end of a create table */
 			if (substr($line,0,9) == ") ENGINE=") {
-				echo "</ul>";
 				//echo "Done examining [$table]<br>";
 				
 				if (($tablerowcount >= $rowlimit) && ($rowlimit > 0)) {
@@ -1090,13 +1275,13 @@
 			
 			/* regular column to be added/updated for the current table */
 			if (($table != "") && ($createtable == "") && (substr($line,0,1) == "`")) {
+				$parts = preg_split('/`/', $line);
+				$column = trim($parts[1] ?? '');
 				if (($tablerowcount >= $rowlimit) && ($rowlimit > 0)) {
 					//echo "Table <tt class='e'>$table</tt> has $tablerowcount rows. Skipping upgrade<br>";
 				}
 				else {
-					$parts = preg_split('/`/', $line);
-					$column = trim($parts[1]);
-					$properties = trim($parts[2]);
+					$properties = trim($parts[2] ?? '');
 					$properties = rtrim($properties,",");
 					
 					$parts2 = explode(" ", $properties);
@@ -1107,10 +1292,10 @@
 					elseif (contains(strtolower($properties), "unsigned zerofill")) {
 						$file_type = $file_type . " unsigned zerofill";
 					}
-					elseif (strtolower($parts2[1]) == "unsigned") {
+					elseif (strtolower($parts2[1] ?? '') == "unsigned") {
 						$file_type = $file_type . " unsigned";
 					}
-					elseif (strtolower($parts2[1]) == "binary") {
+					elseif (strtolower($parts2[1] ?? '') == "binary") {
 						$file_type = $file_type . " binary";
 					}
 					
@@ -1118,10 +1303,14 @@
 					/* determine whether the schema definition requires NOT NULL */
 					$file_notnull = (bool) preg_match('/\bNOT NULL\b/i', $properties);
 
-					/* check if the column exists */
+					/* check if the column exists. $table/$column are identifiers from the installer's schema file (not user input).
+					   Kept as SHOW COLUMNS because the Default comparison below depends on its format, which differs from information_schema */
 					$sqlstringA = "show columns from `$table` where Field = '$column'";
 					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__, true);
-					if (mysqli_num_rows($resultA) > 0) {
+					if (is_array($resultA)) {
+						$err[] = $resultA['errormsg'] . " (" . $resultA['sql'] . ")";
+					}
+					elseif (mysqli_num_rows($resultA) > 0) {
 						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 						$type = $rowA['Type'];
 						$key = $rowA['Key'];
@@ -1232,23 +1421,56 @@
 			}
 		}
 		
-		/* find tables in the database that are not in the schema and rename them */
-		$result = MySQLiQuery("SHOW TABLES", __FILE__, __LINE__, true);
+		/* find tables in the database that are not in the schema. Base tables only; views are never renamed */
+		$result = MySQLiQuery("SHOW FULL TABLES WHERE Table_type = 'BASE TABLE'", __FILE__, __LINE__, true);
 		$dbtables = array();
-		while ($row = mysqli_fetch_row($result)) {
-			$dbtables[] = $row[0];
+		if (!is_array($result)) {
+			while ($row = mysqli_fetch_row($result)) {
+				$dbtables[] = $row[0];
+			}
 		}
 
 		$orphans = array_diff($dbtables, $schematables);
 		if (count($orphans) > 0) {
-			$toRename = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') !== 0; });
+			$toRename = array_values(array_filter($orphans, function($t) { return strpos($t, 'deprecated_') !== 0; }));
 			$alreadyDeprecated = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') === 0; });
 			if (count($toRename) > 0) {
-				echo "<br><b>Deprecated tables</b> (exist in database but not in schema)<br>";
+				echo "<br><b>Tables not in schema</b> (exist in database but not in <code>$sqlfile</code>)<br>";
 				foreach ($toRename as $orphan) {
-					$newname = "deprecated_$orphan";
-					echo "Table <tt>$orphan</tt> not in schema &mdash; renaming to <tt>$newname</tt><br>";
-					$err[] = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+					echo "<tt>$orphan</tt><br>";
+				}
+				
+				/* major releases can intentionally deprecate many tables, but many unmatched tables can also mean
+				   the wrong database or schema file is being used. Warn, but let the rename go ahead */
+				$maxorphans = 10;
+				$manyorphans = (count($toRename) > $maxorphans) || (count($toRename) > 0.10 * count($dbtables));
+				
+				if ($manyorphans) {
+					?>
+					<div class="ui warning message">
+						<i class="exclamation triangle icon"></i> <b><?=count($toRename)?> of <?=count($dbtables)?> tables are not in the schema</b> (more than <?=$maxorphans?> tables or 10% of the database).
+						This is expected for a major release that deprecates many tables. Otherwise, check that the correct database and schema file are being used<?=($renameorphans ? ". The undo SQL is listed below." : " before renaming them.")?>
+					</div>
+					<?
+				}
+				
+				if (!$renameorphans) {
+					echo "<br>These tables were <b>not renamed</b>. To rename them to <tt>deprecated_*</tt>, run the database setup again with <i>Rename tables not in schema</i> checked<br>";
+				}
+				else {
+					$undo = array();
+					foreach ($toRename as $orphan) {
+						$newname = "deprecated_$orphan";
+						echo "Renaming <tt>$orphan</tt> to <tt>$newname</tt><br>";
+						$e = SQLQuery("RENAME TABLE `$orphan` TO `$newname`", $debug, __FILE__, __LINE__);
+						$err[] = $e;
+						if ($e == "") {
+							$undo[] = "RENAME TABLE `$newname` TO `$orphan`;";
+						}
+					}
+					if ((count($undo) > 0) && (!$debug)) {
+						echo "<br>To undo these renames, run the following SQL<pre>" . implode("\n", $undo) . "</pre>";
+					}
 				}
 			}
 			if (count($alreadyDeprecated) > 0) {

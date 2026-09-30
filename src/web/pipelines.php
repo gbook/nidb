@@ -78,6 +78,7 @@
 	$pipelinedatacopymethod = GetVariable("pipelinedatacopymethod");
 	$pipelineremovedata = GetVariable("pipelineremovedata");
 	$pipelineresultsscript = GetVariable("pipelineresultsscript");
+	$pipelinescriptcomment = GetVariable("pipelinescriptcomment");
 	$pipelinedirectory = GetVariable("pipelinedirectory");
 	$pipelinedirstructure = GetVariable("pipelinedirstructure");
 	$pipelineusetmpdir = GetVariable("pipelineusetmpdir");
@@ -142,7 +143,7 @@
 			break;
 		case 'updatepipelineoptions':
 			ob_start();
-			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, array(), $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir);
+			UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, array(), $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $pipelinescriptcomment, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo(PipelineEditURL($id, $returntab));
 			break;
@@ -359,7 +360,7 @@
 	/* -------------------------------------------- */
 	/* this function CHANGES the version number     */
 	/* -------------------------------------------- */
-	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir) {
+	function UpdatePipelineOptions($id, $commandlist, $supplementcommandlist, $steporder, $dd_enabled, $dd_order, $dd_protocol, $dd_modality, $dd_datalevel, $dd_studyassoc, $dd_dataformat, $dd_imagetype, $dd_gzip, $dd_location, $dd_seriescriteria, $dd_numboldreps, $dd_behformat, $dd_behdir, $dd_useseriesdirs, $dd_optional, $dd_isprimary, $dd_preserveseries, $dd_usephasedir, $dd_behonly, $pipelineresultsscript, $pipelinescriptcomment, $completefiles, $deplevel, $depdir, $deplinktype, $groupid, $projectid, $dependency, $groupbysubject, $outputbids, $bidsoutputdir) {
 		
 		if (!ValidID($id,'Pipeline ID - C')) { return; }
 		if (!CanEditPipeline($id)) {
@@ -405,10 +406,10 @@
 		$projectids = implode(",", array_filter(array_map('intval', is_array($projectid) ? $projectid : explode(",", (string)$projectid))));
 
 		/* update the pipeline table */
-		$sqlstring = "update pipelines set pipeline_resultsscript = ?, pipeline_completefiles = ?, pipeline_dependency = ?, pipeline_groupid = ?, pipeline_projectid = ?, pipeline_dependencylevel = ?, pipeline_dependencydir = ?, pipeline_deplinktype = ?, pipeline_groupbysubject = ?, pipeline_outputbids = ?, pipeline_bidsoutputdir = ? where pipeline_id = ?";
-		$params = [$pipelineresultsscript, $completefiles, $dependencies, $groupids, $projectids, $deplevel, $depdir, $deplinktype, $groupbysubject, $outputbids, $bidsoutputdir, $id];
+		$sqlstring = "update pipelines set pipeline_resultsscript = ?, pipeline_scriptcomment = ?, pipeline_completefiles = ?, pipeline_dependency = ?, pipeline_groupid = ?, pipeline_projectid = ?, pipeline_dependencylevel = ?, pipeline_dependencydir = ?, pipeline_deplinktype = ?, pipeline_groupbysubject = ?, pipeline_outputbids = ?, pipeline_bidsoutputdir = ? where pipeline_id = ?";
+		$params = [$pipelineresultsscript, $pipelinescriptcomment, $completefiles, $dependencies, $groupids, $projectids, $deplevel, $depdir, $deplinktype, $groupbysubject, $outputbids, $bidsoutputdir, $id];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ssssssssiisi', ...$params);
+		mysqli_stmt_bind_param($stmt, 'sssssssssiisi', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		if ($result === null) { $error = true; }
 		mysqli_stmt_close($stmt);
@@ -434,10 +435,10 @@
 		}
 
 		/* add row to the pipeline_options table for the new version */
-		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-		$params = [$id, $newversion, $dependencies, $deplevel, $depdir, $deplinktype, $groupids, $projectids, $groupbysubject, $outputbids, $bidsoutputdir, $completefiles, $pipelineresultsscript];
+		$sqlstring = "insert into pipeline_options (pipeline_id, pipeline_version, pipeline_dependency, pipeline_dependencylevel, pipeline_dependencydir, pipeline_deplinktype, pipeline_groupid, pipeline_projectid, pipeline_groupbysubject, pipeline_outputbids, pipeline_bidsoutputdir, pipeline_completefiles, pipeline_resultsscript, pipeline_scriptcomment) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = [$id, $newversion, $dependencies, $deplevel, $depdir, $deplinktype, $groupids, $projectids, $groupbysubject, $outputbids, $bidsoutputdir, $completefiles, $pipelineresultsscript, $pipelinescriptcomment];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'iissssssiisss', ...$params);
+		mysqli_stmt_bind_param($stmt, 'iissssssiissss', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		if ($result === null) { $error = true; }
 		mysqli_stmt_close($stmt);
@@ -1379,6 +1380,7 @@
 			$pipelinenotes = $row['pipeline_notes'];
 			$pipelinegroup = $row['pipeline_group'];
 			$resultscript = $row['pipeline_resultsscript'];
+			$scriptcomment = $row['pipeline_scriptcomment'];
 			$deplevel = $row['pipeline_dependencylevel'];
 			$depdir = $row['pipeline_dependencydir'];
 			$deplinktype = $row['pipeline_deplinktype'];
@@ -2213,6 +2215,14 @@
 						</td>
 						<td valign="top">
 							<textarea name="pipelineresultsscript" rows="3" cols="60"><?=htmlspecialchars($resultscript ?? '', ENT_QUOTES)?></textarea>
+						</td>
+					</tr>
+					<tr>
+						<td class="label" valign="top">
+							Script comment <i class="grey question outline circle icon" title="<b>Script comment</b><br><br>Free-text comments or notes about the pipeline scripts"></i>
+						</td>
+						<td valign="top">
+							<textarea name="pipelinescriptcomment" rows="3" cols="60"><?=htmlspecialchars($scriptcomment ?? '', ENT_QUOTES)?></textarea>
 						</td>
 					</tr>
 					<tr class="level1">
@@ -3415,6 +3425,7 @@
 					$sqlstring = "select * from pipeline_steps where pipeline_id = $id and pipeline_version = $version and ps_supplement <> 1 order by ps_order + 0";
 					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 					?>
+					<div class="ui error message" id="exitwarning-main" style="display:none"></div>
 					<textarea name="commandlist" style="font-weight:normal"><?
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$line = RenderStepLine($row['ps_command'], $row['ps_description'], ($row['ps_enabled'] == 1), ($row['ps_logged'] == 1));
@@ -3446,6 +3457,7 @@
 						$open = "";
 					}
 				?>
+				<div class="ui error message" id="exitwarning-supplement" style="display:none"></div>
 				<div id="supplementcommandlist" style="border: 1px solid #666; font-weight: normal"></div>
 				<textarea name="supplementcommandlist" hidden><?
 					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
@@ -3521,6 +3533,30 @@
 				
 				keepAceSearchHighlight(editor);
 				keepAceSearchHighlight(editor2);
+				
+				/* warn if the script calls 'exit'. The script is embedded in a NiDB-generated script, and exiting early skips the check-in that marks the analysis complete */
+				function CheckExitCommand(whicheditor, key) {
+					var lines = whicheditor.getSession().getValue().split("\n");
+					var found = [];
+					for (var i = 0; i < lines.length; i++) {
+						/* ignore comments, including commented-out (disabled) steps and step descriptions */
+						var line = lines[i].replace(/(^|\s)#.*$/, '');
+						if (/(^|[;&|(){}]|\b(then|do|else)\b)\s*exit\b/.test(line)) {
+							found.push(i + 1);
+						}
+					}
+					var msg = $('#exitwarning-' + key);
+					if (found.length > 0) {
+						msg.html('<i class="exclamation triangle icon"></i><b>This script contains an <tt>exit</tt> command</b> (line' + (found.length == 1 ? ' ' : 's ') + found.join(', ') + '). The script runs inside a NiDB-generated script, and <tt>exit</tt> stops it before the analysis checks in, so the analysis will never be marked as finished. Remove the <tt>exit</tt> command, or use <tt>if</tt> blocks to skip the remaining commands instead.').show();
+					}
+					else {
+						msg.hide();
+					}
+				}
+				CheckExitCommand(editor, 'main');
+				CheckExitCommand(editor2, 'supplement');
+				editor.getSession().on('change', function() { CheckExitCommand(editor, 'main'); });
+				editor2.getSession().on('change', function() { CheckExitCommand(editor2, 'supplement'); });
 				
 				/* check the script with shellcheck (server side) and show the results as Ace gutter annotations */
 				function CheckAceSyntax(whicheditor, key) {
@@ -3992,6 +4028,10 @@
 					<tr>
 						<td><b>Results script</b></td>
 						<td><tt><?=htmlspecialchars($options['pipeline_resultsscript'] ?? '')?></tt></td>
+					</tr>
+					<tr>
+						<td><b>Script comment</b></td>
+						<td><tt><?=htmlspecialchars($options['pipeline_scriptcomment'] ?? '')?></tt></td>
 					</tr>
 				</table>
 				<? } else { ?>

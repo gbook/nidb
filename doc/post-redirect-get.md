@@ -38,14 +38,13 @@ for the reference implementation.
 | `clustersettings.php` | 2 | ⬜ |
 | `datadictionary.php` | 4 | ⬜ |
 | `datasetrequests.php` | 1 | ⬜ |
-| `diagnosis.php` | 1 | ⬜ |
+| `diagnosis.php` | 1 | ✅ |
 | `enrollment.php` | 2 | ✅ |
 | `experiment.php` | 1 | ⬜ |
 | `functions.php` | 3 | ⬜ |
 | `groups.php` | 5 | ✅ |
 | `import.php` | 6 | ⬜ |
 | `importimaging.php` | 5 | ✅ |
-| `importmeasures.php` | 1 | ⬜ |
 | `importnonimaging.php` | 2 | ⬜ |
 | `importremote.php` | 2 | ⬜ |
 | `instance.php` | 1 | ⬜ |
@@ -69,7 +68,7 @@ for the reference implementation.
 | `remoteimportmapping.php` | 2 | ⬜ |
 | `search.php` | 5 | ⬜ |
 | `settings.php` | 1 | ✅ |
-| `setup.php` | 1 | ⬜ |
+| `setup.php` | 1 | ✅ |
 | `signup.php` | 2 | ⬜ |
 | `status.php` | 1 | ⬜ |
 | `studies.php` | 16 | ⬜ |
