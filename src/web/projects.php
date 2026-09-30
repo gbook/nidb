@@ -3306,6 +3306,12 @@
 						<a href="remoteimportmapping.php?projectid=<?=$id?>" style="color: #4183c4">Remote import mapping</a>
 					</div>
 				</div>
+				<a class="ui green card" href="projectusage.php?projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="chart pie icon"></i> Resource usage</div>
+						<div class="description">Imaging disk usage and non-imaging data counts</div>
+					</div>
+				</a>
 			</div>
 
 			<?
