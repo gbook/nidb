@@ -1070,9 +1070,37 @@
 									<th>Datetime</th>
 								</thead>
 							<?
+								/* start with the steps that checked in, then add any StepN log file on disk that has
+								   no checkin event (ex. a step marked NOCHECKIN, or a checkin that failed to record) */
+								$scriptSteps = $logs['status_analysisStepCheckin'] ?? [];
+								$checkedInSteps = array();
+								foreach ($scriptSteps as $step) {
+									$checkedInSteps[(int)$step['stepNumber']] = true;
+								}
+								foreach ((glob("$path/Step*") ?: []) as $stepfile) {
+									if (preg_match('/^Step(\d+)$/', basename($stepfile), $matches) && is_file($stepfile)) {
+										$stepnum = (int)$matches[1];
+										if (!isset($checkedInSteps[$stepnum])) {
+											$scriptSteps[] = array('status' => '', 'stepNumber' => $stepnum, 'message' => "<span class='ui grey text'><i>No checkin event - log file only</i></span>", 'hostname' => '', 'datetime' => '');
+											$checkedInSteps[$stepnum] = true;
+										}
+									}
+								}
+
+								/* order by step number, keeping the original order of multiple events for the same step */
+								foreach ($scriptSteps as $idx => $step) {
+									$scriptSteps[$idx]['sortIndex'] = $idx;
+								}
+								usort($scriptSteps, function($a, $b) {
+									if ((int)$a['stepNumber'] != (int)$b['stepNumber']) {
+										return ((int)$a['stepNumber'] < (int)$b['stepNumber']) ? -1 : 1;
+									}
+									return $a['sortIndex'] - $b['sortIndex'];
+								});
+
 								$scriptModals = "";
 								$modalNum = 0;
-								foreach (($logs['status_analysisStepCheckin'] ?? []) as $step) {
+								foreach ($scriptSteps as $step) {
 									$i = $step['stepNumber'];
 									$modalNum++;
 									$modalID = "scriptStepModal$modalNum";
@@ -1098,8 +1126,9 @@
 										$fileExists = false;
 									}
 									
-									$description = $descriptions['reg'][$i] ?? '';
-									$command = $commands['reg'][$i] ?? '';
+									/* step numbers (and StepN files) are the 1-based ps_order; the arrays are keyed by ps_order - 1 */
+									$description = $descriptions['reg'][$i - 1] ?? '';
+									$command = $commands['reg'][$i - 1] ?? '';
 
 									ob_start();
 									?>
@@ -1140,7 +1169,7 @@
 										<td><?=$step['message']?></td>
 										<td><div class="ui compact small button showModalButton" data-modal="<?=$modalID?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
 										<td><?=$step['hostname']?></td>
-										<td><?=$step['datetime']?></td>
+										<td><?=($step['datetime'] != '' ? $step['datetime'] : $filedate)?></td>
 									</tr>
 									<?
 								}
