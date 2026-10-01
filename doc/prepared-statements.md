@@ -93,7 +93,7 @@ user input is fine as-is).
 | `projectchecklist.php` | 3 | 14 | ⬜ |
 | `projectreport.php` | 13 | 0 | ⬜ |
 | `projects.php` | 99 | 2 | ⬜ |
-| `projectusage.php` | 2 | 6 | ✅ |
+| `projectusage.php` | 3 | 7 | ✅ |
 | `publicdatasets.php` | 3 | 0 | ⬜ |
 | `publicdownloads.php` | 3 | 0 | ⬜ |
 | `qa.php` | 1 | 0 | ⬜ |
@@ -124,4 +124,4 @@ user input is fine as-is).
 | `viewanalysis.php` | 25 | 0 | ✅ |
 | `viewimage.php` | 1 | 0 | ⬜ |
 
-_Regenerated 2026-09-30 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._
+_Regenerated 2026-10-01 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._

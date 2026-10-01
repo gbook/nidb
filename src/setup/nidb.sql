@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Sep 30, 2026 at 03:07 PM
+-- Generation Time: Oct 01, 2026 at 02:45 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -70,7 +70,7 @@ CREATE TABLE `analysisdirs` (
   `clusterpath` text NOT NULL,
   `shortname` varchar(255) NOT NULL,
   `dirformat` enum('pipelinefirst','uidfirst') NOT NULL DEFAULT 'pipelinefirst'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1157,7 +1157,7 @@ CREATE TABLE `files` (
   `file_blob` longblob NOT NULL,
   `file_size` bigint(20) NOT NULL DEFAULT 0,
   `file_date` datetime NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 

@@ -79,4 +79,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-09-30 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-10-01 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
