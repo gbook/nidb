@@ -19,7 +19,7 @@ for the reference implementation.
 | `admindicomae.php` | 2 | ✅ |
 | `adminemail.php` | 1 | ✅ |
 | `admininstances.php` | 2 | ✅ |
-| `adminmodalities.php` | 0 | ✅ |
+| `adminmodalities.php` | 2 | ✅ |
 | `adminprojects.php` | 2 | ✅ |
 | `adminqc.php` | 2 | ✅ |
 | `adminremoteimports.php` | 1 | ✅ |

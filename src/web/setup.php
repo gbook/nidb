@@ -1430,7 +1430,17 @@
 			}
 		}
 
-		$orphans = array_diff($dbtables, $schematables);
+		/* modalities added on the Modalities admin page have a site-created <mod_code>_series table that is
+		   not in the schema. Those belong to a registered modality, so they are not orphans */
+		$modalitytables = array();
+		$result = MySQLiQuery("select mod_code from modalities", __FILE__, __LINE__, true);
+		if (!is_array($result)) {
+			while ($row = mysqli_fetch_row($result)) {
+				$modalitytables[] = strtolower($row[0]) . "_series";
+			}
+		}
+
+		$orphans = array_diff($dbtables, $schematables, $modalitytables);
 		if (count($orphans) > 0) {
 			$toRename = array_values(array_filter($orphans, function($t) { return strpos($t, 'deprecated_') !== 0; }));
 			$alreadyDeprecated = array_filter($orphans, function($t) { return strpos($t, 'deprecated_') === 0; });

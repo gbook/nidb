@@ -1,29 +1,29 @@
 INSERT IGNORE INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `instance_ownerid`, `instance_default`) VALUES
 (1, 'I1234ABC', 'NiDB', 1, 1);
 
-INSERT IGNORE INTO `modalities` (`mod_id`, `mod_code`, `mod_desc`, `mod_enabled`) VALUES
-(1, 'MR', 'Magnetic resonance imaging', 1),
-(2, 'CT', 'Computed tomography', 1),
-(3, 'EEG', 'Electroencephalography', 1),
-(4, 'VIDEO', 'Video', 1),
-(5, 'ECG', 'Electrocardiogram', 1),
-(6, 'US', 'Ultrasound', 1),
-(7, 'MEG', 'Magnetoencephalography', 1),
-(8, 'XRAY', 'X-ray', 1),
-(9, 'PT', 'Positron emission tomography', 1),
-(10, 'OT', 'Other DICOM', 1),
-(11, 'PPI', 'Pre-pulse inhibition', 1),
-(12, 'ET', 'Eye-tracking', 1),
-(13, 'XA', 'X-ray angiography', 1),
-(14, 'CR', 'Computed radiography (digital x-ray)', 1),
-(15, 'SURGERY', 'Pre-surgical Mapping', 1),
-(16, 'AUDIO', 'Audio', 1),
-(17, 'SNP', 'SNP genetic information', 1),
-(18, 'CONSENT', 'Consent form', 1),
-(19, 'TMS', 'Transcranial magnetic stimulation', 1),
-(20, 'GSR', 'Galvanic skin response', 1),
-(20, 'DOC', 'Documents', 1),
-(21, 'TASK', 'Task', 1);
+INSERT IGNORE INTO `modalities` (`mod_code`, `mod_desc`, `mod_enabled`) VALUES
+('MR', 'Magnetic resonance imaging', 1),
+('CT', 'Computed tomography', 1),
+('EEG', 'Electroencephalography', 1),
+('VIDEO', 'Video', 1),
+('ECG', 'Electrocardiogram', 1),
+('US', 'Ultrasound', 1),
+('MEG', 'Magnetoencephalography', 1),
+('XRAY', 'X-ray', 1),
+('PT', 'Positron emission tomography', 1),
+('OT', 'Other DICOM', 1),
+('PPI', 'Pre-pulse inhibition', 1),
+('ET', 'Eye-tracking', 1),
+('XA', 'X-ray angiography', 1),
+('CR', 'Computed radiography (digital x-ray)', 1),
+('SURGERY', 'Pre-surgical Mapping', 1),
+('AUDIO', 'Audio', 1),
+('SNP', 'SNP genetic information', 1),
+('CONSENT', 'Consent form', 1),
+('TMS', 'Transcranial magnetic stimulation', 1),
+('GSR', 'Galvanic skin response', 1),
+('DOC', 'Documents', 1),
+('TASK', 'Task', 1);
 
 delete from modules;
 
