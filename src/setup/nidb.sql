@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 01, 2026 at 02:45 PM
+-- Generation Time: Oct 01, 2026 at 03:49 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2510,21 +2510,6 @@ CREATE TABLE `project_nda_uploads` (
 -- --------------------------------------------------------
 
 --
--- Table structure for table `project_protocol`
---
-
-CREATE TABLE `project_protocol` (
-  `projectprotocol_id` int(11) NOT NULL,
-  `project_id` int(11) NOT NULL,
-  `protocolgroup_id` int(11) NOT NULL,
-  `pp_criteria` enum('required','recommended','conditional','') NOT NULL,
-  `pp_perstudyquantity` int(11) NOT NULL,
-  `pp_perprojectquantity` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
 -- Table structure for table `project_template`
 --
 
@@ -2567,30 +2552,6 @@ CREATE TABLE `project_templatestudyitems` (
   `ptsitem_order` int(11) DEFAULT NULL,
   `ptsitem_protocol` varchar(255) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `protocolgroup_items`
---
-
-CREATE TABLE `protocolgroup_items` (
-  `pgitem_id` int(11) NOT NULL,
-  `protocolgroup_id` int(11) NOT NULL,
-  `pgitem_protocol` varchar(250) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
-
--- --------------------------------------------------------
-
---
--- Table structure for table `protocol_group`
---
-
-CREATE TABLE `protocol_group` (
-  `protocolgroup_id` int(11) NOT NULL,
-  `protocolgroup_name` varchar(50) NOT NULL,
-  `protocolgroup_modality` varchar(40) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC COMMENT='specifies the protocol group name and modality';
 
 -- --------------------------------------------------------
 
@@ -4543,12 +4504,6 @@ ALTER TABLE `project_nda_uploads`
   ADD KEY `idx_project_export` (`project_id`,`export_id`);
 
 --
--- Indexes for table `project_protocol`
---
-ALTER TABLE `project_protocol`
-  ADD PRIMARY KEY (`projectprotocol_id`);
-
---
 -- Indexes for table `project_template`
 --
 ALTER TABLE `project_template`
@@ -4565,19 +4520,6 @@ ALTER TABLE `project_templatestudies`
 --
 ALTER TABLE `project_templatestudyitems`
   ADD PRIMARY KEY (`ptsitem_id`);
-
---
--- Indexes for table `protocolgroup_items`
---
-ALTER TABLE `protocolgroup_items`
-  ADD PRIMARY KEY (`pgitem_id`);
-
---
--- Indexes for table `protocol_group`
---
-ALTER TABLE `protocol_group`
-  ADD PRIMARY KEY (`protocolgroup_id`),
-  ADD UNIQUE KEY `protocolgroup_name` (`protocolgroup_name`,`protocolgroup_modality`);
 
 --
 -- Indexes for table `pr_series`
@@ -5633,12 +5575,6 @@ ALTER TABLE `project_nda_uploads`
   MODIFY `projectndaupload_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT for table `project_protocol`
---
-ALTER TABLE `project_protocol`
-  MODIFY `projectprotocol_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
 -- AUTO_INCREMENT for table `project_template`
 --
 ALTER TABLE `project_template`
@@ -5655,18 +5591,6 @@ ALTER TABLE `project_templatestudies`
 --
 ALTER TABLE `project_templatestudyitems`
   MODIFY `ptsitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `protocolgroup_items`
---
-ALTER TABLE `protocolgroup_items`
-  MODIFY `pgitem_id` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT for table `protocol_group`
---
-ALTER TABLE `protocol_group`
-  MODIFY `protocolgroup_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pr_series`

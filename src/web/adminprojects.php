@@ -501,15 +501,6 @@
 			</form>
 		
 		<br><br><br>
-		
-		<? if ($type == "edit") { ?>
-			<div class="ui container">
-				<div class="ui segment">
-					Required protocols<br><br>
-					<iframe src="adminprojectprotocols.php?projectid=<?=$id?>" width="100%" height="400px" frameborder="0"></iframe>
-				</div>
-			</div>
-		<? } ?>
 		<?
 	}
 
