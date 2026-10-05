@@ -94,6 +94,11 @@
 		$tablestats = GetTableStats();
 		$timeseriesrows = FormatRowCount($tablestats['timeseries']['rows']);
 
+		/* timeseries timepoints belong to observations, so a project with no observations has no
+		   timeseries data. Only show the timeseries counts (and the 'excluding timeseries' notes) if
+		   there are observations */
+		$hastimeseries = ($nonimaging['observations'] > 0);
+
 		/* database usage. observations, interventions, and timeseries are the project's share of
 		   each table's size. files is the actual size of the project's stored files. The timeseries
 		   size is filled in when the user loads the timeseries counts */
@@ -131,13 +136,13 @@
 						<td class="right aligned"><?=HumanReadableFilesize($imagingtotals['size'])?></td>
 					</tr>
 					<tr>
-						<td><i class="table icon"></i> Non-imaging data <span class="statnote" style="color: gray">(excluding timeseries)</span></td>
+						<td><i class="table icon"></i> Non-imaging data<? if ($hastimeseries) { ?> <span class="statnote" style="color: gray">(excluding timeseries)</span><? } ?></td>
 						<td class="right aligned" id="statnonimaging">~<?=HumanReadableFilesize($dbtotalbytes)?></td>
 					</tr>
 				</tbody>
 				<tfoot>
 					<tr>
-						<th style="background-color: #d4f7d4"><b>Total usage</b> <span class="statnote" style="color: gray; font-weight: normal">(excluding timeseries)</span></th>
+						<th style="background-color: #d4f7d4"><b>Total usage</b><? if ($hastimeseries) { ?> <span class="statnote" style="color: gray; font-weight: normal">(excluding timeseries)</span><? } ?></th>
 						<th class="right aligned" style="background-color: #d4f7d4"><b id="stattotal" data-bytes="<?=number_format($imagingtotals['size'] + $dbtotalbytes, 0, '.', '')?>">~<?=HumanReadableFilesize($imagingtotals['size'] + $dbtotalbytes)?></b></th>
 					</tr>
 				</tfoot>
@@ -218,10 +223,12 @@
 								<td><i class="pills icon"></i> Interventions</td>
 								<td class="right aligned"><?=number_format($nonimaging['interventions'])?></td>
 							</tr>
+							<? if ($hastimeseries) { ?>
 							<tr>
 								<td><i class="chart area icon"></i> Timeseries timepoints <span style="color: gray; display: none" id="tsobservationsnote">(from <span id="tsobservations"></span> observations)</span></td>
 								<td class="right aligned" id="tstimepoints"><button class="ui mini primary button" id="loadtimeseries" title="Timeseries counts are not loaded automatically. The timeseries table has approximately <?=$timeseriesrows?> rows, so counting this project's timepoints may take a while">Load counts</button></td>
 							</tr>
+							<? } ?>
 						</tbody>
 					</table>
 				</div>
@@ -247,6 +254,7 @@
 								<td class="right aligned tt" style="color: gray"><?=number_format($dbusage[$table]['bytes'])?></td>
 							</tr>
 							<? } ?>
+							<? if ($hastimeseries) { ?>
 							<tr>
 								<td><i class="chart line icon"></i> Timeseries <span class="tt" style="color: gray">timeseries</span></td>
 								<td class="right aligned" id="tsdbrows"><span style="color: #bbb">&ndash;</span></td>
@@ -254,6 +262,7 @@
 								<td class="right aligned" id="tsdbsize" title="Estimated"><span style="color: #bbb">&ndash;</span></td>
 								<td class="right aligned tt" style="color: gray" id="tsdbbytes"></td>
 							</tr>
+							<? } ?>
 							<tr>
 								<td><i class="<?=$dbusage['files']['icon']?> icon"></i> <?=$dbusage['files']['label']?> <span class="tt" style="color: gray">files</span></td>
 								<td class="right aligned"><?=number_format($dbusage['files']['rows'])?></td>
@@ -264,7 +273,7 @@
 						</tbody>
 						<tfoot>
 							<tr>
-								<th><b>Total</b> <span style="color: gray; font-weight: normal" id="dbtotalnote">(excluding timeseries)</span></th>
+								<th><b>Total</b><? if ($hastimeseries) { ?> <span style="color: gray; font-weight: normal" id="dbtotalnote">(excluding timeseries)</span><? } ?></th>
 								<th></th>
 								<th></th>
 								<th class="right aligned"><b id="dbtotalsize" data-bytes="<?=number_format($dbtotalbytes, 0, '.', '')?>">~<?=HumanReadableFilesize($dbtotalbytes)?></b></th>

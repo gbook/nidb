@@ -41,7 +41,7 @@
 
 	/* ----- setup variables ----- */
 	$clustertype = GetVariable("clustertype");
-	if (!in_array($clustertype, array('slurm', 'pipelines'))) $clustertype = 'sge';
+	if (!in_array($clustertype, array('slurm', 'pipelines', 'diskusage'))) $clustertype = 'sge';
 
 	$action = GetVariable("action");
 
@@ -55,6 +55,7 @@
 		$sgeactive       = ($clustertype === 'sge')       ? 'primary' : 'basic';
 		$slurmactive     = ($clustertype === 'slurm')     ? 'primary' : 'basic';
 		$pipelinesactive = ($clustertype === 'pipelines') ? 'primary' : 'basic';
+		$diskusageactive = ($clustertype === 'diskusage') ? 'primary' : 'basic';
 		?>
 		<div class="ui container">
 			<div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
@@ -65,6 +66,7 @@
 				</div>
 				<div class="ui buttons">
 					<a href="cluster.php?clustertype=pipelines" class="ui <?=$pipelinesactive?> button">Pipelines</a>
+					<a href="cluster.php?clustertype=diskusage" class="ui <?=$diskusageactive?> button">Disk usage</a>
 				</div>
 
 				<div style="margin-left:auto; display:flex; align-items:center; gap:10px">
@@ -77,6 +79,8 @@
 				<? DisplaySlurmTabs($action); ?>
 			<? } elseif ($clustertype === 'pipelines') { ?>
 				<? DisplayPipelines(); ?>
+			<? } elseif ($clustertype === 'diskusage') { ?>
+				<? DisplayDiskUsage(); ?>
 			<? } else { ?>
 				<? DisplaySGETabs($action); ?>
 			<? } ?>
@@ -87,6 +91,80 @@
 				$('.tabular.menu .item').tab();
 			});
 		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayDiskUsage ------------------- */
+	/* -------------------------------------------- */
+	/* total/used/free disk space for the analysis directories (analysisdir and analysisdirb from nidb.cfg) */
+	function DisplayDiskUsage() {
+		$dirs = array(
+			'analysisdir'  => $GLOBALS['cfg']['analysisdir'] ?? '',
+			'analysisdirb' => $GLOBALS['cfg']['analysisdirb'] ?? ''
+		);
+		?>
+		<table class="ui very compact celled grey table">
+			<thead>
+				<tr>
+					<th>Config name</th>
+					<th>Path</th>
+					<th class="right aligned">Total</th>
+					<th class="right aligned">Used</th>
+					<th class="right aligned">Free</th>
+					<th>Usage</th>
+				</tr>
+			</thead>
+			<tbody>
+			<?
+			foreach ($dirs as $configname => $path) {
+				$total = false;
+				$free = false;
+				if (($path != '') && @file_exists($path)) {
+					$total = @disk_total_space($path);
+					$free = @disk_free_space($path);
+				}
+				?>
+				<tr>
+					<td class="tt"><?=$configname?></td>
+					<td class="tt"><?= ($path == '') ? '<span style="color:#999">(not set)</span>' : htmlspecialchars($path) ?></td>
+				<?
+				if ($path == '') {
+					?><td colspan="4"></td><?
+				}
+				elseif (($total === false) || ($total === null) || ($total <= 0)) {
+					?><td colspan="4"><i class="red exclamation circle icon"></i> Path not found or disk space unavailable</td><?
+				}
+				else {
+					if (($free === false) || ($free === null) || ($free < 0))
+						$free = 0;
+					$used = $total - $free;
+					$usedpct = round(($used / $total) * 100);
+
+					/* green normally, orange when getting full, red when nearly full */
+					$color = "#21ba45";
+					if ($usedpct >= 90) $color = "#db2828";
+					elseif ($usedpct >= 75) $color = "#f2711c";
+					?>
+					<td class="right aligned"><?=HumanReadableFilesize($total)?></td>
+					<td class="right aligned"><?=HumanReadableFilesize($used)?></td>
+					<td class="right aligned"><?=HumanReadableFilesize($free)?></td>
+					<td>
+						<div style="position:relative; width:200px; max-width:100%; height:16px; background:#e8e8e8; border-radius:3px; overflow:hidden;">
+							<div style="position:absolute; left:0; top:0; height:100%; width:<?=$usedpct?>%; background:<?=$color?>;"></div>
+							<div style="position:absolute; width:100%; text-align:center; font-size:11px; line-height:16px; color:#333;"><?=$usedpct?>%</div>
+						</div>
+					</td>
+					<?
+				}
+				?>
+				</tr>
+				<?
+			}
+			?>
+			</tbody>
+		</table>
 		<?
 	}
 
