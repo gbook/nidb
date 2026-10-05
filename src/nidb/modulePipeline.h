@@ -86,7 +86,8 @@ public:
     QList<pipelineStep> GetPipelineSteps(int pipelineid, int version);
     QString CheckDependency(int sid, int pipelinedep);
     QString FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description);
-    bool CreateClusterJobFile(QString jobfilename, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory, QList<pipelineStep> steps, bool runsupplement = false);
+    bool CreateClusterJobFile(QString jobfilename, const pipeline &p, qint64 analysisid, QString uid, int studynum, QString analysispath, QString studydatetime, QList<pipelineStep> steps, bool runsupplement);
+    //bool CreateClusterJobFile(QString jobfilename, const pipeline &p, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory, QList<pipelineStep> steps, bool runsupplement = false);
     bool GetData(int studyid, QString analysispath, QString uid, qint64 analysisid, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog);
 
     /* logging and record-keeping */

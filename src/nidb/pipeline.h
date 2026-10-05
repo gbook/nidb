@@ -35,6 +35,7 @@ public:
     /* object variables */
     QString msg;
     bool isValid = true;
+    int pipelineid;
 
     /* pipeline variables */
     QDateTime createDate;
@@ -96,7 +97,6 @@ private:
     QString GetSecondaryScript();
     QStringList GetParentList();
 
-    int pipelineid;
 };
 
 #endif // PIPELINE_H

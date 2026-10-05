@@ -251,7 +251,7 @@ int modulePipeline::Run() {
 
             /* create the cluster job file */
             QString jobFilePath = analysispath + "/sge.job";
-            if (CreateClusterJobFile(jobFilePath, p.clusterType, p.clusterQueue, analysisRowID, "UID", 0, analysispath, p.useTmpDir, p.tmpDir, "", p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, false)) {
+            if (CreateClusterJobFile(jobFilePath, p, analysisRowID, "UID", 0, analysispath, "", steps, false)) {
                 n->Log(QString("[%1] Created sge job submit file [" + jobFilePath + "]").arg(p.name), __FUNCTION__);
                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, "","");
             }
@@ -642,7 +642,7 @@ int modulePipeline::Run() {
                         localJobFilePath = analysispath + "/" + jobFilename;
                         clusterJobFilePath = clusteranalysispath + "/" + jobFilename;
 
-                        if (CreateClusterJobFile(localJobFilePath, p.clusterType, p.clusterQueue, analysisRowID, s.GetUID(), s.GetStudyNum(), clusteranalysispath, p.useTmpDir, p.tmpDir, s.datetime.toString("yyyy-MM-dd hh:mm:ss"), p.name, pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory, steps, a.runSupplement)) {
+                        if (CreateClusterJobFile(localJobFilePath, p, analysisRowID, s.GetUID(), s.GetStudyNum(), clusteranalysispath, s.datetime.toString("yyyy-MM-dd hh:mm:ss"), steps, a.runSupplement)) {
                             n->Debug("Created (local path) " + p.clusterType + " job submit file [" + localJobFilePath + "]");
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupWriteJobScript, LogStatus::success, 0, "", "");
                         }
@@ -2069,7 +2069,9 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 /* ---------------------------------------------------------- */
 /* --------- CreateClusterJobFile --------------------------- */
 /* ---------------------------------------------------------- */
-bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clustertype, QString queue, qint64 analysisid, QString uid, int studynum, QString analysispath, bool usetmpdir, QString tmpdir, QString studydatetime, QString pipelinename, int pipelineid, QString resultscript, int maxwalltime, int numcores, double memory,  QList<pipelineStep> steps, bool runsupplement) {
+bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p, qint64 analysisid, QString uid, int studynum, QString analysispath, QString studydatetime, QList<pipelineStep> steps, bool runsupplement) {
+
+    //p.clusterType, p.clusterQueue, p.useTmpDir, p.tmpDir, p.name, p.pipelineid, p.resultScript, p.clusterMaxWallTime, p.clusterNumCores, p.clusterMemory
 
     bool rerunresults(false);
 
@@ -2085,7 +2087,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
 
     QString jobfile;
     QString clusteranalysispath = analysispath;
-    QString localanalysispath = QString("%1/%2-%3").arg(tmpdir).arg(pipelinename).arg(analysisid);
+    QString localanalysispath = QString("%1/%2-%3").arg(p.tmpDir).arg(p.name).arg(analysisid);
 
     n->Log("Cluster analysis path [" + analysispath + "]");
     n->Log("Local analysis path (temp directory) [" + localanalysispath + "]");
@@ -2117,22 +2119,22 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     }
 
     /* different submission parameters for slurm */
-    if (clustertype == "slurm") {
+    if (p.clusterType == "slurm") {
         jobfile += "#!/bin/bash -l\n";
         if (runsupplement)
-            jobfile += "#SBATCH -J " + pipelinename + "-supplement\n";
+            jobfile += "#SBATCH -J " + p.name + "-supplement\n";
         else
-            jobfile += "#SBATCH -J " + pipelinename + "\n";
+            jobfile += "#SBATCH -J " + p.name + "\n";
 
         jobfile += "#SBATCH --nodes=1\n";
-        jobfile += "#SBATCH --partition=" + queue + "\n";
+        jobfile += "#SBATCH --partition=" + p.clusterQueue + "\n";
         jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.o%j\n";
         jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
-        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(memory);
-        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(numcores);
-        if (maxwalltime > 0) {
-            int hours = int(floor(maxwalltime/60));
-            int min = maxwalltime % 60;
+        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(p.clusterMemory);
+        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(p.clusterNumCores);
+        if (p.clusterMaxWallTime > 0) {
+            int hours = int(floor(p.clusterMaxWallTime/60));
+            int min = p.clusterMaxWallTime % 60;
 
             if (min < 10)
                 jobfile += QString("#SBATCH -t %1:0%2:00\n").arg(hours).arg(min);
@@ -2143,18 +2145,18 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     else { /* assume SGE otherwise */
         jobfile += "#!/bin/sh\n";
         if (runsupplement)
-            jobfile += "#$ -N "+pipelinename+"-supplement\n";
+            jobfile += "#$ -N "+p.name+"-supplement\n";
         else
-            jobfile += "#$ -N "+pipelinename+"\n";
+            jobfile += "#$ -N "+p.name+"\n";
 
         jobfile += "#$ -S /bin/bash\n";
         jobfile += "#$ -j y\n";
         jobfile += "#$ -o "+analysispath+"/pipeline/\n";
         jobfile += "#$ -V\n";
         jobfile += "#$ -u " + n->cfg["queueuser"] + "\n";
-        if (maxwalltime > 0) {
-            int hours = int(floor(maxwalltime/60));
-            int min = maxwalltime % 60;
+        if (p.clusterMaxWallTime > 0) {
+            int hours = int(floor(p.clusterMaxWallTime/60));
+            int min = p.clusterMaxWallTime % 60;
 
             if (min < 10)
                 jobfile += QString("#$ -l h_rt=%1:0%2:00\n").arg(hours).arg(min);
@@ -2181,7 +2183,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     jobfile += QString("NIDB_APITOKEN=%1; export NIDB_APITOKEN;\n").arg(apiToken);
     jobfile += QString("NIDB_APIURL=%1/analysisapi.php; export NIDB_APIURL;\n\n").arg(n->cfg["siteurl"]);
 
-    /* helper function to call analysisapi.php. Exported so child bash scripts (such as the result script) can call it.
+    /* bash function to call analysisapi.php. Exported so child bash scripts (such as the result script) can call it.
      * Prints the JSON response and returns non-zero if the call failed. See doc/analysis-api.md */
     jobfile += "nidbapi() {\n";
     jobfile += "    local response\n";
@@ -2192,7 +2194,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     jobfile += "export -f nidbapi\n\n";
 
     /* do the first checkin from the cluster */
-    if ((resultscript != "") && (rerunresults))
+    if ((p.resultScript != "") && (rerunresults))
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedrerun -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
     else if (runsupplement)
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedsupplement -m 'Supplement processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
@@ -2200,7 +2202,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
 
     jobfile += "cd "+analysispath+";\n";
-    if (usetmpdir) {
+    if (p.useTmpDir) {
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Beginning data copy to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         jobfile += "mkdir -pv " + localanalysispath + "\n";
         jobfile += "cp -Rv " + analysispath + "/* " + localanalysispath + "/\n";
@@ -2256,10 +2258,10 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
                 profile = true;
 
             /* format the command (replace pipeline variables, etc) */
-            if (usetmpdir)
-                command = FormatCommand(pipelineid, clusteranalysispath, command, localanalysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
+            if (p.useTmpDir)
+                command = FormatCommand(p.pipelineid, clusteranalysispath, command, localanalysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
             else
-                command = FormatCommand(pipelineid, clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, workingdir, description);
+                command = FormatCommand(p.pipelineid, clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
 
             /* add the step checkin */
             if (checkedin) {
@@ -2288,16 +2290,16 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
             jobfile += command + "\n";
         }
     }
-    if (usetmpdir) {
+    if (p.useTmpDir) {
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Copying data from temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         jobfile += "cp -Ruv " + localanalysispath + "/* " + analysispath + "/\n";
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Deleting temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         jobfile += "rm --preserve-root -rv " + localanalysispath + "\n";
     }
 
-    if ((resultscript != "") && (rerunresults)) {
+    if ((p.resultScript != "") && (rerunresults)) {
         /* add on the result script command */
-        QString resultcommand = FormatCommand(pipelineid, clusteranalysispath, resultscript, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, "", "");
+        QString resultcommand = FormatCommand(p.pipelineid, clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
         resultcommand += " > " + analysispath + "/pipeline/stepResults.log 2>&1";
         jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(resultcommand);
         jobfile += resultcommand + "\n";
@@ -2307,7 +2309,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
     }
     else {
         /* run the results import script */
-        QString resultcommand = FormatCommand(pipelineid, clusteranalysispath, resultscript, analysispath, analysisid, uid, studynum, studydatetime, pipelinename, "", "");
+        QString resultcommand = FormatCommand(p.pipelineid, clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
         resultcommand += " > " + analysispath + "/pipeline/stepResults.log 2>&1";
         jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(resultcommand);
         jobfile += resultcommand + "\n";
@@ -2322,11 +2324,23 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, QString clusterty
             jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s completesupplement -m 'Supplement processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         }
         else {
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s complete -m 'Cluster processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            /* new way */
+            jobfile += QString("nidbapi -d action=checkin -d status=processing --data-urlencode \"Updating analysis files\"\n");
+            jobfile += QString("nidbapi -d action=updateanalysis -d \"numfiles=$(find \"%1\" -type f | wc -l)\" -d \"disksize=$(find %1 -type f -links 1 -exec du -cb {} + | grep total$ | cut -f1)\"\n").arg(analysispath);
+            jobfile += QString("nidbapi -d action=checkin -d status=processing --data-urlencode \"Checking for completed files\"\n");
+            jobfile += QString("iscomplete=1");
+            jobfile += QString("for f in %1; do").arg(p.completeFiles.join(" "));
+            jobfile += QString("    [ -e \"%1/$f\" ] || { iscomplete=0; break; }").arg(analysispath);
+            jobfile += QString("done");
+            jobfile += QString("nidbapi -d action=setcomplete -d \"iscomplete=$iscomplete\"");
+            jobfile += QString("nidbapi -d action=checkin -d status=complete --data-urlencode \"message=Cluster processing complete\"");
+
+            /* old way */
+            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            //jobfile += QString("%1/nidb cluster -u updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            //jobfile += QString("%1/nidb cluster -u checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s complete -m 'Cluster processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         }
         jobfile += "chmod -Rf 777 " + analysispath;
     }

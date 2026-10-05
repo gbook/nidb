@@ -3362,6 +3362,14 @@
 						<span id="syntaxstatus-main" style="font-weight:normal"></span> &nbsp;
 						<div class="ui tiny basic button" title="Check the script for bash syntax errors and common mistakes. Command names are not checked, so a misspelled command is not reported" onClick="CheckAceSyntax(editor, 'main'); return;"><i class="check circle outline icon"></i>Check syntax</div>
 						<div class="ui tiny basic button" onClick="toggleWrap(); return;">Toggle text wrap</div>
+						<div style="display:inline-block; position:relative">
+							<div class="ui tiny basic icon buttons">
+								<div class="ui button" title="Decrease font size" onClick="changeFontSize(editor, -1, 'fontsize-main'); return;"><i class="minus icon"></i></div>
+								<div class="ui button" title="Reset to default font size" onClick="resetFontSize(editor, 'fontsize-main'); return;"><i class="undo icon"></i></div>
+								<div class="ui button" title="Increase font size" onClick="changeFontSize(editor, 1, 'fontsize-main'); return;"><i class="plus icon"></i></div>
+							</div>
+							<div id="fontsize-main" style="position:absolute; top:100%; left:0; right:0; text-align:center; font-size:10px; color:#888">12px</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -3443,6 +3451,14 @@
 						<span id="syntaxstatus-supplement" style="font-weight:normal"></span> &nbsp;
 						<div class="ui tiny basic button" title="Check the script for bash syntax errors and common mistakes. Command names are not checked, so a misspelled command is not reported" onClick="CheckAceSyntax(editor2, 'supplement'); return;"><i class="check circle outline icon"></i>Check syntax</div>
 						<div class="ui tiny basic button" onClick="toggleWrap2(); return;">Toggle text wrap</div>
+						<div style="display:inline-block; position:relative">
+							<div class="ui tiny basic icon buttons">
+								<div class="ui button" title="Decrease font size" onClick="changeFontSize(editor2, -1, 'fontsize-supplement'); return;"><i class="minus icon"></i></div>
+								<div class="ui button" title="Reset to default font size" onClick="resetFontSize(editor2, 'fontsize-supplement'); return;"><i class="undo icon"></i></div>
+								<div class="ui button" title="Increase font size" onClick="changeFontSize(editor2, 1, 'fontsize-supplement'); return;"><i class="plus icon"></i></div>
+							</div>
+							<div id="fontsize-supplement" style="position:absolute; top:100%; left:0; right:0; text-align:center; font-size:10px; color:#888">12px</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -3491,6 +3507,19 @@
 				
 				function insertText(text) {
 					editor.insert(text);
+				}
+				/* increase/decrease an editor's font size by delta px, limited to 8-32px, and show the new size in labelid */
+				var defaultFontSize = 12;
+				function changeFontSize(ed, delta, labelid) {
+					var size = parseInt(ed.getFontSize(), 10) + delta;
+					if (size < 8) size = 8;
+					if (size > 32) size = 32;
+					ed.setFontSize(size);
+					$('#' + labelid).text(size + 'px');
+				}
+				function resetFontSize(ed, labelid) {
+					ed.setFontSize(defaultFontSize);
+					$('#' + labelid).text(defaultFontSize + 'px');
 				}
 				function toggleWrap() {
 					if (editor.getSession().getUseWrapMode()) {

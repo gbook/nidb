@@ -41,6 +41,8 @@
 <body style="padding: 10px">
 <div style="font-size:10pt">
 <?	
+	DisplayAnalysisHeader($analysisid);
+
 	/* determine action */
 	switch ($action) {
 		case 'viewlogs': DisplayLogs($analysisid); break;
@@ -52,6 +54,76 @@
 	}
 ?></div><?
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayAnalysisHeader -------------- */
+	/* -------------------------------------------- */
+	function DisplayAnalysisHeader($analysisid) {
+		if ($analysisid < 1) { return; }
+
+		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$analysisid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		if (!$row) { return; }
+
+		$uid = $row['uid'] ?? '';
+		$studynum = $row['study_num'] ?? '';
+		$pipelinename = $row['pipeline_name'] ?? '';
+
+		if ($row['pipeline_level'] == 2) {
+			$title = $pipelinename;
+			$clusterpath = str_replace($GLOBALS['cfg']['mountdir'], '', $GLOBALS['cfg']['groupanalysisdir']) . "/$pipelinename";
+		}
+		else {
+			$title = "$uid$studynum";
+			$clusterpath = GetAnalysisClusterPath($row['pipeline_dirstructure'] ?? '', $pipelinename, $uid, $studynum);
+		}
+		?>
+		<div class="ui attached segment">
+			<h2 class="ui header">
+				<?=htmlspecialchars($title)?>
+				<div class="sub header"><?=htmlspecialchars($pipelinename)?></div>
+			</h2>
+			Analysis root (cluster) <code><?=htmlspecialchars($clusterpath)?></code>
+		</div>
+		<br>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAnalysisClusterPath ------------- */
+	/* -------------------------------------------- */
+	/* build the analysis path as seen by the cluster, the same way modulePipeline::GetAnalysisClusterPath() does:
+	   'b' = clusteranalysisdirb, an integer = a row in analysisdirs, anything else = clusteranalysisdir */
+	function GetAnalysisClusterPath($dirstructure, $pipelinename, $uid, $studynum) {
+		$uidfirst = true;
+		if ($dirstructure == "b") {
+			$path = $GLOBALS['cfg']['clusteranalysisdirb'];
+			$uidfirst = false;
+		}
+		elseif (ctype_digit((string)$dirstructure)) {
+			$analysisdirid = (int)$dirstructure;
+			$sqlstring = "select clusterpath, dirformat from analysisdirs where analysisdir_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $analysisdirid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$analysisdirid]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$path = $row['clusterpath'] ?? '';
+			$uidfirst = (($row['dirformat'] ?? '') == "uidfirst");
+		}
+		else {
+			$path = $GLOBALS['cfg']['clusteranalysisdir'];
+		}
+
+		if ($uidfirst) {
+			return "$path/$uid/$studynum/$pipelinename";
+		}
+		return "$path/$pipelinename/$uid/$studynum";
+	}
 
 	
 	/* -------------------------------------------- */
