@@ -1320,7 +1320,11 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     }
 
                     /* start building the analysis path */
-                    QString newanalysispath = analysispath + "/" + location;
+                    QString newanalysispath;
+                    if (location == "")
+                        newanalysispath = analysispath;
+                    else
+                        newanalysispath = analysispath + "/" + location;
 
                     if (behformat == "behnone")
                         dlog << n->Log(QString("Copying imaging data [%1] and behavioral data [%2] into [%3]").arg(indir).arg(behindir).arg(newanalysispath), __FUNCTION__);
@@ -1609,6 +1613,8 @@ QString modulePipeline::GetBehPath(QString behformat, QString analysispath, QStr
         behoutdir = QString("%1/%2/%3").arg(analysispath).arg(location).arg(newseriesnum);
     if (behformat == "behseriesdir")
         behoutdir = QString("%1/%2/%3/%4").arg(analysispath).arg(location).arg(newseriesnum).arg(behdir);
+
+    n->Log(QString("Behavioral data output directory [%1]").arg(behoutdir));
 
     return behoutdir;
 }
