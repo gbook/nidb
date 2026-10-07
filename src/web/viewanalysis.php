@@ -82,14 +82,16 @@
 			$clusterpath = GetAnalysisClusterPath($row['pipeline_dirstructure'] ?? '', $pipelinename, $uid, $studynum);
 		}
 		?>
-		<div class="ui attached segment">
-			<h2 class="ui header">
-				<?=htmlspecialchars($title)?>
-				<div class="sub header"><?=htmlspecialchars($pipelinename)?></div>
-			</h2>
-			Analysis root (cluster) <code><?=htmlspecialchars($clusterpath)?></code>
+		<div class="ui container">
+			<div class="ui segment">
+				<h2 class="ui header">
+					<?=htmlspecialchars($title)?>
+					<div class="sub header"><?=htmlspecialchars($pipelinename)?></div>
+				</h2>
+				Analysis root (cluster) <code><?=htmlspecialchars($clusterpath)?></code>
+			</div>
+			<br>
 		</div>
-		<br>
 		<?
 	}
 
@@ -728,16 +730,71 @@
 	/* ------- GetStatusIcon ---------------------- */
 	/* -------------------------------------------- */
 	function GetStatusIcon($status) {
-		
+
 		switch ($status) {
-			case 'success': return "<i class='green large check circle icon'></i>";
-			case 'warning': return "<i class='yellow large info circle icon'></i>";
-			case 'error': return "<i class='red large exclamation circle icon'></i>";
-			case 'neutral': return "<i class='grey large minus circle icon'></i>";
-			default: return "<i class='grey large minus icon'></i>";
+			case 'success': return TooltipIcon("green large check circle icon", "<b>Success</b><br>Step completed without problems");
+			case 'warning': return TooltipIcon("yellow large info circle icon", "<b>Warning</b><br>Step completed, but something may need attention. See the message for details");
+			case 'error': return TooltipIcon("red large exclamation circle icon", "<b>Error</b><br>Step failed. See the message for details");
+			case 'neutral': return TooltipIcon("grey large minus circle icon", "<b>Neutral</b><br>Informational only, or the step was ignored (disabled, optional, or not applicable)");
+			default: return TooltipIcon("grey large minus icon", "<b>No status</b><br>Step has not run yet, or no status was recorded");
 		}
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- StepLabelClass --------------------- */
+	/* -------------------------------------------- */
+	/* class attribute for a step's label cell. Highlighted as an error if any of the log entries has an error status */
+	function StepLabelClass($steps) {
+		foreach (($steps ?? []) as $step) {
+			if (($step['status'] ?? '') == 'error') { return " class='error'"; }
+		}
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TooltipIcon ------------------------ */
+	/* -------------------------------------------- */
+	/* icon with an HTML popup tooltip. $tooltipHTML is HTML, so escape any plain text before passing it in. The popups are initialized in DisplayGraph() */
+	function TooltipIcon($iconClass, $tooltipHTML) {
+		return "<i class='$iconClass htmlTooltip' data-html='" . htmlspecialchars($tooltipHTML, ENT_QUOTES) . "'></i>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAccordionStatusIcon ------------- */
+	/* -------------------------------------------- */
+	/* summarize a list of log entries into one icon for an accordion title: red if any
+	   error, yellow if any warning, green if every status is success/neutral (neutral is
+	   used for disabled/optional/skipped steps). Blank or unknown statuses get no icon */
+	function GetAccordionStatusIcon($steps) {
+		$numError = $numWarning = $numOther = 0;
+		foreach (($steps ?? []) as $step) {
+			switch ($step['status'] ?? '') {
+				case 'error': $numError++; break;
+				case 'warning': $numWarning++; break;
+				case 'success':
+				case 'neutral':
+				case 'ignored':
+				case 'disabled': break;
+				default: $numOther++;
+			}
+		}
+
+		if ($numError > 0) {
+			$counts = "$numError error" . ($numError == 1 ? "" : "s") . ($numWarning > 0 ? ", $numWarning warning" . ($numWarning == 1 ? "" : "s") : "");
+			return TooltipIcon("red exclamation circle icon", "<b>Error</b><br>$counts in this section. Expand to see details");
+		}
+		if ($numWarning > 0) {
+			return TooltipIcon("yellow exclamation triangle icon", "<b>Warning</b><br>$numWarning warning" . ($numWarning == 1 ? "" : "s") . " in this section. Expand to see details");
+		}
+		if ((count($steps ?? []) > 0) && ($numOther == 0)) {
+			return TooltipIcon("green check circle icon", "<b>Success</b><br>All steps succeeded or were ignored (disabled/optional)");
+		}
+		return "";
+	}
+
 	
 	/* -------------------------------------------- */
 	/* ------- DisplayGraph ----------------------- */
@@ -853,7 +910,7 @@
 			$log['datetime'] = $row['analysislog_datetime'];
 			
 			if (strlen($log['message']) > 40) {
-				$log['message'] = substr($log['message'], 0, 40) . "... <i class='large blue comment alterate outline icon' title='" . $log['message'] . "'></i>";
+				$log['message'] = substr($log['message'], 0, 40) . "... " . TooltipIcon("large blue comment alternate outline icon", "<b>Full message</b><br>" . htmlspecialchars($log['message']));
 			}
 			else {
 				$log['message'] = $log['message'];
@@ -906,7 +963,7 @@
 				</thead>
 				<tr>
 					<td rowspan="11" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Setup</td>
-					<td>Analysis created <!--<i class="question circle icon" title="Create and registere a unique analysis in the database"></i>--></td>
+					<td<?=StepLabelClass([$logs['setup_createAnalysis'][0] ?? null])?>>Analysis created <!--<i class="question circle icon" title="Create and registere a unique analysis in the database"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'])?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['message']?></td>
 					<td><?=$logs['setup_createAnalysis'][0]['hostname']?></td>
@@ -914,7 +971,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Create analysis directory <!--<i class="question circle icon" title="Create analysis directory on disk"></i>--></td>
+					<td<?=StepLabelClass([$logs['setup_createDirectory'][0] ?? null])?>>Create analysis directory <!--<i class="question circle icon" title="Create analysis directory on disk"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'])?></td>
 					<td><?=$logs['setup_createDirectory'][0]['message']?></td>
 					<td><?=$logs['setup_createDirectory'][0]['hostname']?></td>
@@ -922,7 +979,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Dependency check <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
+					<td<?=StepLabelClass([$logs['setup_dependencyCheck'][0] ?? null])?>>Dependency check <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_dependencyCheck'][0]['status'])?></td>
 					<td><?=$logs['setup_dependencyCheck'][0]['message']?></td>
 					<td><?=$logs['setup_dependencyCheck'][0]['hostname']?></td>
@@ -930,7 +987,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Dependency copy <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
+					<td<?=StepLabelClass([$logs['setup_dependencyCopy'][0] ?? null])?>>Dependency copy <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_dependencyCopy'][0]['status'])?></td>
 					<td><?=$logs['setup_dependencyCopy'][0]['message']?></td>
 					<td><?=$logs['setup_dependencyCopy'][0]['hostname']?></td>
@@ -938,12 +995,12 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
+					<td<?=StepLabelClass($logs['setup_dataStepCheck'] ?? [])?>>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
 					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
-							View data checks
+							View data checks <?=GetAccordionStatusIcon($logs['setup_dataStepCheck'] ?? [])?>
 						</div>
 						<div class="content">
 							<table class="ui very compact celled table">
@@ -967,7 +1024,7 @@
 									$protocol = $dd['protocol'] ?? '';
 
 									if (strlen($protocol) > 40) {
-										$protocolShort = htmlspecialchars(substr($protocol, 0, 40)) . "... <i class='large blue comment alternate outline icon' title='" . htmlspecialchars($protocol, ENT_QUOTES) . "'></i>";
+										$protocolShort = htmlspecialchars(substr($protocol, 0, 40)) . "... " . TooltipIcon("large blue comment alternate outline icon", "<b>Protocol</b><br>" . htmlspecialchars($protocol));
 									}
 									else {
 										$protocolShort = htmlspecialchars($protocol);
@@ -1032,7 +1089,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Data check summary</td>
+					<td<?=StepLabelClass([$logs['setup_dataCheckSummary'][0] ?? null])?>>Data check summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'])?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['message']?></td>
 					<td><?=$logs['setup_dataCheckSummary'][0]['hostname']?></td>
@@ -1040,12 +1097,12 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Data download steps</td>
+					<td<?=StepLabelClass($logs['setup_dataStepDownload'] ?? [])?>>Data download steps</td>
 					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
-							View data download steps
+							View data download steps <?=GetAccordionStatusIcon($logs['setup_dataStepDownload'] ?? [])?>
 						</div>
 						<div class="content">
 							<table class="ui very compact celled table">
@@ -1060,11 +1117,12 @@
 								foreach (($logs['setup_dataStepDownload'] ?? []) as $step) {
 									$i = $step['stepNumber'];
 									
-									if (strlen($datadef[$i]['protocol']) > 40) {
-										$protocol = substr($datadef[$i]['protocol'], 0, 40) . "... <i class='large blue comment alternate outline icon' title='" . $datadef[$i]['protocol'] . "'></i>";
+									$fullProtocol = $datadef[$i]['protocol'] ?? '';
+									if (strlen($fullProtocol) > 40) {
+										$protocol = htmlspecialchars(substr($fullProtocol, 0, 40)) . "... " . TooltipIcon("large blue comment alternate outline icon", "<b>Protocol</b><br>" . htmlspecialchars($fullProtocol));
 									}
 									else {
-										$protocol = $datadef[$i]['protocol'];
+										$protocol = htmlspecialchars($fullProtocol);
 									}
 									
 									?>
@@ -1084,7 +1142,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Data download summary</td>
+					<td<?=StepLabelClass([$logs['setup_dataDownloadSummary'][0] ?? null])?>>Data download summary</td>
 					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'])?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['message']?></td>
 					<td><?=$logs['setup_dataDownloadSummary'][0]['hostname']?></td>
@@ -1092,7 +1150,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Check if Ok to run <!--<i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i>--></td>
+					<td<?=StepLabelClass([$logs['setup_checkIfOkToRun'][0] ?? null])?>>Check if Ok to run <!--<i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'])?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['message']?></td>
 					<td><?=$logs['setup_checkIfOkToRun'][0]['hostname']?></td>
@@ -1100,7 +1158,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Submit to cluster</td>
+					<td<?=StepLabelClass([$logs['setup_submitToCluster'][0] ?? null])?>>Submit to cluster</td>
 					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'])?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['message']?></td>
 					<td><?=$logs['setup_submitToCluster'][0]['hostname']?></td>
@@ -1108,7 +1166,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Setup summary</td>
+					<td<?=StepLabelClass([$logs['setup_summary'][0] ?? null])?>>Setup summary</td>
 					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'])?></td>
 					<td><?=$logs['setup_summary'][0]['message']?></td>
 					<td><?=$logs['setup_summary'][0]['hostname']?></td>
@@ -1116,7 +1174,7 @@
 				</tr>
 				<tr>
 					<td rowspan="8" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Cluster</td>
-					<td>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
+					<td<?=StepLabelClass([$logs['status_analysisStarted'][0] ?? null])?>>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
 					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
 					<td><?=$logs['status_analysisStarted'][0]['hostname']?></td>
@@ -1124,12 +1182,41 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
+					<td<?=StepLabelClass($logs['status_analysisStepCheckin'] ?? [])?>>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
 					<td colspan="4" class="blue">
+						<?
+						/* start with the steps that checked in, then add any StepN log file on disk that has
+						   no checkin event (ex. a step marked NOCHECKIN, or a checkin that failed to record) */
+						$scriptSteps = $logs['status_analysisStepCheckin'] ?? [];
+						$checkedInSteps = array();
+						foreach ($scriptSteps as $step) {
+							$checkedInSteps[(int)$step['stepNumber']] = true;
+						}
+						foreach ((glob("$path/Step*") ?: []) as $stepfile) {
+							if (preg_match('/^Step(\d+)$/', basename($stepfile), $matches) && is_file($stepfile)) {
+								$stepnum = (int)$matches[1];
+								if (!isset($checkedInSteps[$stepnum])) {
+									$scriptSteps[] = array('status' => '', 'stepNumber' => $stepnum, 'message' => "<span class='ui grey text'><i>No checkin event - log file only</i></span>", 'hostname' => '', 'datetime' => '');
+									$checkedInSteps[$stepnum] = true;
+								}
+							}
+						}
+
+						/* order by step number, keeping the original order of multiple events for the same step */
+						foreach ($scriptSteps as $idx => $step) {
+							$scriptSteps[$idx]['sortIndex'] = $idx;
+						}
+						usort($scriptSteps, function($a, $b) {
+							if ((int)$a['stepNumber'] != (int)$b['stepNumber']) {
+								return ((int)$a['stepNumber'] < (int)$b['stepNumber']) ? -1 : 1;
+							}
+							return $a['sortIndex'] - $b['sortIndex'];
+						});
+						?>
 						<div class="ui fluid accordion">
 						<div class="title">
 							<i class="dropdown icon"></i>
-							View script steps
+							View script steps <?=GetAccordionStatusIcon($scriptSteps)?>
 						</div>
 						<div class="content">
 							<table class="ui compact celled table">
@@ -1142,34 +1229,6 @@
 									<th>Datetime</th>
 								</thead>
 							<?
-								/* start with the steps that checked in, then add any StepN log file on disk that has
-								   no checkin event (ex. a step marked NOCHECKIN, or a checkin that failed to record) */
-								$scriptSteps = $logs['status_analysisStepCheckin'] ?? [];
-								$checkedInSteps = array();
-								foreach ($scriptSteps as $step) {
-									$checkedInSteps[(int)$step['stepNumber']] = true;
-								}
-								foreach ((glob("$path/Step*") ?: []) as $stepfile) {
-									if (preg_match('/^Step(\d+)$/', basename($stepfile), $matches) && is_file($stepfile)) {
-										$stepnum = (int)$matches[1];
-										if (!isset($checkedInSteps[$stepnum])) {
-											$scriptSteps[] = array('status' => '', 'stepNumber' => $stepnum, 'message' => "<span class='ui grey text'><i>No checkin event - log file only</i></span>", 'hostname' => '', 'datetime' => '');
-											$checkedInSteps[$stepnum] = true;
-										}
-									}
-								}
-
-								/* order by step number, keeping the original order of multiple events for the same step */
-								foreach ($scriptSteps as $idx => $step) {
-									$scriptSteps[$idx]['sortIndex'] = $idx;
-								}
-								usort($scriptSteps, function($a, $b) {
-									if ((int)$a['stepNumber'] != (int)$b['stepNumber']) {
-										return ((int)$a['stepNumber'] < (int)$b['stepNumber']) ? -1 : 1;
-									}
-									return $a['sortIndex'] - $b['sortIndex'];
-								});
-
 								$scriptModals = "";
 								$modalNum = 0;
 								foreach ($scriptSteps as $step) {
@@ -1253,7 +1312,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Run result script</td>
+					<td<?=StepLabelClass([$logs['status_resultScript'][0] ?? null])?>>Run result script</td>
 					<td><?=GetStatusIcon($logs['status_resultScript'][0]['status'])?></td>
 					<td><?=$logs['status_resultScript'][0]['message']?></td>
 					<td><?=$logs['status_resultScript'][0]['hostname']?></td>
@@ -1261,7 +1320,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Update file list</td>
+					<td<?=StepLabelClass([$logs['status_updateFileList'][0] ?? null])?>>Update file list</td>
 					<td><?=GetStatusIcon($logs['status_updateFileList'][0]['status'])?></td>
 					<td><?=$logs['status_updateFileList'][0]['message']?></td>
 					<td><?=$logs['status_updateFileList'][0]['hostname']?></td>
@@ -1269,7 +1328,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Check for successful file(s)</td>
+					<td<?=StepLabelClass([$logs['status_checkSuccessFiles'][0] ?? null])?>>Check for successful file(s)</td>
 					<td><?=GetStatusIcon($logs['status_checkSuccessFiles'][0]['status'])?></td>
 					<td><?=$logs['status_checkSuccessFiles'][0]['message']?></td>
 					<td><?=$logs['status_checkSuccessFiles'][0]['hostname']?></td>
@@ -1334,7 +1393,7 @@
 				?>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
+					<td<?=StepLabelClass([$logs['status_analysisComplete'][0] ?? null])?>>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
 					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'])?></td>
 					<td><?=$logs['status_analysisComplete'][0]['message']?></td>
 					<td><?=$logs['status_analysisComplete'][0]['hostname']?></td>
@@ -1342,7 +1401,7 @@
 				</tr>
 				<tr>
 					<td rowspan="3" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
-					<td>File count</td>
+					<td<?=StepLabelClass([$logs['status_diskSize'][0] ?? null])?>>File count</td>
 					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
 					<td><a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles">View all files</a></td>
 					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
@@ -1350,7 +1409,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Disk size</td>
+					<td<?=StepLabelClass([$logs['status_diskSize'][0] ?? null])?>>Disk size</td>
 					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
 					<td><?=$logs['status_diskSize'][0]['message']?></td>
 					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
@@ -1358,7 +1417,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td>Results</td>
+					<td<?=StepLabelClass([$logs['status_resultCount'][0] ?? null])?>>Results</td>
 					<td><?=GetStatusIcon($logs['status_resultCount'][0]['status'])?></td>
 					<td><a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults">View <?=$resultCount?> results</a></td>
 					<td><?=$logs['status_resultCount'][0]['hostname']?></td>
@@ -1373,6 +1432,9 @@
 				$(document).on('click', '.showModalButton', function(){
 					$('#' + $(this).data('modal')).modal('show');
 				});
+
+				/* HTML popup tooltips (see TooltipIcon) */
+				$('.htmlTooltip').popup({ variation: 'small' });
 			});
 		</script>
 		<?

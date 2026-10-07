@@ -1605,14 +1605,26 @@ bool modulePipeline::UpdateAnalysisStatus(qint64 analysisid, QString status, QSt
 /* ---------------------------------------------------------- */
 QString modulePipeline::GetBehPath(QString behformat, QString analysispath, QString location, QString behdir, int newseriesnum) {
     QString behoutdir;
-    if (behformat == "behroot")
-        behoutdir = QString("%1/%2").arg(analysispath).arg(location);
-    if (behformat == "behrootdir")
-        behoutdir = QString("%1/%2/%3").arg(analysispath).arg(location).arg(behdir);
-    if (behformat == "behseries")
-        behoutdir = QString("%1/%2/%3").arg(analysispath).arg(location).arg(newseriesnum);
-    if (behformat == "behseriesdir")
-        behoutdir = QString("%1/%2/%3/%4").arg(analysispath).arg(location).arg(newseriesnum).arg(behdir);
+    if (location == "") {
+        if (behformat == "behroot")
+            behoutdir = analysispath;
+        if (behformat == "behrootdir")
+            behoutdir = QString("%1/%2").arg(analysispath).arg(behdir);
+        if (behformat == "behseries")
+            behoutdir = QString("%1/%2").arg(analysispath).arg(newseriesnum);
+        if (behformat == "behseriesdir")
+            behoutdir = QString("%1/%2/%3").arg(analysispath).arg(newseriesnum).arg(behdir);
+    }
+    else {
+        if (behformat == "behroot")
+            behoutdir = QString("%1/%2").arg(analysispath).arg(location);
+        if (behformat == "behrootdir")
+            behoutdir = QString("%1/%2/%3").arg(analysispath).arg(location).arg(behdir);
+        if (behformat == "behseries")
+            behoutdir = QString("%1/%2/%3").arg(analysispath).arg(location).arg(newseriesnum);
+        if (behformat == "behseriesdir")
+            behoutdir = QString("%1/%2/%3/%4").arg(analysispath).arg(location).arg(newseriesnum).arg(behdir);
+    }
 
     n->Log(QString("Behavioral data output directory [%1]").arg(behoutdir));
 
