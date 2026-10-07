@@ -628,8 +628,9 @@ int modulePipeline::Run() {
                         }
                         /* "realanalysispath" is now --> "clusteranalysispath" */
                         QString clusteranalysispath = analysispath;
+                        /* strip only "/mount", keeping the leading slash so the path stays absolute */
                         if (clusteranalysispath.startsWith("/mount/"))
-                            clusteranalysispath.remove(0,7);
+                            clusteranalysispath.remove(0,6);
 
                         /* create the cluster job file */
                         QString localJobFilePath;
