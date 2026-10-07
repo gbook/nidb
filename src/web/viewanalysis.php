@@ -784,13 +784,13 @@
 
 		if ($numError > 0) {
 			$counts = "$numError error" . ($numError == 1 ? "" : "s") . ($numWarning > 0 ? ", $numWarning warning" . ($numWarning == 1 ? "" : "s") : "");
-			return TooltipIcon("red exclamation circle icon", "<b>Error</b><br>$counts in this section. Expand to see details");
+			return TooltipIcon("large red exclamation circle icon", "<b>Error</b><br>$counts in this section. Expand to see details");
 		}
 		if ($numWarning > 0) {
-			return TooltipIcon("yellow exclamation triangle icon", "<b>Warning</b><br>$numWarning warning" . ($numWarning == 1 ? "" : "s") . " in this section. Expand to see details");
+			return TooltipIcon("large yellow exclamation triangle icon", "<b>Warning</b><br>$numWarning warning" . ($numWarning == 1 ? "" : "s") . " in this section. Expand to see details");
 		}
 		if ((count($steps ?? []) > 0) && ($numOther == 0)) {
-			return TooltipIcon("green check circle icon", "<b>Success</b><br>All steps succeeded or were ignored (disabled/optional)");
+			return TooltipIcon("large green check circle icon", "<b>Success</b><br>All steps succeeded or were ignored (disabled/optional)");
 		}
 		return "";
 	}
@@ -995,7 +995,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td<?=StepLabelClass($logs['setup_dataStepCheck'] ?? [])?>>Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
+					<td <?=StepLabelClass($logs['setup_dataStepCheck'] ?? [])?> style="vertical-align: top">Data checks <!--<i class="question circle icon" title="Check if all data steps match before downloading any data"></i>--></td>
 					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
@@ -1097,7 +1097,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td<?=StepLabelClass($logs['setup_dataStepDownload'] ?? [])?>>Data download steps</td>
+					<td <?=StepLabelClass($logs['setup_dataStepDownload'] ?? [])?> style="vertical-align: top">Data download steps</td>
 					<td colspan="4" class="blue">
 						<div class="ui fluid accordion">
 						<div class="title">
@@ -1182,7 +1182,7 @@
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
-					<td<?=StepLabelClass($logs['status_analysisStepCheckin'] ?? [])?>>Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
+					<td <?=StepLabelClass($logs['status_analysisStepCheckin'] ?? [])?> style="vertical-align: top">Script <!--<i class="question circle icon" title="Download matching data"></i>--></td>
 					<td colspan="4" class="blue">
 						<?
 						/* start with the steps that checked in, then add any StepN log file on disk that has
