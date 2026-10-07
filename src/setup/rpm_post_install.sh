@@ -43,6 +43,22 @@ setup_dcmrcv_service() {
     fi
 }
 
+# consolidate /etc/nidb/nidb.cfg into /nidb/nidb.cfg. The web UI reads /etc/nidb/nidb.cfg before
+# /nidb/nidb.cfg, so when both exist the /etc copy is usually the one being edited. Keep whichever is
+# newer as /nidb/nidb.cfg. If /etc/nidb/nidb.cfg is the older one, it is moved aside (not deleted) so
+# it can no longer shadow /nidb/nidb.cfg.
+if [[ -f /etc/nidb/nidb.cfg ]]; then
+    if [[ ! -f /nidb/nidb.cfg || /etc/nidb/nidb.cfg -nt /nidb/nidb.cfg ]]; then
+        echo "Moving newer config /etc/nidb/nidb.cfg to /nidb/nidb.cfg"
+        mv -fv /etc/nidb/nidb.cfg /nidb/nidb.cfg
+    else
+        echo "/etc/nidb/nidb.cfg is older than /nidb/nidb.cfg; moving it to /nidb/nidb.cfg.etc-old"
+        mv -fv /etc/nidb/nidb.cfg /nidb/nidb.cfg.etc-old
+    fi
+    chmod 640 /nidb/nidb.cfg
+    rmdir --ignore-fail-on-non-empty /etc/nidb
+fi
+
 # find the config file if it exists; migrate to /nidb/nidb.cfg if found elsewhere
 for file in "${POSSIBLE_FILES[@]}"; do
     if [[ -f "$file" ]]; then
@@ -51,10 +67,6 @@ for file in "${POSSIBLE_FILES[@]}"; do
             echo "Migrating config from $file to /nidb/nidb.cfg"
             cp -v "$file" /nidb/nidb.cfg
             chmod 640 /nidb/nidb.cfg
-            if [[ "$file" == "/etc/nidb/nidb.cfg" ]]; then
-                rm -f /etc/nidb/nidb.cfg
-                rmdir --ignore-fail-on-non-empty /etc/nidb
-            fi
         fi
         CONFIG_FILE="/nidb/nidb.cfg"
         break
