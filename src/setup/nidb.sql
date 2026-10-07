@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 01, 2026 at 03:49 PM
+-- Generation Time: Oct 07, 2026 at 04:47 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2254,6 +2254,23 @@ CREATE TABLE `pipelines` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `pipeline_containers`
+--
+
+CREATE TABLE `pipeline_containers` (
+  `pipelinecontainer_id` int(11) NOT NULL,
+  `pipeline_id` int(11) NOT NULL,
+  `pipeline_version` int(11) NOT NULL,
+  `build_startdate` datetime DEFAULT NULL,
+  `build_enddate` datetime DEFAULT NULL,
+  `build_status` enum('started','building','complete','error') NOT NULL,
+  `build_log` text DEFAULT NULL,
+  `container_path` text DEFAULT NULL COMMENT 'Final container path'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `pipeline_data`
 --
 
@@ -2326,7 +2343,7 @@ CREATE TABLE `pipeline_history` (
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) DEFAULT NULL,
   `analysis_id` bigint(11) DEFAULT NULL,
-  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs') NOT NULL,
+  `pipeline_event` enum('pipelineStarted','errorNoQueue','errorNoSubmitHost','getDataSteps','getPipelineSteps','getStudyToDoList','maxJobsReached','analysisExists','analysisRunSupplement','analysisReRunResults','analysisCheckDependency','analysisGetData','analysisCreateDir','analysisOkToSubmit','analysisCopyParent','analysisErrorCreatePath','submitAnalysis','errorSubmitAnalysis','pipelineDisabled','pipelineFinished','errorNoDataSteps','errorNoPipelineSteps','errorNoMaxConcurrentJobs','errorNoParentPipeline') NOT NULL,
   `event_datetime` timestamp(6) NOT NULL DEFAULT current_timestamp(6),
   `event_message` longtext DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
@@ -4413,6 +4430,12 @@ ALTER TABLE `pipelines`
   ADD UNIQUE KEY `pipeline_name` (`pipeline_name`,`pipeline_version`);
 
 --
+-- Indexes for table `pipeline_containers`
+--
+ALTER TABLE `pipeline_containers`
+  ADD PRIMARY KEY (`pipelinecontainer_id`);
+
+--
 -- Indexes for table `pipeline_data`
 --
 ALTER TABLE `pipeline_data`
@@ -5501,6 +5524,12 @@ ALTER TABLE `package_subjects`
 --
 ALTER TABLE `pipelines`
   MODIFY `pipeline_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pipeline_containers`
+--
+ALTER TABLE `pipeline_containers`
+  MODIFY `pipelinecontainer_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipeline_data`

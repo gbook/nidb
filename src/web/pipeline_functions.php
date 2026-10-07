@@ -156,42 +156,33 @@
 		?>
 		<div class="ui container">
 			<div class="ui top attached black segment">
-				<div class="ui three column grid">
-					<div class="column">
-						<h1 class="ui header">
-							<!--<i class="small grey settings icon"></i>-->
-							<div class="content">
-								<? PipelineFavoriteStar($id, IsUserFavorite('pipeline', $id)); ?>
-								<a href="pipelines.php?action=editpipeline&id=<?=$id?>"><span style="font-size: larger"><?=$pipelinename?><span></a>
-								<div class="sub header"><?=$pipelinedesc?></div>
-							</div>
-						</h1>
-					</div>
-					<!--<div class="center aligned column">
-						<?
-							//$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $id";
-							//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-							//$diskusage = $row['disksize'];
-						?>
-						Disk usage <?=HumanReadableFilesize($diskusage)?> <i class="question circle outline icon" title="Disk usage may not be accurate if this pipeline depends on other pipelines and hard links are used.
-						<p>Check the parent pipeline for its usage</p>"></i>
-					</div> -->
-					<div class="right aligned column">
-						<? if ($isenabled) { ?>
-							Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
-						<? } else { ?>
-							<i class="question circle icon" title="Why is my pipeline disabled? Pipelines are automatically disabled if they have not successfully run a study in the last 60 days."></i>
-							Enable <a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
-						<? } ?>
-						<br>
-						<? if ($isdebug) { ?>
-							Debug <a href="<?=$returnpage?>.php?action=disabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline in debug mode, click to return to normal mode"></i></a>
-						<? } else { ?>
-							Debug <a href="<?=$returnpage?>.php?action=enabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline in normal mode, click to enter debug mode"></i></a>
-						<? } ?>
-					</div>
-				</div>
+				<table width="100%">
+					<tr>
+						<td>
+							<h1 class="ui header">
+								<div class="content">
+									<? PipelineFavoriteStar($id, IsUserFavorite('pipeline', $id)); ?>
+									<a href="pipelines.php?action=editpipeline&id=<?=$id?>"><span style="font-size: larger"><?=$pipelinename?><span></a>
+									<div class="sub header"><?=$pipelinedesc?></div>
+								</div>
+							</h1>
+						</td>
+						<td align="right">
+							<? if ($isenabled) { ?>
+								Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
+							<? } else { ?>
+								<i class="question circle icon" title="Why is my pipeline disabled? Pipelines are automatically disabled if they have not successfully run a study in the last 60 days."></i>
+								Enable <a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
+							<? } ?>
+							<br>
+							<? if ($isdebug) { ?>
+								Debug <a href="<?=$returnpage?>.php?action=disabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline in debug mode, click to return to normal mode"></i></a>
+							<? } else { ?>
+								Debug <a href="<?=$returnpage?>.php?action=enabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline in normal mode, click to enter debug mode"></i></a>
+							<? } ?>
+						</td>
+					</tr>
+				</table>
 			</div>
 			<? if ($pipeline_status == "running") { ?>
 			<div class="ui three bottom attached mini steps">

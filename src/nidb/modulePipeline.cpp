@@ -412,7 +412,8 @@ int modulePipeline::Run() {
                         n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
                         if (q2.size() > 0) {
                             q2.first();
-                            analysisRowID = q2.value("analysis_id").toInt();
+                            analysisRowID = q2.value("analysis_id").toLongLong();
+                            continue;
                         }
                         else {
                             q2.prepare("insert into analysis (pipeline_id, pipeline_version, pipeline_dependency, study_id, analysis_status, analysis_startdate, analysis_isbad) values (:pipelineid, :version, :pipelinedep, :studyid,'processing',now(), 0)");
@@ -421,7 +422,7 @@ int modulePipeline::Run() {
                             q2.bindValue(":pipelinedep",pipelinedep);
                             q2.bindValue(":studyid",sid);
                             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
-                            analysisRowID = q2.lastInsertId().toInt();
+                            analysisRowID = q2.lastInsertId().toLongLong();
                         }
 
                         n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupCreateAnalysis, LogStatus::success, 0, QString("rowID %1").arg(analysisRowID), "");
@@ -533,7 +534,7 @@ int modulePipeline::Run() {
                                 else {
                                     m = QString("[%1] Parent pipeline [%2] does not exist!").arg(p.name).arg(pipelinedep);
                                     setuplog << n->Log(m, __FUNCTION__);
-                                    RecordPipelineEvent(pipelineid, runnum, -1, "pipelineModuleDisabled", m);
+                                    RecordPipelineEvent(pipelineid, runnum, -1, "errorNoParentPipeline", m);
                                     SetPipelineStopped(pipelineid, m);
                                     n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCheck, LogStatus::error, 0, "Parent pipeline does not exist", "");
                                     UpdateAnalysisStatus(analysisRowID, "error", "Parent pipeline does not exist", 0,-1,"",false,false,-1,-1);
@@ -627,7 +628,8 @@ int modulePipeline::Run() {
                         }
                         /* "realanalysispath" is now --> "clusteranalysispath" */
                         QString clusteranalysispath = analysispath;
-                        clusteranalysispath.replace("/mount","");
+                        if (clusteranalysispath.startsWith("/mount/"))
+                            clusteranalysispath.remove(0,7);
 
                         /* create the cluster job file */
                         QString localJobFilePath;
@@ -661,7 +663,7 @@ int modulePipeline::Run() {
                             m = QString("Successfully submitted job %1 to %2 cluster. analysisRowID %3").arg(jobid).arg(p.clusterType).arg(analysisRowID);
                             n->Log(m, __FUNCTION__);
                             n->Debug("Job submission result [" + qresult + "]", __FUNCTION__);
-                            UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", false, true, 0, 0);
+                            UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", true, false, 0, 0);
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, QString("Submitted job %1 to %2 cluster. Result [%3]").arg(jobid).arg(p.clusterType).arg(qresult), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "submitAnalysis", m);
                         }
@@ -1131,8 +1133,14 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 sqlstring += " order by series_size desc, numfiles desc, img_slices desc limit 1";
             else if (criteria == "smallestsize")
                 sqlstring += " order by series_size asc, numfiles asc, img_slices asc limit 1";
-            else if (criteria == "usesizecriteria")
-                sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2)) order by series_num asc").arg(comparison).arg(num);
+            else if (criteria == "usesizecriteria") {
+                if ((comparison == "") || (num < 0)) {
+                    dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Size criteria is blank or invalid", "");
+                    continue;
+                }
+                else
+                    sqlstring += QString(" and ((numfiles %1 %2) or (dimT %1 %2)) order by series_num asc").arg(comparison).arg(num);
+            }
             else
                 sqlstring += " order by series_num asc";
 
@@ -1190,7 +1198,12 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                 else if (criteria == "smallestsize")
                     sqlstring += " order by series_size asc, numfiles asc, img_slices asc limit 1";
                 else if (criteria == "usesizecriteria")
-                    sqlstring += QString(" and numfiles %1 %2 order by series_num asc").arg(comparison).arg(num);
+                    if ((comparison == "") || (num < 0)) {
+                        dlog << n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDataStepDownload, LogStatus::error, stepNum, "Size criteria is blank or invalid", "");
+                        continue;
+                    }
+                    else
+                        sqlstring += QString(" and numfiles %1 %2 order by series_num asc").arg(comparison).arg(num);
                 else
                     sqlstring += " order by series_num asc";
 
@@ -1562,7 +1575,7 @@ bool modulePipeline::UpdateAnalysisStatus(qint64 analysisid, QString status, QSt
         varsToSet << "analysis_runsupplement = :supplementflag";
     if (rerunFlag >= 0)
         varsToSet << "analysis_rerunresults = :rerunflag";
-    if (numseries >= 0)
+    if (numseries > 0)
         varsToSet << "analysis_numseries = :numseries";
 
     /* return false if there were no variables to update */
@@ -2030,6 +2043,7 @@ QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispat
 
     command.replace("{NOLOG}",""); /* remove any {NOLOG} commands */
     command.replace("{NOCHECKIN}",""); /* remove any {NOCHECKIN} commands */
+    command.replace("{PROFILE}",""); /* remove any {PROFILE} commands */
     command.replace(QRegularExpression(QStringLiteral("[\\x00-\\x1F]")),""); /* remove any non-printable ASCII control characters */
     command.replace("{analysisrootdir}", analysispath, Qt::CaseInsensitive);
     command.replace("{analysisid}", QString("%1").arg(analysisid), Qt::CaseInsensitive);
@@ -2148,7 +2162,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
         jobfile += "#SBATCH --partition=" + p.clusterQueue + "\n";
         jobfile += "#SBATCH -o " + analysispath + "/pipeline/%x.o%j\n";
         jobfile += "#SBATCH -e " + analysispath + "/pipeline/%x.e%j\n";
-        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(p.clusterMemory);
+        jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(int(ceil(p.clusterMemory)));
         jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(p.clusterNumCores);
         if (p.clusterMaxWallTime > 0) {
             int hours = int(floor(p.clusterMaxWallTime/60));
@@ -2283,8 +2297,8 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
 
             /* add the step checkin */
             if (checkedin) {
-                QString cleandesc = description;
-                cleandesc.replace("'","").replace("\"","");
+                //QString cleandesc = description;
+                //cleandesc.replace("'","").replace("\"","");
                 jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(size);
                 //jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5' '%6'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(steps.size()).arg(cleandesc);
                 jobfile += "\n# " + description + "\necho Running " + command + "\n";
@@ -2323,7 +2337,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
         jobfile += resultcommand + "\n";
 
         jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s completererun -m 'Results re-run complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-        jobfile += "chmod -Rf 777 " + analysispath;
+        jobfile += "chmod -Rf 777 " + analysispath + "\n";
     }
     else {
         /* run the results import script */
@@ -2346,12 +2360,12 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
             jobfile += QString("nidbapi -d action=checkin -d status=processing --data-urlencode \"Updating analysis files\"\n");
             jobfile += QString("nidbapi -d action=updateanalysis -d \"numfiles=$(find \"%1\" -type f | wc -l)\" -d \"disksize=$(find %1 -type f -links 1 -exec du -cb {} + | grep total$ | cut -f1)\"\n").arg(analysispath);
             jobfile += QString("nidbapi -d action=checkin -d status=processing --data-urlencode \"Checking for completed files\"\n");
-            jobfile += QString("iscomplete=1");
-            jobfile += QString("for f in %1; do").arg(p.completeFiles.join(" "));
-            jobfile += QString("    [ -e \"%1/$f\" ] || { iscomplete=0; break; }").arg(analysispath);
-            jobfile += QString("done");
-            jobfile += QString("nidbapi -d action=setcomplete -d \"iscomplete=$iscomplete\"");
-            jobfile += QString("nidbapi -d action=checkin -d status=complete --data-urlencode \"message=Cluster processing complete\"");
+            jobfile += QString("iscomplete=1\n");
+            jobfile += QString("for f in %1; do\n").arg(p.completeFiles.join(" "));
+            jobfile += QString("    [ -e \"%1/$f\" ] || { iscomplete=0; break; }\n").arg(analysispath);
+            jobfile += QString("done\n");
+            jobfile += QString("nidbapi -d action=setcomplete -d \"iscomplete=$iscomplete\"\n");
+            jobfile += QString("nidbapi -d action=checkin -d status=complete --data-urlencode \"message=Cluster processing complete\"\n");
 
             /* old way */
             //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
@@ -2360,7 +2374,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
             //jobfile += QString("%1/nidb cluster -u checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
             //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s complete -m 'Cluster processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         }
-        jobfile += "chmod -Rf 777 " + analysispath;
+        jobfile += "chmod -Rf 777 " + analysispath + "\n";
     }
 
     /* write out the file */
@@ -2711,6 +2725,7 @@ void modulePipeline::RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 
         analysisRunSupplement
         errorNoDataSteps
         errorNoMaxConcurrentJobs
+        errorNoParentPipeline
         errorNoPipelineSteps
         errorNoQueue
         errorNoSubmitHost
@@ -2804,6 +2819,11 @@ QString modulePipeline::GetAnalysisLocalPath(QString dirStructureCode, QString p
                 dirtype = 'a';
             else
                 dirtype = 'b';
+        }
+        else {
+            path = n->cfg["analysisdir"];
+            dirtype = 'a';
+            n->Log(QString("analysisdir [%1] not found in database. Using default path instead [%2]").arg(dirStructureCode).arg(path));
         }
     }
     else {

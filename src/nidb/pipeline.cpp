@@ -96,7 +96,7 @@ void pipeline::LoadPipelineInfo() {
     clusterSubmitHostUser = q.value("pipeline_submithostuser").toString().trimmed();
     clusterType = q.value("pipeline_clustertype").toString().trimmed();
     clusterUser = q.value("pipeline_clusteruser").toString().trimmed();
-    completeFiles = q.value("pipeline_desc").toString().trimmed().split(",", Qt::SkipEmptyParts);
+    completeFiles = q.value("pipeline_completefiles").toString().trimmed().split(",", Qt::SkipEmptyParts);
     createDate = q.value("pipeline_createdate").toDateTime();
     dataCopyMethod = q.value("pipeline_datacopymethod").toString().trimmed();
     debug = q.value("pipeline_debug").toBool();
