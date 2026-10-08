@@ -13,7 +13,7 @@ NIDB_APIURL=<siteurl>/analysisapi.php; export NIDB_APIURL;
 
 nidbapi() {
     local response
-    response=$(curl -sS --connect-timeout 30 --max-time 300 --retry 3 "$NIDB_APIURL" -d "analysisid=$NIDB_ANALYSISID" --data-urlencode "token=$NIDB_APITOKEN" "$@")
+    response=$(curl -sS --connect-timeout 30 --max-time 300 --retry 3 "$NIDB_APIURL" -d "analysisid=$NIDB_ANALYSISID" --data-urlencode "token=$NIDB_APITOKEN" --data-urlencode "hostname=$(hostname)" "$@")
     echo "$response"
     echo "$response" | grep -q '"success":true'
 }
@@ -54,10 +54,10 @@ Updates the analysis status, status message, status time, and hostname, and writ
 | `completererun` | Sets status `complete`, clears `analysis_rerunresults` |
 | `completesupplement` | Sets status `complete`, clears `analysis_rerunresults` and `analysis_runsupplement` |
 
-The step number comes from `step` if given. Otherwise it's parsed from a message like `processing step 2 of 5` or `processing supplement step 2 of 5`. For a `processing` check-in with no step number, the message text selects the log event: `processing result script`, `updating analysis files`, or `checking for completed files`. Any other message logs `cluster_checkinStep`. `hostname` defaults to the request's IP address.
+The step number comes from `step` if given. Otherwise it's parsed from a message like `processing step 2 of 5` or `processing supplement step 2 of 5`. For a `processing` check-in with no step number, the message text selects the log event: `processing result script`, `updating analysis files`, or `checking for completed files`. Any other message logs `cluster_checkinStep`. `hostname` is sent automatically by the job script's `nidbapi` function (the output of `hostname` on the compute node); if it's missing, it falls back to the request's IP address.
 
 ```bash
-nidbapi -d action=checkin -d status=started -d "hostname=$(hostname)" --data-urlencode "message=Cluster processing started"
+nidbapi -d action=checkin -d status=started --data-urlencode "message=Cluster processing started"
 nidbapi -d action=checkin -d status=processing --data-urlencode "message=processing step 2 of 5"
 nidbapi -d action=checkin -d status=processing -d step=3 --data-urlencode "message=Running recon-all" --data-urlencode "command=recon-all -s sub01 -all"
 nidbapi -d action=checkin -d status=error --data-urlencode "message=recon-all failed"
