@@ -82,6 +82,7 @@ user input is fine as-is).
 | `ndarequests.php` | 16 | 0 | ⬜ |
 | `nidbapi.php` | 1 | 0 | ⬜ |
 | `niiview.php` | 1 | 0 | ⬜ |
+| `nonimaging.php` | 0 | 2 | ✅ |
 | `observations.php` | 4 | 4 | ⬜ |
 | `packages.php` | 74 | 2 | ⬜ |
 | `pd.php` | 2 | 0 | ⬜ |

@@ -3265,6 +3265,12 @@
 						<div class="description">Build and export analyses</div>
 					</div>
 				</a>
+				<a class="ui green card" href="nonimaging.php?projectid=<?=$id?>">
+					<div class="content">
+						<div class="header"><i class="table icon"></i> Non-imaging data</div>
+						<div class="description">Search and export observations/interventions</div>
+					</div>
+				</a>
 			</div>
 
 			<h3 class="ui dividing header">Manage</h3>
