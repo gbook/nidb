@@ -314,12 +314,14 @@
 			'dates' => (bool)($json['dates'] ?? false)
 		);
 
-		if ($req['format'] != 'csv')
-			$errors[] = "Only the CSV format can be exported";
-		elseif (!in_array($req['layout'], array('long', 'wide')))
-			$errors[] = "Invalid CSV layout";
-		if (($req['layout'] == 'wide') && (!in_array($req['repeats'], array('all', 'first', 'last'))))
-			$errors[] = "Invalid repeated observations option";
+		if (!in_array($req['format'], array('csv', 'files')))
+			$errors[] = "Only the CSV and Files formats can be exported";
+		elseif ($req['format'] == 'csv') {
+			if (!in_array($req['layout'], array('long', 'wide')))
+				$errors[] = "Invalid CSV layout";
+			if (($req['layout'] == 'wide') && (!in_array($req['repeats'], array('all', 'first', 'last'))))
+				$errors[] = "Invalid repeated observations option";
+		}
 
 		/* instrument item IDs, and unaffiliated observation names (de-duplicated) */
 		foreach ((array)($json['itemids'] ?? array()) as $id) {
@@ -332,6 +334,8 @@
 				$req['names'][$name] = $name;
 		}
 		$req['names'] = array_values($req['names']);
+		if (($req['format'] != 'csv') && (count($req['names']) > 0))
+			$errors[] = "Unaffiliated observations can only be exported as CSV";
 		if ((count($req['itemids']) + count($req['names'])) == 0)
 			$errors[] = "No observations are selected";
 		if ((count($req['itemids']) + count($req['names'])) > 50000)
@@ -378,11 +382,12 @@
 		$sqlstring = "select ii.instrumentitem_id, ii.item_name, ii.item_type, ii.item_order, i.instrument_name from instrument_items ii join instruments i on ii.instrument_id = i.instrument_id where ii.instrumentitem_id in (" . Placeholders(count($req['itemids'])) . ")";
 		$rows = TimedQuery("Validate instrument items", $sqlstring, str_repeat('i', count($req['itemids'])), $req['itemids']);
 
-		$csvtypes = array('enum', 'int', 'double', 'string', 'datetime', '');
+		$formattypes = array('csv' => array('enum', 'int', 'double', 'string', 'datetime', ''), 'files' => array('image', 'csv', 'json'));
+		$formatlabels = array('csv' => 'CSV', 'files' => 'Files');
 		foreach ($rows as $row) {
 			$items[(int)$row['instrumentitem_id']] = $row;
-			if (!in_array($row['item_type'] ?? '', $csvtypes))
-				$errors[] = "[" . htmlspecialchars($row['item_name']) . "] is a " . htmlspecialchars($row['item_type']) . " item, which can't be exported as CSV";
+			if (!in_array($row['item_type'] ?? '', $formattypes[$req['format']]))
+				$errors[] = "[" . htmlspecialchars($row['item_name']) . "] is a " . htmlspecialchars($row['item_type'] == '' ? 'blank' : $row['item_type']) . " item, which can't be exported as " . $formatlabels[$req['format']];
 		}
 		$nummissing = count($req['itemids']) - count($rows);
 		if ($nummissing > 0)
@@ -427,9 +432,11 @@
 	/* -------------------------------------------- */
 	/* The 'from ... where ...' for the selected observations of a batch of enrollments. Unaffiliated
 	   observations (no instrument item, or the item no longer exists) are selected by name. Observations
-	   from deleted surveys are excluded. Returns array(sql, types, params) */
+	   from deleted surveys are excluded. The Files format also joins the observations' files (f).
+	   Returns array(sql, types, params) */
 	function ExportWhere($req, $enrollmentids) {
-		$sqlstring = "from observations o left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id left join instruments i on ii.instrument_id = i.instrument_id left join observation_surveys sv on o.observationsurvey_id = sv.survey_id where o.enrollment_id in (" . Placeholders(count($enrollmentids)) . ") and (sv.survey_status is null or sv.survey_status <> 7)";
+		$filesjoin = (($req['format'] == 'files') ? " left join files f on o.observation_fileid = f.file_id" : "");
+		$sqlstring = "from observations o left join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id left join instruments i on ii.instrument_id = i.instrument_id left join observation_surveys sv on o.observationsurvey_id = sv.survey_id" . $filesjoin . " where o.enrollment_id in (" . Placeholders(count($enrollmentids)) . ") and (sv.survey_status is null or sv.survey_status <> 7)";
 		$types = str_repeat('i', count($enrollmentids));
 		$params = array_values($enrollmentids);
 
@@ -692,6 +699,310 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- PathPart --------------------------- */
+	/* -------------------------------------------- */
+	/* A name that is safe as one part of a path in the zip (on Windows, macOS, and Linux) */
+	function PathPart($name, $default = "_") {
+		$pattern = '/[\x00-\x1F\x7F\/\\\\:*?"<>|]+/';
+		$part = preg_replace($pattern . 'u', '_', (string)$name);
+		if ($part === null) /* not valid UTF-8 */
+			$part = preg_replace($pattern, '_', (string)$name);
+		$part = trim($part, " .");
+		if ($part == "")
+			$part = $default;
+		return mb_substr($part, 0, 100);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ManifestColumns -------------------- */
+	/* -------------------------------------------- */
+	function ManifestColumns() {
+		return array('Path', 'Status', 'UID', 'AltUID', 'Instrument', 'Observation', 'ItemType', 'StartDateUTC', 'EndDateUTC', 'TimezoneOffset', 'SurveyVisit', 'SurveyInstance', 'OriginalFilename', 'ContentType', 'SizeBytes', 'Value', 'Notes');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FileEntries ------------------------ */
+	/* -------------------------------------------- */
+	/* Generator: the files of the selected observations, in subject UID order, each with its path in
+	   the zip and its manifest row. Observations whose file is missing are included (status 'missing
+	   file', no path). Paths are <UID>/<instrument>/<observation>/<YYYYMMDD_HHMMSS>_<filename>, made
+	   unique (not case sensitive) by adding _2, _3, ... before the extension */
+	function FileEntries($req, $subjects) {
+		$select = "select o.observation_id, o.enrollment_id, coalesce(i.instrument_name, '') 'instrumentname', coalesce(ii.item_name, o.observation_name) 'obsname', ii.item_type, o.observation_value, o.observation_notes, o.observation_startdate, o.observation_enddate, o.observation_tz_offset, sv.survey_visit, sv.survey_instance, f.file_id, f.file_name, f.file_contenttype, f.file_size ";
+		$used = array();
+
+		foreach (array_chunk(array_keys($subjects), 100) as $batch) {
+			list($sqlwhere, $types, $params) = ExportWhere($req, $batch);
+			$sqlstring = $select . $sqlwhere . " order by o.enrollment_id, instrumentname, obsname, o.observation_startdate, o.observation_id";
+			$rows = TimedQuery("File list (batches of 100 subjects)", $sqlstring, $types, $params);
+
+			$byenrollment = array();
+			foreach ($rows as $row)
+				$byenrollment[(int)$row['enrollment_id']][] = $row;
+			unset($rows);
+
+			foreach ($batch as $id) {
+				foreach ($byenrollment[$id] ?? array() as $row) {
+					$startdate = ValidDate($row['observation_startdate']);
+					$found = ($row['file_id'] !== null);
+
+					$path = "";
+					if ($found) {
+						$prefix = ($startdate != "") ? str_replace(array('-', ':', ' '), array('', '', '_'), $startdate) : "nodate";
+						$dir = PathPart($subjects[$id]['uid']) . "/" . PathPart($row['instrumentname']) . "/" . PathPart($row['obsname']);
+						$filename = $prefix . "_" . PathPart($row['file_name'], "file");
+						$path = "$dir/$filename";
+						$num = 2;
+						while (isset($used[mb_strtolower($path)])) {
+							$ext = pathinfo($filename, PATHINFO_EXTENSION);
+							$path = "$dir/" . (($ext != "") ? substr($filename, 0, -strlen($ext) - 1) . "_$num.$ext" : $filename . "_$num");
+							$num++;
+						}
+						$used[mb_strtolower($path)] = true;
+					}
+
+					$timestamp = ($startdate != "") ? strtotime($startdate . " UTC") : time();
+					yield array(
+						'path' => $path,
+						'fileid' => (int)$row['file_id'],
+						'timestamp' => (($timestamp === false) ? time() : $timestamp),
+						/* text files are compressed. Images are usually compressed already, so they're stored */
+						'deflate' => (in_array($row['item_type'], array('csv', 'json')) || (substr((string)$row['file_contenttype'], 0, 5) == 'text/')),
+						'manifest' => array(
+							$path,
+							($found ? 'ok' : 'missing file'),
+							$subjects[$id]['uid'],
+							$subjects[$id]['altuid'],
+							$row['instrumentname'],
+							$row['obsname'],
+							$row['item_type'] ?? '',
+							$startdate,
+							ValidDate($row['observation_enddate']),
+							$row['observation_tz_offset'] ?? '',
+							$row['survey_visit'] ?? '',
+							$row['survey_instance'] ?? '',
+							$row['file_name'] ?? '',
+							$row['file_contenttype'] ?? '',
+							($found ? (int)$row['file_size'] : ''),
+							$row['observation_value'] ?? '',
+							$row['observation_notes'] ?? ''
+						)
+					);
+				}
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- WriteZipExport --------------------- */
+	/* -------------------------------------------- */
+	/* Writes the Files export as a zip: the files, and manifest.csv. $write is called with each piece
+	   of the zip. Each file is read from the database in 64 MB chunks. Returns the number of files */
+	function WriteZipExport($req, $subjects, $write) {
+		$zip = new ZipStreamWriter($write);
+		$manifest = fopen('php://temp', 'w+');
+		fputcsv($manifest, ManifestColumns(), ',', '"', "\\");
+
+		$numfiles = 0;
+		$chunksize = 64 * 1048576;
+		foreach (FileEntries($req, $subjects) as $entry) {
+			if ($entry['path'] != "") {
+				$zip->BeginFile($entry['path'], $entry['timestamp'], $entry['deflate']);
+				$pos = 1;
+				do {
+					$rows = TimedQuery("File data (64 MB chunks)", "select substring(file_blob, ?, ?) 'chunk', length(file_blob) 'length' from files where file_id = ?", 'iii', [$pos, $chunksize, $entry['fileid']]);
+					if (count($rows) == 0)
+						break;
+					$length = (int)$rows[0]['length'];
+					$chunk = (string)$rows[0]['chunk'];
+					unset($rows);
+					if ($chunk == "")
+						break;
+					$zip->WriteData($chunk);
+					$pos += strlen($chunk);
+					unset($chunk);
+				} while ($pos <= $length);
+				$zip->EndFile();
+				$numfiles++;
+			}
+			fputcsv($manifest, $entry['manifest'], ',', '"', "\\");
+		}
+
+		$zip->BeginFile("manifest.csv", time(), true);
+		rewind($manifest);
+		while (!feof($manifest))
+			$zip->WriteData((string)fread($manifest, 1048576));
+		$zip->EndFile();
+		fclose($manifest);
+
+		$zip->Finish();
+		return $numfiles;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PreviewFiles ----------------------- */
+	/* -------------------------------------------- */
+	/* Preview of the Files export: totals, and the first files with their paths in the zip */
+	function PreviewFiles($req, $items, $subjects, $errors, $warnings) {
+		$keycounts = array();
+		$total = 0;
+		$nummissing = 0;
+		$bytes = 0;
+		$numsubjects = 0;
+		foreach (array_chunk(array_keys($subjects), 1000) as $batch) {
+			list($sqlwhere, $types, $params) = ExportWhere($req, $batch);
+			$sqlstring = "select ii.instrumentitem_id 'itemid', count(*) 'num', sum(f.file_id is null) 'missing', coalesce(sum(f.file_size), 0) 'bytes' " . $sqlwhere . " group by itemid";
+			foreach (TimedQuery("Counts (batches of 1000 subjects)", $sqlstring, $types, $params) as $row) {
+				$keycounts[(int)$row['itemid']] = ($keycounts[(int)$row['itemid']] ?? 0) + (int)$row['num'];
+				$total += (int)$row['num'];
+				$nummissing += (int)$row['missing'];
+				$bytes += (float)$row['bytes'];
+			}
+
+			$sqlstring = "select count(distinct o.enrollment_id) 'num' " . $sqlwhere;
+			$rows = TimedQuery("Subjects with data (batches of 1000 subjects)", $sqlstring, $types, $params);
+			$numsubjects += (int)($rows[0]['num'] ?? 0);
+		}
+
+		$empty = array();
+		foreach ($req['itemids'] as $id) {
+			if (!isset($keycounts[$id]))
+				$empty[] = $items[$id]['item_name'] ?? "item $id";
+		}
+		if (count($empty) > 0)
+			$warnings[] = count($empty) . " of the selected observations have no data for these subjects and dates: " . htmlspecialchars(implode(", ", array_slice($empty, 0, 20))) . ((count($empty) > 20) ? ", ..." : "");
+		if ($nummissing > 0)
+			$warnings[] = number_format($nummissing) . " observations have no file, or their file is missing. They're listed in manifest.csv with the status 'missing file'";
+		if ($total == 0)
+			$errors[] = "No observations match. Check the selected observations, subjects, and dates";
+
+		/* the first files: path, status, and the main manifest columns */
+		$previewrows = array();
+		if ($total > 0) {
+			foreach (FileEntries($req, $subjects) as $entry) {
+				$m = $entry['manifest'];
+				$previewrows[] = array($m[0], $m[1], $m[2], $m[4], $m[5], $m[7], $m[12], $m[13], $m[14]);
+				if (count($previewrows) >= 500)
+					break;
+			}
+		}
+
+		$stats = array(
+			array('label' => 'Files', 'value' => number_format($total - $nummissing)),
+			array('label' => 'Total size (uncompressed)', 'value' => HumanSize($bytes)),
+			array('label' => 'Missing files', 'value' => number_format($nummissing)),
+			array('label' => 'Subjects with data', 'value' => number_format($numsubjects))
+		);
+		SendJSON(array('errors' => $errors, 'warnings' => $warnings, 'columns' => array('Path', 'Status', 'UID', 'Instrument', 'Observation', 'StartDateUTC', 'OriginalFilename', 'ContentType', 'SizeBytes'), 'rows' => $previewrows, 'numrows' => $total, 'stats' => $stats));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- HumanSize -------------------------- */
+	/* -------------------------------------------- */
+	function HumanSize($bytes) {
+		$units = array('bytes', 'KB', 'MB', 'GB', 'TB');
+		$i = 0;
+		while (($bytes >= 1024) && ($i < count($units) - 1)) {
+			$bytes /= 1024;
+			$i++;
+		}
+		return (($i == 0) ? number_format($bytes) : number_format($bytes, 1)) . " " . $units[$i];
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ZipStreamWriter -------------------- */
+	/* -------------------------------------------- */
+	/* Writes a .zip file as a stream, so a large export doesn't have to fit in memory or on disk.
+	   Each file is written with a data descriptor (its CRC and sizes come after the data), so the
+	   data can be written in chunks. Files are stored, or deflated if $deflate is set. ZIP64 records
+	   are added if the zip is over 4 GB or has more than 65,535 files. Each file must be under 4 GB.
+	   $write is called with each piece of the zip */
+	class ZipStreamWriter {
+		private $write;
+		private $offset = 0;
+		private $entries = array();
+		private $current = null;
+
+		function __construct($write) {
+			$this->write = $write;
+		}
+
+		private function Write($data) {
+			call_user_func($this->write, $data);
+			$this->offset += strlen($data);
+		}
+
+		/* DOS date and time of a unix timestamp (UTC) */
+		private static function DosDateTime($timestamp) {
+			$t = getdate($timestamp - (int)date('Z', $timestamp));
+			if ($t['year'] < 1980)
+				return array(0, (0 << 9) | (1 << 5) | 1);
+			return array(($t['hours'] << 11) | ($t['minutes'] << 5) | ($t['seconds'] >> 1), (($t['year'] - 1980) << 9) | ($t['mon'] << 5) | $t['mday']);
+		}
+
+		function BeginFile($path, $timestamp, $deflate) {
+			list($dostime, $dosdate) = self::DosDateTime($timestamp);
+			$method = ($deflate ? 8 : 0);
+			$this->current = array('path' => $path, 'offset' => $this->offset, 'method' => $method, 'time' => $dostime, 'date' => $dosdate, 'crc' => hash_init('crc32b'), 'size' => 0, 'csize' => 0, 'deflate' => ($deflate ? deflate_init(ZLIB_ENCODING_RAW, array('level' => 6)) : null));
+			/* flags: bit 3 (data descriptor), bit 11 (UTF-8 file name) */
+			$this->Write(pack('VvvvvvVVVvv', 0x04034b50, 20, 0x0808, $method, $dostime, $dosdate, 0, 0, 0, strlen($path), 0) . $path);
+		}
+
+		function WriteData($data) {
+			hash_update($this->current['crc'], $data);
+			$this->current['size'] += strlen($data);
+			if ($this->current['deflate'])
+				$data = deflate_add($this->current['deflate'], $data, ZLIB_NO_FLUSH);
+			$this->current['csize'] += strlen($data);
+			if ($data != '')
+				$this->Write($data);
+		}
+
+		function EndFile() {
+			if ($this->current['deflate']) {
+				$data = deflate_add($this->current['deflate'], '', ZLIB_FINISH);
+				$this->current['csize'] += strlen($data);
+				$this->Write($data);
+			}
+			$this->current['crc'] = hexdec(hash_final($this->current['crc']));
+			$this->Write(pack('VVVV', 0x08074b50, $this->current['crc'], $this->current['csize'], $this->current['size']));
+			unset($this->current['deflate']);
+			$this->entries[] = $this->current;
+			$this->current = null;
+		}
+
+		/* writes the central directory. Call once, after the last file */
+		function Finish() {
+			$cdstart = $this->offset;
+			foreach ($this->entries as $e) {
+				/* a file that starts after 4 GB has its offset in a ZIP64 extra field */
+				$zip64 = ($e['offset'] > 0xFFFFFFFF);
+				$extra = ($zip64 ? pack('vvP', 0x0001, 8, $e['offset']) : '');
+				$version = ($zip64 ? 45 : 20);
+				/* made by unix (3), so the external attributes are unix permissions (regular file, 0644) */
+				$this->Write(pack('VvvvvvvVVVvvvvvVV', 0x02014b50, (3 << 8) | $version, $version, 0x0808, $e['method'], $e['time'], $e['date'], $e['crc'], $e['csize'], $e['size'], strlen($e['path']), strlen($extra), 0, 0, 0, 0x81A40000, ($zip64 ? 0xFFFFFFFF : $e['offset'])) . $e['path'] . $extra);
+			}
+			$cdsize = $this->offset - $cdstart;
+			$num = count($this->entries);
+
+			if (($num > 0xFFFF) || ($cdstart > 0xFFFFFFFF) || ($cdsize > 0xFFFFFFFF)) {
+				/* ZIP64 end of central directory record and locator */
+				$zip64eocd = $this->offset;
+				$this->Write(pack('VPvvVVPPPP', 0x06064b50, 44, (3 << 8) | 45, 45, 0, 0, $num, $num, $cdsize, $cdstart));
+				$this->Write(pack('VVPV', 0x07064b50, 0, $zip64eocd, 1));
+			}
+			$this->Write(pack('VvvvvVVv', 0x06054b50, 0, 0, min($num, 0xFFFF), min($num, 0xFFFF), min($cdsize, 0xFFFFFFFF), min($cdstart, 0xFFFFFFFF), 0));
+		}
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- PrepareExport ---------------------- */
 	/* -------------------------------------------- */
 	/* Checks the project and permissions, and parses and validates the POSTed export request.
@@ -726,6 +1037,10 @@
 		list($project, $req, $items, $subjects, $errors, $warnings) = PrepareExport($projectid);
 		if (count($errors) > 0) {
 			SendJSON(array('errors' => $errors, 'warnings' => $warnings));
+			return;
+		}
+		if ($req['format'] == 'files') {
+			PreviewFiles($req, $items, $subjects, $errors, $warnings);
 			return;
 		}
 		list($headers, $columns) = ExportColumns($req, $items);
@@ -794,15 +1109,22 @@
 			}
 		}
 
-		SendJSON(array('errors' => $errors, 'warnings' => $warnings, 'columns' => $headers, 'rows' => $previewrows, 'numrows' => $numrows, 'total' => $total, 'numsubjects' => $numsubjects, 'numobservationnames' => count($keycounts)));
+		$stats = array(
+			array('label' => 'Rows', 'value' => number_format($numrows)),
+			array('label' => 'Columns', 'value' => number_format(count($headers))),
+			array('label' => 'Observations', 'value' => number_format($total)),
+			array('label' => 'Subjects with data', 'value' => number_format($numsubjects)),
+			array('label' => 'Observation names with data', 'value' => number_format(count($keycounts)))
+		);
+		SendJSON(array('errors' => $errors, 'warnings' => $warnings, 'columns' => $headers, 'rows' => $previewrows, 'numrows' => $numrows, 'stats' => $stats));
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- DownloadExport --------------------- */
 	/* -------------------------------------------- */
-	/* Streams the export as a .csv file. A dry run (siteadmins only) builds the whole export without
-	   sending it, and returns the size and the performance metrics as JSON */
+	/* Streams the export as a .csv file, or a .zip for the Files format. A dry run (siteadmins only)
+	   builds the whole export without sending it, and returns the size and the performance metrics as JSON */
 	function DownloadExport($projectid, $dryrun) {
 		if (($dryrun) && (!($GLOBALS['issiteadmin'] ?? false))) {
 			SendJSON(array('errors' => array("Dry runs are for siteadmins only")));
@@ -825,15 +1147,43 @@
 			return;
 		}
 
-		if ($dryrun)
-			$out = fopen('php://memory', 'w');
-		else {
+		$projectname = preg_replace('/[^A-Za-z0-9_-]+/', '_', $project['project_name']);
+		if (!$dryrun) {
 			/* nothing should have been output yet. Discard any buffered output so the file streams */
 			while (ob_get_level() > 0)
 				ob_end_clean();
-			$filename = preg_replace('/[^A-Za-z0-9_-]+/', '_', $project['project_name']) . "_observations_" . $req['layout'] . "_" . gmdate('Ymd_His') . ".csv";
+		}
+
+		if ($req['format'] == 'files') {
+			if (!$dryrun) {
+				header('Content-Type: application/zip');
+				header('Content-Disposition: attachment; filename="' . $projectname . "_observations_files_" . gmdate('Ymd_His') . '.zip"');
+			}
+			/* send the zip as it's written. A dry run only counts the bytes */
+			$bytes = 0;
+			$unflushed = 0;
+			$write = function($data) use ($dryrun, &$bytes, &$unflushed) {
+				$bytes += strlen($data);
+				if ($dryrun)
+					return;
+				echo $data;
+				$unflushed += strlen($data);
+				if ($unflushed > 1048576) {
+					flush();
+					$unflushed = 0;
+				}
+			};
+			$numfiles = WriteZipExport($req, $subjects, $write);
+			if ($dryrun)
+				SendJSON(array('rows' => $numfiles, 'bytes' => $bytes));
+			return;
+		}
+
+		if ($dryrun)
+			$out = fopen('php://memory', 'w');
+		else {
 			header('Content-Type: text/csv; charset=utf-8');
-			header('Content-Disposition: attachment; filename="' . $filename . '"');
+			header('Content-Disposition: attachment; filename="' . $projectname . "_observations_" . $req['layout'] . "_" . gmdate('Ymd_His') . '.csv"');
 			$out = fopen('php://output', 'w');
 		}
 
@@ -1182,6 +1532,9 @@
 				if (n == 3) RenderObservations();
 				if (n == 5) {
 					RenderSummary();
+					/* the CSV layout options are only for CSV */
+					$('#layoutoptions').toggle(state.format == 'csv');
+					$('#downloadbutton').html('<i class="download icon"></i> Download ' + (state.format == 'files' ? '.zip' : '.csv'));
 					UpdateDownloadButton();
 				}
 			}
@@ -1539,13 +1892,11 @@
 					}
 					previewedRequest = request;
 					UpdateDownloadButton();
+					/* the totals depend on the format, so the server sends them as label/value pairs */
+					const what = (state.format == 'files') ? 'files' : 'rows';
 					$('#previewsummary').html('<div class="ui small statistics">' +
-						'<div class="statistic"><div class="value">' + Num(data.numrows) + '</div><div class="label">Rows</div></div>' +
-						'<div class="statistic"><div class="value">' + Num(data.columns.length) + '</div><div class="label">Columns</div></div>' +
-						'<div class="statistic"><div class="value">' + Num(data.total) + '</div><div class="label">Observations</div></div>' +
-						'<div class="statistic"><div class="value">' + Num(data.numsubjects) + '</div><div class="label">Subjects with data</div></div>' +
-						'<div class="statistic"><div class="value">' + Num(data.numobservationnames) + '</div><div class="label">Observation names with data</div></div></div>' +
-						'<p style="color: gray">' + (data.numrows > data.rows.length ? 'Showing the first ' + Num(data.rows.length) + ' rows' : 'Showing all rows') + '</p>');
+						data.stats.map(st => '<div class="statistic"><div class="value">' + Esc(st.value) + '</div><div class="label">' + Esc(st.label) + '</div></div>').join('') + '</div>' +
+						'<p style="color: gray">' + (data.numrows > data.rows.length ? 'Showing the first ' + Num(data.rows.length) + ' ' + what : 'Showing all ' + what) + (state.format == 'files' ? '. The zip also has a manifest.csv listing every file and its observation' : '') + '</p>');
 
 					$('#previewgrid').show();
 					const columnDefs = data.columns.map((c, i) => ({ headerName: c, valueGetter: p => p.data[i], filter: true, resizable: true }));
