@@ -13,7 +13,7 @@ NIDB_APIURL=<siteurl>/analysisapi.php; export NIDB_APIURL;
 
 nidbapi() {
     local response
-    response=$(curl -sS "$NIDB_APIURL" -d "analysisid=$NIDB_ANALYSISID" --data-urlencode "token=$NIDB_APITOKEN" "$@")
+    response=$(curl -sS --connect-timeout 30 --max-time 300 --retry 3 "$NIDB_APIURL" -d "analysisid=$NIDB_ANALYSISID" --data-urlencode "token=$NIDB_APITOKEN" "$@")
     echo "$response"
     echo "$response" | grep -q '"success":true'
 }
@@ -23,6 +23,7 @@ export -f nidbapi
 - `nidbapi` fills in `analysisid` and `token`. Any other arguments are passed to `curl`. It prints the JSON response and returns non-zero if the call failed.
 - `export -f` makes `nidbapi` available to child **bash** scripts, such as a pipeline step or result script that runs a separate `.sh` file. Scripts run with `/bin/sh` (dash) don't inherit it.
 - A token can only modify the analysis it was issued for. Writing a new job script for the analysis (rerun or supplement) generates a new token and invalidates the old one.
+- The token is cleared when the job checks in with a complete status (`complete`, `completererun`, or `completesupplement`, through either the API or `nidb cluster -u pipelinecheckin`). After that, any API call with the token fails with `Authentication failed.`, so the final check-in must be the job's last API call.
 
 ## Request and response format
 
@@ -96,7 +97,7 @@ nidbapi -d action=setcomplete -d "iscomplete=$iscomplete"
 {"success":false,"message":"Authentication failed."}
 ```
 
-`Authentication failed.` covers a wrong token, a token from an older job script, and an unknown analysis ID.
+`Authentication failed.` covers a wrong token, a token from an older job script, a token from a job that has already finished, and an unknown analysis ID.
 
 ## User guide: inserting results
 

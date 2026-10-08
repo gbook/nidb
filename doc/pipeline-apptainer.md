@@ -83,7 +83,7 @@ These are all the substitutions `FormatCommand()` (`modulePipeline.cpp:2008`) pe
 | `{analysisid}` | `analysis.analysis_id` | Not meaningful without NiDB, and not a runtime parameter. **Export time:** replaced with `0`, with a warning. `0` rather than an empty string, so a path like `/tmp/{analysisid}` can't collapse to `/tmp/`. |
 | `{groups}`, `{uidstudynums}`, `{uidstudynums_<group>}`, `{numsubjects}`, `{numsubjects_<group>}` | Group-level, from live DB queries | Only meaningful for level-2 pipelines, which can't be exported. If one appears in a level-1 pipeline, **export fails** with an error naming the step. |
 | `{NOLOG}`, `{NOCHECKIN}`, `{PROFILE}` | Flags | **Export time:** removed |
-| `{command}` | Replaced with the command text itself (`modulePipeline.cpp:2059` — a no-op in practice) | **Export time:** removed, with a warning |
+| `{command}` | Deprecated. Removed from the command by `FormatCommand()`, and flagged as a warning in the pipeline checks | **Export time:** removed, with a warning |
 | `{first_*_file}` etc. | Already deprecated, not expanded | **Export time:** error |
 
 So an exported pipeline needs at most **three runtime values**: `subjectuid`, `studynum`, `studydatetime`. The manifest records which ones the script actually uses, and `run.sh` only requires those.

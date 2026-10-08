@@ -1332,6 +1332,15 @@
 			AddPipelineCheck($checks, 'Script', 'ok', "$numenabledsteps of $numsteps main script commands enabled");
 		}
 
+		/* {command} is deprecated. It used to expand to a garbled copy of the command, and is now removed from the command */
+		$rows = VersionQueryRows("select ps_order, ps_supplement from pipeline_steps where pipeline_id = ? and pipeline_version = ? and ps_command like '%{command}%' order by ps_supplement, ps_order", 'ii', [$id, $version], __LINE__);
+		if (count($rows) > 0) {
+			$steps = array();
+			foreach ($rows as $row)
+				$steps[] = (($row['ps_supplement'] ?? 0) == 1 ? "supplement " : "") . (int)$row['ps_order'];
+			AddPipelineCheck($checks, 'Deprecated variables', 'warning', "<tt>{command}</tt> is used in step(s) " . implode(", ", $steps), "The <tt>{command}</tt> variable is deprecated and is removed from the command when the job file is created. Edit the step(s) to remove it.");
+		}
+
 		return $checks;
 	}
 
@@ -3386,7 +3395,6 @@
 							<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{command}');" title="Full command, excluding comment">{command}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{analysisid}');" title="Analysis ID">{analysisid}</td></tr>

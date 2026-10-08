@@ -107,9 +107,10 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
         q.bindValue(":hostname", hostname);
         q.bindValue(":analysisid", id);
     }
+    /* the complete statuses are the job's last check-in, so they also clear the analysisapi.php token */
     else if (status == "complete") {
         event = AnalysisEvent::StatusAnalysisComplete;
-        q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_clusterenddate = now(), analysis_hostname = :hostname where analysis_id = :analysisid");
+        q.prepare("update analysis set analysis_status = :status, analysis_statusmessage = :message, analysis_statusdatetime = now(), analysis_clusterenddate = now(), analysis_hostname = :hostname, analysis_apitoken = null where analysis_id = :analysisid");
         q.bindValue(":status", status);
         q.bindValue(":message", message);
         q.bindValue(":hostname", hostname);
@@ -117,13 +118,13 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
     }
     else if (status == "completererun") {
         event = AnalysisEvent::StatusRerunComplete;
-        q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0 where analysis_id = :analysisid");
+        q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_apitoken = null where analysis_id = :analysisid");
         q.bindValue(":message", message);
         q.bindValue(":analysisid", id);
     }
     else if (status == "completesupplement") {
         event = AnalysisEvent::StatusSupplementComplete;
-        q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = :analysisid");
+        q.prepare("update analysis set analysis_status = 'complete', analysis_statusmessage = :message, analysis_rerunresults = 0, analysis_runsupplement = 0, analysis_apitoken = null where analysis_id = :analysisid");
         q.bindValue(":message", message);
         q.bindValue(":analysisid", id);
     }

@@ -27,7 +27,9 @@
 	Authentication is per-analysis: when the pipeline module writes a job script it
 	generates a random token, stores its SHA-256 hash in analysis.analysis_apitoken,
 	and exports the raw token to the job as $NIDB_APITOKEN. A token can only modify
-	the analysis it was issued for.
+	the analysis it was issued for. The token is cleared when the job checks in with a
+	complete status (complete, completererun, completesupplement), so a token read from
+	an old job script stops working once that job has finished.
 
 	Parameters are read from POST or GET. All responses are JSON:
 		{"success": true|false, "message": "..."}
@@ -97,6 +99,7 @@
 			$stepnum = (int)$matches[1];
 		}
 
+		/* the complete statuses are the job's last check-in, so they also clear the token */
 		switch ($status) {
 			case 'started':
 				$event = 'status_analysisStarted';
@@ -111,17 +114,17 @@
 				break;
 			case 'complete':
 				$event = 'status_analysisComplete';
-				$sqlstring = "update analysis set analysis_status = ?, analysis_statusmessage = ?, analysis_statusdatetime = now(), analysis_clusterenddate = now(), analysis_hostname = ? where analysis_id = ?";
+				$sqlstring = "update analysis set analysis_status = ?, analysis_statusmessage = ?, analysis_statusdatetime = now(), analysis_clusterenddate = now(), analysis_hostname = ?, analysis_apitoken = null where analysis_id = ?";
 				$params = [$status, $message, $hostname, $analysisid];
 				break;
 			case 'completererun':
 				$event = 'status_rerunComplete';
-				$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = ?, analysis_rerunresults = 0 where analysis_id = ?";
+				$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = ?, analysis_rerunresults = 0, analysis_apitoken = null where analysis_id = ?";
 				$params = [$message, $analysisid];
 				break;
 			case 'completesupplement':
 				$event = 'status_supplementComplete';
-				$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = ?, analysis_rerunresults = 0, analysis_runsupplement = 0 where analysis_id = ?";
+				$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = ?, analysis_rerunresults = 0, analysis_runsupplement = 0, analysis_apitoken = null where analysis_id = ?";
 				$params = [$message, $analysisid];
 				break;
 			default:

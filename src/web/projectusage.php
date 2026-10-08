@@ -63,8 +63,8 @@
 	/* ------- DisplayProjectUsage ---------------- */
 	/* -------------------------------------------- */
 	/* Summary of the resources used by a project: disk size of the imaging data (all *_series
-	   tables) and the number of non-imaging entries (observations, interventions, timeseries
-	   timepoints). Requires View Data on the project */
+	   tables), the number of non-imaging entries (observations, interventions, timeseries
+	   timepoints), and disk size of the pipeline analyses. Requires View Data on the project */
 	function DisplayProjectUsage($projectid) {
 		$projectid = (int)$projectid;
 
@@ -91,6 +91,7 @@
 
 		list($imaging, $imagingtotals) = GetImagingUsage($projectid);
 		$nonimaging = GetNonImagingUsage($projectid);
+		list($analyses, $analysistotals) = GetAnalysisUsage($projectid);
 		$tablestats = GetTableStats();
 		$timeseriesrows = FormatRowCount($tablestats['timeseries']['rows']);
 
@@ -136,6 +137,10 @@
 						<td class="right aligned"><?=HumanReadableFilesize($imagingtotals['size'])?></td>
 					</tr>
 					<tr>
+						<td><i class="cogs icon"></i> Analysis data</td>
+						<td class="right aligned"><?=HumanReadableFilesize($analysistotals['size'])?></td>
+					</tr>
+					<tr>
 						<td><i class="table icon"></i> Non-imaging data<? if ($hastimeseries) { ?> <span class="statnote" style="color: gray">(excluding timeseries)</span><? } ?></td>
 						<td class="right aligned" id="statnonimaging">~<?=HumanReadableFilesize($dbtotalbytes)?></td>
 					</tr>
@@ -143,7 +148,7 @@
 				<tfoot>
 					<tr>
 						<th style="background-color: #d4f7d4"><b>Total usage</b><? if ($hastimeseries) { ?> <span class="statnote" style="color: gray; font-weight: normal">(excluding timeseries)</span><? } ?></th>
-						<th class="right aligned" style="background-color: #d4f7d4"><b id="stattotal" data-bytes="<?=number_format($imagingtotals['size'] + $dbtotalbytes, 0, '.', '')?>">~<?=HumanReadableFilesize($imagingtotals['size'] + $dbtotalbytes)?></b></th>
+						<th class="right aligned" style="background-color: #d4f7d4"><b id="stattotal" data-bytes="<?=number_format($imagingtotals['size'] + $analysistotals['size'] + $dbtotalbytes, 0, '.', '')?>">~<?=HumanReadableFilesize($imagingtotals['size'] + $analysistotals['size'] + $dbtotalbytes)?></b></th>
 					</tr>
 				</tfoot>
 			</table>
@@ -200,6 +205,65 @@
 				</tfoot>
 			</table>
 			<div style="color: gray; font-size: smaller">Sizes are the archived series sizes recorded in the database. Studies are counted once per modality; a study with multiple modalities is counted once in the total.</div>
+			<? } ?>
+
+			<h3 class="ui dividing header">Analysis data</h3>
+			<? if (count($analyses) == 0) { ?>
+				<div class="ui message">This project contains no pipeline analyses</div>
+			<? } else { ?>
+			<table class="ui very compact celled selectable table">
+				<thead>
+					<tr>
+						<th>Pipeline</th>
+						<th class="right aligned">Analyses</th>
+						<th class="right aligned">Complete</th>
+						<th class="right aligned">Files</th>
+						<th class="right aligned">Size</th>
+						<th class="right aligned">Bytes</th>
+						<th>% of analysis</th>
+					</tr>
+				</thead>
+				<tbody>
+					<?
+					foreach ($analyses as $p) {
+						$pct = ($analysistotals['size'] > 0) ? ($p['size'] / $analysistotals['size']) * 100.0 : 0;
+						?>
+						<tr>
+							<td>
+								<? if ($p['exists']) { ?>
+								<a href="analysis.php?action=viewanalyses&id=<?=$p['pipelineid']?>"><b><?=htmlspecialchars($p['name'])?></b></a> <span style="color: gray"><?=htmlspecialchars($p['desc'])?></span>
+								<? } else { ?>
+								<i style="color: gray">Deleted pipeline <?=$p['pipelineid']?></i>
+								<? } ?>
+							</td>
+							<td class="right aligned"><?=number_format($p['analyses'])?></td>
+							<td class="right aligned"><?=number_format($p['complete'])?></td>
+							<td class="right aligned"><?=number_format($p['files'])?></td>
+							<td class="right aligned"><?=HumanReadableFilesize($p['size'])?></td>
+							<td class="right aligned tt" style="color: gray"><?=number_format($p['size'])?></td>
+							<td>
+								<div class="ui tiny blue progress" style="margin: 0" data-percent="<?=(int)round($pct)?>" title="<?=number_format($pct, 1)?>%">
+									<div class="bar" style="width: <?=number_format($pct, 1, '.', '')?>%; min-width: 0"></div>
+								</div>
+							</td>
+						</tr>
+						<?
+					}
+					?>
+				</tbody>
+				<tfoot>
+					<tr>
+						<th><b>Total</b></th>
+						<th class="right aligned"><b><?=number_format($analysistotals['analyses'])?></b></th>
+						<th class="right aligned"><b><?=number_format($analysistotals['complete'])?></b></th>
+						<th class="right aligned"><b><?=number_format($analysistotals['files'])?></b></th>
+						<th class="right aligned"><b><?=HumanReadableFilesize($analysistotals['size'])?></b></th>
+						<th class="right aligned tt"><?=number_format($analysistotals['size'])?></th>
+						<th></th>
+					</tr>
+				</tfoot>
+			</table>
+			<div style="color: gray; font-size: smaller">Sizes are the analysis directory sizes recorded in the database when each analysis finished. Only analyses with a non-zero recorded size are included. Analyses of this project's studies are included regardless of which project's pipeline ran them.</div>
 			<? } ?>
 
 			<h3 class="ui dividing header">Non-imaging data</h3>
@@ -398,6 +462,37 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 		$totals['studies'] = (int)($row['studies'] ?? 0);
+
+		return array($rows, $totals);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAnalysisUsage ------------------- */
+	/* -------------------------------------------- */
+	/* Returns [per-pipeline rows (sorted by size, largest first), totals] of the pipeline analyses
+	   of the project's studies that have a non-zero size */
+	function GetAnalysisUsage($projectid) {
+		$projectid = (int)$projectid;
+		$rows = array();
+		$totals = array('analyses' => 0, 'complete' => 0, 'files' => 0, 'size' => 0);
+
+		/* only analyses with a recorded size are included. left join pipelines so analyses from a
+		   deleted pipeline are still counted */
+		$sqlstring = "select a.pipeline_id, d.pipeline_id 'pipelineexists', d.pipeline_name, d.pipeline_desc, count(*) 'analyses', sum(a.analysis_status = 'complete') 'complete', coalesce(sum(a.analysis_numfiles),0) 'files', coalesce(sum(a.analysis_disksize),0) 'size' from analysis a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id left join pipelines d on a.pipeline_id = d.pipeline_id where c.project_id = ? and a.analysis_disksize > 0 group by a.pipeline_id, d.pipeline_id, d.pipeline_name, d.pipeline_desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = array('pipelineid' => (int)$row['pipeline_id'], 'exists' => ($row['pipelineexists'] !== null), 'name' => $row['pipeline_name'] ?? '', 'desc' => $row['pipeline_desc'] ?? '', 'analyses' => (int)$row['analyses'], 'complete' => (int)$row['complete'], 'files' => (float)$row['files'], 'size' => (float)$row['size']);
+			$totals['analyses'] += (int)$row['analyses'];
+			$totals['complete'] += (int)$row['complete'];
+			$totals['files'] += (float)$row['files'];
+			$totals['size'] += (float)$row['size'];
+		}
+		mysqli_stmt_close($stmt);
+
+		usort($rows, function($a, $b) { return $b['size'] <=> $a['size']; });
 
 		return array($rows, $totals);
 	}
