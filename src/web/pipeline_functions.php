@@ -238,4 +238,25 @@
 		<br>
 		<?
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CanEditPipeline -------------------- */
+	/* -------------------------------------------- */
+	/* returns true if the current user owns the pipeline or is a site admin. Mirrors the $readonly check in DisplayPipelineForm() */
+	function CanEditPipeline($id) {
+		if ($GLOBALS['issiteadmin']) { return true; }
+
+		$id = (int)$id;
+		$sqlstring = "select b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) { return false; }
+
+		$owner = $row['username'] ?? '';
+		return (($owner != '') && (strtolower($owner) == strtolower($GLOBALS['username'])));
+	}
 ?>

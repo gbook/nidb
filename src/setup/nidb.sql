@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 07, 2026 at 04:47 PM
+-- Generation Time: Oct 09, 2026 at 06:58 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2261,11 +2261,18 @@ CREATE TABLE `pipeline_containers` (
   `pipelinecontainer_id` int(11) NOT NULL,
   `pipeline_id` int(11) NOT NULL,
   `pipeline_version` int(11) NOT NULL,
+  `build_createdate` datetime DEFAULT NULL COMMENT 'the datetime of the submission to create the container',
   `build_startdate` datetime DEFAULT NULL,
   `build_enddate` datetime DEFAULT NULL,
-  `build_status` enum('started','building','complete','error') NOT NULL,
+  `build_status` enum('started','building','complete','error','submitted') NOT NULL,
   `build_log` text DEFAULT NULL,
-  `container_path` text DEFAULT NULL COMMENT 'Final container path'
+  `build_warnings` text DEFAULT NULL,
+  `reference_analysisid` int(11) DEFAULT NULL,
+  `run_validation` tinyint(1) DEFAULT NULL,
+  `container_size` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Container size in bytes',
+  `container_sha256` varchar(255) DEFAULT NULL COMMENT 'SHA256 checksum',
+  `container_path` text DEFAULT NULL COMMENT 'Final container path',
+  `container_date` datetime DEFAULT NULL COMMENT 'the datetime the container was completed and available to the user (copied to final location)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------

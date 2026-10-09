@@ -59,6 +59,7 @@ SOURCES += \
     moduleManager.cpp \
     moduleMiniPipeline.cpp \
     modulePipeline.cpp \
+    modulePipelineContainer.cpp \
     moduleQC.cpp \
     moduleUpload.cpp \
     nidb.cpp \
@@ -107,6 +108,7 @@ HEADERS += \
     moduleManager.h \
     moduleMiniPipeline.h \
     modulePipeline.h \
+    modulePipelineContainer.h \
     moduleQC.h \
     moduleUpload.h \
     nidb.h \

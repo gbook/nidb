@@ -230,7 +230,7 @@
 		}
 		
 		/* pipelines sub-menu */
-		elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php") {
+		elseif ($page=="pipelines.php" || $page=="analysis.php" || $page == "cluster.php" || $page == "pipelinecontainers.php") {
 			if ($GLOBALS['cfg']['enablepipelines']) {
 				$pipelineid = (int)GetVariable("id");
 				if ($pipelineid == 0) {

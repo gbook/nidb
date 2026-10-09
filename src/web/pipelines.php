@@ -276,27 +276,6 @@
 
 	
 	/* -------------------------------------------- */
-	/* ------- CanEditPipeline -------------------- */
-	/* -------------------------------------------- */
-	/* returns true if the current user owns the pipeline or is a site admin. Mirrors the $readonly check in DisplayPipelineForm() */
-	function CanEditPipeline($id) {
-		if ($GLOBALS['issiteadmin']) { return true; }
-
-		$id = (int)$id;
-		$sqlstring = "select b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		if (!$row) { return false; }
-
-		$owner = $row['username'] ?? '';
-		return (($owner != '') && (strtolower($owner) == strtolower($GLOBALS['username'])));
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- SplitStepLine ---------------------- */
 	/* -------------------------------------------- */
 	/* split an editor line into [command, description]. The description starts at the first '#' that
@@ -3737,6 +3716,19 @@
 					</div>
 				</div>
 				<a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui primary button">Export pipeline</a>
+			</div>
+
+			<div class="raised card">
+				<div class="content">
+					<div class="header">
+						<i class="box icon"></i>
+						Manage containers
+					</div>
+					<div class="description">
+						Build this pipeline as a standalone Apptainer container that can be run without NiDB, and view existing containers
+					</div>
+				</div>
+				<a href="pipelinecontainers.php?id=<?=$id?>" class="ui primary button">Manage Containers</a>
 			</div>
 
 			<div class="raised card">

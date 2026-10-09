@@ -11,6 +11,7 @@
 * * * * * cd /nidb/bin; ./nidb minipipeline > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb mriqa > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb pipeline > /dev/null 2>&1
+* * * * * cd /nidb/bin; ./nidb pipelinecontainer > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb qc > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb remoteimport > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb upload > /dev/null 2>&1

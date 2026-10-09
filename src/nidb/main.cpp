@@ -34,6 +34,7 @@
 #include "moduleMRIQA.h"
 #include "moduleQC.h"
 #include "modulePipeline.h"
+#include "modulePipelineContainer.h"
 #include "moduleCluster.h"
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
@@ -87,7 +88,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  cluster  minipipeline  backup  audit");
+    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  pipelinecontainer  cluster  minipipeline  backup  audit");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -112,6 +113,7 @@ int main(int argc, char *argv[])
     QCommandLineOption optStep(QStringList() << "step", "Pipeline checkin step number", "step");
     QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
     QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
+    QCommandLineOption optContainerID(QStringList() << "containerid", "Only process this pipeline_containers row (pipelinecontainer module)", "containerid");
     p.addOption(optAnalysisID);
     p.addOption(optCommand);
     p.addOption(optMessage);
@@ -124,6 +126,7 @@ int main(int argc, char *argv[])
     p.addOption(optStatus);
     p.addOption(optStep);
     p.addOption(optSubModule);
+    p.addOption(optContainerID);
 
     /* Process the actual command line arguments given by the user */
     p.process(a);
@@ -151,6 +154,7 @@ int main(int argc, char *argv[])
     QString paramStatus = p.value(optStatus).trimmed();
     QString paramStep = p.value(optStep).trimmed();
     QString paramSubModule = p.value(optSubModule).trimmed();
+    int paramContainerID = p.value(optContainerID).trimmed().toInt();
 
     QStringList modules = {
         "audit",
@@ -165,6 +169,7 @@ int main(int argc, char *argv[])
         "modulemanager",
         "mriqa",
         "pipeline",
+        "pipelinecontainer",
         "qc",
         "upload",
     };
@@ -304,6 +309,11 @@ int main(int argc, char *argv[])
                         else if (module == "pipeline") {
                             modulePipeline *m = new modulePipeline(n);
                             keepLog = m->Run();
+                            delete m;
+                        }
+                        else if (module == "pipelinecontainer") {
+                            modulePipelineContainer *m = new modulePipelineContainer(n);
+                            keepLog = m->Run(paramContainerID);
                             delete m;
                         }
                         else if (module == "minipipeline") {

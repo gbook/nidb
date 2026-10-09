@@ -42,6 +42,7 @@ INSERT IGNORE INTO `modules` (`module_name`, `module_status`, `module_numrunning
 ('remoteimport', 'stopped', 0, now(), now(), 1),
 ('notifications', 'stopped', 0, now(), now(), 0),
 ('pipeline', 'stopped', 0, now(), now(), 1),
+('pipelinecontainer', 'stopped', 0, now(), now(), 0),
 ('qc', 'stopped', 0, now(), now(), 1),
 ('upload', 'stopped', 0, now(), now(), 1),
 ('usage', 'stopped', 0, now(), now(), 0);

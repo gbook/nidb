@@ -1,6 +1,6 @@
 # Exporting a pipeline as an Apptainer container
 
-Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, updated 2026-10-06 with design decisions (§11); **draft, nothing is implemented yet**.
+Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, updated 2026-10-06 with design decisions (§11). **Status (2026-10-09):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented; the backend (prepare, build, finish) is not.
 
 Companion docs: `doc/pipeline-execution.md` (how a pipeline runs today), `doc/analysis-api.md` (the check-in API that the container will *not* use).
 
@@ -234,7 +234,7 @@ Then:
 
 A copy of the node's whole root filesystem was considered and rejected: it's simpler and covers every code path, but it's large and it contains host secrets (munge key, SSH host keys, Kerberos keytabs, SSSD config) that the deny list would have to be perfect about.
 
-A trace only sees the code path that the reference run took. Whole-package and whole-directory copies cover most of the gap. For the rest, the pipeline's container settings on `pipelines.php` allow **extra paths to include** and **paths to exclude**, saved per pipeline version and applied on every export.
+A trace only sees the code path that the reference run took. Whole-package and whole-directory copies cover most of the gap. For the rest, the pipeline's container settings (not yet implemented) allow **extra paths to include** and **paths to exclude**, saved per pipeline version and applied on every export.
 
 ### Step 3: base image
 
@@ -280,8 +280,8 @@ Preserving pipelines on the OS they were built and validated on is one of the ma
 
 ```mermaid
 flowchart TD
-    subgraph WEB["Web (pipelines.php)"]
-        A([User clicks 'Build a container']) --> B[Choose reference analysis<br/>and validation option]
+    subgraph WEB["Web (pipelinecontainers.php)"]
+        A([User clicks 'Create']) --> B[Choose reference analysis<br/>and validation option]
         B --> C[Queue build request]
     end
 
@@ -312,17 +312,17 @@ flowchart TD
     D -- not exportable --> P
     F --> G
     M --> N
-    O --> Q([Container available to the user<br/>on pipelines.php and in the export dir])
-    P --> R([Error and logs shown<br/>on pipelines.php])
+    O --> Q([Container available to the user<br/>on pipelinecontainers.php and in the export dir])
+    P --> R([Error and logs shown<br/>on pipelinecontainers.php])
 ```
 
-1. **Trigger.** A "Build a container" button on `pipelines.php` for a specific pipeline version. It's only enabled for level-1 pipelines with at least one completed analysis. The user picks the reference analysis and whether to run the validation step (on by default; turning it off is useful for long pipelines). A row then goes into a new `pipeline_containers` table with status `pending`.
-2. **Prepare (NiDB server).** The `nidb pipeline` module, or a small new module, picks up pending rows. It writes a build directory on shared storage that both the server and the compute nodes can reach, e.g. `cfg[analysisdir]/_apptainer/<pipeline>-v<version>-<id>/`, containing:
+1. **Trigger.** The **Create** button on `pipelinecontainers.php` (reached from the *Manage containers* tile on the pipeline's Operations tab) always builds the pipeline's current version. It's only enabled for the pipeline owner or a site admin, and only when the export checks shown on that page have no errors (level-1 pipeline, at least one completed, not-bad analysis of this version, no group/deprecated variables or NiDB storage paths in the steps; see "Web UI" below), and when no build for this version is already in progress. The user picks the reference analysis (default: the most recent) and whether to run the validation step (on by default; turning it off is useful for long pipelines). A row then goes into `pipeline_containers` with `build_status` = `submitted`, `build_createdate` = now, `reference_analysisid` and `run_validation`.
+2. **Prepare (NiDB server).** The `pipelinecontainer` module (`modulePipelineContainer`, run every minute from cron like the other modules) picks up `submitted` rows and sets them to `started`. A row still `started` when the module next runs means a previous run stopped part way through, and is marked `error`. The module writes a build directory on shared storage that both the server and the compute nodes can reach, `cfg[analysisdir]/_apptainer/<pipelinecontainer_id>/` (named by ID only, so it can be found from the row alone and doesn't change if the pipeline is renamed), containing:
    - `run.sh` (fixed), `run.sh.template`, `manifest.json` (partial), `requiredvars.txt`;
    - `input/`: the reference study's input, staged again (§7 step 1);
    - `export.log`: variable and path checks (§3, §5);
    - `build-container.sh` (fixed, from `src/setup/apptainer/`) and `build.job` (sbatch/SGE header plus a call to it, with the reference study's values).
-3. **Submit** `build.job` with the existing `nidb::SubmitClusterJob()`, using the pipeline's own cluster and queue settings.
+3. **Submit** `build.job` with the existing `nidb::SubmitClusterJob()`, using the pipeline's own cluster and queue settings, and set `build_status` = `building` and `build_startdate`.
 4. **Build (compute node)**, done by `build-container.sh`:
    1. Check that the required tools are present, and fail with a clear message listing any that are missing. Read `/etc/os-release`, choose the base, and choose the package manager (§7 step 3).
    2. Reference run under `strace`, plus the environment dump (§7 step 1).
@@ -331,14 +331,40 @@ flowchart TD
    5. Build the `.sif` from a definition file with `Bootstrap: localimage` / `From: base/` and only `%environment`, `%runscript`, `%labels` and `%help` (no `%post`).
    6. **Validation run (optional):** `apptainer run` the new image on `input/` and compare the output file list with the reference analysis directory. NiDB's `pipeline/` logs, job files and the `completeFiles` check are excluded from the comparison. The results go to `validation.txt`.
    7. Write `build.exitcode`.
-5. **Finish (NiDB server).** The module polls for `build.exitcode`. On success it copies `<pipeline>-v<version>.sif`, `README.txt`, `manifest.json` and `validation.txt` to `cfg[exportdir]/NiDB-Apptainer-<pipeline>-v<version>/`. It records the status, path, size and sha256, and deletes the build directory (keeping the logs in the table). Polling means the build job needs no NiDB connection, check-ins or token.
+5. **Finish (NiDB server).** The module polls for `build.exitcode`. On success it copies `<pipeline>-v<version>.sif`, `README.txt`, `manifest.json` and `validation.txt` to `cfg[exportdir]/NiDB-Apptainer-<pipeline>-v<version>/`. It records `build_status` (`complete` or `error`), `build_enddate`, `container_path`, `container_date` (when the copy to `cfg[exportdir]` finished and the container became available), `container_size` and `container_sha256`, the export warnings (§3, §5, §7) in `build_warnings`, and the build log (including the validation summary) in `build_log`, then deletes the build directory. Polling means the build job needs no NiDB connection, check-ins or token.
 
 Only `build-container.sh` runs on the node. It doesn't depend on the `nidb` binary on the cluster. It needs only:
 - standard Linux tools: `bash`, coreutils, `find`, `ldd`;
 - the node's package manager, if there is one;
 - `strace`, `objdump` (binutils) and `apptainer`, installed on the nodes for this feature (§8 "Cluster requirements").
 
-`pipeline_containers` columns: `pipelinecontainer_id`, `pipeline_id`, `pipeline_version`, `reference_analysis_id`, `run_validation`, `status` (`pending` / `building` / `complete` / `error`), `create_date`, `build_date`, `base_image`, `sif_path`, `sif_size`, `sif_sha256`, `apptainer_version`, `export_warnings`, `build_log`, `validation_result`.
+### `pipeline_containers` table
+
+| Column | Type | Set by | Meaning |
+|---|---|---|---|
+| `pipelinecontainer_id` | int, auto increment | | Primary key |
+| `pipeline_id`, `pipeline_version` | int | Web | The pipeline version the container is built from (always the current version when created) |
+| `build_status` | enum `submitted` / `started` / `building` / `complete` / `error` | Web, then module | `submitted` by the web page; `started` when the module picks it up (step 2); `building` once the job is submitted (step 3); `complete` or `error` at the end (step 5) |
+| `reference_analysisid` | int | Web | The completed analysis whose study is re-run under trace (§7 step 1) |
+| `run_validation` | tinyint | Web | Whether to run the validation step (step 4.6) |
+| `build_createdate` | datetime | Web | When the user clicked Create |
+| `build_startdate`, `build_enddate` | datetime | Module | Build job submitted / build finished |
+| `build_warnings` | text | Module | Export warnings (§3, §5, §7: `{analysisid}`, excluded deny-list files, glibc, commercial software, EOL OS, ...) |
+| `build_log` | text | Module | Export and build log, including the validation summary |
+| `container_path` | text | Module | Path of the final `.sif` in `cfg[exportdir]` |
+| `container_size` | bigint | Module | Size of the `.sif` in bytes |
+| `container_sha256` | varchar | Module | sha256 of the `.sif` |
+| `container_date` | datetime | Module | When the `.sif` was copied to `cfg[exportdir]` and became available. Only set on success |
+
+There is no column for the base image or Apptainer version; those are in the image's `%labels` and `manifest.json`, and in `build_log`. The full validation report is `validation.txt` in the export directory.
+
+### Web UI (`pipelinecontainers.php`, implemented)
+
+Opened from the *Manage containers* tile on the pipeline's Operations tab (`pipelinecontainers.php?id=<pipeline_id>`). It shows:
+- **In progress:** `submitted` / `started` / `building` rows.
+- **Containers:** `complete` / `error` rows, with version, reference analysis, validation, submitted / build started / build finished / available dates, path, size, sha256, and the warnings and log.
+- **Usage:** an example `apptainer run` command with only the arguments this pipeline's script actually uses (§3), and the expected `/input` layout from the enabled data items, BIDS setting and dependency (§6).
+- **Create container:** the export checks for this pipeline as a list of pitfalls, then the reference-analysis picker, the validation checkbox and **Create**. Errors (level ≠ 1, no enabled steps, no completed analysis, group or deprecated `{first_*}` variables, NiDB storage paths in the steps) disable Create, and are checked again on submit. Warnings: unrecognized `{tokens}`, `{analysisid}`, `{command}`, a parent dependency, FreeSurfer license, MATLAB, and a long average runtime. Info: supplement steps, results script and temp dir not exported, FSL size, untaken code paths, compute node OS. These are a web-side preview; the backend export checks are authoritative.
 
 ### Example generated definition file (step 4.5)
 
@@ -381,11 +407,11 @@ Software doesn't appear in the definition file, because it was copied into the s
 | Area | Change |
 |---|---|
 | `modulePipeline.cpp` | Split the step-rendering part of `CreateClusterJobFile()` into a function used by both the job file and the container export, so both always agree on step order, enabled/supplement handling, and flags. Add an export-mode variable pass (§3) next to `FormatCommand()`. Refactor `GetData()` and the dependency copy so they can stage a study's input into an arbitrary directory, with no analysis row. |
-| New `pipelineContainer.{h,cpp}` | Level-1 check, variable and path checks (§3, §5), template/manifest generation, build directory and job writing, polling, copying to `cfg[exportdir]` |
+| New `modulePipelineContainer.{h,cpp}` | **Skeleton done:** the `pipelinecontainer` module, with the status flow (`submitted` → `started` → `building` → `complete`/`error`), row claiming, and `build_log`/`build_warnings` helpers; the stage functions are stubs. Run with `nidb pipelinecontainer [--containerid N]`; `--containerid` processes only that row. Registered in `main.cpp`, `nidb.cpp` (1 thread), `nidb.pro`, the `modules` table seed (`nidb-data.sql`, inactive by default) and `crontab.txt`. **To do:** level-1 check, variable and path checks (§3, §5), template/manifest generation, build directory and job writing, polling, copying to `cfg[exportdir]` |
 | `src/setup/apptainer/run.sh` | Fixed runner script (§4) |
 | `src/setup/apptainer/build-container.sh` | Fixed build script for the compute node (§7, §8 step 4). Holds the per-OS-family table (package manager, base image, library roots) from §7 "Supported OSes". |
-| `pipelines.php` | "Build a container" button with reference-analysis picker; container settings (extra include/exclude paths, base override); list of exported images with status, logs and validation result. Use PRG and prepared statements per project conventions. |
-| SQL | `pipeline_containers` table. Container settings columns on `pipelines` + `pipeline_options` (versioned like the other options). |
+| `pipelines.php`, `pipelinecontainers.php` | **Done:** *Manage containers* tile on the Operations tab; `pipelinecontainers.php` with existing and in-progress containers, usage, export checks, and Create (reference analysis, validation). **To do:** container settings (extra include/exclude paths, base override) on `pipelines.php`. |
+| SQL | `pipeline_containers` table (**done**, §8). Container settings columns on `pipelines` + `pipeline_options` (versioned like the other options). |
 | `doc/` | This doc, plus the `README.txt` template that ships next to each `.sif` |
 
 ---
@@ -397,7 +423,7 @@ Software doesn't appear in the definition file, because it was copied into the s
 | 1 | Step rendering refactor, export-time variable pass, level-1 and path checks, `run.sh` with validation, manifest | 1–1.5 weeks |
 | 2 | `GetData()` / dependency-copy refactor to stage the reference input into an arbitrary directory | 3–5 days |
 | 3 | `build-container.sh`: tool check, OS detection and per-family table, traced reference run, environment capture, file sorting with `rpm`/`dpkg`/no-package-manager handling, package/`/opt`/library-root copying, `ldd` pass, deny list, glibc check, sandbox and `.sif` build, optional validation run | 2–2.5 weeks |
-| 4 | `pipeline_containers` table, `pipelines.php` UI, build job submit, polling, copy to `cfg[exportdir]` | 1 week |
+| 4 | ~~`pipeline_containers` table, web UI~~ (done), build job submit, polling, copy to `cfg[exportdir]` | 1 week |
 | — | Testing on 2–3 real pipelines on the local cluster's OS: build, run the image on another machine, and compare with NiDB's output. Elapsed time depends on how long the pipelines run. | 1 week |
 | Ongoing | Testing each further OS family (§7 "Supported OSes"), one at a time as needed. Mostly elapsed time and small fixes to the per-family table. | 1–3 days per OS |
 | Later | Fallback for pipelines whose nodes are already upgraded: archive repos plus `%post` installs with `--fakeroot` | 3–5 days |
