@@ -314,14 +314,16 @@
 			'dates' => (bool)($json['dates'] ?? false)
 		);
 
-		if (!in_array($req['format'], array('csv', 'files')))
-			$errors[] = "Only the CSV and Files formats can be exported";
+		if (!in_array($req['format'], array('csv', 'timeseries', 'files')))
+			$errors[] = "Invalid export format";
 		elseif ($req['format'] == 'csv') {
 			if (!in_array($req['layout'], array('long', 'wide')))
 				$errors[] = "Invalid CSV layout";
 			if (($req['layout'] == 'wide') && (!in_array($req['repeats'], array('all', 'first', 'last'))))
 				$errors[] = "Invalid repeated observations option";
 		}
+		elseif (($req['format'] == 'timeseries') && (!in_array($req['layout'], array('subject', 'observation'))))
+			$errors[] = "Invalid timeseries layout";
 
 		/* instrument item IDs, and unaffiliated observation names (de-duplicated) */
 		foreach ((array)($json['itemids'] ?? array()) as $id) {
@@ -382,8 +384,8 @@
 		$sqlstring = "select ii.instrumentitem_id, ii.item_name, ii.item_type, ii.item_order, i.instrument_name from instrument_items ii join instruments i on ii.instrument_id = i.instrument_id where ii.instrumentitem_id in (" . Placeholders(count($req['itemids'])) . ")";
 		$rows = TimedQuery("Validate instrument items", $sqlstring, str_repeat('i', count($req['itemids'])), $req['itemids']);
 
-		$formattypes = array('csv' => array('enum', 'int', 'double', 'string', 'datetime', ''), 'files' => array('image', 'csv', 'json'));
-		$formatlabels = array('csv' => 'CSV', 'files' => 'Files');
+		$formattypes = array('csv' => array('enum', 'int', 'double', 'string', 'datetime', ''), 'timeseries' => array('timeseries'), 'files' => array('image', 'csv', 'json'));
+		$formatlabels = array('csv' => 'CSV', 'timeseries' => 'Timeseries', 'files' => 'Files');
 		foreach ($rows as $row) {
 			$items[(int)$row['instrumentitem_id']] = $row;
 			if (!in_array($row['item_type'] ?? '', $formattypes[$req['format']]))
@@ -506,6 +508,23 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SortItems -------------------------- */
+	/* -------------------------------------------- */
+	/* Returns the instrument items (itemid => row) by instrument, item order, then item name */
+	function SortItems($items) {
+		uasort($items, function($a, $b) {
+			$cmp = strcasecmp($a['instrument_name'], $b['instrument_name']);
+			if ($cmp == 0)
+				$cmp = (int)$a['item_order'] - (int)$b['item_order'];
+			if ($cmp == 0)
+				$cmp = strcasecmp($a['item_name'], $b['item_name']);
+			return $cmp;
+		});
+		return $items;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ExportColumns ---------------------- */
 	/* -------------------------------------------- */
 	/* Returns array(header row, observation columns). The observation columns (wide layout only) are
@@ -521,14 +540,7 @@
 		foreach ($fixed as $header)
 			$used[mb_strtolower($header)] = true;
 
-		uasort($items, function($a, $b) {
-			$cmp = strcasecmp($a['instrument_name'], $b['instrument_name']);
-			if ($cmp == 0)
-				$cmp = (int)$a['item_order'] - (int)$b['item_order'];
-			if ($cmp == 0)
-				$cmp = strcasecmp($a['item_name'], $b['item_name']);
-			return $cmp;
-		});
+		$items = SortItems($items);
 		$names = $req['names'];
 		usort($names, 'strcasecmp');
 
@@ -1003,6 +1015,352 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- TimeseriesManifestColumns ---------- */
+	/* -------------------------------------------- */
+	function TimeseriesManifestColumns() {
+		return array('File', 'Column', 'UID', 'AltUID', 'Instrument', 'Observation', 'StartDateUTC', 'EndDateUTC', 'TimezoneOffset', 'SurveyVisit', 'SurveyInstance', 'DataPoints');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UniqueFilename --------------------- */
+	/* -------------------------------------------- */
+	/* Returns $filename, with _2, _3, ... added before the extension if it's already used (not case sensitive) */
+	function UniqueFilename($filename, &$used) {
+		$unique = $filename;
+		$ext = pathinfo($filename, PATHINFO_EXTENSION);
+		$base = ($ext != "") ? substr($filename, 0, -strlen($ext) - 1) : $filename;
+		$num = 2;
+		while (isset($used[mb_strtolower($unique)]))
+			$unique = $base . "_" . $num++ . (($ext != "") ? ".$ext" : "");
+		$used[mb_strtolower($unique)] = true;
+		return $unique;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TimeseriesFiles -------------------- */
+	/* -------------------------------------------- */
+	/* The .csv files of the timeseries export, in order. Each file: array(name, headers, obs). Each obs
+	   is array(obsid, itemid, enrollmentid, col, manifest), where col is the observation's column in the file (column 0 is
+	   DateTimeUTC), and manifest is its row in manifest.csv (without the data point count).
+	   - subject layout: one file per subject (<UID>.csv), one column per selected observation. Every
+	     selected observation has a column, even if the subject has no data for it
+	   - observation layout: one file per observation (<instrument>.<item>.csv), one column per subject
+	     with data, in UID order
+	   A subject can have several observations of the same item. They share the item's column */
+	function TimeseriesFiles($req, $items, $subjects) {
+		$items = SortItems($items);
+
+		/* the selected observations, by enrollment */
+		$select = "select o.observation_id, o.enrollment_id, ii.instrumentitem_id 'itemid', o.observation_startdate, o.observation_enddate, o.observation_tz_offset, sv.survey_visit, sv.survey_instance ";
+		$byenrollment = array();
+		foreach (array_chunk(array_keys($subjects), 1000) as $batch) {
+			list($sqlwhere, $types, $params) = ExportWhere($req, $batch);
+			$sqlstring = $select . $sqlwhere . " order by o.enrollment_id, o.observation_startdate, o.observation_id";
+			foreach (TimedQuery("Timeseries observations (batches of 1000 subjects)", $sqlstring, $types, $params) as $row)
+				$byenrollment[(int)$row['enrollment_id']][] = $row;
+		}
+
+		$manifest = function($id, $itemid, $row) use ($subjects, $items) {
+			return array($subjects[$id]['uid'], $subjects[$id]['altuid'], $items[$itemid]['instrument_name'] ?? '', $items[$itemid]['item_name'] ?? '', ValidDate($row['observation_startdate']), ValidDate($row['observation_enddate']), $row['observation_tz_offset'] ?? '', $row['survey_visit'] ?? '', $row['survey_instance'] ?? '');
+		};
+
+		$files = array();
+		$usednames = array();
+		if ($req['layout'] == 'subject') {
+			$headers = array('DateTimeUTC');
+			$used = array('datetimeutc' => true);
+			$itemcols = array();
+			foreach ($items as $itemid => $item) {
+				$itemcols[$itemid] = count($headers);
+				$headers[] = UniqueHeader($item['instrument_name'] . "." . $item['item_name'], $used);
+			}
+			foreach ($subjects as $id => $subject) {
+				if (!isset($byenrollment[$id]))
+					continue;
+				$name = UniqueFilename(PathPart($subject['uid'], "subject") . ".csv", $usednames);
+				$obs = array();
+				foreach ($byenrollment[$id] as $row) {
+					$itemid = (int)$row['itemid'];
+					if (isset($itemcols[$itemid]))
+						$obs[] = array('obsid' => (int)$row['observation_id'], 'itemid' => $itemid, 'enrollmentid' => $id, 'col' => $itemcols[$itemid], 'manifest' => array_merge(array($name, $headers[$itemcols[$itemid]]), $manifest($id, $itemid, $row)));
+				}
+				$files[] = array('name' => $name, 'headers' => $headers, 'obs' => $obs);
+			}
+		}
+		else {
+			/* the subjects with data for each item, in UID order */
+			$byitem = array();
+			foreach ($subjects as $id => $subject) {
+				foreach ($byenrollment[$id] ?? array() as $row)
+					$byitem[(int)$row['itemid']][$id][] = $row;
+			}
+			foreach ($items as $itemid => $item) {
+				if (!isset($byitem[$itemid]))
+					continue;
+				$name = UniqueFilename(PathPart($item['instrument_name'] . "." . $item['item_name'], "observation") . ".csv", $usednames);
+				$headers = array('DateTimeUTC');
+				$used = array('datetimeutc' => true);
+				$obs = array();
+				foreach ($byitem[$itemid] as $id => $rows) {
+					$col = count($headers);
+					$headers[] = UniqueHeader($subjects[$id]['uid'], $used);
+					foreach ($rows as $row)
+						$obs[] = array('obsid' => (int)$row['observation_id'], 'itemid' => $itemid, 'enrollmentid' => $id, 'col' => $col, 'manifest' => array_merge(array($name, $headers[$col]), $manifest($id, $itemid, $row)));
+				}
+				$files[] = array('name' => $name, 'headers' => $headers, 'obs' => $obs);
+			}
+		}
+
+		return $files;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TimeseriesHeap --------------------- */
+	/* -------------------------------------------- */
+	/* Min-heap of array(time, cursor index), by time, then cursor index. The times are
+	   'YYYY-MM-DD HH:MM:SS.fff' strings, which sort as text */
+	class TimeseriesHeap extends SplHeap {
+		protected function compare($a, $b): int {
+			$cmp = strcmp($b[0], $a[0]);
+			return (($cmp != 0) ? $cmp : ($b[1] - $a[1]));
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TimeseriesFetch -------------------- */
+	/* -------------------------------------------- */
+	/* Reads the next page of a cursor's observation's data points, in time order. The page starts
+	   after the last time read (the (observation_id, time) key is unique). Returns false if there are
+	   no more points. The session time zone must be UTC (see PrepareExport) */
+	function TimeseriesFetch(&$cursor, $pagesize) {
+		if ($cursor['done'])
+			return false;
+
+		$sqlstring = "select cast(time as char) 't', value_double, value_int, value_string from timeseries where observation_id = ?" . (($cursor['last'] === null) ? "" : " and time > ?") . " order by time limit " . (int)$pagesize;
+		if ($cursor['last'] === null)
+			$rows = TimedQuery("Timeseries data points (pages)", $sqlstring, 'i', [$cursor['obsid']]);
+		else
+			$rows = TimedQuery("Timeseries data points (pages)", $sqlstring, 'is', [$cursor['obsid'], $cursor['last']]);
+
+		$cursor['times'] = array();
+		$cursor['values'] = array();
+		$cursor['pos'] = 0;
+		foreach ($rows as $row) {
+			$cursor['times'][] = $row['t'];
+			/* a point has one of the value columns */
+			$cursor['values'][] = ($row['value_double'] ?? ($row['value_int'] ?? ($row['value_string'] ?? '')));
+		}
+		if (count($rows) < $pagesize)
+			$cursor['done'] = true;
+		if (count($rows) == 0)
+			return false;
+		$cursor['last'] = end($cursor['times']);
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TimeseriesRows --------------------- */
+	/* -------------------------------------------- */
+	/* Generator: the rows of one timeseries .csv file, in time order. Merges the data points of the
+	   file's observations, read a page at a time from each, so only one page per observation is in
+	   memory. Points with the same time go in one row. If one column has several points at the same
+	   time (a subject's observations of the same item can overlap), the extra points go in additional
+	   rows. $points counts the data points read for each observation ID */
+	function TimeseriesRows($obs, $numcols, &$points, $maxpage = 10000) {
+		$pagesize = max(100, min($maxpage, intdiv(500000, max(1, count($obs)))));
+		$cursors = array();
+		$heap = new TimeseriesHeap();
+		foreach ($obs as $i => $o) {
+			$cursors[$i] = array('obsid' => $o['obsid'], 'col' => $o['col'], 'times' => array(), 'values' => array(), 'pos' => 0, 'last' => null, 'done' => false);
+			if (TimeseriesFetch($cursors[$i], $pagesize))
+				$heap->insert(array($cursors[$i]['times'][0], $i));
+		}
+
+		$blank = array_fill(0, $numcols, '');
+		while (!$heap->isEmpty()) {
+			$time = $heap->top()[0];
+			$cells = array();
+			while ((!$heap->isEmpty()) && ($heap->top()[0] === $time)) {
+				$i = $heap->extract()[1];
+				$cells[$cursors[$i]['col']][] = $cursors[$i]['values'][$cursors[$i]['pos']];
+				$points[$cursors[$i]['obsid']] = ($points[$cursors[$i]['obsid']] ?? 0) + 1;
+				$cursors[$i]['pos']++;
+				if (($cursors[$i]['pos'] < count($cursors[$i]['times'])) || (TimeseriesFetch($cursors[$i], $pagesize)))
+					$heap->insert(array($cursors[$i]['times'][$cursors[$i]['pos']], $i));
+				else
+					$cursors[$i] = null;
+			}
+
+			$numrows = 1;
+			foreach ($cells as $values)
+				$numrows = max($numrows, count($values));
+			for ($r = 0; $r < $numrows; $r++) {
+				$row = $blank;
+				$row[0] = $time;
+				foreach ($cells as $col => $values) {
+					if (isset($values[$r]))
+						$row[$col] = $values[$r];
+				}
+				yield $row;
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CsvLine ---------------------------- */
+	/* -------------------------------------------- */
+	/* Returns $row as one line of CSV */
+	function CsvLine($row) {
+		static $buffer = null;
+		if ($buffer === null)
+			$buffer = fopen('php://memory', 'w+');
+		rewind($buffer);
+		ftruncate($buffer, 0);
+		fputcsv($buffer, $row, ',', '"', "\\");
+		rewind($buffer);
+		return stream_get_contents($buffer);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- WriteTimeseriesZip ----------------- */
+	/* -------------------------------------------- */
+	/* Writes the timeseries export as a zip: the .csv files, and manifest.csv listing every observation
+	   and its file and column. $write is called with each piece of the zip. Returns array(number of
+	   files, number of csv rows) */
+	function WriteTimeseriesZip($req, $items, $subjects, $write) {
+		$zip = new ZipStreamWriter($write);
+		$manifest = fopen('php://temp', 'w+');
+		fputcsv($manifest, TimeseriesManifestColumns(), ',', '"', "\\");
+
+		$numrows = 0;
+		$files = TimeseriesFiles($req, $items, $subjects);
+		foreach ($files as $file) {
+			$zip->BeginFile($file['name'], time(), true);
+			$data = CsvLine($file['headers']);
+			$points = array();
+			foreach (TimeseriesRows($file['obs'], count($file['headers']), $points) as $row) {
+				$data .= CsvLine($row);
+				$numrows++;
+				if (strlen($data) > 1048576) {
+					$zip->WriteData($data);
+					$data = "";
+				}
+			}
+			$zip->WriteData($data);
+			$zip->EndFile();
+
+			foreach ($file['obs'] as $o)
+				fputcsv($manifest, array_merge($o['manifest'], array($points[$o['obsid']] ?? 0)), ',', '"', "\\");
+		}
+
+		$zip->BeginFile("manifest.csv", time(), true);
+		rewind($manifest);
+		while (!feof($manifest))
+			$zip->WriteData((string)fread($manifest, 1048576));
+		$zip->EndFile();
+		fclose($manifest);
+
+		$zip->Finish();
+		return array(count($files), $numrows);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PreviewTimeseries ------------------ */
+	/* -------------------------------------------- */
+	/* Preview of the timeseries export: totals, the list of files, and the first rows of the first
+	   file with data */
+	function PreviewTimeseries($req, $items, $subjects, $errors, $warnings) {
+		$files = TimeseriesFiles($req, $items, $subjects);
+
+		/* data points and time range of each observation */
+		$obsids = array();
+		$withdata = array();
+		$withsubjects = array();
+		foreach ($files as $file) {
+			foreach ($file['obs'] as $o) {
+				$obsids[$o['obsid']] = $o['obsid'];
+				$withdata[$o['itemid']] = true;
+				$withsubjects[$o['enrollmentid']] = true;
+			}
+		}
+		$counts = array();
+		foreach (array_chunk(array_values($obsids), 1000) as $batch) {
+			$sqlstring = "select observation_id, count(*) 'num', cast(min(time) as char) 'first', cast(max(time) as char) 'last' from timeseries where observation_id in (" . Placeholders(count($batch)) . ") group by observation_id";
+			foreach (TimedQuery("Data point counts (batches of 1000 observations)", $sqlstring, str_repeat('i', count($batch)), $batch) as $row)
+				$counts[(int)$row['observation_id']] = $row;
+		}
+
+		$totalpoints = 0;
+		$filelist = array();
+		$samplefile = null;
+		foreach ($files as $f => $file) {
+			$num = 0;
+			$first = "";
+			$last = "";
+			foreach ($file['obs'] as $o) {
+				$c = $counts[$o['obsid']] ?? null;
+				if ($c == null)
+					continue;
+				$num += (int)$c['num'];
+				if (($first == "") || ($c['first'] < $first))
+					$first = $c['first'];
+				if ($c['last'] > $last)
+					$last = $c['last'];
+			}
+			$totalpoints += $num;
+			if (($samplefile === null) && ($num > 0))
+				$samplefile = $f;
+			if (count($filelist) < 500)
+				$filelist[] = array($file['name'], count($file['headers']) - 1, count($file['obs']), $num, $first, $last);
+		}
+
+		$empty = array();
+		foreach ($items as $id => $item) {
+			if (!isset($withdata[$id]))
+				$empty[] = $item['item_name'];
+		}
+		if (count($empty) > 0)
+			$warnings[] = count($empty) . " of the selected observations have no data for these subjects and dates: " . htmlspecialchars(implode(", ", array_slice($empty, 0, 20))) . ((count($empty) > 20) ? ", ..." : "");
+		if (count($obsids) == 0)
+			$errors[] = "No observations match. Check the selected observations, subjects, and dates";
+		elseif ($totalpoints == 0)
+			$warnings[] = "The selected observations have no timeseries data points. The .csv files will only have headers";
+
+		/* the first rows of the first file with data */
+		$columns = array();
+		$previewrows = array();
+		$gridnote = "";
+		if ($samplefile !== null) {
+			$file = $files[$samplefile];
+			$columns = $file['headers'];
+			$points = array();
+			foreach (TimeseriesRows($file['obs'], count($file['headers']), $points, 500) as $row) {
+				$previewrows[] = $row;
+				if (count($previewrows) >= 500)
+					break;
+			}
+			$gridnote = "The first " . number_format(count($previewrows)) . " rows of " . $file['name'];
+		}
+
+		$stats = array(
+			array('label' => 'CSV files', 'value' => number_format(count($files))),
+			array('label' => 'Data points', 'value' => number_format($totalpoints)),
+			array('label' => 'Observations', 'value' => number_format(count($obsids))),
+			array('label' => 'Subjects with data', 'value' => number_format(count($withsubjects)))
+		);
+		SendJSON(array('errors' => $errors, 'warnings' => $warnings, 'columns' => $columns, 'rows' => $previewrows, 'numrows' => count($previewrows), 'stats' => $stats, 'gridnote' => $gridnote, 'filelist' => array('columns' => array('File', 'Columns', 'Observations', 'Data points', 'FirstDateTimeUTC', 'LastDateTimeUTC'), 'rows' => $filelist, 'total' => count($files))));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- PrepareExport ---------------------- */
 	/* -------------------------------------------- */
 	/* Checks the project and permissions, and parses and validates the POSTed export request.
@@ -1022,6 +1380,11 @@
 
 		list($items, $errors) = ValidateExportItems($req);
 		list($subjects, $warnings) = GetExportSubjects($projectid, $req);
+
+		/* timeseries.time is a TIMESTAMP, which is read in the session time zone. Read it in UTC, so
+		   the export is UTC and the paging by time isn't affected by daylight saving changes */
+		if ($req['format'] == 'timeseries')
+			MySQLiQuery("set time_zone = '+00:00'", __FILE__, __LINE__);
 		if ((count($errors) == 0) && (count($subjects) == 0))
 			$errors[] = "There are no subjects to export";
 
@@ -1041,6 +1404,10 @@
 		}
 		if ($req['format'] == 'files') {
 			PreviewFiles($req, $items, $subjects, $errors, $warnings);
+			return;
+		}
+		if ($req['format'] == 'timeseries') {
+			PreviewTimeseries($req, $items, $subjects, $errors, $warnings);
 			return;
 		}
 		list($headers, $columns) = ExportColumns($req, $items);
@@ -1123,7 +1490,7 @@
 	/* -------------------------------------------- */
 	/* ------- DownloadExport --------------------- */
 	/* -------------------------------------------- */
-	/* Streams the export as a .csv file, or a .zip for the Files format. A dry run (siteadmins only)
+	/* Streams the export as a .csv file, or a .zip for the Files and Timeseries formats. A dry run (siteadmins only)
 	   builds the whole export without sending it, and returns the size and the performance metrics as JSON */
 	function DownloadExport($projectid, $dryrun) {
 		if (($dryrun) && (!($GLOBALS['issiteadmin'] ?? false))) {
@@ -1154,10 +1521,11 @@
 				ob_end_clean();
 		}
 
-		if ($req['format'] == 'files') {
+		if (($req['format'] == 'files') || ($req['format'] == 'timeseries')) {
 			if (!$dryrun) {
+				$what = (($req['format'] == 'files') ? "files" : "timeseries_" . $req['layout']);
 				header('Content-Type: application/zip');
-				header('Content-Disposition: attachment; filename="' . $projectname . "_observations_files_" . gmdate('Ymd_His') . '.zip"');
+				header('Content-Disposition: attachment; filename="' . $projectname . "_observations_" . $what . "_" . gmdate('Ymd_His') . '.zip"');
 			}
 			/* send the zip as it's written. A dry run only counts the bytes */
 			$bytes = 0;
@@ -1173,9 +1541,16 @@
 					$unflushed = 0;
 				}
 			};
-			$numfiles = WriteZipExport($req, $subjects, $write);
-			if ($dryrun)
-				SendJSON(array('rows' => $numfiles, 'bytes' => $bytes));
+			if ($req['format'] == 'files') {
+				$numfiles = WriteZipExport($req, $subjects, $write);
+				if ($dryrun)
+					SendJSON(array('rows' => $numfiles, 'bytes' => $bytes));
+			}
+			else {
+				list($numfiles, $numrows) = WriteTimeseriesZip($req, $items, $subjects, $write);
+				if ($dryrun)
+					SendJSON(array('rows' => $numrows, 'files' => $numfiles, 'bytes' => $bytes));
+			}
 			return;
 		}
 
@@ -1380,6 +1755,13 @@
 								<div class="field" id="dateoption" style="display: none"><div class="ui checkbox"><input type="checkbox" id="includedates"><label>Include a date column for each observation</label></div></div>
 							</div>
 						</div>
+						<div class="ui form" id="tsoptions" style="display: none">
+							<div class="grouped fields">
+								<label>Timeseries layout (one .csv file each, in a .zip; the first column is the date/time, UTC)</label>
+								<div class="field"><div class="ui radio checkbox"><input type="radio" name="tslayout" value="subject" checked><label>Per subject: one file per subject, one column per observation</label></div></div>
+								<div class="field"><div class="ui radio checkbox"><input type="radio" name="tslayout" value="observation"><label>Per observation: one file per observation, one column per subject</label></div></div>
+							</div>
+						</div>
 					</div>
 				</div>
 				<button class="ui primary button" id="previewbutton" onClick="Preview()"><i class="eye icon"></i> Preview</button>
@@ -1449,7 +1831,7 @@
 			/* export formats, and the instrument item types that use them. Unaffiliated observations are always CSV */
 			const FORMATS = {
 				csv: { label: 'CSV', icon: 'file excel outline', types: ['enum', 'int', 'double', 'string', 'datetime', ''], desc: 'Values in a .csv file (long or wide layout)' },
-				timeseries: { label: 'Timeseries', icon: 'chart line', types: ['timeseries'], desc: 'Timeseries data points (format to be determined)' },
+				timeseries: { label: 'Timeseries', icon: 'chart line', types: ['timeseries'], desc: 'Timeseries data points in .csv files (one per subject, or one per observation), in a .zip' },
 				files: { label: 'Files', icon: 'file archive outline', types: ['image', 'csv', 'json'], desc: 'A .zip of image, csv, and json files' }
 			};
 
@@ -1532,9 +1914,10 @@
 				if (n == 3) RenderObservations();
 				if (n == 5) {
 					RenderSummary();
-					/* the CSV layout options are only for CSV */
+					/* the layout options are for CSV and timeseries */
 					$('#layoutoptions').toggle(state.format == 'csv');
-					$('#downloadbutton').html('<i class="download icon"></i> Download ' + (state.format == 'files' ? '.zip' : '.csv'));
+					$('#tsoptions').toggle(state.format == 'timeseries');
+					$('#downloadbutton').html('<i class="download icon"></i> Download ' + (state.format == 'csv' ? '.csv' : '.zip'));
 					UpdateDownloadButton();
 				}
 			}
@@ -1836,7 +2219,7 @@
 				});
 				return JSON.stringify({
 					format: state.format,
-					layout: $('input[name=layout]:checked').val(),
+					layout: (state.format == 'timeseries') ? $('input[name=tslayout]:checked').val() : $('input[name=layout]:checked').val(),
 					repeats: $('input[name=repeats]:checked').val(),
 					dates: $('#includedates').prop('checked'),
 					itemids: itemids,
@@ -1894,11 +2277,19 @@
 					UpdateDownloadButton();
 					/* the totals depend on the format, so the server sends them as label/value pairs */
 					const what = (state.format == 'files') ? 'files' : 'rows';
-					$('#previewsummary').html('<div class="ui small statistics">' +
-						data.stats.map(st => '<div class="statistic"><div class="value">' + Esc(st.value) + '</div><div class="label">' + Esc(st.label) + '</div></div>').join('') + '</div>' +
-						'<p style="color: gray">' + (data.numrows > data.rows.length ? 'Showing the first ' + Num(data.rows.length) + ' ' + what : 'Showing all ' + what) + (state.format == 'files' ? '. The zip also has a manifest.csv listing every file and its observation' : '') + '</p>');
+					let html = '<div class="ui small statistics">' +
+						data.stats.map(st => '<div class="statistic"><div class="value">' + Esc(st.value) + '</div><div class="label">' + Esc(st.label) + '</div></div>').join('') + '</div>';
+					/* timeseries: the list of .csv files, then the first rows of the first file with data */
+					if (data.filelist) {
+						html += '<div style="max-height: 250px; overflow: auto; margin-top: 1em"><table class="ui very compact small celled table"><thead><tr>' + data.filelist.columns.map(c => '<th>' + Esc(c) + '</th>').join('') + '</tr></thead><tbody>' +
+							data.filelist.rows.map(r => '<tr>' + r.map((v, i) => '<td>' + Esc((i >= 1 && i <= 3) ? Num(v) : v) + '</td>').join('') + '</tr>').join('') + '</tbody></table></div>' +
+							'<p style="color: gray">' + (data.filelist.total > data.filelist.rows.length ? 'Showing the first ' + Num(data.filelist.rows.length) + ' of ' + Num(data.filelist.total) + ' files. ' : '') + 'The zip also has a manifest.csv listing every observation and its file and column' + (data.gridnote ? '. Below: ' + Esc(data.gridnote) : '') + '</p>';
+					}
+					else
+						html += '<p style="color: gray">' + (data.numrows > data.rows.length ? 'Showing the first ' + Num(data.rows.length) + ' ' + what : 'Showing all ' + what) + (state.format == 'files' ? '. The zip also has a manifest.csv listing every file and its observation' : '') + '</p>';
+					$('#previewsummary').html(html);
 
-					$('#previewgrid').show();
+					$('#previewgrid').toggle(data.columns.length > 0);
 					const columnDefs = data.columns.map((c, i) => ({ headerName: c, valueGetter: p => p.data[i], filter: true, resizable: true }));
 					if (!previewGrid)
 						previewGrid = agGrid.createGrid(document.getElementById('previewgrid'), { theme: agGrid.themeBalham, columnDefs: columnDefs, rowData: data.rows });
@@ -1930,7 +2321,7 @@
 						return;
 					}
 					if (data.perf)
-						data.perf.queries.push({ label: 'Output: ' + Num(data.rows) + ' rows, ' + (data.bytes / 1048576).toFixed(1) + ' MB', calls: '', rows: data.rows, queryms: '', fetchms: '' });
+						data.perf.queries.push({ label: 'Output: ' + (data.files !== undefined ? Num(data.files) + ' files, ' : '') + Num(data.rows) + ' rows, ' + (data.bytes / 1048576).toFixed(1) + ' MB', calls: '', rows: data.rows, queryms: '', fetchms: '' });
 				});
 			}
 
@@ -1992,6 +2383,7 @@
 					UpdateDownloadButton();
 				});
 				$('#includedates').change(UpdateDownloadButton);
+				$('input[name=tslayout]').change(UpdateDownloadButton);
 
 				/* subjects: all or chosen */
 				$('input[name=subjectmode]').change(function() {

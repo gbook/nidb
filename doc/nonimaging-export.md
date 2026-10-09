@@ -1,6 +1,6 @@
 # Non-imaging search/export (`nonimaging.php`) — design
 
-Status: phases 1–4 built (CSV long and wide layouts, Files zip). See *Build phases*.
+Status: phases 1–5 built (CSV long and wide layouts, Timeseries, Files zip). See *Build phases*.
 
 ## Flow
 
@@ -26,7 +26,7 @@ The page is one page with a step bar: **Data type → Format → Observations �
 | Format | `item_type` | Export |
 |--------|-------------|--------|
 | CSV | `enum`, `int`, `double`, `string`, `datetime`, blank, and all unaffiliated observations | `.csv`, long or wide layout |
-| Timeseries | `timeseries` | TBD; data points come from `timeseries` by `observation_id` |
+| Timeseries | `timeseries` | `.zip` of `.csv` files, per subject or per observation (data points from `timeseries` by `observation_id`) |
 | Files | `image`, `csv`, `json` | `.zip` of the files (`files` by `observation_fileid`) |
 
 ### CSV long layout
@@ -43,6 +43,20 @@ A **repeated observations** setting controls the rows:
 - **First** / **Last**: one row per subject (only subjects with data), with each observation's earliest/latest value by observation start date. Fixed columns: UID, AltUID. Optionally a `<column>.DateUTC` column after each observation with that value's start date.
 
 The preview shows the number of rows and columns, and warns above Excel's limit of 16,384 columns. For **All**, the row count is calculated exactly in SQL (for each subject's survey/date, the count of its most repeated observation).
+
+### Timeseries (zip of csv files)
+
+The data points are in the `timeseries` table (`observation_id`, `time`, and one of `value_double`, `value_int`, `value_string`). The export is a `.zip` with one `.csv` file per subject or per observation, plus `manifest.csv`. In every file the first column is `DateTimeUTC` (`YYYY-MM-DD HH:MM:SS.fff`), and there is one row per time, in time order.
+
+- **Per subject**: one file per subject with data, `<UID>.csv`. One column per selected observation, named `<instrument>.<item>`, in instrument and item order. Every selected observation has a column, even if the subject has no data for it.
+- **Per observation**: one file per selected observation with data, `<instrument>.<item>.csv`. One column per subject with data, named by UID, in UID order. Rows only line up where subjects have points at exactly the same time, so this file is mostly empty cells unless the recordings share clock times.
+- A subject can have several observations of the same item (for example, recordings on different days). They share the item's column. If two points land in the same column at the same time, the extra points go in additional rows with the same time.
+- `manifest.csv` has one row per exported observation: File, Column, UID, AltUID, Instrument, Observation, StartDateUTC, EndDateUTC, TimezoneOffset, SurveyVisit, SurveyInstance, DataPoints.
+- File names are made safe the same way as the Files format, and duplicates get `_2`, `_3`, ... added.
+- The date range filters observations by `observation_startdate`, like the other formats. It doesn't trim the data points within an observation.
+- `timeseries.time` is a `TIMESTAMP`, which MariaDB returns in the session time zone, so the export sets the session time zone to UTC first. That also keeps paging by time correct across daylight saving changes.
+- **How it's read**: each file's observations are merged in time order (a k-way merge with a heap). Each observation's points are read a page at a time using the unique `(observation_id, time)` key (`time > <last time read> order by time limit <page>`), so only one page per observation is in memory. The page size is 500,000 points divided by the number of observations in the file, between 100 and 10,000.
+- The preview shows the number of files, data points, observations, and subjects with data; the list of files with their columns, observations, data points, and time range; and the first 500 rows of the first file with data.
 
 ### Files (zip) layout
 
@@ -75,7 +89,7 @@ Users may not know what observations exist or what format each one is. To make f
 - Only active subjects (`subjects.isactive = 1`) are listed and exported.
 - Data is queried in batches of subjects (100 per query for rows, 1000 for counts), in UID order. `MySQLiBoundQuery` buffers each result, so batching keeps memory bounded, and the download streams each batch to the browser.
 - **Preview** returns the totals (rows, subjects with data, observation names with data), warnings for selected observations with no data, and the first 500 rows. It runs the same row generator as the download.
-- **Download** is only enabled after a preview without errors, for the same selection. It's a normal form POST, so the browser streams the file to disk. The file name is `<project>_observations_long_<YYYYMMDD_HHMMSS>.csv` (UTC).
+- **Download** is only enabled after a preview without errors, for the same selection. It's a normal form POST, so the browser streams the file to disk. The file name is `<project>_observations_<long|wide>_<YYYYMMDD_HHMMSS>.csv` (UTC), `<project>_observations_files_<YYYYMMDD_HHMMSS>.zip`, or `<project>_observations_timeseries_<subject|observation>_<YYYYMMDD_HHMMSS>.zip`.
 
 ## Permissions
 
@@ -100,8 +114,8 @@ Built in so performance can be measured on production data (millions of rows), d
 2. **Done**: CSV long layout preview and download.
 3. **Done**: CSV wide layout.
 4. **Done**: Files (zip).
-5. Timeseries.
+5. **Done**: Timeseries (zip of csv files, per subject or per observation).
 
 ## Open questions
 
-- Timeseries export format (decided later).
+- None at the moment.
