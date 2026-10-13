@@ -110,11 +110,13 @@
 	/* -------------------------------------------- */
 	/* ------- GetContainerVariables -------------- */
 	/* -------------------------------------------- */
-	/* scan the main script steps (and their working directories) for {variables}. Returns
-	   [lowercase variable] => list of step numbers. Bash ${var} is not a NiDB variable and is skipped */
+	/* scan the enabled main script steps (and their working directories) for {variables}. Returns
+	   [lowercase variable] => list of step numbers. Bash ${var} is not a NiDB variable and is skipped.
+	   Disabled steps don't run in the container, so they're skipped, as in modulePipelineContainer::CheckIfExportable() */
 	function GetContainerVariables($steps) {
 		$vars = array();
 		foreach ($steps as $step) {
+			if (!$step['ps_enabled']) { continue; }
 			$text = ($step['ps_command'] ?? '') . "\n" . ($step['ps_workingdir'] ?? '');
 			if (preg_match_all('/(?<!\$)\{([A-Za-z0-9_]+)\}/', $text, $matches)) {
 				foreach ($matches[1] as $var) {
@@ -204,7 +206,7 @@
 			AddPitfall($pitfalls, 'error', "Deprecated variables", "These variables are no longer expanded by NiDB, and the export rejects them: " . implode(", ", $deprecated));
 		}
 		if (count($unknown) > 0) {
-			AddPitfall($pitfalls, 'warning', "Unrecognized variables", "These look like NiDB variables but aren't. NiDB leaves them in the command as-is; the export treats any leftover <tt>{...}</tt> token as an error, so fix the typo or rewrite the text (e.g. an awk program) so it isn't a single word in braces: " . implode(", ", $unknown));
+			AddPitfall($pitfalls, 'error', "Unrecognized variables", "These look like NiDB variables but aren't. NiDB leaves them in the command as-is, but the export rejects them. Fix the typo, or rewrite the text (e.g. an awk program) so it isn't a single word in braces: " . implode(", ", $unknown));
 		}
 		if (isset($vars['analysisid'])) {
 			AddPitfall($pitfalls, 'warning', "<tt>{analysisid}</tt> is used", "There is no analysis ID outside NiDB. It will be replaced with <tt>0</tt> in the container (" . StepList($vars['analysisid']) . ").");
@@ -232,6 +234,7 @@
 		$nidbpaths = array_unique($nidbpaths);
 		$pathsteps = array();
 		foreach ($steps as $step) {
+			if (!$step['ps_enabled']) { continue; }
 			$text = ($step['ps_command'] ?? '') . "\n" . ($step['ps_workingdir'] ?? '');
 			foreach ($nidbpaths as $path) {
 				if (preg_match('/' . preg_quote($path, '/') . '(\/|\s|$|[\'";])/', $text)) {
@@ -271,7 +274,9 @@
 
 		/* ---------- software ---------- */
 		$allcommands = "";
-		foreach ($steps as $step) { $allcommands .= ($step['ps_command'] ?? '') . "\n"; }
+		foreach ($steps as $step) {
+			if ($step['ps_enabled']) { $allcommands .= ($step['ps_command'] ?? '') . "\n"; }
+		}
 		if (preg_match('/freesurfer|recon-all|FREESURFER_HOME|SUBJECTS_DIR/i', $allcommands)) {
 			AddPitfall($pitfalls, 'warning', "FreeSurfer license", "FreeSurfer's <tt>license.txt</tt> is never copied into the image. Users must supply their own license, e.g. <tt>--bind license.txt:/opt/freesurfer/license.txt</tt>. FreeSurfer also adds ~10 GB to the image.");
 		}
@@ -588,8 +593,9 @@
 apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, version, base OS</pre></div>
 
 			<h4 class="ui header">Expected input layout (<tt>/input</tt>)</h4>
+			<p>Lay out <tt>/input</tt> as NiDB would have staged the data for this pipeline. The container doesn't check the layout. This is also in the container's <tt>README.txt</tt> and <tt>apptainer run-help</tt>.</p>
 			<? if ($p['pipeline_outputbids'] ?? 0) { ?>
-				<p>A BIDS dataset in <tt>/input/<?=htmlspecialchars($p['pipeline_bidsoutputdir'] ?? '')?></tt></p>
+				<p>A BIDS dataset in <tt><?=htmlspecialchars(rtrim("/input/" . ltrim((string)($p['pipeline_bidsoutputdir'] ?? ''), '/'), '/'))?></tt>. Subject directories are <tt>sub-&lt;subjectuid&gt;</tt> and session directories are <tt>ses-&lt;studynum&gt;</tt>.</p>
 			<? } elseif (count($datadefs) == 0) { ?>
 				<p>This pipeline has no enabled data items.</p>
 			<? } else { ?>
@@ -605,15 +611,27 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 				</thead>
 				<tbody>
 				<?
+				/* the same layout as GetData(), and the README.txt in the container (modulePipelineContainer::GetInputLayout()) */
 				foreach ($datadefs as $dd) {
-					$location = htmlspecialchars("/input/" . ltrim((string)$dd['pdd_location'], '/'));
-					if ($dd['pdd_useseries']) { $location = rtrim($location, '/') . "/&lt;seriesnum&gt;"; }
+					$root = rtrim("/input/" . ltrim((string)$dd['pdd_location'], '/'), '/');
+					$location = htmlspecialchars($root);
+					if ($dd['pdd_useseries']) { $location .= "/&lt;seriesnum&gt;"; }
 					if ($dd['pdd_usephasedir']) { $location .= "/&lt;phasedir&gt;"; }
 					$format = htmlspecialchars($dd['pdd_dataformat']) . ($dd['pdd_gzip'] ? " (gzipped)" : "");
+					$behdir = trim($dd['pdd_behdir'] ?? '');
+					switch (trim($dd['pdd_behformat'] ?? '')) {
+						case 'behroot': $behlocation = htmlspecialchars($root); break;
+						case 'behrootdir': $behlocation = htmlspecialchars("$root/$behdir"); break;
+						case 'behseries': $behlocation = htmlspecialchars($root) . "/&lt;seriesnum&gt;"; break;
+						case 'behseriesdir': $behlocation = htmlspecialchars($root) . "/&lt;seriesnum&gt;/" . htmlspecialchars($behdir); break;
+						default: $behlocation = "";
+					}
 					$notes = array();
 					if ($dd['pdd_optional']) { $notes[] = "optional"; }
-					if ($dd['pdd_behonly']) { $notes[] = "behavioral data only"; }
-					if (trim($dd['pdd_behformat'] ?? '') != "") { $notes[] = "behavioral: " . htmlspecialchars($dd['pdd_behformat']) . (trim($dd['pdd_behdir'] ?? '') != "" ? " in <tt>" . htmlspecialchars($dd['pdd_behdir']) . "</tt>" : ""); }
+					if ($dd['pdd_behonly']) { $notes[] = "behavioral data only, no imaging data"; }
+					if ($dd['pdd_useseries']) { $notes[] = $dd['pdd_preserveseries'] ? "&lt;seriesnum&gt; is the original series number" : "&lt;seriesnum&gt; is 1, 2, 3, ... for each matching series"; }
+					if ($dd['pdd_usephasedir']) { $notes[] = "&lt;phasedir&gt; is AP, PA, RL, LR, COL, ROW, or unknownPE"; }
+					if ($behlocation != "") { $notes[] = "behavioral data in <tt>$behlocation</tt>"; }
 					?>
 					<tr>
 						<td><tt><?=$location?></tt></td>

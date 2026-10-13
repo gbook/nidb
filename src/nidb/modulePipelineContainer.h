@@ -37,6 +37,7 @@ public:
 
 private:
     nidb *n;
+    QStringList storagePaths; /* NiDB archive and analysis paths, loaded by CheckPaths() */
 
     /* one pipeline_containers row */
     struct containerRequest {
@@ -49,28 +50,33 @@ private:
         QString buildDir;   /* GetBuildDir(containerID) */
     };
 
-    QList<containerRequest> GetRequests(QString status, int containerID);
+    QList<containerRequest> GetExportRequests(QString status, int containerID);
     bool ClaimRequest(containerRequest &c, QString fromStatus, QString toStatus);
 
     /* build stages (doc section 8) */
-    bool Prepare(containerRequest &c, QString &msg);            /* step 2: checks, build directory */
+    bool PrepareExport(containerRequest &c, QString &msg);            /* step 2: checks, build directory */
     bool SubmitBuildJob(containerRequest &c, QString &msg);     /* step 3: submit build.job to the cluster */
     bool IsBuildFinished(containerRequest &c);                  /* step 5: poll for build.exitcode */
     bool Finish(containerRequest &c, QString &msg);             /* step 5: copy to exportdir, record results */
 
     /* export checks (doc sections 1, 3, 5) */
-    bool CheckExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings);
+    bool CheckIfExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings);
     void CheckVariables(QString text, int step, QStringList &errors, QStringList &warnings);
     void CheckPaths(QString text, int step, QStringList &errors);
 
     /* build directory contents (doc sections 4, 6, 8) */
     bool RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings);
-    QString CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings);
+    QStringList GetInputDirStructure(pipeline &p, int version, QJsonArray &items);
+    QString CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout);
+    QString CreateReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout);
     bool StageReferenceInput(containerRequest &c, QString &msg);
-    bool WriteBuildJob(containerRequest &c, pipeline &p, QString &msg);
+    bool WriteContainerBuildScript(containerRequest &c, pipeline &p, QString &msg);
+    bool WriteClusterJob(containerRequest &c, pipeline &p, QString &msg);
 
     /* paths */
     QString GetBuildDir(int containerID);
+    QString GetClusterBuildDir(int containerID);
+    QString GetContainerFileName(pipeline &p, int version);
     QString GetExportDir(pipeline &p, int version);
 
     /* pipeline_containers updates */

@@ -3458,6 +3458,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
             for (int i=0; i<pipelineIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
                 pipeline p(pipelineIDs[i], n);
+                if (!p.isValid) {
+                    n->Log(QString("Pipeline [%1] not found, not adding it to the package: %2").arg(pipelineIDs[i]).arg(p.msg));
+                    continue;
+                }
                 squirrelPipeline sqrlPipeline = p.GetSquirrelObject(sqrl.GetDatabaseUUID());
                 sqrlPipeline.Store();
             }

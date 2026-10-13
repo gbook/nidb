@@ -21,6 +21,9 @@
   ------------------------------------------------------------------------------ */
 
 #include "modulePipelineContainer.h"
+#include "modulePipeline.h"
+#include "analysis.h"
+#include <cmath>
 
 
 /* ---------------------------------------------------------- */
@@ -62,15 +65,15 @@ int modulePipelineContainer::Run(int containerID) {
 
     int numDone = 0;
 
-    /* 'started' means a previous run of this module stopped part way through Prepare(). The build
+    /* 'started' means a previous run of this module stopped part way through PrepareExport(). The build
        directory may be incomplete, so don't try to resume it */
-    for (containerRequest c : GetRequests("started", containerID)) {
+    for (containerRequest c : GetExportRequests("started", containerID)) {
         SetError(c.containerID, "The pipelinecontainer module stopped while preparing this build. Create the container again");
         numDone++;
     }
 
     /* new requests: prepare the build directory and submit the build job */
-    for (containerRequest c : GetRequests("submitted", containerID)) {
+    for (containerRequest c : GetExportRequests("submitted", containerID)) {
         n->ModuleRunningCheckIn();
         if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return numDone; }
 
@@ -80,7 +83,7 @@ int modulePipelineContainer::Run(int containerID) {
         numDone++;
 
         QString msg;
-        if (!Prepare(c, msg)) {
+        if (!PrepareExport(c, msg)) {
             SetError(c.containerID, msg);
             continue;
         }
@@ -91,7 +94,7 @@ int modulePipelineContainer::Run(int containerID) {
     }
 
     /* running builds: finish any that have written build.exitcode */
-    for (containerRequest c : GetRequests("building", containerID)) {
+    for (containerRequest c : GetExportRequests("building", containerID)) {
         n->ModuleRunningCheckIn();
         if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return numDone; }
 
@@ -110,15 +113,15 @@ int modulePipelineContainer::Run(int containerID) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetRequests ------------------------------------ */
+/* --------- GetExportRequests ------------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Get the pipeline_containers rows with a given status
+ * @brief Get list of pipeline containers that have a specified status
  * @param status The build_status to select
  * @param containerID If non-zero, only this row
  * @return List of requests, oldest first
  */
-QList<modulePipelineContainer::containerRequest> modulePipelineContainer::GetRequests(QString status, int containerID) {
+QList<modulePipelineContainer::containerRequest> modulePipelineContainer::GetExportRequests(QString status, int containerID) {
     QList<containerRequest> requests;
 
     QSqlQuery q;
@@ -172,16 +175,17 @@ bool modulePipelineContainer::ClaimRequest(containerRequest &c, QString fromStat
 
 
 /* ---------------------------------------------------------- */
-/* --------- Prepare ---------------------------------------- */
+/* --------- PrepareExport ---------------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Step 2. Check the pipeline is exportable, then write the build directory: run.sh, run.sh.template,
- * manifest.json, requiredvars.txt, the staged reference input, export.log, build-container.sh and build.job
+ * manifest.json, README.txt, requiredvars.txt, the staged reference input, export.log, build-container.sh and build.job.
+ * build-container.sh is written before build.job, which calls it
  * @param c The request
  * @param msg Error message, if any
  * @return true if the build directory is ready to submit
  */
-bool modulePipelineContainer::Prepare(containerRequest &c, QString &msg) {
+bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
     AppendBuildLog(c.containerID, QString("Preparing container for pipeline [%1] version [%2], reference analysis [%3], validation [%4]").arg(c.pipelineID).arg(c.pipelineVersion).arg(c.referenceAnalysisID).arg(c.runValidation ? "yes" : "no"));
 
     /* TODO: the pipeline object loads the current version. Load c.pipelineVersion instead, since the pipeline
@@ -193,7 +197,7 @@ bool modulePipelineContainer::Prepare(containerRequest &c, QString &msg) {
     }
 
     QStringList errors, warnings;
-    if (!CheckExportable(p, c.pipelineVersion, errors, warnings)) {
+    if (!CheckIfExportable(p, c.pipelineVersion, errors, warnings)) {
         AppendBuildWarnings(c.containerID, warnings);
         msg = "Pipeline can't be exported:\n" + errors.join("\n");
         return false;
@@ -211,15 +215,26 @@ bool modulePipelineContainer::Prepare(containerRequest &c, QString &msg) {
     if (!MakePath(c.buildDir, msg))
         return false;
 
-    QString manifest = CreateManifest(p, c.pipelineVersion, requiredVars, warnings);
+    /* the expected /input layout, for manifest.json, README.txt and the image's %help */
+    QJsonArray inputLayout;
+    QStringList inputLayoutText = GetInputDirStructure(p, c.pipelineVersion, inputLayout);
 
-    /* TODO: write run.sh (copied from src/setup/apptainer), run.sh.template, manifest.json, requiredvars.txt and export.log into c.buildDir */
-    Q_UNUSED(manifest);
+    QString manifest = CreateManifest(p, c.pipelineVersion, requiredVars, warnings, inputLayout);
+    QString readme = CreateReadme(p, c.pipelineVersion, requiredVars, inputLayoutText);
+    if (!WriteTextFile(c.buildDir + "/manifest.json", manifest, false) || !WriteTextFile(c.buildDir + "/README.txt", readme, false)) {
+        msg = "Unable to write manifest.json and README.txt into [" + c.buildDir + "]";
+        return false;
+    }
+
+    /* TODO: write run.sh (copied from src/setup/apptainer), run.sh.template, requiredvars.txt and export.log into c.buildDir */
 
     if (!StageReferenceInput(c, msg))
         return false;
 
-    if (!WriteBuildJob(c, p, msg))
+    if (!WriteContainerBuildScript(c, p, msg))
+        return false;
+
+    if (!WriteClusterJob(c, p, msg))
         return false;
 
     AppendBuildLog(c.containerID, "Build directory [" + c.buildDir + "] is ready");
@@ -280,26 +295,65 @@ bool modulePipelineContainer::Finish(containerRequest &c, QString &msg) {
 
 
 /* ---------------------------------------------------------- */
-/* --------- CheckExportable -------------------------------- */
+/* --------- CheckIfExportable ------------------------------ */
 /* ---------------------------------------------------------- */
 /**
- * @brief Export checks (doc sections 1, 3, 5): level 1 only, at least one enabled main step, a valid
- * reference analysis, no group or deprecated variables, and no NiDB storage paths in the steps
+ * @brief Export checks (doc sections 1, 3, 5). The same rules as the pitfalls on pipelinecontainers.php, which are
+ * a preview; these are authoritative. Only enabled main steps are checked, since only they run in the container.
+ * Errors: not level 1, no enabled main steps, no completed analysis of this version, group, deprecated or
+ * unrecognized variables, NiDB storage paths. Warnings: {analysisid}, {command}, a parent pipeline, FreeSurfer, MATLAB
  * @param p The pipeline
  * @param version Pipeline version
  * @param errors Problems that stop the export
  * @param warnings Problems that don't
  * @return true if there are no errors
  */
-bool modulePipelineContainer::CheckExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings) {
-    Q_UNUSED(version);
+bool modulePipelineContainer::CheckIfExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings) {
 
     if (p.level != 1)
         errors << QString("Only level 1 pipelines can be exported. This is a level [%1] pipeline").arg(p.level);
 
-    /* TODO: enabled main steps, reference analysis, CheckVariables() and CheckPaths() on each step's command and working directory */
-    Q_UNUSED(warnings);
+    /* main steps of this version */
+    modulePipeline mp(n);
+    QList<pipelineStep> steps;
+    for (pipelineStep step : mp.GetPipelineSteps(p.pipelineid, version)) {
+        if (step.enabled && !step.supplement)
+            steps.append(step);
+    }
+    if (steps.size() == 0)
+        errors << QString("Version [%1] has no enabled main script steps").arg(version);
 
+    /* the build re-runs a completed analysis of this version (the reference analysis) */
+    QSqlQuery q;
+    q.prepare("select count(*) 'num' from analysis where pipeline_id = :pipelineid and pipeline_version = :version and analysis_status = 'complete' and (analysis_isbad is null or analysis_isbad <> 1)");
+    q.bindValue(":pipelineid", p.pipelineid);
+    q.bindValue(":version", version);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.first() && (q.value("num").toInt() < 1))
+        errors << QString("Version [%1] has no completed, not-bad analyses to use as the reference analysis").arg(version);
+
+    /* variables and paths, in each step's command and working directory */
+    QString allCommands;
+    for (pipelineStep step : steps) {
+        QString text = step.command + "\n" + step.workingDir;
+        CheckVariables(text, step.order, errors, warnings);
+        CheckPaths(text, step.order, errors);
+        allCommands += step.command + "\n";
+    }
+
+    /* the caller has to supply the parent's output in /input */
+    for (int parentID : p.parentIDs) {
+        pipeline parent(parentID, n);
+        warnings << QString("Depends on parent pipeline [%1]. Its output must be supplied in /input").arg(parent.isValid ? parent.name : QString::number(parentID));
+    }
+
+    /* software that needs a license, which is never copied into the image */
+    if (allCommands.contains(QRegularExpression("freesurfer|recon-all|FREESURFER_HOME|SUBJECTS_DIR", QRegularExpression::CaseInsensitiveOption)))
+        warnings << "Uses FreeSurfer. Its license.txt isn't copied into the image, so users must bind their own (--bind license.txt:/opt/freesurfer/license.txt)";
+    if (allCommands.contains(QRegularExpression("\\bmatlab\\b", QRegularExpression::CaseInsensitiveOption)))
+        warnings << "Uses MATLAB. Commercial software must not be in an image meant to be shared, and MATLAB license files aren't copied. Compiled MATLAB with the MATLAB Runtime (MCR) can be included";
+
+    /* return false if any errors */
     return (errors.size() == 0);
 }
 
@@ -309,18 +363,38 @@ bool modulePipelineContainer::CheckExportable(pipeline &p, int version, QStringL
 /* ---------------------------------------------------------- */
 /**
  * @brief Check the {variables} in one step (doc section 3). Group variables, {first_*} and unrecognized
- * tokens are errors; {analysisid} and {command} are warnings
- * @param text The step command (or working directory)
+ * tokens are errors; {analysisid} and {command} are warnings. Bash ${var} isn't a NiDB variable and is skipped
+ * @param text The step command and working directory
  * @param step The step number, for messages
  * @param errors Problems that stop the export
  * @param warnings Problems that don't
  */
 void modulePipelineContainer::CheckVariables(QString text, int step, QStringList &errors, QStringList &warnings) {
-    /* TODO */
-    Q_UNUSED(text);
-    Q_UNUSED(step);
-    Q_UNUSED(errors);
-    Q_UNUSED(warnings);
+    static const QStringList known = { "analysisrootdir", "pipelinename", "workingdir", "description", "subjectuid", "studynum", "uidstudynum", "studydatetime", "analysisid", "nolog", "nocheckin", "profile", "command" };
+    static const QStringList group = { "groups", "uidstudynums", "numsubjects" };
+
+    QStringList found;
+    QRegularExpressionMatchIterator i = QRegularExpression("(?<!\\$)\\{([A-Za-z0-9_]+)\\}").globalMatch(text);
+    while (i.hasNext()) {
+        QString var = i.next().captured(1).toLower();
+        if (!found.contains(var))
+            found << var;
+    }
+
+    for (QString var : found) {
+        if (var == "analysisid")
+            warnings << QString("Step %1: {analysisid} is replaced with 0, since there is no analysis ID outside NiDB").arg(step);
+        else if (var == "command")
+            warnings << QString("Step %1: the deprecated {command} variable is removed").arg(step);
+        else if (known.contains(var))
+            continue;
+        else if (group.contains(var) || var.startsWith("uidstudynums_") || var.startsWith("numsubjects_"))
+            errors << QString("Step %1: group variable {%2} can only be used in level 2 pipelines").arg(step).arg(var);
+        else if (var.startsWith("first_"))
+            errors << QString("Step %1: deprecated variable {%2} is no longer expanded by NiDB").arg(step).arg(var);
+        else
+            errors << QString("Step %1: {%2} isn't a NiDB variable. Fix the typo, or rewrite the text so it isn't a single word in braces").arg(step).arg(var);
+    }
 }
 
 
@@ -328,17 +402,42 @@ void modulePipelineContainer::CheckVariables(QString text, int step, QStringList
 /* --------- CheckPaths ------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Check one step for absolute NiDB storage paths (doc section 5): cfg archivedir, analysisdir,
- * analysisdirb, and the analysisdirs table
- * @param text The step command (or working directory)
+ * @brief Check one step for absolute NiDB storage paths (doc section 5): the archive and analysis directories
+ * in the config, and the analysisdirs table. The container can't see NiDB's storage
+ * @param text The step command and working directory
  * @param step The step number, for messages
  * @param errors Problems that stop the export
  */
 void modulePipelineContainer::CheckPaths(QString text, int step, QStringList &errors) {
-    /* TODO */
-    Q_UNUSED(text);
-    Q_UNUSED(step);
-    Q_UNUSED(errors);
+
+    /* load the storage paths once */
+    if (storagePaths.isEmpty()) {
+        QStringList keys = { "archivedir", "archivedir1", "archivedir2", "archivedir3", "archivedir4", "analysisdir", "analysisdirb", "clusteranalysisdir", "clusteranalysisdirb", "groupanalysisdir" };
+        for (QString key : keys)
+            storagePaths << n->cfg.value(key);
+
+        QSqlQuery q;
+        q.prepare("select nidbpath, clusterpath from analysisdirs");
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next())
+            storagePaths << q.value("nidbpath").toString() << q.value("clusterpath").toString();
+
+        /* trim trailing slashes, and drop blanks and the root directory */
+        QStringList paths;
+        for (QString path : storagePaths) {
+            path = path.trimmed();
+            while (path.endsWith("/"))
+                path.chop(1);
+            if ((path != "") && !paths.contains(path))
+                paths << path;
+        }
+        storagePaths = paths;
+    }
+
+    for (QString path : storagePaths) {
+        if (text.contains(QRegularExpression(QRegularExpression::escape(path) + "(/|\\s|$|['\";])")))
+            errors << QString("Step %1: NiDB storage path [%2] can't be used in the container. Use {analysisrootdir} for the analysis directory, and bring other data in through /input").arg(step).arg(path);
+    }
 }
 
 
@@ -377,10 +476,11 @@ bool modulePipelineContainer::RenderScriptTemplate(pipeline &p, int version, QSt
  * @param version Pipeline version
  * @param requiredVars The runtime variables the script uses
  * @param warnings Export warnings
+ * @param inputLayout The /input layout from GetInputDirStructure()
  * @return The JSON text
  */
-QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings) {
-    /* TODO: input layout, and the squirrel pipeline from p.GetSquirrelObject() */
+QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout) {
+    /* TODO: the squirrel pipeline from p.GetSquirrelObject() */
     QJsonObject root;
     root["pipelineName"] = p.name;
     root["pipelineVersion"] = version;
@@ -388,8 +488,175 @@ QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const 
     root["exportDate"] = QDateTime::currentDateTime().toString(Qt::ISODate);
     root["requiredVariables"] = QJsonArray::fromStringList(requiredVars);
     root["exportWarnings"] = QJsonArray::fromStringList(warnings);
+    root["inputLayout"] = inputLayout;
 
     return QJsonDocument(root).toJson();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetInputDirStructure --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief The /input layout the container expects: the layout GetData() and the dependency copy would have
+ * staged into the analysis directory (doc section 6). The container doesn't check it; this is documentation,
+ * for manifest.json, README.txt and the image's %help
+ * @param p The pipeline
+ * @param version Pipeline version (the data steps are versioned)
+ * @param items The layout, for manifest.json
+ * @return The layout as readable text, one line per entry
+ */
+QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int version, QJsonArray &items) {
+    QStringList lines;
+
+    if (p.outputBIDS) {
+        /* GetData() writes all the matching series as one BIDS dataset (archiveIO::WriteBIDS(), BIDS_SUBJECTDIR_UID and BIDS_STUDYDIR_STUDYNUM) */
+        QString dir = "/input";
+        QString bidsDir = p.BIDSoutputDir.trimmed();
+        while (bidsDir.startsWith("/")) bidsDir.remove(0, 1);
+        if (bidsDir != "")
+            dir += "/" + bidsDir;
+        lines << dir;
+        lines << "    A BIDS dataset. Subject directories are sub-<subjectuid> and session directories are ses-<studynum>";
+
+        QJsonObject o;
+        o["type"] = "bids";
+        o["location"] = dir;
+        items.append(o);
+    }
+    else {
+        modulePipeline mp(n);
+        for (dataDefinitionStep d : mp.GetPipelineDataDef(p.pipelineid, version)) {
+            if (!d.flags.isEnabled)
+                continue;
+
+            QString location = d.exportSubDirectoryName;
+            while (location.startsWith("/")) location.remove(0, 1);
+            QString root = (location == "") ? "/input" : "/input/" + location;
+
+            /* the same directory structure as GetData() */
+            QString dataDir = root;
+            if (d.flags.exportWriteSeriesDirectory) dataDir += "/<seriesnum>";
+            if (d.flags.exportWritePhaseDirectory) dataDir += "/<phasedir>";
+
+            /* the same as modulePipeline::GetBehPath() */
+            QString behFormat = d.exportBehavioralDirectoryFormat;
+            QString behDir;
+            if (behFormat == "behroot") behDir = root;
+            else if (behFormat == "behrootdir") behDir = root + "/" + d.exportBehavioralDirectoryName;
+            else if (behFormat == "behseries") behDir = root + "/<seriesnum>";
+            else if (behFormat == "behseriesdir") behDir = root + "/<seriesnum>/" + d.exportBehavioralDirectoryName;
+
+            QString format = d.exportDataFormat + (d.flags.exportGzip ? ", gzipped" : "");
+
+            lines << dataDir;
+            if (d.flags.behOnly)
+                lines << QString("    %1, protocol [%2]. Behavioral data only, no imaging data").arg(d.searchModality.toUpper()).arg(d.searchProtocol);
+            else
+                lines << QString("    %1, protocol [%2], format [%3]").arg(d.searchModality.toUpper()).arg(d.searchProtocol).arg(format);
+            if (d.flags.exportWriteSeriesDirectory) {
+                if (d.flags.exportPreserveSeriesNumber)
+                    lines << "    <seriesnum> is the series' original series number";
+                else
+                    lines << "    <seriesnum> is 1, 2, 3, ... for each matching series, in order";
+            }
+            if (d.flags.exportWritePhaseDirectory)
+                lines << "    <phasedir> is the phase encoding direction: AP, PA, RL, LR, COL, ROW, or unknownPE";
+            if (behDir != "")
+                lines << "    Behavioral data in " + behDir;
+            if (d.flags.isOptional)
+                lines << "    Optional";
+
+            QJsonObject o;
+            o["type"] = "data";
+            o["location"] = dataDir;
+            o["modality"] = d.searchModality;
+            o["protocol"] = d.searchProtocol;
+            o["format"] = d.exportDataFormat;
+            o["gzip"] = d.flags.exportGzip;
+            o["seriesDirectories"] = d.flags.exportWriteSeriesDirectory;
+            o["preserveSeriesNumbers"] = d.flags.exportPreserveSeriesNumber;
+            o["phaseDirectories"] = d.flags.exportWritePhaseDirectory;
+            o["behavioralLocation"] = behDir;
+            o["behavioralOnly"] = d.flags.behOnly;
+            o["optional"] = d.flags.isOptional;
+            items.append(o);
+        }
+        if (items.size() == 0)
+            lines << "This pipeline has no enabled data steps, so /input can be empty";
+    }
+
+    /* the dependency copy puts the parent's analysis directory in a subdirectory, or its contents in the root */
+    for (int parentID : p.parentIDs) {
+        pipeline parent(parentID, n);
+        if (!parent.isValid)
+            continue;
+
+        QString dir = (p.depDir == "subdir") ? "/input/" + parent.name : "/input";
+        lines << dir;
+        lines << QString("    The output (analysis directory) of parent pipeline [%1] for the same study").arg(parent.name);
+
+        QJsonObject o;
+        o["type"] = "parent";
+        o["location"] = dir;
+        o["pipeline"] = parent.name;
+        items.append(o);
+    }
+
+    return lines;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CreateReadme ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Create README.txt: what the container is, how to run it, and the expected /input layout. It goes next to
+ * the .sif in the export directory and into the image as /pipeline/README.txt and the %help text (apptainer run-help)
+ * @param p The pipeline
+ * @param version Pipeline version
+ * @param requiredVars The runtime variables the script uses
+ * @param inputLayout The /input layout from GetInputDirStructure()
+ * @return The text
+ */
+QString modulePipelineContainer::CreateReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout) {
+    QString sif = GetContainerFileName(p, version);
+
+    QStringList args;
+    if (requiredVars.contains("subjectuid")) args << "--subjectuid S1234ABC";
+    if (requiredVars.contains("studynum")) args << "--studynum 1";
+    if (requiredVars.contains("studydatetime")) args << "--studydatetime \"2024-03-01 10:15:00\"";
+
+    QStringList r;
+    r << QString("NiDB pipeline [%1], version %2").arg(p.name).arg(version);
+    if (p.desc.trimmed() != "")
+        r << p.desc.trimmed();
+    r << QString("Exported from NiDB on %1").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd"));
+    r << "";
+    r << "USAGE";
+    r << "Run once per subject/study. Bind the input data to /input and a writable directory to /output. The input is";
+    r << "copied into /output and the pipeline runs there, so /output ends up looking like a NiDB analysis directory.";
+    r << "";
+    r << "    apptainer run --bind /data/sub01:/input --bind /results/sub01:/output " + sif + (args.size() > 0 ? " " + args.join(" ") : "");
+    r << "";
+    r << "ARGUMENTS";
+    if (requiredVars.contains("subjectuid")) r << "    --subjectuid UID           Subject ID. Letters, numbers, _ and - only";
+    if (requiredVars.contains("studynum")) r << "    --studynum N               Study number (integer)";
+    if (requiredVars.contains("studydatetime")) r << "    --studydatetime DATETIME   Study date/time, \"YYYY-MM-DD hh:mm:ss\"";
+    r << "    --stop-on-error            Optional. Stop at the first failing step. By default, like NiDB, later steps still run";
+    r << "";
+    r << "INPUT LAYOUT (/input)";
+    r << "Lay out /input as NiDB would have staged the data for this pipeline. The container doesn't check the layout.";
+    r << "";
+    for (QString line : inputLayout)
+        r << "    " + line;
+    r << "";
+    r << "MORE";
+    r << "    apptainer run-help " + sif + "    # this text";
+    r << "    apptainer inspect " + sif + "     # labels: pipeline name, version, base OS";
+    r << "    /pipeline/manifest.json in the image has the same information, plus the software captured into the image";
+
+    return r.join("\n") + "\n";
 }
 
 
@@ -412,22 +679,454 @@ bool modulePipelineContainer::StageReferenceInput(containerRequest &c, QString &
 
 
 /* ---------------------------------------------------------- */
-/* --------- WriteBuildJob ---------------------------------- */
+/* --------- WriteContainerBuildScript ---------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Copy build-container.sh into the build directory and write build.job: the scheduler header
- * (from the pipeline's cluster settings) plus a call to build-container.sh with the reference study's values
+ * @brief Write build-container.sh into the build directory. It's the only script that runs on the compute node
+ * (doc section 8 step 4), and is bash so it runs on any node without Python or the nidb binary. It collects the
+ * OS and software info into plain text files, runs the pipeline once under strace, builds the .sif, and optionally
+ * runs the validation. Finish() does all the parsing of its output. It always writes build.exitcode last.
+ * The settings block at the top is generated for this build; the rest is the same for every build
+ *
+ * Files it writes into the build directory:
+ *   build.log             everything the script prints
+ *   build-warnings.txt    one warning per line, added to build_warnings by Finish()
+ *   build-error.txt       the reason the build stopped, if it did
+ *   sysinfo.txt           key=value: host, OS, base image, package manager, tool versions, cpus, memory, scratch space
+ *   software.txt          key=value: interpreter paths and versions, package count
+ *   env.txt               the login environment
+ *   packages.txt          installed packages: name, version-release, arch (tab separated)
+ *   modules.txt           'module list' output
+ *   opt.txt               the entries in /opt
+ *   trace.log             strace output from the reference run
+ *   reference-run.log     output of the reference run
+ *   validation.txt        key=value summary, then the missing and extra file lists (validation only)
+ *   <pipeline>-v<N>.sif   the container
+ *   build.exitcode        0 on success. Written last, atomically
+ *
  * @param c The request
  * @param p The pipeline
  * @param msg Error message, if any
  * @return true if written
  */
-bool modulePipelineContainer::WriteBuildJob(containerRequest &c, pipeline &p, QString &msg) {
-    /* TODO */
-    Q_UNUSED(c);
-    Q_UNUSED(p);
-    msg = "WriteBuildJob() not implemented yet";
-    return false;
+bool modulePipelineContainer::WriteContainerBuildScript(containerRequest &c, pipeline &p, QString &msg) {
+
+    /* the reference analysis supplies the study values for the reference and validation runs */
+    analysis a(c.referenceAnalysisID, n, true);
+    if (!a.isValid) {
+        msg = QString("Unable to load reference analysis [%1]").arg(c.referenceAnalysisID);
+        return false;
+    }
+    if (a.pipelineid != c.pipelineID) {
+        msg = QString("Reference analysis [%1] belongs to pipeline [%2], not this pipeline [%3]").arg(c.referenceAnalysisID).arg(a.pipelineid).arg(c.pipelineID);
+        return false;
+    }
+    if ((a.status != "complete") || a.isBad) {
+        msg = QString("Reference analysis [%1] must be complete and not marked bad. Its status is [%2]%3").arg(c.referenceAnalysisID).arg(a.status).arg(a.isBad ? " and it's marked bad" : "");
+        return false;
+    }
+
+    /* these become arguments to run.sh, so they must pass run.sh's own checks (doc section 4) */
+    QString studyDateTime = a.studyDateTime.left(19).replace('T', ' ');
+    if (!QRegularExpression("^[A-Za-z0-9_-]+$").match(a.uid).hasMatch() || (a.studynum < 1) || !QRegularExpression("^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$").match(studyDateTime).hasMatch()) {
+        msg = QString("Reference analysis [%1] has a subject UID [%2], study number [%3] or study date [%4] that run.sh won't accept").arg(c.referenceAnalysisID).arg(a.uid).arg(a.studynum).arg(studyDateTime);
+        return false;
+    }
+
+    /* the reference analysis directory as the compute node sees it, for the validation comparison */
+    modulePipeline mp(n);
+    QString refAnalysisDir = mp.GetAnalysisClusterPath(p.dirStructure, p.name, a.uid, a.studynum);
+
+    QStringList settings;
+    settings << "#!/bin/bash -l";
+    settings << QString("# build-container.sh, generated by NiDB for pipeline_containers row [%1] on %2").arg(c.containerID).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"));
+    settings << "# Runs on a compute node and builds an Apptainer container from a NiDB pipeline. See doc/pipeline-apptainer.md section 8";
+    settings << "# Must work with bash 4.2 (CentOS 7) and only standard tools, plus strace, objdump and apptainer";
+    settings << "";
+    settings << "# ---------- settings for this build ----------";
+    settings << "CONTAINER_ID=" + QString::number(c.containerID);
+    settings << "PIPELINE_NAME=" + ShellQuote(p.name);
+    settings << "PIPELINE_VERSION=" + QString::number(c.pipelineVersion);
+    settings << "BUILDDIR=" + ShellQuote(GetClusterBuildDir(c.containerID));
+    settings << "SIF_NAME=" + ShellQuote(GetContainerFileName(p, c.pipelineVersion));
+    settings << "REF_ANALYSISDIR=" + ShellQuote(refAnalysisDir);
+    settings << "REF_SUBJECTUID=" + ShellQuote(a.uid);
+    settings << "REF_STUDYNUM=" + QString::number(a.studynum);
+    settings << "REF_STUDYDATETIME=" + ShellQuote(studyDateTime);
+    settings << QString("RUN_VALIDATION=%1").arg(c.runValidation ? 1 : 0);
+    /* TODO: from the pipeline's container settings, once they exist. A docker:// URI or the path of a .sif */
+    settings << "BASE_OVERRIDE=''";
+    settings << "";
+
+    /* the same for every build */
+    static const char *body = R"BASH(# ---------- fixed part ----------
+set -u
+
+APPTAINER=""
+MISSING_TOOLS=()
+OS_ID=""; OS_VERSION_ID=""; OS_ID_LIKE=""; OS_PRETTY_NAME=""; OS_FAMILY="unknown"
+PKG_MANAGER="none"
+BASE_IMAGE=""
+
+log()  { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+warn() { log "WARNING: $*"; echo "$*" >> "$BUILDDIR/build-warnings.txt"; }
+fail() { log "ERROR: $*"; echo "$*" >> "$BUILDDIR/build-error.txt"; exit 1; }
+
+# kv <file> <key> <value>: one key=value line. Newlines in the value are flattened
+kv() { printf '%s=%s\n' "$2" "$(printf '%s' "$3" | tr '\r\n' '  ')" >> "$1"; }
+
+# first line of a command's output, with a time limit so a hung tool can't stall the build
+firstline() { timeout 60 "$@" 2>&1 | head -n 1; }
+
+# always write build.exitcode, even on failure, so the NiDB module stops polling. Write it atomically
+finish() {
+    local rc=$?
+    log "build-container.sh finished with exit code [$rc]"
+    echo "$rc" > "$BUILDDIR/build.exitcode.tmp" && mv -f "$BUILDDIR/build.exitcode.tmp" "$BUILDDIR/build.exitcode"
+}
+
+# find the tools. Missing ones stop the build in check_tools, after the system info is collected
+find_tools() {
+    local t
+    for t in strace objdump ldd find timeout sha256sum; do
+        command -v "$t" >/dev/null 2>&1 || MISSING_TOOLS+=("$t")
+    done
+    if command -v apptainer >/dev/null 2>&1; then APPTAINER="apptainer"
+    elif command -v singularity >/dev/null 2>&1; then APPTAINER="singularity"
+    else MISSING_TOOLS+=("apptainer (or singularity)")
+    fi
+}
+
+check_tools() {
+    if [ ${#MISSING_TOOLS[@]} -gt 0 ]; then
+        fail "Required tools missing on $(hostname): ${MISSING_TOOLS[*]}"
+    fi
+}
+
+# OS, family, package manager and base image (doc section 7, step 3 and 'Supported OSes')
+detect_os() {
+    if [ -r /etc/os-release ]; then
+        eval "$(. /etc/os-release; printf 'OS_ID=%q; OS_VERSION_ID=%q; OS_ID_LIKE=%q; OS_PRETTY_NAME=%q' "${ID:-}" "${VERSION_ID:-}" "${ID_LIKE:-}" "${PRETTY_NAME:-}")"
+    else
+        warn "/etc/os-release not found, so the OS can't be detected"
+    fi
+
+    case " $OS_ID $OS_ID_LIKE " in
+        *" rhel "*|*" centos "*|*" fedora "*) OS_FAMILY="rhel" ;;
+        *" debian "*|*" ubuntu "*) OS_FAMILY="debian" ;;
+        *" suse "*|*" sles "*|*" opensuse "*) OS_FAMILY="suse" ;;
+    esac
+
+    if command -v rpm >/dev/null 2>&1 && rpm -q coreutils >/dev/null 2>&1; then
+        PKG_MANAGER="rpm"
+    elif command -v dpkg-query >/dev/null 2>&1 && dpkg-query -W coreutils >/dev/null 2>&1; then
+        PKG_MANAGER="dpkg"
+    else
+        warn "No usable package manager (rpm or dpkg) found. Software is captured from the trace and ldd only, which is less complete"
+    fi
+
+    local major="${OS_VERSION_ID%%.*}"
+    if [ -n "$BASE_OVERRIDE" ]; then
+        BASE_IMAGE="$BASE_OVERRIDE"
+    elif [ -n "$major" ]; then
+        case "$OS_ID" in
+            centos)        if [ "$major" = "7" ]; then BASE_IMAGE="docker://centos:7.9.2009"; fi ;;
+            rhel)          if [ "$major" = "7" ]; then BASE_IMAGE="docker://centos:7.9.2009"; else BASE_IMAGE="docker://rockylinux:$major"; fi ;;
+            rocky)         BASE_IMAGE="docker://rockylinux:$major" ;;
+            almalinux)     BASE_IMAGE="docker://almalinux:$major" ;;
+            debian)        BASE_IMAGE="docker://debian:$major" ;;
+            ubuntu)        BASE_IMAGE="docker://ubuntu:$OS_VERSION_ID" ;;
+            opensuse-leap) BASE_IMAGE="docker://opensuse/leap:$OS_VERSION_ID" ;;
+        esac
+    fi
+}
+
+collect_sysinfo() {
+    local f="$BUILDDIR/sysinfo.txt"
+    local tmp="${APPTAINER_TMPDIR:-${TMPDIR:-/tmp}}"
+    : > "$f"
+    kv "$f" hostname "$(hostname)"
+    kv "$f" date "$(date '+%Y-%m-%d %H:%M:%S')"
+    kv "$f" user "$(id -un)"
+    kv "$f" jobid "${SLURM_JOB_ID:-${JOB_ID:-}}"
+    kv "$f" kernel "$(uname -r)"
+    kv "$f" arch "$(uname -m)"
+    kv "$f" os_id "$OS_ID"
+    kv "$f" os_version_id "$OS_VERSION_ID"
+    kv "$f" os_pretty_name "$OS_PRETTY_NAME"
+    kv "$f" os_family "$OS_FAMILY"
+    kv "$f" package_manager "$PKG_MANAGER"
+    kv "$f" base_image "$BASE_IMAGE"
+    kv "$f" glibc "$(firstline ldd --version)"
+    kv "$f" bash "$BASH_VERSION"
+    kv "$f" apptainer "$(if [ -n "$APPTAINER" ]; then firstline "$APPTAINER" --version; fi)"
+    kv "$f" strace "$(if command -v strace >/dev/null 2>&1; then firstline strace -V; fi)"
+    kv "$f" objdump "$(if command -v objdump >/dev/null 2>&1; then firstline objdump --version; fi)"
+    kv "$f" cpus "$(nproc 2>/dev/null)"
+    kv "$f" memory_kb "$(awk '/^MemTotal:/ {print $2}' /proc/meminfo 2>/dev/null)"
+    kv "$f" ptrace_scope "$(cat /proc/sys/kernel/yama/ptrace_scope 2>/dev/null)"
+    kv "$f" tmpdir "$tmp"
+    kv "$f" tmpdir_free_kb "$(df -Pk "$tmp" 2>/dev/null | awk 'NR==2 {print $4}')"
+    kv "$f" builddir_free_kb "$(df -Pk "$BUILDDIR" 2>/dev/null | awk 'NR==2 {print $4}')"
+}
+
+# an inventory of the node's software. This is a record for the manifest; the files themselves
+# are captured from the trace in capture_software
+collect_software() {
+    local f="$BUILDDIR/software.txt" t path
+    : > "$f"
+    for t in R Rscript perl python python3 java tcsh csh matlab octave; do
+        path="$(command -v "$t" 2>/dev/null)"
+        if [ -z "$path" ]; then continue; fi
+        kv "$f" "$t.path" "$path"
+        case "$t" in
+            R|Rscript|python|python3) kv "$f" "$t.version" "$(firstline "$t" --version)" ;;
+            perl) kv "$f" "$t.version" "$(timeout 60 perl -e 'print $^V' 2>&1)" ;;
+            java) kv "$f" "$t.version" "$(firstline java -version)" ;;
+        esac
+    done
+
+    case "$PKG_MANAGER" in
+        rpm)  rpm -qa --qf '%{NAME}\t%{VERSION}-%{RELEASE}\t%{ARCH}\n' 2>/dev/null | LC_ALL=C sort > "$BUILDDIR/packages.txt" ;;
+        dpkg) dpkg-query -W -f '${Package}\t${Version}\t${Architecture}\n' 2>/dev/null | LC_ALL=C sort > "$BUILDDIR/packages.txt" ;;
+        *)    : > "$BUILDDIR/packages.txt" ;;
+    esac
+    kv "$f" packages.count "$(wc -l < "$BUILDDIR/packages.txt")"
+
+    # 'module' is a shell function, only defined in a login shell
+    if type module >/dev/null 2>&1; then
+        module list > "$BUILDDIR/modules.txt" 2>&1
+    else
+        : > "$BUILDDIR/modules.txt"
+    fi
+
+    if [ -d /opt ]; then
+        find /opt -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | LC_ALL=C sort > "$BUILDDIR/opt.txt"
+    else
+        : > "$BUILDDIR/opt.txt"
+    fi
+}
+
+# run the pipeline once under strace, outside a container (doc section 7, step 1). run.sh reads
+# NIDB_PIPELINE_DIR, NIDB_INPUT_DIR and NIDB_OUTPUT_DIR in place of /pipeline, /input and /output
+reference_run() {
+    local scratch="$BUILDDIR/reference" rc
+    if [ ! -f "$BUILDDIR/run.sh" ]; then fail "run.sh is missing from the build directory"; fi
+    rm -rf "$scratch"
+    mkdir -p "$scratch" || fail "Unable to create [$scratch]"
+
+    log "Reference run: subject [$REF_SUBJECTUID] study [$REF_STUDYNUM] [$REF_STUDYDATETIME]"
+    NIDB_PIPELINE_DIR="$BUILDDIR" NIDB_INPUT_DIR="$BUILDDIR/input" NIDB_OUTPUT_DIR="$scratch" \
+        strace -f -s 4096 -e trace=file,process -o "$BUILDDIR/trace.log" \
+        bash -l "$BUILDDIR/run.sh" --subjectuid "$REF_SUBJECTUID" --studynum "$REF_STUDYNUM" --studydatetime "$REF_STUDYDATETIME" > "$BUILDDIR/reference-run.log" 2>&1
+    rc=$?
+    log "Reference run finished with exit code [$rc]"
+
+    if [ ! -s "$BUILDDIR/trace.log" ]; then fail "The reference run produced no trace. Check that strace works on this node (ptrace_scope in sysinfo.txt)"; fi
+    if [ $rc -ne 0 ]; then warn "The reference run exited with code [$rc], so the trace may not include everything the pipeline uses. See reference-run.log"; fi
+}
+
+# sort the traced files and copy them into staging/, and write environment.txt (doc section 7, step 2)
+capture_software() {
+    # TODO: package/opt/library-root/unowned sorting, ldd pass, deny list, glibc check, environment
+    fail "Software capture is not implemented yet"
+}
+
+write_definition() {
+    echo "Bootstrap: localimage"
+    echo "From: $BUILDDIR/base"
+    echo ""
+    echo "%environment"
+    if [ -f "$BUILDDIR/environment.txt" ]; then sed 's/^/    /' "$BUILDDIR/environment.txt"; fi
+    echo ""
+    echo "%runscript"
+    echo '    exec /pipeline/run.sh "$@"'
+    echo ""
+    echo "%labels"
+    echo "    org.nidb.pipeline.name $PIPELINE_NAME"
+    echo "    org.nidb.pipeline.version $PIPELINE_VERSION"
+    echo "    org.nidb.base $BASE_IMAGE"
+    echo "    org.nidb.buildos $OS_PRETTY_NAME"
+    echo "    org.nidb.exported $(date '+%Y-%m-%d')"
+    echo ""
+    # README.txt is written by NiDB: usage, arguments and the expected /input layout
+    echo "%help"
+    sed 's/^/    /' "$BUILDDIR/README.txt"
+}
+
+# sandbox from the base image, add the captured software and /pipeline, then build the .sif (doc section 8, steps 4.4-4.5)
+build_image() {
+    export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-${TMPDIR:-/tmp}}"
+    cd "$BUILDDIR" || fail "Unable to cd into [$BUILDDIR]"
+
+    # sandboxes can contain read-only directories
+    if [ -d base ]; then chmod -R u+w base 2>/dev/null; rm -rf base; fi
+
+    log "Creating a sandbox from base image [$BASE_IMAGE]"
+    "$APPTAINER" build --sandbox base "$BASE_IMAGE" || fail "Unable to create a sandbox from base image [$BASE_IMAGE]"
+
+    log "Copying the captured software and the pipeline into the sandbox"
+    cp -a staging/. base/ || fail "Unable to copy the captured software into the sandbox"
+    mkdir -p base/pipeline base/input base/output || fail "Unable to create /pipeline, /input and /output in the sandbox"
+    cp -f run.sh run.sh.template manifest.json requiredvars.txt README.txt base/pipeline/ || fail "Unable to copy the pipeline files into the sandbox"
+    chmod 755 base/pipeline/run.sh
+
+    write_definition > container.def
+
+    log "Building [$SIF_NAME]"
+    rm -f "$SIF_NAME"
+    "$APPTAINER" build "$SIF_NAME" container.def || fail "Unable to build [$SIF_NAME]. If the build needs root, this node needs fakeroot (see 'Cluster requirements' in the NiDB container documentation)"
+}
+
+# run the new image on the reference input and compare the output file list with the reference analysis (doc section 8, step 4.6)
+validate() {
+    local out="$BUILDDIR/validation-output" f="$BUILDDIR/validation.txt" rc nmissing nextra
+    rm -rf "$out"
+    mkdir -p "$out" || fail "Unable to create [$out]"
+
+    log "Validation run"
+    "$APPTAINER" run --bind "$BUILDDIR/input:/input:ro" --bind "$out:/output" "$BUILDDIR/$SIF_NAME" --subjectuid "$REF_SUBJECTUID" --studynum "$REF_STUDYNUM" --studydatetime "$REF_STUDYDATETIME" > "$BUILDDIR/validation-run.log" 2>&1
+    rc=$?
+    log "Validation run finished with exit code [$rc]"
+
+    : > "$f"
+    kv "$f" exitcode "$rc"
+    if [ $rc -ne 0 ]; then warn "The validation run exited with code [$rc]. See validation-run.log"; fi
+
+    if [ ! -d "$REF_ANALYSISDIR" ]; then
+        warn "Reference analysis directory [$REF_ANALYSISDIR] not found on $(hostname), so the validation output was not compared"
+        return 0
+    fi
+
+    # NiDB's pipeline/ directory (logs, job files) isn't created by the container
+    (cd "$REF_ANALYSISDIR" && find . -path ./pipeline -prune -o -type f -print) | LC_ALL=C sort > "$BUILDDIR/validation-reference-files.txt"
+    (cd "$out" && find . -path ./pipeline -prune -o -type f -print) | LC_ALL=C sort > "$BUILDDIR/validation-container-files.txt"
+    LC_ALL=C comm -23 "$BUILDDIR/validation-reference-files.txt" "$BUILDDIR/validation-container-files.txt" > "$BUILDDIR/validation-missing.txt"
+    LC_ALL=C comm -13 "$BUILDDIR/validation-reference-files.txt" "$BUILDDIR/validation-container-files.txt" > "$BUILDDIR/validation-extra.txt"
+    nmissing=$(wc -l < "$BUILDDIR/validation-missing.txt")
+    nextra=$(wc -l < "$BUILDDIR/validation-extra.txt")
+
+    kv "$f" reference_files "$(wc -l < "$BUILDDIR/validation-reference-files.txt")"
+    kv "$f" container_files "$(wc -l < "$BUILDDIR/validation-container-files.txt")"
+    kv "$f" missing_files "$nmissing"
+    kv "$f" extra_files "$nextra"
+    { echo ""; echo "[missing]"; cat "$BUILDDIR/validation-missing.txt"; echo ""; echo "[extra]"; cat "$BUILDDIR/validation-extra.txt"; } >> "$f"
+
+    if [ "$nmissing" -gt 0 ]; then warn "$nmissing files in the reference analysis were not created by the container. See validation.txt"; fi
+}
+
+# ---------- main ----------
+cd "$BUILDDIR" || { echo "Unable to cd into the build directory [$BUILDDIR]"; exit 1; }
+exec >> "$BUILDDIR/build.log" 2>&1
+rm -f build.exitcode build.exitcode.tmp build-error.txt build-warnings.txt
+trap finish EXIT
+trap 'exit 143' TERM
+trap 'exit 130' INT
+
+log "Building container [$CONTAINER_ID] for pipeline [$PIPELINE_NAME] version [$PIPELINE_VERSION] on $(hostname)"
+
+# the login environment, before this script changes anything
+env | LC_ALL=C sort > "$BUILDDIR/env.txt"
+
+find_tools
+detect_os
+collect_sysinfo
+collect_software
+check_tools
+if [ -z "$BASE_IMAGE" ]; then fail "No base image for this OS [$OS_PRETTY_NAME] (ID [$OS_ID], VERSION_ID [$OS_VERSION_ID])"; fi
+log "OS [$OS_PRETTY_NAME], family [$OS_FAMILY], package manager [$PKG_MANAGER], base image [$BASE_IMAGE]"
+
+reference_run
+capture_software
+build_image
+if [ "$RUN_VALIDATION" = "1" ]; then validate; else log "Validation run skipped"; fi
+
+log "Build complete"
+exit 0
+)BASH";
+
+    QString path = c.buildDir + "/build-container.sh";
+    if (!WriteTextFile(path, settings.join("\n") + "\n" + body, false)) {
+        msg = "Unable to write [" + path + "]";
+        return false;
+    }
+    QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner | QFileDevice::ReadGroup | QFileDevice::ExeGroup | QFileDevice::ReadOther | QFileDevice::ExeOther);
+
+    AppendBuildLog(c.containerID, QString("Wrote build-container.sh. Reference study [%1/%2], reference analysis directory [%3]").arg(a.uid).arg(a.studynum).arg(refAnalysisDir));
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteClusterJob -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write build.job: the scheduler header (from the pipeline's cluster settings) plus a call to
+ * build-container.sh, which WriteContainerBuildScript() has already written. The reference study's values
+ * are in build-container.sh, so build.job passes no arguments. The scheduler output goes to the build directory.
+ * The wall time is the pipeline's, times the number of pipeline runs (reference, plus validation), plus 4 hours
+ * @param c The request
+ * @param p The pipeline
+ * @param msg Error message, if any
+ * @return true if written
+ */
+bool modulePipelineContainer::WriteClusterJob(containerRequest &c, pipeline &p, QString &msg) {
+
+    /* paths as the compute node sees them */
+    QString clusterBuildDir = GetClusterBuildDir(c.containerID);
+    QString jobName = RemoveNonAlphaNumericChars(p.name) + "-container";
+
+    /* the build runs the pipeline once (reference run), and again if validating, plus the capture and the image
+       build. So allow the pipeline's wall time for each run, plus 4 hours */
+    int wallTime = 0;
+    if (p.clusterMaxWallTime > 0)
+        wallTime = p.clusterMaxWallTime * (c.runValidation ? 2 : 1) + 240;
+    QString wallTimeStr = QString("%1:%2:00").arg(wallTime/60).arg(wallTime % 60, 2, 10, QChar('0'));
+
+    QString jobfile;
+    if (p.clusterType == "slurm") {
+        jobfile += "#!/bin/bash -l\n";
+        jobfile += "#SBATCH -J " + jobName + "\n";
+        jobfile += "#SBATCH --nodes=1\n";
+        jobfile += "#SBATCH --partition=" + p.clusterQueue + "\n";
+        jobfile += "#SBATCH -o " + clusterBuildDir + "/%x.o%j\n";
+        jobfile += "#SBATCH -e " + clusterBuildDir + "/%x.e%j\n";
+        if (p.clusterMemory > 0)
+            jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(int(ceil(p.clusterMemory)));
+        jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(qMax(1, p.clusterNumCores));
+        if (wallTime > 0)
+            jobfile += "#SBATCH -t " + wallTimeStr + "\n";
+    }
+    else { /* assume SGE otherwise, as modulePipeline does */
+        jobfile += "#!/bin/bash\n";
+        jobfile += "#$ -N " + jobName + "\n";
+        jobfile += "#$ -S /bin/bash\n";
+        jobfile += "#$ -j y\n";
+        jobfile += "#$ -o " + clusterBuildDir + "/\n";
+        /* no '-V'. The submit host's environment would end up in env.txt and the image's environment instead of the node's login environment */
+        jobfile += "#$ -u " + n->cfg["queueuser"] + "\n";
+        if (wallTime > 0)
+            jobfile += "#$ -l h_rt=" + wallTimeStr + "\n";
+    }
+
+    jobfile += "\n";
+    jobfile += "echo Hostname: `hostname`\n";
+    jobfile += "echo Username: `whoami`\n\n";
+
+    /* build-container.sh has all the settings for this build, so it takes no arguments. Run it in a login shell,
+       like the pipeline's own jobs, so the reference run sees the same environment. It logs to build.log and
+       writes build.exitcode, which the module polls for */
+    jobfile += "exec /bin/bash -l " + ShellQuote(clusterBuildDir + "/build-container.sh") + "\n";
+
+    QString path = c.buildDir + "/build.job";
+    if (!WriteTextFile(path, jobfile, false)) {
+        msg = "Unable to write [" + path + "]";
+        return false;
+    }
+    QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner | QFileDevice::ReadGroup | QFileDevice::ExeGroup | QFileDevice::ReadOther | QFileDevice::ExeOther);
+
+    AppendBuildLog(c.containerID, QString("Wrote build.job for [%1] queue [%2]. Wall time [%3]").arg(p.clusterType == "slurm" ? "slurm" : "SGE").arg(p.clusterQueue).arg(wallTime > 0 ? wallTimeStr : "none"));
+    return true;
 }
 
 
@@ -442,6 +1141,38 @@ bool modulePipelineContainer::WriteBuildJob(containerRequest &c, pipeline &p, QS
  */
 QString modulePipelineContainer::GetBuildDir(int containerID) {
     return QString("%1/_apptainer/%2").arg(n->cfg["analysisdir"]).arg(containerID);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetClusterBuildDir ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief The build directory as the compute nodes see it. Used inside build-container.sh
+ * @param containerID pipelinecontainer_id
+ * @return <clusteranalysisdir>/_apptainer/<containerid>, or GetBuildDir() if clusteranalysisdir isn't set
+ */
+QString modulePipelineContainer::GetClusterBuildDir(int containerID) {
+    if (n->cfg["clusteranalysisdir"].trimmed() == "")
+        return GetBuildDir(containerID);
+
+    return QString("%1/_apptainer/%2").arg(n->cfg["clusteranalysisdir"]).arg(containerID);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetContainerFileName --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief The .sif filename. The same as the example on pipelinecontainers.php
+ * @param p The pipeline
+ * @param version Pipeline version
+ * @return <pipeline>-v<version>.sif, with characters other than letters, numbers, _ . - replaced with _
+ */
+QString modulePipelineContainer::GetContainerFileName(pipeline &p, int version) {
+    QString name = p.name;
+    name.replace(QRegularExpression("[^A-Za-z0-9_.-]"), "_");
+    return QString("%1-v%2.sif").arg(name).arg(version);
 }
 
 

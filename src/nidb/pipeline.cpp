@@ -23,35 +23,36 @@
 #include "pipeline.h"
 #include <QSqlQuery>
 #include <QTextStream>
+#include <cmath>
 
 namespace {
-QString FormatBool(bool value) { return value ? "true" : "false"; }
+    QString FormatBool(bool value) { return value ? "true" : "false"; }
 
-QString FormatDateTime(const QDateTime &value) {
-    return value.isValid() ? value.toString(Qt::ISODate) : "<invalid>";
-}
+    QString FormatDateTime(const QDateTime &value) {
+        return value.isValid() ? value.toString(Qt::ISODate) : "<invalid>";
+    }
 
-QString FormatString(const QString &value) {
-    return value.isEmpty() ? "<empty>" : value;
-}
+    QString FormatString(const QString &value) {
+        return value.isEmpty() ? "<empty>" : value;
+    }
 
-QString FormatIntList(const QList<int> &values) {
-    if (values.isEmpty())
-        return "[]";
+    QString FormatIntList(const QList<int> &values) {
+        if (values.isEmpty())
+            return "[]";
 
-    QStringList strValues;
-    for (int value : values)
-        strValues.append(QString::number(value));
+        QStringList strValues;
+        for (int value : values)
+            strValues.append(QString::number(value));
 
-    return QString("[%1]").arg(strValues.join(", "));
-}
+        return QString("[%1]").arg(strValues.join(", "));
+    }
 
-QString FormatStringList(const QStringList &values) {
-    if (values.isEmpty())
-        return "[]";
+    QString FormatStringList(const QStringList &values) {
+        if (values.isEmpty())
+            return "[]";
 
-    return QString("[%1]").arg(values.join(", "));
-}
+        return QString("[%1]").arg(values.join(", "));
+    }
 }
 
 /* ---------------------------------------------------------- */
@@ -149,14 +150,27 @@ void pipeline::LoadPipelineInfo() {
     }
 
     /* check if anything is missing */
+    clusterSubmitHostSetting = clusterSubmitHost;
     if (clusterSubmitHost == "")
         clusterSubmitHost = n->cfg["clustersubmithost"];
 
+    /* root analysis directory. Same logic as modulePipeline::GetAnalysisLocalPath(): 'b', an analysisdirs row ID, or the default */
     if (dirStructure == "b")
         pipelineRootDir = n->cfg["analysisdirb"];
-    else {
-        pipelineRootDir = n->cfg["analysisdir"];
+    else if (IsInt(dirStructure)) {
+        QSqlQuery q2;
+        q2.prepare("select nidbpath from analysisdirs where analysisdir_id = :dir");
+        q2.bindValue(":dir", dirStructure.toInt());
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        if (q2.first())
+            pipelineRootDir = q2.value("nidbpath").toString().trimmed();
+        else {
+            pipelineRootDir = n->cfg["analysisdir"];
+            n->Log(QString("analysisdir [%1] for pipeline [%2] not found in database. Using default path instead [%3]").arg(dirStructure).arg(pipelineid).arg(pipelineRootDir));
+        }
     }
+    else
+        pipelineRootDir = n->cfg["analysisdir"];
 
     /* remove any whitespace from the queue... SGE hates whitespace */
     static const QRegularExpression re("\\s+");
@@ -177,7 +191,10 @@ QStringList pipeline::GetParentList() {
     if (parentIDs.size() > 0) {
         for (int i=0; i< parentIDs.size(); i++) {
             pipeline p(parentIDs[i], n);
-            l.append(p.name);
+            if (p.isValid)
+                l.append(p.name);
+            else
+                n->Log(QString("Parent pipeline [%1] of pipeline [%2] not found: %3").arg(parentIDs[i]).arg(pipelineid).arg(p.msg));
         }
     }
     return l;
@@ -256,12 +273,12 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     //s.ClusterSubmitHostUser = clusterSubmitHostUser;
     s.ClusterEngine = clusterType;
     s.ClusterMaxWallTime = clusterMaxWallTime;
-    s.ClusterMemory = clusterMemory;
+    s.ClusterMemory = int(ceil(clusterMemory)); /* squirrel stores whole GB. Round up, as the slurm job file does */
     s.ClusterNumberConcurrentAnalyses = numConcurrentAnalysis;
     s.ClusterNumberCores = clusterNumCores;
     s.ClusterQueue = clusterQueue;
     s.ClusterSubmitDelay = submitDelay;
-    s.ClusterSubmitHost = clusterSubmitHost;
+    s.ClusterSubmitHost = clusterSubmitHostSetting; /* not this server's default, which may be wrong for the importing instance */
     s.ClusterUser = clusterUser;
     s.PipelineAnalysisLevel = level;
     s.PipelineCompleteFiles = completeFiles;
@@ -278,6 +295,8 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     s.SearchGroup = group;
     //s.SearchGroupType = groupType;
     s.SearchParentPipelines = GetParentList();
+    s.SetupBidsDirectory = BIDSoutputDir;
+    s.SetupWriteBids = outputBIDS ? "1" : "0";
     s.SetupDataCopyMethod = dataCopyMethod;
     s.SetupDependencyDirectory = depDir;
     s.SetupTempDirectory = tmpDir;
@@ -298,6 +317,7 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
             d.ExportDataFormat = q.value("pdd_dataformat").toString();
             d.ExportSubDirectoryName = q.value("pdd_location").toString();
             d.SearchAssociationType = q.value("pdd_assoctype").toString();
+            d.SearchDataLevel = q.value("pdd_level").toString();
             d.SearchImageType = q.value("pdd_imagetype").toString();
             d.SearchModality = q.value("pdd_modality").toString();
             d.SearchNumberBOLDreps = q.value("pdd_numboldreps").toString();
@@ -311,7 +331,6 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
             d.flags.IsEnabled = q.value("pdd_enabled").toBool();
             d.flags.IsOptional = q.value("pdd_optional").toBool();
             d.flags.IsPrimaryProtocol = q.value("pdd_isprimaryprotocol").toBool();
-            //d. = q.value("pdd_level").toString();
             //d.numImagesCriteria = q.value("pdd_numimagescriteria").toString();
 
             s.dataSteps.append(d);
@@ -319,69 +338,44 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     }
 
     /* scripts (required) */
-    s.PipelinePrimaryScript = GetPrimaryScript();
-    s.PipelineSecondaryScript = GetSecondaryScript();
+    s.PipelinePrimaryScript = GetScript(false);
+    s.PipelineSecondaryScript = GetScript(true);
 
     return s;
 }
 
 
 /* ---------------------------------------------------------- */
-/* --------- GetPrimaryScript ------------------------------- */
+/* --------- GetScript -------------------------------------- */
 /* ---------------------------------------------------------- */
-QString pipeline::GetPrimaryScript() {
+/* the main (supplement = false) or supplement script, one step per line, in the same format as
+   RenderStepLine() in pipelines.php, so the script can be pasted back into the pipeline editor:
+   disabled steps start with '#', and {NOLOG} and the description go in a trailing comment */
+QString pipeline::GetScript(bool supplement) {
     QString script;
 
-    /* get primary script from the pipeline_steps */
     QSqlQuery q;
-    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 0 order by ps_order asc");
+    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = :supplement order by ps_order asc");
     q.bindValue(":pipelineid", pipelineid);
     q.bindValue(":version", version);
+    q.bindValue(":supplement", supplement ? 1 : 0);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0) {
-        while (q.next()) {
-            QString str;
-            QString command = q.value("ps_command").toString();
-            QString description = q.value("ps_description").toString();
-            bool enable = q.value("ps_enabled").toBool();
-            str = QString(command + " #" + description);
-            if (!enable)
-                str = QString("#" + str);
+    while (q.next()) {
+        QString command = q.value("ps_command").toString();
+        QString description = q.value("ps_description").toString();
+        bool enabled = q.value("ps_enabled").toBool();
+        bool logged = q.value("ps_logged").toBool();
 
-            str += "\n";
-            script.append(str);
-        }
-    }
+        /* disabled steps are stored with their leading '#', but older rows may not have it */
+        QString line = command;
+        if (!enabled && !command.trimmed().startsWith("#"))
+            line = "#" + command;
 
-    return script;
-}
+        QString comment = QString("%1 %2").arg(logged ? "" : "{NOLOG}").arg(description).trimmed();
+        if (comment != "")
+            line += "     # " + comment;
 
-
-/* ---------------------------------------------------------- */
-/* --------- GetSecondaryScript ----------------------------- */
-/* ---------------------------------------------------------- */
-QString pipeline::GetSecondaryScript() {
-    QString script;
-
-    /* get primary script from the pipeline_steps */
-    QSqlQuery q;
-    q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = 1 order by ps_order asc");
-    q.bindValue(":pipelineid", pipelineid);
-    q.bindValue(":version", version);
-    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0) {
-        while (q.next()) {
-            QString str;
-            QString command = q.value("ps_command").toString();
-            QString description = q.value("ps_description").toString();
-            bool enable = q.value("ps_enabled").toBool();
-            str = QString(command + " #" + description);
-            if (!enable)
-                str = QString("#" + str);
-
-            str += "\n";
-            script.append(str);
-        }
+        script.append(line + "\n");
     }
 
     return script;

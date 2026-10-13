@@ -28,14 +28,13 @@
 class pipeline
 {
 public:
-    pipeline();
     pipeline(int id, nidb *a);
-    nidb *n;
+    nidb *n = nullptr;
 
     /* object variables */
     QString msg;
-    bool isValid = true;
-    int pipelineid;
+    bool isValid = false;
+    int pipelineid = 0;
 
     /* pipeline variables */
     QDateTime createDate;
@@ -63,39 +62,40 @@ public:
     QString statusMessage;
     QString tmpDir;
     QStringList completeFiles;
-    bool debug;
-    bool enabled;
-    bool groupBySubject;
-    bool isHidden;
-    bool isPrivate;
-    bool outputBIDS;
-    bool removeData;
-    bool testing;
-    bool useProfile;
-    bool useTmpDir;
-    int dynamicGroupID;
-    int level;
-    int numConcurrentAnalysis;
-    int ownerID;
-    int submitDelay;
-    int version;
+    bool debug = false;
+    bool enabled = false;
+    bool groupBySubject = false;
+    bool isHidden = false;
+    bool isPrivate = false;
+    bool outputBIDS = false;
+    bool removeData = false;
+    bool testing = false;
+    bool useProfile = false;
+    bool useTmpDir = false;
+    int dynamicGroupID = 0;
+    int level = 0;
+    int numConcurrentAnalysis = 0;
+    int ownerID = 0;
+    int submitDelay = 0;
+    int version = 0;
     QString clusterQueue;
     QString clusterSubmitHost;
     QString clusterSubmitHostUser;
     QString clusterType;
     QString clusterUser;
-    int clusterMemory;
-    int clusterMaxWallTime;
-    int clusterNumCores;
+    double clusterMemory = 0.0; /* GB per core. Fractional values are allowed */
+    int clusterMaxWallTime = 0;
+    int clusterNumCores = 0;
 
     QString PrintPipelineVariables() const;
     squirrelPipeline GetSquirrelObject(QString databaseUUID);
 
 private:
     void LoadPipelineInfo();
-    QString GetPrimaryScript();
-    QString GetSecondaryScript();
+    QString GetScript(bool supplement);
     QStringList GetParentList();
+
+    QString clusterSubmitHostSetting; /* submit host as stored in the pipeline, before the cfg default is applied. Used for export */
 
 };
 
