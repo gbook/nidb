@@ -58,11 +58,82 @@ namespace {
 /* ---------------------------------------------------------- */
 /* --------- pipeline --------------------------------------- */
 /* ---------------------------------------------------------- */
-pipeline::pipeline(int id, nidb *a)
+pipeline::pipeline(nidb *a)
 {
     n = a;
-    pipelineid = id;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Load ------------------------------------------- */
+/* ---------------------------------------------------------- */
+bool pipeline::Load() {
+
+    /* check if searchPipelineRowID is valid, if so load it */
+    if (searchPipelineRowID < 1) {
+        /* no valid pipeline IDs */
+        msg = "Missing search pipelineID";
+        valid = false;
+        return false;
+    }
+
+    pipelineRowID = searchPipelineRowID;
     LoadPipelineInfo();
+
+    if (!valid) {
+        //msg = "Pipeline not valid [" + msg + "]";
+        return false;
+    }
+
+    /* check if searchVersion is valid, if so load it */
+    if (searchPipelineVersion > -1) {
+        QSqlQuery q;
+        q.prepare("select * from pipeline_options where pipeline_id = :pipelineid and pipeline_version = :version");
+        q.bindValue(":pipelineid", pipelineRowID);
+        q.bindValue(":version", searchPipelineVersion);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.size() < 1) {
+            msg = QString("Pipeline *version* [%1] not found").arg(searchPipelineVersion);
+            valid = false;
+            return false;
+        }
+        q.first();
+
+        version = searchPipelineVersion;
+
+        /* versioned variables */
+        depDir = q.value("pipeline_dependencydir").toString().trimmed();
+        depLevel = q.value("pipeline_dependencylevel").toString().trimmed();
+        depLinkType = q.value("pipeline_deplinktype").toString().trimmed();
+        //group = q.value("pipeline_group").toString().trimmed();
+        groupBySubject = q.value("pipeline_groupbysubject").toBool();
+        //groupType = q.value("pipeline_grouptype").toString().trimmed();
+        dynamicGroupID = q.value("pipeline_dynamicgroupid").toInt();
+        outputBIDS = q.value("pipeline_outputbids").toInt();
+        BIDSoutputDir = q.value("pipeline_bidsoutputdir").toString();
+        completeFiles = q.value("pipeline_completefiles").toString().trimmed().split(",", Qt::SkipEmptyParts);
+        resultScript = q.value("pipeline_resultsscript").toString().trimmed();
+        scriptComment = q.value("pipeline_scriptcomment").toString().trimmed();
+        QStringList dependencyStr = q.value("pipeline_dependency").toString().trimmed().split(",", Qt::SkipEmptyParts);
+        QStringList groupIDStr = q.value("pipeline_groupid").toString().trimmed().split(",", Qt::SkipEmptyParts);
+        QStringList projectIDStr = q.value("pipeline_projectid").toString().trimmed().split(",", Qt::SkipEmptyParts);
+
+        /* split the 'list' variables */
+        parentIDs.clear();
+        foreach (QString did, dependencyStr) {
+            parentIDs.append(did.toInt());
+        }
+        groupIDs.clear();
+        foreach (QString gid, groupIDStr) {
+            groupIDs.append(gid.toInt());
+        }
+        projectIDs.clear();
+        foreach (QString pid, projectIDStr) {
+            projectIDs.append(pid.toInt());
+        }
+    }
+
+    return true;
 }
 
 
@@ -71,20 +142,20 @@ pipeline::pipeline(int id, nidb *a)
 /* ---------------------------------------------------------- */
 void pipeline::LoadPipelineInfo() {
 
-    if (pipelineid < 1) {
+    if (pipelineRowID < 1) {
         msg = "Invalid pipeline ID";
-        isValid = false;
+        valid = false;
         return;
     }
 
     /* get the path to the analysisroot */
     QSqlQuery q;
     q.prepare("select * from pipelines where pipeline_id = :pipelineid");
-    q.bindValue(":pipelineid", pipelineid);
+    q.bindValue(":pipelineid", pipelineRowID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() < 1) {
         msg = "Pipeline query returned no results. Possibly invalid pipeline ID or recently deleted?";
-        isValid = false;
+        valid = false;
         return;
     }
     q.first();
@@ -126,6 +197,7 @@ void pipeline::LoadPipelineInfo() {
     BIDSoutputDir = q.value("pipeline_bidsoutputdir").toString();
     removeData = q.value("pipeline_removedata").toBool();
     resultScript = q.value("pipeline_resultsscript").toString().trimmed();
+    scriptComment = q.value("pipeline_scriptcomment").toString().trimmed();
     status = q.value("pipeline_status").toString().trimmed();
     statusMessage = q.value("pipeline_statusmessage").toString().trimmed();
     submitDelay = q.value("pipeline_submitdelay").toInt();
@@ -139,12 +211,15 @@ void pipeline::LoadPipelineInfo() {
     QStringList projectIDStr = q.value("pipeline_projectid").toString().trimmed().split(",", Qt::SkipEmptyParts);
 
     /* split the 'list' variables */
+    parentIDs.clear();
     foreach (QString did, dependencyStr) {
         parentIDs.append(did.toInt());
     }
+    groupIDs.clear();
     foreach (QString gid, groupIDStr) {
         groupIDs.append(gid.toInt());
     }
+    projectIDs.clear();
     foreach (QString pid, projectIDStr) {
         projectIDs.append(pid.toInt());
     }
@@ -166,7 +241,7 @@ void pipeline::LoadPipelineInfo() {
             pipelineRootDir = q2.value("nidbpath").toString().trimmed();
         else {
             pipelineRootDir = n->cfg["analysisdir"];
-            n->Log(QString("analysisdir [%1] for pipeline [%2] not found in database. Using default path instead [%3]").arg(dirStructure).arg(pipelineid).arg(pipelineRootDir));
+            n->Log(QString("analysisdir [%1] for pipeline [%2] not found in database. Using default path instead [%3]").arg(dirStructure).arg(pipelineRowID).arg(pipelineRootDir));
         }
     }
     else
@@ -176,7 +251,7 @@ void pipeline::LoadPipelineInfo() {
     static const QRegularExpression re("\\s+");
     clusterQueue.replace(re,"");
 
-    isValid = true;
+    valid = true;
     msg = "Loaded pipeline details";
 }
 
@@ -190,11 +265,13 @@ QStringList pipeline::GetParentList() {
 
     if (parentIDs.size() > 0) {
         for (int i=0; i< parentIDs.size(); i++) {
-            pipeline p(parentIDs[i], n);
-            if (p.isValid)
+            pipeline p(n);
+            p.searchPipelineRowID = parentIDs[i];
+            p.Load();
+            if (p.isValid())
                 l.append(p.name);
             else
-                n->Log(QString("Parent pipeline [%1] of pipeline [%2] not found: %3").arg(parentIDs[i]).arg(pipelineid).arg(p.msg));
+                n->Log(QString("Parent pipeline [%1] of pipeline [%2] not found: %3").arg(parentIDs[i]).arg(pipelineRowID).arg(p.msg));
         }
     }
     return l;
@@ -212,54 +289,55 @@ QString pipeline::PrintPipelineVariables() const {
         stream << label << ": " << value << Qt::endl;
     };
 
-    writeLine("createDate", FormatDateTime(createDate));
-    writeLine("lastCheck", FormatDateTime(lastCheck));
-    writeLine("lastFinish", FormatDateTime(lastFinish));
-    writeLine("lastStart", FormatDateTime(lastStart));
-    writeLine("groupIDs", FormatIntList(groupIDs));
-    writeLine("parentIDs", FormatIntList(parentIDs));
-    writeLine("projectIDs", FormatIntList(projectIDs));
     writeLine("BIDSoutputDir", FormatString(BIDSoutputDir));
+    writeLine("clusterMaxWallTime", QString::number(clusterMaxWallTime));
+    writeLine("clusterMemory", QString::number(clusterMemory));
+    writeLine("clusterNumCores", QString::number(clusterNumCores));
+    writeLine("clusterQueue", FormatString(clusterQueue));
+    writeLine("clusterSubmitHost", FormatString(clusterSubmitHost));
+    writeLine("clusterSubmitHostUser", FormatString(clusterSubmitHostUser));
+    writeLine("clusterType", FormatString(clusterType));
+    writeLine("clusterUser", FormatString(clusterUser));
+    writeLine("completeFiles", FormatStringList(completeFiles));
+    writeLine("createDate", FormatDateTime(createDate));
     writeLine("dataCopyMethod", FormatString(dataCopyMethod));
+    writeLine("debug", FormatBool(debug));
     writeLine("depDir", FormatString(depDir));
     writeLine("depLevel", FormatString(depLevel));
     writeLine("depLinkType", FormatString(depLinkType));
     writeLine("desc", FormatString(desc));
     writeLine("dirStructure", FormatString(dirStructure));
     writeLine("directory", FormatString(directory));
-    writeLine("group", FormatString(group));
-    writeLine("name", FormatString(name));
-    writeLine("notes", FormatString(notes));
-    writeLine("pipelineRootDir", FormatString(pipelineRootDir));
-    writeLine("resultScript", FormatString(resultScript));
-    writeLine("status", FormatString(status));
-    writeLine("statusMessage", FormatString(statusMessage));
-    writeLine("tmpDir", FormatString(tmpDir));
-    writeLine("completeFiles", FormatStringList(completeFiles));
-    writeLine("debug", FormatBool(debug));
+    writeLine("dynamicGroupID", QString::number(dynamicGroupID));
     writeLine("enabled", FormatBool(enabled));
+    writeLine("group", FormatString(group));
     writeLine("groupBySubject", FormatBool(groupBySubject));
+    writeLine("groupIDs", FormatIntList(groupIDs));
     writeLine("isHidden", FormatBool(isHidden));
     writeLine("isPrivate", FormatBool(isPrivate));
+    writeLine("lastCheck", FormatDateTime(lastCheck));
+    writeLine("lastFinish", FormatDateTime(lastFinish));
+    writeLine("lastStart", FormatDateTime(lastStart));
+    writeLine("level", QString::number(level));
+    writeLine("name", FormatString(name));
+    writeLine("notes", FormatString(notes));
+    writeLine("numConcurrentAnalysis", QString::number(numConcurrentAnalysis));
     writeLine("outputBIDS", FormatBool(outputBIDS));
+    writeLine("ownerID", QString::number(ownerID));
+    writeLine("parentIDs", FormatIntList(parentIDs));
+    writeLine("pipelineRootDir", FormatString(pipelineRootDir));
+    writeLine("projectIDs", FormatIntList(projectIDs));
     writeLine("removeData", FormatBool(removeData));
+    writeLine("resultScript", FormatString(resultScript));
+    writeLine("scriptComment", FormatString(scriptComment));
+    writeLine("status", FormatString(status));
+    writeLine("statusMessage", FormatString(statusMessage));
+    writeLine("submitDelay", QString::number(submitDelay));
     writeLine("testing", FormatBool(testing));
+    writeLine("tmpDir", FormatString(tmpDir));
     writeLine("useProfile", FormatBool(useProfile));
     writeLine("useTmpDir", FormatBool(useTmpDir));
-    writeLine("dynamicGroupID", QString::number(dynamicGroupID));
-    writeLine("level", QString::number(level));
-    writeLine("numConcurrentAnalysis", QString::number(numConcurrentAnalysis));
-    writeLine("ownerID", QString::number(ownerID));
-    writeLine("submitDelay", QString::number(submitDelay));
     writeLine("version", QString::number(version));
-    writeLine("clusterQueue", FormatString(clusterQueue));
-    writeLine("clusterSubmitHost", FormatString(clusterSubmitHost));
-    writeLine("clusterSubmitHostUser", FormatString(clusterSubmitHostUser));
-    writeLine("clusterType", FormatString(clusterType));
-    writeLine("clusterUser", FormatString(clusterUser));
-    writeLine("clusterMemory", QString::number(clusterMemory));
-    writeLine("clusterMaxWallTime", QString::number(clusterMaxWallTime));
-    writeLine("clusterNumCores", QString::number(clusterNumCores));
 
     return output;
 }
@@ -306,7 +384,7 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     /* dataSteps */
     QSqlQuery q;
     q.prepare("select * from pipeline_data_def where pipeline_id = :pipelineid and pipeline_version = :version order by pdd_order + 0");
-    q.bindValue(":pipelineid",pipelineid);
+    q.bindValue(":pipelineid", pipelineRowID);
     q.bindValue(":version", version);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
@@ -338,8 +416,8 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
     }
 
     /* scripts (required) */
-    s.PipelinePrimaryScript = GetScript(false);
-    s.PipelineSecondaryScript = GetScript(true);
+    s.PipelinePrimaryScript = GetScript(false, version);
+    s.PipelineSecondaryScript = GetScript(true, version);
 
     return s;
 }
@@ -351,13 +429,13 @@ squirrelPipeline pipeline::GetSquirrelObject(QString databaseUUID) {
 /* the main (supplement = false) or supplement script, one step per line, in the same format as
    RenderStepLine() in pipelines.php, so the script can be pasted back into the pipeline editor:
    disabled steps start with '#', and {NOLOG} and the description go in a trailing comment */
-QString pipeline::GetScript(bool supplement) {
+QString pipeline::GetScript(bool supplement, int v) {
     QString script;
 
     QSqlQuery q;
     q.prepare("select * from pipeline_steps where pipeline_id = :pipelineid and pipeline_version = :version and ps_supplement = :supplement order by ps_order asc");
-    q.bindValue(":pipelineid", pipelineid);
-    q.bindValue(":version", version);
+    q.bindValue(":pipelineid", pipelineRowID);
+    q.bindValue(":version", v);
     q.bindValue(":supplement", supplement ? 1 : 0);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {

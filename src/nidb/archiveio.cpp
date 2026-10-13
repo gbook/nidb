@@ -3457,8 +3457,10 @@ bool archiveIO::WriteSquirrel(qint64 exportid, QString name, QString desc, QStri
         if (pipelineIDs.size() > 0) {
             for (int i=0; i<pipelineIDs.size(); i++) {
                 /* create and add each squirrelPipeline object */
-                pipeline p(pipelineIDs[i], n);
-                if (!p.isValid) {
+                pipeline p(n);
+                p.searchPipelineRowID = pipelineIDs[i];
+                p.Load();
+                if (!p.isValid()) {
                     n->Log(QString("Pipeline [%1] not found, not adding it to the package: %2").arg(pipelineIDs[i]).arg(p.msg));
                     continue;
                 }
@@ -3890,8 +3892,11 @@ bool archiveIO::WriteExportPackage(qint64 exportid, QString zipfilepath, QString
         int pipelineRowID = q.value("pipeline_id").toInt();
 
         /* add the pipeline to the package */
-        pipeline p(pipelineRowID, n);
-        if (!p.isValid) continue;
+        pipeline p(n);
+        p.searchPipelineRowID = pipelineRowID;
+        p.Load();
+        if (!p.isValid())
+            continue;
 
         squirrelPipeline sqrlPipeline(sqrl.GetDatabaseUUID());
         sqrlPipeline = p.GetSquirrelObject(sqrl.GetDatabaseUUID());
@@ -4235,8 +4240,10 @@ bool archiveIO::GetStoragePath(QString obj, int objectRowID, QString modality, Q
         }
     }
     else if (obj == "pipeline") {
-        pipeline p(objectRowID, n);
-        if (p.isValid) {
+        pipeline p(n);
+        p.searchPipelineRowID = objectRowID;
+        p.Load();
+        if (p.isValid()) {
             if (p.pipelineRootDir != "") {
                 path = p.pipelineRootDir;
                 success = true;

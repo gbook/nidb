@@ -188,10 +188,12 @@ bool modulePipelineContainer::ClaimRequest(containerRequest &c, QString fromStat
 bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
     AppendBuildLog(c.containerID, QString("Preparing container for pipeline [%1] version [%2], reference analysis [%3], validation [%4]").arg(c.pipelineID).arg(c.pipelineVersion).arg(c.referenceAnalysisID).arg(c.runValidation ? "yes" : "no"));
 
-    /* TODO: the pipeline object loads the current version. Load c.pipelineVersion instead, since the pipeline
-       may have been edited since the request was submitted */
-    pipeline p(c.pipelineID, n);
-    if (!p.isValid) {
+    /* the requested version, since the pipeline may have been edited since the request was submitted */
+    pipeline p(n);
+    p.searchPipelineRowID = c.pipelineID;
+    p.searchPipelineVersion = c.pipelineVersion;
+    p.Load();
+    if (!p.isValid()) {
         msg = QString("Unable to load pipeline [%1]: %2").arg(c.pipelineID).arg(p.msg);
         return false;
     }
@@ -212,6 +214,17 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
     }
     AppendBuildWarnings(c.containerID, warnings);
 
+    /* start from an empty build directory. A build.exitcode left from an earlier attempt would make
+       IsBuildFinished() true before the new job starts */
+    if (n->cfg["analysisdir"].trimmed() == "") {
+        msg = "analysisdir isn't set in the config, so there's nowhere to put the build directory";
+        return false;
+    }
+    QDir buildDir(c.buildDir);
+    if (buildDir.exists() && !buildDir.removeRecursively()) {
+        msg = "Unable to remove the build directory [" + c.buildDir + "] left from an earlier attempt";
+        return false;
+    }
     if (!MakePath(c.buildDir, msg))
         return false;
 
@@ -226,9 +239,29 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
         return false;
     }
 
-    /* TODO: write run.sh (copied from src/setup/apptainer), run.sh.template, requiredvars.txt and export.log into c.buildDir */
+    /* run.sh reads requiredvars.txt, one variable per line, since the image may not have jq */
+    if (!WriteTextFile(c.buildDir + "/run.sh.template", script, false) || !WriteTextFile(c.buildDir + "/requiredvars.txt", requiredVars.isEmpty() ? "" : requiredVars.join("\n") + "\n", false)) {
+        msg = "Unable to write run.sh.template and requiredvars.txt into [" + c.buildDir + "]";
+        return false;
+    }
 
-    if (!StageReferenceInput(c, msg))
+    if (!WriteRunScript(c, msg))
+        return false;
+
+    /* export.log records the checks. The errors stopped the export above, so only the warnings are left */
+    QStringList log;
+    log << QString("Exported [%1] version [%2] on %3").arg(p.name).arg(c.pipelineVersion).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    log << QString("Reference analysis [%1]").arg(c.referenceAnalysisID);
+    log << "Required arguments: " + (requiredVars.isEmpty() ? QString("none") : "--" + requiredVars.join(", --"));
+    log << QString("Export checks: %1 warning(s)").arg(warnings.size());
+    for (QString w : warnings)
+        log << "  " + w;
+    if (!WriteTextFile(c.buildDir + "/export.log", log.join("\n") + "\n", false)) {
+        msg = "Unable to write export.log into [" + c.buildDir + "]";
+        return false;
+    }
+
+    if (!StageReferenceInput(c, p, msg))
         return false;
 
     if (!WriteContainerBuildScript(c, p, msg))
@@ -236,6 +269,10 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
 
     if (!WriteClusterJob(c, p, msg))
         return false;
+
+    /* the build job runs as the pipeline's cluster user, which may not be the NiDB user, and writes into the build
+       directory. Same permissions modulePipeline gives analysis directories */
+    SystemCommand("chmod -Rf 777 " + ShellQuote(c.buildDir), true, true);
 
     AppendBuildLog(c.containerID, "Build directory [" + c.buildDir + "] is ready");
     return true;
@@ -316,7 +353,7 @@ bool modulePipelineContainer::CheckIfExportable(pipeline &p, int version, QStrin
     /* main steps of this version */
     modulePipeline mp(n);
     QList<pipelineStep> steps;
-    for (pipelineStep step : mp.GetPipelineSteps(p.pipelineid, version)) {
+    for (pipelineStep step : mp.GetPipelineSteps(p.GetPipelineRowID(), version)) {
         if (step.enabled && !step.supplement)
             steps.append(step);
     }
@@ -326,7 +363,7 @@ bool modulePipelineContainer::CheckIfExportable(pipeline &p, int version, QStrin
     /* the build re-runs a completed analysis of this version (the reference analysis) */
     QSqlQuery q;
     q.prepare("select count(*) 'num' from analysis where pipeline_id = :pipelineid and pipeline_version = :version and analysis_status = 'complete' and (analysis_isbad is null or analysis_isbad <> 1)");
-    q.bindValue(":pipelineid", p.pipelineid);
+    q.bindValue(":pipelineid", p.GetPipelineRowID());
     q.bindValue(":version", version);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.first() && (q.value("num").toInt() < 1))
@@ -343,8 +380,10 @@ bool modulePipelineContainer::CheckIfExportable(pipeline &p, int version, QStrin
 
     /* the caller has to supply the parent's output in /input */
     for (int parentID : p.parentIDs) {
-        pipeline parent(parentID, n);
-        warnings << QString("Depends on parent pipeline [%1]. Its output must be supplied in /input").arg(parent.isValid ? parent.name : QString::number(parentID));
+        pipeline parent(n);
+        parent.searchPipelineRowID = parentID;
+        parent.Load();
+        warnings << QString("Depends on parent pipeline [%1]. Its output must be supplied in /input").arg(parent.isValid() ? parent.name : QString::number(parentID));
     }
 
     /* software that needs a license, which is never copied into the image */
@@ -446,7 +485,9 @@ void modulePipelineContainer::CheckPaths(QString text, int step, QStringList &er
 /* ---------------------------------------------------------- */
 /**
  * @brief Render run.sh.template from the main script steps (doc sections 2-4). Export-time variables are
- * replaced; {subjectuid}, {studynum}, {studydatetime} and {analysisrootdir} are left for run.sh, lowercased
+ * replaced; {subjectuid}, {studynum}, {studydatetime} and {analysisrootdir} are left for run.sh, lowercased.
+ * Each enabled step is a comment, an echo, the cd to its working directory, and the command. Disabled steps
+ * are comments, and supplement steps are left out. requiredVars only counts the lines that run
  * @param p The pipeline
  * @param version Pipeline version
  * @param script The rendered template
@@ -456,14 +497,137 @@ void modulePipelineContainer::CheckPaths(QString text, int step, QStringList &er
  * @return true if there are no errors
  */
 bool modulePipelineContainer::RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings) {
-    /* TODO: share the step rendering with modulePipeline::CreateClusterJobFile() (doc section 9) */
-    Q_UNUSED(p);
-    Q_UNUSED(version);
-    Q_UNUSED(script);
-    Q_UNUSED(requiredVars);
-    Q_UNUSED(warnings);
-    errors << "RenderScriptTemplate() not implemented yet";
-    return false;
+    static const QStringList runtimeVars = { "subjectuid", "studynum", "studydatetime" };
+
+    script = "#!/bin/bash\n";
+    script += QString("# %1 version %2, exported from NiDB on %3\n").arg(p.name).arg(version).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    script += "# Rendered and run by /pipeline/run.sh. Steps run in order and a failing step doesn't stop later steps, unless run.sh is given --stop-on-error\n";
+
+    /* the lines that run, for the checks below. Comments and echo lines aren't checked */
+    QString executable;
+
+    modulePipeline mp(n);
+    int numSteps = 0;
+    for (pipelineStep step : mp.GetPipelineSteps(p.GetPipelineRowID(), version)) {
+        /* supplement steps aren't exported (doc section 2) */
+        if (step.supplement)
+            continue;
+
+        /* the description is written into comments and an echo, so remove the flags and flatten newlines */
+        QString description = step.description;
+        description.remove(QRegularExpression("\\{(nolog|nocheckin|profile)\\}", QRegularExpression::CaseInsensitiveOption));
+        description.replace(QRegularExpression("[\\x00-\\x1F]"), " ");
+        description = description.trimmed();
+
+        /* {workingdir} is the step's working directory, rendered. NiDB doesn't render it (doc section 4) */
+        QString workingDir = RenderVariables(step.workingDir, p.name, step.workingDir, description).trimmed();
+        QString command = RenderVariables(step.command, p.name, workingDir, description).trimmed();
+
+        /* as in FormatCommand(), remove a trailing semicolon */
+        if (command.endsWith(";"))
+            command = command.chopped(1).trimmed();
+
+        script += "\n";
+        if (step.enabled) {
+            if ((step.command + step.description).contains("{PROFILE}", Qt::CaseInsensitive))
+                warnings << QString("Step %1: {PROFILE} is removed. The container doesn't run steps with /usr/bin/time").arg(step.order);
+
+            script += QString("# Step %1: %2\n").arg(step.order).arg(description);
+            script += "echo " + ShellQuote(QString("== Step %1: %2").arg(step.order).arg(description)) + "\n";
+            if (workingDir != "")
+                script += "cd " + workingDir + "\n";
+            if (command != "")
+                script += command + "\n";
+
+            executable += workingDir + "\n" + command + "\n";
+            numSteps++;
+        }
+        else {
+            /* disabled steps are kept as comments, so the step numbering matches NiDB (doc section 2) */
+            script += QString("# Step %1 (disabled): %2\n").arg(step.order).arg(description);
+            if (workingDir != "")
+                script += "# cd " + workingDir + "\n";
+            if (command != "")
+                script += "# " + command + "\n";
+        }
+    }
+
+    if (numSteps == 0)
+        errors << QString("Version [%1] has no enabled main script steps").arg(version);
+
+    /* only the runtime variables may be left. CheckVariables() already reported problems in the step text, so this
+       catches anything that came in through {workingdir} or {description}. Bash ${var} is skipped */
+    QStringList unknown;
+    QRegularExpressionMatchIterator i = QRegularExpression("(?<!\\$)\\{([A-Za-z0-9_]+)\\}").globalMatch(executable);
+    while (i.hasNext()) {
+        QString var = i.next().captured(1);
+        if ((var != "analysisrootdir") && !runtimeVars.contains(var) && !unknown.contains(var))
+            unknown << var;
+    }
+    for (QString var : unknown)
+        errors << QString("{%1} is left in the rendered script, after the step's working directory and description were inserted").arg(var);
+
+    /* the runtime variables the steps use, which run.sh requires */
+    requiredVars.clear();
+    for (QString var : runtimeVars) {
+        if (executable.contains("{" + var + "}"))
+            requiredVars << var;
+    }
+
+    return (errors.size() == 0);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RenderVariables -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Replace the pipeline variables in one command or working directory, as FormatCommand() does, but leave the
+ * runtime variables for run.sh (doc section 3). The text is scanned once, so the inserted values aren't rescanned.
+ * Variables are matched case-insensitively and the runtime variables are lowercased, so run.sh only needs exact matches.
+ * {uidstudynum} becomes {subjectuid}{studynum}, {analysisid} becomes 0, {command} and the flags are removed, and
+ * control characters are removed. Other {words} are left as they are
+ * @param text The command or working directory
+ * @param pipelineName Value of {pipelinename}
+ * @param workingDir Value of {workingdir}
+ * @param description Value of {description}
+ * @return The rendered text
+ */
+QString modulePipelineContainer::RenderVariables(QString text, QString pipelineName, QString workingDir, QString description) {
+
+    text.remove(QRegularExpression("\\{(nolog|nocheckin|profile)\\}", QRegularExpression::CaseInsensitiveOption));
+    text.remove(QRegularExpression("[\\x00-\\x1F]"));
+
+    QString rendered;
+    int last = 0;
+    QRegularExpressionMatchIterator i = QRegularExpression("\\{([A-Za-z0-9_]+)\\}").globalMatch(text);
+    while (i.hasNext()) {
+        QRegularExpressionMatch m = i.next();
+        QString var = m.captured(1).toLower();
+        QString value;
+        if ((var == "analysisrootdir") || (var == "subjectuid") || (var == "studynum") || (var == "studydatetime"))
+            value = "{" + var + "}";
+        else if (var == "uidstudynum")
+            value = "{subjectuid}{studynum}";
+        else if (var == "pipelinename")
+            value = pipelineName;
+        else if (var == "workingdir")
+            value = workingDir;
+        else if (var == "description")
+            value = description;
+        else if (var == "analysisid")
+            value = "0";
+        else if (var == "command")
+            value = "";
+        else
+            continue;
+
+        rendered += text.mid(last, m.capturedStart() - last) + value;
+        last = m.capturedEnd();
+    }
+    rendered += text.mid(last);
+
+    return rendered;
 }
 
 
@@ -526,7 +690,7 @@ QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int versi
     }
     else {
         modulePipeline mp(n);
-        for (dataDefinitionStep d : mp.GetPipelineDataDef(p.pipelineid, version)) {
+        for (dataDefinitionStep d : mp.GetPipelineDataDef(p.GetPipelineRowID(), version)) {
             if (!d.flags.isEnabled)
                 continue;
 
@@ -588,8 +752,10 @@ QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int versi
 
     /* the dependency copy puts the parent's analysis directory in a subdirectory, or its contents in the root */
     for (int parentID : p.parentIDs) {
-        pipeline parent(parentID, n);
-        if (!parent.isValid)
+        pipeline parent(n);
+        parent.searchPipelineRowID = parentID;
+        parent.Load();
+        if (!parent.isValid())
             continue;
 
         QString dir = (p.depDir == "subdir") ? "/input/" + parent.name : "/input";
@@ -664,17 +830,245 @@ QString modulePipelineContainer::CreateReadme(pipeline &p, int version, const QS
 /* --------- StageReferenceInput ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Stage the reference analysis' study input into <builddir>/input, as GetData() and the dependency
- * copy would (doc section 7 step 1). Needs those refactored to stage into an arbitrary directory
+ * @brief Stage the reference analysis' input into <builddir>/input, the way modulePipeline stages a new analysis
+ * (doc section 7 step 1): the data steps through modulePipeline::GetData(), then the parent pipeline's output.
+ * Nothing is logged against the reference analysis. The data log is written to input.log
  * @param c The request
+ * @param p The pipeline, loaded at the requested version
  * @param msg Error message, if any
  * @return true if the input was staged
  */
-bool modulePipelineContainer::StageReferenceInput(containerRequest &c, QString &msg) {
-    /* TODO */
-    Q_UNUSED(c);
-    msg = "StageReferenceInput() not implemented yet";
-    return false;
+bool modulePipelineContainer::StageReferenceInput(containerRequest &c, pipeline &p, QString &msg) {
+
+    /* local paths, since the staging runs on the NiDB server */
+    analysis a(c.referenceAnalysisID, n);
+    if (!a.isValid) {
+        msg = QString("Unable to load reference analysis [%1]: %2").arg(c.referenceAnalysisID).arg(a.msg);
+        return false;
+    }
+    study s(a.studyid, n);
+    if (!s.isValid()) {
+        msg = QString("Unable to load study [%1] of reference analysis [%2]: %3").arg(a.studyid).arg(c.referenceAnalysisID).arg(s.msg);
+        return false;
+    }
+
+    QString inputDir = c.buildDir + "/input";
+    if (!MakePath(inputDir, msg))
+        return false;
+
+    /* modulePipeline only uses the first parent */
+    int pipelineDep = p.parentIDs.isEmpty() ? -1 : p.parentIDs[0];
+
+    /* the data steps. Analysis ID -1, so GetData() doesn't log events or set the status on any analysis. Copied with
+       cp even if the pipeline uses scp, since the build directory is local */
+    modulePipeline mp(n);
+    QList<dataDefinitionStep> dataSteps = mp.GetPipelineDataDef(p.GetPipelineRowID(), c.pipelineVersion);
+    int numDownloaded = 0;
+    QString dataLog;
+    mp.GetData(s.GetStudyRowID(), inputDir, s.GetUID(), -1, p.GetPipelineRowID(), pipelineDep, p.depLevel, dataSteps, numDownloaded, dataLog, true);
+    WriteTextFile(c.buildDir + "/input.log", dataLog + "\n", false);
+
+    /* the rule modulePipeline uses to decide whether an analysis runs: some data, or a study-level parent */
+    if ((numDownloaded < 1) && !((pipelineDep != -1) && (p.depLevel == "study"))) {
+        msg = QString("No data found for the reference study [%1%2] using the data steps of version [%3]. See input.log in the build directory").arg(s.GetUID()).arg(s.GetStudyNum()).arg(c.pipelineVersion);
+        return false;
+    }
+    AppendBuildLog(c.containerID, QString("Staged [%1] series from study [%2%3] into [%4]").arg(numDownloaded).arg(s.GetUID()).arg(s.GetStudyNum()).arg(inputDir));
+
+    if (pipelineDep == -1)
+        return true;
+
+    /* the parent's output. A study-level parent is the same study; a subject-level parent is the subject's completed
+       analysis nearest in time, as in modulePipeline */
+    pipeline parent(n);
+    parent.searchPipelineRowID = pipelineDep;
+    if (!parent.Load()) {
+        msg = QString("Unable to load parent pipeline [%1]: %2").arg(pipelineDep).arg(parent.msg);
+        return false;
+    }
+
+    int parentStudyNum = s.GetStudyNum();
+    if (p.depLevel == "subject") {
+        QSqlQuery q;
+        q.prepare("select b.study_num from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = :subjectid and a.pipeline_id = :pipelinedep and a.analysis_status = 'complete' and (a.analysis_isbad <> 1 or a.analysis_isbad is null) order by abs(timestampdiff(minute, b.study_datetime, :studydatetime)) limit 1");
+        q.bindValue(":subjectid", s.GetSubjectRowID());
+        q.bindValue(":pipelinedep", pipelineDep);
+        q.bindValue(":studydatetime", s.datetime.toString("yyyy-MM-dd hh:mm:ss"));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (!q.first()) {
+            msg = QString("Subject [%1] has no completed analysis of parent pipeline [%2]").arg(s.GetUID()).arg(parent.name);
+            return false;
+        }
+        parentStudyNum = q.value("study_num").toInt();
+    }
+
+    QString parentDir = mp.GetAnalysisLocalPath(parent.dirStructure, parent.name, s.GetUID(), parentStudyNum);
+    if (!QDir(parentDir).exists()) {
+        msg = QString("Parent pipeline [%1] analysis directory [%2] not found").arg(parent.name).arg(parentDir);
+        return false;
+    }
+
+    /* always a regular copy, so the build directory doesn't depend on links. -u, as modulePipeline does, so the
+       parent's files don't replace newer files from the data steps */
+    QString targetDir = (p.depDir == "subdir") ? inputDir + "/" + parent.name : inputDir;
+    if (!MakePath(targetDir, msg))
+        return false;
+    QProcess cp;
+    cp.setProcessChannelMode(QProcess::MergedChannels);
+    cp.start("cp", { "-au", parentDir + "/.", targetDir + "/" });
+    if (!cp.waitForFinished(-1) || (cp.exitStatus() != QProcess::NormalExit) || (cp.exitCode() != 0)) {
+        msg = QString("Unable to copy parent pipeline [%1] output from [%2] to [%3]: %4").arg(parent.name).arg(parentDir).arg(targetDir).arg(QString(cp.readAll()).trimmed());
+        return false;
+    }
+
+    /* remove the logs and job files that came with the parent, as modulePipeline does. pipeline/ is kept, empty */
+    QDir(inputDir + "/pipeline").removeRecursively();
+    MakePath(inputDir + "/pipeline", msg);
+    for (QString f : { "origfiles.log", "sge.job", "slurm.job" })
+        QFile::remove(inputDir + "/" + f);
+
+    AppendBuildLog(c.containerID, QString("Copied parent pipeline [%1] output from [%2] into [%3]").arg(parent.name).arg(parentDir).arg(targetDir));
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteRunScript --------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write run.sh, the image's entry point (doc section 4). It's the same for every pipeline: it checks the
+ * arguments against requiredvars.txt, copies /input to /output, renders run.sh.template and runs it in /output.
+ * Must work with bash 4.2 and coreutils, since the base image may be minimal
+ * @param c The request
+ * @param msg Error message, if any
+ * @return true if run.sh was written
+ */
+bool modulePipelineContainer::WriteRunScript(containerRequest &c, QString &msg) {
+    static const QString script = R"BASH(#!/bin/bash
+# Runs an exported NiDB pipeline: checks the arguments, copies /input to /output, renders
+# /pipeline/run.sh.template with the arguments, and runs it in /output. Written by NiDB, and the same for every pipeline.
+# For the build's reference run outside a container, NIDB_PIPELINE_DIR, NIDB_INPUT_DIR and NIDB_OUTPUT_DIR
+# are used in place of /pipeline, /input and /output. Needs bash 4.2 or later and coreutils
+
+PIPELINE_DIR="${NIDB_PIPELINE_DIR:-/pipeline}"
+INPUT_DIR="${NIDB_INPUT_DIR:-/input}"
+OUTPUT_DIR="${NIDB_OUTPUT_DIR:-/output}"
+
+# bash 5.2 expands & in the replacement of ${var//pattern/replacement}. The values are checked below, but turn it off anyway
+shopt -u patsub_replacement 2>/dev/null
+
+die() {
+    echo "run.sh: $*" >&2
+    exit 2
+}
+
+usage() {
+    echo 'Usage: run.sh [--subjectuid UID] [--studynum N] [--studydatetime "YYYY-MM-DD hh:mm:ss"] [--stop-on-error]'
+    echo 'Run with --help to see which arguments this pipeline requires'
+}
+
+SUBJECTUID=""
+STUDYNUM=""
+STUDYDATETIME=""
+STOPONERROR=0
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --subjectuid|--studynum|--studydatetime)
+            [ $# -ge 2 ] || die "$1 needs a value"
+            case "$1" in
+                --subjectuid) SUBJECTUID="$2" ;;
+                --studynum) STUDYNUM="$2" ;;
+                --studydatetime) STUDYDATETIME="$2" ;;
+            esac
+            shift 2 ;;
+        --stop-on-error)
+            STOPONERROR=1
+            shift ;;
+        -h|--help)
+            usage
+            if [ -f "$PIPELINE_DIR/README.txt" ]; then
+                echo
+                cat "$PIPELINE_DIR/README.txt"
+            fi
+            exit 0 ;;
+        *)
+            usage >&2
+            die "unknown argument [$1]" ;;
+    esac
+done
+
+# the values are inserted into the script as text, so only these characters are accepted
+re='^[A-Za-z0-9_-]+$'
+if [ -n "$SUBJECTUID" ] && ! [[ $SUBJECTUID =~ $re ]]; then die "--subjectuid [$SUBJECTUID] can only contain letters, numbers, _ and -"; fi
+re='^[0-9]+$'
+if [ -n "$STUDYNUM" ] && ! [[ $STUDYNUM =~ $re ]]; then die "--studynum [$STUDYNUM] must be a number"; fi
+re='^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'
+if [ -n "$STUDYDATETIME" ] && ! [[ $STUDYDATETIME =~ $re ]]; then die "--studydatetime [$STUDYDATETIME] must be in the format \"YYYY-MM-DD hh:mm:ss\""; fi
+
+# the arguments this pipeline requires, one per line
+[ -f "$PIPELINE_DIR/run.sh.template" ] || die "[$PIPELINE_DIR/run.sh.template] not found"
+missing=""
+if [ -f "$PIPELINE_DIR/requiredvars.txt" ]; then
+    while IFS= read -r var || [ -n "$var" ]; do
+        case "$var" in
+            subjectuid) [ -n "$SUBJECTUID" ] || missing="$missing --subjectuid" ;;
+            studynum) [ -n "$STUDYNUM" ] || missing="$missing --studynum" ;;
+            studydatetime) [ -n "$STUDYDATETIME" ] || missing="$missing --studydatetime" ;;
+            "") ;;
+            *) die "unknown variable [$var] in [$PIPELINE_DIR/requiredvars.txt]" ;;
+        esac
+    done < "$PIPELINE_DIR/requiredvars.txt"
+fi
+if [ -n "$missing" ]; then
+    usage >&2
+    die "this pipeline requires$missing"
+fi
+
+# {analysisrootdir} is the output directory, and is also inserted as text
+[ -d "$OUTPUT_DIR" ] || die "output directory [$OUTPUT_DIR] not found. Bind a directory to it, for example: apptainer run --bind <dir>:/output ..."
+OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd) || die "unable to cd into the output directory"
+[ -w "$OUTPUT_DIR" ] || die "output directory [$OUTPUT_DIR] isn't writable"
+re='^/[A-Za-z0-9_.+/-]*$'
+[[ $OUTPUT_DIR =~ $re ]] || die "output directory path [$OUTPUT_DIR] can only contain letters, numbers, _ . + / and -"
+
+# the pipeline runs in place, in a copy of the input, as it does in a NiDB analysis directory
+if [ -d "$INPUT_DIR" ] && [ -n "$(ls -A "$INPUT_DIR" 2>/dev/null)" ]; then
+    echo "== Copying [$INPUT_DIR] to [$OUTPUT_DIR]"
+    cp -a "$INPUT_DIR/." "$OUTPUT_DIR/" || die "unable to copy [$INPUT_DIR] to [$OUTPUT_DIR]"
+fi
+
+# render the template. Variables that weren't given are left as they are; requiredvars.txt
+# covers every line that runs, so those are only in comments and echo lines
+RENDERED=$(mktemp "${TMPDIR:-/tmp}/run-rendered.XXXXXX") || die "unable to create a temporary file in [${TMPDIR:-/tmp}]"
+trap 'rm -f "$RENDERED"' EXIT
+while IFS= read -r line || [ -n "$line" ]; do
+    line=${line//"{analysisrootdir}"/$OUTPUT_DIR}
+    if [ -n "$SUBJECTUID" ]; then line=${line//"{subjectuid}"/$SUBJECTUID}; fi
+    if [ -n "$STUDYNUM" ]; then line=${line//"{studynum}"/$STUDYNUM}; fi
+    if [ -n "$STUDYDATETIME" ]; then line=${line//"{studydatetime}"/$STUDYDATETIME}; fi
+    printf '%s\n' "$line"
+done < "$PIPELINE_DIR/run.sh.template" > "$RENDERED" || die "unable to render [$PIPELINE_DIR/run.sh.template]"
+
+# a failing step doesn't stop later steps, as in NiDB, unless --stop-on-error. The exit code is the last step's
+cd "$OUTPUT_DIR" || die "unable to cd into [$OUTPUT_DIR]"
+if [ $STOPONERROR -eq 1 ]; then
+    bash -e "$RENDERED"
+else
+    bash "$RENDERED"
+fi
+rc=$?
+echo "== Finished with exit code [$rc]"
+exit $rc
+)BASH";
+
+    QString path = c.buildDir + "/run.sh";
+    if (!WriteTextFile(path, script, false)) {
+        msg = "Unable to write [" + path + "]";
+        return false;
+    }
+    QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner | QFile::ReadGroup | QFile::ExeGroup | QFile::ReadOther | QFile::ExeOther);
+
+    return true;
 }
 
 

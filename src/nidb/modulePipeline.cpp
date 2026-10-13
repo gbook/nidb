@@ -99,8 +99,10 @@ int modulePipeline::Run() {
 
         qint64 runnum = 0;
         /* check if the pipeline is valid */
-        pipeline p(pipelineid, n);
-        if (!p.isValid) {
+        pipeline p(n);
+        p.searchPipelineRowID = pipelineid;
+        p.Load();
+        if (!p.isValid()) {
             m = n->Log(QString("Error starting pipeline [%1]. Pipeline was not valid [" + p.msg + "]").arg(p.name), __FUNCTION__);
             RecordPipelineEvent(pipelineid, runnum, -1, "pipelineStarted", m);
             RecordPipelineEvent(pipelineid, runnum, -1, "pipelineFinished", "Pipeline stopped prematurely due to error");
@@ -791,9 +793,10 @@ int modulePipeline::Run() {
  * @param datadef List of data definition steps
  * @param numdownloaded Number of series downloaded
  * @param datalog Debugging log
+ * @param localCopy Always copy with cp, ignoring the pipeline's scp setting. For staging into a local directory (modulePipelineContainer)
  * @return true if data was downloaded, false otherwise
  */
-bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qint64 analysisRowID, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog) {
+bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qint64 analysisRowID, int pipelineid, int pipelinedep, QString deplevel, QList<dataDefinitionStep> datadef, int &numdownloaded, QString &datalog, bool localCopy) {
 
     numdownloaded = 0;
     QStringList dlog;
@@ -804,8 +807,10 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
     QStringList BIDSmodalities;
 
     /* get pipeline information, for data copying preferences */
-    pipeline p(pipelineid, n);
-    if (p.isValid) {
+    pipeline p(n);
+    p.searchPipelineRowID = pipelineid;
+    p.Load();
+    if (p.isValid()) {
         n->Debug(p.PrintPipelineVariables());
     }
     else {
@@ -1392,7 +1397,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         /* output the correct file type */
                         if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                             QString systemstring;
-                            if (p.dataCopyMethod == "scp")
+                            if ((p.dataCopyMethod == "scp") && !localCopy)
                                 systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(clusteruser).arg(submithost).arg(newanalysispath);
                             else
                                 systemstring = QString("time cp -v %1/* %2").arg(indir).arg(newanalysispath);
@@ -1430,7 +1435,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             }
 
                             QString systemstring;
-                            if (p.dataCopyMethod == "scp")
+                            if ((p.dataCopyMethod == "scp") && !localCopy)
                                 systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(clusteruser).arg(submithost).arg(newanalysispath);
                             else
                                 systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
@@ -2282,9 +2287,9 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
 
             /* format the command (replace pipeline variables, etc) */
             if (p.useTmpDir)
-                command = FormatCommand(p.pipelineid, clusteranalysispath, command, localanalysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
+                command = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, command, localanalysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
             else
-                command = FormatCommand(p.pipelineid, clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
+                command = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, command, analysispath, analysisid, uid, studynum, studydatetime, p.name, workingdir, description);
 
             /* add the step checkin. The description is written as a comment, so flatten any newlines,
                otherwise the following lines would be run as commands. The command is quoted for the echo,
@@ -2323,7 +2328,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
 
     if ((p.resultScript.trimmed() != "") && (rerunresults)) {
         /* add on the result script command */
-        QString resultcommand = FormatCommand(p.pipelineid, clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
+        QString resultcommand = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
         jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(ShellQuote(resultcommand));
         jobfile += resultcommand + " > " + ShellQuote(analysispath + "/pipeline/stepResults.log") + " 2>&1\n";
 
@@ -2333,7 +2338,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
     else {
         /* run the results import script */
         if (p.resultScript.trimmed() != "") {
-            QString resultcommand = FormatCommand(p.pipelineid, clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
+            QString resultcommand = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
             jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(ShellQuote(resultcommand));
             jobfile += resultcommand + " > " + ShellQuote(analysispath + "/pipeline/stepResults.log") + " 2>&1\n";
         }
@@ -2420,14 +2425,20 @@ QList<int> modulePipeline::GetStudyToDoList(int pipelineid, QString modality, in
     QStringList normalStudyList;
     QString m;
 
-    pipeline p(pipelineid, n);
-    //n->Log(p.PrintPipelineVariables());
+    pipeline p(n);
+    p.searchPipelineRowID = pipelineid;
+    p.Load();
 
     /* run some checks first */
+    if (!p.isValid()) {
+        m = QString("Pipeline was not valid [%1]").arg(p.msg);
+        RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
+        return studyIDToDoList;
+    }
+
     if (modality.trimmed() == "") {
         m = QString("Pipeline modality was blank. Cannot run pipeline without a primary modality in the data specification");
         RecordPipelineEvent(pipelineid, runnum, -1, "getStudyToDoList", n->Log(m, __FUNCTION__));
-
         return studyIDToDoList;
     }
 
@@ -2746,7 +2757,9 @@ void modulePipeline::RecordPipelineEvent(int pipelineid, qint64 &runnum, qint64 
     */
 
     QSqlQuery q;
-    pipeline p(pipelineid, n);
+    pipeline p(n);
+    p.searchPipelineRowID = pipelineid;
+    p.Load();
 
     if (event == "pipelineStarted") {
         q.prepare("select max(run_num) 'max' from pipeline_history where pipeline_id = :pipelineid");

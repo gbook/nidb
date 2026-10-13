@@ -66,10 +66,12 @@ private:
 
     /* build directory contents (doc sections 4, 6, 8) */
     bool RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings);
+    QString RenderVariables(QString text, QString pipelineName, QString workingDir, QString description);
     QStringList GetInputDirStructure(pipeline &p, int version, QJsonArray &items);
     QString CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout);
     QString CreateReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout);
-    bool StageReferenceInput(containerRequest &c, QString &msg);
+    bool StageReferenceInput(containerRequest &c, pipeline &p, QString &msg);
+    bool WriteRunScript(containerRequest &c, QString &msg);
     bool WriteContainerBuildScript(containerRequest &c, pipeline &p, QString &msg);
     bool WriteClusterJob(containerRequest &c, pipeline &p, QString &msg);
 

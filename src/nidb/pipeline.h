@@ -28,13 +28,18 @@
 class pipeline
 {
 public:
-    pipeline(int id, nidb *a);
+    pipeline(nidb *a);
     nidb *n = nullptr;
 
     /* object variables */
     QString msg;
-    bool isValid = false;
-    int pipelineid = 0;
+    QString PrintPipelineVariables() const;
+    squirrelPipeline GetSquirrelObject(QString databaseUUID);
+    bool Load();
+    int GetPipelineRowID() const { return pipelineRowID; }
+    int searchPipelineRowID = -1;
+    int searchPipelineVersion = -1;
+    bool isValid() const { return valid; }
 
     /* pipeline variables */
     QDateTime createDate;
@@ -59,6 +64,7 @@ public:
     QString pipelineRootDir;
     QString resultScript;
     QString status;
+    QString scriptComment;
     QString statusMessage;
     QString tmpDir;
     QStringList completeFiles;
@@ -87,13 +93,12 @@ public:
     int clusterMaxWallTime = 0;
     int clusterNumCores = 0;
 
-    QString PrintPipelineVariables() const;
-    squirrelPipeline GetSquirrelObject(QString databaseUUID);
-
 private:
     void LoadPipelineInfo();
-    QString GetScript(bool supplement);
+    QString GetScript(bool supplement, int v);
     QStringList GetParentList();
+    int pipelineRowID = 0;
+    bool valid = false;
 
     QString clusterSubmitHostSetting; /* submit host as stored in the pipeline, before the cfg default is applied. Used for export */
 

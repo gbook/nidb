@@ -364,7 +364,13 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 
     /* attempt to kill the SGE job, if its running */
     if (a.jobid > 0) {
-        pipeline p(a.pipelineid, n);
+        pipeline p(n);
+        p.searchPipelineRowID = a.pipelineid;
+        p.Load();
+        if (!p.isValid()) {
+            msg = "Pipeline was not valid [" + p.msg + "]";
+            return false;
+        }
         QString clusterType = p.clusterType;
         QString systemstring;
         if (clusterType == "slurm") {

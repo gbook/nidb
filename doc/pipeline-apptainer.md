@@ -43,8 +43,8 @@ Only level-1 (subject/study level) pipelines can be exported. Export refuses lev
 | `nidb cluster -u pipelinecheckin ...` lines | Dropped |
 | `cd <analysispath>` | `cd /output` |
 | `useTmpDir` copy in/out | Dropped. The caller can bind a scratch directory as `/output` if they want local disk. |
-| Step check-in + `echo Running ...` | Replaced with a plain `echo "== Step N: <description>"` to stdout |
-| `{NOLOG}`, `{NOCHECKIN}`, `{PROFILE}` flags | Stripped from the text. `PROFILE` is not honored. |
+| Step check-in + `echo Running ...` | Replaced with a plain `echo '== Step N: <description>'` to stdout. The description is shell-quoted, with flags removed and newlines flattened. |
+| `{NOLOG}`, `{NOCHECKIN}`, `{PROFILE}` flags | Stripped from the command and description. `PROFILE` is not honored, and an enabled step that uses it gets a warning. |
 | `>> <analysispath>/pipeline/StepN` log redirect | Dropped. Output goes to the container's stdout/stderr. |
 | `cd <workingdir>` | Kept, after its variables are rendered (see §4 note about `workingdir`) |
 | Disabled steps (`# command`) | Kept as comments, so the script still matches the NiDB step numbering |
@@ -96,12 +96,12 @@ Any other `{...}` token left after export is an error. This catches typos that N
 
 ### Text rendering at startup (same semantics as NiDB)
 
-The image stores `run.sh.template`, with the runtime tokens still in their `{...}` form. At startup, `run.sh` replaces them with the argument values, writes `/tmp/run-rendered.sh`, and runs it with `bash`. This is what NiDB does today (plain text replacement before bash ever sees the script), so a command behaves identically in both places, including inside single quotes, quoted heredocs, `awk` programs, and generated filenames.
+The image stores `run.sh.template`, with the runtime tokens still in their `{...}` form. At startup, `run.sh` replaces them with the argument values, writes the result to a temporary file, and runs it with `bash`. This is what NiDB does today (plain text replacement before bash ever sees the script), so a command behaves identically in both places, including inside single quotes, quoted heredocs, `awk` programs, and generated filenames.
 
 ### Details
 
 - **Case.** `FormatCommand()` matches case-insensitively (`{SubjectUID}` works). At export, NiDB rewrites every recognized token to lowercase with a `QRegularExpression::CaseInsensitiveOption` pass. That way the bash renderer only needs exact matches.
-- **Substitution in bash.** Use `${line//"{subjectuid}"/"$SUBJECTUID"}` with *both* sides quoted. Quoting the replacement matters: bash 5.2 has `patsub_replacement` enabled by default, where an unquoted `&` in the replacement means "the matched text." (CentOS 7 has bash 4.2, which doesn't have that option, but quoting is correct on both.)
+- **Substitution in bash.** `run.sh` uses `line=${line//"{subjectuid}"/$SUBJECTUID}`, with the pattern quoted. bash 5.2 has `patsub_replacement` enabled by default, where `&` in the replacement means "the matched text," so `run.sh` turns it off with `shopt -u patsub_replacement` (bash 4.2 doesn't have the option, and the `shopt` error is discarded). The validated values can't contain `&` anyway. The replacement is a plain variable in an assignment, so it isn't word-split or globbed.
 - **Validation (required).** Rendered values become shell code, so `run.sh` must reject bad input before it renders anything:
   - `subjectuid` must match `^[A-Za-z0-9_-]+$`;
   - `studynum` must match `^[0-9]+$`;
@@ -123,9 +123,11 @@ cd {analysisrootdir}; bet T1/{SubjectUID}_t1.nii.gz T1/brain {NOLOG}   # Skull s
 
 ```bash
 # Step 2: Skull strip
-echo "== Step 2: Skull strip"
+echo '== Step 2: Skull strip'
 cd {analysisrootdir}; bet T1/{subjectuid}_t1.nii.gz T1/brain
 ```
+
+`RenderScriptTemplate()` writes each enabled step as the comment, the echo, `cd <workingdir>` (if the step has one) and the command, with a trailing `;` removed as `FormatCommand()` does. A disabled step is written as a `# Step N (disabled):` comment followed by its commented-out lines. Variables are replaced in one pass over the text, so values inserted for `{workingdir}` and `{description}` aren't scanned again. After rendering, any `{word}` other than the four runtime tokens in a line that runs is an error. `requiredVariables` lists the runtime variables that appear in the lines that run, and is written to `manifest.json` and `requiredvars.txt` (one per line).
 
 Rendered at runtime with `--subjectuid S1234ABC`:
 
@@ -135,17 +137,20 @@ cd /output; bet T1/S1234ABC_t1.nii.gz T1/brain
 
 ### `run.sh` (fixed, same for every pipeline)
 
-```bash
-#!/bin/bash
-# usage: run.sh --subjectuid UID --studynum N --studydatetime "YYYY-MM-DD hh:mm:ss" [--stop-on-error]
-# parse args; check against the validation rules above; check that every variable in
-#   /pipeline/manifest.json "requiredVariables" was given
-# if /input is non-empty: cp -a /input/. /output/
-# render /pipeline/run.sh.template -> /tmp/run-rendered.sh ({analysisrootdir} -> /output, quoted ${//} substitutions)
-# cd /output; exec bash [-e] /tmp/run-rendered.sh
+```
+usage: run.sh [--subjectuid UID] [--studynum N] [--studydatetime "YYYY-MM-DD hh:mm:ss"] [--stop-on-error] [--help]
 ```
 
-Writing `run.sh` once in the repo (`src/setup/apptainer/run.sh`) and copying it into every image keeps the per-pipeline output down to the template and the manifest. It must work with bash 4.2 (CentOS 7) and avoid tools that may be missing from a minimal base image (no `jq`: the build writes `requiredVariables` into a plain-text file next to the manifest). For the reference run (§7 step 1), which runs `run.sh` on the node outside a container, `run.sh` reads `NIDB_PIPELINE_DIR`, `NIDB_INPUT_DIR` and `NIDB_OUTPUT_DIR` in place of `/pipeline`, `/input` and `/output`. `NIDB_*` variables are never copied into the image's environment.
+1. Parse the arguments, and check them against the validation rules above.
+2. Check that every variable in `/pipeline/requiredvars.txt` was given.
+3. Check that `/output` exists and is writable. Its path becomes `{analysisrootdir}` and is inserted as text, so it may only contain letters, numbers and `_ . + / -`.
+4. If `/input` isn't empty, `cp -a /input/. /output/`.
+5. Render `/pipeline/run.sh.template` into a `mktemp` file in `$TMPDIR` (default `/tmp`), deleted on exit. A variable that wasn't given is left as it is; since `requiredvars.txt` covers every line that runs, those can only be in comments and echo lines.
+6. `cd /output` and run the rendered script with `bash` (`bash -e` with `--stop-on-error`), then exit with its status.
+
+`--help` prints the usage and `/pipeline/README.txt`. `run.sh`'s own errors exit with status 2.
+
+`run.sh` is the same for every image, so the per-pipeline output is only the template and the manifest. It's embedded in `modulePipelineContainer.cpp` and written into the build directory by `WriteRunScript()`, like `build-container.sh`, so there's no extra file to install with NiDB. It must work with bash 4.2 (CentOS 7) and avoid tools that may be missing from a minimal base image (no `jq`: the build writes `requiredVariables` into a plain-text file next to the manifest). For the reference run (§7 step 1), which runs `run.sh` on the node outside a container, `run.sh` reads `NIDB_PIPELINE_DIR`, `NIDB_INPUT_DIR` and `NIDB_OUTPUT_DIR` in place of `/pipeline`, `/input` and `/output`. `NIDB_*` variables are never copied into the image's environment.
 
 ---
 
@@ -211,7 +216,10 @@ Real pipelines use whatever is on the compute node: software in `/opt` installed
 ### Step 1: a reference run under `strace`
 
 The export is based on a **reference analysis**: a completed, not-bad analysis of this pipeline version, picked by the user (default: the most recent one).
-- NiDB stages that study's input again into the build directory, using `GetData()` and the dependency copy. Today those write into the analysis directory and log against an analysis row, so they need a refactor to stage into an arbitrary directory.
+- NiDB stages that study's input again into `<builddir>/input` with `StageReferenceInput()`:
+  - **Data steps:** `modulePipeline::GetData()`, with the requested version's data steps, called with analysis ID `-1` so it doesn't log events or set the status on any analysis, and with `localCopy`, so it copies with `cp` even if the pipeline uses `scp`. Its data log goes to `input.log`. As in `modulePipeline`, staging fails if no series were found, unless the pipeline has a study-level parent.
+  - **Parent pipeline:** the first parent, as in `modulePipeline`. A study-level parent's analysis of the same study, or a subject-level parent's completed analysis nearest in time. Its directory comes from `GetAnalysisLocalPath()` with the parent's own directory structure. It's copied with `cp -au` (always a regular copy, whatever the link type) into `input/` or `input/<parent name>/`, and the parent's `pipeline/` logs, `origfiles.log`, `sge.job` and `slurm.job` are removed.
+  - `GetData()` reads the pipeline's BIDS settings from the current version, not the requested one.
 - The build job renders `run.sh.template` with the reference study's values and `{analysisrootdir}` set to a scratch directory, and runs it under `strace -f -e trace=file,process -o trace.log`.
 - It runs in a login shell, like the pipeline job (`#!/bin/bash -l`), and dumps the environment (`env`) at the start.
 
@@ -320,8 +328,9 @@ flowchart TD
 1. **Trigger.** The **Create** button on `pipelinecontainers.php` (reached from the *Manage containers* tile on the pipeline's Operations tab) always builds the pipeline's current version. It's only enabled for the pipeline owner or a site admin, and only when the export checks shown on that page have no errors (level-1 pipeline, at least one completed, not-bad analysis of this version, no group/deprecated variables or NiDB storage paths in the steps; see "Web UI" below), and when no build for this version is already in progress. The user picks the reference analysis (default: the most recent) and whether to run the validation step (on by default; turning it off is useful for long pipelines). A row then goes into `pipeline_containers` with `build_status` = `submitted`, `build_createdate` = now, `reference_analysisid` and `run_validation`.
 2. **Prepare (NiDB server).** The `pipelinecontainer` module (`modulePipelineContainer`, run every minute from cron like the other modules) picks up `submitted` rows and sets them to `started`. A row still `started` when the module next runs means a previous run stopped part way through, and is marked `error`. The module writes a build directory on shared storage that both the server and the compute nodes can reach, `cfg[analysisdir]/_apptainer/<pipelinecontainer_id>/` (named by ID only, so it can be found from the row alone and doesn't change if the pipeline is renamed), containing:
    - `run.sh` (fixed), `run.sh.template`, `manifest.json` (partial), `README.txt`, `requiredvars.txt`;
-   - `input/`: the reference study's input, staged again (§7 step 1);
-   - `export.log`: variable and path checks (§3, §5);
+   - the build directory is removed first if it's left from an earlier attempt, since an old `build.exitcode` would make the build look finished;
+   - `input/`: the reference study's input, staged again (§7 step 1), and `input.log`, the data log;
+   - `export.log`: the pipeline, version, reference analysis, required arguments and the export warnings (§3, §5). Errors stop the export before this point;
    - `build-container.sh`, written by `WriteContainerBuildScript()` (see "The build script" below), then `build.job`, written by `WriteClusterJob()`: the sbatch/SGE header from the pipeline's cluster settings, then `exec /bin/bash -l build-container.sh` (no arguments; all settings are in the script). The header matches `modulePipeline`'s job files, except:
      - the job name is `<pipeline>-container`, and the scheduler output goes to the build directory;
      - the wall time is the pipeline's maximum × the number of pipeline runs (1, or 2 with validation) + 4 hours, for the capture and image build. No limit if the pipeline has none;
@@ -440,9 +449,9 @@ Software doesn't appear in the definition file, because it was copied into the s
 
 | Area | Change |
 |---|---|
-| `modulePipeline.cpp` | Split the step-rendering part of `CreateClusterJobFile()` into a function used by both the job file and the container export, so both always agree on step order, enabled/supplement handling, and flags. Add an export-mode variable pass (§3) next to `FormatCommand()`. Refactor `GetData()` and the dependency copy so they can stage a study's input into an arbitrary directory, with no analysis row. |
-| New `modulePipelineContainer.{h,cpp}` | **Skeleton done:** the `pipelinecontainer` module, with the status flow (`submitted` → `started` → `building` → `complete`/`error`), row claiming, and `build_log`/`build_warnings` helpers; the stage functions are stubs. Run with `nidb pipelinecontainer [--containerid N]`; `--containerid` processes only that row. Registered in `main.cpp`, `nidb.cpp` (1 thread), `nidb.pro`, the `modules` table seed (`nidb-data.sql`, inactive by default) and `crontab.txt`. **Done:** `build-container.sh` and `build.job` writing, `README.txt` and the `manifest.json` input layout (§6). Export checks (`CheckIfExportable()`: level 1, enabled steps, completed analysis, variables and paths, §1, §3, §5). **To do:** template rendering, the rest of the manifest, reference input staging, job submission, polling, copying to `cfg[exportdir]` |
-| `src/setup/apptainer/run.sh` | Fixed runner script (§4) |
+| `modulePipeline.cpp` | Split the step-rendering part of `CreateClusterJobFile()` into a function used by both the job file and the container export, so both always agree on step order, enabled/supplement handling, and flags. Add an export-mode variable pass (§3) next to `FormatCommand()`. **Done:** `GetData()` takes a `localCopy` flag, to always copy with `cp`; with analysis ID `-1` it already logs nothing. The dependency copy is reimplemented in `StageReferenceInput()`, since in `modulePipeline` it's inline in the main loop. |
+| New `modulePipelineContainer.{h,cpp}` | **Skeleton done:** the `pipelinecontainer` module, with the status flow (`submitted` → `started` → `building` → `complete`/`error`), row claiming, and `build_log`/`build_warnings` helpers; the stage functions are stubs. Run with `nidb pipelinecontainer [--containerid N]`; `--containerid` processes only that row. Registered in `main.cpp`, `nidb.cpp` (1 thread), `nidb.pro`, the `modules` table seed (`nidb-data.sql`, inactive by default) and `crontab.txt`. **Done:** `build-container.sh` and `build.job` writing, `README.txt` and the `manifest.json` input layout (§6). Export checks (`CheckIfExportable()`: level 1, enabled steps, completed analysis, variables and paths, §1, §3, §5). Template rendering (`RenderScriptTemplate()`), `run.sh` (`WriteRunScript()`), `requiredvars.txt`, `export.log`. `PrepareExport()` loads the requested pipeline version. Reference input staging (`StageReferenceInput()`, §7 step 1). The build directory is made writable for the cluster user (`chmod -R 777`, as for analysis directories). **To do:** the rest of the manifest, job submission, polling, copying to `cfg[exportdir]` |
+| `run.sh` | Fixed runner script (§4), embedded in `modulePipelineContainer.cpp` and written by `WriteRunScript()`. **Done.** Tested with bash 5.1; not yet with bash 4.2. |
 | `build-container.sh` | Build script for the compute node (§7, §8 step 4), generated per build by `modulePipelineContainer::WriteContainerBuildScript()` (§8 "The build script"). Holds the per-OS-family table (package manager, base image, library roots) from §7 "Supported OSes". **Done:** OS/tool detection, system and software info, reference run, sandbox and `.sif` build, validation; `build.job` (`WriteClusterJob()`). **To do:** software capture (§7 step 2). |
 | `pipelines.php`, `pipelinecontainers.php` | **Done:** *Manage containers* tile on the Operations tab; `pipelinecontainers.php` with existing and in-progress containers, usage, export checks, and Create (reference analysis, validation). **To do:** container settings (extra include/exclude paths, base override) on `pipelines.php`. |
 | SQL | `pipeline_containers` table (**done**, §8). Container settings columns on `pipelines` + `pipeline_options` (versioned like the other options). |
@@ -455,7 +464,7 @@ Software doesn't appear in the definition file, because it was copied into the s
 | Phase | Work | Estimate |
 |---|---|---|
 | 1 | Step rendering refactor, export-time variable pass, level-1 and path checks, `run.sh` with validation, manifest | 1–1.5 weeks |
-| 2 | `GetData()` / dependency-copy refactor to stage the reference input into an arbitrary directory | 3–5 days |
+| 2 | ~~`GetData()` / dependency-copy refactor to stage the reference input into an arbitrary directory~~ (done) | — |
 | 3 | `build-container.sh`: tool check, OS detection and per-family table, traced reference run, environment capture, file sorting with `rpm`/`dpkg`/no-package-manager handling, package/`/opt`/library-root copying, `ldd` pass, deny list, glibc check, sandbox and `.sif` build, optional validation run | 2–2.5 weeks |
 | 4 | ~~`pipeline_containers` table, web UI~~ (done), build job submit, polling, copy to `cfg[exportdir]` | 1 week |
 | — | Testing on 2–3 real pipelines on the local cluster's OS: build, run the image on another machine, and compare with NiDB's output. Elapsed time depends on how long the pipelines run. | 1 week |
