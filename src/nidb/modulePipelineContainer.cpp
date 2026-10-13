@@ -284,16 +284,48 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
 /* ---------------------------------------------------------- */
 /**
  * @brief Step 3. Submit build.job with nidb::SubmitClusterJob(), using the pipeline's cluster and queue settings,
- * then set build_status = building and build_startdate
+ * then set build_status = building and build_startdate. The job ID is written to build.jobid in the build directory
  * @param c The request
  * @param msg Error message, if any
  * @return true if the job was submitted
  */
 bool modulePipelineContainer::SubmitBuildJob(containerRequest &c, QString &msg) {
-    /* TODO */
-    Q_UNUSED(c);
-    msg = "SubmitBuildJob() not implemented yet";
-    return false;
+
+    /* the cluster settings aren't versioned, so the current version is fine */
+    pipeline p(n);
+    p.searchPipelineRowID = c.pipelineID;
+    if (!p.Load()) {
+        msg = QString("Unable to load pipeline [%1]: %2").arg(c.pipelineID).arg(p.msg);
+        return false;
+    }
+    if (p.clusterQueue == "") {
+        msg = QString("Pipeline [%1] has no cluster queue").arg(p.name);
+        return false;
+    }
+    if (p.clusterSubmitHost == "") {
+        msg = QString("Pipeline [%1] has no submit host, and clustersubmithost isn't set in the config").arg(p.name);
+        return false;
+    }
+
+    /* the scheduler reads build.job from the cluster's path to the build directory */
+    QString jobFile = GetClusterBuildDir(c.containerID) + "/build.job";
+    QString submitMsg, result;
+    int jobID = -1;
+    if (!n->SubmitClusterJob(jobFile, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, submitMsg, jobID, result)) {
+        msg = QString("Unable to submit [%1] to the %2 cluster through [%3]: %4. Output [%5]").arg(jobFile).arg(p.clusterType).arg(p.clusterSubmitHost).arg(submitMsg).arg(result);
+        return false;
+    }
+
+    /* pipeline_containers has no job ID column, so it goes in the build directory for IsBuildFinished() */
+    WriteTextFile(c.buildDir + "/build.jobid", QString("%1\n").arg(jobID), false);
+
+    QSqlQuery q;
+    q.prepare("update pipeline_containers set build_status = 'building', build_startdate = now() where pipelinecontainer_id = :id");
+    q.bindValue(":id", c.containerID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    AppendBuildLog(c.containerID, QString("Submitted build job [%1] to the %2 cluster, queue [%3], through [%4]. Output [%5]").arg(jobID).arg(p.clusterType).arg(p.clusterQueue).arg(p.clusterSubmitHost).arg(result));
+    return true;
 }
 
 
@@ -1478,7 +1510,7 @@ bool modulePipelineContainer::WriteClusterJob(containerRequest &c, pipeline &p, 
     QString wallTimeStr = QString("%1:%2:00").arg(wallTime/60).arg(wallTime % 60, 2, 10, QChar('0'));
 
     QString jobfile;
-    if (p.clusterType == "slurm") {
+    if (p.clusterType.toLower() == "slurm") {
         jobfile += "#!/bin/bash -l\n";
         jobfile += "#SBATCH -J " + jobName + "\n";
         jobfile += "#SBATCH --nodes=1\n";
@@ -1519,7 +1551,7 @@ bool modulePipelineContainer::WriteClusterJob(containerRequest &c, pipeline &p, 
     }
     QFile::setPermissions(path, QFileDevice::ReadOwner | QFileDevice::WriteOwner | QFileDevice::ExeOwner | QFileDevice::ReadGroup | QFileDevice::ExeGroup | QFileDevice::ReadOther | QFileDevice::ExeOther);
 
-    AppendBuildLog(c.containerID, QString("Wrote build.job for [%1] queue [%2]. Wall time [%3]").arg(p.clusterType == "slurm" ? "slurm" : "SGE").arg(p.clusterQueue).arg(wallTime > 0 ? wallTimeStr : "none"));
+    AppendBuildLog(c.containerID, QString("Wrote build.job for [%1] queue [%2]. Wall time [%3]").arg(p.clusterType.toLower() == "slurm" ? "slurm" : "SGE").arg(p.clusterQueue).arg(wallTime > 0 ? wallTimeStr : "none"));
     return true;
 }
 
