@@ -1498,6 +1498,7 @@ declare -A PKG_SEEN=()     # name.arch of packages already captured
 declare -A TREE_SEEN=()    # /opt directories, library roots and script directories already captured
 declare -A ELF_SEEN=()     # files already checked for ELF and run through ldd
 declare -A DIR_CHECKED=()  # is_script_dir() results
+declare -A OPT_SPLIT=()    # /opt/<name> directories where only the install the trace used is captured (find_opt_installs)
 EXCLUDE_PREFIXES=()
 LIB_ROOTS=()
 
@@ -1708,6 +1709,50 @@ add_tree() {
     find -H "$1" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*' \) -print 2>/dev/null >> "$CAP/elf-other.txt"
 }
 
+# opt_child <path>: for a path under /opt, sets OPT_NAME to <name> and OPT_CHILD to /opt/<name>/<child>, the entry in
+# /opt/<name> the path is in. OPT_CHILD is empty for /opt/<name> itself. If the entry is a link to a directory in
+# /opt/<name>, OPT_CHILD is the directory and OPT_LINK the link; OPT_LINK is empty otherwise
+opt_child() {
+    local rest
+    rest="${1#/opt/}"; OPT_NAME="${rest%%/*}"; OPT_CHILD=""; OPT_LINK=""
+    if [ "$rest" = "$OPT_NAME" ]; then return; fi
+    rest="${rest#*/}"
+    OPT_CHILD="/opt/$OPT_NAME/${rest%%/*}"
+    if [ -L "$OPT_CHILD" ]; then
+        link_target "$OPT_CHILD"
+        case "$CANON_RESULT" in
+            /opt/"$OPT_NAME"/?*)
+                rest="${CANON_RESULT#/opt/"$OPT_NAME"/}"
+                if [ -d "/opt/$OPT_NAME/${rest%%/*}" ]; then OPT_LINK="$OPT_CHILD"; OPT_CHILD="/opt/$OPT_NAME/${rest%%/*}"; fi ;;
+        esac
+    fi
+}
+
+# find_opt_installs <paths>: /opt/<name> directories that hold several installs side by side, like /opt/fsl/fsl-5.0.11 and
+# /opt/fsl/fsl-6.0.3. If every traced path under /opt/<name> is in one subdirectory (directly or through a link in
+# /opt/<name>), and that subdirectory is an install root itself (it has a bin or lib directory), only it is captured.
+# Otherwise the whole /opt/<name> is, since a program's own bin, lib, share, ... are siblings. Sets OPT_SPLIT
+find_opt_installs() {
+    local p n
+    local -A first=() blocked=()
+    while IFS= read -r p || [ -n "$p" ]; do
+        case "$p" in /opt/?*) ;; *) continue ;; esac
+        opt_child "$p"
+        n="$OPT_NAME"
+        if [ -z "$OPT_CHILD" ] || [ -n "${blocked[$n]+x}" ]; then continue; fi
+        if [ ! -d "$OPT_CHILD" ] || [ -L "$OPT_CHILD" ]; then blocked[$n]=1; continue; fi
+        if [ -z "${first[$n]+x}" ]; then first[$n]="$OPT_CHILD"; elif [ "${first[$n]}" != "$OPT_CHILD" ]; then blocked[$n]=1; fi
+    done < "$1"
+    for n in ${first[@]+"${!first[@]}"}; do
+        if [ -n "${blocked[$n]+x}" ]; then continue; fi
+        p="${first[$n]}"
+        if [ -d "$p/bin" ] || [ -d "$p/lib" ] || [ -d "$p/lib64" ]; then
+            OPT_SPLIT[$n]=1
+            log "[/opt/$n] has more than one directory, and the reference run only used [${p##*/}], so only [$p] is captured"
+        fi
+    done
+}
+
 # classify <paths>: sort each path into a package, an /opt directory, a library root, a script directory or a single file
 classify() {
     local p n v a d
@@ -1736,7 +1781,14 @@ classify() {
     # everything else
     while IFS= read -r p || [ -n "$p" ]; do
         case "$p" in
-            /opt/?*) n="${p#/opt/}"; add_tree "/opt/${n%%/*}" "$BUILDDIR/captured-opt.txt"; continue ;;
+            /opt/?*)
+                opt_child "$p"
+                if [ -z "${OPT_SPLIT[$OPT_NAME]+x}" ]; then add_tree "/opt/$OPT_NAME" "$BUILDDIR/captured-opt.txt"; continue; fi
+                # only the install(s) used. A link in /opt/<name> is copied as a link, and the directory it points to whole
+                if [ -z "$OPT_CHILD" ]; then continue; fi
+                if [ -n "$OPT_LINK" ]; then echo "$OPT_LINK" >> "$BUILDDIR/captured-paths.txt"; echo "$OPT_LINK" >> "$CAP/copy.txt"; fi
+                if [ -d "$OPT_CHILD" ] && [ ! -L "$OPT_CHILD" ]; then add_tree "$OPT_CHILD" "$BUILDDIR/captured-opt.txt"; continue; fi
+                ;;
         esac
         lib_root_for "$p"
         if [ -n "$ROOT_RESULT" ]; then add_tree "$ROOT_RESULT" "$BUILDDIR/captured-paths.txt"; continue; fi
@@ -1982,6 +2034,7 @@ capture_software() {
         }' "$BUILDDIR/trace.log" | LC_ALL=C sort -u > "$CAP/traced.txt"
     log "Trace: $(wc -l < "$CAP/traced.txt") distinct paths"
     prepare_paths "$CAP/traced.txt" "$CAP/round.txt"
+    find_opt_installs "$CAP/round.txt"
 
     # classify, then add the libraries the copied ELF files need, until nothing new turns up
     while [ -s "$CAP/round.txt" ] && [ $round -lt 8 ]; do
@@ -2102,6 +2155,10 @@ build_image() {
 
     log "Creating a sandbox from base image [$BASE_IMAGE]"
     "$APPTAINER" build --sandbox base "$BASE_IMAGE" || fail "Unable to create a sandbox from base image [$BASE_IMAGE]"
+
+    # an unprivileged sandbox keeps the image's modes, so directories like usr/bin aren't writable by us and the copy below
+    # can't add or replace files in them. Same as 'build --fix-perms', which older versions don't have
+    chmod -R u+rwX base || fail "Unable to make the sandbox writable"
 
     log "Copying the captured software and the pipeline into the sandbox"
     cp -a staging/. base/ || fail "Unable to copy the captured software into the sandbox"
