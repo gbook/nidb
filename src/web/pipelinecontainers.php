@@ -303,7 +303,7 @@
 			AddPitfall($pitfalls, 'warning', "FreeSurfer license", "FreeSurfer's <tt>license.txt</tt> is never copied into the image. Users must supply their own license, e.g. <tt>--bind license.txt:/opt/freesurfer/license.txt</tt>. FreeSurfer also adds ~10 GB to the image.");
 		}
 		if (preg_match('/\bmatlab\b/i', $allcommands)) {
-			AddPitfall($pitfalls, 'warning', "MATLAB", "Commercial software must not be in an image meant to be shared, and MATLAB license files are never copied. Compiled MATLAB code with the MATLAB Runtime (MCR) is fine.");
+			AddPitfall($pitfalls, 'warning', "MATLAB", "Commercial software cannot be included in an image meant to be shared, and MATLAB license files are never copied. Compiled MATLAB code with the MATLAB Runtime (MCR) is ok.");
 		}
 		if (preg_match('/\/opt\/fsl|FSLDIR|\b(bet|flirt|fnirt|feat|melodic|fslmaths)\b/', $allcommands)) {
 			AddPitfall($pitfalls, 'info', "FSL", "FSL adds ~5 GB to the image.");
@@ -313,8 +313,8 @@
 		if ($avgsec > 4*3600) {
 			AddPitfall($pitfalls, 'warning', "Long build", "The build runs the whole pipeline once on a compute node to find the software it uses. Completed analyses of this version averaged " . round($avgsec/3600, 1) . " hours on the cluster.");
 		}
-		AddPitfall($pitfalls, 'info', "Code paths not taken", "Software is found by tracing one reference run. Software used only for some subjects (an <tt>if</tt> branch the reference study didn't take) may be missing from the image.");
-		AddPitfall($pitfalls, 'info', "Compute node OS", "The image is built on a compute node, using that node's OS and software. Export pipelines that run on an old OS before those nodes are upgraded.");
+		AddPitfall($pitfalls, 'info', "Skipped code in script", "Required applications/libraries are found by tracing calls from <i>one</i> reference analysis. A bash <tt>if</tt> statement may cause sections of code to not run, preventing capture of all needed software.");
+		AddPitfall($pitfalls, 'info', "Compute node OS", "The image is built on a compute node, using that node's OS and software.");
 
 		return $pitfalls;
 	}
@@ -352,7 +352,8 @@
 	function ReferenceAnalysisLabel($uid, $studynum, $analysisid) {
 		if ((int)$analysisid == 0) { return ""; }
 		if (($uid ?? '') == "") { return "Analysis " . (int)$analysisid . " (deleted)"; }
-		return htmlspecialchars($uid) . (int)$studynum;
+		$str = "<a href='viewanalysis.php?action=viewgraph&analysisid=$analysisid'>" . htmlspecialchars($uid) . (int)$studynum . "</a>";
+		return $str;
 	}
 
 
@@ -755,16 +756,18 @@
 				</div>
 			</div>
 
-			<p>A container is a standalone Apptainer (<tt>.sif</tt>) image of one version of this pipeline: its main script plus the software it uses, captured from the compute node. Anyone can run it once per subject/study without NiDB. See <tt>doc/pipeline-apptainer.md</tt> for details.</p>
+			<p>A container is a standalone <a href="https://apptainer.org/">Apptainer</a> (<tt>.sif</tt>) image of this pipeline. The container holds this pipeline's main script plus the software it uses, allowing anyone to run this pipeline without NiDB. The container would run on a <b>single</b> imaging study, like a single analysis. Input data must be formatted according to the specifications before running the container.
 
 			<!-- ---------- in progress ---------- -->
+			<br>
 			<? if (count($inprogress) > 0) { ?>
-			<h3 class="ui dividing header"><i class="spinner loading icon"></i> In progress</h3>
+			<h2 class="ui dividing header">Exports in progress</h2>
 			<? DisplayContainerTable($inprogress, $version, false); ?>
 			<? } ?>
 
 			<!-- ---------- existing ---------- -->
-			<h3 class="ui dividing header"><i class="boxes icon"></i> Containers</h3>
+			<br>
+			<h2 class="ui dividing header">Completed containers</h2>
 			<? if (count($finished) == 0) { ?>
 				<div class="ui message">No containers have been built for this pipeline yet</div>
 			<? } else { ?>
@@ -772,7 +775,8 @@
 			<? } ?>
 
 			<!-- ---------- usage ---------- -->
-			<h3 class="ui dividing header"><i class="terminal icon"></i> Usage</h3>
+			<br>
+			<h2 class="ui dividing header"><i class="small terminal icon"></i> Container usage</h2>
 			<p>Run the container once per subject/study. Bind the subject's input data to <tt>/input</tt> and a writable directory to <tt>/output</tt>. The input is copied into <tt>/output</tt>, and the pipeline runs there, so <tt>/output</tt> ends up looking like a NiDB analysis directory.</p>
 			<div class="ui segment" style="background-color: #f8f8f8"><pre style="margin: 0"><?=htmlspecialchars($runcmd)?></pre></div>
 			<table class="ui very basic compact collapsing table">
@@ -863,7 +867,8 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 			<? } ?>
 
 			<!-- ---------- create ---------- -->
-			<h3 class="ui dividing header"><i class="plus square outline icon"></i> Create container</h3>
+			<br>
+			<h2 class="ui dividing header">Create container</h2>
 			<p>Builds a container from the current version (<b>version <?=$version?></b>) of this pipeline. The build runs as a job on a compute node, in this pipeline's queue, and may take as long as the pipeline itself.</p>
 
 			<h4 class="ui header">Potential pitfalls for this pipeline</h4>
@@ -894,7 +899,7 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 				<div class="ui negative message">Fix the <?=$numblocking?> problem(s) marked <i class="red times circle icon"></i> before creating a container</div>
 				<button class="ui disabled primary button"><i class="box icon"></i> Create</button>
 			<? } elseif ($versioninprogress) { ?>
-				<div class="ui info message">A container for version <?=$version?> is already being built</div>
+				<div class="ui info message">A container for version <?=$version?> is already being built - wait until the build is complete before trying to build again</div>
 				<button class="ui disabled primary button"><i class="box icon"></i> Create</button>
 			<? } else { ?>
 				<form action="pipelinecontainers.php" method="post" class="ui form">
