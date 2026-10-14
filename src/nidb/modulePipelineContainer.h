@@ -53,11 +53,9 @@ private:
     QList<containerRequest> GetExportRequests(QString status, int containerID);
     bool ClaimRequest(containerRequest &c, QString fromStatus, QString toStatus);
 
-    /* build stages (doc section 8) */
+    /* build stages (doc section 8). After step 3 the build job reports its progress and result through analysisapi.php */
     bool PrepareExport(containerRequest &c, QString &msg);            /* step 2: checks, build directory */
     bool SubmitBuildJob(containerRequest &c, QString &msg);     /* step 3: submit build.job to the cluster */
-    bool IsBuildFinished(containerRequest &c);                  /* step 5: poll for build.exitcode */
-    bool Finish(containerRequest &c, QString &msg);             /* step 5: copy to exportdir, record results */
 
     /* export checks (doc sections 1, 3, 5) */
     bool CheckIfExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings);
@@ -79,7 +77,6 @@ private:
     QString GetBuildDir(int containerID);
     QString GetClusterBuildDir(int containerID);
     QString GetContainerFileName(pipeline &p, int version);
-    QString GetExportDir(pipeline &p, int version);
 
     /* pipeline_containers updates */
     void SetStatus(int containerID, QString status);

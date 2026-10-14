@@ -99,6 +99,30 @@ nidbapi -d action=setcomplete -d "iscomplete=$iscomplete"
 
 `Authentication failed.` covers a wrong token, a token from an older job script, a token from a job that has already finished, and an unknown analysis ID.
 
+## Container builds
+
+The same endpoint takes check-ins from container build jobs (`build-container.sh`, written by `modulePipelineContainer`; see `doc/pipeline-apptainer.md` §8). These calls use `containerid` in place of `analysisid`, and a separate per-build token: `WriteContainerBuildScript()` stores its SHA-256 in `pipeline_containers.build_apitoken` and writes the raw token into `build-container.sh`. A container token only works while the row's `build_status` is `building`, and is cleared by `containercomplete` or `containererror`, so one of those must be the build's last call.
+
+| Action | Parameters | Effect |
+|--------|------------|--------|
+| `containercheckin` | `step`, [`message`], [`hostname`] | Sets `build_step`, `build_step_message`, `build_hostname`, and `build_startdate` on the first check-in. Adds a line to `build_log` |
+| `containercomplete` | `path`, `size` (bytes), `sha256`, [`message`], [`warnings`], [`hostname`] | Sets `build_status` = `complete`, `build_step` = `buildComplete`, `build_enddate`, `container_path`, `container_size`, `container_sha256`, `container_date`. Clears the token |
+| `containererror` | `message`, [`step`], [`warnings`], [`hostname`] | Sets `build_status` = `error` and `build_enddate`. `build_step` is left at the last check-in, so it shows where the build stopped. Clears the token |
+
+- `step` for `containercheckin` is one of `preReferenceAnalysisChecks`, `runningReferenceAnalysis`, `postReferenceAnalysisChecks`, `buildingContainer`, `runningValidationAnalysis`. `buildComplete` is set only by `containercomplete`.
+- `path` is the `.sif`'s absolute path as the cluster sees it. The `.sif` isn't copied to NiDB.
+- `warnings` is the build's warnings, one per line, appended to `build_warnings`.
+- `build_step_message` is truncated to 255 characters; the full message is in `build_log`.
+
+```bash
+nidbapi() {
+    curl -sS --connect-timeout 30 --max-time 300 --retry 3 "$NIDB_APIURL" -d "containerid=$CONTAINER_ID" --data-urlencode "token=$NIDB_APITOKEN" --data-urlencode "hostname=$(hostname)" "$@"
+}
+nidbapi -d action=containercheckin -d step=runningReferenceAnalysis --data-urlencode "message=Reference run of subject [S1234ABC] study [1]"
+nidbapi -d action=containercomplete --data-urlencode "path=/cluster/analysis/_apptainer/12/mypipeline-v3.sif" -d size=1234567890 -d sha256=<64 hex chars> --data-urlencode "warnings@build-warnings.txt"
+nidbapi -d action=containererror -d step=buildingContainer --data-urlencode "message=Unable to build [mypipeline-v3.sif]"
+```
+
 ## User guide: inserting results
 
 Pipeline steps and result scripts can save results to NiDB with the `nidbapi` command, which is already available inside every NiDB pipeline job. Each call saves one result with a description (`desc`) and one value:

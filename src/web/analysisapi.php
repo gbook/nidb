@@ -40,6 +40,13 @@
 		updateanalysis analysisid, token, numfiles, disksize (bytes)
 		setcomplete    analysisid, token, iscomplete (0|1)
 
+	Container build actions, called by build-container.sh (modulePipelineContainer). These use a per-build token,
+	stored as a SHA-256 hash in pipeline_containers.build_apitoken, and only work while the row is 'building'.
+	containercomplete and containererror are the build's last call, and clear the token
+		containercheckin   containerid, token, step, [message], [hostname]
+		containercomplete  containerid, token, path, size (bytes), sha256, [message], [warnings], [hostname]
+		containererror     containerid, token, message, [step], [warnings], [hostname]
+
 	Example
 		curl -s "$NIDB_APIURL" -d action=checkin -d analysisid=$NIDB_ANALYSISID \
 			-d token=$NIDB_APITOKEN -d status=processing --data-urlencode "message=processing step 2 of 5"
@@ -54,9 +61,28 @@
 	require "includes_php.php";
 
 	$action = AAPIParam("action");
-	$analysisid = AAPIParam("analysisid");
 	$token = AAPIParam("token");
 
+	/* container builds authenticate against pipeline_containers, not analysis */
+	if (in_array($action, array('containercheckin', 'containercomplete', 'containererror'), true)) {
+		$containerid = AAPIParam("containerid");
+		if (($containerid == "") || ($token == ""))
+			AAPIRespond(false, "Missing required parameters: containerid, token.", 400);
+		if (!ctype_digit($containerid))
+			AAPIRespond(false, "containerid is not an integer.", 400);
+		$containerid = (int)$containerid;
+
+		if (!AAPIAuthenticateContainer($containerid, $token))
+			AAPIRespond(false, "Authentication failed.", 401);
+
+		switch ($action) {
+			case 'containercheckin':  ContainerCheckin($containerid); break;
+			case 'containercomplete': ContainerComplete($containerid); break;
+			case 'containererror':    ContainerError($containerid); break;
+		}
+	}
+
+	$analysisid = AAPIParam("analysisid");
 	if (($analysisid == "") || ($token == ""))
 		AAPIRespond(false, "Missing required parameters: analysisid, token.", 400);
 	if (!ctype_digit($analysisid))
@@ -259,7 +285,138 @@
 	}
 
 
+	/* -------------------------------------------- */
+	/* ------- ContainerCheckin ------------------- */
+	/* -------------------------------------------- */
+	/* a major step of a container build. The first check-in is when the job started running, so it sets build_startdate */
+	function ContainerCheckin($containerid) {
+		$step = AAPIParam("step");
+		$message = AAPIParam("message");
+		$hostname = AAPIHostname();
+
+		/* buildComplete is set by containercomplete */
+		$validsteps = array('preReferenceAnalysisChecks', 'runningReferenceAnalysis', 'postReferenceAnalysisChecks', 'buildingContainer', 'runningValidationAnalysis');
+		if (!in_array($step, $validsteps, true))
+			AAPIRespond(false, "Invalid step [$step]. Must be one of: " . implode(", ", $validsteps), 400);
+
+		$log = ContainerLogLine("[$hostname] $step" . (($message == "") ? "" : ": $message"));
+		$sqlstring = "update pipeline_containers set build_step = ?, build_step_message = ?, build_hostname = ?, build_startdate = coalesce(build_startdate, now()), build_log = concat(coalesce(build_log, ''), ?) where pipelinecontainer_id = ?";
+		$params = [$step, ContainerStepMessage($message), $hostname, $log, $containerid];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssi', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		AAPIRespond(true, "Checked in container [$containerid] at step [$step]");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerComplete ------------------ */
+	/* -------------------------------------------- */
+	/* the build succeeded. The .sif stays on the cluster; path is where it is, as the cluster sees it */
+	function ContainerComplete($containerid) {
+		$path = AAPIParam("path");
+		$size = AAPIParam("size");
+		$sha256 = strtolower(AAPIParam("sha256"));
+		$message = AAPIParam("message");
+		$hostname = AAPIHostname();
+
+		if (($path == "") || (substr($path, 0, 1) != "/"))
+			AAPIRespond(false, "path is required and must be an absolute path.", 400);
+		if (!ctype_digit($size) || ((int)$size < 1))
+			AAPIRespond(false, "size (bytes) is required and must be a positive integer.", 400);
+		if (!preg_match('/^[0-9a-f]{64}$/', $sha256))
+			AAPIRespond(false, "sha256 is required and must be 64 hex characters.", 400);
+		$size = (int)$size;
+
+		if ($message == "")
+			$message = "Container built";
+		$log = ContainerLogLine("[$hostname] buildComplete: $message. Container [$path] size [$size] sha256 [$sha256]");
+		$sqlstring = "update pipeline_containers set build_status = 'complete', build_step = 'buildComplete', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?), container_path = ?, container_size = ?, container_sha256 = ?, container_date = now() where pipelinecontainer_id = ?";
+		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $path, $size, $sha256, $containerid];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssisi', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		AAPIRespond(true, "Container [$containerid] is complete");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerError --------------------- */
+	/* -------------------------------------------- */
+	/* the build failed. build_step is left at the last step checked in, so it shows where the build stopped */
+	function ContainerError($containerid) {
+		$message = AAPIParam("message");
+		$step = AAPIParam("step");
+		$hostname = AAPIHostname();
+
+		if ($message == "")
+			$message = "The build failed, with no message";
+		$log = ContainerLogLine("[$hostname] ERROR" . (($step == "") ? "" : " during $step") . ": $message");
+		$sqlstring = "update pipeline_containers set build_status = 'error', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?) where pipelinecontainer_id = ?";
+		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $containerid];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssi', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		AAPIRespond(true, "Container [$containerid] marked as error");
+	}
+
+
 	/* ------------------------------------ helpers ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- AAPIAuthenticateContainer ---------- */
+	/* -------------------------------------------- */
+	/* Check the token against the hash stored for this container build. Only a build that's
+	   running ('building') can check in */
+	function AAPIAuthenticateContainer($containerid, $token) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select build_apitoken from pipeline_containers where pipelinecontainer_id = ? and build_status = 'building'");
+		mysqli_stmt_bind_param($stmt, 'i', $containerid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		$row = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		$storedhash = $row['build_apitoken'] ?? '';
+		if ($storedhash == '')
+			return false;
+
+		return hash_equals($storedhash, hash('sha256', $token));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerLogLine ------------------- */
+	/* -------------------------------------------- */
+	/* a line for build_log, in the same format as modulePipelineContainer::AppendBuildLog() */
+	function ContainerLogLine($text) {
+		return "[" . date("Y-m-d H:i:s") . "] $text\n";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerStepMessage --------------- */
+	/* -------------------------------------------- */
+	/* build_step_message is a varchar(255). The full message is in build_log */
+	function ContainerStepMessage($message) {
+		return mb_substr($message, 0, 255);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerWarnings ------------------ */
+	/* -------------------------------------------- */
+	/* the build's warnings (build-warnings.txt, one per line), to append to build_warnings */
+	function ContainerWarnings() {
+		$warnings = AAPIParam("warnings");
+		return ($warnings == "") ? "" : "$warnings\n";
+	}
+
 
 
 	/* -------------------------------------------- */

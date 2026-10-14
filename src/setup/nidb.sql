@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 09, 2026 at 06:58 PM
+-- Generation Time: Oct 14, 2026 at 01:38 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2264,7 +2264,11 @@ CREATE TABLE `pipeline_containers` (
   `build_createdate` datetime DEFAULT NULL COMMENT 'the datetime of the submission to create the container',
   `build_startdate` datetime DEFAULT NULL,
   `build_enddate` datetime DEFAULT NULL,
+  `build_hostname` varchar(255) DEFAULT NULL,
   `build_status` enum('started','building','complete','error','submitted') NOT NULL,
+  `build_step` enum('preReferenceAnalysisChecks','runningReferenceAnalysis','postReferenceAnalysisChecks','buildingContainer','runningValidationAnalysis','buildComplete') DEFAULT NULL COMMENT 'preAnalysisChecks are everything that happens before the reference analysis is run.',
+  `build_step_message` varchar(255) DEFAULT NULL,
+  `build_apitoken` varchar(255) DEFAULT NULL,
   `build_log` text DEFAULT NULL,
   `build_warnings` text DEFAULT NULL,
   `reference_analysisid` int(11) DEFAULT NULL,
@@ -2272,7 +2276,7 @@ CREATE TABLE `pipeline_containers` (
   `container_size` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Container size in bytes',
   `container_sha256` varchar(255) DEFAULT NULL COMMENT 'SHA256 checksum',
   `container_path` text DEFAULT NULL COMMENT 'Final container path',
-  `container_date` datetime DEFAULT NULL COMMENT 'the datetime the container was completed and available to the user (copied to final location)'
+  `container_date` datetime DEFAULT NULL COMMENT 'the datetime the container was completed and available to the user'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------

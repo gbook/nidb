@@ -416,6 +416,33 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ContainerStepLabel ----------------- */
+	/* -------------------------------------------- */
+	/* the last step the build job checked in with (analysisapi.php), its message, and the host. For a failed build
+	   this is where it stopped */
+	function ContainerStepLabel($c) {
+		$steps = array(
+			'preReferenceAnalysisChecks' => 'Checking tools and system',
+			'runningReferenceAnalysis' => 'Reference run',
+			'postReferenceAnalysisChecks' => 'Capturing software',
+			'buildingContainer' => 'Building image',
+			'runningValidationAnalysis' => 'Validation run',
+			'buildComplete' => 'Build complete');
+		$step = (string)($c['build_step'] ?? '');
+		if ($step == "") {
+			return ($c['build_status'] == 'building') ? "<div class='ui small grey text'>Waiting in the cluster queue</div>" : "";
+		}
+
+		$html = "<div><b>" . htmlspecialchars($steps[$step] ?? $step) . "</b></div>";
+		$message = trim((string)($c['build_step_message'] ?? ''));
+		if ($message != "") { $html .= "<div class='ui small text'>" . htmlspecialchars($message) . "</div>"; }
+		$hostname = trim((string)($c['build_hostname'] ?? ''));
+		if ($hostname != "") { $html .= "<div class='ui small grey text'><i class='server icon'></i>" . htmlspecialchars($hostname) . "</div>"; }
+		return $html;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayContainerTable -------------- */
 	/* -------------------------------------------- */
 	function DisplayContainerTable($containers, $currentversion, $showsize) {
@@ -433,7 +460,7 @@
 					<th>Build finished</th>
 					<? if ($showsize) { ?>
 					<th>Available</th>
-					<th>Container</th>
+					<th>Container <span class="ui small grey text">(path on the cluster)</span></th>
 					<th>Size</th>
 					<th>SHA256</th>
 					<? } ?>
@@ -455,7 +482,7 @@
 				<tr>
 					<td><?=$containerid?></td>
 					<td><?=$cversion?> <? if ($cversion == $currentversion) { ?><span class="ui tiny basic green label">current</span><? } ?></td>
-					<td><?=ContainerStatusLabel($c['build_status'])?></td>
+					<td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td>
 					<td><?=ReferenceAnalysisLabel($c['uid'], $c['study_num'], $c['reference_analysisid'])?></td>
 					<td><?=($c['run_validation'] ?? 0) ? "Yes" : "No"?></td>
 					<td><?=htmlspecialchars($c['build_createdate'] ?? '')?></td>
@@ -495,8 +522,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayContainerFiles -------------- */
 	/* -------------------------------------------- */
-	/* the files on disk for one container: the build directory (cfg analysisdir/_apptainer/<id>, removed when the build
-	   finishes) and the export directory the finished container is copied to. Like viewanalysis.php?action=viewfiles */
+	/* the files on disk for one container: the build directory (cfg analysisdir/_apptainer/<id>), where the finished
+	   .sif stays, next to the logs and reports. Like viewanalysis.php?action=viewfiles */
 	function DisplayContainerFiles($id, $containerid) {
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		if (!ValidID($containerid,'Container ID')) { return; }
@@ -508,20 +535,13 @@
 		}
 		$c = $rows[0];
 
-		/* the same paths as modulePipelineContainer::GetBuildDir() and GetExportDir() */
+		/* the same path as modulePipelineContainer::GetBuildDir(), as NiDB sees it. container_path is the cluster's path */
 		$dirs = array();
 		$analysisdir = rtrim(trim($GLOBALS['cfg']['analysisdir'] ?? ''), '/');
 		if ($analysisdir != "") {
-			$dirs['Build directory'] = array($analysisdir . "/_apptainer/$containerid", "Not found. It's created when the build starts, and removed when the build finishes");
+			$dirs['Build directory'] = array($analysisdir . "/_apptainer/$containerid", "Not found. It's created when the build starts. The container may have been moved or deleted");
 		}
 		$path = trim((string)($c['container_path'] ?? ''));
-		$exportdir = rtrim(trim($GLOBALS['cfg']['exportdir'] ?? ''), '/');
-		if ($path != "") {
-			$dirs['Export directory'] = array(dirname($path), "Not found. The container may have been moved or deleted");
-		}
-		elseif ($exportdir != "") {
-			$dirs['Export directory'] = array($exportdir . "/NiDB-Apptainer-" . $c['pipeline_name'] . "-v" . (int)$c['pipeline_version'], "Not found. It's created when the build finishes");
-		}
 		?>
 		<div class="ui container">
 			<h2 class="ui header">
@@ -531,6 +551,9 @@
 					<div class="sub header"><a href="pipelinecontainers.php?id=<?=$id?>"><?=htmlspecialchars($c['pipeline_name'] ?? '')?></a> &nbsp; version <?=(int)$c['pipeline_version']?> &nbsp; <?=ContainerStatusLabel($c['build_status'])?></div>
 				</div>
 			</h2>
+			<? if ($path != "") { ?>
+			<div class="ui message">Container, as the cluster sees it: <tt><?=htmlspecialchars($path)?></tt></div>
+			<? } ?>
 			<?
 			foreach ($dirs as $title => list($dir, $missing)) {
 				?>
