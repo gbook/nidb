@@ -52,6 +52,7 @@
 	$id = (int)GetVariable("id"); /* pipeline_id. Named 'id' so menu.php shows the pipeline sub-menu */
 	$referenceanalysisid = (int)GetVariable("referenceanalysisid");
 	$runvalidation = GetMySQLTinyInt(GetVariable("runvalidation"));
+	$containerid = (int)GetVariable("containerid");
 
 	/* determine action */
 	switch ($action) {
@@ -60,6 +61,9 @@
 			CreateContainer($id, $referenceanalysisid, $runvalidation);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("pipelinecontainers.php?id=$id");
+			break;
+		case 'viewfiles':
+			DisplayContainerFiles($id, $containerid);
 			break;
 		default:
 			DisplayContainers($id);
@@ -330,7 +334,7 @@
 	function ReferenceAnalysisLabel($uid, $studynum, $analysisid) {
 		if ((int)$analysisid == 0) { return ""; }
 		if (($uid ?? '') == "") { return "Analysis " . (int)$analysisid . " (deleted)"; }
-		return htmlspecialchars($uid) . (int)$studynum . " <span style='color: #888'>(analysis " . (int)$analysisid . ")</span>";
+		return htmlspecialchars($uid) . (int)$studynum;
 	}
 
 
@@ -434,6 +438,7 @@
 					<th>SHA256</th>
 					<? } ?>
 					<th>Warnings &amp; log</th>
+					<th>Files</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -476,6 +481,7 @@
 						</div>
 						<? } ?>
 					</td>
+					<td><a href="pipelinecontainers.php?action=viewfiles&id=<?=(int)$c['pipeline_id']?>&containerid=<?=$containerid?>" target="_viewfiles"><i class="folder open outline icon"></i>View files</a></td>
 				</tr>
 				<?
 			}
@@ -483,6 +489,157 @@
 			</tbody>
 		</table>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayContainerFiles -------------- */
+	/* -------------------------------------------- */
+	/* the files on disk for one container: the build directory (cfg analysisdir/_apptainer/<id>, removed when the build
+	   finishes) and the export directory the finished container is copied to. Like viewanalysis.php?action=viewfiles */
+	function DisplayContainerFiles($id, $containerid) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($containerid,'Container ID')) { return; }
+
+		$rows = ContainerQueryRows("select a.*, p.pipeline_name from pipeline_containers a left join pipelines p on a.pipeline_id = p.pipeline_id where a.pipelinecontainer_id = ? and a.pipeline_id = ?", 'ii', [$containerid, $id], __LINE__);
+		if (count($rows) < 1) {
+			Error("Container [$containerid] not found for pipeline [$id]");
+			return;
+		}
+		$c = $rows[0];
+
+		/* the same paths as modulePipelineContainer::GetBuildDir() and GetExportDir() */
+		$dirs = array();
+		$analysisdir = rtrim(trim($GLOBALS['cfg']['analysisdir'] ?? ''), '/');
+		if ($analysisdir != "") {
+			$dirs['Build directory'] = array($analysisdir . "/_apptainer/$containerid", "Not found. It's created when the build starts, and removed when the build finishes");
+		}
+		$path = trim((string)($c['container_path'] ?? ''));
+		$exportdir = rtrim(trim($GLOBALS['cfg']['exportdir'] ?? ''), '/');
+		if ($path != "") {
+			$dirs['Export directory'] = array(dirname($path), "Not found. The container may have been moved or deleted");
+		}
+		elseif ($exportdir != "") {
+			$dirs['Export directory'] = array($exportdir . "/NiDB-Apptainer-" . $c['pipeline_name'] . "-v" . (int)$c['pipeline_version'], "Not found. It's created when the build finishes");
+		}
+		?>
+		<div class="ui container">
+			<h2 class="ui header">
+				<i class="folder open outline icon"></i>
+				<div class="content">
+					Container <?=$containerid?> files
+					<div class="sub header"><a href="pipelinecontainers.php?id=<?=$id?>"><?=htmlspecialchars($c['pipeline_name'] ?? '')?></a> &nbsp; version <?=(int)$c['pipeline_version']?> &nbsp; <?=ContainerStatusLabel($c['build_status'])?></div>
+				</div>
+			</h2>
+			<?
+			foreach ($dirs as $title => list($dir, $missing)) {
+				?>
+				<h3 class="ui dividing header"><?=$title?> <div class="sub header"><tt><?=htmlspecialchars($dir)?></tt></div></h3>
+				<?
+				if (!is_dir($dir)) {
+					?><div class="ui message"><?=$missing?></div><?
+					continue;
+				}
+				DisplayContainerFileList($dir);
+			}
+			?>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayContainerFileList ----------- */
+	/* -------------------------------------------- */
+	/* a recursive listing of $dir. Symlinks aren't followed. Files are linked to the viewers when viewfile.php
+	   would allow them (IsViewablePath()) */
+	function DisplayContainerFileList($dir) {
+		$maxfiles = 5000;
+		$entries = array();
+		$truncated = false;
+		try {
+			$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS), RecursiveIteratorIterator::SELF_FIRST, RecursiveIteratorIterator::CATCH_GET_CHILD);
+			foreach ($it as $file => $info) {
+				if (count($entries) >= $maxfiles) { $truncated = true; break; }
+				$entries[] = $file;
+			}
+		}
+		catch (Exception $e) {
+			Error("Unable to read [" . htmlspecialchars($dir) . "]: " . htmlspecialchars($e->getMessage()));
+			return;
+		}
+		sort($entries);
+
+		$totalsize = 0;
+		foreach ($entries as $file) {
+			if (is_file($file) && !is_link($file)) { $totalsize += filesize($file); }
+		}
+		?>
+		<p><?=number_format(count($entries))?> files and directories, <?=HumanReadableFilesize($totalsize)?><? if ($truncated) { ?>. <b>Only the first <?=number_format($maxfiles)?> are shown</b><? } ?></p>
+		<? if (count($entries) == 0) { return; } ?>
+		<table class="ui very compact celled table">
+			<thead>
+				<tr>
+					<th>File</th>
+					<th>Timestamp</th>
+					<th>Permissions</th>
+					<th class="right aligned">Size <span class="tiny">bytes</span></th>
+				</tr>
+			</thead>
+			<tbody>
+			<?
+			foreach ($entries as $file) {
+				$stat = lstat($file);
+				$islink = is_link($file);
+				$isdir = !$islink && is_dir($file);
+				$relative = substr($file, strlen($dir) + 1);
+				$lastslash = strrpos($relative, '/');
+				$display = ($lastslash === false) ? "<b>" . htmlspecialchars($relative) . "</b>" : htmlspecialchars(substr($relative, 0, $lastslash + 1)) . "<b>" . htmlspecialchars(substr($relative, $lastslash + 1)) . "</b>";
+
+				if ($isdir) {
+					$display = "<span style='color: darkblue'>$display/</span>";
+				}
+				elseif ($islink) {
+					$display = "<span style='color: red'>$display</span> &rarr; " . htmlspecialchars((string)readlink($file));
+				}
+				elseif (IsViewablePath(realpath($file))) {
+					$lower = strtolower($file);
+					if (preg_match('/\.nii(\.gz)?$/', $lower)) {
+						$display = "<a href='niiview.php?type=nifti&filename=" . urlencode($file) . "'>$display</a>";
+					}
+					elseif (preg_match('/\.(png|jpe?g|gif|ppm)$/', $lower)) {
+						$display = "<a href='viewimagefile.php?file=" . urlencode($file) . "'>$display</a>";
+					}
+					else {
+						$display = "<a href='viewfile.php?file=" . urlencode($file) . "'>$display</a>";
+					}
+				}
+				?>
+				<tr>
+					<td><?=$display?></td>
+					<td><?=($stat !== false) ? date("M j, Y H:i:s", $stat['mtime']) : ''?></td>
+					<td><tt><?=($stat !== false) ? FilePermissionString($stat['mode']) : ''?></tt></td>
+					<td class="right aligned"><?=(($stat !== false) && !$isdir) ? number_format($stat['size']) : ''?></td>
+				</tr>
+				<?
+			}
+			?>
+			</tbody>
+		</table>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FilePermissionString --------------- */
+	/* -------------------------------------------- */
+	/* rwxr-xr-x from a stat() mode */
+	function FilePermissionString($mode) {
+		$s = "";
+		foreach (array(0400, 0200, 0100, 040, 020, 010, 04, 02, 01) as $i => $bit) {
+			$s .= ($mode & $bit) ? substr("rwx", $i % 3, 1) : "-";
+		}
+		return $s;
 	}
 
 
@@ -611,13 +768,16 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 				</thead>
 				<tbody>
 				<?
-				/* the same layout as GetData(), and the README.txt in the container (modulePipelineContainer::GetInputLayout()) */
+				/* the same layout as GetData(), and the README.txt in the container (modulePipelineContainer::GetInputDirStructure()).
+				   Steps that write to the same directory, with the same modality, format and notes, are one input; their protocols are combined */
+				$layout = array();
 				foreach ($datadefs as $dd) {
 					$root = rtrim("/input/" . ltrim((string)$dd['pdd_location'], '/'), '/');
 					$location = htmlspecialchars($root);
 					if ($dd['pdd_useseries']) { $location .= "/&lt;seriesnum&gt;"; }
 					if ($dd['pdd_usephasedir']) { $location .= "/&lt;phasedir&gt;"; }
-					$format = htmlspecialchars($dd['pdd_dataformat']) . ($dd['pdd_gzip'] ? " (gzipped)" : "");
+					$modality = htmlspecialchars(strtoupper((string)$dd['pdd_modality']));
+					$format = $dd['pdd_behonly'] ? "behavioral data only, no imaging data" : htmlspecialchars((string)$dd['pdd_dataformat']) . ($dd['pdd_gzip'] ? " (gzipped)" : "");
 					$behdir = trim($dd['pdd_behdir'] ?? '');
 					switch (trim($dd['pdd_behformat'] ?? '')) {
 						case 'behroot': $behlocation = htmlspecialchars($root); break;
@@ -627,18 +787,29 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 						default: $behlocation = "";
 					}
 					$notes = array();
-					if ($dd['pdd_optional']) { $notes[] = "optional"; }
-					if ($dd['pdd_behonly']) { $notes[] = "behavioral data only, no imaging data"; }
 					if ($dd['pdd_useseries']) { $notes[] = $dd['pdd_preserveseries'] ? "&lt;seriesnum&gt; is the original series number" : "&lt;seriesnum&gt; is 1, 2, 3, ... for each matching series"; }
 					if ($dd['pdd_usephasedir']) { $notes[] = "&lt;phasedir&gt; is AP, PA, RL, LR, COL, ROW, or unknownPE"; }
 					if ($behlocation != "") { $notes[] = "behavioral data in <tt>$behlocation</tt>"; }
+					if ($dd['pdd_optional']) { $notes[] = "optional"; }
+					$notes = implode("; ", $notes);
+
+					$key = "$location\t$modality\t$format\t$notes";
+					if (!isset($layout[$key])) {
+						$layout[$key] = array('location' => $location, 'modality' => $modality, 'format' => $format, 'notes' => $notes, 'protocols' => array());
+					}
+					$protocol = htmlspecialchars((string)$dd['pdd_protocol']);
+					if (!in_array($protocol, $layout[$key]['protocols'])) {
+						$layout[$key]['protocols'][] = $protocol;
+					}
+				}
+				foreach ($layout as $item) {
 					?>
 					<tr>
-						<td><tt><?=$location?></tt></td>
-						<td><?=htmlspecialchars($dd['pdd_modality'])?></td>
-						<td><?=htmlspecialchars($dd['pdd_protocol'])?></td>
-						<td><?=$format?></td>
-						<td><?=implode("; ", $notes)?></td>
+						<td><tt><?=$item['location']?></tt></td>
+						<td><?=$item['modality']?></td>
+						<td><?=implode("<br>", $item['protocols'])?></td>
+						<td><?=$item['format']?></td>
+						<td><?=$item['notes']?></td>
 					</tr>
 					<?
 				}

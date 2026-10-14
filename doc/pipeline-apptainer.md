@@ -179,8 +179,10 @@ The container doesn't download data. The caller has to provide `/input` laid out
 The layout is documented, not enforced or converted. The container doesn't check `/input` or rearrange data; matching the layout is the caller's job. `modulePipelineContainer::GetInputDirStructure()` generates the description from the pipeline version's data steps (`modulePipeline::GetPipelineDataDef()`), as readable text and as JSON, and it's published in four places:
 - `README.txt`, in the export directory next to the `.sif`, and in the image as `/pipeline/README.txt`;
 - the image's `%help`, which is `README.txt`, so `apptainer run-help <sif>` shows it;
-- `manifest.json` `inputLayout`: one object per entry, with `type` (`data`, `bids` or `parent`), `location`, and for data steps `modality`, `protocol`, `format`, `gzip`, `seriesDirectories`, `preserveSeriesNumbers`, `phaseDirectories`, `behavioralLocation`, `behavioralOnly`, `optional`;
+- `manifest.json` `inputLayout`: one object per entry, with `type` (`data`, `bids` or `parent`), `location`, and for data steps `modality`, `protocols` (an array), `format`, `gzip`, `seriesDirectories`, `preserveSeriesNumbers`, `phaseDirectories`, `behavioralLocation`, `behavioralOnly`, `optional`;
 - the Usage section of `pipelinecontainers.php`, which uses the same rules for the current version.
+
+The list is per destination, not per data step. Data steps that write to the same directory with the same modality, format and notes (series and phase directories, behavioral location, optional) are one entry, listing all their protocols, since to the container they're one input. Steps that differ in any of those stay separate entries, even with the same directory.
 
 Example `README.txt` section:
 
@@ -189,7 +191,7 @@ INPUT LAYOUT (/input)
 Lay out /input as NiDB would have staged the data for this pipeline. The container doesn't check the layout.
 
     /input/T1/<seriesnum>
-        MR, protocol [MPRAGE], format [nifti3d, gzipped]
+        MR, protocols [MPRAGE], [MPRAGE_repeat], format [nifti3d, gzipped]
         <seriesnum> is 1, 2, 3, ... for each matching series, in order
     /input/fmri/<seriesnum>
         MR, protocol [rest], format [nifti4d, gzipped]
@@ -404,7 +406,8 @@ The base image and Apptainer version are in the image's `%labels`, `manifest.jso
 
 Opened from the *Manage containers* tile on the pipeline's Operations tab (`pipelinecontainers.php?id=<pipeline_id>`). It shows:
 - **In progress:** `submitted` / `started` / `building` rows.
-- **Containers:** `complete` / `error` rows, with version, reference analysis, validation, submitted / build started / build finished / available dates, path, size, sha256, and the warnings and log.
+- **Containers:** `complete` / `error` rows, with version, reference analysis (subject UID and study number), validation, submitted / build started / build finished / available dates, path, size, sha256, and the warnings and log.
+- Both tables have a **View files** link (`pipelinecontainers.php?action=viewfiles&id=<pipeline_id>&containerid=<id>`, in a new tab), like `viewanalysis.php?action=viewfiles`. It lists the build directory (`cfg[analysisdir]/_apptainer/<id>`, while it exists) and the export directory, recursively, up to 5,000 entries each, without following symlinks. Files that `viewfile.php` allows (`IsViewablePath()`, which covers the build directory but not `cfg[exportdir]`) link to `viewfile.php`, `viewimagefile.php` or `niiview.php`. Like the analysis file view, it has no permission check beyond being logged in (`doc/permissions.md`).
 - **Usage:** an example `apptainer run` command with only the arguments this pipeline's script uses (§3), and the expected `/input` layout from the enabled data items, BIDS setting and dependency (§6).
 - **Create container:** the export checks for this pipeline as a list of pitfalls, then the reference-analysis picker, the validation checkbox and **Create**. Errors (level ≠ 1, no enabled steps, no completed analysis, group, deprecated `{first_*}` or unrecognized variables, NiDB storage paths in the steps) disable Create, and are checked again on submit. Warnings: `{analysisid}`, `{command}`, a parent dependency, FreeSurfer license, MATLAB, and a long average runtime. Only enabled main steps are checked, since only they run in the container. Info: supplement steps, results script and temp dir not exported, FSL size, untaken code paths, compute node OS. These are a web-side preview. The backend checks are authoritative: `modulePipelineContainer::CheckIfExportable()` (with `CheckVariables()` and `CheckPaths()`) applies the same errors and warnings, except the long-runtime warning and the info items, and `WriteContainerBuildScript()` checks that the chosen reference analysis is complete and not bad.
 

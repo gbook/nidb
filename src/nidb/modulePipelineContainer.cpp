@@ -696,7 +696,8 @@ QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const 
 /**
  * @brief The /input layout the container expects: the layout GetData() and the dependency copy would have
  * staged into the analysis directory (doc section 6). The container doesn't check it; this is documentation,
- * for manifest.json, README.txt and the image's %help
+ * for manifest.json, README.txt and the image's %help. Data steps that write to the same directory, with the same
+ * modality, format and notes, are one entry, with their protocols combined
  * @param p The pipeline
  * @param version Pipeline version (the data steps are versioned)
  * @param items The layout, for manifest.json
@@ -721,6 +722,13 @@ QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int versi
         items.append(o);
     }
     else {
+        /* steps that write to the same directory, with the same modality, format and notes, are one input to
+           the container. Their protocols are combined */
+        QStringList keys;
+        QList<QStringList> notes;
+        QList<QStringList> protocols;
+        QList<QJsonObject> entries;
+
         modulePipeline mp(n);
         for (dataDefinitionStep d : mp.GetPipelineDataDef(p.GetPipelineRowID(), version)) {
             if (!d.flags.isEnabled)
@@ -743,31 +751,35 @@ QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int versi
             else if (behFormat == "behseries") behDir = root + "/<seriesnum>";
             else if (behFormat == "behseriesdir") behDir = root + "/<seriesnum>/" + d.exportBehavioralDirectoryName;
 
-            QString format = d.exportDataFormat + (d.flags.exportGzip ? ", gzipped" : "");
+            QString modality = d.searchModality.toUpper();
+            QString format = d.flags.behOnly ? ". Behavioral data only, no imaging data" : QString(", format [%1%2]").arg(d.exportDataFormat).arg(d.flags.exportGzip ? ", gzipped" : "");
 
-            lines << dataDir;
-            if (d.flags.behOnly)
-                lines << QString("    %1, protocol [%2]. Behavioral data only, no imaging data").arg(d.searchModality.toUpper()).arg(d.searchProtocol);
-            else
-                lines << QString("    %1, protocol [%2], format [%3]").arg(d.searchModality.toUpper()).arg(d.searchProtocol).arg(format);
+            QStringList stepNotes;
             if (d.flags.exportWriteSeriesDirectory) {
                 if (d.flags.exportPreserveSeriesNumber)
-                    lines << "    <seriesnum> is the series' original series number";
+                    stepNotes << "<seriesnum> is the series' original series number";
                 else
-                    lines << "    <seriesnum> is 1, 2, 3, ... for each matching series, in order";
+                    stepNotes << "<seriesnum> is 1, 2, 3, ... for each matching series, in order";
             }
             if (d.flags.exportWritePhaseDirectory)
-                lines << "    <phasedir> is the phase encoding direction: AP, PA, RL, LR, COL, ROW, or unknownPE";
+                stepNotes << "<phasedir> is the phase encoding direction: AP, PA, RL, LR, COL, ROW, or unknownPE";
             if (behDir != "")
-                lines << "    Behavioral data in " + behDir;
+                stepNotes << "Behavioral data in " + behDir;
             if (d.flags.isOptional)
-                lines << "    Optional";
+                stepNotes << "Optional";
+
+            QString key = QStringList({ dataDir, modality, format, stepNotes.join("\n") }).join("\t");
+            int i = keys.indexOf(key);
+            if (i >= 0) {
+                if (!protocols[i].contains(d.searchProtocol))
+                    protocols[i] << d.searchProtocol;
+                continue;
+            }
 
             QJsonObject o;
             o["type"] = "data";
             o["location"] = dataDir;
             o["modality"] = d.searchModality;
-            o["protocol"] = d.searchProtocol;
             o["format"] = d.exportDataFormat;
             o["gzip"] = d.flags.exportGzip;
             o["seriesDirectories"] = d.flags.exportWriteSeriesDirectory;
@@ -776,7 +788,23 @@ QStringList modulePipelineContainer::GetInputDirStructure(pipeline &p, int versi
             o["behavioralLocation"] = behDir;
             o["behavioralOnly"] = d.flags.behOnly;
             o["optional"] = d.flags.isOptional;
+
+            keys << key;
+            notes << stepNotes;
+            protocols << QStringList(d.searchProtocol);
+            entries << o;
+        }
+
+        for (int i = 0; i < entries.size(); i++) {
+            QJsonObject o = entries[i];
+            o["protocols"] = QJsonArray::fromStringList(protocols[i]);
             items.append(o);
+
+            QStringList key = keys[i].split("\t");
+            lines << key[0];
+            lines << QString("    %1, %2 [%3]%4").arg(key[1]).arg(protocols[i].size() > 1 ? "protocols" : "protocol").arg(protocols[i].join("], [")).arg(key[2]);
+            for (QString note : notes[i])
+                lines << "    " + note;
         }
         if (items.size() == 0)
             lines << "This pipeline has no enabled data steps, so /input can be empty";
