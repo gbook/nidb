@@ -619,7 +619,7 @@
 		?>
 		<p><?=number_format(count($entries))?> files and directories, <?=HumanReadableFilesize($totalsize)?><? if ($truncated) { ?>. <b>Only the first <?=number_format($maxfiles)?> are shown</b><? } ?></p>
 		<? if (count($entries) == 0) { return; } ?>
-		<table class="ui very compact celled table">
+		<table class="ui very compact celled sortable table containerfiles">
 			<thead>
 				<tr>
 					<th>File</th>
@@ -658,16 +658,20 @@
 				}
 				?>
 				<tr>
-					<td><?=$display?></td>
-					<td><?=($stat !== false) ? date("M j, Y H:i:s", $stat['mtime']) : ''?></td>
+					<td data-sort-value="<?=htmlspecialchars($relative)?>"><?=$display?></td>
+					<td data-sort-value="<?=($stat !== false) ? (int)$stat['mtime'] : 0?>"><?=($stat !== false) ? date("M j, Y H:i:s", $stat['mtime']) : ''?></td>
 					<td><tt><?=($stat !== false) ? FilePermissionString($stat['mode']) : ''?></tt></td>
-					<td class="right aligned"><?=(($stat !== false) && !$isdir) ? number_format($stat['size']) : ''?></td>
+					<td class="right aligned" data-sort-value="<?=(($stat !== false) && !$isdir) ? (int)$stat['size'] : -1?>"><?=(($stat !== false) && !$isdir) ? number_format($stat['size']) : ''?></td>
 				</tr>
 				<?
 			}
 			?>
 			</tbody>
 		</table>
+		<script>
+			/* click a column header to sort. Cells sort by data-sort-value: the relative path, mtime, and size in bytes (directories are -1) */
+			$(document).ready(function() { $('table.containerfiles').tablesort(); });
+		</script>
 		<?
 	}
 

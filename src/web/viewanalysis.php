@@ -273,7 +273,7 @@
 			?>
 			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
-			<table class="ui very compact celled table">
+			<table class="ui very compact celled sortable table analysisfiles">
 				<thead>
 					<tr>
 						<th>File</th>
@@ -361,7 +361,7 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>" data-sort-value="<?=htmlspecialchars($file)?>">
 					<?
 						switch ($filetype) {
 							case 'text':
@@ -393,9 +393,9 @@
 								}
 						} ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=(is_numeric($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : $timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD" data-sort-value="<?=(is_numeric($timestamp2) ? (int)$timestamp2 : 0)?>"><?=(is_numeric($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : $timestamp2)?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format($size2)?></td>
+					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right" data-sort-value="<?=(int)$size2?>"><?=number_format($size2)?></td>
 				</tr>
 				<?
 			}
@@ -411,13 +411,16 @@
 			?>
 			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
 			<br><br>
-			<table cellspacing="0" cellpadding="2">
-				<tr>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">File</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Timestamp</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999">Permissions</td>
-					<td style="font-weight: bold; border-bottom:2px solid #999999; text-align: right">Size <span class="tiny">bytes</span></td>
-				</tr>
+			<table class="ui very compact celled sortable table analysisfiles">
+				<thead>
+					<tr>
+						<th>File</th>
+						<th>Timestamp</th>
+						<th>Permissions</th>
+						<th class="right aligned">Size <span class="tiny">bytes</span></th>
+					</tr>
+				</thead>
+				<tbody>
 			<?
 			foreach ($files as $line) {
 				//$file\t$mtime\t$perm\t$isdir\t$islink\t$size
@@ -480,7 +483,7 @@
 				}
 				?>
 				<tr>
-					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>">
+					<td style="font-size:9pt; border-bottom: solid 1px #DDDDDD; color:<?=$filecolor?>; font-weight: <?=$fileweight?>" data-sort-value="<?=htmlspecialchars($file)?>">
 					<?
 						$fullpath = $GLOBALS['cfg']['mountdir'] . "/$file";
 						switch ($filetype) {
@@ -513,18 +516,23 @@
 								}
 						} ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=(is_numeric($timestamp1) ? date("M j, Y H:i:s",$timestamp1) : "")?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD" data-sort-value="<?=(is_numeric($timestamp1) ? (int)$timestamp1 : 0)?>"><?=(is_numeric($timestamp1) ? date("M j, Y H:i:s",$timestamp1) : "")?><? //if ($timestamp1 != $timestamp2) { echo "&nbsp;<span class='smalldiff'>$timestamp2</span>"; } ?></span></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms1?><? //if ($perm1 != $perm2) { echo "&nbsp;<span class='smalldiff'>$perm2</span>"; } ?></td>
-					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right"><?=number_format((float)$size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
+					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right" data-sort-value="<?=(float)$size1?>"><?=number_format((float)$size1)?><? //if ($size1 != $size2) { echo "&nbsp;<span class='smalldiff'>" . number_format($size2) . "</span>"; } ?></td>
 				</tr>
 				<?
 			}
 			?>
+				</tbody>
 			</table>
 			<?
 		}
 		?>
 		</div>
+		<script>
+			/* click a column header to sort. Cells sort by data-sort-value: the file path, mtime, and size in bytes */
+			$(document).ready(function() { $('table.analysisfiles').tablesort(); });
+		</script>
 		<?
 	}
 	
