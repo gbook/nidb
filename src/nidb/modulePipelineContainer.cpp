@@ -330,7 +330,7 @@ bool modulePipelineContainer::SubmitBuildJob(containerRequest &c, QString &msg) 
  * @brief Export checks (doc sections 1, 3, 5). The same rules as the pitfalls on pipelinecontainers.php, which are
  * a preview; these are authoritative. Only enabled main steps are checked, since only they run in the container.
  * Errors: not level 1, no enabled main steps, no completed analysis of this version, group, deprecated or
- * unrecognized variables, NiDB storage paths. Warnings: {analysisid}, {command}, a parent pipeline, FreeSurfer, MATLAB
+ * unrecognized variables, NiDB storage paths, running a container. Warnings: {analysisid}, {command}, a parent pipeline, FreeSurfer, MATLAB
  * @param p The pipeline
  * @param version Pipeline version
  * @param errors Problems that stop the export
@@ -367,6 +367,7 @@ bool modulePipelineContainer::CheckIfExportable(pipeline &p, int version, QStrin
         QString text = step.command + "\n" + step.workingDir;
         CheckVariables(text, step.order, errors, warnings);
         CheckPaths(text, step.order, errors);
+        CheckContainers(step.command, step.order, errors);
         allCommands += step.command + "\n";
     }
 
@@ -468,6 +469,34 @@ void modulePipelineContainer::CheckPaths(QString text, int step, QStringList &er
     for (QString path : storagePaths) {
         if (text.contains(QRegularExpression(QRegularExpression::escape(path) + "(/|\\s|$|['\";])")))
             errors << QString("Step %1: NiDB storage path [%2] can't be used in the container. Use {analysisrootdir} for the analysis directory, and bring other data in through /input").arg(step).arg(path);
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CheckContainers -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check one step for running a container (doc section 7, "Pipelines that run containers"): apptainer, singularity,
+ * docker or podman with a run-type subcommand, docker-compose, run-singularity, or a .sif/.simg image, which can be run
+ * directly. The image would need a container runtime inside a container, which doesn't work. Comment lines are skipped.
+ * build-container.sh also checks the reference run's trace, which catches containers started from a script the step calls.
+ * The same rule as GetContainerPitfalls() on pipelinecontainers.php
+ * @param text The step command
+ * @param step The step number, for messages
+ * @param errors Problems that stop the export
+ */
+void modulePipelineContainer::CheckContainers(QString text, int step, QStringList &errors) {
+    static const QRegularExpression containerRegex("(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\\s+(exec|run|shell|instance|test|start|create|compose|container)\\b|\\bdocker-compose\\b|\\brun-singularity\\b|[A-Za-z0-9_}-]\\.(?i:sif|simg)\\b");
+
+    for (QString line : text.split("\n")) {
+        if (line.trimmed().startsWith("#"))
+            continue;
+        QRegularExpressionMatch m = containerRegex.match(line);
+        if (m.hasMatch()) {
+            errors << QString("Step %1: runs a container [%2]. Pipelines that run containers can't be exported, since the image would need Apptainer inside Apptainer. If the pipeline already runs in a container, share that image instead").arg(step).arg(m.captured(0).trimmed());
+            return;
+        }
     }
 }
 
@@ -1878,11 +1907,44 @@ capture_warnings() {
     fi
 }
 
+# check_container_use: stop if the reference run started a container runtime. The traced paths would be the inner container's,
+# looked up on this node, and the image would need a container runtime inside a container. The export checks catch step
+# commands that run containers; this catches containers started from a script a step calls. Reports the command and the
+# program that started it, from the trace's fork and execve calls
+check_container_use() {
+    local found
+    found="$(awk '
+        / = -1 / { next }
+        $2 ~ /^(clone|clone3|fork|vfork)\(/ || ($2 == "<..." && $3 ~ /^(clone|clone3|fork|vfork)$/) {
+            if (match($0, /= [0-9]+$/)) { child = substr($0, RSTART + 2); parent[child] = $1; prog[child] = prog[$1] }
+            next
+        }
+        $2 ~ /^execve\(/ {
+            path = $0; sub(/^[0-9]+ +execve\("/, "", path); sub(/".*/, "", path)
+            argv = $0; i = index(argv, "["); j = index(argv, "]")
+            argv = (i > 0 && j > i) ? substr(argv, i + 1, j - i - 1) : path
+            gsub(/", "/, " ", argv); gsub(/"/, "", argv)
+            if (length(argv) > 300) argv = substr(argv, 1, 300) "..."
+            name = path; sub(/.*\//, "", name)
+            if (name ~ /^(apptainer|singularity|run-singularity|starter|starter-suid|docker|docker-compose|podman)$/) {
+                by = (parent[$1] != "") ? prog[parent[$1]] : ""
+                if (by == "") by = prog[$1]
+                print "[" argv "], started by [" by "]"
+                exit
+            }
+            prog[$1] = argv
+        }' "$BUILDDIR/trace.log")"
+    if [ -n "$found" ]; then
+        fail "The reference run started a container: $found. Pipelines that run containers can't be exported, since the image would need Apptainer inside Apptainer. If the pipeline already runs in a container, share that image instead"
+    fi
+}
+
 # sort the traced files and copy them into staging/, and write environment.txt (doc section 7, step 2)
 capture_software() {
     local d t f round=0
     CAP="$BUILDDIR/capture"; STAGING="$BUILDDIR/staging"; REF_START="$BUILDDIR/reference.start"
     if [ ! -f "$REF_START" ]; then fail "reference.start is missing, so the reference run's output can't be told apart from the software"; fi
+    check_container_use
     safe_rm "$CAP" "$STAGING"
     mkdir -p "$CAP" "$STAGING" || fail "Unable to create [$CAP] and [$STAGING]"
     : > "$CAP/copy.txt"; : > "$CAP/nonpackage-elf.txt"

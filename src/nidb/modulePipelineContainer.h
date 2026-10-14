@@ -61,6 +61,7 @@ private:
     bool CheckIfExportable(pipeline &p, int version, QStringList &errors, QStringList &warnings);
     void CheckVariables(QString text, int step, QStringList &errors, QStringList &warnings);
     void CheckPaths(QString text, int step, QStringList &errors);
+    void CheckContainers(QString text, int step, QStringList &errors);
 
     /* build directory contents (doc sections 4, 6, 8) */
     bool RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings);

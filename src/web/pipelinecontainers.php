@@ -254,6 +254,24 @@
 			AddPitfall($pitfalls, 'error', "NiDB data paths in the script", "The container can't see NiDB's storage. Use <tt>{analysisrootdir}</tt> for this analysis' own directory, and bring other data in through <tt>/input</tt>: " . implode(", ", $list));
 		}
 
+		/* ---------- running containers ---------- */
+		/* the same rule as modulePipelineContainer::CheckContainers(). The build also checks the reference run's trace,
+		   which catches containers started from a script a step calls */
+		$containersteps = array();
+		foreach ($steps as $step) {
+			if (!$step['ps_enabled']) { continue; }
+			foreach (explode("\n", (string)($step['ps_command'] ?? '')) as $line) {
+				if (substr(ltrim($line), 0, 1) == "#") { continue; }
+				if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\s+(exec|run|shell|instance|test|start|create|compose|container)\b|\bdocker-compose\b|\brun-singularity\b|[A-Za-z0-9_}-]\.(?i:sif|simg)\b/', $line, $m)) {
+					$containersteps[] = "<tt>" . htmlspecialchars(trim($m[0])) . "</tt> (step " . (int)$step['ps_order'] . ")";
+					break;
+				}
+			}
+		}
+		if (count($containersteps) > 0) {
+			AddPitfall($pitfalls, 'error', "Runs a container", "Pipelines that run Apptainer, Singularity, Docker or Podman containers can't be exported, since the image would need a container runtime inside a container. If the pipeline already runs in a container, share that image instead: " . implode(", ", $containersteps));
+		}
+
 		/* ---------- things that behave differently ---------- */
 		$rows = ContainerQueryRows("select count(*) 'num' from pipeline_steps where pipeline_id = ? and pipeline_version = ? and ps_supplement = 1", 'ii', [$id, $version], __LINE__);
 		$numsupplement = (int)($rows[0]['num'] ?? 0);
