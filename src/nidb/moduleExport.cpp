@@ -2449,6 +2449,7 @@ bool moduleExport::WriteNDARSeries(QString file, QString imagefile, QString behf
             }
             else if (modality == "ET") {
                 int expid = 0;
+                Q_UNUSED(expid)
                 QString str;
                 QTextStream(&str) << guid << "," << uid << "," << studydatetime << "," << static_cast<int>(round(ageatscan)) << "," << gender << ",Unknown," << ndaExperimentID << "," << seriesprotocol << ",,\"" << seriesnotes << "\",,,," << imagefile << ",Eyetracking,,,,,,\n";
                 fs << str;

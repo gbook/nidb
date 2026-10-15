@@ -52,7 +52,7 @@ bool moduleCluster::PipelineCheckin(QString analysisid, QString status, QString 
     QString hostname = QHostInfo::localHostName();
     QSqlQuery q;
     qint64 id;
-    AnalysisEvent event;
+    AnalysisEvent event = AnalysisEvent::StatusAnalysisStepCheckin;
 
     /* check if the analysis ID is valid */
     if (IsInt(analysisid)) {

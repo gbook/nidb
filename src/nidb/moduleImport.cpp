@@ -174,7 +174,7 @@ bool moduleImport::ParseRemotelyImportedData() {
                 n->Log("Encountered [" + datatype + "] import");
 
                 /* move the files */
-                /* Quote the directories but leave the /* outside the quotes, so
+                /* Quote the directories but leave the trailing glob outside the quotes, so
                    the shell still expands the glob. Quoting the whole pattern
                    would make it a literal filename. */
                 QString systemstring = QString("touch %1/*; mv -v %1/* %2/").arg(ShellQuote(uploaddir)).arg(ShellQuote(outdir));

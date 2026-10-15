@@ -149,6 +149,7 @@ bool moduleRemoteImport::Run() {
             int remoteImportRowID = q.value("remoteimport_id").toInt();
             QString importName = q.value("import_name").toString().trimmed();
             int projectRowID = q.value("project_id").toInt();
+            Q_UNUSED(projectRowID)
             QString remoteType = q.value("remote_type").toString().trimmed();
             QString remoteURL = q.value("remote_url").toString().trimmed();
             QString remoteToken = q.value("remote_token").toString().trimmed();
@@ -196,6 +197,7 @@ bool moduleRemoteImport::Run() {
             q2.bindValue(":remoteimportid", remoteImportRowID);
             n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
             qint64 batchRowID = q2.lastInsertId().toLongLong();
+            Q_UNUSED(batchRowID)
 
             /* ----- a batch exists, now we can do the import ----- */
 
@@ -530,6 +532,8 @@ void moduleRemoteImport::RemoteImportLog(qint64 batchRowID, RemoteImportLogEvent
  * @return true on success, false otherwise.
  */
 bool moduleRemoteImport::ImportAvicennaSurveyAPI(int remoteImportBatchRowID, QString remoteURL, QString remoteToken, QString remoteUsername, int remoteProjectID, int remoteSurveyID, const ImportMapping &mapping) {
+
+    Q_UNUSED(remoteSurveyID)
 
     // URL should be https://avicennaresearch.com/api/v1/filter/export/
 
@@ -1071,6 +1075,7 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
                         continue;
 
                     int question(0);
+                    Q_UNUSED(question)
                     QString obsName;
                     obsName = avicennaVariable;
 
@@ -1188,6 +1193,8 @@ qint64 moduleRemoteImport::ImportAvicennaSurveyCSV(qint64 remoteImportBatchRowID
  * - All datasource data will added to the timeseries table.
  */
 qint64 moduleRemoteImport::ImportAvicennaDataSourceCSV(qint64 remoteImportBatchRowID, QString remoteDatasource, const ImportMapping &mapping, bool importUnmapped) {
+
+    Q_UNUSED(importUnmapped)
 
     /* get csv_path, and make sure it's valid */
     QString datafile_path;

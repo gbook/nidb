@@ -433,6 +433,7 @@ int modulePipeline::Run() {
                     QString datalog;
 
                     int dependencyanalysisid(0);
+                    Q_UNUSED(dependencyanalysisid)
                     bool submiterror = false;
 
                     QString analysispath = "";
@@ -1289,6 +1290,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     int localstudynum;
                     n->Debug(QString("NumDownloaded [%1]").arg(numdownloaded), __FUNCTION__);
                     int seriesid = q.value(modality+"series_id").toInt();
+                    Q_UNUSED(seriesid)
                     int seriesnum = q.value("series_num").toInt();
                     QString seriesdesc = q.value("series_desc").toString();
                     QString seriesprotocol = q.value("series_protocol").toString();
@@ -2043,6 +2045,8 @@ QList<dataDefinitionStep> modulePipeline::GetPipelineDataDef(int pipelineid, int
 /* --------- FormatCommand ---------------------------------- */
 /* ---------------------------------------------------------- */
 QString modulePipeline::FormatCommand(int pipelineid, QString clusteranalysispath, QString command, QString analysispath, qint64 analysisid, QString uid, int studynum, QString studydatetime, QString pipelinename, QString workingdir, QString description) {
+
+    Q_UNUSED(clusteranalysispath)
 
     if (command.trimmed() == "")
         return "";

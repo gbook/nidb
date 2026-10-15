@@ -417,6 +417,8 @@ UploadOptions moduleUpload::GetUploadOptions(int uploadRowID) {
  */
 bool moduleUpload::ParseUploadedFiles(QMap<QString, QMap<QString, QMap<QString, QStringList> > > fs, QString upload_subjectcriteria, QString upload_studycriteria, QString upload_seriescriteria, QString uploadstagingpath, int uploadRowID) {
 
+    Q_UNUSED(uploadstagingpath)
+
     io->AppendUploadLog(QString("Processing [%1] subjects").arg(fs.size()));
 
     /* ---------- iterate through the subjects ---------- */
