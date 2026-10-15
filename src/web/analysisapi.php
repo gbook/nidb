@@ -44,8 +44,9 @@
 	stored as a SHA-256 hash in pipeline_containers.build_apitoken, and only work while the row is 'building'.
 	containercomplete and containererror are the build's last call, and clear the token
 		containercheckin   containerid, token, step, [message], [hostname]
-		containercomplete  containerid, token, path, size (bytes), sha256, [message], [warnings], [hostname]
-		containererror     containerid, token, message, [step], [warnings], [hostname]
+		containercomplete  containerid, token, path, size (bytes), sha256, [message], [warnings], [buildsize], [buildfilecount], [hostname]
+		containererror     containerid, token, message, [step], [warnings], [buildsize], [buildfilecount], [hostname]
+		buildsize (bytes) and buildfilecount are what's left in the build directory after the job's cleanup
 
 	Example
 		curl -s "$NIDB_APIURL" -d action=checkin -d analysisid=$NIDB_ANALYSISID \
@@ -333,10 +334,11 @@
 		if ($message == "")
 			$message = "Container built";
 		$log = ContainerLogLine("[$hostname] buildComplete: $message. Container [$path] size [$size] sha256 [$sha256]");
-		$sqlstring = "update pipeline_containers set build_status = 'complete', build_step = 'buildComplete', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?), container_path = ?, container_size = ?, container_sha256 = ?, container_date = now() where pipelinecontainer_id = ?";
-		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $path, $size, $sha256, $containerid];
+		list($buildsize, $buildfilecount) = ContainerBuildDirStats();
+		$sqlstring = "update pipeline_containers set build_status = 'complete', build_step = 'buildComplete', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?), container_path = ?, container_size = ?, container_sha256 = ?, container_date = now(), build_size = coalesce(?, build_size), build_filecount = coalesce(?, build_filecount) where pipelinecontainer_id = ?";
+		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $path, $size, $sha256, $buildsize, $buildfilecount, $containerid];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'sssssisi', ...$params);
+		mysqli_stmt_bind_param($stmt, 'sssssisiii', ...$params);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
@@ -356,10 +358,11 @@
 		if ($message == "")
 			$message = "The build failed, with no message";
 		$log = ContainerLogLine("[$hostname] ERROR" . (($step == "") ? "" : " during $step") . ": $message");
-		$sqlstring = "update pipeline_containers set build_status = 'error', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?) where pipelinecontainer_id = ?";
-		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $containerid];
+		list($buildsize, $buildfilecount) = ContainerBuildDirStats();
+		$sqlstring = "update pipeline_containers set build_status = 'error', build_step_message = ?, build_hostname = ?, build_enddate = now(), build_apitoken = null, build_warnings = concat(coalesce(build_warnings, ''), ?), build_log = concat(coalesce(build_log, ''), ?), build_size = coalesce(?, build_size), build_filecount = coalesce(?, build_filecount) where pipelinecontainer_id = ?";
+		$params = [ContainerStepMessage($message), $hostname, ContainerWarnings(), $log, $buildsize, $buildfilecount, $containerid];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ssssi', ...$params);
+		mysqli_stmt_bind_param($stmt, 'ssssiii', ...$params);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
@@ -396,6 +399,21 @@
 	/* a line for build_log, in the same format as modulePipelineContainer::AppendBuildLog() */
 	function ContainerLogLine($text) {
 		return "[" . date("Y-m-d H:i:s") . "] $text\n";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerBuildDirStats ------------- */
+	/* -------------------------------------------- */
+	/* the optional buildsize (bytes) and buildfilecount: what's left in the build directory. null if missing or not a
+	   whole number, so the columns keep their value */
+	function ContainerBuildDirStats() {
+		$stats = array();
+		foreach (array("buildsize", "buildfilecount") as $name) {
+			$value = trim(AAPIParam($name));
+			$stats[] = (($value != "") && ctype_digit($value)) ? (int)$value : null;
+		}
+		return $stats;
 	}
 
 

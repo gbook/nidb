@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 14, 2026 at 01:38 PM
+-- Generation Time: Oct 15, 2026 at 03:44 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2271,6 +2271,8 @@ CREATE TABLE `pipeline_containers` (
   `build_apitoken` varchar(255) DEFAULT NULL,
   `build_log` text DEFAULT NULL,
   `build_warnings` text DEFAULT NULL,
+  `build_size` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Total size of the build directory',
+  `build_filecount` int(11) NOT NULL DEFAULT 0 COMMENT 'Total file count of the build directory',
   `reference_analysisid` int(11) DEFAULT NULL,
   `run_validation` tinyint(1) DEFAULT NULL,
   `container_size` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Container size in bytes',

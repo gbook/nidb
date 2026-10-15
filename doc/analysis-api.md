@@ -106,9 +106,10 @@ The same endpoint takes check-ins from container build jobs (`build-container.sh
 | Action | Parameters | Effect |
 |--------|------------|--------|
 | `containercheckin` | `step`, [`message`], [`hostname`] | Sets `build_step`, `build_step_message`, `build_hostname`, and `build_startdate` on the first check-in. Adds a line to `build_log` |
-| `containercomplete` | `path`, `size` (bytes), `sha256`, [`message`], [`warnings`], [`hostname`] | Sets `build_status` = `complete`, `build_step` = `buildComplete`, `build_enddate`, `container_path`, `container_size`, `container_sha256`, `container_date`. Clears the token |
-| `containererror` | `message`, [`step`], [`warnings`], [`hostname`] | Sets `build_status` = `error` and `build_enddate`. `build_step` is left at the last check-in, so it shows where the build stopped. Clears the token |
+| `containercomplete` | `path`, `size` (bytes), `sha256`, [`message`], [`warnings`], [`buildsize`], [`buildfilecount`], [`hostname`] | Sets `build_status` = `complete`, `build_step` = `buildComplete`, `build_enddate`, `container_path`, `container_size`, `container_sha256`, `container_date`, and `build_size` / `build_filecount` if given. Clears the token |
+| `containererror` | `message`, [`step`], [`warnings`], [`buildsize`], [`buildfilecount`], [`hostname`] | Sets `build_status` = `error` and `build_enddate`, and `build_size` / `build_filecount` if given. `build_step` is left at the last check-in, so it shows where the build stopped. Clears the token |
 
+- `buildsize` (bytes on disk) and `buildfilecount` (everything but directories) are what's left in the build directory after the job's cleanup. Missing or non-numeric values leave the columns as they are.
 - `step` for `containercheckin` is one of `preReferenceAnalysisChecks`, `runningReferenceAnalysis`, `postReferenceAnalysisChecks`, `buildingContainer`, `runningValidationAnalysis`. `buildComplete` is set only by `containercomplete`.
 - `path` is the `.sif`'s absolute path as the cluster sees it. The `.sif` isn't copied to NiDB.
 - `warnings` is the build's warnings, one per line, appended to `build_warnings`.

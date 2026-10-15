@@ -456,7 +456,7 @@
 		$message = trim((string)($c['build_step_message'] ?? ''));
 		if ($message != "") { $html .= "<div class='ui small text'>" . htmlspecialchars($message) . "</div>"; }
 		$hostname = trim((string)($c['build_hostname'] ?? ''));
-		if ($hostname != "") { $html .= "<div class='ui small grey text'><i class='server icon'></i>" . htmlspecialchars($hostname) . "</div>"; }
+		if ($hostname != "") { $html .= "<div class='ui small grey text'>" . htmlspecialchars($hostname) . "</div>"; }
 		return $html;
 	}
 
@@ -490,7 +490,7 @@
 		<table class="ui very compact celled table">
 			<thead>
 				<tr>
-					<th>ID</th>
+					<!--<th>ID</th>-->
 					<th>Version</th>
 					<th>Status</th>
 					<th>Reference analysis</th>
@@ -515,10 +515,13 @@
 				$sha256 = (string)($c['container_sha256'] ?? '');
 				$warnings = trim((string)($c['build_warnings'] ?? ''));
 				$log = trim((string)($c['build_log'] ?? ''));
+				/* what the build job left in the build directory; 0 until it reports */
+				$buildsize = (int)($c['build_size'] ?? 0);
+				$buildfilecount = (int)($c['build_filecount'] ?? 0);
 				?>
 				<tr>
-					<td><?=$containerid?></td>
-					<td><?=$cversion?> <? if ($cversion == $currentversion) { ?><span class="ui tiny basic green label">current</span><? } ?></td>
+					<!--<td><?=$containerid?></td>-->
+					<td><?=$cversion?></td>
 					<td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td>
 					<td><?=ReferenceAnalysisLabel($c['uid'], $c['study_num'], $c['reference_analysisid'])?></td>
 					<td><?=($c['run_validation'] ?? 0) ? "Yes" : "No"?></td>
@@ -542,7 +545,12 @@
 						</div>
 						<? } ?>
 					</td>
-					<td><a href="pipelinecontainers.php?action=viewfiles&id=<?=(int)$c['pipeline_id']?>&containerid=<?=$containerid?>" target="_viewfiles"><i class="folder open outline icon"></i>View files</a></td>
+					<td>
+						<a href="pipelinecontainers.php?action=viewfiles&id=<?=(int)$c['pipeline_id']?>&containerid=<?=$containerid?>" target="_viewfiles"><i class="folder open outline icon"></i>View files</a>
+						<? if (($buildsize > 0) || ($buildfilecount > 0)) { ?>
+						<div class="ui small grey text" style="white-space: nowrap" title="Left in the build directory when the build finished"><?=number_format($buildfilecount)?> files, <?=HumanReadableFilesize($buildsize)?></div>
+						<? } ?>
+					</td>
 				</tr>
 				<?
 			}

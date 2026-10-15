@@ -1237,6 +1237,7 @@ MISSING_TOOLS=()
 INTERPRETERS="R Rscript perl python python3 java tcsh csh matlab octave"
 CURRENT_STEP=""
 SIF_SIZE=""; SIF_SHA256=""
+BUILD_SIZE=""; BUILD_FILECOUNT=""
 OS_ID=""; OS_VERSION_ID=""; OS_ID_LIKE=""; OS_PRETTY_NAME=""; OS_FAMILY="unknown"
 PKG_MANAGER="none"
 BASE_IMAGE=""
@@ -1310,19 +1311,32 @@ checkin() {
     nidbapi -d action=containercheckin -d "step=$1" --data-urlencode "message=$2"
 }
 
+# build_dir_stats: what's left in the build directory, as BUILD_SIZE (bytes on disk) and BUILD_FILECOUNT (everything but
+# directories). Each is left empty if it fails or takes over 2 minutes, rather than reporting a partial count
+build_dir_stats() {
+    BUILD_SIZE=$(set -o pipefail; timeout 120 du -sB1 -- "$BUILDDIR" 2>/dev/null | awk '{ print $1 }') || BUILD_SIZE=""
+    BUILD_FILECOUNT=$(set -o pipefail; timeout 120 find "$BUILDDIR" ! -type d -printf 'x' 2>/dev/null | wc -c) || BUILD_FILECOUNT=""
+    log "Build directory [$BUILDDIR] has [${BUILD_FILECOUNT:-unknown}] files, [${BUILD_SIZE:-unknown}] bytes"
+}
+
 # the EXIT trap, so the result is reported even on failure or SIGTERM from the scheduler. This is the job's last API call,
 # since it clears the token
 finish() {
     local rc=$? msg
     log "build-container.sh finished with exit code [$rc]"
+    # after finalize's cleanup on success. On error everything is kept, so this shows how much is left to clean up. Skipped
+    # on SIGTERM, since the scheduler may follow with SIGKILL and the result has to be reported first
+    if [ $rc -ne 143 ]; then build_dir_stats; fi
     if [ $rc -eq 0 ]; then
         nidbapi -d action=containercomplete --data-urlencode "path=$BUILDDIR/$SIF_NAME" -d "size=$SIF_SIZE" -d "sha256=$SIF_SHA256" \
+            -d "buildsize=$BUILD_SIZE" -d "buildfilecount=$BUILD_FILECOUNT" \
             --data-urlencode "message=Container built on $(hostname)" --data-urlencode "warnings@$BUILDDIR/build-warnings.txt" \
             || log "ERROR: the container was built, but NiDB wasn't told. It's [$BUILDDIR/$SIF_NAME]"
     else
         msg="build-container.sh exited with code [$rc]"
         if [ -s "$BUILDDIR/build-error.txt" ]; then msg="$(tail -n 1 "$BUILDDIR/build-error.txt")"; fi
-        nidbapi -d action=containererror -d "step=$CURRENT_STEP" --data-urlencode "message=$msg" --data-urlencode "warnings@$BUILDDIR/build-warnings.txt"
+        nidbapi -d action=containererror -d "step=$CURRENT_STEP" --data-urlencode "message=$msg" --data-urlencode "warnings@$BUILDDIR/build-warnings.txt" \
+            -d "buildsize=$BUILD_SIZE" -d "buildfilecount=$BUILD_FILECOUNT"
     fi
 }
 
