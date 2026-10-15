@@ -14,6 +14,17 @@ then
 	source /opt/rh/gcc-toolset-10/enable
 fi
 
+# optional flags (may appear anywhere; removed before reading the positional args below)
+#   --cluster   also build the nidbcluster executable (not built by default)
+BUILDCLUSTER=0
+for arg in "$@"; do
+	shift
+	case "$arg" in
+		--cluster) BUILDCLUSTER=1 ;;
+		*) set -- "$@" "$arg" ;;
+	esac
+done
+
 # global build variables
 if [ -z "$1" ]; then
 	QMAKEBIN=~/Qt/6.9.3/gcc_64/bin/qmake
@@ -78,10 +89,13 @@ cd $BUILDDIR/nidb
 make -B -j 16
 
 # ----- build NiDB cluster (cluster-only executable; links neither dcmtk nor squirrel) -----
-echo -e "\nBuilding NiDB cluster\n"
-$QMAKEBIN -o $BUILDDIR/nidbcluster/Makefile $SRCDIR/nidb/nidbcluster.pro -spec linux-g++
-cd $BUILDDIR/nidbcluster
-make -B -j 16
+if [ "$BUILDCLUSTER" = "1" ]; then
+	echo -e "\nBuilding NiDB cluster\n"
+	$QMAKEBIN -o $BUILDDIR/nidbcluster/Makefile $SRCDIR/nidb/nidbcluster.pro -spec linux-g++
+	cd $BUILDDIR/nidbcluster
+	make -B -j 16
+	echo -e "\n Built nidbcluster in $BUILDDIR/nidbcluster\n"
+fi
 
 # try to copy the binaries to their final locations (this may fail because it requires sudo, but its not a critical step to build)
 cd $ORIGDIR
@@ -97,5 +111,7 @@ echo -e "\nCopying nidb to /nidb/bin"
 sudo mkdir -p /nidb/bin
 sudo cp -uv $BUILDDIR/nidb/nidb /nidb/bin/
 
-echo -e "\nCopying nidbcluster to /nidb/bin"
-sudo cp -uv $BUILDDIR/nidbcluster/nidbcluster /nidb/bin/
+if [ "$BUILDCLUSTER" = "1" ]; then
+	echo -e "\nCopying nidbcluster to /nidb/bin"
+	sudo cp -uv $BUILDDIR/nidbcluster/nidbcluster /nidb/bin/
+fi

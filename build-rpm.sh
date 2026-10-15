@@ -1,5 +1,16 @@
 #!/bin/sh
 
+# optional flags (may appear anywhere; removed before reading the positional args below)
+#   --cluster   also build the nidbcluster executable (not built by default)
+BUILDCLUSTER=0
+for arg in "$@"; do
+	shift
+	case "$arg" in
+		--cluster) BUILDCLUSTER=1 ;;
+		*) set -- "$@" "$arg" ;;
+	esac
+done
+
 # global build variables
 if [ -z "$1" ]; then
 	QMAKEBIN=~/Qt/6.9.3/gcc_64/bin/qmake
@@ -75,3 +86,12 @@ $QMAKEBIN -o $BUILDDIR/nidb/Makefile $SRCDIR/nidb/nidb.pro -spec linux-g++
 cd $BUILDDIR/nidb
 make -B -j 16
 echo -e "\n Built nidb in $BUILDDIR/nidb\n"
+
+# ----- build NiDB cluster (cluster-only executable; links neither dcmtk nor squirrel) -----
+if [ "$BUILDCLUSTER" = "1" ]; then
+	echo -e "\nBuilding NiDB cluster\n"
+	$QMAKEBIN -o $BUILDDIR/nidbcluster/Makefile $SRCDIR/nidb/nidbcluster.pro -spec linux-g++
+	cd $BUILDDIR/nidbcluster
+	make -B -j 16
+	echo -e "\n Built nidbcluster in $BUILDDIR/nidbcluster\n"
+fi
