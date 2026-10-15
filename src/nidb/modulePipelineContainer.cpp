@@ -2150,6 +2150,13 @@ build_image() {
     export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-${TMPDIR:-/tmp}}"
     cd "$BUILDDIR" || fail "Unable to cd into [$BUILDDIR]"
 
+    # the job can inherit another user's XDG_RUNTIME_DIR (like root's /run/user/0) from the submit environment. Pulling an
+    # image reads registry logins from $XDG_RUNTIME_DIR/containers/auth.json, and stops if that's unreadable
+    if [ -n "${XDG_RUNTIME_DIR:-}" ] && { [ ! -d "$XDG_RUNTIME_DIR" ] || [ ! -O "$XDG_RUNTIME_DIR" ] || [ ! -w "$XDG_RUNTIME_DIR" ]; }; then
+        log "XDG_RUNTIME_DIR [$XDG_RUNTIME_DIR] isn't a directory owned by and writable by $(whoami), so it's unset for $APPTAINER"
+        unset XDG_RUNTIME_DIR
+    fi
+
     # sandboxes can contain read-only directories, which safe_rm handles
     safe_rm "$BUILDDIR/base"
 
