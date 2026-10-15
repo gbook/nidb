@@ -43,6 +43,82 @@ setup_dcmrcv_service() {
     fi
 }
 
+# dump the existing database before the upgrade, so the backup required by the first page of
+# setup.php already exists when the user gets there. The filename must match the one setup.php checks
+# for, which uses PHP's date() (UTC unless date.timezone is set), so ask PHP for the date. The dump is
+# written to a temp file and only renamed into place if mysqldump succeeds, so a partial dump can never
+# satisfy setup.php's check. An existing backup from today is moved aside, not overwritten.
+backup_database() {
+    local dbhost="${config[mysqlhost]:-localhost}"
+    local dbname="${config[mysqldatabase]:-nidb}"
+    local dbuser="${config[mysqluser]:-nidb}"
+    local dbpass="${config[mysqlpassword]:-password}"
+
+    local today
+    today="$(php -r 'echo date("Y-m-d");' 2>/dev/null)"
+    [[ "$today" =~ ^[0-9]{4}-[0-9]{2}-[0-9]{2}$ ]] || today="$(date -u +%Y-%m-%d)"
+    local backupfile="/nidb/data/nidb-backup-$today.sql"
+
+    local dumpbin
+    dumpbin="$(command -v mysqldump || command -v mariadb-dump)"
+    if [[ -z "$dumpbin" ]]; then
+        echo "WARNING: mysqldump not found; database was NOT backed up. Back it up manually from setup.php."
+        return 1
+    fi
+
+    echo "Backing up database [$dbname] to $backupfile (this may take a while)..."
+    mkdir -p /nidb/data
+
+    # pass the credentials in a private defaults file so the password is not visible in the process list
+    local credfile tmpfile
+    credfile="$(mktemp)" && tmpfile="$(mktemp /nidb/data/nidb-backup-XXXXXX.tmp)" || {
+        echo "WARNING: could not create temp files; database was NOT backed up. Back it up manually from setup.php."
+        rm -f "$credfile"
+        return 1
+    }
+    chmod 600 "$credfile" "$tmpfile"
+    printf '[client]\nhost=%s\nuser=%s\npassword="%s"\n' "$dbhost" "$dbuser" "$dbpass" > "$credfile"
+
+    # show progress: a pv bar if pv is installed and we have a terminal, otherwise (e.g. when the package
+    # manager captures the script's output) print the dump size every 30 seconds. The final size isn't
+    # known in advance, so this shows the amount dumped and elapsed time, not percent complete.
+    local dumpargs=(--defaults-extra-file="$credfile" --max_allowed_packet=1G --single-transaction --compact "$dbname")
+    local rc
+    if command -v pv >/dev/null 2>&1 && [[ -t 2 ]]; then
+        "$dumpbin" "${dumpargs[@]}" | pv -f -t -b -r > "$tmpfile"
+        rc=${PIPESTATUS[0]}
+        [[ ${PIPESTATUS[1]} -eq 0 ]] || rc=1
+    else
+        "$dumpbin" "${dumpargs[@]}" > "$tmpfile" &
+        local dumppid=$! start=$SECONDS ticks=0
+        while kill -0 "$dumppid" 2>/dev/null; do
+            sleep 1
+            if (( ++ticks % 30 == 0 )) && kill -0 "$dumppid" 2>/dev/null; then
+                local elapsed=$(( SECONDS - start ))
+                printf '  ... %s dumped, %dm%02ds elapsed\n' "$(du -h "$tmpfile" | cut -f1)" $(( elapsed / 60 )) $(( elapsed % 60 ))
+            fi
+        done
+        wait "$dumppid"
+        rc=$?
+    fi
+
+    if (( rc == 0 )); then
+        if [[ -f "$backupfile" ]]; then
+            echo "Moving existing $backupfile aside to $backupfile.$(date +%H%M%S)"
+            mv -f "$backupfile" "$backupfile.$(date +%H%M%S)"
+        fi
+        mv -f "$tmpfile" "$backupfile"
+        chown nidb:nidb "$backupfile"
+        echo "Database backed up to $backupfile ($(du -h "$backupfile" | cut -f1))"
+        rm -f "$credfile"
+        return 0
+    fi
+
+    echo "WARNING: mysqldump failed; database was NOT backed up. Back it up manually from setup.php."
+    rm -f "$credfile" "$tmpfile"
+    return 1
+}
+
 # consolidate /etc/nidb/nidb.cfg into /nidb/nidb.cfg. The web UI reads /etc/nidb/nidb.cfg before
 # /nidb/nidb.cfg, so when both exist the /etc copy is usually the one being edited. Keep whichever is
 # newer as /nidb/nidb.cfg. If /etc/nidb/nidb.cfg is the older one, it is moved aside (not deleted) so
@@ -276,6 +352,11 @@ for f in "${DEPRECATED_WEB_FILES[@]}"; do
 done
 # also remove any files explicitly marked as deprecated
 rm -f /var/www/html/deprecated_*
+
+# back up the existing database (upgrades only; a new installation has no database to back up yet)
+if ! ((new_installation)); then
+    backup_database
+fi
 
 touch /nidb/setup/dbupgrade
 
