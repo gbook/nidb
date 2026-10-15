@@ -462,6 +462,27 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ContainerDatesCell ----------------- */
+	/* -------------------------------------------- */
+	/* the submitted date, and a clock icon whose tooltip has all four dates */
+	function ContainerDatesCell($c) {
+		$dates = array(
+			'Submitted' => $c['build_createdate'] ?? '',
+			'Build started' => $c['build_startdate'] ?? '',
+			'Build finished' => $c['build_enddate'] ?? '',
+			'Available' => $c['container_date'] ?? '');
+		$tooltip = "<table class='ui very basic very compact collapsing table'>";
+		foreach ($dates as $label => $date) {
+			$date = trim((string)$date);
+			$tooltip .= "<tr><td><b>$label</b></td><td style='white-space: nowrap'>" . (($date == "") ? "<span class='ui grey text'>&mdash;</span>" : htmlspecialchars($date)) . "</td></tr>";
+		}
+		$tooltip .= "</table>";
+		$submitted = trim((string)$dates['Submitted']);
+		return "<span style='white-space: nowrap'>" . htmlspecialchars($submitted) . " <i class='grey clock outline icon containerDates' data-html=\"" . htmlspecialchars($tooltip, ENT_QUOTES) . "\"></i></span>";
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayContainerTable -------------- */
 	/* -------------------------------------------- */
 	function DisplayContainerTable($containers, $currentversion, $showsize) {
@@ -474,11 +495,8 @@
 					<th>Status</th>
 					<th>Reference analysis</th>
 					<th>Validation</th>
-					<th>Submitted</th>
-					<th>Build started</th>
-					<th>Build finished</th>
+					<th>Dates</th>
 					<? if ($showsize) { ?>
-					<th>Available</th>
 					<th>Container <span class="ui small grey text">(path on the cluster)</span></th>
 					<th>Size</th>
 					<th>SHA256</th>
@@ -504,11 +522,8 @@
 					<td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td>
 					<td><?=ReferenceAnalysisLabel($c['uid'], $c['study_num'], $c['reference_analysisid'])?></td>
 					<td><?=($c['run_validation'] ?? 0) ? "Yes" : "No"?></td>
-					<td><?=htmlspecialchars($c['build_createdate'] ?? '')?></td>
-					<td><?=htmlspecialchars($c['build_startdate'] ?? '')?></td>
-					<td><?=htmlspecialchars($c['build_enddate'] ?? '')?></td>
+					<td><?=ContainerDatesCell($c)?></td>
 					<? if ($showsize) { ?>
-					<td><?=htmlspecialchars($c['container_date'] ?? '')?></td>
 					<td><tt><?=htmlspecialchars($path)?></tt></td>
 					<td><?=$size?></td>
 					<td><? if ($sha256 != "") { ?><tt title="<?=htmlspecialchars($sha256)?>"><?=htmlspecialchars(substr($sha256, 0, 12))?>&hellip;</tt><? } ?></td>
@@ -534,6 +549,9 @@
 			?>
 			</tbody>
 		</table>
+		<script>
+			$(document).ready(function() { $('.containerDates').popup({ variation: 'small' }); });
+		</script>
 		<?
 	}
 
