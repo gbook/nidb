@@ -65,6 +65,9 @@
 		case 'viewfiles':
 			DisplayContainerFiles($id, $containerid);
 			break;
+		case 'viewcontainer':
+			DisplayContainerDetails($id, $containerid);
+			break;
 		default:
 			DisplayContainers($id);
 	}
@@ -435,18 +438,27 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- ContainerStepLabel ----------------- */
+	/* ------- ContainerStepNames ----------------- */
 	/* -------------------------------------------- */
-	/* the last step the build job checked in with (analysisapi.php), its message, and the host. For a failed build
-	   this is where it stopped */
-	function ContainerStepLabel($c) {
-		$steps = array(
+	/* build_step values, in build order, and their display names */
+	function ContainerStepNames() {
+		return array(
 			'preReferenceAnalysisChecks' => 'Checking tools and system',
 			'runningReferenceAnalysis' => 'Reference run',
 			'postReferenceAnalysisChecks' => 'Capturing software',
 			'buildingContainer' => 'Building image',
 			'runningValidationAnalysis' => 'Validation run',
 			'buildComplete' => 'Build complete');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerStepLabel ----------------- */
+	/* -------------------------------------------- */
+	/* the last step the build job checked in with (analysisapi.php), its message, and the host. For a failed build
+	   this is where it stopped */
+	function ContainerStepLabel($c) {
+		$steps = ContainerStepNames();
 		$step = (string)($c['build_step'] ?? '');
 		if ($step == "") {
 			return ($c['build_status'] == 'building') ? "<div class='ui small grey text'>Waiting in the cluster queue</div>" : "";
@@ -493,16 +505,12 @@
 					<!--<th>ID</th>-->
 					<th>Version</th>
 					<th>Status</th>
-					<th>Reference analysis</th>
-					<th>Validation</th>
 					<th>Dates</th>
 					<? if ($showsize) { ?>
-					<th>Container <span class="ui small grey text">(path on the cluster)</span></th>
 					<th>Size</th>
-					<th>SHA256</th>
 					<? } ?>
 					<th>Warnings &amp; log</th>
-					<th>Files</th>
+					<th></th>
 				</tr>
 			</thead>
 			<tbody>
@@ -510,26 +518,17 @@
 			foreach ($containers as $c) {
 				$containerid = (int)$c['pipelinecontainer_id'];
 				$cversion = (int)$c['pipeline_version'];
-				$path = (string)($c['container_path'] ?? '');
 				$size = ((int)($c['container_size'] ?? 0) > 0) ? HumanReadableFilesize((int)$c['container_size']) : "";
-				$sha256 = (string)($c['container_sha256'] ?? '');
 				$warnings = trim((string)($c['build_warnings'] ?? ''));
 				$log = trim((string)($c['build_log'] ?? ''));
-				/* what the build job left in the build directory; 0 until it reports */
-				$buildsize = (int)($c['build_size'] ?? 0);
-				$buildfilecount = (int)($c['build_filecount'] ?? 0);
 				?>
 				<tr>
 					<!--<td><?=$containerid?></td>-->
 					<td><?=$cversion?></td>
 					<td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td>
-					<td><?=ReferenceAnalysisLabel($c['uid'], $c['study_num'], $c['reference_analysisid'])?></td>
-					<td><?=($c['run_validation'] ?? 0) ? "Yes" : "No"?></td>
 					<td><?=ContainerDatesCell($c)?></td>
 					<? if ($showsize) { ?>
-					<td><tt><?=htmlspecialchars($path)?></tt></td>
 					<td><?=$size?></td>
-					<td><? if ($sha256 != "") { ?><tt title="<?=htmlspecialchars($sha256)?>"><?=htmlspecialchars(substr($sha256, 0, 12))?>&hellip;</tt><? } ?></td>
 					<? } ?>
 					<td>
 						<? if ($warnings != "") { ?>
@@ -545,12 +544,7 @@
 						</div>
 						<? } ?>
 					</td>
-					<td>
-						<a href="pipelinecontainers.php?action=viewfiles&id=<?=(int)$c['pipeline_id']?>&containerid=<?=$containerid?>" target="_viewfiles"><i class="folder open outline icon"></i>View files</a>
-						<? if (($buildsize > 0) || ($buildfilecount > 0)) { ?>
-						<div class="ui small grey text" style="white-space: nowrap" title="Left in the build directory when the build finished"><?=number_format($buildfilecount)?> files, <?=HumanReadableFilesize($buildsize)?></div>
-						<? } ?>
-					</td>
+					<td style="white-space: nowrap"><a href="pipelinecontainers.php?action=viewcontainer&id=<?=(int)$c['pipeline_id']?>&containerid=<?=$containerid?>"><i class="info circle icon"></i>Details</a></td>
 				</tr>
 				<?
 			}
@@ -560,6 +554,262 @@
 		<script>
 			$(document).ready(function() { $('.containerDates').popup({ variation: 'small' }); });
 		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerBuildDir ------------------ */
+	/* -------------------------------------------- */
+	/* the build directory as NiDB sees it, the same path as modulePipelineContainer::GetBuildDir(). Empty if
+	   cfg analysisdir isn't set. container_path is the cluster's path */
+	function ContainerBuildDir($containerid) {
+		$analysisdir = rtrim(trim($GLOBALS['cfg']['analysisdir'] ?? ''), '/');
+		return ($analysisdir == "") ? "" : $analysisdir . "/_apptainer/" . (int)$containerid;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerFileLink ------------------ */
+	/* -------------------------------------------- */
+	/* a link to a file in the build directory, through viewfile.php if it would allow it. Empty if there's no file */
+	function ContainerFileLink($file, $label) {
+		if (!is_file($file)) { return ""; }
+		$real = realpath($file);
+		if (($real === false) || !IsViewablePath($real)) { return "<tt>" . htmlspecialchars($label) . "</tt>"; }
+		return "<a href='viewfile.php?file=" . urlencode($file) . "' target='_blank'><tt>" . htmlspecialchars($label) . "</tt></a>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayContainerDetails ------------ */
+	/* -------------------------------------------- */
+	/* everything about one container build: the build, the reference analysis and validation, the image, the build
+	   directory and its reports, and the full warnings and log */
+	function DisplayContainerDetails($id, $containerid) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($containerid,'Container ID')) { return; }
+
+		$rows = ContainerQueryRows("select a.*, p.pipeline_name, p.pipeline_version 'current_version', d.uid, b.study_num from pipeline_containers a left join pipelines p on a.pipeline_id = p.pipeline_id left join analysis r on a.reference_analysisid = r.analysis_id left join studies b on r.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipelinecontainer_id = ? and a.pipeline_id = ?", 'ii', [$containerid, $id], __LINE__);
+		if (count($rows) < 1) {
+			Error("Container [$containerid] not found for pipeline [$id]");
+			return;
+		}
+		$c = $rows[0];
+		$cversion = (int)$c['pipeline_version'];
+		$path = trim((string)($c['container_path'] ?? ''));
+		$sha256 = trim((string)($c['container_sha256'] ?? ''));
+		$containersize = (int)($c['container_size'] ?? 0);
+		$buildsize = (int)($c['build_size'] ?? 0);
+		$buildfilecount = (int)($c['build_filecount'] ?? 0);
+		$warnings = trim((string)($c['build_warnings'] ?? ''));
+		$log = trim((string)($c['build_log'] ?? ''));
+		$hostname = trim((string)($c['build_hostname'] ?? ''));
+
+		$builddir = ContainerBuildDir($containerid);
+		$hasdir = ($builddir != "") && is_dir($builddir);
+
+		/* the cluster job ID, written by the module when it submitted the job */
+		$jobid = "";
+		if ($hasdir && is_file("$builddir/build.jobid")) { $jobid = trim((string)file_get_contents("$builddir/build.jobid")); }
+
+		/* how long the build ran */
+		$duration = "";
+		$start = strtotime((string)($c['build_startdate'] ?? ''));
+		$end = strtotime((string)($c['build_enddate'] ?? ''));
+		if (($start !== false) && ($end !== false) && ($end >= $start)) {
+			$secs = $end - $start;
+			$duration = sprintf("%d:%02d:%02d", intdiv($secs, 3600), intdiv($secs % 3600, 60), $secs % 60);
+		}
+
+		/* validation.txt: key=value lines, then the [missing] and [extra] file lists */
+		$validation = array();
+		if ($hasdir && is_file("$builddir/validation.txt")) {
+			$lines = file("$builddir/validation.txt", FILE_IGNORE_NEW_LINES);
+			foreach (($lines === false) ? array() : $lines as $line) {
+				if (trim($line) == "") { break; }
+				$parts = explode("=", $line, 2);
+				if (count($parts) == 2) { $validation[$parts[0]] = $parts[1]; }
+			}
+		}
+
+		$dates = array(
+			'Submitted' => $c['build_createdate'] ?? '',
+			'Build started' => $c['build_startdate'] ?? '',
+			'Build finished' => $c['build_enddate'] ?? '',
+			'Available' => $c['container_date'] ?? '');
+
+		/* the reports in the build directory, in the order they're first written, and the steps that can write each one
+		   (first and last column, inclusive): modulePipelineContainer's export on the NiDB server, then build-container.sh
+		   on the compute node. build.log and build-warnings.txt are created at the job start and added to by the steps
+		   after it; build-error.txt is written by whichever step fails */
+		$stepcolumns = array(
+			'export' => array('Export (NiDB)', 'Export, on the NiDB server', 'nidb'),
+			'start' => array('Build job start', 'Build job start, before the first check-in', 'cluster'),
+			'preReferenceAnalysisChecks' => array('Pre-checks', 'Checking tools and system', 'cluster'),
+			'runningReferenceAnalysis' => array('Reference run', 'Reference run', 'cluster'),
+			'postReferenceAnalysisChecks' => array('Capturing software', 'Capturing software', 'cluster'),
+			'buildingContainer' => array('Building image', 'Building image', 'cluster'),
+			'runningValidationAnalysis' => array('Validation run', 'Validation run', 'cluster'));
+		$stepnames = ContainerStepNames();
+		$failedstep = (($c['build_status'] == 'error') && isset($stepnames[(string)($c['build_step'] ?? '')])) ? $stepnames[$c['build_step']] : '';
+		$reports = array(
+			'README.txt' => array('Usage, also the image\'s help', 'export', 'export'),
+			'export.log' => array('Export checks', 'export', 'export'),
+			'input.log' => array('Staging the reference input', 'export', 'export'),
+			'build.job' => array('The cluster job', 'export', 'export'),
+			'build.log' => array('Build log, from the compute node', 'start', 'runningValidationAnalysis'),
+			'build-warnings.txt' => array('Warnings', 'start', 'runningValidationAnalysis'),
+			'env.txt' => array('Login environment on the build node', 'start', 'start'),
+			'sysinfo.txt' => array('Build node: OS, base image, tools, resources', 'preReferenceAnalysisChecks', 'preReferenceAnalysisChecks'),
+			'software.txt' => array('Interpreters and versions on the build node', 'preReferenceAnalysisChecks', 'preReferenceAnalysisChecks'),
+			'build-error.txt' => array('Why the build stopped' . (($failedstep == "") ? "" : ", during $failedstep"), 'preReferenceAnalysisChecks', 'runningValidationAnalysis'),
+			'reference-run.log' => array('Output of the reference run', 'runningReferenceAnalysis', 'runningReferenceAnalysis'),
+			'captured-packages.txt' => array('Packages copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
+			'captured-opt.txt' => array('/opt directories copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
+			'captured-paths.txt' => array('Other paths copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
+			'capture-excluded.txt' => array('Deny-listed files that weren\'t copied', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
+			'environment.txt' => array('The image\'s environment', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
+			'manifest.json' => array('Pipeline, input layout and captured software', 'buildingContainer', 'buildingContainer'),
+			'labels.txt' => array('The image\'s labels', 'buildingContainer', 'buildingContainer'),
+			'validation-run.log' => array('Output of the validation run', 'runningValidationAnalysis', 'runningValidationAnalysis'),
+			'validation.txt' => array('Validation summary and file lists', 'runningValidationAnalysis', 'runningValidationAnalysis'));
+		$none = "<span class='ui grey text'>&mdash;</span>";
+		?>
+		<div class="ui container">
+			<div class="ui two column middle aligned grid">
+				<div class="column">
+					<h2 class="ui header">
+						<i class="box icon"></i>
+						<div class="content">
+							Container <?=$containerid?>
+							<div class="sub header"><a href="pipelinecontainers.php?id=<?=$id?>"><?=htmlspecialchars($c['pipeline_name'] ?? '')?></a> &nbsp; version <?=$cversion?> <? if ($cversion == (int)$c['current_version']) { ?><span class="ui tiny basic green label">current</span><? } ?></div>
+						</div>
+					</h2>
+				</div>
+				<div class="right aligned column">
+					<a href="pipelinecontainers.php?id=<?=$id?>" class="ui basic button"><i class="arrow left icon"></i> Back to containers</a>
+					<a href="pipelinecontainers.php?action=viewfiles&id=<?=$id?>&containerid=<?=$containerid?>" class="ui basic button" target="_viewfiles"><i class="folder open outline icon"></i> View files</a>
+				</div>
+			</div>
+
+			<div class="ui two column stackable grid">
+				<div class="column">
+					<h3 class="ui dividing header">Build</h3>
+					<table class="ui very basic compact table">
+						<tr><td class="four wide"><b>Status</b></td><td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td></tr>
+						<tr><td><b>Build node</b></td><td><?=($hostname == "") ? $none : htmlspecialchars($hostname)?></td></tr>
+						<tr><td><b>Cluster job</b></td><td><?=($jobid == "") ? $none : htmlspecialchars($jobid)?></td></tr>
+						<? foreach ($dates as $label => $date) { $date = trim((string)$date); ?>
+						<tr><td><b><?=$label?></b></td><td><?=($date == "") ? $none : htmlspecialchars($date)?></td></tr>
+						<? } ?>
+						<tr><td><b>Duration</b></td><td><?=($duration == "") ? $none : $duration?></td></tr>
+					</table>
+				</div>
+				<div class="column">
+					<h3 class="ui dividing header">Reference analysis &amp; validation</h3>
+					<table class="ui very basic compact table">
+						<tr><td class="four wide"><b>Reference analysis</b></td><td><?=((int)($c['reference_analysisid'] ?? 0) == 0) ? $none : ReferenceAnalysisLabel($c['uid'], $c['study_num'], $c['reference_analysisid'])?></td></tr>
+						<tr><td><b>Validation run</b></td><td><?=($c['run_validation'] ?? 0) ? "Yes" : "No"?></td></tr>
+						<? if (count($validation) > 0) {
+							$missing = (int)($validation['missing_files'] ?? 0);
+							$extra = (int)($validation['extra_files'] ?? 0);
+							$exitcode = (string)($validation['exitcode'] ?? '');
+							?>
+						<tr><td><b>Exit code</b></td><td><?=htmlspecialchars($exitcode)?> <? if (($exitcode != "") && ($exitcode != "0")) { ?><i class="orange exclamation triangle icon"></i><? } ?></td></tr>
+						<tr><td><b>Output files</b></td><td><?=number_format((int)($validation['container_files'] ?? 0))?> from the container, <?=number_format((int)($validation['reference_files'] ?? 0))?> in the reference analysis</td></tr>
+						<tr><td><b>Missing</b></td><td><span class="<?=($missing > 0) ? 'ui orange text' : ''?>"><?=number_format($missing)?></span> <span class="ui small grey text">in the reference analysis, not created by the container</span></td></tr>
+						<tr><td><b>Extra</b></td><td><?=number_format($extra)?> <span class="ui small grey text">created by the container, not in the reference analysis</span></td></tr>
+						<tr><td><b>Details</b></td><td><?=ContainerFileLink("$builddir/validation.txt", "validation.txt")?></td></tr>
+						<? } elseif ($c['run_validation'] ?? 0) { ?>
+						<tr><td><b>Results</b></td><td><span class="ui grey text">No validation results yet</span></td></tr>
+						<? } ?>
+					</table>
+				</div>
+			</div>
+
+			<h3 class="ui dividing header">Container</h3>
+			<table class="ui very basic compact table">
+				<tr><td class="three wide"><b>Path</b> <span class="ui small grey text">(on the cluster)</span></td><td><?=($path == "") ? $none : "<tt>" . htmlspecialchars($path) . "</tt>"?></td></tr>
+				<tr><td><b>Size</b></td><td><?=($containersize > 0) ? HumanReadableFilesize($containersize) . " <span class='ui small grey text'>(" . number_format($containersize) . " bytes)</span>" : $none?></td></tr>
+				<tr><td><b>SHA256</b></td><td><?=($sha256 == "") ? $none : "<tt style='word-break: break-all'>" . htmlspecialchars($sha256) . "</tt>"?></td></tr>
+			</table>
+
+			<h3 class="ui dividing header">Build directory</h3>
+			<table class="ui very basic compact table">
+				<tr><td class="three wide"><b>Path</b> <span class="ui small grey text">(as NiDB sees it)</span></td><td><?=($builddir == "") ? $none : "<tt>" . htmlspecialchars($builddir) . "</tt>"?> <? if (($builddir != "") && !$hasdir) { ?><span class="ui orange text">Not found. It's created when the build starts. It may have been moved or deleted</span><? } ?></td></tr>
+				<tr><td><b>Left on disk</b></td><td><?=(($buildsize > 0) || ($buildfilecount > 0)) ? number_format($buildfilecount) . " files, " . HumanReadableFilesize($buildsize) . " <span class='ui small grey text'>when the build finished" . (($c['build_status'] == 'error') ? ". A failed build keeps everything, for diagnosis" : "") . "</span>" : $none?></td></tr>
+			</table>
+			<? if ($hasdir) { ?>
+		</div>
+		<!-- outside the ui container, so the table can use the page width. The container reopens after it -->
+		<div style="margin: 0 1em">
+			<h4 class="ui header">
+				Build reports
+				<div class="sub header">In the order they're first written. Each report spans the build steps that can write to it</div>
+			</h4>
+			<table class="ui very compact celled table">
+				<thead>
+					<?
+					/* where each step runs, over its step columns: consecutive steps in the same place share one heading */
+					$locations = array();
+					foreach ($stepcolumns as list($header, $title, $location)) {
+						$n = count($locations);
+						if (($n > 0) && ($locations[$n - 1][0] == $location)) { $locations[$n - 1][1]++; }
+						else { $locations[] = array($location, 1); }
+					}
+					?>
+					<tr>
+						<th rowspan="2">Report description</th>
+						<? foreach ($locations as list($location, $span)) { ?>
+						<th colspan="<?=$span?>" class="center aligned"><?=($location == 'nidb') ? "NiDB" : (($hostname == "") ? "Cluster" : "Cluster (" . htmlspecialchars($hostname) . ")")?></th>
+						<? } ?>
+						<th rowspan="2" class="right aligned">Size</th>
+					</tr>
+					<tr>
+						<? foreach ($stepcolumns as list($header, $title, $location)) { ?>
+						<th title="<?=htmlspecialchars($title)?>"><?=htmlspecialchars($header)?></th>
+						<? } ?>
+					</tr>
+				</thead>
+				<tbody>
+				<?
+				$stepkeys = array_keys($stepcolumns);
+				foreach ($reports as $file => list($desc, $firststep, $laststep)) {
+					$link = ContainerFileLink("$builddir/$file", $file);
+					if ($link == "") { continue; }
+					$first = array_search($firststep, $stepkeys, true);
+					$last = array_search($laststep, $stepkeys, true);
+					?>
+					<tr>
+						<td><?=htmlspecialchars($desc)?></td>
+						<? for ($i = 0; $i < $first; $i++) { ?><td></td><? } ?>
+						<td colspan="<?=$last - $first + 1?>" style="background-color: #f3f4f5; border-left: 3px solid #a0a0a0; white-space: nowrap"><?=$link?></td>
+						<? for ($i = $last + 1; $i < count($stepkeys); $i++) { ?><td></td><? } ?>
+						<td class="right aligned" style="white-space: nowrap"><?=HumanReadableFilesize(filesize("$builddir/$file"))?></td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
+		</div>
+		<div class="ui container">
+			<br>
+			<? } ?>
+
+			<h3 class="ui dividing header"><i class="orange exclamation triangle icon"></i> Warnings</h3>
+			<? if ($warnings == "") { ?>
+			<div class="ui message">No warnings</div>
+			<? } else { ?>
+			<pre class="ui segment" style="max-height: 400px; overflow: auto; font-size: smaller; white-space: pre-wrap"><?=htmlspecialchars($warnings)?></pre>
+			<? } ?>
+
+			<h3 class="ui dividing header">Log (NiDB module log)</h3>
+			<? if ($log == "") { ?>
+			<div class="ui message">No log entries</div>
+			<? } else { ?>
+			<pre class="ui segment" style="max-height: 600px; overflow: auto; font-size: smaller; white-space: pre-wrap"><?=htmlspecialchars($log)?></pre>
+			<? } ?>
+		</div>
 		<?
 	}
 
@@ -580,11 +830,10 @@
 		}
 		$c = $rows[0];
 
-		/* the same path as modulePipelineContainer::GetBuildDir(), as NiDB sees it. container_path is the cluster's path */
 		$dirs = array();
-		$analysisdir = rtrim(trim($GLOBALS['cfg']['analysisdir'] ?? ''), '/');
-		if ($analysisdir != "") {
-			$dirs['Build directory'] = array($analysisdir . "/_apptainer/$containerid", "Not found. It's created when the build starts. The container may have been moved or deleted");
+		$builddir = ContainerBuildDir($containerid);
+		if ($builddir != "") {
+			$dirs['Build directory'] = array($builddir, "Not found. It's created when the build starts. The container may have been moved or deleted");
 		}
 		$path = trim((string)($c['container_path'] ?? ''));
 		?>
@@ -741,7 +990,7 @@
 		$inprogress = array();
 		$finished = array();
 		$latestcomplete = null;
-		$rows = ContainerQueryRows("select a.*, d.uid, b.study_num from pipeline_containers a left join analysis r on a.reference_analysisid = r.analysis_id left join studies b on r.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? order by a.pipelinecontainer_id desc", 'i', [$id], __LINE__);
+		$rows = ContainerQueryRows("select * from pipeline_containers where pipeline_id = ? order by pipelinecontainer_id desc", 'i', [$id], __LINE__);
 		foreach ($rows as $row) {
 			if (in_array($row['build_status'], array('submitted','started','building'))) {
 				$inprogress[] = $row;
