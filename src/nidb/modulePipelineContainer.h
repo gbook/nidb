@@ -35,6 +35,10 @@ public:
 
     int Run(int containerID = 0);
 
+    /* also used by moduleFileIO::CancelPipelineContainer() */
+    QString GetBuildDir(int containerID);
+    void AppendBuildLog(int containerID, QString log);
+
 private:
     nidb *n;
     QStringList storagePaths; /* NiDB archive and analysis paths, loaded by CheckPaths() */
@@ -75,14 +79,12 @@ private:
     bool WriteClusterJob(containerRequest &c, pipeline &p, QString &msg);
 
     /* paths */
-    QString GetBuildDir(int containerID);
     QString GetClusterBuildDir(int containerID);
     QString GetContainerFileName(pipeline &p, int version);
 
     /* pipeline_containers updates */
     void SetStatus(int containerID, QString status);
     void SetError(int containerID, QString msg);
-    void AppendBuildLog(int containerID, QString log);
     void AppendBuildWarnings(int containerID, QStringList warnings);
 };
 

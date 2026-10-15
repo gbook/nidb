@@ -129,6 +129,7 @@ public:
     QString Debug(QString msg, QString func="", int wrap=0, bool timeStamp=true);
     bool SendEmail(QString to, QString subject, QString body);
     bool SubmitClusterJob(QString jobFilePath, QString clusterType, QString submitHost, QString submitUser, QString qsub, QString clusterUser, QString clusterQueue, QString &msg, int &jobid, QString &result);
+    bool CancelClusterJob(QString clusterType, QString submitHost, QString submitUser, QString qsub, int jobid, QString &msg, QString &result);
 
     /* SQL functions */
     QString BuildInClause(QString prefix, QStringList values, QVariantMap &binds);

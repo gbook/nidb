@@ -68,6 +68,12 @@
 		case 'viewcontainer':
 			DisplayContainerDetails($id, $containerid);
 			break;
+		case 'cancel':
+			ob_start();
+			CancelContainer($id, $containerid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("pipelinecontainers.php?action=viewcontainer&id=$id&containerid=$containerid");
+			break;
 		default:
 			DisplayContainers($id);
 	}
@@ -423,6 +429,55 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- PendingCancelRequest --------------- */
+	/* -------------------------------------------- */
+	/* the pending fileio_requests cancel for this container, or null */
+	function PendingCancelRequest($containerid) {
+		$rows = ContainerQueryRows("select fileiorequest_id, username, requestdate from fileio_requests where fileio_operation = 'cancel' and data_type = 'pipelinecontainer' and data_id = ? and request_status = 'pending' order by fileiorequest_id limit 1", 'i', [$containerid], __LINE__);
+		return (count($rows) > 0) ? $rows[0] : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CancelContainer -------------------- */
+	/* -------------------------------------------- */
+	/* queue a cancel of an unfinished build for the fileio module (moduleFileIO::CancelPipelineContainer()), which
+	   stops the cluster job and sets the row to 'canceled'. The build directory is kept */
+	function CancelContainer($id, $containerid) {
+		if (!ValidID($id,'Pipeline ID')) { return; }
+		if (!ValidID($containerid,'Container ID')) { return; }
+
+		if (!CanEditPipeline($id)) {
+			Error("Only the pipeline owner or a site admin can cancel a container build");
+			return;
+		}
+
+		$rows = ContainerQueryRows("select build_status from pipeline_containers where pipelinecontainer_id = ? and pipeline_id = ?", 'ii', [$containerid, $id], __LINE__);
+		if (count($rows) < 1) {
+			Error("Container [$containerid] not found for pipeline [$id]");
+			return;
+		}
+		if (!in_array($rows[0]['build_status'], array('submitted','started','building'))) {
+			Warning("Container $containerid is " . htmlspecialchars($rows[0]['build_status']) . ", so there's nothing to cancel");
+			return;
+		}
+		if (PendingCancelRequest($containerid) != null) {
+			Notice("Container $containerid is already queued to be canceled");
+			return;
+		}
+
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('cancel', 'pipelinecontainer', ?, ?, now())";
+		$params = [$containerid, $GLOBALS['username']];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		Notice("Container $containerid is queued to be canceled. Its cluster job, if it has one, is stopped within a few minutes. The build directory is kept");
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ContainerStatusLabel --------------- */
 	/* -------------------------------------------- */
 	function ContainerStatusLabel($status) {
@@ -432,6 +487,7 @@
 			case 'building': return "<span class='ui blue label'><i class='spinner loading icon'></i> Building</span>";
 			case 'complete': return "<span class='ui green label'><i class='check icon'></i> Complete</span>";
 			case 'error': return "<span class='ui red label'><i class='exclamation triangle icon'></i> Error</span>";
+			case 'canceled': return "<span class='ui orange label'><i class='ban icon'></i> Canceled</span>";
 		}
 		return "<span class='ui label'>" . htmlspecialchars($status) . "</span>";
 	}
@@ -587,6 +643,8 @@
 	/* everything about one container build: the build, the reference analysis and validation, the image, the build
 	   directory and its reports, and the full warnings and log */
 	function DisplayContainerDetails($id, $containerid) {
+		ShowFlashMessage(); /* show any message from the cancel action that redirected here (PRG) */
+
 		if (!ValidID($id,'Pipeline ID')) { return; }
 		if (!ValidID($containerid,'Container ID')) { return; }
 
@@ -608,6 +666,10 @@
 
 		$builddir = ContainerBuildDir($containerid);
 		$hasdir = ($builddir != "") && is_dir($builddir);
+
+		/* an unfinished build can be canceled by the pipeline owner or a site admin */
+		$cancancel = in_array($c['build_status'], array('submitted','started','building')) && CanEditPipeline($id);
+		$pendingcancel = $cancancel ? PendingCancelRequest($containerid) : null;
 
 		/* the cluster job ID, written by the module when it submitted the job */
 		$jobid = "";
@@ -690,6 +752,18 @@
 				<div class="right aligned column">
 					<a href="pipelinecontainers.php?id=<?=$id?>" class="ui basic button"><i class="arrow left icon"></i> Back to containers</a>
 					<a href="pipelinecontainers.php?action=viewfiles&id=<?=$id?>&containerid=<?=$containerid?>" class="ui basic button" target="_viewfiles"><i class="folder open outline icon"></i> View files</a>
+					<? if ($cancancel) { ?>
+						<? if ($pendingcancel != null) { ?>
+						<button class="ui disabled orange button" title="Requested by <?=htmlspecialchars($pendingcancel['username'] ?? '')?> at <?=htmlspecialchars($pendingcancel['requestdate'] ?? '')?>"><i class="hourglass half icon"></i> Cancel requested</button>
+						<? } else { ?>
+						<form action="pipelinecontainers.php" method="post" style="display: inline" onsubmit="return confirm('Cancel container build <?=$containerid?>? Its cluster job is stopped, and the build directory is kept');">
+							<input type="hidden" name="action" value="cancel">
+							<input type="hidden" name="id" value="<?=$id?>">
+							<input type="hidden" name="containerid" value="<?=$containerid?>">
+							<button type="submit" class="ui orange button"><i class="ban icon"></i> Cancel build</button>
+						</form>
+						<? } ?>
+					<? } ?>
 				</div>
 			</div>
 
@@ -764,6 +838,7 @@
 						<? foreach ($locations as list($location, $span)) { ?>
 						<th colspan="<?=$span?>" class="center aligned"><?=($location == 'nidb') ? "NiDB" : (($hostname == "") ? "Cluster" : "Cluster (" . htmlspecialchars($hostname) . ")")?></th>
 						<? } ?>
+						<th rowspan="2">File date</th>
 						<th rowspan="2" class="right aligned">Size</th>
 					</tr>
 					<tr>
@@ -786,6 +861,7 @@
 						<? for ($i = 0; $i < $first; $i++) { ?><td></td><? } ?>
 						<td colspan="<?=$last - $first + 1?>" style="background-color: #f3f4f5; border-left: 3px solid #a0a0a0; white-space: nowrap"><?=$link?></td>
 						<? for ($i = $last + 1; $i < count($stepkeys); $i++) { ?><td></td><? } ?>
+						<td style="white-space: nowrap"><?=date("Y-m-d H:i:s", filemtime("$builddir/$file"))?></td>
 						<td class="right aligned" style="white-space: nowrap"><?=HumanReadableFilesize(filesize("$builddir/$file"))?></td>
 					</tr>
 				<? } ?>

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 15, 2026 at 03:44 PM
+-- Generation Time: Oct 15, 2026 at 05:40 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -1118,8 +1118,8 @@ CREATE TABLE `favorites` (
 CREATE TABLE `fileio_requests` (
   `fileiorequest_id` int(11) NOT NULL,
   `group_id` bigint(20) DEFAULT 0,
-  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge') NOT NULL,
-  `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis') NOT NULL,
+  `fileio_operation` enum('copy','delete','move','detach','anonymize','createlinks','rearchive','rearchivesubject','rearchiveidonly','rearchivesubjectidonly','rechecksuccess','merge','cancel') NOT NULL,
+  `data_type` enum('pipeline','analysis','subject','study','series','groupanalysis','pipelinecontainer') NOT NULL,
   `data_id` int(11) DEFAULT NULL,
   `data_destination` varchar(255) DEFAULT NULL,
   `rearchiveprojectid` int(11) DEFAULT NULL,
@@ -2265,7 +2265,7 @@ CREATE TABLE `pipeline_containers` (
   `build_startdate` datetime DEFAULT NULL,
   `build_enddate` datetime DEFAULT NULL,
   `build_hostname` varchar(255) DEFAULT NULL,
-  `build_status` enum('started','building','complete','error','submitted') NOT NULL,
+  `build_status` enum('started','building','complete','error','submitted','canceled') NOT NULL,
   `build_step` enum('preReferenceAnalysisChecks','runningReferenceAnalysis','postReferenceAnalysisChecks','buildingContainer','runningValidationAnalysis','buildComplete') DEFAULT NULL COMMENT 'preAnalysisChecks are everything that happens before the reference analysis is run.',
   `build_step_message` varchar(255) DEFAULT NULL,
   `build_apitoken` varchar(255) DEFAULT NULL,

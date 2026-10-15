@@ -1150,6 +1150,70 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
 }
 
 
+
+/* ---------------------------------------------------------- */
+/* --------- CancelClusterJob ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Cancel a cluster job, through the same submit host SubmitClusterJob() uses: scancel for slurm, qdel for SGE
+ * @param clusterType either 'sge' or 'slurm'
+ * @param submitHost Hostname the job was submitted through. cfg['clustersubmithost'] if blank
+ * @param submitUser Username to login to the host (slurm). cfg['clustersubmituser'] if blank
+ * @param qsub path to the qsub executable. qdel is taken from the same directory
+ * @param jobid The job to cancel
+ * @param msg Any messages generated
+ * @param result Output from the cancel command
+ * @return true if the job was canceled, or no longer exists on the cluster (it already finished, or never started)
+ */
+bool nidb::CancelClusterJob(QString clusterType, QString submitHost, QString submitUser, QString qsub, int jobid, QString &msg, QString &result) {
+    clusterType = clusterType.toLower();
+
+    if (jobid < 1) {
+        msg = QString("Invalid job ID [%1]").arg(jobid);
+        return false;
+    }
+    if (submitHost == "")
+        submitHost = cfg["clustersubmithost"];
+    if (submitUser == "")
+        submitUser = cfg["clustersubmituser"];
+
+    QString systemstring;
+    if (clusterType == "slurm")
+        systemstring = QString("ssh %1@%2 scancel %3").arg(submitUser).arg(submitHost).arg(jobid);
+    else {
+        /* ssh <submithost> qdel <jobid>, with qdel next to qsub if qsub is a full path */
+        QString qdel = "qdel";
+        if (qsub.contains("/"))
+            qdel = QFileInfo(qsub).path() + "/qdel";
+        systemstring = QString("ssh %1 %2 %3").arg(submitHost).arg(qdel).arg(jobid);
+    }
+
+    /* SystemCommand() doesn't return the exit code, so it's echoed. ssh exits with the remote command's code, or 255 */
+    systemstring += " 2>&1; echo \"NIDBEXIT=$?\"";
+    QString output = SystemCommand(systemstring, false).trimmed();
+
+    int exitcode = -1;
+    QRegularExpressionMatch m = QRegularExpression("NIDBEXIT=(\\d+)\\s*$").match(output);
+    if (m.hasMatch())
+        exitcode = m.captured(1).toInt();
+    result = output.left(output.lastIndexOf("NIDBEXIT=")).trimmed();
+
+    if (exitcode == 0) {
+        msg = QString("Canceled cluster job [%1] [%2]").arg(jobid).arg(result);
+        return true;
+    }
+
+    /* the scheduler no longer knows the job: it already finished, or never started */
+    if (result.contains("does not exist", Qt::CaseInsensitive) || result.contains("invalid job id", Qt::CaseInsensitive) || result.contains("already completing or completed", Qt::CaseInsensitive)) {
+        msg = QString("Cluster job [%1] is no longer running [%2]").arg(jobid).arg(result);
+        return true;
+    }
+
+    msg = QString("Unable to cancel cluster job [%1]. Exit code [%2], output [%3]").arg(jobid).arg(exitcode).arg(result);
+    return false;
+}
+
+
 /* ---------------------------------------------------------- */
 /* --------- GetSQLComparison ------------------------------- */
 /* ---------------------------------------------------------- */

@@ -121,6 +121,9 @@ int moduleFileIO::Run() {
                 else if (data_type == "study") { found = DeleteStudy(data_id, msg); }
                 else if (data_type == "series") { found = DeleteSeries(data_id, modality, msg); }
             }
+            else if (fileio_operation == "cancel") {
+                if (data_type == "pipelinecontainer") { found = CancelPipelineContainer(data_id, username, msg); }
+            }
             else if (fileio_operation == "detach") {
             }
             else if (fileio_operation == "move") {
@@ -350,6 +353,102 @@ bool moduleFileIO::CopyAnalysis(qint64 analysisid, QString destination, QString 
         msg += "Unable to create destination directory";
         return false;
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CancelPipelineContainer ------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Cancel a container build (pipeline_containers row) that hasn't finished. The row is set to 'canceled' first,
+ * so analysisapi.php rejects the build job's later check-ins and final report, then the cluster job is stopped if
+ * it was submitted. Nothing is deleted: the build directory stays, for the logs
+ * @param containerid pipelinecontainer_id
+ * @param username Who asked, for the build log
+ * @param msg Result message
+ * @return true if the build was canceled and, if it had a cluster job, the job was stopped
+ */
+bool moduleFileIO::CancelPipelineContainer(int containerid, QString username, QString &msg) {
+    n->Log(QString("In CancelPipelineContainer(%1)").arg(containerid));
+
+    modulePipelineContainer mpc(n);
+    QString who = (username == "") ? QString("a user") : username;
+
+    /* mark it canceled only if the status is still the one read, since the pipelinecontainer module and the build job
+       also change it. Retry if it changed in between */
+    QString status;
+    int pipelineid = 0;
+    bool canceled = false;
+    for (int attempt = 0; (attempt < 3) && !canceled; attempt++) {
+        QSqlQuery q;
+        q.prepare("select build_status, pipeline_id from pipeline_containers where pipelinecontainer_id = :id");
+        q.bindValue(":id", containerid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (!q.first()) {
+            msg = QString("Container [%1] not found").arg(containerid);
+            return false;
+        }
+        status = q.value("build_status").toString();
+        pipelineid = q.value("pipeline_id").toInt();
+        if ((status != "submitted") && (status != "started") && (status != "building")) {
+            msg = QString("Container [%1] is [%2], so there's nothing to cancel").arg(containerid).arg(status);
+            return false;
+        }
+
+        QSqlQuery q2;
+        q2.prepare("update pipeline_containers set build_status = 'canceled', build_enddate = now(), build_apitoken = null, build_step_message = :message where pipelinecontainer_id = :id and build_status = :status");
+        q2.bindValue(":message", "Canceled by " + who);
+        q2.bindValue(":id", containerid);
+        q2.bindValue(":status", status);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        canceled = (q2.numRowsAffected() > 0);
+    }
+    if (!canceled) {
+        msg = QString("Container [%1]'s status kept changing, so it wasn't canceled. Try again").arg(containerid);
+        return false;
+    }
+    mpc.AppendBuildLog(containerid, QString("Canceled by %1, while [%2]").arg(who).arg(status));
+
+    /* submitted: the module hasn't picked it up. started: the module is preparing it, and won't submit it, since its
+       claim from started to building fails */
+    if (status != "building") {
+        msg = QString("Canceled container [%1], which was [%2]. No cluster job had been submitted").arg(containerid).arg(status);
+        mpc.AppendBuildLog(containerid, msg);
+        return true;
+    }
+
+    /* building: stop the cluster job. Its ID is in build.jobid. If it isn't there yet, the job is still being
+       submitted, and modulePipelineContainer::SubmitBuildJob() cancels it once it has the ID */
+    QString buildDir = mpc.GetBuildDir(containerid);
+    int jobid = 0;
+    QFile f(buildDir + "/build.jobid");
+    if (f.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        jobid = QString(f.readAll()).trimmed().toInt();
+        f.close();
+    }
+    if (jobid < 1) {
+        msg = QString("Canceled container [%1]. No job ID in [%2/build.jobid] yet, so the job is canceled when its submission finishes").arg(containerid).arg(buildDir);
+        mpc.AppendBuildLog(containerid, msg);
+        return true;
+    }
+
+    /* the cluster settings aren't versioned, so the current version is fine (same as SubmitBuildJob) */
+    pipeline p(n);
+    p.searchPipelineRowID = pipelineid;
+    if (!p.Load()) {
+        msg = QString("Canceled container [%1], but couldn't load pipeline [%2] to stop cluster job [%3]: %4").arg(containerid).arg(pipelineid).arg(jobid).arg(p.msg);
+        mpc.AppendBuildLog(containerid, "ERROR: " + msg);
+        return false;
+    }
+
+    QString cancelMsg, result;
+    bool ok = n->CancelClusterJob(p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], jobid, cancelMsg, result);
+    if (ok)
+        msg = QString("Canceled container [%1]. %2").arg(containerid).arg(cancelMsg);
+    else
+        msg = QString("Canceled container [%1], but its cluster job may still be running, and needs to be stopped by hand. %2").arg(containerid).arg(cancelMsg);
+    mpc.AppendBuildLog(containerid, (ok ? QString("") : QString("ERROR: ")) + msg);
+    return ok;
 }
 
 

@@ -28,6 +28,7 @@
 #include "study.h"
 #include "series.h"
 #include "pipeline.h"
+#include "modulePipelineContainer.h"
 
 class moduleFileIO
 {
@@ -44,6 +45,7 @@ public:
     bool DeleteSubject(int subjectid, QString username, QString &msg);
     bool DeleteStudy(int studyid, QString &msg);
     bool DeleteSeries(int seriesid, QString modality, QString &msg);
+    bool CancelPipelineContainer(int containerid, QString username, QString &msg);
     bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
     bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
     bool MoveStudyToSubject(int studyid, QString newuid, int newsubjectid, QString &msg);

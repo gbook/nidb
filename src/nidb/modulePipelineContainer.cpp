@@ -319,6 +319,17 @@ bool modulePipelineContainer::SubmitBuildJob(containerRequest &c, QString &msg) 
     WriteTextFile(c.buildDir + "/build.jobid", QString("%1\n").arg(jobID), false);
 
     AppendBuildLog(c.containerID, QString("Submitted build job [%1] to the %2 cluster, queue [%3], through [%4]. Output [%5]").arg(jobID).arg(p.clusterType).arg(p.clusterQueue).arg(p.clusterSubmitHost).arg(result));
+
+    /* a cancel that came in after the claim above, but before build.jobid was written, couldn't find the job to stop it */
+    QSqlQuery q;
+    q.prepare("select build_status from pipeline_containers where pipelinecontainer_id = :id");
+    q.bindValue(":id", c.containerID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.first() && (q.value("build_status").toString() == "canceled")) {
+        QString cancelMsg, cancelResult;
+        n->CancelClusterJob(p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], jobID, cancelMsg, cancelResult);
+        AppendBuildLog(c.containerID, "Canceled while the job was being submitted. " + cancelMsg);
+    }
     return true;
 }
 
@@ -2472,8 +2483,9 @@ void modulePipelineContainer::SetError(int containerID, QString msg) {
     n->Log(QString("Container [%1] error: %2").arg(containerID).arg(msg));
     AppendBuildLog(containerID, "ERROR: " + msg);
 
+    /* a canceled build stays canceled. Canceling while the export is being prepared makes SubmitBuildJob()'s claim fail */
     QSqlQuery q;
-    q.prepare("update pipeline_containers set build_status = 'error', build_enddate = now() where pipelinecontainer_id = :id");
+    q.prepare("update pipeline_containers set build_status = 'error', build_enddate = now() where pipelinecontainer_id = :id and build_status <> 'canceled'");
     q.bindValue(":id", containerID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
