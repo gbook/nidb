@@ -1149,7 +1149,8 @@ exit $rc
  *   capture/              capture_software's work files: the package file map, traced paths, copy list, tar and glibc logs
  *   captured-*.txt        what capture_software copied: packages, /opt directories, other paths
  *   capture-excluded.txt  deny-listed files that weren't copied
- *   environment.txt       the image's %environment
+ *   environment.txt       the image's environment (.singularity.d/env/90-environment.sh)
+ *   labels.txt            the image's labels, key and value tab separated (.singularity.d/labels.json)
  *   staging/              the captured software, laid over the base image
  *   reference-run.log     output of the reference run
  *   validation.txt        key=value summary, then the missing and extra file lists (validation only)
@@ -2123,26 +2124,47 @@ write_manifest() {
     log "Wrote manifest.json"
 }
 
-write_definition() {
-    echo "Bootstrap: localimage"
-    echo "From: $BUILDDIR/base"
-    echo ""
-    echo "%environment"
-    if [ -f "$BUILDDIR/environment.txt" ]; then sed 's/^/    /' "$BUILDDIR/environment.txt"; fi
-    echo ""
-    echo "%runscript"
-    echo '    exec /pipeline/run.sh "$@"'
-    echo ""
-    echo "%labels"
-    echo "    org.nidb.pipeline.name $PIPELINE_NAME"
-    echo "    org.nidb.pipeline.version $PIPELINE_VERSION"
-    echo "    org.nidb.base $BASE_IMAGE"
-    echo "    org.nidb.buildos $OS_PRETTY_NAME"
-    echo "    org.nidb.exported $(date '+%Y-%m-%d')"
-    echo ""
+# write_metadata <sandbox>: the image's environment, run script, labels and help, written straight into the sandbox's
+# /.singularity.d, where a definition file's %environment, %runscript, %labels and %help would put them. Building the .sif
+# from the sandbox then needs no root or fakeroot, unlike building from a definition file
+write_metadata() {
+    local d="$1/.singularity.d" key value sep="" line
+    mkdir -p "$d/env" || fail "Unable to create [$d/env]"
+
+    # sourced after the base image's own env/*.sh (like 10-docker2singularity.sh), so these win
+    {
+        echo "#!/bin/sh"
+        echo "# written by NiDB from the build node's login environment"
+        if [ -f "$BUILDDIR/environment.txt" ]; then cat "$BUILDDIR/environment.txt"; fi
+    } > "$d/env/90-environment.sh" || fail "Unable to write [$d/env/90-environment.sh]"
+    chmod 755 "$d/env/90-environment.sh"
+
+    printf '#!/bin/sh\n\nexec /pipeline/run.sh "$@"\n' > "$d/runscript" || fail "Unable to write [$d/runscript]"
+    chmod 755 "$d/runscript"
+
     # README.txt is written by NiDB: usage, arguments and the expected /input layout
-    echo "%help"
-    sed 's/^/    /' "$BUILDDIR/README.txt"
+    cp -f "$BUILDDIR/README.txt" "$d/runscript.help" || fail "Unable to write [$d/runscript.help]"
+
+    # NiDB's labels, plus the base image's own (simple "key": "value" pairs) that NiDB doesn't set
+    {
+        printf 'org.nidb.pipeline.name\t%s\n' "$PIPELINE_NAME"
+        printf 'org.nidb.pipeline.version\t%s\n' "$PIPELINE_VERSION"
+        printf 'org.nidb.base\t%s\n' "$BASE_IMAGE"
+        printf 'org.nidb.buildos\t%s\n' "$OS_PRETTY_NAME"
+        printf 'org.nidb.exported\t%s\n' "$(date '+%Y-%m-%d')"
+        if [ -f "$d/labels.json" ]; then
+            grep -o '"[^"\\]*"[[:space:]]*:[[:space:]]*"[^"\\]*"' "$d/labels.json" | sed 's/^"\([^"]*\)"[[:space:]]*:[[:space:]]*"\(.*\)"$/\1\t\2/' | grep -v '^org\.nidb\.'
+        fi
+    } > "$BUILDDIR/labels.txt"
+    {
+        printf '{'
+        while IFS=$'\t' read -r key value; do
+            if [ -z "$key" ]; then continue; fi
+            printf '%s\n    %s: %s' "$sep" "$(json_str "$key")" "$(json_str "$value")"
+            sep=","
+        done < "$BUILDDIR/labels.txt"
+        printf '\n}\n'
+    } > "$d/labels.json" || fail "Unable to write [$d/labels.json]"
 }
 
 # sandbox from the base image, add the captured software and /pipeline, then build the .sif (doc section 8, steps 4.4-4.5)
@@ -2173,11 +2195,12 @@ build_image() {
     cp -f run.sh run.sh.template manifest.json requiredvars.txt README.txt base/pipeline/ || fail "Unable to copy the pipeline files into the sandbox"
     chmod 755 base/pipeline/run.sh
 
-    write_definition > container.def
+    write_metadata base
 
+    # sandbox to .sif only packs the directory into squashfs, so it doesn't need root or fakeroot
     log "Building [$SIF_NAME]"
     safe_rm "$BUILDDIR/$SIF_NAME"
-    "$APPTAINER" build "$SIF_NAME" container.def || fail "Unable to build [$SIF_NAME]. If the build needs root, this node needs fakeroot (see 'Cluster requirements' in the NiDB container documentation)"
+    "$APPTAINER" build "$SIF_NAME" base || fail "Unable to build [$SIF_NAME] from the sandbox"
 }
 
 # run the new image on the reference input and compare the output file list with the reference analysis (doc section 8, step 4.6)

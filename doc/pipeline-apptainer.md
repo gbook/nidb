@@ -375,7 +375,7 @@ flowchart TD
    2. *(`runningReferenceAnalysis`)* Reference run under `strace`, plus the environment dump (§7 step 1).
    3. *(`postReferenceAnalysisChecks`)* Sort and collect the files into a staging tree, with the `ldd` pass, deny list and glibc check (§7 step 2).
    4. *(`buildingContainer`)* Write `manifest.json` (§6). If `XDG_RUNTIME_DIR` isn't a directory the build user owns and can write (a job can inherit root's `/run/user/0`), unset it, since the pull reads `$XDG_RUNTIME_DIR/containers/auth.json` and stops on `permission denied`. `apptainer build --sandbox base/ docker://<base>`, then `chmod -R u+rwX base/` (an unprivileged sandbox keeps the image's read-only modes, e.g. on `usr/bin`, so nothing could be added to those directories), then copy the staging tree and `/pipeline/*` into `base/`.
-   5. Build the `.sif` from a definition file with `Bootstrap: localimage` / `From: base/` and only `%environment`, `%runscript`, `%labels` and `%help` (no `%post`).
+   5. Write the image's metadata straight into `base/.singularity.d/` (`write_metadata()`), where a definition file's `%environment`, `%runscript`, `%labels` and `%help` would go, then `apptainer build <name>.sif base/`. Building from a definition file needs root or `--fakeroot`, even with no `%post` (tested: Singularity 3.x on CentOS 7); building from a sandbox only packs it into squashfs, so it doesn't.
    6. *(`runningValidationAnalysis`)* **Validation run (optional):** `apptainer run` the new image on `input/` and compare the output file list with the reference analysis directory. NiDB's `pipeline/` logs, job files and the `completeFiles` check are excluded from the comparison. The results go to `validation.txt`.
    7. Get the `.sif`'s size and sha256, then remove the sandbox (`base/`), `staging/`, the staged `input/` (the reference subject's data), `reference/` and `validation-output/`. The `.sif`, `README.txt`, `manifest.json`, `validation.txt` and the logs stay in the build directory.
 5. **Finish (from the node).** The script's `EXIT` trap reports the result, so it's reported on failure and on `SIGTERM` from the scheduler too:
@@ -418,13 +418,13 @@ The collection stages write plain text files (`key=value` or one item per line) 
 | `modules.txt` | `module list` output, if environment modules are set up |
 | `opt.txt` | The entries in `/opt` |
 | `trace.log`, `reference-run.log`, `reference.start` | strace output and output of the reference run, and the marker touched just before it |
-| `captured-packages.txt`, `captured-opt.txt`, `captured-paths.txt`, `environment.txt` | What the software capture copied into the image: packages (name, version-release, arch, tab separated), `/opt` directories, other paths (library roots, script directories, single files), one per line, and the `%environment` lines. Read by `write_manifest()` and `write_definition()` |
+| `captured-packages.txt`, `captured-opt.txt`, `captured-paths.txt`, `environment.txt` | What the software capture copied into the image: packages (name, version-release, arch, tab separated), `/opt` directories, other paths (library roots, script directories, single files), one per line, and the `%environment` lines. Read by `write_manifest()` and `write_metadata()` |
 | `capture-excluded.txt` | Deny-listed files that weren't copied |
 | `capture/` | The capture's work files: `filemap.txt` (package file map), `traced.txt`, `library-roots.txt`, `package-reasons.txt`, `copy-list.txt`, `tar-read.log`/`tar-write.log`, `glibc-newer.txt` |
 | `staging/` | The captured software, laid over the sandbox in step 4.4 |
 | `manifest-export.json` | NiDB's part of the manifest, written by the module |
 | `manifest.json` | `manifest-export.json` plus the `build` object. Copied into the image as `/pipeline/manifest.json` |
-| `container.def` | The generated definition file |
+| `labels.txt` | The image's labels (key, value, tab separated): NiDB's, plus the base image's own. Written into `labels.json` by `write_metadata()` |
 | `validation.txt` | `key=value` summary (`exitcode`, `reference_files`, `container_files`, `missing_files`, `extra_files`), then `[missing]` and `[extra]` file lists |
 | `<pipeline>-v<version>.sif` | The container. Stays here; its cluster path is `container_path` |
 
@@ -465,38 +465,44 @@ Opened from the *Manage containers* tile on the pipeline's Operations tab (`pipe
 - **Usage:** an example `apptainer run` command with only the arguments this pipeline's script uses (§3), and the expected `/input` layout from the enabled data items, BIDS setting and dependency (§6).
 - **Create container:** the export checks for this pipeline as a list of pitfalls, then the reference-analysis picker, the validation checkbox and **Create**. Errors (level ≠ 1, no enabled steps, no completed analysis, group, deprecated `{first_*}` or unrecognized variables, NiDB storage paths in the steps, running a container (§7)) disable Create, and are checked again on submit. Warnings: `{analysisid}`, `{command}`, a parent dependency, FreeSurfer license, MATLAB, and a long average runtime. Only enabled main steps are checked, since only they run in the container. Info: supplement steps, results script and temp dir not exported, FSL size, untaken code paths, compute node OS. These are a web-side preview. The backend checks are authoritative: `modulePipelineContainer::CheckIfExportable()` (with `CheckVariables()` and `CheckPaths()`) applies the same errors and warnings, except the long-runtime warning and the info items, and `WriteContainerBuildScript()` checks that the chosen reference analysis is complete and not bad.
 
-### Example generated definition file (step 4.5)
+### Example generated metadata (step 4.5)
 
+`write_metadata()` writes these into `base/.singularity.d/`. They're what `apptainer inspect --environment / --runscript / --labels` and `apptainer run-help` show.
+
+`env/90-environment.sh`, sourced after the base image's own `env/*.sh` (like `10-docker2singularity.sh`), so it wins:
 ```
-Bootstrap: localimage
-From: <builddir>/base
-
-%environment
-    export FSLDIR=/opt/fsl
-    export PATH=/opt/fsl/bin:/usr/local/bin:/usr/bin:/bin
-    export FSLOUTPUTTYPE=NIFTI_GZ
-    export R_LIBS_SITE=/usr/local/lib64/R/site-library
-
-%runscript
-    exec /pipeline/run.sh "$@"
-
-%labels
-    org.nidb.pipeline.name mypipeline
-    org.nidb.pipeline.version 3
-    org.nidb.base docker://centos:7.9.2009
-    org.nidb.buildos CentOS Linux 7 (Core)
-    org.nidb.exported 2026-10-06
-
-%help
-    (README.txt, indented)
+#!/bin/sh
+# written by NiDB from the build node's login environment
+export FSLDIR='/opt/fsl'
+export PATH='/opt/fsl/bin:/usr/local/bin:/usr/bin:/bin'
+export FSLOUTPUTTYPE='NIFTI_GZ'
 ```
 
-Software doesn't appear in the definition file, because it was copied into the sandbox in step 4.4.
+`runscript`:
+```
+#!/bin/sh
+
+exec /pipeline/run.sh "$@"
+```
+
+`labels.json`, NiDB's labels followed by the base image's own, except any `org.nidb.*` it had:
+```
+{
+    "org.nidb.pipeline.name": "mypipeline",
+    "org.nidb.pipeline.version": "3",
+    "org.nidb.base": "docker://centos:7.9.2009",
+    "org.nidb.buildos": "CentOS Linux 7 (Core)",
+    "org.nidb.exported": "2026-10-06",
+    "org.label-schema.name": "CentOS Base Image"
+}
+```
+
+`runscript.help` is `README.txt`. Software doesn't appear in any of these, because it was copied into the sandbox in step 4.4.
 
 ### Cluster requirements (check first)
 
 - Apptainer, `strace` and binutils (`objdump`) installed on the compute nodes. These aren't always present by default, but can be installed. Tracing the job's own child processes is allowed under the default `kernel.yama.ptrace_scope = 1`.
-- Unprivileged builds: pulling a sandbox from `docker://` and building a `.sif` from a sandbox both work without root. Whether step 4.5 (a definition file with no `%post`) needs `--fakeroot` depends on the Apptainer version, so this needs testing on the cluster.
+- Unprivileged builds: pulling a sandbox from `docker://` and building a `.sif` from a sandbox both work without root, so the build doesn't need `--fakeroot` (which on CentOS 7 needs user namespaces enabled and `/etc/subuid` entries). That's why step 4.5 writes the metadata into the sandbox instead of using a definition file.
 - Outbound network access from the node to pull the base image, or a pre-pulled base `.sif` on shared storage.
 - Node-local scratch for the build (`APPTAINER_TMPDIR`) and room for the reference run.
 
