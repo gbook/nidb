@@ -55,12 +55,15 @@ cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=ON -DBIT7Z_GENERAT
 echo -e "\n ----- chdir to $BUILDDIR/bit7z -----\n"
 cd $BUILDDIR/bit7z
 echo -e "\n ----- Running cmake --build . --config Release -----\n"
+# bit7z writes its library into the source tree (src/bit7z/lib/x64), which makeAllInstallers.sh shares between
+# distros. Remove it first, so it's always relinked from this build directory's objects, not left from another distro
+rm -f $SRCDIR/bit7z/lib/x64/libbit7z64.a
 cmake --build . --config Release
-cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
-cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
+cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
+cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
 mkdir -p ~/rpmbuild/SOURCES/bin/bit7z/
-cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/bin/bit7z/
-cp -uv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/src/bit7z/
+cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/bin/bit7z/
+cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/src/bit7z/
 echo -e "\n Built bit7z in $BUILDDIR/bit7z\n"
 
 # ----- build squirrel library -----

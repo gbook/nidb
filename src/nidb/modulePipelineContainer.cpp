@@ -1016,7 +1016,8 @@ void modulePipelineContainer::TranslateDockerRun(const QString &command, const Q
             value = word.mid(2);
             inlineValue = true;
         }
-        if (inlineValue && (command.mid(w.start, option.size()) != option)) {
+        int optionSize = static_cast<int>(option.size());
+        if (inlineValue && (command.mid(w.start, optionSize) != option)) {
             errors << QString("Step %1: [%2] can't be rewritten. Write the option without quotes").arg(step).arg(word);
             ok = false;
             break;
@@ -1039,14 +1040,14 @@ void modulePipelineContainer::TranslateDockerRun(const QString &command, const Q
             if (!inlineValue)
                 replacements << textReplacement{ w.start, w.end, newOption };
             else
-                replacements << textReplacement{ w.start, w.start + option.size(), option.startsWith("--") ? newOption : newOption + "=" };
+                replacements << textReplacement{ w.start, w.start + optionSize, option.startsWith("--") ? newOption : newOption + "=" };
         };
         /* replace the option's value with shell text */
         auto setValue = [&](QString text) {
             if (!inlineValue)
                 replacements << textReplacement{ words[valueWord].start, words[valueWord].end, text };
             else
-                replacements << textReplacement{ w.start + option.size() + (option.startsWith("--") ? 1 : 0), w.end, text };
+                replacements << textReplacement{ w.start + optionSize + (option.startsWith("--") ? 1 : 0), w.end, text };
         };
         /* remove the option and its value */
         auto drop = [&]() {
