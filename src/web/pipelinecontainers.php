@@ -264,12 +264,20 @@
 		}
 
 		/* ---------- running containers ---------- */
-		/* the same rule as modulePipelineContainer::CheckContainers(). The build also checks the reference run's trace,
-		   which catches containers started from a script a step calls */
+		/* a preview of modulePipelineContainer::CheckContainers() (doc/pipeline-apptainer.md section 11). Steps that run
+		   apptainer or singularity exec, run or test are exported as a launcher; other ways of running a container are
+		   errors. The export checks each command properly, and the build also checks the reference run's trace, which
+		   catches containers started from a script a step calls */
+		$launchersteps = array();
 		$containersteps = array();
 		foreach ($steps as $step) {
 			if (!$step['ps_enabled']) { continue; }
-			foreach (explode("\n", (string)($step['ps_command'] ?? '')) as $line) {
+			$command = (string)($step['ps_command'] ?? '');
+			if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity)\s+(exec|run|test)\b/', $command, $m)) {
+				$launchersteps[] = "<tt>" . htmlspecialchars(trim($m[0])) . "</tt> (step " . (int)$step['ps_order'] . ")";
+				continue;
+			}
+			foreach (explode("\n", $command) as $line) {
 				if (substr(ltrim($line), 0, 1) == "#") { continue; }
 				if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\s+(exec|run|shell|instance|test|start|create|compose|container)\b|\bdocker-compose\b|\brun-singularity\b|[A-Za-z0-9_}-]\.(?i:sif|simg)\b/', $line, $m)) {
 					$containersteps[] = "<tt>" . htmlspecialchars(trim($m[0])) . "</tt> (step " . (int)$step['ps_order'] . ")";
@@ -278,7 +286,10 @@
 			}
 		}
 		if (count($containersteps) > 0) {
-			AddPitfall($pitfalls, 'error', "Runs a container", "Pipelines that run Apptainer, Singularity, Docker or Podman containers can't be exported, since the image would need a container runtime inside a container. If the pipeline already runs in a container, share that image instead: " . implode(", ", $containersteps));
+			AddPitfall($pitfalls, 'error', "Runs a container that can't be exported", "Only steps that run <tt>apptainer</tt> or <tt>singularity</tt> <tt>exec</tt>, <tt>run</tt> or <tt>test</tt> directly can be exported. Docker and Podman aren't supported yet; run the image with <tt>apptainer exec docker://&lt;image&gt;</tt> instead: " . implode(", ", $containersteps));
+		}
+		if (count($launchersteps) > 0) {
+			AddPitfall($pitfalls, 'info', "Exported as a launcher", "Some steps run their own containers, so instead of a single <tt>.sif</tt>, the export is a directory with <tt>run-pipeline.sh</tt>, which runs the other steps in <tt>pipeline.sif</tt> and each of these containers directly, downloading them from a pinned reference. The build node must be able to reach the images' registry: " . implode(", ", $launchersteps));
 		}
 
 		/* ---------- things that behave differently ---------- */

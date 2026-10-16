@@ -1,6 +1,6 @@
 # Exporting a pipeline as an Apptainer container
 
-Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9.
+Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is designed in §11 (2026-10-15), not implemented.
 
 Companion docs: `doc/pipeline-execution.md` (how a pipeline runs today), `doc/analysis-api.md` (the check-in API that the container will *not* use).
 
@@ -312,12 +312,12 @@ Preserving pipelines on the OS they were built and validated on is a goal of thi
 
 ### Pipelines that run containers
 
-Pipelines whose steps run Apptainer, Singularity, Docker or Podman containers can't be exported. The image would need a container runtime inside a container, which generally doesn't work (no setuid inside a container, and nesting in user-namespace mode depends on the host). The capture would also be wrong: the trace records the inner container's paths, like its own `/usr/bin/python3`, which would be looked up on the node, and the `.sif` would be copied in as a large data file. Such pipelines are blocked in two places, with the same message, which suggests sharing the pipeline's existing image instead:
+Pipelines whose steps run Apptainer, Singularity, Docker or Podman containers can't be exported as a single image. §11 designs a different export for them (a launcher plus referenced images); until that's implemented, they're blocked. The image would need a container runtime inside a container, which generally doesn't work (no setuid inside a container, and nesting in user-namespace mode depends on the host). The capture would also be wrong: the trace records the inner container's paths, like its own `/usr/bin/python3`, which would be looked up on the node, and the `.sif` would be copied in as a large data file. Such pipelines are blocked in two places, with the same message, which suggests sharing the pipeline's existing image instead:
 
 - **Export check** (`CheckContainers()`, called from `CheckIfExportable()`, and the matching pitfall on `pipelinecontainers.php`): an enabled main step that runs `apptainer`, `singularity`, `docker` or `podman` with a run-type subcommand (`exec`, `run`, `shell`, `instance`, `test`, `start`, `create`, `compose`, `container`), runs `docker-compose` or `run-singularity`, or names a `.sif`/`.simg` image (which can be run directly). Shell comment lines are skipped.
 - **Trace check** (`check_container_use()` in `build-container.sh`, at the start of the capture): if the reference run executed `apptainer`, `singularity`, `run-singularity`, `starter`, `starter-suid`, `docker`, `docker-compose` or `podman`, the build fails. This catches containers started from a script the step calls. The error gives the container command and the program that started it, from the trace's `fork`/`execve` calls, for example `[apptainer exec /data/fmriprep.sif ...], started by [bash /home/user/scripts/run_fmriprep.sh]`.
 
-A possible later extension: for a pipeline whose steps all run inside the same container, build from that `.sif` (`Bootstrap: localimage`) instead of a distro base image, and remove the `apptainer exec <sif>` prefix from the step commands, so nothing is nested.
+§11 replaces these checks with sorting the steps into native and container steps. The trace check stays, for containers started from a script that a step calls.
 
 ### Size, licensing, and portability
 
@@ -551,6 +551,7 @@ To do, as of 2026-10-15:
 | `build-container.sh` | Test with Apptainer, and on a `dpkg` (Debian/Ubuntu) node. So far a full build has worked with Singularity 3.x on a CentOS 7 node. |
 | `pipelines.php` | Container settings (extra include/exclude paths, base image override). |
 | SQL | Columns for those settings on `pipelines` and `pipeline_options` (versioned like the other options). |
+| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15, not yet compiled or run in NiDB. Phase 3 (database and UI) is next. See §11 "Implementation order". |
 
 ---
 
@@ -571,3 +572,218 @@ To do, as of 2026-10-15:
 - **Validation run:** optional, chosen at export; on by default.
 - **Build script:** bash, generated per build (§8 "The build script").
 - **Input layout:** documented in `README.txt`, `%help` and `manifest.json`; not checked or converted (§6).
+- **Pipelines that run containers:** exported as a launcher plus referenced images, pinned by digest and downloaded by the user, not nested and not bundled (§11, 2026-10-15). It has to work on clusters, including compute nodes with no internet access.
+
+---
+
+## 11. Pipelines that run containers (referenced images)
+
+**Status (2026-10-15):** phases 1 and 2 of the implementation order (below) are written: the export side and the build. A pipeline with container steps can be exported and built, end to end. `pipelinecontainers.php` shows those steps as an info note ("Exported as a launcher") instead of an error, but its usage section, container details and table still describe a single `.sif` (phase 3).
+
+Pipelines whose steps run their own containers (fMRIPrep, QSIPrep, FreeSurfer images, ...) can't go into a single `.sif`, because that would mean running containers inside a container (§7). Instead, such a pipeline is exported as a **launcher** that runs on the user's machine and starts each step in exactly one container, so nothing is nested:
+
+- steps that don't run a container (**native steps**) run in the pipeline's own captured image, `pipeline.sif`, built as today (§7, §8);
+- steps that run a container (**container steps**) run that container directly, from the host.
+
+The third-party images aren't put into the export. They're **referenced** by source and pinned by digest (`docker://nipreps/fmriprep@sha256:...`), and the launcher downloads them the first time it runs. This keeps the export small, records exactly which image ran, and means NiDB never redistributes third-party images: users get them from the publisher, under the publisher's license.
+
+Pipelines with no container steps are unaffected and still export as a single `.sif`.
+
+### Export layout
+
+```
+mypipeline-v3/
+  run-pipeline.sh     the launcher (bash 4.2, needs only apptainer or singularity on the host)
+  pipeline.sif        native steps (left out if every step is a container step)
+  manifest.json       §6, plus the images, segments and external paths below
+  README.txt          usage, input layout, images, external paths, resources used
+  checksums.sha256    run-pipeline.sh, pipeline.sif, manifest.json
+```
+
+### Sorting the steps
+
+`CheckContainers()` (§7) changes from an error to sorting each enabled main step:
+
+| Step | Kind | Handling |
+| --- | --- | --- |
+| No container command | native | In `pipeline.sif`, as today |
+| `apptainer`/`singularity` `exec`/`run`/`test` with a literal image path or URI | container | Image and external paths replaced with placeholders (below) |
+| `docker run` / `podman run` | container | Translated to Apptainer: `-v a:b` → `--bind a:b`, `-e K=V` → `--env K=V`, `--gpus` → `--nv`, `-w` → `--pwd`; `--rm`, `-i`, `-t` dropped. Any other option is an export error |
+| Image given by a variable (`$IMG`, `{var}`) | — | Error: the image must be known at export |
+| `docker-compose`, `instance start`, `shell`, an unknown Apptainer option | — | Error |
+| Container started from a script that a step calls | — | Error, from the trace check (§7). The step must call the container directly |
+
+A container step's command runs in a host shell with only the image and external paths rewritten, so `cd`, redirects, `&&` and multiple container commands in one step keep working. The host side of a container step may only use basic shell tools (`cd`, `echo`, `mkdir`, `cp`, `mv`, `sed`, `grep`, `tar`, ..., the `hostTools` list in `RewriteContainerStep()`); any other program, for example `apptainer exec ... | fslmaths ...`, is an export error, since that program won't exist on the user's machine. This is checked from the command at export, not from a trace: tracing a step that starts Apptainer would trace Apptainer too, which breaks setuid installs.
+
+The Apptainer options are parsed to find the image: options that take a value (`--bind`/`-B`, `--env`, `--env-file`, `--pwd`, `--home`/`-H`, `--overlay`, `--mount`) and flags (`--nv`, `--cleanenv`/`-e`, `--containall`/`-C`, `--contain`/`-c`, `--writable-tmpfs`, `--no-home`, `--compat`). The first argument that isn't an option is the image.
+
+### Placeholders
+
+The export rewrites container steps with three new placeholders, rendered by the launcher at run time. Pipeline variables (§3) are rendered as usual. The colon keeps the placeholders apart from pipeline variable names.
+
+| Placeholder | Replaces | Rendered as |
+| --- | --- | --- |
+| `{apptainer}` | `apptainer`, `singularity`, or the translated `docker run` | The runtime found on the host (`apptainer`, else `singularity`) |
+| `{image:<name>}` | The image path or URI | The cached `.sif` for that image (below) |
+| `{path:<name>}` | A host path in a bind source that isn't under `{analysisrootdir}` | The path the user gives with `--path <name>=<host path>` |
+
+`<name>` comes from the image's repository name, or from the bind source's file name for paths (`fs-license`, `templateflow`), made unique. External paths are things like a FreeSurfer license or a TemplateFlow cache. They're listed in the manifest and README, and the launcher refuses to start until each one is given and exists. Bind sources under NiDB's archive or analysis directories are still the errors from §5.
+
+Example step 3, as written in NiDB:
+
+```
+apptainer run --cleanenv -B {analysisrootdir}:/work -B /opt/freesurfer/license.txt:/license.txt /apps/containers/fmriprep-23.2.0.sif /work/bids /work/derivatives participant --participant-label {subjectuid} --fs-license-file /license.txt --nthreads 8
+```
+
+and as exported:
+
+```
+{apptainer} run --cleanenv -B {analysisrootdir}:/work -B {path:license}:/license.txt {image:fmriprep} /work/bids /work/derivatives participant --participant-label {subjectuid} --fs-license-file /license.txt --nthreads 8
+```
+
+with an export warning about the fixed `--nthreads 8` (see "Running on a cluster").
+
+### Segments and `{analysisrootdir}`
+
+Today `run.sh` runs all the steps as one script (§4), so shell state carries from step to step. The launcher instead runs the steps in **segments**: each run of consecutive native steps is one `apptainer exec pipeline.sif` call, and each container step is one host command.
+
+- **Working directory:** each segment starts in the directory the previous one ended in. A segment ends by writing `pwd` to a state directory (a `mktemp -d` in `$TMPDIR`, bound into `pipeline.sif` at the same path), and the next one starts with `cd` to it.
+- **Shell variables** don't carry across segments. The export warns when a step uses a variable (`$NAME`) that's only assigned or exported in an earlier segment.
+- **`{analysisrootdir}`** is the user's output directory, as its host path, in every segment. Native segments bind it into `pipeline.sif` at the same path (`--bind "$OUTPUT:$OUTPUT"`), not at `/output`, so a path written by a native step means the same thing to a later container step, and vice versa. This relies on Apptainer creating bind destinations that don't exist in the image (underlay/overlay, on by default). The output path is inserted as text, so it has the same character rules as `/output` today (§4).
+- `pipeline.sif`'s `run.sh` gets `--segment N`, `--analysisrootdir PATH`, `--cwd DIR` and `--state FILE`, and the steps are split into one template per segment (`segments/<N>.sh.template`, in `/pipeline/segments/` in the image). A segment doesn't copy the input (run-pipeline.sh copies it once) and doesn't print the final exit code line. The rendered segment starts with `trap 'pwd > "$NIDB_SEGMENT_STATE"' EXIT`, so the directory it ends in is recorded even when a step fails. Without `--segment`, `run.sh` behaves as in §4.
+
+Example: steps 1–2 native (conversion, BIDS layout), step 3 fMRIPrep, step 4 native (statistics) gives three segments: `pipeline.sif` (steps 1–2), fMRIPrep (step 3), `pipeline.sif` (step 4).
+
+### Identifying and pinning the images
+
+At export, for each image a container step uses:
+
+| Image as written | Source | Pin |
+| --- | --- | --- |
+| `docker://repo:tag` | As written | Digest of the tag, looked up from the registry at build time |
+| `docker://repo@sha256:...` | As written | Already pinned |
+| `oras://...`, `library://...` | As written | Digest at build time; the `.sif` is stored as-is in these registries, so its sha256 can be checked too |
+| A local `.sif` built from Docker | `Bootstrap: docker` / `From:` in `apptainer inspect --deffile` | Digest of that tag at build time |
+| A local `.sif` with no registry source (built locally) | — | Error, unless the pipeline's container settings (§9) give a source URI for it, for example after pushing it to a registry with `oras://` |
+
+The registry digest is what gets checked, not the `.sif` checksum. Converting a Docker image to `.sif` doesn't give byte-identical files across Apptainer versions, so a user's download won't match the node's `.sif`, even when it's the same image. The manifest records both: the pinned reference, and the sha256 of the local `.sif` used at export, for the record.
+
+A tag's digest is looked up at build time, so it may not be the same image the node's local `.sif` was built from, if the tag has moved since. The validation run (§8) therefore runs the **downloaded, pinned** images, not the node's local copies. That checks the export the way users will run it. When validation is off, the build warns that the pinned images haven't been run.
+
+`manifest.json` gets:
+
+```json
+"exportType": "referenced",
+"images": [
+  {
+    "name": "fmriprep",
+    "steps": [3],
+    "source": "/apps/containers/fmriprep-23.2.0.sif",
+    "reference": "docker://nipreps/fmriprep@sha256:9f2c...",
+    "tag": "docker://nipreps/fmriprep:23.2.0",
+    "localSha256": "a41e...",
+    "localSize": 7340032000
+  }
+],
+"segments": [ { "steps": [1, 2], "image": "pipeline" }, { "steps": [3], "image": "fmriprep" }, { "steps": [4], "image": "pipeline" } ],
+"externalPaths": [ { "name": "license", "steps": [3], "example": "/opt/freesurfer/license.txt" } ]
+```
+
+### The launcher (`run-pipeline.sh`)
+
+```
+usage: run-pipeline.sh --input DIR --output DIR [--subjectuid UID] [--studynum N] [--studydatetime "YYYY-MM-DD hh:mm:ss"]
+                       [--path NAME=PATH ...] [--image-cache DIR] [--allow-pull] [--stop-on-error]
+       run-pipeline.sh --fetch-images [--image-cache DIR]
+       run-pipeline.sh --help
+```
+
+1. Parse and check the arguments, using the same rules as `run.sh` (§4). Check that every external path was given and exists.
+2. Find the runtime: `apptainer`, else `singularity` (SingularityCE 3.x has the same commands).
+3. Find each image in the cache (below). If one is missing, download it, unless running inside a batch job (below).
+4. If `--input` isn't empty, `cp -a` it to `--output`, as `run.sh` does today.
+5. Run the segments in order. With `--stop-on-error`, stop at the first segment that fails; without it, the segments run like the steps do today. Exit with the last segment's status. The launcher's own errors exit with status 2, as in `run.sh`.
+
+`--fetch-images` only does step 3, for every image, and exits. `--help` prints the README. The arguments are checked before any download, so a missing argument doesn't wait for a large image first.
+
+Two hooks for the build, not in the usage text:
+
+- `--local-image NAME=PATH` uses a local `.sif` for that image instead of the cache (the reference run, which uses the node's own images).
+- `NIDB_REFERENCE_TRACE_DIR=<dir>` runs native segments outside a container, as `bash run.sh --segment N` with `NIDB_PIPELINE_DIR` set to the export directory, under `strace`, writing `<dir>/trace-N.log`. Container segments run as usual, untraced.
+
+### Build directory files
+
+Written by `PrepareExport()` for a launcher export, in place of `run.sh.template` (all plain text, tab separated, since neither script can count on `jq`):
+
+| File | Contents |
+| --- | --- |
+| `segments.txt` | One line per segment: number, `native` or `container`, images (comma separated; `pipeline` for native), steps (comma separated) |
+| `segments/<N>.sh.template` | Each segment's template |
+| `images-export.txt` | Name, the image as written in the step, steps. Phase 2 pins each one and writes `images.txt` (name, pinned reference), which `run-pipeline.sh` reads |
+| `externalpaths.txt` | Name, the host path as written in the step, steps |
+| `run-pipeline.sh`, `run.sh`, `requiredvars.txt` | The launcher, the in-image runner, and the required arguments |
+| `README.txt`, `manifest-export.json` | `CreateLauncherReadme()`, and the manifest with `exportType`, `images`, `segments` and `externalPaths` |
+
+### The image cache
+
+- **Location:** `--image-cache`, else `$NIDB_IMAGE_CACHE`, else `$HOME/.cache/nidb-images`.
+- **Files:** `<name>-<first 12 characters of digest>.sif`, plus a `.source` file next to it with the pinned reference. An image is in the cache when both exist and the `.source` matches the manifest, so a cache can be shared between pipelines, and between versions that pin the same image.
+- **Downloads:** `apptainer pull` from the pinned reference into a temp file in the cache directory, then renamed into place, so a partial download is never used. Each image is downloaded under an `flock` on `<name>.lock`, so several launchers starting together download it once and the rest wait. `oras://` and `library://` images are also checked against their sha256 after download.
+- **Private registries** use the runtime's own login (`apptainer remote login`, or `APPTAINER_DOCKER_USERNAME`/`APPTAINER_DOCKER_PASSWORD`). The launcher doesn't handle credentials.
+
+### Running on a cluster
+
+This works on a cluster. The launcher runs inside the user's batch job, on the compute node, and starts each container from there, so nothing is nested. Clusters do need a few things handled:
+
+- **No internet on compute nodes.** Many clusters only allow downloads from login or data-transfer nodes. Inside a batch job (`SLURM_JOB_ID`, `PBS_JOBID`, `LSB_JOBID` or `JOB_ID` set), the launcher doesn't download missing images. It stops with an error saying to run `--fetch-images` first, unless `--allow-pull` is given. The README tells users to run `run-pipeline.sh --fetch-images --image-cache <shared dir>` once, on a node with internet, before submitting.
+- **Converting Docker images is heavy.** Turning a Docker image into a `.sif` takes CPU and memory (`mksquashfs`), often 10–30 minutes for a large image. Some sites limit that on login nodes, so the README suggests running `--fetch-images` as a short job on a node with internet access, if the site has one. `oras://` images are already `.sif` files and need no conversion.
+- **Many jobs at once.** Downloading beforehand means jobs never download. If they do (`--allow-pull`), the lock and rename make sure each image is downloaded once and never used half-written. Downloading once also avoids Docker Hub's limits on anonymous downloads, which every node of a cluster behind one address would share.
+- **Where the cache goes.** Images can be 5–15 GB each, too big for many home quotas. The README recommends `--image-cache` (or `NIDB_IMAGE_CACHE`) on project or scratch storage that every node can see, and setting `APPTAINER_CACHEDIR` there too, since `apptainer pull` keeps its own copy of the Docker layers (which can be deleted afterwards). Many jobs can read the same `.sif` at the same time.
+- **The runtime.** Clusters often provide Apptainer as a module (`module load apptainer`). The launcher only needs `apptainer` or `singularity` on the `PATH`. On sites where Apptainer can't mount images (unprivileged installs without `squashfuse`), each run unpacks the image to temporary space first, which costs time and disk on every job. This is the site's setup, not the export's, but the README mentions it.
+- **Resources.** The export has no scheduler headers (§2); the user writes the job script and requests CPUs, memory and time. To help with that, the reference run records its wall time per segment and, if `/usr/bin/time` is on the node, its peak memory, and the README lists them under "Resources used by the reference run". The export warns about thread counts fixed in step commands (`--nthreads N`, `--omp-nthreads N`, `-openmp N`, `-j N`, `OMP_NUM_THREADS=N`), since a job that requests fewer cores than that will be oversubscribed. Making the count a pipeline variable fixes it.
+- **GPUs.** `--nv` on a container step (or `--gpus` on a translated `docker run`) is kept, so that step needs a GPU node. The README says so. Native segments don't use GPUs (§7).
+- **Storage.** `--output` gets a copy of `--input` (§2 "In-place working directory"), so each subject needs room for its input plus results, the same as running under NiDB.
+
+The README includes an example SLURM array job, one subject per task:
+
+```
+#!/bin/bash
+#SBATCH --array=1-50 --cpus-per-task=8 --mem=32G --time=12:00:00
+SUB=$(sed -n "${SLURM_ARRAY_TASK_ID}p" subjects.txt)
+module load apptainer
+./run-pipeline.sh --input /project/data/$SUB --output /scratch/$USER/results/$SUB \
+    --subjectuid $SUB --studynum 1 --path license=$HOME/license.txt \
+    --image-cache /project/nidb-images --stop-on-error
+```
+
+### Changes to the build
+
+- **Export check** (`CheckIfExportable()`): sort the steps, translate `docker run`, find the images and external paths, and write the placeholders, segment templates and the manifest's `images`, `segments` and `externalPaths`. Error and warning messages are the ones above, matched on `pipelinecontainers.php` (as `GetContainerPitfalls()` matches `CheckContainers()` today).
+- **Reference run** (`build-container.sh`, §8): run `run-pipeline.sh` with `NIDB_REFERENCE_TRACE_DIR` and `--local-image` for each image, so native segments are traced and container segments run the node's local images, untraced. Only native segments' traces go to the software capture (`trace-*.log` joined into `trace.log`), so the inner containers' files are never captured. Record each segment's wall time and peak memory.
+- **Pinning** (`pin_images()`, `registry_digest()`, `local_image_source()`): look up each image's digest from its registry's HTTP API with `curl`, so the node needs no extra tools: a `HEAD` on the manifest, asking for index, manifest list and manifest types; if the registry answers 401, the token handshake from its `WWW-Authenticate` header (`realm`, `service`, `scope`) with an anonymous token; then the `Docker-Content-Digest` header. A multi-architecture image is pinned to its index digest, so `apptainer pull` still picks the platform. A local `.sif` is checksummed, and its source comes from `apptainer inspect --deffile` (`Bootstrap: docker`, `From:`), which `apptainer pull` and `build` write into the image. The build fails if an image can't be pinned: the node can't reach the registry, the image is private (not supported yet), it's a `library://` image (not supported yet), or a local `.sif` has no registry source. Writes `images.txt` (name, pinned reference, tag; read by `run-pipeline.sh`) and `images-info.txt` (name, source, pinned reference, tag, local path, local sha256, local size). Pinning reports under the existing `preReferenceAnalysisChecks` build step, since `analysisapi.php` only accepts the known step names.
+- **Downloads:** `APPTAINER_CACHEDIR` (and `SINGULARITY_CACHEDIR`) is `<builddir>/apptainer-cache`, and images are downloaded into `<builddir>/image-cache`, so a launcher build doesn't fill the cluster user's home directory. Both are removed at the end, as is `traces/`. Images given as URIs are downloaded from their pinned reference for the reference run; local ones are downloaded from it for the validation run. `build.job`'s wall time gets an hour per image (`WriteClusterJob()`).
+- **No native steps:** if every step is a container step, there's no base image, software capture or `pipeline.sif`; the export is `run-pipeline.sh` and its files.
+- **Resources:** `run-pipeline.sh`'s `NIDB_SEGMENT_STATS` hook records each segment's wall time and, with `/usr/bin/time`, peak memory (the largest single process) into `reference-segments.txt`. `add_readme_resources()` appends them to `README.txt` ("RESOURCES USED BY THE REFERENCE RUN"), and `write_manifest()` adds them to the manifest's `build` object as `referenceRun`, along with `images` (each image's source, pinned reference, tag, local path, sha256 and size, and whether the validation run used it).
+- **Export directory** (`assemble_export()`): `<builddir>/<pipeline>-v<N>/`, with `run-pipeline.sh`, `pipeline.sif` (if there are native steps), `segments.txt`, `segments/`, `images.txt`, `externalpaths.txt`, `requiredvars.txt`, `README.txt`, `manifest.json` and `checksums.sha256` (`sha256sum` of every other file in it). `pipeline.sif` has `/pipeline/segments/`, and running it directly says to use `run-pipeline.sh`. It's built before the validation run, which tests it as users will run it.
+- **Validation run** (§8 step 4.6): run the export directory's own `run-pipeline.sh` with the pinned images, downloaded into the build's image cache, then compare the outputs as today (`compare_outputs()`). When validation is off, the build warns if a local `.sif`'s pinned image was never run.
+- **Result:** the export directory, as above, instead of a single `.sif`. `containercomplete` gets the directory as `path`, its total size, and the sha256 of `checksums.sha256` (`analysisapi.php` already accepts any absolute path).
+
+### Database and UI
+
+- `pipeline_containers`: add `container_type` (`single` or `referenced`), set at export from the step sorting.
+- New table `pipeline_container_images`: one row per image, with `pipelinecontainer_id`, `image_name`, `image_source` (as written in the step), `image_reference` (pinned), `image_tag`, `image_localsha256`, `image_localsize`, `image_steps`, and `image_validated` (whether the validation run used the pinned image).
+- Pipeline container settings (§9): a source URI per image, for local images with no registry source, or to point at a different registry.
+- `pipelinecontainers.php`: show the export type, the segments, and each image with its source, pinned reference and whether it was validated; the external paths the user will have to provide; and the cluster notes above. The download is the export directory as one uncompressed tar (`.sif` files are already compressed).
+
+### Not chosen
+
+- **Nesting:** see §7. It only works where the node allows unprivileged user namespaces and FUSE, and it breaks the software capture.
+- **Bundling the images** in the export (a directory with every `.sif`): self-contained and works offline, but it's large (fMRIPrep alone is ~7 GB), and NiDB would be redistributing third-party images, some of which can't be shared (for example, images containing FSL fall under its non-commercial license). It could come later as an option for archiving, reusing the same launcher with the images found in the export's own `images/` directory instead of the cache.
+- **Building from the inner image** (`Bootstrap: localimage`, removing the `apptainer exec <sif>` prefix): only works when every step uses the same image, and the software capture would have to add to an image it didn't build. The launcher covers that case, as a pipeline with one container segment and no `pipeline.sif`.
+
+### Implementation order
+
+1. **Done (2026-10-15), not yet compiled or run in NiDB.** Step sorting, placeholders and segments for Apptainer and Singularity container steps (`TokenizeCommand()`, `RewriteContainerStep()`, `RewriteBinds()`, `RenderScriptTemplate()`, `CheckSegments()`); the build directory files; `run.sh --segment`; `run-pipeline.sh` with the image cache, locking, `--fetch-images` and the batch job check. The two scripts were tested outside NiDB with a stand-in `apptainer`.
+2. **Done (2026-10-15), not yet compiled or run in NiDB.** The build: pinning `docker://`, `oras://` and local Docker-built images; the reference run through `run-pipeline.sh`, with only native segments traced; per-segment resources; the export directory; validation with the pinned images; reporting the directory. The stop in `PrepareExport()` is removed, and `pipelinecontainers.php` shows container steps as an info note. The build was tested outside NiDB, end to end, with a stand-in `apptainer` and a stand-in registry and API (`curl`), and the real `strace` and software capture: a pipeline with native and container steps, one with only container steps, and an image that can't be pinned. Not tested yet: a real registry, a real image, and a real cluster job.
+3. `docker run` / `podman run` translation.
+4. The database table and `pipelinecontainers.php`; per-image source URIs in the container settings.

@@ -54,6 +54,43 @@ private:
         QString buildDir;   /* GetBuildDir(containerID) */
     };
 
+    /* a pipeline whose steps run their own containers is exported as a launcher that runs the steps in segments:
+       native steps in the pipeline's own image, and each container step from the host (doc section 11) */
+    struct containerImage {
+        QString name;           /* {image:<name>} */
+        QString source;         /* the image as written in the step: an absolute path or a docker://, oras:// or library:// URI */
+        QList<int> steps;
+    };
+    struct externalPath {
+        QString name;           /* {path:<name>}, given to run-pipeline.sh as --path <name>=<host path> */
+        QString source;         /* the host path as written in the step */
+        QList<int> steps;
+    };
+    struct scriptSegment {
+        int number = 0;
+        bool container = false; /* a container step, run from the host. Otherwise native steps, run in pipeline.sif */
+        QStringList images;     /* container segments: the images the step runs */
+        QList<int> steps;
+        QString script;         /* the segment's template */
+        QString executable;     /* the lines that run, for the checks */
+    };
+    struct segmentedScript {
+        QList<scriptSegment> segments;  /* empty if no step runs a container, which is a single-image export */
+        QList<containerImage> images;
+        QList<externalPath> paths;
+    };
+
+    /* one word or operator of a step command, from TokenizeCommand() */
+    struct shellToken {
+        int start = 0;          /* position in the command */
+        int end = 0;            /* one past the last character */
+        QString text;           /* the word with quotes and escapes removed, or the operator */
+        bool isOperator = false;/* ; && || | & ( ) or a redirection */
+        bool isRedirect = false;
+        bool expands = false;   /* has an unquoted or double-quoted $ or backtick */
+        bool quoted = false;
+    };
+
     QList<containerRequest> GetExportRequests(QString status, int containerID);
     bool ClaimRequest(containerRequest &c, QString fromStatus, QString toStatus);
 
@@ -67,20 +104,32 @@ private:
     void CheckPaths(QString text, int step, QStringList &errors);
     void CheckContainers(QString text, int step, QStringList &errors);
 
-    /* build directory contents (doc sections 4, 6, 8) */
-    bool RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings);
+    /* container steps (doc section 11) */
+    QList<shellToken> TokenizeCommand(const QString &command);
+    bool RewriteContainerStep(QString &command, int step, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings);
+    QString RewriteBinds(const shellToken &token, QString prefix, QString value, int step, QList<externalPath> &paths, QStringList &errors, QStringList &warnings);
+    QString AddImage(QString source, int step, QList<containerImage> &images);
+    QString AddExternalPath(QString source, int step, QList<externalPath> &paths);
+    void CheckSegments(const segmentedScript &segmented, QStringList &warnings);
+
+    /* build directory contents (doc sections 4, 6, 8, 11) */
+    bool RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, segmentedScript &segmented, QStringList &errors, QStringList &warnings);
     QString RenderVariables(QString text, QString pipelineName, QString workingDir, QString description);
     QStringList GetInputDirStructure(pipeline &p, int version, QJsonArray &items);
-    QString CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout);
+    QString CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout, const segmentedScript &segmented);
     QString CreateReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout);
+    QString CreateLauncherReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout, const segmentedScript &segmented);
+    bool WriteSegmentFiles(containerRequest &c, const segmentedScript &segmented, QString &msg);
     bool StageReferenceInput(containerRequest &c, pipeline &p, QString &msg);
     bool WriteRunScript(containerRequest &c, QString &msg);
+    bool WriteLauncherScript(containerRequest &c, QString &msg);
     bool WriteContainerBuildScript(containerRequest &c, pipeline &p, QString &msg);
     bool WriteClusterJob(containerRequest &c, pipeline &p, QString &msg);
 
     /* paths */
     QString GetClusterBuildDir(int containerID);
     QString GetContainerFileName(pipeline &p, int version);
+    QString GetExportDirName(pipeline &p, int version);
 
     /* pipeline_containers updates */
     void SetStatus(int containerID, QString status);

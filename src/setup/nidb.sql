@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 15, 2026 at 05:40 PM
+-- Generation Time: Oct 15, 2026 at 10:20 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2275,11 +2275,31 @@ CREATE TABLE `pipeline_containers` (
   `build_filecount` int(11) NOT NULL DEFAULT 0 COMMENT 'Total file count of the build directory',
   `reference_analysisid` int(11) DEFAULT NULL,
   `run_validation` tinyint(1) DEFAULT NULL,
+  `container_type` enum('single','referenced') DEFAULT NULL COMMENT 'referenced means the original pipeline references a nested container',
   `container_size` bigint(20) NOT NULL DEFAULT 0 COMMENT 'Container size in bytes',
   `container_sha256` varchar(255) DEFAULT NULL COMMENT 'SHA256 checksum',
   `container_path` text DEFAULT NULL COMMENT 'Final container path',
   `container_date` datetime DEFAULT NULL COMMENT 'the datetime the container was completed and available to the user'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pipeline_container_images`
+--
+
+CREATE TABLE `pipeline_container_images` (
+  `pipelinecontainerimage_id` int(11) NOT NULL,
+  `pipelinecontainer_id` int(11) NOT NULL,
+  `image_name` varchar(255) NOT NULL,
+  `image_source` text NOT NULL,
+  `image_reference` text NOT NULL,
+  `image_tag` varchar(255) NOT NULL,
+  `image_localsha256` varchar(100) NOT NULL,
+  `image_localsize` int(11) NOT NULL,
+  `image_steps` varchar(255) NOT NULL,
+  `image_validated` tinyint(1) NOT NULL
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -2329,7 +2349,8 @@ CREATE TABLE `pipeline_data_def` (
   `pdd_enabled` tinyint(1) NOT NULL,
   `pdd_optional` tinyint(1) NOT NULL,
   `pdd_numboldreps` varchar(255) NOT NULL,
-  `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL
+  `pdd_isprimaryprotocol` tinyint(1) DEFAULT NULL,
+  `pdd_desc` text DEFAULT NULL COMMENT 'Description of the datastep. Used in pipeline container export'
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -4449,6 +4470,12 @@ ALTER TABLE `pipeline_containers`
   ADD PRIMARY KEY (`pipelinecontainer_id`);
 
 --
+-- Indexes for table `pipeline_container_images`
+--
+ALTER TABLE `pipeline_container_images`
+  ADD PRIMARY KEY (`pipelinecontainerimage_id`);
+
+--
 -- Indexes for table `pipeline_data`
 --
 ALTER TABLE `pipeline_data`
@@ -5543,6 +5570,12 @@ ALTER TABLE `pipelines`
 --
 ALTER TABLE `pipeline_containers`
   MODIFY `pipelinecontainer_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `pipeline_container_images`
+--
+ALTER TABLE `pipeline_container_images`
+  MODIFY `pipelinecontainerimage_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `pipeline_data`

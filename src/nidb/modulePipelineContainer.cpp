@@ -24,6 +24,16 @@
 #include "modulePipeline.h"
 #include "analysis.h"
 #include <cmath>
+#include <algorithm>
+
+
+/* step numbers as "1, 2, 3", for messages and the segment files */
+static QString JoinSteps(const QList<int> &steps) {
+    QStringList list;
+    for (int step : steps)
+        list << QString::number(step);
+    return list.join(", ");
+}
 
 
 /* ---------------------------------------------------------- */
@@ -194,7 +204,8 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
 
     QString script;
     QStringList requiredVars;
-    if (!RenderScriptTemplate(p, c.pipelineVersion, script, requiredVars, errors, warnings)) {
+    segmentedScript segmented;
+    if (!RenderScriptTemplate(p, c.pipelineVersion, script, requiredVars, segmented, errors, warnings)) {
         AppendBuildWarnings(c.containerID, warnings);
         msg = "Unable to render the script template:\n" + errors.join("\n");
         return false;
@@ -224,16 +235,27 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
     QJsonArray inputLayout;
     QStringList inputLayoutText = GetInputDirStructure(p, c.pipelineVersion, inputLayout);
 
-    QString manifest = CreateManifest(p, c.pipelineVersion, requiredVars, warnings, inputLayout);
-    QString readme = CreateReadme(p, c.pipelineVersion, requiredVars, inputLayoutText);
+    /* a pipeline whose steps run containers is exported as a launcher (doc section 11) */
+    bool launcher = !segmented.segments.isEmpty();
+
+    QString manifest = CreateManifest(p, c.pipelineVersion, requiredVars, warnings, inputLayout, segmented);
+    QString readme = launcher ? CreateLauncherReadme(p, c.pipelineVersion, requiredVars, inputLayoutText, segmented) : CreateReadme(p, c.pipelineVersion, requiredVars, inputLayoutText);
     if (!WriteTextFile(c.buildDir + "/manifest-export.json", manifest, false) || !WriteTextFile(c.buildDir + "/README.txt", readme, false)) {
         msg = "Unable to write manifest-export.json and README.txt into [" + c.buildDir + "]";
         return false;
     }
 
     /* run.sh reads requiredvars.txt, one variable per line, since the image may not have jq */
-    if (!WriteTextFile(c.buildDir + "/run.sh.template", script, false) || !WriteTextFile(c.buildDir + "/requiredvars.txt", requiredVars.isEmpty() ? "" : requiredVars.join("\n") + "\n", false)) {
-        msg = "Unable to write run.sh.template and requiredvars.txt into [" + c.buildDir + "]";
+    if (!WriteTextFile(c.buildDir + "/requiredvars.txt", requiredVars.isEmpty() ? "" : requiredVars.join("\n") + "\n", false)) {
+        msg = "Unable to write requiredvars.txt into [" + c.buildDir + "]";
+        return false;
+    }
+    if (launcher) {
+        if (!WriteSegmentFiles(c, segmented, msg) || !WriteLauncherScript(c, msg))
+            return false;
+    }
+    else if (!WriteTextFile(c.buildDir + "/run.sh.template", script, false)) {
+        msg = "Unable to write run.sh.template into [" + c.buildDir + "]";
         return false;
     }
 
@@ -244,6 +266,7 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
     QStringList log;
     log << QString("Exported [%1] version [%2] on %3").arg(p.name).arg(c.pipelineVersion).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
     log << QString("Reference analysis [%1]").arg(c.referenceAnalysisID);
+    log << "Export type: " + (launcher ? QString("launcher with referenced images (%1 segments, %2 images, %3 external paths)").arg(segmented.segments.size()).arg(segmented.images.size()).arg(segmented.paths.size()) : QString("single image"));
     log << "Required arguments: " + (requiredVars.isEmpty() ? QString("none") : "--" + requiredVars.join(", --"));
     log << QString("Export checks: %1 warning(s)").arg(warnings.size());
     for (QString w : warnings)
@@ -488,25 +511,590 @@ void modulePipelineContainer::CheckPaths(QString text, int step, QStringList &er
 /* --------- CheckContainers -------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Check one step for running a container (doc section 7, "Pipelines that run containers"): apptainer, singularity,
- * docker or podman with a run-type subcommand, docker-compose, run-singularity, or a .sif/.simg image, which can be run
- * directly. The image would need a container runtime inside a container, which doesn't work. Comment lines are skipped.
- * build-container.sh also checks the reference run's trace, which catches containers started from a script the step calls.
- * The same rule as GetContainerPitfalls() on pipelinecontainers.php
+ * @brief Check one step's container commands (doc sections 7 and 11). A dry run of RewriteContainerStep(), which
+ * RenderScriptTemplate() runs again on the rendered command, so the checks and the export agree. Steps that run
+ * apptainer or singularity exec, run or test directly are exported as container steps; anything else that looks like
+ * running a container is an error. build-container.sh also checks the reference run's trace, which catches containers
+ * started from a script the step calls. GetContainerPitfalls() on pipelinecontainers.php is a preview of these rules
  * @param text The step command
  * @param step The step number, for messages
  * @param errors Problems that stop the export
  */
 void modulePipelineContainer::CheckContainers(QString text, int step, QStringList &errors) {
-    static const QRegularExpression containerRegex("(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\\s+(exec|run|shell|instance|test|start|create|compose|container)\\b|\\bdocker-compose\\b|\\brun-singularity\\b|[A-Za-z0-9_}-]\\.(?i:sif|simg)\\b");
+    QList<containerImage> images;
+    QList<externalPath> paths;
+    QStringList warnings; /* reported by RenderScriptTemplate() */
 
-    for (QString line : text.split("\n")) {
-        if (line.trimmed().startsWith("#"))
+    /* as RenderVariables() does, so this sees the command RenderScriptTemplate() will */
+    text.remove(QRegularExpression("[\\x00-\\x1F]"));
+    RewriteContainerStep(text, step, images, paths, errors, warnings);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- TokenizeCommand -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Split a step command into shell words and operators, enough to find the container commands in it (doc
+ * section 11). Quotes and backslashes are removed from a word's text, and its position in the command is kept, so it
+ * can be replaced. $(...), ${...} and backticks stay inside the word they're in, and mark it as expanding. A # at the
+ * start of a word starts a comment, which ends the command. Not a full shell parser: here-documents, arithmetic and
+ * the like aren't recognized, which is fine for the rewrite, which only changes words it understands
+ * @param command The step command, on one line
+ * @return The words and operators, in order
+ */
+QList<modulePipelineContainer::shellToken> modulePipelineContainer::TokenizeCommand(const QString &command) {
+    static const QString operatorChars = ";&|()<>";
+    QList<shellToken> tokens;
+    int len = command.size();
+    int i = 0;
+
+    /* skip a $(...), ${...} or `...` starting at i, and return the position after it. Nested parentheses are counted */
+    auto skipExpansion = [&](int pos) -> int {
+        if (command[pos] == '`') {
+            int j = command.indexOf('`', pos + 1);
+            return (j < 0) ? len : j + 1;
+        }
+        if ((pos + 1 < len) && ((command[pos + 1] == '(') || (command[pos + 1] == '{'))) {
+            QChar open = command[pos + 1];
+            QChar close = (open == '(') ? ')' : '}';
+            int depth = 0;
+            for (int j = pos + 1; j < len; j++) {
+                if (command[j] == open) depth++;
+                else if (command[j] == close) {
+                    depth--;
+                    if (depth == 0)
+                        return j + 1;
+                }
+            }
+            return len;
+        }
+        return pos + 1;
+    };
+
+    while (i < len) {
+        QChar ch = command[i];
+        if (ch.isSpace()) {
+            i++;
             continue;
-        QRegularExpressionMatch m = containerRegex.match(line);
-        if (m.hasMatch()) {
-            errors << QString("Step %1: runs a container [%2]. Pipelines that run containers can't be exported, since the image would need Apptainer inside Apptainer. If the pipeline already runs in a container, share that image instead").arg(step).arg(m.captured(0).trimmed());
-            return;
+        }
+        if (ch == '#')
+            break;
+
+        /* operators: ; ;; & && | || |& ( ) and redirections */
+        if (operatorChars.contains(ch)) {
+            shellToken t;
+            t.start = i;
+            t.isOperator = true;
+            if ((ch == '<') || (ch == '>')) {
+                t.isRedirect = true;
+                i++;
+                while ((i < len) && QString("<>&|").contains(command[i]))
+                    i++;
+            }
+            else if ((ch == '&') && (i + 1 < len) && (command[i + 1] == '>')) {
+                t.isRedirect = true;
+                i += 2;
+                if ((i < len) && (command[i] == '>'))
+                    i++;
+            }
+            else if (((ch == '&') || (ch == '|') || (ch == ';')) && (i + 1 < len) && ((command[i + 1] == ch) || ((ch == '|') && (command[i + 1] == '&'))))
+                i += 2;
+            else
+                i++;
+            t.end = i;
+            t.text = command.mid(t.start, t.end - t.start);
+
+            /* a file descriptor number right before a redirection, like 2>, belongs to it */
+            if (t.isRedirect && !tokens.isEmpty() && !tokens.last().isOperator && !tokens.last().quoted && (tokens.last().end == t.start) && QRegularExpression("^[0-9]+$").match(tokens.last().text).hasMatch()) {
+                t.start = tokens.last().start;
+                t.text = command.mid(t.start, t.end - t.start);
+                tokens.removeLast();
+            }
+            tokens << t;
+            continue;
+        }
+
+        /* a word */
+        shellToken t;
+        t.start = i;
+        while (i < len) {
+            ch = command[i];
+            if (ch.isSpace() || operatorChars.contains(ch))
+                break;
+            if (ch == '\'') {
+                t.quoted = true;
+                int j = command.indexOf('\'', i + 1);
+                if (j < 0) j = len;
+                t.text += command.mid(i + 1, j - i - 1);
+                i = j + 1;
+            }
+            else if (ch == '"') {
+                t.quoted = true;
+                i++;
+                while ((i < len) && (command[i] != '"')) {
+                    if ((command[i] == '\\') && (i + 1 < len) && QString("\"\\$`").contains(command[i + 1])) {
+                        t.text += command[i + 1];
+                        i += 2;
+                    }
+                    else if ((command[i] == '$') || (command[i] == '`')) {
+                        t.expands = true;
+                        int j = skipExpansion(i);
+                        t.text += command.mid(i, j - i);
+                        i = j;
+                    }
+                    else {
+                        t.text += command[i];
+                        i++;
+                    }
+                }
+                i++;
+            }
+            else if (ch == '\\') {
+                t.quoted = true;
+                if (i + 1 < len)
+                    t.text += command[i + 1];
+                i += 2;
+            }
+            else if ((ch == '$') || (ch == '`')) {
+                t.expands = true;
+                int j = skipExpansion(i);
+                t.text += command.mid(i, j - i);
+                i = j;
+            }
+            else {
+                t.text += ch;
+                i++;
+            }
+        }
+        if (i > len)
+            i = len;
+        t.end = i;
+        tokens << t;
+    }
+
+    return tokens;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RewriteContainerStep --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find the container commands in one step and rewrite them for run-pipeline.sh (doc section 11): the runtime
+ * becomes {apptainer}, the image {image:<name>}, and absolute host paths in --bind sources outside {analysisrootdir}
+ * {path:<name>}. Only apptainer or singularity exec, run and test, run directly by the step, can be rewritten. Anything
+ * else that looks like running a container is an error: docker or podman (not supported yet), other subcommands, an
+ * image run as a program, a container started inside $(...), or an image given by a variable. In a container step,
+ * the other commands run on the user's machine, so they may only be basic shell tools. Steps that don't run a
+ * container are left as they are
+ * @param command The step command. Rewritten if it's a container step and there are no errors
+ * @param step The step number, for messages
+ * @param images The images found so far, added to
+ * @param paths The external paths found so far, added to
+ * @param errors Problems that stop the export
+ * @param warnings Problems that don't
+ * @return true if the step runs a container
+ */
+bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings) {
+    /* the old test (doc section 7). Whatever matches it after the rewrite is a container command NiDB couldn't rewrite */
+    static const QRegularExpression containerRegex("(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\\s+(exec|run|shell|instance|test|start|create|compose|container)\\b|\\bdocker-compose\\b|\\brun-singularity\\b|[A-Za-z0-9_}-]\\.(?i:sif|simg)\\b");
+    static const QStringList runtimes = { "apptainer", "singularity" };
+    static const QStringList otherRuntimes = { "docker", "podman", "docker-compose", "podman-compose", "nvidia-docker", "run-singularity", "udocker", "charliecloud", "ch-run", "enroot", "shifter" };
+    static const QStringList globalOptions = { "-s", "--silent", "-q", "--quiet", "-d", "--debug", "-v", "--verbose", "--nocolor" };
+    static const QStringList valueOptions = { "-B", "--bind", "--mount", "--env", "--env-file", "--pwd", "-H", "--home", "-o", "--overlay", "-W", "--workdir", "-S", "--scratch", "--app", "--hostname", "--network", "--network-args", "--dns", "--security", "--fusemount", "--add-caps", "--drop-caps", "--no-mount", "--cpus", "--memory", "--memory-swap", "--memory-reservation", "--cpu-shares", "--cpuset-cpus", "--cpuset-mems", "--pids-limit", "--blkio-weight" };
+    static const QStringList flagOptions = { "--nv", "--nvccli", "--rocm", "-e", "--cleanenv", "-C", "--containall", "-c", "--contain", "--writable-tmpfs", "-w", "--writable", "--no-home", "--compat", "-u", "--userns", "-f", "--fakeroot", "-i", "--ipc", "-p", "--pid", "--no-privs", "--keep-privs", "--no-init", "--no-umask", "--no-eval", "--unsquash", "--no-https", "--no-nv", "--disable-cache", "--cwd" };
+    /* commands a container step may run on the host, besides the container. Shell keywords are skipped before this check */
+    static const QStringList hostTools = { "cd", "echo", "printf", "mkdir", "rmdir", "cp", "mv", "rm", "ln", "cat", "touch", "test", "[", "[[", "true", "false", ":", "export", "unset", "set", "exit", "return", "pwd", "ls", "chmod", "sed", "grep", "egrep", "fgrep", "awk", "head", "tail", "sort", "uniq", "wc", "cut", "tr", "tee", "find", "xargs", "basename", "dirname", "readlink", "realpath", "gzip", "gunzip", "zcat", "tar", "date", "sleep", "du", "df", "stat", "md5sum", "sha256sum", "paste", "join", "comm", "diff", "seq", "yes", "printenv", "wait", "shift", "local", "read" };
+    static const QStringList keywords = { "if", "then", "else", "elif", "fi", "while", "until", "do", "done", "esac", "!", "{", "}", "time" };
+
+    QList<shellToken> tokens = TokenizeCommand(command);
+
+    /* split into simple commands: the words between control operators, without redirections and their targets */
+    QList<QList<shellToken>> simpleCommands;
+    QList<shellToken> current;
+    for (int i = 0; i < tokens.size(); i++) {
+        shellToken t = tokens[i];
+        if (t.isRedirect) {
+            i++; /* the target */
+            continue;
+        }
+        if (t.isOperator) {
+            if (!current.isEmpty())
+                simpleCommands << current;
+            current.clear();
+            continue;
+        }
+        current << t;
+    }
+    if (!current.isEmpty())
+        simpleCommands << current;
+
+    struct replacement { int start; int end; QString text; };
+    QList<replacement> replacements;
+    QStringList hostCommands;
+    bool isContainerStep = false;
+    int numErrors = errors.size();
+
+    for (QList<shellToken> words : simpleCommands) {
+        /* skip shell keywords and variable assignments to get to the program. 'for', 'case' and 'select' headers have no program */
+        int k = 0;
+        while ((k < words.size()) && (keywords.contains(words[k].text) || QRegularExpression("^[A-Za-z_][A-Za-z0-9_]*=").match(words[k].text).hasMatch()))
+            k++;
+        if (k >= words.size())
+            continue;
+        if (QStringList({ "for", "case", "select", "in" }).contains(words[k].text))
+            continue;
+
+        QString program = words[k].text.section('/', -1);
+
+        if (otherRuntimes.contains(program)) {
+            isContainerStep = true;
+            if ((program == "docker") || (program == "podman"))
+                errors << QString("Step %1: runs a container with [%2]. Only apptainer and singularity containers can be exported so far. Run the image with apptainer instead, for example apptainer exec docker://<image> <command>").arg(step).arg(program);
+            else
+                errors << QString("Step %1: runs a container with [%2], which can't be exported. Run the image with apptainer exec, run or test instead").arg(step).arg(program);
+            continue;
+        }
+        if (QRegularExpression("\\.(sif|simg)$", QRegularExpression::CaseInsensitiveOption).match(program).hasMatch()) {
+            isContainerStep = true;
+            errors << QString("Step %1: runs the image [%2] as a program. Run it with apptainer run instead, so it can be exported").arg(step).arg(words[k].text);
+            continue;
+        }
+        if (!runtimes.contains(program)) {
+            hostCommands << words[k].text;
+            continue;
+        }
+
+        /* apptainer or singularity: [global options] exec|run|test [options] <image> [command] */
+        isContainerStep = true;
+        if (words[k].expands) {
+            errors << QString("Step %1: the container runtime [%2] can't be rewritten").arg(step).arg(words[k].text);
+            continue;
+        }
+        int runtimeWord = k;
+        k++;
+        while ((k < words.size()) && globalOptions.contains(words[k].text))
+            k++;
+        if (k >= words.size()) {
+            errors << QString("Step %1: [%2] has no subcommand").arg(step).arg(words[runtimeWord].text);
+            continue;
+        }
+        QString subcommand = words[k].text;
+        if (!QStringList({ "exec", "run", "test" }).contains(subcommand)) {
+            errors << QString("Step %1: [%2 %3] can't be exported. Only exec, run and test can, since the step must run the container and finish").arg(step).arg(program).arg(subcommand);
+            continue;
+        }
+        k++;
+
+        bool ok = true;
+        for (; k < words.size(); k++) {
+            QString word = words[k].text;
+            if (!word.startsWith("-") || (word == "-"))
+                break;
+            if (word == "--") {
+                k++;
+                break;
+            }
+
+            QString option = word;
+            QString value;
+            QString prefix;
+            bool inlineValue = false;
+            if (word.startsWith("--") && word.contains('=')) {
+                option = word.section('=', 0, 0);
+                value = word.section('=', 1);
+                prefix = option + "=";
+                inlineValue = true;
+            }
+
+            if (valueOptions.contains(option)) {
+                int valueWord = k;
+                if (!inlineValue) {
+                    k++;
+                    if (k >= words.size()) {
+                        errors << QString("Step %1: [%2] has no value").arg(step).arg(option);
+                        ok = false;
+                        break;
+                    }
+                    value = words[k].text;
+                    valueWord = k;
+                }
+                if ((option == "-B") || (option == "--bind")) {
+                    QString rewritten = RewriteBinds(words[valueWord], prefix, value, step, paths, errors, warnings);
+                    if (rewritten != "")
+                        replacements << replacement{ words[valueWord].start, words[valueWord].end, rewritten };
+                }
+                else if ((option == "--mount") && value.contains(QRegularExpression("(^|,)(src|source)=/")))
+                    errors << QString("Step %1: --mount with an absolute host path can't be rewritten. Use --bind instead").arg(step);
+                else if (((option == "--env-file") || (option == "--overlay") || (option == "-o")) && value.startsWith("/") && !value.startsWith("{analysisrootdir}"))
+                    errors << QString("Step %1: [%2 %3] uses a file on this cluster, which the user won't have. Put it in the analysis directory, or bind it with --bind").arg(step).arg(option).arg(value);
+            }
+            else if (!flagOptions.contains(option)) {
+                errors << QString("Step %1: [%2 %3] option [%4] isn't one NiDB knows, so the image can't be found in the command").arg(step).arg(program).arg(subcommand).arg(option);
+                ok = false;
+                break;
+            }
+        }
+        if (!ok)
+            continue;
+        if (k >= words.size()) {
+            errors << QString("Step %1: [%2 %3] has no image").arg(step).arg(program).arg(subcommand);
+            continue;
+        }
+
+        /* the image */
+        shellToken image = words[k];
+        QString source = image.text;
+        if (image.expands)
+            errors << QString("Step %1: the image [%2] is given by a variable, so it can't be found at export. Write the image's path or URI in the step").arg(step).arg(source);
+        else if (source.startsWith("{analysisrootdir}"))
+            errors << QString("Step %1: the image [%2] is in the analysis directory, so it can't be referenced. Use the image's path on the cluster, or its URI").arg(step).arg(source);
+        else if (source.contains("{"))
+            errors << QString("Step %1: the image [%2] contains a variable, so it can't be found at export").arg(step).arg(source);
+        else if (source.contains("://") && !QRegularExpression("^(docker|oras|library)://\\S+$").match(source).hasMatch())
+            errors << QString("Step %1: the image [%2] has a scheme that can't be referenced. Use docker://, oras://, library:// or the path of a .sif").arg(step).arg(source);
+        else if (!source.contains("://") && !source.startsWith("/"))
+            errors << QString("Step %1: the image [%2] is a relative path. Use its absolute path or its URI").arg(step).arg(source);
+        else {
+            QString name = AddImage(source, step, images);
+            replacements << replacement{ words[runtimeWord].start, words[runtimeWord].end, "{apptainer}" };
+            replacements << replacement{ image.start, image.end, "{image:" + name + "}" };
+        }
+    }
+
+    /* the other commands of a container step run on the user's machine */
+    if (isContainerStep) {
+        for (QString host : hostCommands) {
+            QString program = host.section('/', -1);
+            if (!hostTools.contains(program))
+                errors << QString("Step %1: [%2] runs on the host in a step that runs a container, so the user's machine would need it. Move it to its own step, or run it inside the container").arg(step).arg(host);
+        }
+    }
+
+    if (errors.size() > numErrors)
+        return isContainerStep;
+
+    /* apply the replacements, from the end so the earlier positions stay valid */
+    std::sort(replacements.begin(), replacements.end(), [](const replacement &a, const replacement &b) { return a.start > b.start; });
+    QString rewritten = command;
+    for (replacement r : replacements)
+        rewritten.replace(r.start, r.end - r.start, r.text);
+
+    /* anything left that looks like running a container is one the rewrite didn't understand */
+    QRegularExpressionMatch m = containerRegex.match(rewritten);
+    if (m.hasMatch()) {
+        errors << QString("Step %1: [%2] looks like it runs a container, but it isn't an apptainer or singularity exec, run or test command run directly by the step, so it can't be exported. Containers started from a script or inside $(...) can't be exported").arg(step).arg(m.captured(0).trimmed());
+        return true;
+    }
+
+    if (isContainerStep)
+        command = rewritten;
+    return isContainerStep;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RewriteBinds ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Rewrite one --bind value: each absolute host source outside {analysisrootdir} becomes {path:<name>}, for
+ * run-pipeline.sh's --path <name>=<host path> (doc section 11). A source without a destination is bound at its own
+ * path, so it keeps that path as the destination. Relative sources are left, since they're relative to the step's
+ * working directory. Sources with shell variables are left as they are, with a warning
+ * @param token The value's word in the command
+ * @param prefix "--bind=" if the value was given inline, else empty
+ * @param value The value, without quotes
+ * @param step The step number, for messages
+ * @param paths The external paths found so far, added to
+ * @param errors Problems that stop the export
+ * @param warnings Problems that don't
+ * @return The replacement for the word, or empty if it doesn't change
+ */
+QString modulePipelineContainer::RewriteBinds(const shellToken &token, QString prefix, QString value, int step, QList<externalPath> &paths, QStringList &errors, QStringList &warnings) {
+    QStringList specs = value.split(',');
+    bool changed = false;
+
+    for (int i = 0; i < specs.size(); i++) {
+        QString spec = specs[i];
+        QString src = spec.section(':', 0, 0);
+        QString rest = spec.mid(src.size());
+
+        if (src.startsWith("{analysisrootdir}") || (src == ""))
+            continue;
+        if (src.contains('$')) {
+            warnings << QString("Step %1: bind source [%2] has a shell variable, so it's evaluated on the user's machine").arg(step).arg(src);
+            continue;
+        }
+        if (!src.startsWith("/"))
+            continue;
+        if (token.expands) {
+            errors << QString("Step %1: bind [%2] has a host path and a shell variable in the same value, so it can't be rewritten").arg(step).arg(value);
+            return "";
+        }
+
+        if (rest == "")
+            rest = ":" + src;
+        specs[i] = "{path:" + AddExternalPath(src, step, paths) + "}" + rest;
+        changed = true;
+    }
+
+    if (!changed)
+        return "";
+
+    /* left unquoted if it's safe, so the command stays readable. The rendered paths are checked by run-pipeline.sh */
+    QString rewritten = prefix + specs.join(",");
+    if (!QRegularExpression("^[A-Za-z0-9_.,:/+={}@-]+$").match(rewritten).hasMatch())
+        rewritten = ShellQuote(rewritten);
+    return rewritten;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AddImage --------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Add an image to the list, or a step to an image already in it. The name comes from the image: the repository
+ * name of a URI, without its tag or digest, or the file name of a .sif, without its extension. Lowercase letters,
+ * numbers, _ . and -, made unique with -2, -3, ...
+ * @param source The image as written in the step
+ * @param step The step number
+ * @param images The images, added to
+ * @return The image's name, for {image:<name>}
+ */
+QString modulePipelineContainer::AddImage(QString source, int step, QList<containerImage> &images) {
+    for (int i = 0; i < images.size(); i++) {
+        if (images[i].source == source) {
+            if (!images[i].steps.contains(step))
+                images[i].steps << step;
+            return images[i].name;
+        }
+    }
+
+    QString base = source;
+    bool isURI = base.contains("://");
+    base.remove(QRegularExpression("^[a-z]+://"));
+    base = base.section('/', -1).section('@', 0, 0);
+    if (isURI)
+        base = base.section(':', 0, 0);
+    else
+        base.remove(QRegularExpression("\\.(sif|simg)$", QRegularExpression::CaseInsensitiveOption));
+    base = base.toLower();
+    base.replace(QRegularExpression("[^a-z0-9_.-]"), "-");
+    base.remove(QRegularExpression("^[.-]+|[.-]+$"));
+    if (base == "")
+        base = "image";
+
+    /* the native steps' image is pipeline.sif */
+    QString name = (base == "pipeline") ? "pipeline-image" : base;
+    for (int num = 2; ; num++) {
+        bool taken = false;
+        for (containerImage image : images)
+            if (image.name == name) taken = true;
+        if (!taken)
+            break;
+        name = QString("%1-%2").arg(base).arg(num);
+    }
+
+    containerImage image;
+    image.name = name;
+    image.source = source;
+    image.steps << step;
+    images << image;
+    return name;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AddExternalPath -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Add an external path to the list, or a step to a path already in it. The name is the file name without its
+ * extension (license.txt is license). Lowercase letters, numbers, _ and -, made unique with -2, -3, ...
+ * @param source The host path as written in the step
+ * @param step The step number
+ * @param paths The external paths, added to
+ * @return The path's name, for {path:<name>} and --path <name>=...
+ */
+QString modulePipelineContainer::AddExternalPath(QString source, int step, QList<externalPath> &paths) {
+    QString path = source;
+    while (path.endsWith("/") && (path.size() > 1))
+        path.chop(1);
+
+    for (int i = 0; i < paths.size(); i++) {
+        if (paths[i].source == path) {
+            if (!paths[i].steps.contains(step))
+                paths[i].steps << step;
+            return paths[i].name;
+        }
+    }
+
+    QString base = path.section('/', -1);
+    if (base.lastIndexOf('.') > 0)
+        base = base.left(base.lastIndexOf('.'));
+    base = base.toLower();
+    base.replace(QRegularExpression("[^a-z0-9_-]"), "-");
+    base.remove(QRegularExpression("^-+|-+$"));
+    if (base == "")
+        base = "path";
+
+    QString name = base;
+    for (int num = 2; ; num++) {
+        bool taken = false;
+        for (externalPath p : paths)
+            if (p.name == name) taken = true;
+        if (!taken)
+            break;
+        name = QString("%1-%2").arg(base).arg(num);
+    }
+
+    externalPath p;
+    p.name = name;
+    p.source = path;
+    p.steps << step;
+    paths << p;
+    return name;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CheckSegments ---------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Warnings for a segmented export (doc section 11, "Segments" and "Running on a cluster"): shell variables
+ * assigned in one segment and used in a later one, which don't carry across, and thread counts fixed in a step command,
+ * which oversubscribe a cluster job that requests fewer cores
+ * @param segmented The segments
+ * @param warnings Added to
+ */
+void modulePipelineContainer::CheckSegments(const segmentedScript &segmented, QStringList &warnings) {
+    static const QRegularExpression assignRegex("(?:^|[;&|(\\s])(?:export\\s+|local\\s+)?([A-Za-z_][A-Za-z0-9_]*)=");
+    static const QRegularExpression useRegex("\\$\\{?([A-Za-z_][A-Za-z0-9_]*)");
+    static const QRegularExpression threadsRegex("(--n_?threads|--nthreads|--omp-nthreads|--nprocs|--n_cpus|--n-cpus|-openmp|-nthreads|-j)[ =]([0-9]+)\\b|\\b(OMP_NUM_THREADS|ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS|MKL_NUM_THREADS)=([0-9]+)\\b");
+
+    QSet<QString> assignedEarlier;
+    QSet<QString> warned;
+    for (scriptSegment seg : segmented.segments) {
+        QSet<QString> assignedHere;
+        for (QString line : seg.executable.split("\n")) {
+            QRegularExpressionMatchIterator u = useRegex.globalMatch(line);
+            while (u.hasNext()) {
+                QString var = u.next().captured(1);
+                if (assignedEarlier.contains(var) && !assignedHere.contains(var) && !warned.contains(var)) {
+                    warnings << QString("Steps %1 use shell variable $%2, which an earlier segment sets. Variables don't carry from one segment to the next, since steps that run a container run separately").arg(JoinSteps(seg.steps)).arg(var);
+                    warned << var;
+                }
+            }
+            QRegularExpressionMatchIterator a = assignRegex.globalMatch(line);
+            while (a.hasNext())
+                assignedHere << a.next().captured(1);
+        }
+        assignedEarlier.unite(assignedHere);
+
+        QRegularExpressionMatchIterator t = threadsRegex.globalMatch(seg.executable);
+        while (t.hasNext()) {
+            QString found = t.next().captured(0).trimmed();
+            warnings << QString("Steps %1 use a fixed thread count [%2]. A cluster job that requests fewer cores will be oversubscribed").arg(JoinSteps(seg.steps)).arg(found);
         }
     }
 }
@@ -516,24 +1104,35 @@ void modulePipelineContainer::CheckContainers(QString text, int step, QStringLis
 /* --------- RenderScriptTemplate --------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Render run.sh.template from the main script steps (doc sections 2-4). Export-time variables are
+ * @brief Render the step templates from the main script steps (doc sections 2-4, 11). Export-time variables are
  * replaced; {subjectuid}, {studynum}, {studydatetime} and {analysisrootdir} are left for run.sh, lowercased.
  * Each enabled step is a comment, an echo, the cd to its working directory, and the command. Disabled steps
- * are comments, and supplement steps are left out. requiredVars only counts the lines that run
+ * are comments, and supplement steps are left out. requiredVars only counts the lines that run.
+ * If no step runs a container, the result is one template, run.sh.template, in script. Otherwise the steps are split
+ * into segments (doc section 11): each run of steps that don't run a container is one segment, run in pipeline.sif,
+ * and each step that does is a segment of its own, run from the host, with its container commands rewritten by
+ * RewriteContainerStep(). Disabled steps go in the segment they're in, as comments
  * @param p The pipeline
  * @param version Pipeline version
- * @param script The rendered template
+ * @param script The rendered template, for a single-image export
  * @param requiredVars The runtime variables the script uses
+ * @param segmented The segments, images and external paths, for a launcher export. No segments for a single-image export
  * @param errors Problems that stop the export
  * @param warnings Problems that don't
  * @return true if there are no errors
  */
-bool modulePipelineContainer::RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, QStringList &errors, QStringList &warnings) {
+bool modulePipelineContainer::RenderScriptTemplate(pipeline &p, int version, QString &script, QStringList &requiredVars, segmentedScript &segmented, QStringList &errors, QStringList &warnings) {
     static const QStringList runtimeVars = { "subjectuid", "studynum", "studydatetime" };
 
+    QString exportDate = QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss");
     script = "#!/bin/bash\n";
-    script += QString("# %1 version %2, exported from NiDB on %3\n").arg(p.name).arg(version).arg(QDateTime::currentDateTime().toString("yyyy-MM-dd hh:mm:ss"));
+    script += QString("# %1 version %2, exported from NiDB on %3\n").arg(p.name).arg(version).arg(exportDate);
     script += "# Rendered and run by /pipeline/run.sh. Steps run in order and a failing step doesn't stop later steps, unless run.sh is given --stop-on-error\n";
+    segmented = segmentedScript();
+
+    /* each step's text, in order. A step that runs a container is a segment of its own */
+    struct stepBlock { int step = 0; bool enabled = false; bool container = false; QStringList images; QString text; QString executable; };
+    QList<stepBlock> blocks;
 
     /* the lines that run, for the checks below. Comments and echo lines aren't checked */
     QString executable;
@@ -559,41 +1158,103 @@ bool modulePipelineContainer::RenderScriptTemplate(pipeline &p, int version, QSt
         if (command.endsWith(";"))
             command = command.chopped(1).trimmed();
 
-        script += "\n";
+        stepBlock block;
+        block.step = step.order;
+        block.enabled = step.enabled;
         if (step.enabled) {
             if ((step.command + step.description).contains("{PROFILE}", Qt::CaseInsensitive))
                 warnings << QString("Step %1: {PROFILE} is removed. The container doesn't run steps with /usr/bin/time").arg(step.order);
 
-            script += QString("# Step %1: %2\n").arg(step.order).arg(description);
-            script += "echo " + ShellQuote(QString("== Step %1: %2").arg(step.order).arg(description)) + "\n";
-            if (workingDir != "")
-                script += "cd " + workingDir + "\n";
-            if (command != "")
-                script += command + "\n";
+            /* container commands are rewritten for run-pipeline.sh (doc section 11) */
+            block.container = RewriteContainerStep(command, step.order, segmented.images, segmented.paths, errors, warnings);
+            if (block.container) {
+                for (containerImage image : segmented.images)
+                    if (image.steps.contains(step.order))
+                        block.images << image.name;
+            }
 
-            executable += workingDir + "\n" + command + "\n";
+            block.text += QString("# Step %1: %2\n").arg(step.order).arg(description);
+            block.text += "echo " + ShellQuote(QString("== Step %1: %2").arg(step.order).arg(description)) + "\n";
+            if (workingDir != "")
+                block.text += "cd " + workingDir + "\n";
+            if (command != "")
+                block.text += command + "\n";
+
+            block.executable = workingDir + "\n" + command + "\n";
+            executable += block.executable;
             numSteps++;
         }
         else {
             /* disabled steps are kept as comments, so the step numbering matches NiDB (doc section 2) */
-            script += QString("# Step %1 (disabled): %2\n").arg(step.order).arg(description);
+            block.text += QString("# Step %1 (disabled): %2\n").arg(step.order).arg(description);
             if (workingDir != "")
-                script += "# cd " + workingDir + "\n";
+                block.text += "# cd " + workingDir + "\n";
             if (command != "")
-                script += "# " + command + "\n";
+                block.text += "# " + command + "\n";
         }
+        blocks << block;
     }
 
     if (numSteps == 0)
         errors << QString("Version [%1] has no enabled main script steps").arg(version);
 
-    /* only the runtime variables may be left. CheckVariables() already reported problems in the step text, so this
-       catches anything that came in through {workingdir} or {description}. Bash ${var} is skipped */
+    bool hasContainerSteps = false;
+    for (stepBlock block : blocks)
+        if (block.container) hasContainerSteps = true;
+
+    if (!hasContainerSteps) {
+        /* a single image (doc section 4) */
+        for (stepBlock block : blocks)
+            script += "\n" + block.text;
+        segmented = segmentedScript();
+    }
+    else {
+        /* segments (doc section 11). Disabled steps join the segment they're in; ones before the first enabled step join the first segment */
+        QString pending;
+        for (stepBlock block : blocks) {
+            if (!block.enabled) {
+                if (segmented.segments.isEmpty())
+                    pending += "\n" + block.text;
+                else
+                    segmented.segments.last().script += "\n" + block.text;
+                continue;
+            }
+            if (block.container || segmented.segments.isEmpty() || segmented.segments.last().container) {
+                scriptSegment seg;
+                seg.number = segmented.segments.size() + 1;
+                seg.container = block.container;
+                seg.images = block.images;
+                seg.script = pending;
+                pending = "";
+                segmented.segments << seg;
+            }
+            scriptSegment &seg = segmented.segments.last();
+            seg.steps << block.step;
+            seg.script += "\n" + block.text;
+            seg.executable += block.executable;
+        }
+
+        int numSegments = segmented.segments.size();
+        for (int i = 0; i < numSegments; i++) {
+            scriptSegment &seg = segmented.segments[i];
+            QString header = "#!/bin/bash\n";
+            header += QString("# %1 version %2, exported from NiDB on %3. Segment %4 of %5: step%6 %7\n").arg(p.name).arg(version).arg(exportDate).arg(seg.number).arg(numSegments).arg(seg.steps.size() > 1 ? "s" : "").arg(JoinSteps(seg.steps));
+            if (seg.container)
+                header += "# Runs on the host. Rendered and run by run-pipeline.sh, which fills in {apptainer}, {image:<name>} and {path:<name>}\n";
+            else
+                header += "# Runs in pipeline.sif. Rendered and run by /pipeline/run.sh --segment, called by run-pipeline.sh. Steps run in order and a failing step doesn't stop later steps, unless run-pipeline.sh is given --stop-on-error\n";
+            seg.script = header + seg.script;
+        }
+        CheckSegments(segmented, warnings);
+    }
+
+    /* only the runtime variables and the launcher's placeholders may be left. CheckVariables() already reported problems
+       in the step text, so this catches anything that came in through {workingdir} or {description}. Bash ${var} is skipped */
     QStringList unknown;
     QRegularExpressionMatchIterator i = QRegularExpression("(?<!\\$)\\{([A-Za-z0-9_]+)\\}").globalMatch(executable);
     while (i.hasNext()) {
         QString var = i.next().captured(1);
-        if ((var != "analysisrootdir") && !runtimeVars.contains(var) && !unknown.contains(var))
+        if ((var != "analysisrootdir") && !(hasContainerSteps && (var == "apptainer")) && !runtimeVars.contains(var) && !unknown.contains(var))
             unknown << var;
     }
     for (QString var : unknown)
@@ -674,18 +1335,61 @@ QString modulePipelineContainer::RenderVariables(QString text, QString pipelineN
  * @param requiredVars The runtime variables the script uses
  * @param warnings Export warnings
  * @param inputLayout The /input layout from GetInputDirStructure()
+ * @param segmented The segments, images and external paths of a launcher export (doc section 11). Empty for a single image
  * @return The JSON text
  */
-QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout) {
+QString modulePipelineContainer::CreateManifest(pipeline &p, int version, const QStringList &requiredVars, const QStringList &warnings, const QJsonArray &inputLayout, const segmentedScript &segmented) {
     /* TODO: the squirrel pipeline from p.GetSquirrelObject() */
     QJsonObject root;
     root["pipelineName"] = p.name;
     root["pipelineVersion"] = version;
     root["pipelineDescription"] = p.desc;
     root["exportDate"] = QDateTime::currentDateTime().toString(Qt::ISODate);
+    root["exportType"] = segmented.segments.isEmpty() ? "single" : "referenced";
     root["requiredVariables"] = QJsonArray::fromStringList(requiredVars);
     root["exportWarnings"] = QJsonArray::fromStringList(warnings);
     root["inputLayout"] = inputLayout;
+
+    /* a launcher export. The build adds each image's pinned reference to its 'build' object */
+    if (!segmented.segments.isEmpty()) {
+        auto stepArray = [](const QList<int> &steps) {
+            QJsonArray a;
+            for (int step : steps)
+                a.append(step);
+            return a;
+        };
+
+        QJsonArray images;
+        for (containerImage image : segmented.images) {
+            QJsonObject o;
+            o["name"] = image.name;
+            o["source"] = image.source;
+            o["steps"] = stepArray(image.steps);
+            images.append(o);
+        }
+        root["images"] = images;
+
+        QJsonArray segments;
+        for (scriptSegment seg : segmented.segments) {
+            QJsonObject o;
+            o["number"] = seg.number;
+            o["kind"] = seg.container ? "container" : "native";
+            o["images"] = seg.container ? QJsonArray::fromStringList(seg.images) : QJsonArray::fromStringList({ "pipeline" });
+            o["steps"] = stepArray(seg.steps);
+            segments.append(o);
+        }
+        root["segments"] = segments;
+
+        QJsonArray externalPaths;
+        for (externalPath path : segmented.paths) {
+            QJsonObject o;
+            o["name"] = path.name;
+            o["example"] = path.source;
+            o["steps"] = stepArray(path.steps);
+            externalPaths.append(o);
+        }
+        root["externalPaths"] = externalPaths;
+    }
 
     return QJsonDocument(root).toJson();
 }
@@ -888,6 +1592,125 @@ QString modulePipelineContainer::CreateReadme(pipeline &p, int version, const QS
 
 
 /* ---------------------------------------------------------- */
+/* --------- CreateLauncherReadme --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Create README.txt for a launcher export (doc section 11): what the export is, how to run it, the external
+ * paths, the containers it downloads, how to run it on a cluster, and the input layout. It goes next to run-pipeline.sh,
+ * and into pipeline.sif as /pipeline/README.txt. The pinned references aren't known until the build, so they're in images.txt
+ * @param p The pipeline
+ * @param version Pipeline version
+ * @param requiredVars The runtime variables the script uses
+ * @param inputLayout The /input layout from GetInputDirStructure()
+ * @param segmented The segments, images and external paths
+ * @return The text
+ */
+QString modulePipelineContainer::CreateLauncherReadme(pipeline &p, int version, const QStringList &requiredVars, const QStringList &inputLayout, const segmentedScript &segmented) {
+    QString dir = GetExportDirName(p, version);
+
+    QStringList args;
+    args << "--input /data/sub01" << "--output /results/sub01";
+    if (requiredVars.contains("subjectuid")) args << "--subjectuid S1234ABC";
+    if (requiredVars.contains("studynum")) args << "--studynum 1";
+    if (requiredVars.contains("studydatetime")) args << "--studydatetime \"2024-03-01 10:15:00\"";
+    for (externalPath path : segmented.paths)
+        args << QString("--path %1=/path/to/%2").arg(path.name).arg(path.source.section('/', -1));
+
+    QStringList r;
+    r << QString("NiDB pipeline [%1], version %2").arg(p.name).arg(version);
+    if (p.desc.trimmed() != "")
+        r << p.desc.trimmed();
+    r << QString("Exported from NiDB on %1").arg(QDateTime::currentDateTime().toString("yyyy-MM-dd"));
+    r << "";
+    r << "This pipeline runs its own containers, so it's exported as a launcher, run-pipeline.sh, instead of a single";
+    r << "image. Steps that don't run a container run in pipeline.sif, and each step that does runs its container";
+    r << "directly, so no container runs inside another. The containers aren't included: run-pipeline.sh downloads";
+    r << "them the first time it runs, into an image cache, from the references in images.txt, which are pinned by digest.";
+    r << "It needs bash and apptainer (or singularity).";
+    r << "";
+    r << "USAGE";
+    r << "Run once per subject/study, from the " + dir + " directory or by its full path. The input is copied into";
+    r << "the output directory and the pipeline runs there, so the output directory ends up looking like a NiDB analysis directory.";
+    r << "";
+    r << "    ./run-pipeline.sh " + args.join(" ");
+    r << "";
+    r << "ARGUMENTS";
+    r << "    --input DIR                The input data, laid out as below";
+    r << "    --output DIR               A writable directory for the results. Created if it doesn't exist. Letters, numbers, _ . + / and - only";
+    if (requiredVars.contains("subjectuid")) r << "    --subjectuid UID           Subject ID. Letters, numbers, _ and - only";
+    if (requiredVars.contains("studynum")) r << "    --studynum N               Study number (integer)";
+    if (requiredVars.contains("studydatetime")) r << "    --studydatetime DATETIME   Study date/time, \"YYYY-MM-DD hh:mm:ss\"";
+    if (!segmented.paths.isEmpty())
+        r << "    --path NAME=PATH           Required, for each path listed under EXTERNAL PATHS";
+    r << "    --image-cache DIR          Where the containers are kept. Default: $NIDB_IMAGE_CACHE, else ~/.cache/nidb-images";
+    r << "    --fetch-images             Only download the containers into the image cache, then exit";
+    r << "    --allow-pull               Download missing containers even inside a batch job (see RUNNING ON A CLUSTER)";
+    r << "    --stop-on-error            Optional. Stop at the first failing step. By default, like NiDB, later steps still run";
+    r << "";
+
+    if (!segmented.paths.isEmpty()) {
+        r << "EXTERNAL PATHS (--path NAME=PATH)";
+        r << "Files or directories on your machine that the containers need, like a license file. Give each one with --path.";
+        r << "";
+        for (externalPath path : segmented.paths)
+            r << QString("    %1   used by step %2. It was [%3] where the pipeline was exported").arg(path.name, -14).arg(JoinSteps(path.steps)).arg(path.source);
+        r << "";
+    }
+
+    r << "CONTAINERS";
+    r << "Downloaded by run-pipeline.sh. Each is pinned by digest in images.txt, so it's the exact image the export was built with.";
+    r << "";
+    for (containerImage image : segmented.images)
+        r << QString("    %1   step %2. Exported from [%3]").arg(image.name, -14).arg(JoinSteps(image.steps)).arg(image.source);
+    r << "";
+    r << "SEGMENTS";
+    for (scriptSegment seg : segmented.segments)
+        r << QString("    %1. step%2 %3: %4").arg(seg.number).arg(seg.steps.size() > 1 ? "s" : "").arg(JoinSteps(seg.steps)).arg(seg.container ? "runs " + seg.images.join(", ") : QString("in pipeline.sif"));
+    r << "Shell variables don't carry from one segment to the next. The working directory does.";
+    r << "";
+    r << "RUNNING ON A CLUSTER";
+    r << "run-pipeline.sh runs inside your batch job, one subject/study per job, and starts each container from the compute node.";
+    r << "  - Compute nodes often can't download. Inside a batch job, run-pipeline.sh doesn't download missing containers";
+    r << "    unless given --allow-pull, so download them first, once, on a node with internet access:";
+    r << "        ./run-pipeline.sh --fetch-images --image-cache /project/nidb-images";
+    r << "    Converting a large Docker image takes CPU and memory, sometimes 10-30 minutes, which some login nodes limit.";
+    r << "  - Containers can be 5-15 GB each. Put the image cache on project or scratch storage every node can see, and";
+    r << "    set APPTAINER_CACHEDIR there too, since downloads keep their own copy of the layers (it can be deleted afterwards).";
+    r << "    Many jobs can use the same cached image at once.";
+    r << "  - apptainer is often a module: module load apptainer";
+    r << "  - Request the CPUs, memory and time the pipeline needs in your job script. Thread counts fixed in a step";
+    r << "    (listed in manifest.json's exportWarnings) need at least that many cores.";
+    r << "  - The output directory gets a copy of the input, so each job needs room for the input plus the results.";
+    r << "";
+    r << "  Example slurm array job, one subject per task, subjects listed one per line in subjects.txt:";
+    r << "        #!/bin/bash";
+    r << "        #SBATCH --array=1-50 --cpus-per-task=8 --mem=32G --time=12:00:00";
+    r << "        SUB=$(sed -n \"${SLURM_ARRAY_TASK_ID}p\" subjects.txt)";
+    r << "        module load apptainer";
+    QStringList jobArgs;
+    jobArgs << "--input /project/data/$SUB" << "--output /scratch/$USER/results/$SUB";
+    if (requiredVars.contains("subjectuid")) jobArgs << "--subjectuid $SUB";
+    if (requiredVars.contains("studynum")) jobArgs << "--studynum 1";
+    if (requiredVars.contains("studydatetime")) jobArgs << "--studydatetime \"2024-03-01 10:15:00\"";
+    for (externalPath path : segmented.paths)
+        jobArgs << QString("--path %1=$HOME/%2").arg(path.name).arg(path.source.section('/', -1));
+    jobArgs << "--image-cache /project/nidb-images" << "--stop-on-error";
+    r << "        ./" + dir + "/run-pipeline.sh " + jobArgs.join(" ");
+    r << "";
+    r << "INPUT LAYOUT (--input, shown as /input)";
+    r << "Lay out the input directory as NiDB would have staged the data for this pipeline. run-pipeline.sh doesn't check the layout.";
+    r << "";
+    for (QString line : inputLayout)
+        r << "    " + line;
+    r << "";
+    r << "MORE";
+    r << "    ./run-pipeline.sh --help   # this text";
+    r << "    manifest.json              the pipeline, segments, containers and external paths, plus the software in pipeline.sif";
+
+    return r.join("\n") + "\n";
+}
+
+/* ---------------------------------------------------------- */
 /* --------- StageReferenceInput ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -999,7 +1822,10 @@ bool modulePipelineContainer::StageReferenceInput(containerRequest &c, pipeline 
 /**
  * @brief Write run.sh, the image's entry point (doc section 4). It's the same for every pipeline: it checks the
  * arguments against requiredvars.txt, copies /input to /output, renders run.sh.template and runs it in /output.
- * Must work with bash 4.2 and coreutils, since the base image may be minimal
+ * In a launcher export (doc section 11), run-pipeline.sh calls it with --segment N to run one segment of native
+ * steps instead: segments/N.sh.template, with {analysisrootdir} the output directory's host path, starting in the
+ * directory the previous segment ended in, and writing the directory it ends in to the --state file. There's no
+ * input copy then, since run-pipeline.sh does it once. Must work with bash 4.2 and coreutils, since the base image may be minimal
  * @param c The request
  * @param msg Error message, if any
  * @return true if run.sh was written
@@ -1010,6 +1836,9 @@ bool modulePipelineContainer::WriteRunScript(containerRequest &c, QString &msg) 
 # /pipeline/run.sh.template with the arguments, and runs it in /output. Written by NiDB, and the same for every pipeline.
 # For the build's reference run outside a container, NIDB_PIPELINE_DIR, NIDB_INPUT_DIR and NIDB_OUTPUT_DIR
 # are used in place of /pipeline, /input and /output. Needs bash 4.2 or later and coreutils
+#
+# For a pipeline that runs containers, run-pipeline.sh calls this with --segment N --analysisrootdir DIR [--cwd DIR]
+# [--state FILE] to run one segment, /pipeline/segments/N.sh.template, in DIR (the output directory, at its host path)
 
 PIPELINE_DIR="${NIDB_PIPELINE_DIR:-/pipeline}"
 INPUT_DIR="${NIDB_INPUT_DIR:-/input}"
@@ -1032,14 +1861,22 @@ SUBJECTUID=""
 STUDYNUM=""
 STUDYDATETIME=""
 STOPONERROR=0
+SEGMENT=""
+ANALYSISROOTDIR=""
+SEGMENT_CWD=""
+SEGMENT_STATE=""
 while [ $# -gt 0 ]; do
     case "$1" in
-        --subjectuid|--studynum|--studydatetime)
+        --subjectuid|--studynum|--studydatetime|--segment|--analysisrootdir|--cwd|--state)
             [ $# -ge 2 ] || die "$1 needs a value"
             case "$1" in
                 --subjectuid) SUBJECTUID="$2" ;;
                 --studynum) STUDYNUM="$2" ;;
                 --studydatetime) STUDYDATETIME="$2" ;;
+                --segment) SEGMENT="$2" ;;
+                --analysisrootdir) ANALYSISROOTDIR="$2" ;;
+                --cwd) SEGMENT_CWD="$2" ;;
+                --state) SEGMENT_STATE="$2" ;;
             esac
             shift 2 ;;
         --stop-on-error)
@@ -1066,8 +1903,22 @@ if [ -n "$STUDYNUM" ] && ! [[ $STUDYNUM =~ $re ]]; then die "--studynum [$STUDYN
 re='^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'
 if [ -n "$STUDYDATETIME" ] && ! [[ $STUDYDATETIME =~ $re ]]; then die "--studydatetime [$STUDYDATETIME] must be in the format \"YYYY-MM-DD hh:mm:ss\""; fi
 
+# one segment of a launcher export (run-pipeline.sh), or the whole pipeline
+if [ -n "$SEGMENT" ]; then
+    re='^[0-9]+$'
+    [[ $SEGMENT =~ $re ]] || die "--segment [$SEGMENT] must be a number"
+    [ -n "$ANALYSISROOTDIR" ] || die "--segment needs --analysisrootdir"
+    TEMPLATE="$PIPELINE_DIR/segments/$SEGMENT.sh.template"
+    OUTPUT_DIR="$ANALYSISROOTDIR"
+else
+    TEMPLATE="$PIPELINE_DIR/run.sh.template"
+    if [ ! -f "$TEMPLATE" ] && [ -d "$PIPELINE_DIR/segments" ]; then
+        die "this image is part of a pipeline export that's run with run-pipeline.sh, which runs this image for some of the steps. Run run-pipeline.sh instead"
+    fi
+fi
+[ -f "$TEMPLATE" ] || die "[$TEMPLATE] not found"
+
 # the arguments this pipeline requires, one per line
-[ -f "$PIPELINE_DIR/run.sh.template" ] || die "[$PIPELINE_DIR/run.sh.template] not found"
 missing=""
 if [ -f "$PIPELINE_DIR/requiredvars.txt" ]; then
     while IFS= read -r var || [ -n "$var" ]; do
@@ -1092,8 +1943,9 @@ OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd) || die "unable to cd into the output direc
 re='^/[A-Za-z0-9_.+/-]*$'
 [[ $OUTPUT_DIR =~ $re ]] || die "output directory path [$OUTPUT_DIR] can only contain letters, numbers, _ . + / and -"
 
-# the pipeline runs in place, in a copy of the input, as it does in a NiDB analysis directory
-if [ -d "$INPUT_DIR" ] && [ -n "$(ls -A "$INPUT_DIR" 2>/dev/null)" ]; then
+# the pipeline runs in place, in a copy of the input, as it does in a NiDB analysis directory. A segment doesn't copy,
+# since run-pipeline.sh copies the input once, before the first segment
+if [ -z "$SEGMENT" ] && [ -d "$INPUT_DIR" ] && [ -n "$(ls -A "$INPUT_DIR" 2>/dev/null)" ]; then
     echo "== Copying [$INPUT_DIR] to [$OUTPUT_DIR]"
     cp -a "$INPUT_DIR/." "$OUTPUT_DIR/" || die "unable to copy [$INPUT_DIR] to [$OUTPUT_DIR]"
 fi
@@ -1102,23 +1954,30 @@ fi
 # covers every line that runs, so those are only in comments and echo lines
 RENDERED=$(mktemp "${TMPDIR:-/tmp}/run-rendered.XXXXXX") || die "unable to create a temporary file in [${TMPDIR:-/tmp}]"
 trap 'rm -f "$RENDERED"' EXIT
-while IFS= read -r line || [ -n "$line" ]; do
-    line=${line//"{analysisrootdir}"/$OUTPUT_DIR}
-    if [ -n "$SUBJECTUID" ]; then line=${line//"{subjectuid}"/$SUBJECTUID}; fi
-    if [ -n "$STUDYNUM" ]; then line=${line//"{studynum}"/$STUDYNUM}; fi
-    if [ -n "$STUDYDATETIME" ]; then line=${line//"{studydatetime}"/$STUDYDATETIME}; fi
-    printf '%s\n' "$line"
-done < "$PIPELINE_DIR/run.sh.template" > "$RENDERED" || die "unable to render [$PIPELINE_DIR/run.sh.template]"
+{
+    # a segment records the directory it ends in, even if a step fails, so the next segment starts there
+    if [ -n "$SEGMENT_STATE" ]; then echo 'trap '"'"'pwd > "$NIDB_SEGMENT_STATE"'"'"' EXIT'; fi
+    while IFS= read -r line || [ -n "$line" ]; do
+        line=${line//"{analysisrootdir}"/$OUTPUT_DIR}
+        if [ -n "$SUBJECTUID" ]; then line=${line//"{subjectuid}"/$SUBJECTUID}; fi
+        if [ -n "$STUDYNUM" ]; then line=${line//"{studynum}"/$STUDYNUM}; fi
+        if [ -n "$STUDYDATETIME" ]; then line=${line//"{studydatetime}"/$STUDYDATETIME}; fi
+        printf '%s\n' "$line"
+    done < "$TEMPLATE"
+} > "$RENDERED" || die "unable to render [$TEMPLATE]"
+if [ -n "$SEGMENT_STATE" ]; then export NIDB_SEGMENT_STATE="$SEGMENT_STATE"; fi
 
-# a failing step doesn't stop later steps, as in NiDB, unless --stop-on-error. The exit code is the last step's
+# a failing step doesn't stop later steps, as in NiDB, unless --stop-on-error. The exit code is the last step's.
+# A segment starts where the previous one ended, if that directory still exists
 cd "$OUTPUT_DIR" || die "unable to cd into [$OUTPUT_DIR]"
+if [ -n "$SEGMENT_CWD" ] && [ -d "$SEGMENT_CWD" ]; then cd "$SEGMENT_CWD" || die "unable to cd into [$SEGMENT_CWD]"; fi
 if [ $STOPONERROR -eq 1 ]; then
     bash -e "$RENDERED"
 else
     bash "$RENDERED"
 fi
 rc=$?
-echo "== Finished with exit code [$rc]"
+if [ -z "$SEGMENT" ]; then echo "== Finished with exit code [$rc]"; fi
 exit $rc
 )BASH";
 
@@ -1132,6 +1991,402 @@ exit $rc
     return true;
 }
 
+
+/* ---------------------------------------------------------- */
+/* --------- WriteSegmentFiles ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write a launcher export's segment files into the build directory (doc section 11). Plain tab-separated text,
+ * since run-pipeline.sh can't count on jq:
+ *   segments.txt          number, native or container, images (comma separated, or pipeline), steps (comma separated)
+ *   segments/N.sh.template  each segment's template. Native ones also go into pipeline.sif
+ *   images-export.txt     name, the image as written in the step, steps. The build pins each one, into images.txt
+ *   externalpaths.txt     name, the path as written in the step, steps
+ * @param c The request
+ * @param segmented The segments, images and external paths
+ * @param msg Error message, if any
+ * @return true if written
+ */
+bool modulePipelineContainer::WriteSegmentFiles(containerRequest &c, const segmentedScript &segmented, QString &msg) {
+    if (!MakePath(c.buildDir + "/segments", msg))
+        return false;
+
+    QStringList segments;
+    for (scriptSegment seg : segmented.segments) {
+        QStringList steps;
+        for (int step : seg.steps)
+            steps << QString::number(step);
+        segments << QString("%1\t%2\t%3\t%4").arg(seg.number).arg(seg.container ? "container" : "native").arg(seg.container ? seg.images.join(",") : "pipeline").arg(steps.join(","));
+
+        QString path = QString("%1/segments/%2.sh.template").arg(c.buildDir).arg(seg.number);
+        if (!WriteTextFile(path, seg.script, false)) {
+            msg = "Unable to write [" + path + "]";
+            return false;
+        }
+    }
+
+    QStringList images;
+    for (containerImage image : segmented.images) {
+        QStringList steps;
+        for (int step : image.steps)
+            steps << QString::number(step);
+        images << QString("%1\t%2\t%3").arg(image.name).arg(image.source).arg(steps.join(","));
+    }
+
+    QStringList paths;
+    for (externalPath path : segmented.paths) {
+        QStringList steps;
+        for (int step : path.steps)
+            steps << QString::number(step);
+        paths << QString("%1\t%2\t%3").arg(path.name).arg(path.source).arg(steps.join(","));
+    }
+
+    auto lines = [](const QStringList &l) { return l.isEmpty() ? QString("") : l.join("\n") + "\n"; };
+    if (!WriteTextFile(c.buildDir + "/segments.txt", lines(segments), false) || !WriteTextFile(c.buildDir + "/images-export.txt", lines(images), false) || !WriteTextFile(c.buildDir + "/externalpaths.txt", lines(paths), false)) {
+        msg = "Unable to write segments.txt, images-export.txt and externalpaths.txt into [" + c.buildDir + "]";
+        return false;
+    }
+
+    AppendBuildLog(c.containerID, QString("Wrote [%1] segments, [%2] images and [%3] external paths for the launcher").arg(segmented.segments.size()).arg(segmented.images.size()).arg(segmented.paths.size()));
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteLauncherScript ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write run-pipeline.sh, a launcher export's entry point (doc section 11). It's the same for every pipeline, and
+ * runs on the user's machine or in their cluster job: it checks the arguments, finds or downloads each container into
+ * the image cache, copies the input to the output directory, and runs the segments in order. Native segments run in
+ * pipeline.sif through /pipeline/run.sh --segment; container segments are rendered and run from the host. It reads
+ * requiredvars.txt, segments.txt, images.txt (the pinned images, written by the build), externalpaths.txt and
+ * segments/, next to itself. Must work with bash 4.2 and coreutils.
+ * For the build: --local-image NAME=PATH uses a local .sif instead of the cache, NIDB_REFERENCE_TRACE_DIR runs the
+ * native segments outside a container under strace, writing trace-N.log there, for the software capture, and
+ * NIDB_SEGMENT_STATS appends each segment's number, wall time (seconds) and peak memory (KB, if /usr/bin/time exists) to a file
+ * @param c The request
+ * @param msg Error message, if any
+ * @return true if written
+ */
+bool modulePipelineContainer::WriteLauncherScript(containerRequest &c, QString &msg) {
+    static const QString script = R"BASH(#!/bin/bash
+# Runs an exported NiDB pipeline whose steps run their own containers (NiDB doc/pipeline-apptainer.md section 11). The
+# steps run in segments: steps that don't run a container run in pipeline.sif, and each step that does runs its container
+# directly, from this machine, so no container runs inside another. The containers aren't part of the export; they're
+# downloaded from their pinned references (images.txt) into an image cache. Written by NiDB, and the same for every
+# pipeline. Needs bash 4.2 or later, coreutils, and apptainer or singularity
+
+# bash 5.2 expands & in the replacement of ${var//pattern/replacement}. The values are checked below, but turn it off anyway
+shopt -u patsub_replacement 2>/dev/null
+
+die() {
+    echo "run-pipeline.sh: $*" >&2
+    exit 2
+}
+
+usage() {
+    echo 'Usage: run-pipeline.sh --output DIR [--input DIR] [--subjectuid UID] [--studynum N] [--studydatetime "YYYY-MM-DD hh:mm:ss"]'
+    echo '                       [--path NAME=PATH ...] [--image-cache DIR] [--allow-pull] [--stop-on-error]'
+    echo '       run-pipeline.sh --fetch-images [--image-cache DIR]'
+    echo 'Run with --help to see which arguments this pipeline requires'
+}
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)" || die "unable to find the directory run-pipeline.sh is in"
+
+INPUT_DIR=""
+OUTPUT_DIR=""
+SUBJECTUID=""
+STUDYNUM=""
+STUDYDATETIME=""
+STOPONERROR=0
+FETCHONLY=0
+ALLOWPULL=0
+IMAGE_CACHE="${NIDB_IMAGE_CACHE:-}"
+declare -A PATH_ARG=()
+declare -A LOCAL_IMAGE=()
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --input|--output|--subjectuid|--studynum|--studydatetime|--path|--image-cache|--local-image)
+            [ $# -ge 2 ] || die "$1 needs a value"
+            case "$1" in
+                --input) INPUT_DIR="$2" ;;
+                --output) OUTPUT_DIR="$2" ;;
+                --subjectuid) SUBJECTUID="$2" ;;
+                --studynum) STUDYNUM="$2" ;;
+                --studydatetime) STUDYDATETIME="$2" ;;
+                --image-cache) IMAGE_CACHE="$2" ;;
+                --path|--local-image)
+                    case "$2" in ?*=?*) ;; *) die "$1 needs NAME=PATH, not [$2]" ;; esac
+                    if [ "$1" = "--path" ]; then PATH_ARG["${2%%=*}"]="${2#*=}"; else LOCAL_IMAGE["${2%%=*}"]="${2#*=}"; fi ;;
+            esac
+            shift 2 ;;
+        --stop-on-error) STOPONERROR=1; shift ;;
+        --allow-pull) ALLOWPULL=1; shift ;;
+        --fetch-images) FETCHONLY=1; shift ;;
+        -h|--help)
+            usage
+            if [ -f "$HERE/README.txt" ]; then
+                echo
+                cat "$HERE/README.txt"
+            fi
+            exit 0 ;;
+        *)
+            usage >&2
+            die "unknown argument [$1]" ;;
+    esac
+done
+
+for f in segments.txt images.txt; do
+    [ -f "$HERE/$f" ] || die "[$HERE/$f] not found. Run run-pipeline.sh from the export directory NiDB created"
+done
+
+# apptainer, or singularity, which has the same commands
+if command -v apptainer >/dev/null 2>&1; then RUNTIME="apptainer"
+elif command -v singularity >/dev/null 2>&1; then RUNTIME="singularity"
+else die "apptainer or singularity not found. On a cluster, it may be a module: module load apptainer"
+fi
+
+# paths are inserted into the commands as text, so only these characters are accepted
+SAFE_PATH='^/[A-Za-z0-9_.+/-]*$'
+
+# ---------- arguments, checked before any download ----------
+re='^[A-Za-z0-9_-]+$'
+if [ -n "$SUBJECTUID" ] && ! [[ $SUBJECTUID =~ $re ]]; then die "--subjectuid [$SUBJECTUID] can only contain letters, numbers, _ and -"; fi
+re='^[0-9]+$'
+if [ -n "$STUDYNUM" ] && ! [[ $STUDYNUM =~ $re ]]; then die "--studynum [$STUDYNUM] must be a number"; fi
+re='^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2}$'
+if [ -n "$STUDYDATETIME" ] && ! [[ $STUDYDATETIME =~ $re ]]; then die "--studydatetime [$STUDYDATETIME] must be in the format \"YYYY-MM-DD hh:mm:ss\""; fi
+
+missing=""
+if [ -f "$HERE/requiredvars.txt" ]; then
+    while IFS= read -r var || [ -n "$var" ]; do
+        case "$var" in
+            subjectuid) [ -n "$SUBJECTUID" ] || missing="$missing --subjectuid" ;;
+            studynum) [ -n "$STUDYNUM" ] || missing="$missing --studynum" ;;
+            studydatetime) [ -n "$STUDYDATETIME" ] || missing="$missing --studydatetime" ;;
+            "") ;;
+            *) die "unknown variable [$var] in [$HERE/requiredvars.txt]" ;;
+        esac
+    done < "$HERE/requiredvars.txt"
+fi
+
+# the host paths the container steps bind: name, the path on the export node, steps
+declare -A PATH_VALUE=()
+if [ -f "$HERE/externalpaths.txt" ]; then
+    while IFS=$'\t' read -r name _ || [ -n "$name" ]; do
+        case "$name" in ''|\#*) continue ;; esac
+        if [ -z "${PATH_ARG[$name]:-}" ]; then
+            missing="$missing --path $name=PATH"
+            continue
+        fi
+        [ -e "${PATH_ARG[$name]}" ] || die "--path $name: [${PATH_ARG[$name]}] not found"
+        PATH_VALUE[$name]="$(readlink -f -- "${PATH_ARG[$name]}")" || die "--path $name: unable to resolve [${PATH_ARG[$name]}]"
+        [[ ${PATH_VALUE[$name]} =~ $SAFE_PATH ]] || die "--path $name: [${PATH_VALUE[$name]}] can only contain letters, numbers, _ . + / and -"
+    done < "$HERE/externalpaths.txt"
+fi
+for name in "${!PATH_ARG[@]}"; do
+    [ -n "${PATH_VALUE[$name]:-}" ] || die "--path [$name] isn't one this pipeline uses. See --help"
+done
+
+[ -n "$OUTPUT_DIR" ] || missing="$missing --output"
+if [ -n "$missing" ] && [ $FETCHONLY -eq 0 ]; then
+    usage >&2
+    die "this pipeline requires$missing"
+fi
+if [ -n "$INPUT_DIR" ] && [ ! -d "$INPUT_DIR" ]; then die "input directory [$INPUT_DIR] not found"; fi
+
+# ---------- the image cache ----------
+IMAGE_CACHE="${IMAGE_CACHE:-$HOME/.cache/nidb-images}"
+mkdir -p "$IMAGE_CACHE" 2>/dev/null || die "unable to create the image cache [$IMAGE_CACHE]. Choose another with --image-cache"
+IMAGE_CACHE="$(cd "$IMAGE_CACHE" && pwd)" || die "unable to cd into the image cache [$IMAGE_CACHE]"
+[[ $IMAGE_CACHE =~ $SAFE_PATH ]] || die "image cache path [$IMAGE_CACHE] can only contain letters, numbers, _ . + / and -. Choose another with --image-cache"
+
+# image_file <name> <reference>: the image's file in the cache. Named by its digest, so versions that pin the same image share it
+image_file() {
+    local key
+    case "$2" in
+        *@sha256:*) key="${2##*@sha256:}" ;;
+        *) key="$(printf '%s' "$2" | sha256sum | awk '{ print $1 }')" ;;
+    esac
+    printf '%s/%s-%s.sif' "$IMAGE_CACHE" "$1" "${key:0:12}"
+}
+
+# in_cache <file> <reference>: the image is in the cache once the .sif and a .source with the same reference both exist
+in_cache() {
+    [ -s "$1" ] && [ -f "$1.source" ] && [ "$(cat "$1.source")" = "$2" ]
+}
+
+# a batch job (slurm, PBS/Torque, LSF, SGE). Compute nodes often have no internet access
+in_batch_job() {
+    [ -n "${SLURM_JOB_ID:-}${PBS_JOBID:-}${LSB_JOBID:-}${JOB_ID:-}" ]
+}
+
+# fetch_image <name> <reference> <file>: download into a temporary directory in the cache, then rename into place, so a
+# partial download is never used. A lock per image means launchers that start together download it once
+fetch_image() {
+    local name="$1" ref="$2" file="$3" tmpdir rc
+    exec 9> "$IMAGE_CACHE/$name.lock" || die "unable to create [$IMAGE_CACHE/$name.lock]"
+    if command -v flock >/dev/null 2>&1; then
+        flock 9 || die "unable to lock [$IMAGE_CACHE/$name.lock]"
+    else
+        echo "run-pipeline.sh: flock not found, so [$name] isn't locked while it downloads" >&2
+    fi
+    if in_cache "$file" "$ref"; then
+        exec 9>&-
+        return 0
+    fi
+
+    tmpdir="$(mktemp -d "$IMAGE_CACHE/.download-$name.XXXXXX")" || die "unable to create a temporary directory in [$IMAGE_CACHE]"
+    echo "== Downloading [$name] from [$ref] into [$file]. Large images can take a while to download and convert"
+    "$RUNTIME" pull "$tmpdir/image.sif" "$ref" < /dev/null
+    rc=$?
+    if [ $rc -ne 0 ] || [ ! -s "$tmpdir/image.sif" ]; then
+        rm -rf "$tmpdir"
+        die "unable to download [$name] from [$ref] (exit code [$rc])"
+    fi
+    mv -f "$tmpdir/image.sif" "$file" || die "unable to move the download into [$file]"
+    printf '%s\n' "$ref" > "$file.source.tmp" && mv -f "$file.source.tmp" "$file.source" || die "unable to write [$file.source]"
+    rm -rf "$tmpdir"
+    exec 9>&-
+}
+
+# the images: name and pinned reference, tab separated. Read first, so nothing below reads from the file
+declare -A IMAGE_FILE=()
+mapfile -t IMAGES < "$HERE/images.txt"
+for line in "${IMAGES[@]}"; do
+    IFS=$'\t' read -r name ref rest <<< "$line"
+    case "$name" in ''|\#*) continue ;; esac
+    if [ -n "${LOCAL_IMAGE[$name]:-}" ]; then
+        IMAGE_FILE[$name]="${LOCAL_IMAGE[$name]}"
+        continue
+    fi
+    [ -n "$ref" ] || die "image [$name] has no reference in [$HERE/images.txt]"
+    file="$(image_file "$name" "$ref")"
+    if ! in_cache "$file" "$ref"; then
+        if [ $FETCHONLY -eq 0 ] && [ $ALLOWPULL -eq 0 ] && in_batch_job; then
+            die "image [$name] isn't in the image cache [$IMAGE_CACHE], and this is a batch job, where nodes often can't download. Run 'run-pipeline.sh --fetch-images --image-cache $IMAGE_CACHE' on a node with internet access first, or add --allow-pull"
+        fi
+        fetch_image "$name" "$ref" "$file"
+    fi
+    IMAGE_FILE[$name]="$file"
+done
+for name in "${!LOCAL_IMAGE[@]}"; do
+    [ -n "${IMAGE_FILE[$name]:-}" ] || die "--local-image [$name] isn't one of this pipeline's images"
+    [ -f "${IMAGE_FILE[$name]}" ] || die "--local-image [$name] file [${IMAGE_FILE[$name]}] not found"
+    [[ ${IMAGE_FILE[$name]} =~ $SAFE_PATH ]] || die "--local-image [$name] path can only contain letters, numbers, _ . + / and -"
+done
+
+if [ $FETCHONLY -eq 1 ]; then
+    echo "== All ${#IMAGE_FILE[@]} images are in the image cache [$IMAGE_CACHE]"
+    exit 0
+fi
+
+# {analysisrootdir} is the output directory, at the same path on this machine and in pipeline.sif
+mkdir -p "$OUTPUT_DIR" || die "unable to create the output directory [$OUTPUT_DIR]"
+OUTPUT_DIR=$(cd "$OUTPUT_DIR" && pwd) || die "unable to cd into the output directory"
+[ -w "$OUTPUT_DIR" ] || die "output directory [$OUTPUT_DIR] isn't writable"
+[[ $OUTPUT_DIR =~ $SAFE_PATH ]] || die "output directory path [$OUTPUT_DIR] can only contain letters, numbers, _ . + / and -"
+
+# the pipeline runs in place, in a copy of the input, as it does in a NiDB analysis directory
+if [ -n "$INPUT_DIR" ] && [ -n "$(ls -A "$INPUT_DIR" 2>/dev/null)" ]; then
+    echo "== Copying [$INPUT_DIR] to [$OUTPUT_DIR]"
+    cp -a "$INPUT_DIR/." "$OUTPUT_DIR/" || die "unable to copy [$INPUT_DIR] to [$OUTPUT_DIR]"
+fi
+
+# ---------- segments ----------
+STATE_DIR=$(mktemp -d "${TMPDIR:-/tmp}/run-pipeline.XXXXXX") || die "unable to create a temporary directory in [${TMPDIR:-/tmp}]"
+trap 'rm -rf "$STATE_DIR"' EXIT
+
+VARARGS=()
+if [ -n "$SUBJECTUID" ]; then VARARGS+=(--subjectuid "$SUBJECTUID"); fi
+if [ -n "$STUDYNUM" ]; then VARARGS+=(--studynum "$STUDYNUM"); fi
+if [ -n "$STUDYDATETIME" ]; then VARARGS+=(--studydatetime "$STUDYDATETIME"); fi
+if [ $STOPONERROR -eq 1 ]; then VARARGS+=(--stop-on-error); fi
+
+# render_segment <template> <output>: fill in the variables, the runtime, the images and the external paths. Placeholders
+# for images or paths this export doesn't have are an error
+render_segment() {
+    local line name
+    {
+        echo 'trap '"'"'pwd > "$NIDB_SEGMENT_STATE"'"'"' EXIT'
+        while IFS= read -r line || [ -n "$line" ]; do
+            line=${line//"{analysisrootdir}"/$OUTPUT_DIR}
+            if [ -n "$SUBJECTUID" ]; then line=${line//"{subjectuid}"/$SUBJECTUID}; fi
+            if [ -n "$STUDYNUM" ]; then line=${line//"{studynum}"/$STUDYNUM}; fi
+            if [ -n "$STUDYDATETIME" ]; then line=${line//"{studydatetime}"/$STUDYDATETIME}; fi
+            line=${line//"{apptainer}"/$RUNTIME}
+            for name in "${!IMAGE_FILE[@]}"; do line=${line//"{image:$name}"/${IMAGE_FILE[$name]}}; done
+            for name in "${!PATH_VALUE[@]}"; do line=${line//"{path:$name}"/${PATH_VALUE[$name]}}; done
+            printf '%s\n' "$line"
+        done < "$1"
+    } > "$2" || die "unable to render [$1]"
+    if grep -v '^[[:space:]]*#' "$2" | grep -q '{image:[^}]*}\|{path:[^}]*}'; then
+        die "[$1] uses an image or path that isn't in images.txt or externalpaths.txt"
+    fi
+}
+
+mapfile -t SEGMENTS < "$HERE/segments.txt"
+CWD="$OUTPUT_DIR"
+rc=0
+for line in "${SEGMENTS[@]}"; do
+    IFS=$'\t' read -r num kind images steps <<< "$line"
+    case "$num" in ''|\#*) continue ;; esac
+    printf '%s\n' "$CWD" > "$STATE_DIR/cwd"
+
+    # the build records each segment's wall time and peak memory (NIDB_SEGMENT_STATS)
+    TIMECMD=()
+    if [ -n "${NIDB_SEGMENT_STATS:-}" ] && [ -x /usr/bin/time ]; then TIMECMD=(/usr/bin/time -a -o "$NIDB_SEGMENT_STATS" -f "$num\t%e\t%M"); fi
+    start=$SECONDS
+
+    if [ "$kind" = "native" ]; then
+        echo "== Segment [$num]: steps [$steps] in pipeline.sif"
+        if [ -n "${NIDB_REFERENCE_TRACE_DIR:-}" ]; then
+            # the build's reference run: outside a container, under strace, for the software capture
+            "${TIMECMD[@]}" env NIDB_PIPELINE_DIR="$HERE" strace -f -s 4096 -e trace=file,process -o "$NIDB_REFERENCE_TRACE_DIR/trace-$num.log" \
+                bash "$HERE/run.sh" --segment "$num" --analysisrootdir "$OUTPUT_DIR" --cwd "$CWD" --state "$STATE_DIR/cwd" "${VARARGS[@]}" < /dev/null
+        else
+            [ -f "$HERE/pipeline.sif" ] || die "[$HERE/pipeline.sif] not found"
+            "${TIMECMD[@]}" "$RUNTIME" exec --bind "$OUTPUT_DIR:$OUTPUT_DIR" --bind "$STATE_DIR:$STATE_DIR" "$HERE/pipeline.sif" \
+                /pipeline/run.sh --segment "$num" --analysisrootdir "$OUTPUT_DIR" --cwd "$CWD" --state "$STATE_DIR/cwd" "${VARARGS[@]}" < /dev/null
+        fi
+        rc=$?
+    else
+        echo "== Segment [$num]: step [$steps] runs [$images]"
+        render_segment "$HERE/segments/$num.sh.template" "$STATE_DIR/segment-$num.sh"
+        if [ $STOPONERROR -eq 1 ]; then
+            (cd "$CWD" && exec "${TIMECMD[@]}" env NIDB_SEGMENT_STATE="$STATE_DIR/cwd" bash -e "$STATE_DIR/segment-$num.sh" < /dev/null)
+        else
+            (cd "$CWD" && exec "${TIMECMD[@]}" env NIDB_SEGMENT_STATE="$STATE_DIR/cwd" bash "$STATE_DIR/segment-$num.sh" < /dev/null)
+        fi
+        rc=$?
+    fi
+    if [ -n "${NIDB_SEGMENT_STATS:-}" ] && [ ${#TIMECMD[@]} -eq 0 ]; then printf '%s\t%s\t\n' "$num" "$((SECONDS - start))" >> "$NIDB_SEGMENT_STATS"; fi
+
+    # the next segment starts in the directory this one ended in
+    if [ -s "$STATE_DIR/cwd" ]; then
+        next="$(cat "$STATE_DIR/cwd")"
+        if [ -d "$next" ]; then CWD="$next"; fi
+    fi
+    if [ $rc -ne 0 ] && [ $STOPONERROR -eq 1 ]; then
+        echo "== Segment [$num] failed with exit code [$rc]. Stopping, since --stop-on-error was given"
+        break
+    fi
+done
+
+echo "== Finished with exit code [$rc]"
+exit $rc
+)BASH";
+
+    QString path = c.buildDir + "/run-pipeline.sh";
+    if (!WriteTextFile(path, script, false)) {
+        msg = "Unable to write [" + path + "]";
+        return false;
+    }
+    QFile::setPermissions(path, QFile::ReadOwner | QFile::WriteOwner | QFile::ExeOwner | QFile::ReadGroup | QFile::ExeGroup | QFile::ReadOther | QFile::ExeOther);
+
+    return true;
+}
 
 /* ---------------------------------------------------------- */
 /* --------- WriteContainerBuildScript ---------------------- */
@@ -1223,7 +2478,11 @@ bool modulePipelineContainer::WriteContainerBuildScript(containerRequest &c, pip
     settings << "PIPELINE_NAME=" + ShellQuote(p.name);
     settings << "PIPELINE_VERSION=" + QString::number(c.pipelineVersion);
     settings << "BUILDDIR=" + ShellQuote(GetClusterBuildDir(c.containerID));
-    settings << "SIF_NAME=" + ShellQuote(GetContainerFileName(p, c.pipelineVersion));
+    /* a launcher export (doc section 11) is a directory, with the native steps' image as pipeline.sif */
+    bool launcher = QFile::exists(c.buildDir + "/segments.txt");
+    settings << QString("EXPORT_TYPE=%1").arg(launcher ? "launcher" : "single");
+    settings << "EXPORT_DIR=" + ShellQuote(launcher ? GetExportDirName(p, c.pipelineVersion) : QString(""));
+    settings << "SIF_NAME=" + ShellQuote(launcher ? QString("pipeline.sif") : GetContainerFileName(p, c.pipelineVersion));
     settings << "REF_ANALYSISDIR=" + ShellQuote(refAnalysisDir);
     settings << "REF_SUBJECTUID=" + ShellQuote(a.uid);
     settings << "REF_STUDYNUM=" + QString::number(a.studynum);
@@ -1339,10 +2598,11 @@ finish() {
     # on SIGTERM, since the scheduler may follow with SIGKILL and the result has to be reported first
     if [ $rc -ne 143 ]; then build_dir_stats; fi
     if [ $rc -eq 0 ]; then
-        nidbapi -d action=containercomplete --data-urlencode "path=$BUILDDIR/$SIF_NAME" -d "size=$SIF_SIZE" -d "sha256=$SIF_SHA256" \
+        # a single .sif, or a launcher export's directory, with the sha256 of its checksums.sha256 (finalize)
+        nidbapi -d action=containercomplete --data-urlencode "path=$RESULT_PATH" -d "size=$SIF_SIZE" -d "sha256=$SIF_SHA256" \
             -d "buildsize=$BUILD_SIZE" -d "buildfilecount=$BUILD_FILECOUNT" \
             --data-urlencode "message=Container built on $(hostname)" --data-urlencode "warnings@$BUILDDIR/build-warnings.txt" \
-            || log "ERROR: the container was built, but NiDB wasn't told. It's [$BUILDDIR/$SIF_NAME]"
+            || log "ERROR: the container was built, but NiDB wasn't told. It's [$RESULT_PATH]"
     else
         msg="build-container.sh exited with code [$rc]"
         if [ -s "$BUILDDIR/build-error.txt" ]; then msg="$(tail -n 1 "$BUILDDIR/build-error.txt")"; fi
@@ -2082,12 +3342,214 @@ capture_software() {
     capture_warnings
 }
 
+# ---------- launcher exports (doc section 11) ----------
+# A pipeline whose steps run their own containers is exported as a directory: run-pipeline.sh, pipeline.sif for the native
+# steps (if any), and the pinned references of the images the container steps run. Files: images-export.txt (from NiDB:
+# name, image as written, steps), images.txt (name, pinned reference, tag; read by run-pipeline.sh), images-info.txt
+# (name, source, pinned reference, tag, local path, local sha256, local size; for the manifest), reference-segments.txt
+# (segment, seconds, peak memory KB)
+
+HAS_NATIVE=1
+RESULT_PATH=""
+
+# registry_digest <reference>: the manifest digest (sha256:...) of a docker:// or oras:// reference, without the scheme,
+# from the registry's HTTP API. A tag is looked up; a digest is returned as it is. Anonymous access, with the registry's
+# token handshake if it asks for one (Docker Hub, ghcr.io, quay.io, ...). Sets REGISTRY_ERROR on failure
+REGISTRY_ERROR=""
+registry_digest() {
+    local ref="$1" first host repo tag last url out code challenge realm service scope token digest
+    local accept=(-H "Accept: application/vnd.oci.image.index.v1+json" -H "Accept: application/vnd.docker.distribution.manifest.list.v2+json" \
+                  -H "Accept: application/vnd.oci.image.manifest.v1+json" -H "Accept: application/vnd.docker.distribution.manifest.v2+json")
+    REGISTRY_ERROR=""
+
+    # the registry is the first part if it looks like a host name, else Docker Hub, where official images are library/<name>
+    first="${ref%%/*}"
+    if [ "$first" != "$ref" ] && { [[ $first == *.* ]] || [[ $first == *:* ]] || [ "$first" = "localhost" ]; }; then
+        host="$first"; repo="${ref#*/}"
+    else
+        host="registry-1.docker.io"; repo="$ref"
+        if [[ $repo != */* ]]; then repo="library/$repo"; fi
+    fi
+    case "$host" in docker.io|index.docker.io) host="registry-1.docker.io" ;; esac
+
+    if [[ $repo == *@sha256:* ]]; then
+        printf '%s' "${repo##*@}"
+        return 0
+    fi
+    tag="latest"
+    last="${repo##*/}"
+    if [[ $last == *:* ]]; then tag="${last##*:}"; repo="${repo%:*}"; fi
+    url="https://$host/v2/$repo/manifests/$tag"
+
+    out="$(curl -sS -I --connect-timeout 30 --max-time 120 "${accept[@]}" -w '\n%{http_code}' "$url" 2>&1)"
+    code="$(printf '%s' "$out" | tail -n 1)"
+    if [ "$code" = "401" ]; then
+        challenge="$(printf '%s\n' "$out" | tr -d '\r' | grep -i '^www-authenticate:' | head -n 1)"
+        realm="$(printf '%s' "$challenge" | sed -n 's/.*realm="\([^"]*\)".*/\1/p')"
+        service="$(printf '%s' "$challenge" | sed -n 's/.*service="\([^"]*\)".*/\1/p')"
+        scope="$(printf '%s' "$challenge" | sed -n 's/.*scope="\([^"]*\)".*/\1/p')"
+        if [ -z "$scope" ]; then scope="repository:$repo:pull"; fi
+        if [ -z "$realm" ]; then REGISTRY_ERROR="[$host] asked for authentication, but not how"; return 1; fi
+        token="$(curl -sS --connect-timeout 30 --max-time 120 --get "$realm" --data-urlencode "service=$service" --data-urlencode "scope=$scope" 2>&1 \
+            | tr ',' '\n' | sed -n 's/^[[:space:]{]*"\(token\|access_token\)"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\2/p' | head -n 1)"
+        if [ -z "$token" ]; then REGISTRY_ERROR="no anonymous token from [$realm] for [$scope]. Private images aren't supported yet"; return 1; fi
+        out="$(curl -sS -I --connect-timeout 30 --max-time 120 "${accept[@]}" -H "Authorization: Bearer $token" -w '\n%{http_code}' "$url" 2>&1)"
+        code="$(printf '%s' "$out" | tail -n 1)"
+    fi
+    if [ "$code" != "200" ]; then
+        REGISTRY_ERROR="[$url] returned HTTP [$code]: $(printf '%s' "$out" | head -n 1 | tr -d '\r')"
+        return 1
+    fi
+    digest="$(printf '%s\n' "$out" | tr -d '\r' | awk 'tolower($1) == "docker-content-digest:" { print $2 }' | tail -n 1)"
+    if ! [[ $digest =~ ^sha256:[0-9a-f]{64}$ ]]; then REGISTRY_ERROR="[$url] didn't return a sha256 digest"; return 1; fi
+    printf '%s' "$digest"
+}
+
+# local_image_source <sif>: the docker:// reference a local .sif was built from, from its definition file (Bootstrap: docker,
+# From: <image>), which apptainer pull and build write into the image. Empty if it wasn't built from a registry image
+local_image_source() {
+    timeout 120 "$APPTAINER" inspect --deffile "$1" 2>/dev/null | awk '
+        { line = $0; sub(/^[[:space:]]+/, "", line); key = tolower(line); sub(/:.*/, "", key)
+          value = line; sub(/^[^:]*:[[:space:]]*/, "", value); sub(/[[:space:]]+$/, "", value) }
+        key == "bootstrap" && bootstrap == "" { bootstrap = tolower(value) }
+        key == "from" && from == "" { from = value }
+        END { if (bootstrap == "docker" && from != "") print "docker://" from }'
+}
+
+# pin each image the container steps run (doc section 11, "Identifying and pinning the images"): a URI is pinned to its
+# registry digest; a local .sif to the digest of the registry image it was built from
+pin_images() {
+    local name source steps uri scheme ref digest pinned last localpath localsha localsize
+    if [ ! -f "$BUILDDIR/images-export.txt" ]; then fail "images-export.txt is missing from the build directory"; fi
+    : > "$BUILDDIR/images.txt"; : > "$BUILDDIR/images-info.txt"
+    while IFS=$'\t' read -r name source steps || [ -n "$name" ]; do
+        if [ -z "$name" ]; then continue; fi
+        localpath=""; localsha=""; localsize=""
+        uri="$source"
+        if [ "${source#/}" != "$source" ]; then
+            if [ ! -f "$source" ]; then fail "Image [$name] (step $steps) is [$source], which doesn't exist on $(hostname)"; fi
+            localpath="$source"
+            localsize="$(stat -c %s "$source")"
+            log "Checksumming image [$name] [$source] ($localsize bytes)"
+            localsha="$(sha256sum "$source" | awk '{ print $1 }')"
+            uri="$(local_image_source "$source")"
+            if [ -z "$uri" ]; then fail "Image [$name] [$source] (step $steps) wasn't built from a registry image (its definition file has no Bootstrap: docker), so it can't be referenced. Push it to a registry, for example with apptainer push to an oras:// URI, and use that URI in the step"; fi
+            log "Image [$name] [$source] was built from [$uri]"
+        fi
+
+        scheme="${uri%%://*}"; ref="${uri#*://}"
+        case "$scheme" in
+            docker|oras) ;;
+            *) fail "Image [$name] [$uri] (step $steps) can't be pinned. Only docker:// and oras:// images can be, so far" ;;
+        esac
+        log "Looking up the digest of [$uri]"
+        digest="$(registry_digest "$ref")" || fail "Unable to pin image [$name] [$uri] (step $steps) to a digest: $REGISTRY_ERROR. The build node needs to reach the registry"
+        pinned="$scheme://${ref%@*}"
+        # a tag is replaced with the digest: repo:tag@sha256 isn't accepted everywhere
+        last="${pinned##*/}"
+        if [[ $last == *:* ]]; then pinned="${pinned%:*}"; fi
+        pinned="$pinned@$digest"
+        log "Pinned image [$name] to [$pinned]"
+        if [ -n "$localpath" ]; then warn "Image [$name] is pinned to the current digest of [$uri], which may be newer than [$localpath] if the tag has moved since it was downloaded. The validation run uses the pinned image"; fi
+
+        printf '%s\t%s\t%s\n' "$name" "$pinned" "$uri" >> "$BUILDDIR/images.txt"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$name" "$source" "$pinned" "$uri" "$localpath" "$localsha" "$localsize" >> "$BUILDDIR/images-info.txt"
+    done < "$BUILDDIR/images-export.txt"
+    if [ ! -s "$BUILDDIR/images.txt" ]; then fail "No images to pin. images-export.txt is empty"; fi
+}
+
+# launcher_args: LAUNCHER_ARGS, the run-pipeline.sh arguments for the reference and validation runs: the reference study, the
+# build's image cache, and the external paths as they are on this node. A global, since bash 4.2 has no namerefs
+LAUNCHER_ARGS=()
+launcher_args() {
+    local name source steps
+    LAUNCHER_ARGS=(--subjectuid "$REF_SUBJECTUID" --studynum "$REF_STUDYNUM" --studydatetime "$REF_STUDYDATETIME" --image-cache "$BUILDDIR/image-cache" --allow-pull)
+    if [ -f "$BUILDDIR/externalpaths.txt" ]; then
+        while IFS=$'\t' read -r name source steps || [ -n "$name" ]; do
+            if [ -n "$name" ]; then LAUNCHER_ARGS+=(--path "$name=$source"); fi
+        done < "$BUILDDIR/externalpaths.txt"
+    fi
+}
+
+# the reference run of a launcher export: run-pipeline.sh from the build directory, with native segments outside a
+# container under strace and container segments running the node's local images (doc section 11). Images given as
+# URIs are downloaded into the build's image cache from their pinned reference
+reference_run_launcher() {
+    local scratch="$BUILDDIR/reference" rc args=() name pinned uri localpath f
+    safe_rm "$scratch" "$BUILDDIR/traces"
+    mkdir -p "$scratch" "$BUILDDIR/traces" || fail "Unable to create [$scratch] and [$BUILDDIR/traces]"
+    : > "$BUILDDIR/reference-segments.txt"
+
+    launcher_args
+    args=("${LAUNCHER_ARGS[@]}")
+    while IFS=$'\t' read -r name pinned uri || [ -n "$name" ]; do
+        localpath="$(awk -F'\t' -v n="$name" '$1 == n { print $5; exit }' "$BUILDDIR/images-info.txt")"
+        if [ -n "$localpath" ]; then args+=(--local-image "$name=$localpath"); fi
+    done < "$BUILDDIR/images.txt"
+
+    touch "$BUILDDIR/reference.start" || fail "Unable to create [$BUILDDIR/reference.start]"
+    sleep 1
+    log "Reference run: subject [$REF_SUBJECTUID] study [$REF_STUDYNUM] [$REF_STUDYDATETIME], through run-pipeline.sh"
+    NIDB_REFERENCE_TRACE_DIR="$BUILDDIR/traces" NIDB_SEGMENT_STATS="$BUILDDIR/reference-segments.txt" \
+        bash "$BUILDDIR/run-pipeline.sh" --input "$BUILDDIR/input" --output "$scratch" "${args[@]}" > "$BUILDDIR/reference-run.log" 2>&1
+    rc=$?
+    log "Reference run finished with exit code [$rc]"
+    if [ $rc -eq 2 ] && grep -q '^run-pipeline.sh: ' "$BUILDDIR/reference-run.log"; then
+        fail "run-pipeline.sh stopped: $(grep '^run-pipeline.sh: ' "$BUILDDIR/reference-run.log" | tail -n 1 | cut -c 18-)"
+    fi
+
+    # the native segments' traces, in segment order, are the trace the software capture reads
+    : > "$BUILDDIR/trace.log"
+    for f in $(ls "$BUILDDIR/traces" 2>/dev/null | sed -n 's/^trace-\([0-9]*\)\.log$/\1/p' | sort -n); do
+        cat "$BUILDDIR/traces/trace-$f.log" >> "$BUILDDIR/trace.log"
+    done
+    if [ $HAS_NATIVE -eq 1 ] && [ ! -s "$BUILDDIR/trace.log" ]; then fail "The reference run produced no trace. Check that strace works on this node (ptrace_scope in sysinfo.txt)"; fi
+    if [ $rc -ne 0 ]; then warn "The reference run exited with code [$rc], so the trace may not include everything the pipeline uses. See reference-run.log"; fi
+}
+
+# add what the reference run used to README.txt, so users can size their cluster jobs (doc section 11, "Running on a cluster")
+add_readme_resources() {
+    local num seconds kb mem
+    if [ ! -s "$BUILDDIR/reference-segments.txt" ]; then return 0; fi
+    {
+        echo ""
+        echo "RESOURCES USED BY THE REFERENCE RUN"
+        echo "On $(hostname), with $(nproc 2>/dev/null) CPUs and $(awk '/^MemTotal:/ { printf "%.0f GB", $2 / 1048576 }' /proc/meminfo 2>/dev/null) of memory. Peak memory is the largest single process."
+        echo ""
+        # /usr/bin/time adds 'Command exited with non-zero status' lines, so only lines starting with a segment number are read
+        grep -E $'^[0-9]+\t' "$BUILDDIR/reference-segments.txt" | while IFS=$'\t' read -r num seconds kb; do
+            mem="unknown"
+            if [ -n "$kb" ]; then mem="$(awk -v k="$kb" 'BEGIN { if (k >= 1048576) printf "%.1f GB", k / 1048576; else printf "%.0f MB", k / 1024 }')"; fi
+            printf '    segment %s: %s seconds, peak memory %s\n' "$num" "${seconds%.*}" "$mem"
+        done
+    } >> "$BUILDDIR/README.txt"
+}
+
+# the export directory: run-pipeline.sh, pipeline.sif (if there are native steps), the segment templates, images.txt,
+# externalpaths.txt, requiredvars.txt, README.txt, manifest.json, and checksums.sha256 of the rest
+assemble_export() {
+    local out="$BUILDDIR/$EXPORT_DIR" f
+    safe_rm "$out"
+    mkdir -p "$out" || fail "Unable to create [$out]"
+    for f in run-pipeline.sh segments.txt images.txt externalpaths.txt requiredvars.txt README.txt manifest.json; do
+        cp -f "$BUILDDIR/$f" "$out/" || fail "Unable to copy [$f] into [$out]"
+    done
+    cp -a "$BUILDDIR/segments" "$out/" || fail "Unable to copy the segment templates into [$out]"
+    chmod 755 "$out/run-pipeline.sh"
+    if [ $HAS_NATIVE -eq 1 ]; then
+        mv -f "$BUILDDIR/$SIF_NAME" "$out/$SIF_NAME" || fail "Unable to move [$SIF_NAME] into [$out]"
+    fi
+    (cd "$out" && find . -type f ! -name checksums.sha256 | LC_ALL=C sort | sed 's|^\./||' | xargs -d '\n' sha256sum > checksums.sha256) || fail "Unable to write [$out/checksums.sha256]"
+    log "Assembled the export in [$out]: $(ls "$out" | tr '\n' ' ')"
+}
+
 # manifest.json: NiDB's manifest-export.json (pipeline, input layout, required variables, export warnings) plus a 'build'
 # object with the build node, base OS and the captured software (doc section 6). Written before build_image, which copies
 # it into the image. capture_software writes the captured-*.txt and environment.txt files. Validation results aren't in
 # it, since the image is already built by then; they're in validation.txt
 write_manifest() {
     local base s="$BUILDDIR/sysinfo.txt" sw="$BUILDDIR/software.txt" m="$BUILDDIR/manifest.json" t path sep name version arch
+    local source pinned uri localpath localsha localsize mem
     if [ ! -s "$BUILDDIR/manifest-export.json" ]; then fail "manifest-export.json is missing from the build directory"; fi
 
     # remove the closing brace of NiDB's object, so the build object can be added to it
@@ -2142,6 +3604,28 @@ write_manifest() {
         printf '        "capturedOptDirectories": %s,\n' "$(json_lines "$BUILDDIR/captured-opt.txt" '        ')"
         printf '        "capturedPaths": %s,\n' "$(json_lines "$BUILDDIR/captured-paths.txt" '        ')"
         printf '        "environment": %s,\n' "$(json_lines "$BUILDDIR/environment.txt" '        ')"
+
+        # a launcher export: the pinned images, and what each segment of the reference run used (doc section 11)
+        if [ "$EXPORT_TYPE" = "launcher" ]; then
+            printf '        "images": ['
+            sep=""
+            while IFS=$'\t' read -r name source pinned uri localpath localsha localsize || [ -n "$name" ]; do
+                if [ -z "$name" ]; then continue; fi
+                printf '%s\n            { "name": %s, "source": %s, "reference": %s, "tag": %s, "localPath": %s, "localSha256": %s, "localSize": %s, "validated": %s }' "$sep" \
+                    "$(json_str "$name")" "$(json_str "$source")" "$(json_str "$pinned")" "$(json_str "$uri")" "$(json_str "$localpath")" "$(json_str "$localsha")" "${localsize:-null}" "$( [ "$RUN_VALIDATION" = "1" ] && echo true || echo false )"
+                sep=","
+            done < "$BUILDDIR/images-info.txt"
+            if [ -n "$sep" ]; then printf '\n        ],\n'; else printf '],\n'; fi
+
+            printf '        "referenceRun": ['
+            sep=""
+            while IFS=$'\t' read -r name t mem; do
+                printf '%s\n            { "segment": %s, "seconds": %s, "peakMemoryKb": %s }' "$sep" "$name" "${t%.*}" "${mem:-null}"
+                sep=","
+            done < <(grep -E $'^[0-9]+\t[0-9.]+(\t[0-9]*)?$' "$BUILDDIR/reference-segments.txt" 2>/dev/null)
+            if [ -n "$sep" ]; then printf '\n        ],\n'; else printf '],\n'; fi
+        fi
+
         printf '        "buildWarnings": %s\n' "$(json_lines "$BUILDDIR/build-warnings.txt" '        ')"
         printf '    }\n}\n'
     } > "$m.tmp" || fail "Unable to write [$m.tmp]"
@@ -2177,6 +3661,7 @@ write_metadata() {
         printf 'org.nidb.base\t%s\n' "$BASE_IMAGE"
         printf 'org.nidb.buildos\t%s\n' "$OS_PRETTY_NAME"
         printf 'org.nidb.exported\t%s\n' "$(date '+%Y-%m-%d')"
+        printf 'org.nidb.export\t%s\n' "$EXPORT_TYPE"
         if [ -f "$d/labels.json" ]; then
             grep -o '"[^"\\]*"[[:space:]]*:[[:space:]]*"[^"\\]*"' "$d/labels.json" | sed 's/^"\([^"]*\)"[[:space:]]*:[[:space:]]*"\(.*\)"$/\1\t\2/' | grep -v '^org\.nidb\.'
         fi
@@ -2192,17 +3677,20 @@ write_metadata() {
     } > "$d/labels.json" || fail "Unable to write [$d/labels.json]"
 }
 
-# sandbox from the base image, add the captured software and /pipeline, then build the .sif (doc section 8, steps 4.4-4.5)
-build_image() {
-    export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-${TMPDIR:-/tmp}}"
-    cd "$BUILDDIR" || fail "Unable to cd into [$BUILDDIR]"
-
-    # the job can inherit another user's XDG_RUNTIME_DIR (like root's /run/user/0) from the submit environment. Pulling an
-    # image reads registry logins from $XDG_RUNTIME_DIR/containers/auth.json, and stops if that's unreadable
+# the job can inherit another user's XDG_RUNTIME_DIR (like root's /run/user/0) from the submit environment. Pulling an
+# image reads registry logins from $XDG_RUNTIME_DIR/containers/auth.json, and stops if that's unreadable
+fix_xdg_runtime_dir() {
     if [ -n "${XDG_RUNTIME_DIR:-}" ] && { [ ! -d "$XDG_RUNTIME_DIR" ] || [ ! -O "$XDG_RUNTIME_DIR" ] || [ ! -w "$XDG_RUNTIME_DIR" ]; }; then
         log "XDG_RUNTIME_DIR [$XDG_RUNTIME_DIR] isn't a directory owned by and writable by $(whoami), so it's unset for $APPTAINER"
         unset XDG_RUNTIME_DIR
     fi
+}
+
+# sandbox from the base image, add the captured software and /pipeline, then build the .sif (doc section 8, steps 4.4-4.5)
+build_image() {
+    export APPTAINER_TMPDIR="${APPTAINER_TMPDIR:-${TMPDIR:-/tmp}}"
+    cd "$BUILDDIR" || fail "Unable to cd into [$BUILDDIR]"
+    fix_xdg_runtime_dir
 
     # sandboxes can contain read-only directories, which safe_rm handles
     safe_rm "$BUILDDIR/base"
@@ -2217,7 +3705,13 @@ build_image() {
     log "Copying the captured software and the pipeline into the sandbox"
     cp -a staging/. base/ || fail "Unable to copy the captured software into the sandbox"
     mkdir -p base/pipeline base/input base/output || fail "Unable to create /pipeline, /input and /output in the sandbox"
-    cp -f run.sh run.sh.template manifest.json requiredvars.txt README.txt base/pipeline/ || fail "Unable to copy the pipeline files into the sandbox"
+    if [ "$EXPORT_TYPE" = "launcher" ]; then
+        # pipeline.sif runs the native segments, through run.sh --segment (doc section 11)
+        cp -f run.sh manifest.json requiredvars.txt README.txt base/pipeline/ || fail "Unable to copy the pipeline files into the sandbox"
+        cp -a segments base/pipeline/ || fail "Unable to copy the segment templates into the sandbox"
+    else
+        cp -f run.sh run.sh.template manifest.json requiredvars.txt README.txt base/pipeline/ || fail "Unable to copy the pipeline files into the sandbox"
+    fi
     chmod 755 base/pipeline/run.sh
 
     write_metadata base
@@ -2228,17 +3722,33 @@ build_image() {
     "$APPTAINER" build "$SIF_NAME" base || fail "Unable to build [$SIF_NAME] from the sandbox"
 }
 
-# run the new image on the reference input and compare the output file list with the reference analysis (doc section 8, step 4.6)
+# run the new image on the reference input and compare the output file list with the reference analysis (doc section 8, step 4.6).
+# A launcher export runs its own run-pipeline.sh, from the export directory, with the pinned images (doc section 11)
 validate() {
-    local out="$BUILDDIR/validation-output" f="$BUILDDIR/validation.txt" rc nmissing nextra
+    local out="$BUILDDIR/validation-output" rc
     safe_rm "$out"
     mkdir -p "$out" || fail "Unable to create [$out]"
 
-    log "Validation run"
-    "$APPTAINER" run --bind "$BUILDDIR/input:/input:ro" --bind "$out:/output" "$BUILDDIR/$SIF_NAME" --subjectuid "$REF_SUBJECTUID" --studynum "$REF_STUDYNUM" --studydatetime "$REF_STUDYDATETIME" > "$BUILDDIR/validation-run.log" 2>&1
-    rc=$?
+    if [ "$EXPORT_TYPE" = "launcher" ]; then
+        log "Validation run of [$BUILDDIR/$EXPORT_DIR/run-pipeline.sh], with the pinned images"
+        launcher_args
+        bash "$BUILDDIR/$EXPORT_DIR/run-pipeline.sh" --input "$BUILDDIR/input" --output "$out" "${LAUNCHER_ARGS[@]}" > "$BUILDDIR/validation-run.log" 2>&1
+        rc=$?
+        if [ $rc -eq 2 ] && grep -q '^run-pipeline.sh: ' "$BUILDDIR/validation-run.log"; then
+            warn "run-pipeline.sh stopped in the validation run: $(grep '^run-pipeline.sh: ' "$BUILDDIR/validation-run.log" | tail -n 1 | cut -c 18-)"
+        fi
+    else
+        log "Validation run"
+        "$APPTAINER" run --bind "$BUILDDIR/input:/input:ro" --bind "$out:/output" "$BUILDDIR/$SIF_NAME" --subjectuid "$REF_SUBJECTUID" --studynum "$REF_STUDYNUM" --studydatetime "$REF_STUDYDATETIME" > "$BUILDDIR/validation-run.log" 2>&1
+        rc=$?
+    fi
     log "Validation run finished with exit code [$rc]"
+    compare_outputs "$out" "$rc"
+}
 
+# compare_outputs <dir> <exit code>: the validation run's file list against the reference analysis, into validation.txt
+compare_outputs() {
+    local out="$1" rc="$2" f="$BUILDDIR/validation.txt" nmissing nextra
     : > "$f"
     kv "$f" exitcode "$rc"
     if [ $rc -ne 0 ]; then warn "The validation run exited with code [$rc]. See validation-run.log"; fi
@@ -2267,15 +3777,26 @@ validate() {
 
 # the .sif's size and checksum for the final report, then remove what's no longer needed. The .sif stays here, with the
 # logs and reports. The staged input is the reference subject's data, and the sandbox is as big as the image
+# A launcher export reports its directory: the total size, and the sha256 of its checksums.sha256, which covers every file in it.
+# The images downloaded for the reference and validation runs are removed; users download their own
 finalize() {
-    local sif="$BUILDDIR/$SIF_NAME"
-    if [ ! -s "$sif" ]; then fail "[$sif] is missing or empty"; fi
-    SIF_SIZE=$(stat -c %s "$sif") || fail "Unable to get the size of [$sif]"
-    SIF_SHA256=$(sha256sum "$sif" | awk '{print $1}')
-    if [ -z "$SIF_SHA256" ]; then fail "Unable to get the sha256 of [$sif]"; fi
-    log "[$sif] size [$SIF_SIZE] sha256 [$SIF_SHA256]"
+    local sif="$BUILDDIR/$SIF_NAME" dir="$BUILDDIR/$EXPORT_DIR"
+    if [ "$EXPORT_TYPE" = "launcher" ]; then
+        if [ ! -s "$dir/checksums.sha256" ]; then fail "[$dir/checksums.sha256] is missing or empty"; fi
+        SIF_SIZE=$(du -sb -- "$dir" | awk '{print $1}') || fail "Unable to get the size of [$dir]"
+        SIF_SHA256=$(sha256sum "$dir/checksums.sha256" | awk '{print $1}')
+        RESULT_PATH="$dir"
+    else
+        if [ ! -s "$sif" ]; then fail "[$sif] is missing or empty"; fi
+        SIF_SIZE=$(stat -c %s "$sif") || fail "Unable to get the size of [$sif]"
+        SIF_SHA256=$(sha256sum "$sif" | awk '{print $1}')
+        RESULT_PATH="$sif"
+    fi
+    if [ -z "$SIF_SHA256" ]; then fail "Unable to get the sha256 of [$RESULT_PATH]"; fi
+    log "[$RESULT_PATH] size [$SIF_SIZE] sha256 [$SIF_SHA256]"
 
     safe_rm "$BUILDDIR/base" "$BUILDDIR/staging" "$BUILDDIR/input" "$BUILDDIR/reference" "$BUILDDIR/validation-output"
+    if [ "$EXPORT_TYPE" = "launcher" ]; then safe_rm "$BUILDDIR/image-cache" "$BUILDDIR/apptainer-cache" "$BUILDDIR/traces"; fi
 }
 
 # ---------- main ----------
@@ -2300,22 +3821,53 @@ detect_os
 collect_sysinfo
 collect_software
 check_tools
-if [ -z "$BASE_IMAGE" ]; then fail "No base image for this OS [$OS_PRETTY_NAME] (ID [$OS_ID], VERSION_ID [$OS_VERSION_ID])"; fi
-log "OS [$OS_PRETTY_NAME], family [$OS_FAMILY], package manager [$PKG_MANAGER], base image [$BASE_IMAGE]"
-check_eol
 
-checkin runningReferenceAnalysis "Reference run of subject [$REF_SUBJECTUID] study [$REF_STUDYNUM] under strace"
-reference_run
-checkin postReferenceAnalysisChecks "Capturing the software used by the reference run"
-capture_software
-checkin buildingContainer "Building [$SIF_NAME] from base image [$BASE_IMAGE]"
+# a launcher export with only container steps has no pipeline.sif, so no base image or software capture (doc section 11)
+if [ "$EXPORT_TYPE" = "launcher" ]; then
+    if [ ! -s "$BUILDDIR/segments.txt" ]; then fail "segments.txt is missing from the build directory"; fi
+    if ! grep -q $'^[0-9]*\tnative\t' "$BUILDDIR/segments.txt"; then HAS_NATIVE=0; fi
+fi
+if [ $HAS_NATIVE -eq 1 ]; then
+    if [ -z "$BASE_IMAGE" ]; then fail "No base image for this OS [$OS_PRETTY_NAME] (ID [$OS_ID], VERSION_ID [$OS_VERSION_ID])"; fi
+    log "OS [$OS_PRETTY_NAME], family [$OS_FAMILY], package manager [$PKG_MANAGER], base image [$BASE_IMAGE]"
+    check_eol
+else
+    log "Every step runs a container, so there's no pipeline.sif to build"
+fi
+
+if [ "$EXPORT_TYPE" = "launcher" ]; then
+    # downloads for this build stay in the build directory, and are removed at the end (finalize)
+    fix_xdg_runtime_dir
+    export APPTAINER_CACHEDIR="$BUILDDIR/apptainer-cache" SINGULARITY_CACHEDIR="$BUILDDIR/apptainer-cache"
+    checkin preReferenceAnalysisChecks "Pinning the images the container steps run"
+    pin_images
+    checkin runningReferenceAnalysis "Reference run of subject [$REF_SUBJECTUID] study [$REF_STUDYNUM] through run-pipeline.sh, native steps under strace"
+    reference_run_launcher
+else
+    checkin runningReferenceAnalysis "Reference run of subject [$REF_SUBJECTUID] study [$REF_STUDYNUM] under strace"
+    reference_run
+fi
+if [ $HAS_NATIVE -eq 1 ]; then
+    checkin postReferenceAnalysisChecks "Capturing the software used by the reference run"
+    capture_software
+fi
+if [ "$EXPORT_TYPE" = "launcher" ]; then
+    checkin buildingContainer "Building the export [$EXPORT_DIR]$( [ $HAS_NATIVE -eq 1 ] && echo " and its [$SIF_NAME] from base image [$BASE_IMAGE]")"
+    add_readme_resources
+else
+    checkin buildingContainer "Building [$SIF_NAME] from base image [$BASE_IMAGE]"
+fi
 write_manifest
-build_image
+if [ $HAS_NATIVE -eq 1 ]; then build_image; fi
+if [ "$EXPORT_TYPE" = "launcher" ]; then assemble_export; fi
 if [ "$RUN_VALIDATION" = "1" ]; then
-    checkin runningValidationAnalysis "Validation run of [$SIF_NAME]"
+    checkin runningValidationAnalysis "Validation run of [$( [ "$EXPORT_TYPE" = "launcher" ] && echo "$EXPORT_DIR" || echo "$SIF_NAME")]"
     validate
 else
     log "Validation run skipped"
+    if [ "$EXPORT_TYPE" = "launcher" ] && awk -F'\t' '$5 != "" { found = 1 } END { exit !found }' "$BUILDDIR/images-info.txt"; then
+        warn "Validation was skipped, so the pinned images of local .sif files haven't been run. The reference run used the node's own copies"
+    fi
 fi
 finalize
 
@@ -2342,7 +3894,8 @@ exit 0
  * @brief Write build.job: the scheduler header (from the pipeline's cluster settings) plus a call to
  * build-container.sh, which WriteContainerBuildScript() has already written. The reference study's values
  * are in build-container.sh, so build.job passes no arguments. The scheduler output goes to the build directory.
- * The wall time is the pipeline's, times the number of pipeline runs (reference, plus validation), plus 4 hours
+ * The wall time is the pipeline's, times the number of pipeline runs (reference, plus validation), plus 4 hours, plus an
+ * hour per image for a launcher export
  * @param c The request
  * @param p The pipeline
  * @param msg Error message, if any
@@ -2359,6 +3912,14 @@ bool modulePipelineContainer::WriteClusterJob(containerRequest &c, pipeline &p, 
     int wallTime = 0;
     if (p.clusterMaxWallTime > 0)
         wallTime = p.clusterMaxWallTime * (c.runValidation ? 2 : 1) + 240;
+
+    /* a launcher export (doc section 11) also downloads each image it references, and converts Docker images to .sif,
+       which can take half an hour for a large one. Allow an hour per image */
+    QFile imageList(c.buildDir + "/images-export.txt");
+    if ((wallTime > 0) && imageList.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        int numImages = QString(imageList.readAll()).split("\n", Qt::SkipEmptyParts).size();
+        wallTime += 60 * numImages;
+    }
     QString wallTimeStr = QString("%1:%2:00").arg(wallTime/60).arg(wallTime % 60, 2, 10, QChar('0'));
 
     QString jobfile;
@@ -2451,6 +4012,22 @@ QString modulePipelineContainer::GetContainerFileName(pipeline &p, int version) 
     QString name = p.name;
     name.replace(QRegularExpression("[^A-Za-z0-9_.-]"), "_");
     return QString("%1-v%2.sif").arg(name).arg(version);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetExportDirName ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief The directory name of a launcher export (doc section 11), which holds run-pipeline.sh and pipeline.sif
+ * @param p The pipeline
+ * @param version Pipeline version
+ * @return <pipeline>-v<version>, with characters other than letters, numbers, _ . - replaced with _
+ */
+QString modulePipelineContainer::GetExportDirName(pipeline &p, int version) {
+    QString name = p.name;
+    name.replace(QRegularExpression("[^A-Za-z0-9_.-]"), "_");
+    return QString("%1-v%2").arg(name).arg(version);
 }
 
 
