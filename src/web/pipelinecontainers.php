@@ -167,6 +167,30 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- LauncherStepMatch ------------------ */
+	/* -------------------------------------------- */
+	/* the apptainer/singularity exec, run or test in a step command, or "" if there isn't one. Such a step makes the
+	   export a launcher with referenced images (doc/pipeline-apptainer.md section 11). A preview of
+	   modulePipelineContainer::CheckContainers(), which parses each command properly */
+	function LauncherStepMatch($command) {
+		if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity)\s+(exec|run|test)\b/', (string)$command, $m)) { return trim($m[0]); }
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsLauncherExport ------------------- */
+	/* -------------------------------------------- */
+	/* true if any enabled main step runs a container, so the export is a launcher, not a single .sif */
+	function IsLauncherExport($steps) {
+		foreach ($steps as $step) {
+			if ($step['ps_enabled'] && (LauncherStepMatch($step['ps_command'] ?? '') != "")) { return true; }
+		}
+		return false;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetContainerPitfalls --------------- */
 	/* -------------------------------------------- */
 	/* things specific to this pipeline that will stop the export (error), make the container behave
@@ -273,8 +297,9 @@
 		foreach ($steps as $step) {
 			if (!$step['ps_enabled']) { continue; }
 			$command = (string)($step['ps_command'] ?? '');
-			if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity)\s+(exec|run|test)\b/', $command, $m)) {
-				$launchersteps[] = "<tt>" . htmlspecialchars(trim($m[0])) . "</tt> (step " . (int)$step['ps_order'] . ")";
+			$match = LauncherStepMatch($command);
+			if ($match != "") {
+				$launchersteps[] = "<tt>" . htmlspecialchars($match) . "</tt> (step " . (int)$step['ps_order'] . ")";
 				continue;
 			}
 			foreach (explode("\n", $command) as $line) {
@@ -562,6 +587,41 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ContainerTypeLabel ----------------- */
+	/* -------------------------------------------- */
+	/* a label for a launcher export (container_type 'referenced'). Nothing for a single .sif, or before the export sets it */
+	function ContainerTypeLabel($c) {
+		if (($c['container_type'] ?? '') != 'referenced') { return ""; }
+		return " <span class='ui tiny basic blue label' title='Exported as run-pipeline.sh plus referenced images, because some steps run their own containers'>launcher</span>";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerImages -------------------- */
+	/* -------------------------------------------- */
+	/* a launcher export's images (pipeline_container_images), in the order the export found them */
+	function ContainerImages($containerid) {
+		return ContainerQueryRows("select * from pipeline_container_images where pipelinecontainer_id = ? order by pipelinecontainerimage_id", 'i', [$containerid], __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ReadTabFile ------------------------ */
+	/* -------------------------------------------- */
+	/* a tab-separated file from the build directory (segments.txt, externalpaths.txt), as arrays of at least $numfields
+	   fields. Empty if the file doesn't exist */
+	function ReadTabFile($file, $numfields) {
+		$rows = array();
+		if (!is_file($file)) { return $rows; }
+		$lines = file($file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+		foreach (($lines === false) ? array() : $lines as $line) {
+			$rows[] = array_pad(explode("\t", $line), $numfields, "");
+		}
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayContainerTable -------------- */
 	/* -------------------------------------------- */
 	function DisplayContainerTable($containers, $currentversion, $showsize) {
@@ -591,7 +651,7 @@
 				?>
 				<tr>
 					<!--<td><?=$containerid?></td>-->
-					<td><?=$cversion?></td>
+					<td><?=$cversion?><?=ContainerTypeLabel($c)?></td>
 					<td><?=ContainerStatusLabel($c['build_status'])?><?=ContainerStepLabel($c)?></td>
 					<td><?=ContainerDatesCell($c)?></td>
 					<? if ($showsize) { ?>
@@ -678,6 +738,13 @@
 		$builddir = ContainerBuildDir($containerid);
 		$hasdir = ($builddir != "") && is_dir($builddir);
 
+		/* a launcher export (doc section 11): its images are in the database; its segments and external paths are only
+		   in the build directory */
+		$launcher = (($c['container_type'] ?? '') == 'referenced');
+		$images = $launcher ? ContainerImages($containerid) : array();
+		$segments = ($launcher && $hasdir) ? ReadTabFile("$builddir/segments.txt", 4) : array();
+		$extpaths = ($launcher && $hasdir) ? ReadTabFile("$builddir/externalpaths.txt", 3) : array();
+
 		/* an unfinished build can be canceled by the pipeline owner or a site admin */
 		$cancancel = in_array($c['build_status'], array('submitted','started','building')) && CanEditPipeline($id);
 		$pendingcancel = $cancancel ? PendingCancelRequest($containerid) : null;
@@ -729,6 +796,10 @@
 		$reports = array(
 			'README.txt' => array('Usage, also the image\'s help', 'export', 'export'),
 			'export.log' => array('Export checks', 'export', 'export'),
+			'run-pipeline.sh' => array('The launcher', 'export', 'export'),
+			'segments.txt' => array('Launcher segments: native steps run in pipeline.sif, container steps from the host', 'export', 'export'),
+			'images-export.txt' => array('Images the container steps run, as written in the steps', 'export', 'export'),
+			'externalpaths.txt' => array('Host paths the user gives with --path', 'export', 'export'),
 			'input.log' => array('Staging the reference input', 'export', 'export'),
 			'build.job' => array('The cluster job', 'export', 'export'),
 			'build.log' => array('Build log, from the compute node', 'start', 'runningValidationAnalysis'),
@@ -736,8 +807,10 @@
 			'env.txt' => array('Login environment on the build node', 'start', 'start'),
 			'sysinfo.txt' => array('Build node: OS, base image, tools, resources', 'preReferenceAnalysisChecks', 'preReferenceAnalysisChecks'),
 			'software.txt' => array('Interpreters and versions on the build node', 'preReferenceAnalysisChecks', 'preReferenceAnalysisChecks'),
+			'images-info.txt' => array('Images, pinned by digest', 'preReferenceAnalysisChecks', 'preReferenceAnalysisChecks'),
 			'build-error.txt' => array('Why the build stopped' . (($failedstep == "") ? "" : ", during $failedstep"), 'preReferenceAnalysisChecks', 'runningValidationAnalysis'),
 			'reference-run.log' => array('Output of the reference run', 'runningReferenceAnalysis', 'runningReferenceAnalysis'),
+			'reference-segments.txt' => array('Wall time and peak memory of each segment in the reference run', 'runningReferenceAnalysis', 'runningReferenceAnalysis'),
 			'captured-packages.txt' => array('Packages copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
 			'captured-opt.txt' => array('/opt directories copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
 			'captured-paths.txt' => array('Other paths copied into the image', 'postReferenceAnalysisChecks', 'postReferenceAnalysisChecks'),
@@ -815,10 +888,90 @@
 
 			<h3 class="ui dividing header">Container</h3>
 			<table class="ui very basic compact table">
-				<tr><td class="three wide"><b>Path</b> <span class="ui small grey text">(on the cluster)</span></td><td><?=($path == "") ? $none : "<tt>" . htmlspecialchars($path) . "</tt>"?></td></tr>
-				<tr><td><b>Size</b></td><td><?=($containersize > 0) ? HumanReadableFilesize($containersize) . " <span class='ui small grey text'>(" . number_format($containersize) . " bytes)</span>" : $none?></td></tr>
-				<tr><td><b>SHA256</b></td><td><?=($sha256 == "") ? $none : "<tt style='word-break: break-all'>" . htmlspecialchars($sha256) . "</tt>"?></td></tr>
+				<tr><td class="three wide"><b>Type</b></td><td><?
+					switch ($c['container_type'] ?? '') {
+						case 'referenced': echo "Launcher: <tt>run-pipeline.sh</tt>, which runs the native steps in <tt>pipeline.sif</tt> and each container step's image, downloaded from its pinned reference"; break;
+						case 'single': echo "Single image (<tt>.sif</tt>)"; break;
+						default: echo $none;
+					}
+				?></td></tr>
+				<tr><td><b><?=$launcher ? "Directory" : "Path"?></b> <span class="ui small grey text">(on the cluster)</span></td><td><?=($path == "") ? $none : "<tt>" . htmlspecialchars($path) . "</tt>"?></td></tr>
+				<tr><td><b>Size</b></td><td><?=($containersize > 0) ? HumanReadableFilesize($containersize) . " <span class='ui small grey text'>(" . number_format($containersize) . " bytes" . ($launcher ? ", not counting the images" : "") . ")</span>" : $none?></td></tr>
+				<tr><td><b>SHA256</b><? if ($launcher) { ?> <span class="ui small grey text">(of checksums.sha256)</span><? } ?></td><td><?=($sha256 == "") ? $none : "<tt style='word-break: break-all'>" . htmlspecialchars($sha256) . "</tt>"?></td></tr>
 			</table>
+
+			<? if ($launcher) { ?>
+			<h4 class="ui header">Images <div class="sub header">Not in the export. <tt>run-pipeline.sh</tt> downloads each one from its pinned reference, the first time it runs</div></h4>
+			<? if (count($images) == 0) { ?>
+			<div class="ui message">No images recorded</div>
+			<? } else { ?>
+			<table class="ui very compact celled table">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Steps</th>
+						<th>As written in the step</th>
+						<th>Pinned reference</th>
+						<th>Local image</th>
+						<th>Validated</th>
+					</tr>
+				</thead>
+				<tbody>
+				<? foreach ($images as $img) {
+					$reference = trim((string)($img['image_reference'] ?? ''));
+					$tag = trim((string)($img['image_tag'] ?? ''));
+					$localsha = trim((string)($img['image_localsha256'] ?? ''));
+					$localsize = (int)($img['image_localsize'] ?? 0);
+					?>
+					<tr>
+						<td><tt><?=htmlspecialchars($img['image_name'])?></tt></td>
+						<td><?=htmlspecialchars(str_replace(",", ", ", (string)$img['image_steps']))?></td>
+						<td><tt style="word-break: break-all"><?=htmlspecialchars($img['image_source'])?></tt></td>
+						<td><? if ($reference == "") { ?><span class="ui grey text">Not pinned yet. The build pins it</span><? } else { ?><tt style="word-break: break-all"><?=htmlspecialchars($reference)?></tt><? if (($tag != "") && ($tag != $img['image_source'])) { ?><br><span class="ui small grey text">from <tt><?=htmlspecialchars($tag)?></tt></span><? } ?><? } ?></td>
+						<td><? if ($localsha == "") { echo $none; } else { ?><?=($localsize > 0) ? HumanReadableFilesize($localsize) . "<br>" : ""?><span class="ui small grey text" title="sha256 of the .sif on the build node, for the record. A user's download won't match it, since converting a Docker image isn't byte-identical"><tt><?=htmlspecialchars(substr($localsha, 0, 12))?>&hellip;</tt></span><? } ?></td>
+						<td><?=$img['image_validated'] ? "<i class='green check icon'></i> Yes" : (($reference == "") ? $none : "<i class='orange exclamation triangle icon'></i> No")?></td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
+			<? } ?>
+
+			<? if (count($segments) > 0) { ?>
+			<h4 class="ui header">Segments <div class="sub header">The order <tt>run-pipeline.sh</tt> runs the steps. Shell variables don't carry from one segment to the next</div></h4>
+			<table class="ui very compact celled collapsing table">
+				<thead><tr><th>Segment</th><th>Steps</th><th>Runs in</th></tr></thead>
+				<tbody>
+				<? foreach ($segments as list($num, $kind, $segimages, $segsteps)) { ?>
+					<tr>
+						<td><?=(int)$num?></td>
+						<td><?=htmlspecialchars(str_replace(",", ", ", $segsteps))?></td>
+						<td><?=($kind == 'native') ? "<tt>pipeline.sif</tt>" : "<tt>" . htmlspecialchars(str_replace(",", ", ", $segimages)) . "</tt>, from the host"?></td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
+			<? } ?>
+
+			<h4 class="ui header">External paths <div class="sub header">Host files or directories the user gives with <tt>--path NAME=PATH</tt>. <tt>run-pipeline.sh</tt> won't start without them</div></h4>
+			<? if (!$hasdir) { ?>
+			<div class="ui message">Unknown. They're listed in the build directory, which wasn't found</div>
+			<? } elseif (count($extpaths) == 0) { ?>
+			<div class="ui message">None</div>
+			<? } else { ?>
+			<table class="ui very compact celled collapsing table">
+				<thead><tr><th>Name</th><th>Steps</th><th>Path on the build node</th></tr></thead>
+				<tbody>
+				<? foreach ($extpaths as list($pname, $psource, $psteps)) { ?>
+					<tr>
+						<td><tt><?=htmlspecialchars($pname)?></tt></td>
+						<td><?=htmlspecialchars(str_replace(",", ", ", $psteps))?></td>
+						<td><tt><?=htmlspecialchars($psource)?></tt></td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
+			<? } ?>
+			<? } ?>
 
 			<h3 class="ui dividing header">Build directory</h3>
 			<table class="ui very basic compact table">
@@ -1103,6 +1256,21 @@
 		$runcmd = "apptainer run \\\n    --bind /data/sub01:/input \\\n    --bind /results/sub01:/output \\\n    $siffile";
 		if (count($args) > 0) { $runcmd .= " \\\n    " . implode(" ", $args); }
 
+		/* steps that run their own containers make the export a launcher (doc section 11). Its external paths are only
+		   known after an export, so they come from the latest complete launcher export of any version, if there is one */
+		$launcher = IsLauncherExport($steps);
+		$exportdir = preg_replace('/[^A-Za-z0-9_.-]/', '_', $pipelinename) . "-v$version";
+		$extpaths = array();
+		if ($launcher && ($latestcomplete != null) && (($latestcomplete['container_type'] ?? '') == 'referenced')) {
+			if (trim($latestcomplete['container_path'] ?? '') != "") { $exportdir = basename($latestcomplete['container_path']); }
+			$latestdir = ContainerBuildDir($latestcomplete['pipelinecontainer_id']);
+			if ($latestdir != "") { $extpaths = ReadTabFile("$latestdir/externalpaths.txt", 3); }
+		}
+		$launchcmd = "./run-pipeline.sh \\\n    --input /data/sub01 \\\n    --output /results/sub01";
+		if (count($args) > 0) { $launchcmd .= " \\\n    " . implode(" ", $args); }
+		foreach ($extpaths as list($pname, $psource, $psteps)) { $launchcmd .= " \\\n    --path $pname=/path/to/" . basename($psource); }
+		$launchcmd .= " \\\n    --image-cache /project/nidb-images";
+
 		$datadefs = ContainerQueryRows("select * from pipeline_data_def where pipeline_id = ? and pipeline_version = ? and pdd_enabled = 1 order by pdd_order", 'ii', [$id, $version], __LINE__);
 		$dependencyids = array_values(array_filter(array_map('intval', explode(",", (string)($p['pipeline_dependency'] ?? '')))));
 		?>
@@ -1122,7 +1290,7 @@
 				</div>
 			</div>
 
-			<p>A container is a standalone <a href="https://apptainer.org/">Apptainer</a> (<tt>.sif</tt>) image of this pipeline. The container holds this pipeline's main script plus the software it uses, allowing anyone to run this pipeline without NiDB. The container would run on a <b>single</b> imaging study, like a single analysis. Input data must be formatted according to the specifications before running the container.
+			<p>A container is a standalone <a href="https://apptainer.org/">Apptainer</a> (<tt>.sif</tt>) image of this pipeline. The container holds this pipeline's main script plus the software it uses, allowing anyone to run this pipeline without NiDB. The container would run on a <b>single</b> imaging study, like a single analysis. Input data must be formatted according to the specifications before running the container. Pipelines with steps that run their own containers are exported as a launcher instead, which runs those containers next to the pipeline's image (see usage below).</p>
 
 			<!-- ---------- in progress ---------- -->
 			<br>
@@ -1143,6 +1311,26 @@
 			<!-- ---------- usage ---------- -->
 			<br>
 			<h2 class="ui dividing header"><i class="small terminal icon"></i> Container usage</h2>
+			<? if ($launcher) { ?>
+			<p>Some steps of this pipeline run their own containers, so it's exported as a <b>launcher</b>: a directory (<tt><?=htmlspecialchars($exportdir)?>/</tt>) with <tt>run-pipeline.sh</tt>, which runs the other steps in the pipeline's own image (<tt>pipeline.sif</tt>) and starts each container step's image directly, so no container runs inside another. The images aren't in the export. <tt>run-pipeline.sh</tt> downloads them from their pinned references into an image cache. It needs only <tt>apptainer</tt> or <tt>singularity</tt> on the <tt>PATH</tt>.</p>
+			<p>Download the images once, on a machine with internet access. Images can be 5&ndash;15&nbsp;GB each, so put the cache on project or scratch storage that every node can see:</p>
+			<div class="ui segment" style="background-color: #f8f8f8"><pre style="margin: 0">./run-pipeline.sh --fetch-images --image-cache /project/nidb-images</pre></div>
+			<p>Then run it once per subject/study. The input is copied into <tt>--output</tt>, and the pipeline runs there, so <tt>--output</tt> ends up looking like a NiDB analysis directory.</p>
+			<div class="ui segment" style="background-color: #f8f8f8"><pre style="margin: 0"><?=htmlspecialchars($launchcmd)?></pre></div>
+			<table class="ui very basic compact collapsing table">
+				<tbody>
+					<tr><td><tt>--input</tt>, <tt>--output</tt></td><td>The subject's input data, laid out as below, and a writable output directory</td></tr>
+				<? if (in_array('subjectuid', $required)) { ?><tr><td><tt>--subjectuid</tt></td><td>Subject ID. Letters, numbers, <tt>_</tt> and <tt>-</tt> only. Replaces <tt>{subjectuid}</tt></td></tr><? } ?>
+				<? if (in_array('studynum', $required)) { ?><tr><td><tt>--studynum</tt></td><td>Study number (integer). Replaces <tt>{studynum}</tt></td></tr><? } ?>
+				<? if (in_array('studydatetime', $required)) { ?><tr><td><tt>--studydatetime</tt></td><td>Study date/time, <tt>YYYY-MM-DD hh:mm:ss</tt>. Replaces <tt>{studydatetime}</tt></td></tr><? } ?>
+					<tr><td><tt>--path NAME=PATH</tt></td><td>A host file or directory a container step needs, such as a FreeSurfer license. <?=(count($extpaths) > 0) ? "This pipeline's are shown above, from its latest export" : "The export's <tt>README.txt</tt> lists them"?></td></tr>
+					<tr><td><tt>--image-cache DIR</tt></td><td>Optional. Where the images are. Default <tt>$NIDB_IMAGE_CACHE</tt>, else <tt>~/.cache/nidb-images</tt></td></tr>
+					<tr><td><tt>--allow-pull</tt></td><td>Optional. Download missing images inside a batch job. By default it stops instead, since compute nodes often have no internet access</td></tr>
+					<tr><td><tt>--stop-on-error</tt></td><td>Optional. Stop at the first failing step. By default, like NiDB, later steps still run</td></tr>
+				</tbody>
+			</table>
+			<p>On a cluster, run it from the batch job, one subject per job or array task, after <tt>--fetch-images</tt>. The export has no scheduler settings; the export's <tt>README.txt</tt> lists the wall time and peak memory of each segment in the reference run, and has an example SLURM array job. Steps that use <tt>--nv</tt> need a GPU node. <tt>./run-pipeline.sh --help</tt> prints the <tt>README.txt</tt>.</p>
+			<? } else { ?>
 			<p>Run the container once per subject/study. Bind the subject's input data to <tt>/input</tt> and a writable directory to <tt>/output</tt>. The input is copied into <tt>/output</tt>, and the pipeline runs there, so <tt>/output</tt> ends up looking like a NiDB analysis directory.</p>
 			<div class="ui segment" style="background-color: #f8f8f8"><pre style="margin: 0"><?=htmlspecialchars($runcmd)?></pre></div>
 			<table class="ui very basic compact collapsing table">
@@ -1159,9 +1347,14 @@
 			<p>Other useful commands:</p>
 			<div class="ui segment" style="background-color: #f8f8f8"><pre style="margin: 0">apptainer run-help <?=htmlspecialchars($siffile)?>    # pipeline description, variables and input layout
 apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, version, base OS</pre></div>
+			<? } ?>
 
 			<h4 class="ui header">Expected input layout (<tt>/input</tt>)</h4>
+			<? if ($launcher) { ?>
+			<p>Lay out <tt>--input</tt> (shown here as <tt>/input</tt>) as NiDB would have staged the data for this pipeline. The launcher doesn't check the layout. This is also in the export's <tt>README.txt</tt>.</p>
+			<? } else { ?>
 			<p>Lay out <tt>/input</tt> as NiDB would have staged the data for this pipeline. The container doesn't check the layout. This is also in the container's <tt>README.txt</tt> and <tt>apptainer run-help</tt>.</p>
+			<? } ?>
 			<? if ($p['pipeline_outputbids'] ?? 0) { ?>
 				<p>A BIDS dataset in <tt><?=htmlspecialchars(rtrim("/input/" . ltrim((string)($p['pipeline_bidsoutputdir'] ?? ''), '/'), '/'))?></tt>. Subject directories are <tt>sub-&lt;subjectuid&gt;</tt> and session directories are <tt>ses-&lt;studynum&gt;</tt>.</p>
 			<? } elseif (count($datadefs) == 0) { ?>

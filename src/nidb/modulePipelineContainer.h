@@ -133,6 +133,7 @@ private:
 
     /* pipeline_containers updates */
     void SetStatus(int containerID, QString status);
+    void SaveExportType(int containerID, const segmentedScript &segmented);
     void SetError(int containerID, QString msg);
     void AppendBuildWarnings(int containerID, QStringList warnings);
 };

@@ -44,9 +44,11 @@
 	stored as a SHA-256 hash in pipeline_containers.build_apitoken, and only work while the row is 'building'.
 	containercomplete and containererror are the build's last call, and clear the token
 		containercheckin   containerid, token, step, [message], [hostname]
-		containercomplete  containerid, token, path, size (bytes), sha256, [message], [warnings], [buildsize], [buildfilecount], [hostname]
+		containercomplete  containerid, token, path, size (bytes), sha256, [message], [warnings], [buildsize], [buildfilecount], [images], [hostname]
 		containererror     containerid, token, message, [step], [warnings], [buildsize], [buildfilecount], [hostname]
 		buildsize (bytes) and buildfilecount are what's left in the build directory after the job's cleanup
+		images is a launcher export's images-info.txt (tab separated: name, source, pinned reference, tag, local path,
+		local sha256, local size), saved into pipeline_container_images
 
 	Example
 		curl -s "$NIDB_APIURL" -d action=checkin -d analysisid=$NIDB_ANALYSISID \
@@ -342,7 +344,41 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
-		AAPIRespond(true, "Container [$containerid] is complete");
+		$numimages = ContainerSaveImages($containerid, AAPIParam("images"));
+
+		AAPIRespond(true, "Container [$containerid] is complete" . (($numimages > 0) ? ", with [$numimages] referenced images" : ""));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ContainerSaveImages ---------------- */
+	/* -------------------------------------------- */
+	/* a launcher export's pinned images (doc/pipeline-apptainer.md section 11): the build's images-info.txt, one image per
+	   line, tab separated: name, source, pinned reference, tag, local path, local sha256, local size. The rows were
+	   written at export by modulePipelineContainer::SaveExportType(); this fills in what the build found. The validation
+	   run, if there was one, ran every image. Returns the number of images updated */
+	function ContainerSaveImages($containerid, $images) {
+		$numupdated = 0;
+		foreach (explode("\n", str_replace("\r", "", (string)$images)) as $line) {
+			/* padded, since AAPIParam() trims the empty local fields off the end of the last line */
+			$fields = array_pad(explode("\t", $line), 7, "");
+			if ((trim($fields[0]) == "") || (trim($fields[2]) == "")) { continue; }
+			list($name, $source, $reference, $tag, $localpath, $localsha, $localsize) = $fields;
+
+			$localsha = strtolower(trim($localsha));
+			if (!preg_match('/^[0-9a-f]{64}$/', $localsha)) { $localsha = null; }
+			$localsize = trim($localsize);
+			$localsize = ctype_digit($localsize) ? (int)$localsize : null;
+
+			$sqlstring = "update pipeline_container_images i join pipeline_containers c on i.pipelinecontainer_id = c.pipelinecontainer_id set i.image_reference = ?, i.image_tag = ?, i.image_localsha256 = ?, i.image_localsize = ?, i.image_validated = coalesce(c.run_validation, 0) where i.pipelinecontainer_id = ? and i.image_name = ?";
+			$params = [trim($reference), trim($tag), $localsha, $localsize, $containerid, trim($name)];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'sssiis', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			$numupdated += max(0, mysqli_stmt_affected_rows($stmt));
+			mysqli_stmt_close($stmt);
+		}
+		return $numupdated;
 	}
 
 

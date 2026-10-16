@@ -237,6 +237,7 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
 
     /* a pipeline whose steps run containers is exported as a launcher (doc section 11) */
     bool launcher = !segmented.segments.isEmpty();
+    SaveExportType(c.containerID, segmented);
 
     QString manifest = CreateManifest(p, c.pipelineVersion, requiredVars, warnings, inputLayout, segmented);
     QString readme = launcher ? CreateLauncherReadme(p, c.pipelineVersion, requiredVars, inputLayoutText, segmented) : CreateReadme(p, c.pipelineVersion, requiredVars, inputLayoutText);
@@ -2396,7 +2397,8 @@ exit $rc
  * (doc section 8 step 4), and is bash so it runs on any node without Python or the nidb binary. It collects the
  * OS and software info into plain text files, runs the pipeline once under strace, builds the .sif, and optionally
  * runs the validation. It checks in to analysisapi.php at each major step (build_step), and its EXIT trap reports
- * the result: containercomplete with the .sif's path, size and sha256, or containererror. The .sif stays in the
+ * the result: containercomplete with the .sif's path, size and sha256 (a launcher export's directory, plus its pinned
+ * images from images-info.txt, for pipeline_container_images), or containererror. The .sif stays in the
  * build directory on the cluster. A new API token is created for each build; only its SHA-256 is stored, in
  * build_apitoken. The settings block at the top is generated for this build; the rest is the same for every build
  *
@@ -2592,15 +2594,17 @@ build_dir_stats() {
 # the EXIT trap, so the result is reported even on failure or SIGTERM from the scheduler. This is the job's last API call,
 # since it clears the token
 finish() {
-    local rc=$? msg
+    local rc=$? msg images=()
     log "build-container.sh finished with exit code [$rc]"
     # after finalize's cleanup on success. On error everything is kept, so this shows how much is left to clean up. Skipped
     # on SIGTERM, since the scheduler may follow with SIGKILL and the result has to be reported first
     if [ $rc -ne 143 ]; then build_dir_stats; fi
     if [ $rc -eq 0 ]; then
-        # a single .sif, or a launcher export's directory, with the sha256 of its checksums.sha256 (finalize)
+        # a single .sif, or a launcher export's directory, with the sha256 of its checksums.sha256 (finalize). A launcher
+        # export also sends its pinned images, for pipeline_container_images
+        if [ "$EXPORT_TYPE" = "launcher" ] && [ -s "$BUILDDIR/images-info.txt" ]; then images=(--data-urlencode "images@$BUILDDIR/images-info.txt"); fi
         nidbapi -d action=containercomplete --data-urlencode "path=$RESULT_PATH" -d "size=$SIF_SIZE" -d "sha256=$SIF_SHA256" \
-            -d "buildsize=$BUILD_SIZE" -d "buildfilecount=$BUILD_FILECOUNT" \
+            -d "buildsize=$BUILD_SIZE" -d "buildfilecount=$BUILD_FILECOUNT" ${images[@]+"${images[@]}"} \
             --data-urlencode "message=Container built on $(hostname)" --data-urlencode "warnings@$BUILDDIR/build-warnings.txt" \
             || log "ERROR: the container was built, but NiDB wasn't told. It's [$RESULT_PATH]"
     else
@@ -4045,6 +4049,41 @@ void modulePipelineContainer::SetStatus(int containerID, QString status) {
     q.bindValue(":status", status);
     q.bindValue(":id", containerID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SaveExportType --------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Set container_type, and replace the row's pipeline_container_images rows with the images the container steps
+ * run (doc section 11). The pinned reference, tag, local checksum and size, and whether validation used the image, are
+ * filled in by analysisapi.php's containercomplete, from the build's images-info.txt
+ * @param containerID pipelinecontainer_id
+ * @param segmented The segments and images. No segments is a single-image export
+ */
+void modulePipelineContainer::SaveExportType(int containerID, const segmentedScript &segmented) {
+    QSqlQuery q;
+    q.prepare("update pipeline_containers set container_type = :type where pipelinecontainer_id = :id");
+    q.bindValue(":type", segmented.segments.isEmpty() ? "single" : "referenced");
+    q.bindValue(":id", containerID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    q.prepare("delete from pipeline_container_images where pipelinecontainer_id = :id");
+    q.bindValue(":id", containerID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    for (containerImage image : segmented.images) {
+        QStringList steps;
+        for (int step : image.steps)
+            steps << QString::number(step);
+        q.prepare("insert into pipeline_container_images (pipelinecontainer_id, image_name, image_source, image_steps) values (:id, :name, :source, :steps)");
+        q.bindValue(":id", containerID);
+        q.bindValue(":name", image.name);
+        q.bindValue(":source", image.source);
+        q.bindValue(":steps", steps.join(","));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
 }
 
 

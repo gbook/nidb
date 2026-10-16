@@ -1,6 +1,6 @@
 # Exporting a pipeline as an Apptainer container
 
-Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is designed in §11 (2026-10-15), not implemented.
+Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is in §11: written 2026-10-15/16, not yet compiled or run in NiDB, and without `docker run` translation.
 
 Companion docs: `doc/pipeline-execution.md` (how a pipeline runs today), `doc/analysis-api.md` (the check-in API that the container will *not* use).
 
@@ -551,7 +551,7 @@ To do, as of 2026-10-15:
 | `build-container.sh` | Test with Apptainer, and on a `dpkg` (Debian/Ubuntu) node. So far a full build has worked with Singularity 3.x on a CentOS 7 node. |
 | `pipelines.php` | Container settings (extra include/exclude paths, base image override). |
 | SQL | Columns for those settings on `pipelines` and `pipeline_options` (versioned like the other options). |
-| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15, not yet compiled or run in NiDB. Phase 3 (database and UI) is next. See §11 "Implementation order". |
+| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15; phase 4 (database and UI) written 2026-10-16, apart from the download and per-image source URIs. None of it compiled or run in NiDB yet. Phase 3 (`docker run` / `podman run` translation) is next. See §11 "Implementation order". |
 
 ---
 
@@ -578,7 +578,7 @@ To do, as of 2026-10-15:
 
 ## 11. Pipelines that run containers (referenced images)
 
-**Status (2026-10-15):** phases 1 and 2 of the implementation order (below) are written: the export side and the build. A pipeline with container steps can be exported and built, end to end. `pipelinecontainers.php` shows those steps as an info note ("Exported as a launcher") instead of an error, but its usage section, container details and table still describe a single `.sif` (phase 3).
+**Status (2026-10-16):** phases 1, 2 and 4 of the implementation order (below) are written: the export side, the build, and the database and UI, apart from the download and per-image source URIs. A pipeline with container steps can be exported and built, end to end, and `pipelinecontainers.php` shows it as a launcher. Phase 3, translating `docker run` and `podman run`, isn't written; those steps are still an export error.
 
 Pipelines whose steps run their own containers (fMRIPrep, QSIPrep, FreeSurfer images, ...) can't go into a single `.sif`, because that would mean running containers inside a container (§7). Instead, such a pipeline is exported as a **launcher** that runs on the user's machine and starts each step in exactly one container, so nothing is nested:
 
@@ -770,10 +770,10 @@ module load apptainer
 
 ### Database and UI
 
-- `pipeline_containers`: add `container_type` (`single` or `referenced`), set at export from the step sorting.
-- New table `pipeline_container_images`: one row per image, with `pipelinecontainer_id`, `image_name`, `image_source` (as written in the step), `image_reference` (pinned), `image_tag`, `image_localsha256`, `image_localsize`, `image_steps`, and `image_validated` (whether the validation run used the pinned image).
-- Pipeline container settings (§9): a source URI per image, for local images with no registry source, or to point at a different registry.
-- `pipelinecontainers.php`: show the export type, the segments, and each image with its source, pinned reference and whether it was validated; the external paths the user will have to provide; and the cluster notes above. The download is the export directory as one uncompressed tar (`.sif` files are already compressed).
+- `pipeline_containers.container_type` (`single` or `referenced`): set at export from the step sorting, by `SaveExportType()` in `PrepareExport()`.
+- `pipeline_container_images`: one row per image, with `pipelinecontainer_id`, `image_name`, `image_source` (as written in the step), `image_reference` (pinned), `image_tag` (the registry reference before pinning), `image_localsha256`, `image_localsize` (`bigint`, since images are often over 2 GB), `image_steps`, and `image_validated` (whether the validation run used the pinned image). `SaveExportType()` replaces the rows at export with the name, source and steps. The build fills in the rest: `finish()` in `build-container.sh` sends `images-info.txt` as the `images` parameter of `containercomplete`, and `ContainerSaveImages()` in `analysisapi.php` updates each image's row by name. `image_validated` is the row's `run_validation`, since the validation run runs every image. A failed build leaves those columns empty.
+- `pipelinecontainers.php`: a "launcher" label in the containers table; on the container details page, the export type, each image (source, pinned reference, local `.sif` checksum and size, whether it was validated), the segments and the external paths (from `segments.txt` and `externalpaths.txt` in the build directory), and the launcher's files among the build reports. When the current version has container steps, the usage section shows `run-pipeline.sh`: `--fetch-images` first, then a per-subject run with its arguments, the external paths from the latest launcher export, and the cluster notes above. `LauncherStepMatch()` is the one rule for the pitfall and the usage section.
+- **Not done yet:** pipeline container settings (§9), with a source URI per image, for local images with no registry source, or to point at a different registry. A download of the export: the export directory as one uncompressed tar (`.sif` files are already compressed). A single `.sif` has no download either (§10, "Output location").
 
 ### Not chosen
 
@@ -786,4 +786,4 @@ module load apptainer
 1. **Done (2026-10-15), not yet compiled or run in NiDB.** Step sorting, placeholders and segments for Apptainer and Singularity container steps (`TokenizeCommand()`, `RewriteContainerStep()`, `RewriteBinds()`, `RenderScriptTemplate()`, `CheckSegments()`); the build directory files; `run.sh --segment`; `run-pipeline.sh` with the image cache, locking, `--fetch-images` and the batch job check. The two scripts were tested outside NiDB with a stand-in `apptainer`.
 2. **Done (2026-10-15), not yet compiled or run in NiDB.** The build: pinning `docker://`, `oras://` and local Docker-built images; the reference run through `run-pipeline.sh`, with only native segments traced; per-segment resources; the export directory; validation with the pinned images; reporting the directory. The stop in `PrepareExport()` is removed, and `pipelinecontainers.php` shows container steps as an info note. The build was tested outside NiDB, end to end, with a stand-in `apptainer` and a stand-in registry and API (`curl`), and the real `strace` and software capture: a pipeline with native and container steps, one with only container steps, and an image that can't be pinned. Not tested yet: a real registry, a real image, and a real cluster job.
 3. `docker run` / `podman run` translation.
-4. The database table and `pipelinecontainers.php`; per-image source URIs in the container settings.
+4. **Done (2026-10-16), not yet compiled or run in NiDB**, apart from the per-image source URIs and the download. `container_type` and `pipeline_container_images`, filled in at export and by `containercomplete`; `pipelinecontainers.php`. See "Database and UI".

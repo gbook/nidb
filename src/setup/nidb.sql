@@ -2292,13 +2292,13 @@ CREATE TABLE `pipeline_container_images` (
   `pipelinecontainerimage_id` int(11) NOT NULL,
   `pipelinecontainer_id` int(11) NOT NULL,
   `image_name` varchar(255) NOT NULL,
-  `image_source` text NOT NULL,
-  `image_reference` text NOT NULL,
-  `image_tag` varchar(255) NOT NULL,
-  `image_localsha256` varchar(100) NOT NULL,
-  `image_localsize` int(11) NOT NULL,
-  `image_steps` varchar(255) NOT NULL,
-  `image_validated` tinyint(1) NOT NULL
+  `image_source` text NOT NULL COMMENT 'The image as written in the step',
+  `image_reference` text DEFAULT NULL COMMENT 'Pinned by digest, set by the build',
+  `image_tag` text DEFAULT NULL COMMENT 'The registry reference before pinning, set by the build',
+  `image_localsha256` varchar(100) DEFAULT NULL COMMENT 'SHA256 of the local .sif, if the step used one',
+  `image_localsize` bigint(20) DEFAULT NULL COMMENT 'Size in bytes of the local .sif, if the step used one',
+  `image_steps` varchar(255) NOT NULL COMMENT 'Comma separated step numbers',
+  `image_validated` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'The validation run used the pinned image'
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
@@ -4473,7 +4473,8 @@ ALTER TABLE `pipeline_containers`
 -- Indexes for table `pipeline_container_images`
 --
 ALTER TABLE `pipeline_container_images`
-  ADD PRIMARY KEY (`pipelinecontainerimage_id`);
+  ADD PRIMARY KEY (`pipelinecontainerimage_id`),
+  ADD KEY `pipelinecontainer_id` (`pipelinecontainer_id`);
 
 --
 -- Indexes for table `pipeline_data`
