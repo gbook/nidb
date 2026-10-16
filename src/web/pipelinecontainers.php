@@ -169,11 +169,11 @@
 	/* -------------------------------------------- */
 	/* ------- LauncherStepMatch ------------------ */
 	/* -------------------------------------------- */
-	/* the apptainer/singularity exec, run or test in a step command, or "" if there isn't one. Such a step makes the
-	   export a launcher with referenced images (doc/pipeline-apptainer.md section 11). A preview of
-	   modulePipelineContainer::CheckContainers(), which parses each command properly */
+	/* the apptainer/singularity exec, run or test, or docker/podman run, in a step command, or "" if there isn't one. Such
+	   a step makes the export a launcher with referenced images (doc/pipeline-apptainer.md section 11). A preview of
+	   modulePipelineContainer::CheckContainers(), which parses each command properly, and translates docker run */
 	function LauncherStepMatch($command) {
-		if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity)\s+(exec|run|test)\b/', (string)$command, $m)) { return trim($m[0]); }
+		if (preg_match('/(^|[^A-Za-z0-9_.-])((apptainer|singularity)\s+(exec|run|test)|(docker|podman)\s+(container\s+)?run)\b/', (string)$command, $m)) { return trim($m[0]); }
 		return "";
 	}
 
@@ -289,7 +289,7 @@
 
 		/* ---------- running containers ---------- */
 		/* a preview of modulePipelineContainer::CheckContainers() (doc/pipeline-apptainer.md section 11). Steps that run
-		   apptainer or singularity exec, run or test are exported as a launcher; other ways of running a container are
+		   apptainer or singularity exec, run or test, or docker or podman run, are exported as a launcher; other ways of running a container are
 		   errors. The export checks each command properly, and the build also checks the reference run's trace, which
 		   catches containers started from a script a step calls */
 		$launchersteps = array();
@@ -311,10 +311,10 @@
 			}
 		}
 		if (count($containersteps) > 0) {
-			AddPitfall($pitfalls, 'error', "Runs a container that can't be exported", "Only steps that run <tt>apptainer</tt> or <tt>singularity</tt> <tt>exec</tt>, <tt>run</tt> or <tt>test</tt> directly can be exported. Docker and Podman aren't supported yet; run the image with <tt>apptainer exec docker://&lt;image&gt;</tt> instead: " . implode(", ", $containersteps));
+			AddPitfall($pitfalls, 'error', "Runs a container that can't be exported", "Only steps that run <tt>apptainer</tt> or <tt>singularity</tt> <tt>exec</tt>, <tt>run</tt> or <tt>test</tt>, or <tt>docker run</tt> or <tt>podman run</tt>, directly can be exported: " . implode(", ", $containersteps));
 		}
 		if (count($launchersteps) > 0) {
-			AddPitfall($pitfalls, 'info', "Exported as a launcher", "Some steps run their own containers, so instead of a single <tt>.sif</tt>, the export is a directory with <tt>run-pipeline.sh</tt>, which runs the other steps in <tt>pipeline.sif</tt> and each of these containers directly, downloading them from a pinned reference. The build node must be able to reach the images' registry: " . implode(", ", $launchersteps));
+			AddPitfall($pitfalls, 'info', "Exported as a launcher", "Some steps run their own containers, so instead of a single <tt>.sif</tt>, the export is a directory with <tt>run-pipeline.sh</tt>, which runs the other steps in <tt>pipeline.sif</tt> and each of these containers directly, downloading them from a pinned reference. The build node must be able to reach the images' registry. <tt>docker run</tt> and <tt>podman run</tt> are translated to <tt>apptainer run --cleanenv</tt>, so the container runs as the user, not root, and can only write to the directories bound into it; the build's reference run checks that it still works: " . implode(", ", $launchersteps));
 		}
 
 		/* ---------- things that behave differently ---------- */

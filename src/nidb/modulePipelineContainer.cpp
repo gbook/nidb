@@ -684,9 +684,9 @@ QList<modulePipelineContainer::shellToken> modulePipelineContainer::TokenizeComm
 /**
  * @brief Find the container commands in one step and rewrite them for run-pipeline.sh (doc section 11): the runtime
  * becomes {apptainer}, the image {image:<name>}, and absolute host paths in --bind sources outside {analysisrootdir}
- * {path:<name>}. Only apptainer or singularity exec, run and test, run directly by the step, can be rewritten. Anything
- * else that looks like running a container is an error: docker or podman (not supported yet), other subcommands, an
- * image run as a program, a container started inside $(...), or an image given by a variable. In a container step,
+ * {path:<name>}. Only apptainer or singularity exec, run and test, and docker or podman run (TranslateDockerRun()), run
+ * directly by the step, can be rewritten. Anything else that looks like running a container is an error: other
+ * subcommands, an image run as a program, a container started inside $(...), or an image given by a variable. In a container step,
  * the other commands run on the user's machine, so they may only be basic shell tools. Steps that don't run a
  * container are left as they are
  * @param command The step command. Rewritten if it's a container step and there are no errors
@@ -731,8 +731,7 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
     if (!current.isEmpty())
         simpleCommands << current;
 
-    struct replacement { int start; int end; QString text; };
-    QList<replacement> replacements;
+    QList<textReplacement> replacements;
     QStringList hostCommands;
     bool isContainerStep = false;
     int numErrors = errors.size();
@@ -749,12 +748,14 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
 
         QString program = words[k].text.section('/', -1);
 
+        if ((program == "docker") || (program == "podman")) {
+            isContainerStep = true;
+            TranslateDockerRun(command, words, k, step, replacements, images, paths, errors, warnings);
+            continue;
+        }
         if (otherRuntimes.contains(program)) {
             isContainerStep = true;
-            if ((program == "docker") || (program == "podman"))
-                errors << QString("Step %1: runs a container with [%2]. Only apptainer and singularity containers can be exported so far. Run the image with apptainer instead, for example apptainer exec docker://<image> <command>").arg(step).arg(program);
-            else
-                errors << QString("Step %1: runs a container with [%2], which can't be exported. Run the image with apptainer exec, run or test instead").arg(step).arg(program);
+            errors << QString("Step %1: runs a container with [%2], which can't be exported. Run the image with apptainer exec, run or test, or docker run, instead").arg(step).arg(program);
             continue;
         }
         if (QRegularExpression("\\.(sif|simg)$", QRegularExpression::CaseInsensitiveOption).match(program).hasMatch()) {
@@ -824,7 +825,7 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
                 if ((option == "-B") || (option == "--bind")) {
                     QString rewritten = RewriteBinds(words[valueWord], prefix, value, step, paths, errors, warnings);
                     if (rewritten != "")
-                        replacements << replacement{ words[valueWord].start, words[valueWord].end, rewritten };
+                        replacements << textReplacement{ words[valueWord].start, words[valueWord].end, rewritten };
                 }
                 else if ((option == "--mount") && value.contains(QRegularExpression("(^|,)(src|source)=/")))
                     errors << QString("Step %1: --mount with an absolute host path can't be rewritten. Use --bind instead").arg(step);
@@ -859,8 +860,8 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
             errors << QString("Step %1: the image [%2] is a relative path. Use its absolute path or its URI").arg(step).arg(source);
         else {
             QString name = AddImage(source, step, images);
-            replacements << replacement{ words[runtimeWord].start, words[runtimeWord].end, "{apptainer}" };
-            replacements << replacement{ image.start, image.end, "{image:" + name + "}" };
+            replacements << textReplacement{ words[runtimeWord].start, words[runtimeWord].end, "{apptainer}" };
+            replacements << textReplacement{ image.start, image.end, "{image:" + name + "}" };
         }
     }
 
@@ -877,9 +878,9 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
         return isContainerStep;
 
     /* apply the replacements, from the end so the earlier positions stay valid */
-    std::sort(replacements.begin(), replacements.end(), [](const replacement &a, const replacement &b) { return a.start > b.start; });
+    std::sort(replacements.begin(), replacements.end(), [](const textReplacement &a, const textReplacement &b) { return a.start > b.start; });
     QString rewritten = command;
-    for (replacement r : replacements)
+    for (textReplacement r : replacements)
         rewritten.replace(r.start, r.end - r.start, r.text);
 
     /* anything left that looks like running a container is one the rewrite didn't understand */
@@ -892,6 +893,322 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
     if (isContainerStep)
         command = rewritten;
     return isContainerStep;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- TranslateDockerRun ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Translate one docker or podman command into Apptainer, for run-pipeline.sh (doc section 11, "Sorting the
+ * steps"). Only the words that change are replaced, so the rest of the command keeps its quoting and expansions.
+ * docker run [options] <image> [args] becomes {apptainer} run --cleanenv [options] {image:<name>} [args], which runs
+ * the image's entrypoint and command as Docker does; with --entrypoint X it's exec instead, with X as the program.
+ * --cleanenv, since Docker doesn't pass the host's environment in. The image is a registry image, docker://<image>.
+ * Options: -v, --volume and --mount type=bind become --bind (rewritten by RewriteBinds()), -e and --env become --env,
+ * --env-file stays, -w and --workdir become --pwd, --gpus and --runtime=nvidia become --nv. Options that don't apply
+ * under Apptainer are dropped (--rm, -i, -t, --name, -u, --network host, ...); resource limits are dropped with a
+ * warning, since the cluster job sets them. Anything else is an error. docker pull becomes true, since run-pipeline.sh
+ * downloads the images
+ * @param command The step command
+ * @param words The simple command's words, as split by RewriteContainerStep()
+ * @param k The index of the docker or podman word
+ * @param step The step number, for messages
+ * @param replacements Added to
+ * @param images The images found so far, added to
+ * @param paths The external paths found so far, added to
+ * @param errors Problems that stop the export
+ * @param warnings Problems that don't
+ */
+void modulePipelineContainer::TranslateDockerRun(const QString &command, const QList<shellToken> &words, int k, int step, QList<textReplacement> &replacements, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings) {
+    static const QStringList dropFlags = { "--rm", "-i", "--interactive", "-t", "--tty", "-it", "-ti", "--init", "-q", "--quiet", "--privileged=false" };
+    static const QStringList dropValues = { "--name", "--pull", "--platform", "-u", "--user", "--userns", "--ipc", "--uts", "--pid", "-l", "--label", "-h", "--hostname", "--log-driver", "--log-opt", "--stop-timeout", "--group-add" };
+    static const QStringList resourceValues = { "--cpus", "-c", "--cpu-shares", "--cpuset-cpus", "--cpuset-mems", "-m", "--memory", "--memory-swap", "--memory-reservation", "--shm-size", "--pids-limit", "--ulimit", "--oom-score-adj" };
+    static const QStringList longValueOptions = { "--volume", "--mount", "--env", "--env-file", "--workdir", "--gpus", "--runtime", "--entrypoint", "--network", "--net", "--security-opt" };
+    static const QStringList shortValueOptions = { "-v", "-e", "-w" };
+
+    QString program = words[k].text.section('/', -1);
+    int runtimeWord = k;
+    if (words[k].expands) {
+        errors << QString("Step %1: the container runtime [%2] can't be rewritten").arg(step).arg(words[k].text);
+        return;
+    }
+
+    /* no global options: docker [container] run|pull */
+    k++;
+    if ((k < words.size()) && (words[k].text == "container") && (k + 1 < words.size())) {
+        replacements << textReplacement{ words[k].start, words[k].end, "" };
+        k++;
+    }
+    if (k >= words.size()) {
+        errors << QString("Step %1: [%2] has no subcommand").arg(step).arg(words[runtimeWord].text);
+        return;
+    }
+    QString subcommand = words[k].text;
+    if ((subcommand == "pull") || ((subcommand == "image") && (k + 1 < words.size()) && (words[k + 1].text == "pull"))) {
+        /* the whole simple command becomes true. run-pipeline.sh downloads the images itself */
+        replacements << textReplacement{ words[runtimeWord].start, words[runtimeWord].end, "true" };
+        for (int i = runtimeWord + 1; i < words.size(); i++)
+            replacements << textReplacement{ words[i].start, words[i].end, "" };
+        warnings << QString("Step %1: [%2 pull] is left out of the export, since run-pipeline.sh downloads the images the steps run").arg(step).arg(program);
+        return;
+    }
+    if (subcommand != "run") {
+        errors << QString("Step %1: [%2 %3] can't be exported. Only %2 run can, since the step must run the container and finish").arg(step).arg(program).arg(subcommand);
+        return;
+    }
+    int subcommandWord = k;
+    k++;
+
+    /* a bind spec, docker style (src:dst[:opts]), cleaned for apptainer: rw, z, Z and the propagation options are dropped,
+       ro is kept. Empty, with an error, if it isn't a bind of a host path */
+    auto cleanBind = [&](QString spec) -> QString {
+        QStringList parts = spec.split(':');
+        QString src = parts.value(0);
+        if (parts.size() < 2) {
+            errors << QString("Step %1: [-v %2] is an anonymous volume, which can't be exported. Bind a directory instead, for example -v {analysisrootdir}/work:%2").arg(step).arg(spec);
+            return "";
+        }
+        if (!(src.startsWith("/") || src.startsWith("{") || src.startsWith("$") || src.startsWith("~") || src.startsWith("."))) {
+            errors << QString("Step %1: [-v %2] uses the %3 volume [%4], which can't be exported. Bind a directory instead").arg(step).arg(spec).arg(program).arg(src);
+            return "";
+        }
+        QString cleaned = src + ":" + parts.value(1);
+        if ((parts.size() > 2) && parts.mid(2).join(":").split(',').contains("ro"))
+            cleaned += ":ro";
+        return cleaned;
+    };
+
+    /* shell text for a new value. Left unquoted if it's safe, as RewriteBinds() does */
+    auto quoted = [](QString text) -> QString {
+        if (QRegularExpression("^[A-Za-z0-9_.,:/+={}@-]+$").match(text).hasMatch())
+            return text;
+        return ShellQuote(text);
+    };
+
+    bool resourcesDropped = false;
+    bool ok = true;
+    QString entrypoint;
+    bool hasEntrypoint = false;
+    for (; k < words.size(); k++) {
+        const shellToken &w = words[k];
+        QString word = w.text;
+        if (!word.startsWith("-") || (word == "-"))
+            break;
+        if (word == "--") {
+            replacements << textReplacement{ w.start, w.end, "" };
+            k++;
+            break;
+        }
+
+        /* the option, and its value inline (--opt=value, or -vVALUE) or in the next word. optionEnd is where the option
+           name ends in the command, so an inline option can be renamed without touching its value */
+        QString option = word;
+        QString value;
+        bool inlineValue = false;
+        if (word.startsWith("--") && word.contains('=')) {
+            option = word.section('=', 0, 0);
+            value = word.section('=', 1);
+            inlineValue = true;
+        }
+        else if (!word.startsWith("--") && (word.size() > 2) && shortValueOptions.contains(word.left(2))) {
+            option = word.left(2);
+            value = word.mid(2);
+            inlineValue = true;
+        }
+        if (inlineValue && (command.mid(w.start, option.size()) != option)) {
+            errors << QString("Step %1: [%2] can't be rewritten. Write the option without quotes").arg(step).arg(word);
+            ok = false;
+            break;
+        }
+        bool takesValue = longValueOptions.contains(option) || shortValueOptions.contains(option) || dropValues.contains(option) || resourceValues.contains(option);
+        int valueWord = k;
+        if (takesValue && !inlineValue) {
+            k++;
+            if (k >= words.size()) {
+                errors << QString("Step %1: [%2] has no value").arg(step).arg(option);
+                ok = false;
+                break;
+            }
+            value = words[k].text;
+            valueWord = k;
+        }
+
+        /* rename the option, keeping an inline value as it's written */
+        auto rename = [&](QString newOption) {
+            if (!inlineValue)
+                replacements << textReplacement{ w.start, w.end, newOption };
+            else
+                replacements << textReplacement{ w.start, w.start + option.size(), option.startsWith("--") ? newOption : newOption + "=" };
+        };
+        /* replace the option's value with shell text */
+        auto setValue = [&](QString text) {
+            if (!inlineValue)
+                replacements << textReplacement{ words[valueWord].start, words[valueWord].end, text };
+            else
+                replacements << textReplacement{ w.start + option.size() + (option.startsWith("--") ? 1 : 0), w.end, text };
+        };
+        /* remove the option and its value */
+        auto drop = [&]() {
+            replacements << textReplacement{ w.start, w.end, "" };
+            if (takesValue && !inlineValue)
+                replacements << textReplacement{ words[valueWord].start, words[valueWord].end, "" };
+        };
+
+        if (dropFlags.contains(word) || dropValues.contains(option)) {
+            drop();
+        }
+        else if (resourceValues.contains(option)) {
+            drop();
+            resourcesDropped = true;
+        }
+        else if ((option == "-v") || (option == "--volume") || (option == "--mount")) {
+            QString spec;
+            if (option == "--mount") {
+                /* type=bind,source=X,target=Y[,readonly] */
+                QString type, src, dst;
+                bool ro = false;
+                for (QString kv : value.split(',')) {
+                    QString key = kv.section('=', 0, 0), val = kv.section('=', 1);
+                    if (key == "type") type = val;
+                    else if ((key == "source") || (key == "src")) src = val;
+                    else if ((key == "target") || (key == "destination") || (key == "dst")) dst = val;
+                    else if (((key == "readonly") || (key == "ro")) && (val != "false") && (val != "0")) ro = true;
+                }
+                if ((type != "bind") || (src == "") || (dst == "")) {
+                    errors << QString("Step %1: [--mount %2] can't be exported. Only type=bind mounts with a source and target can, as --bind").arg(step).arg(value);
+                    ok = false;
+                    break;
+                }
+                spec = src + ":" + dst + (ro ? ":ro" : "");
+            }
+            else {
+                spec = cleanBind(value);
+                if (spec == "") {
+                    ok = false;
+                    break;
+                }
+            }
+            const shellToken &valueToken = inlineValue ? w : words[valueWord];
+            QString rewritten = RewriteBinds(valueToken, "", spec, step, paths, errors, warnings);
+            rename("--bind");
+            if (rewritten != "")
+                setValue(rewritten);
+            else if (spec != value) {
+                if (valueToken.expands) {
+                    errors << QString("Step %1: [%2 %3] has a shell variable and has to be rewritten, so it can't be exported. Write it as %4").arg(step).arg(option).arg(value).arg(spec);
+                    ok = false;
+                    break;
+                }
+                setValue(quoted(spec));
+            }
+        }
+        else if ((option == "-e") || (option == "--env")) {
+            rename("--env");
+            /* -e NAME passes the host's value in */
+            if (!value.contains('=')) {
+                if (!QRegularExpression("^[A-Za-z_][A-Za-z0-9_]*$").match(value).hasMatch()) {
+                    errors << QString("Step %1: [%2 %3] isn't a variable name or NAME=VALUE").arg(step).arg(option).arg(value);
+                    ok = false;
+                    break;
+                }
+                setValue(QString("\"%1=$%1\"").arg(value));
+            }
+        }
+        else if (option == "--env-file") {
+            if (value.startsWith("/") && !value.startsWith("{analysisrootdir}")) {
+                errors << QString("Step %1: [--env-file %2] uses a file on this cluster, which the user won't have. Put it in the analysis directory, or use -e").arg(step).arg(value);
+                ok = false;
+                break;
+            }
+        }
+        else if ((option == "-w") || (option == "--workdir")) {
+            rename("--pwd");
+        }
+        else if ((option == "--gpus") || ((option == "--runtime") && (value == "nvidia"))) {
+            /* the whole option becomes --nv, and its value is removed */
+            replacements << textReplacement{ w.start, w.end, "--nv" };
+            if (!inlineValue)
+                replacements << textReplacement{ words[valueWord].start, words[valueWord].end, "" };
+        }
+        else if (option == "--entrypoint") {
+            if (words[valueWord].expands) {
+                errors << QString("Step %1: the entrypoint [%2] is given by a variable, so it can't be rewritten").arg(step).arg(value);
+                ok = false;
+                break;
+            }
+            hasEntrypoint = true;
+            entrypoint = value;
+            drop();
+        }
+        else if ((option == "--network") || (option == "--net")) {
+            if (value != "host") {
+                errors << QString("Step %1: [%2 %3] can't be exported. Containers share the host's network under Apptainer, so only --network host can").arg(step).arg(option).arg(value);
+                ok = false;
+                break;
+            }
+            drop();
+        }
+        else if (option == "--security-opt") {
+            if ((value != "label=disable") && (value != "label:disable")) {
+                errors << QString("Step %1: [--security-opt %2] can't be exported").arg(step).arg(value);
+                ok = false;
+                break;
+            }
+            drop();
+        }
+        else if ((option == "-d") || (option == "--detach") || (option == "-p") || (option == "--publish") || (option == "-P") || (option == "--publish-all")) {
+            errors << QString("Step %1: [%2 run %3] starts a service, which can't be exported. The step must run the container and finish").arg(step).arg(program).arg(option);
+            ok = false;
+            break;
+        }
+        else {
+            errors << QString("Step %1: [%2 run] option [%3] can't be translated to Apptainer").arg(step).arg(program).arg(option);
+            ok = false;
+            break;
+        }
+    }
+    if (!ok)
+        return;
+    if (k >= words.size()) {
+        errors << QString("Step %1: [%2 run] has no image").arg(step).arg(program);
+        return;
+    }
+
+    /* the image: a registry image, as docker pulls it */
+    const shellToken &image = words[k];
+    QString ref = image.text;
+    if (image.expands || ref.contains("{")) {
+        errors << QString("Step %1: the image [%2] is given by a variable, so it can't be found at export. Write the image's name in the step").arg(step).arg(ref);
+        return;
+    }
+    if (ref.contains("://") || !QRegularExpression("^[a-z0-9][A-Za-z0-9._/:@-]*$").match(ref).hasMatch()) {
+        errors << QString("Step %1: [%2] isn't a registry image %3 can run").arg(step).arg(ref).arg(program);
+        return;
+    }
+    if (ref.startsWith("localhost/") || ref.startsWith("localhost:")) {
+        errors << QString("Step %1: the image [%2] was built locally, so it can't be referenced. Push it to a registry and use that name").arg(step).arg(ref);
+        return;
+    }
+    /* podman resolves short names from registries.conf, which may not be Docker Hub */
+    QString first = ref.section('/', 0, 0);
+    if ((program == "podman") && !(ref.contains('/') && (first.contains('.') || first.contains(':'))))
+        warnings << QString("Step %1: the image [%2] has no registry, so it's taken to be on Docker Hub (docker://%2). Podman may have found it elsewhere; write its full name, for example quay.io/%2").arg(step).arg(ref);
+
+    bool hasArgs = (k + 1 < words.size());
+    if (hasEntrypoint && (entrypoint == "") && !hasArgs) {
+        errors << QString("Step %1: [%2 run --entrypoint \"\"] has no command to run").arg(step).arg(program);
+        return;
+    }
+
+    QString name = AddImage("docker://" + ref, step, images);
+    replacements << textReplacement{ words[runtimeWord].start, words[runtimeWord].end, "{apptainer}" };
+    replacements << textReplacement{ words[subcommandWord].start, words[subcommandWord].end, hasEntrypoint ? "exec --cleanenv" : "run --cleanenv" };
+    replacements << textReplacement{ image.start, image.end, "{image:" + name + "}" + ((entrypoint == "") ? "" : " " + quoted(entrypoint)) };
+
+    warnings << QString("Step %1: [%2 run] is exported as apptainer %3 --cleanenv. Under Apptainer the container runs as the user, not root, can only write to the directories bound into it, and starts in the current directory, not the image's WORKDIR, unless -w is given. The build's reference run runs it this way").arg(step).arg(program).arg(hasEntrypoint ? "exec" : "run");
+    if (resourcesDropped)
+        warnings << QString("Step %1: [%2 run]'s CPU and memory limits are left out of the export. Request them from the scheduler instead").arg(step).arg(program);
 }
 
 

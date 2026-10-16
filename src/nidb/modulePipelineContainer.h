@@ -91,6 +91,13 @@ private:
         bool quoted = false;
     };
 
+    /* a change to a step command: the characters from start to end are replaced with text, which is shell text */
+    struct textReplacement {
+        int start;
+        int end;
+        QString text;
+    };
+
     QList<containerRequest> GetExportRequests(QString status, int containerID);
     bool ClaimRequest(containerRequest &c, QString fromStatus, QString toStatus);
 
@@ -107,6 +114,7 @@ private:
     /* container steps (doc section 11) */
     QList<shellToken> TokenizeCommand(const QString &command);
     bool RewriteContainerStep(QString &command, int step, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings);
+    void TranslateDockerRun(const QString &command, const QList<shellToken> &words, int k, int step, QList<textReplacement> &replacements, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings);
     QString RewriteBinds(const shellToken &token, QString prefix, QString value, int step, QList<externalPath> &paths, QStringList &errors, QStringList &warnings);
     QString AddImage(QString source, int step, QList<containerImage> &images);
     QString AddExternalPath(QString source, int step, QList<externalPath> &paths);

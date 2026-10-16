@@ -1,6 +1,6 @@
 # Exporting a pipeline as an Apptainer container
 
-Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is in §11: written 2026-10-15/16, not yet compiled or run in NiDB, and without `docker run` translation.
+Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is in §11: written 2026-10-15/16, not yet compiled or run in NiDB.
 
 Companion docs: `doc/pipeline-execution.md` (how a pipeline runs today), `doc/analysis-api.md` (the check-in API that the container will *not* use).
 
@@ -551,7 +551,7 @@ To do, as of 2026-10-15:
 | `build-container.sh` | Test with Apptainer, and on a `dpkg` (Debian/Ubuntu) node. So far a full build has worked with Singularity 3.x on a CentOS 7 node. |
 | `pipelines.php` | Container settings (extra include/exclude paths, base image override). |
 | SQL | Columns for those settings on `pipelines` and `pipeline_options` (versioned like the other options). |
-| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15; phase 4 (database and UI) written 2026-10-16, apart from the download and per-image source URIs. None of it compiled or run in NiDB yet. Phase 3 (`docker run` / `podman run` translation) is next. See §11 "Implementation order". |
+| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15; phases 3 (`docker run` / `podman run` translation) and 4 (database and UI) written 2026-10-16, apart from the download and per-image source URIs. None of it compiled or run in NiDB yet. See §11 "Implementation order". |
 
 ---
 
@@ -578,7 +578,7 @@ To do, as of 2026-10-15:
 
 ## 11. Pipelines that run containers (referenced images)
 
-**Status (2026-10-16):** phases 1, 2 and 4 of the implementation order (below) are written: the export side, the build, and the database and UI, apart from the download and per-image source URIs. A pipeline with container steps can be exported and built, end to end, and `pipelinecontainers.php` shows it as a launcher. Phase 3, translating `docker run` and `podman run`, isn't written; those steps are still an export error.
+**Status (2026-10-16):** all four phases of the implementation order (below) are written, apart from the download and per-image source URIs: the export side, the build, `docker run` translation, and the database and UI. A pipeline with container steps can be exported and built, end to end, and `pipelinecontainers.php` shows it as a launcher. None of it has been compiled or run in NiDB yet.
 
 Pipelines whose steps run their own containers (fMRIPrep, QSIPrep, FreeSurfer images, ...) can't go into a single `.sif`, because that would mean running containers inside a container (§7). Instead, such a pipeline is exported as a **launcher** that runs on the user's machine and starts each step in exactly one container, so nothing is nested:
 
@@ -608,7 +608,8 @@ mypipeline-v3/
 | --- | --- | --- |
 | No container command | native | In `pipeline.sif`, as today |
 | `apptainer`/`singularity` `exec`/`run`/`test` with a literal image path or URI | container | Image and external paths replaced with placeholders (below) |
-| `docker run` / `podman run` | container | Translated to Apptainer: `-v a:b` → `--bind a:b`, `-e K=V` → `--env K=V`, `--gpus` → `--nv`, `-w` → `--pwd`; `--rm`, `-i`, `-t` dropped. Any other option is an export error |
+| `docker run` / `podman run` | container | Translated to Apptainer by `TranslateDockerRun()` (below) |
+| `docker pull` / `podman pull` | — | Becomes `true`, with a warning, since the launcher downloads the images |
 | Image given by a variable (`$IMG`, `{var}`) | — | Error: the image must be known at export |
 | `docker-compose`, `instance start`, `shell`, an unknown Apptainer option | — | Error |
 | Container started from a script that a step calls | — | Error, from the trace check (§7). The step must call the container directly |
@@ -617,13 +618,32 @@ A container step's command runs in a host shell with only the image and external
 
 The Apptainer options are parsed to find the image: options that take a value (`--bind`/`-B`, `--env`, `--env-file`, `--pwd`, `--home`/`-H`, `--overlay`, `--mount`) and flags (`--nv`, `--cleanenv`/`-e`, `--containall`/`-C`, `--contain`/`-c`, `--writable-tmpfs`, `--no-home`, `--compat`). The first argument that isn't an option is the image.
 
+### Translating `docker run`
+
+`docker run [options] <image> [args]` (or `podman run`, `docker container run`) becomes `{apptainer} run --cleanenv [options] {image:<name>} [args]`, with the image as `docker://<image>`. A Docker image converted by Apptainer has the image's entrypoint and command as its runscript, so `apptainer run` with arguments runs the same thing `docker run` does. With `--entrypoint X`, it becomes `exec --cleanenv ... {image:<name>} X [args]`. `--cleanenv` is added since Docker doesn't pass the host's environment into the container. Only the words that change are replaced, so quoting, `$(...)` and redirects in the rest of the command stay as written.
+
+| Docker option | Apptainer |
+| --- | --- |
+| `-v`, `--volume src:dst[:opts]` | `--bind src:dst[:ro]`, then rewritten for external paths as any bind. `rw`, `z`, `Z` and propagation options are dropped. A named or anonymous volume is an error |
+| `--mount type=bind,source=...,target=...[,readonly]` | `--bind src:dst[:ro]`. Other mount types are an error |
+| `-e`, `--env NAME=VALUE` | `--env NAME=VALUE` |
+| `-e NAME` | `--env "NAME=$NAME"`, the host's value |
+| `--env-file FILE` | Kept. A file outside `{analysisrootdir}` is an error, as for Apptainer |
+| `-w`, `--workdir` | `--pwd` |
+| `--gpus ...`, `--runtime nvidia` | `--nv` |
+| `--rm`, `-i`, `-t`, `--init`, `--name`, `--pull`, `--platform`, `-u`/`--user`, `--userns`, `--ipc`, `--uts`, `--pid`, `--label`, `--hostname`, `--group-add`, logging options, `--network host`, `--security-opt label=disable` | Dropped. Apptainer runs as the user and shares the host's network |
+| `--cpus`, `--memory`, `--shm-size`, `--ulimit` and other resource limits | Dropped, with a warning to request them from the scheduler |
+| `-d`, `-p`, `-P`, any other `--network`, any other option | Error |
+
+Every translated step gets a warning that the container now runs as the user, not root, can only write to the directories bound into it, and starts in the current directory rather than the image's `WORKDIR` unless `-w` is given. The reference run runs the translated command, so a step that depends on Docker's behavior fails the build rather than the user's run. The image must be a registry image: a variable, a URI or a `localhost/` image is an error. For Podman, a short name with no registry (`fmriprep`, `nipreps/fmriprep`) is taken to be on Docker Hub, with a warning, since Podman may have resolved it from another registry in `registries.conf`.
+
 ### Placeholders
 
 The export rewrites container steps with three new placeholders, rendered by the launcher at run time. Pipeline variables (§3) are rendered as usual. The colon keeps the placeholders apart from pipeline variable names.
 
 | Placeholder | Replaces | Rendered as |
 | --- | --- | --- |
-| `{apptainer}` | `apptainer`, `singularity`, or the translated `docker run` | The runtime found on the host (`apptainer`, else `singularity`) |
+| `{apptainer}` | `apptainer`, `singularity`, or `docker`/`podman` in a translated `docker run` | The runtime found on the host (`apptainer`, else `singularity`) |
 | `{image:<name>}` | The image path or URI | The cached `.sif` for that image (below) |
 | `{path:<name>}` | A host path in a bind source that isn't under `{analysisrootdir}` | The path the user gives with `--path <name>=<host path>` |
 
@@ -785,5 +805,5 @@ module load apptainer
 
 1. **Done (2026-10-15), not yet compiled or run in NiDB.** Step sorting, placeholders and segments for Apptainer and Singularity container steps (`TokenizeCommand()`, `RewriteContainerStep()`, `RewriteBinds()`, `RenderScriptTemplate()`, `CheckSegments()`); the build directory files; `run.sh --segment`; `run-pipeline.sh` with the image cache, locking, `--fetch-images` and the batch job check. The two scripts were tested outside NiDB with a stand-in `apptainer`.
 2. **Done (2026-10-15), not yet compiled or run in NiDB.** The build: pinning `docker://`, `oras://` and local Docker-built images; the reference run through `run-pipeline.sh`, with only native segments traced; per-segment resources; the export directory; validation with the pinned images; reporting the directory. The stop in `PrepareExport()` is removed, and `pipelinecontainers.php` shows container steps as an info note. The build was tested outside NiDB, end to end, with a stand-in `apptainer` and a stand-in registry and API (`curl`), and the real `strace` and software capture: a pipeline with native and container steps, one with only container steps, and an image that can't be pinned. Not tested yet: a real registry, a real image, and a real cluster job.
-3. `docker run` / `podman run` translation.
+3. **Done (2026-10-16), not yet compiled or run in NiDB.** `docker run` / `podman run` translation (`TranslateDockerRun()`, see "Translating `docker run`"), and `docker pull` as a no-op. `pipelinecontainers.php` shows those steps as launcher steps.
 4. **Done (2026-10-16), not yet compiled or run in NiDB**, apart from the per-image source URIs and the download. `container_type` and `pipeline_container_images`, filled in at export and by `containercomplete`; `pipelinecontainers.php`. See "Database and UI".
