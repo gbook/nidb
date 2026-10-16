@@ -2192,8 +2192,6 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
             else
                 jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours).arg(min);
         }
-        /* add the library path SO the cluster version of the nidb executable to run, and diagnostic echos */
-        jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
     }
 
     jobfile += "echo Hostname: `hostname`\n";
@@ -2224,21 +2222,24 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
     jobfile += "export -f nidbapi\n\n";
 
     /* do the first checkin from the cluster */
-    if ((p.resultScript != "") && (rerunresults))
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedrerun -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-    else if (runsupplement)
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s startedsupplement -m 'Supplement processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-    else
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Cluster processing started'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+    if ((p.resultScript != "") && (rerunresults)) {
+        jobfile += "nidbapi -d action=checkin -d status=startedrerun --data-urlencode \"message=Cluster processing re-run started\"\n";
+    }
+    else if (runsupplement) {
+        jobfile += "nidbapi -d action=checkin -d status=startedsupplement --data-urlencode \"message=Supplement processing started\"\n";
+    }
+    else {
+        jobfile += "nidbapi -d action=checkin -d status=started --data-urlencode \"message=Cluster processing started\"\n";
+    }
 
     if (analysispath != "")
         jobfile += "cd " + ShellQuote(analysispath) + ";\n";
 
     if (p.useTmpDir) {
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Beginning data copy to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Beginning data copy to /tmp\"\n";
         jobfile += "mkdir -pv " + ShellQuote(localanalysispath) + "\n";
         jobfile += "cp -Rv " + ShellQuote(analysispath) + "/* " + ShellQuote(localanalysispath) + "/\n";
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Done copying data to /tmp'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Done copying data to /tmp\"\n";
     }
 
     QDir::setCurrent(clusteranalysispath);
@@ -2301,7 +2302,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
             if (checkedin) {
                 QString cleandesc = description;
                 cleandesc.replace("\r", " ").replace("\n", " ");
-                jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'processing %3step %4 of %5'").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(supplement).arg(order).arg(size);
+                jobfile += QString("nidbapi -d action=checkin -d status=processing -d step=%1 --data-urlencode \"message=Processing %2step %1 of %3\"\n").arg(order).arg(supplement).arg(size);
                 jobfile += "\n# " + cleandesc + "\necho Running " + ShellQuote(command) + "\n";
             }
 
@@ -2324,66 +2325,52 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
         }
     }
     if (p.useTmpDir) {
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Copying data from temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Copying data from temp dir\"\n";
         jobfile += "cp -Ruv " + ShellQuote(localanalysispath) + "/* " + ShellQuote(analysispath) + "/\n";
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s started -m 'Deleting temp dir'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Deleting temp dir\"\n";
         jobfile += "rm --preserve-root -rv " + ShellQuote(localanalysispath) + "\n";
     }
 
     if ((p.resultScript.trimmed() != "") && (rerunresults)) {
         /* add on the result script command */
         QString resultcommand = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
-        jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(ShellQuote(resultcommand));
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Processing result script\"\n";
         jobfile += resultcommand + " > " + ShellQuote(analysispath + "/pipeline/stepResults.log") + " 2>&1\n";
 
-        jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s completererun -m 'Results re-run complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+        jobfile += "nidbapi -d action=checkin -d status=completererun --data-urlencode \"message=Results re-run complete\"\n";
         jobfile += "chmod -Rf 777 " + ShellQuote(analysispath) + "\n";
     }
     else {
         /* run the results import script */
         if (p.resultScript.trimmed() != "") {
             QString resultcommand = FormatCommand(p.GetPipelineRowID(), clusteranalysispath, p.resultScript, analysispath, analysisid, uid, studynum, studydatetime, p.name, "", "");
-            jobfile += QString("\n%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Processing result script'\n# Running result script\necho Running %3\n").arg(n->cfg["clusternidbpath"]).arg(analysisid).arg(ShellQuote(resultcommand));
+            jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Processing result script\"\n";
             jobfile += resultcommand + " > " + ShellQuote(analysispath + "/pipeline/stepResults.log") + " 2>&1\n";
         }
 
         /* clean up and log everything */
-        //jobfile += "chmod -Rf 777 " + ShellQuote(analysispath) + "\n";
+        /* disksize is summed with awk, because 'du -c' prints a separate total for each batch of files that find passes it */
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Updating analysis files\"\n";
+        jobfile += "nidbapi -d action=updateanalysis -d \"numfiles=$(find " + ShellQuote(analysispath) + " -type f | wc -l)\" -d \"disksize=$(find " + ShellQuote(analysispath) + " -type f -links 1 -printf '%s\\n' | awk '{s+=$1} END {printf \"%.0f\", s}')\"\n";
+        jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Checking for completed files\"\n";
+
+        /* check for completed files */
+        QStringList completefiles;
+        for (int i=0; i<p.completeFiles.size(); i++) {
+            QString f = p.completeFiles[i].trimmed();
+            if (f != "")
+                completefiles << ShellQuote(f);
+        }
+        jobfile += "iscomplete=1\n";
+        jobfile += "for f in " + completefiles.join(" ") + "; do\n";
+        jobfile += "    [ -e " + ShellQuote(analysispath) + "/\"$f\" ] || { iscomplete=0; break; }\n";
+        jobfile += "done\n";
+        jobfile += QString("nidbapi -d action=setcomplete -d \"iscomplete=$iscomplete\"\n");
         if (runsupplement) {
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s completesupplement -m 'Supplement processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
+            jobfile += QString("nidbapi -d action=checkin -d status=completesupplement --data-urlencode \"message=Supplement processing complete\"\n");
         }
         else {
-            /* new way */
-            /* disksize is summed with awk, because 'du -c' prints a separate total for each batch of files that find passes it */
-            jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Updating analysis files\"\n";
-            jobfile += "nidbapi -d action=updateanalysis -d \"numfiles=$(find " + ShellQuote(analysispath) + " -type f | wc -l)\" -d \"disksize=$(find " + ShellQuote(analysispath) + " -type f -links 1 -printf '%s\\n' | awk '{s+=$1} END {printf \"%.0f\", s}')\"\n";
-            jobfile += "nidbapi -d action=checkin -d status=processing --data-urlencode \"message=Checking for completed files\"\n";
-
-            /* each complete file is quoted, so it's checked as a literal path (as the old CheckCompleteAnalysis() did),
-               rather than being split on spaces or glob-expanded relative to whatever directory the last step cd'd into */
-            QStringList completefiles;
-            for (int i=0; i<p.completeFiles.size(); i++) {
-                QString f = p.completeFiles[i].trimmed();
-                if (f != "")
-                    completefiles << ShellQuote(f);
-            }
-            jobfile += "iscomplete=1\n";
-            jobfile += "for f in " + completefiles.join(" ") + "; do\n";
-            jobfile += "    [ -e " + ShellQuote(analysispath) + "/\"$f\" ] || { iscomplete=0; break; }\n";
-            jobfile += "done\n";
-            jobfile += QString("nidbapi -d action=setcomplete -d \"iscomplete=$iscomplete\"\n");
             jobfile += QString("nidbapi -d action=checkin -d status=complete --data-urlencode \"message=Cluster processing complete\"\n");
-
-            /* old way */
-            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Updating analysis files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            //jobfile += QString("%1/nidb cluster -u updateanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s processing -m 'Checking for completed files'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            //jobfile += QString("%1/nidb cluster -u checkcompleteanalysis -a %2\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
-            //jobfile += QString("%1/nidb cluster -u pipelinecheckin -a %2 -s complete -m 'Cluster processing complete'\n").arg(n->cfg["clusternidbpath"]).arg(analysisid);
         }
         jobfile += "chmod -Rf 777 " + ShellQuote(analysispath) + "\n";
     }

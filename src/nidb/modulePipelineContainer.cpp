@@ -2815,8 +2815,9 @@ bool modulePipelineContainer::WriteContainerBuildScript(containerRequest &c, pip
     settings << "BASE_OVERRIDE=''";
     settings << "";
 
-    /* the same for every build */
-    static const char *body = R"BASH(# ---------- fixed part ----------
+    /* the same for every build. In pieces, because MSVC limits a string literal to 16380 bytes (C2026) */
+    static const char *body[] = {
+R"BASH(# ---------- fixed part ----------
 set -u
 
 # bash 5.2 expands & in the replacement of ${var//pattern/replacement}. json_str quotes its replacements, but turn it off anyway
@@ -3063,7 +3064,8 @@ collect_software() {
         : > "$BUILDDIR/modules.txt"
     fi
 
-    if [ -d /opt ]; then
+)BASH",
+R"BASH(    if [ -d /opt ]; then
         find /opt -mindepth 1 -maxdepth 1 -printf '%f\n' 2>/dev/null | LC_ALL=C sort > "$BUILDDIR/opt.txt"
     else
         : > "$BUILDDIR/opt.txt"
@@ -3317,7 +3319,8 @@ add_tree() {
     find -H "$1" -type f \( -perm -u+x -o -name '*.so' -o -name '*.so.*' \) -print 2>/dev/null >> "$CAP/elf-other.txt"
 }
 
-# opt_child <path>: for a path under /opt, sets OPT_NAME to <name> and OPT_CHILD to /opt/<name>/<child>, the entry in
+)BASH",
+R"BASH(# opt_child <path>: for a path under /opt, sets OPT_NAME to <name> and OPT_CHILD to /opt/<name>/<child>, the entry in
 # /opt/<name> the path is in. OPT_CHILD is empty for /opt/<name> itself. If the entry is a link to a directory in
 # /opt/<name>, OPT_CHILD is the directory and OPT_LINK the link; OPT_LINK is empty otherwise
 opt_child() {
@@ -3525,7 +3528,8 @@ capture_environment() {
     log "Image environment: $(sed 's/=.*//; s/^export //' "$BUILDDIR/environment.txt" | tr '\n' ' ')"
 }
 
-# copied binaries (not from a package) that need a newer glibc than the node's. They couldn't run on this node either, so
+)BASH",
+R"BASH(# copied binaries (not from a package) that need a newer glibc than the node's. They couldn't run on this node either, so
 # they're usually unused files in a copied /opt directory that was built on a newer system. The node's glibc is the newest
 # GLIBC_ version its libc.so.6 provides, since distributions backport versions (EL9's glibc 2.34 provides GLIBC_2.35)
 check_glibc() {
@@ -3727,7 +3731,8 @@ registry_digest() {
     printf '%s' "$digest"
 }
 
-# local_image_source <sif>: the docker:// reference a local .sif was built from, from its definition file (Bootstrap: docker,
+)BASH",
+R"BASH(# local_image_source <sif>: the docker:// reference a local .sif was built from, from its definition file (Bootstrap: docker,
 # From: <image>), which apptainer pull and build write into the image. Empty if it wasn't built from a registry image
 local_image_source() {
     timeout 120 "$APPTAINER" inspect --deffile "$1" 2>/dev/null | awk '
@@ -3911,7 +3916,8 @@ write_manifest() {
         done
         if [ -n "$sep" ]; then printf '\n        ],\n'; else printf '],\n'; fi
 
-        # the system packages copied into the image: name, version-release, arch (tab separated)
+)BASH",
+R"BASH(        # the system packages copied into the image: name, version-release, arch (tab separated)
         printf '        "capturedPackages": ['
         sep=""
         if [ -f "$BUILDDIR/captured-packages.txt" ]; then
@@ -4097,7 +4103,8 @@ compare_outputs() {
     if [ "$nmissing" -gt 0 ]; then warn "$nmissing files in the reference analysis were not created by the container. See validation.txt"; fi
 }
 
-# the .sif's size and checksum for the final report, then remove what's no longer needed. The .sif stays here, with the
+)BASH",
+R"BASH(# the .sif's size and checksum for the final report, then remove what's no longer needed. The .sif stays here, with the
 # logs and reports. The staged input is the reference subject's data, and the sandbox is as big as the image
 # A launcher export reports its directory: the total size, and the sha256 of its checksums.sha256, which covers every file in it.
 # The images downloaded for the reference and validation runs are removed; users download their own
@@ -4195,10 +4202,14 @@ finalize
 
 log "Build complete"
 exit 0
-)BASH";
+)BASH"
+    };
 
     QString path = c.buildDir + "/build-container.sh";
-    if (!WriteTextFile(path, settings.join("\n") + "\n" + body, false)) {
+    QString script = settings.join("\n") + "\n";
+    for (const char *part : body)
+        script += part;
+    if (!WriteTextFile(path, script, false)) {
         msg = "Unable to write [" + path + "]";
         return false;
     }
