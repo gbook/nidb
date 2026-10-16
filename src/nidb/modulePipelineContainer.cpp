@@ -699,7 +699,7 @@ QList<modulePipelineContainer::shellToken> modulePipelineContainer::TokenizeComm
  */
 bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, QList<containerImage> &images, QList<externalPath> &paths, QStringList &errors, QStringList &warnings) {
     /* the old test (doc section 7). Whatever matches it after the rewrite is a container command NiDB couldn't rewrite */
-    static const QRegularExpression containerRegex("(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\\s+(exec|run|shell|instance|test|start|create|compose|container)\\b|\\bdocker-compose\\b|\\brun-singularity\\b|[A-Za-z0-9_}-]\\.(?i:sif|simg)\\b");
+    static const QRegularExpression containerRegex("(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\\s+(exec|run|shell|instance|test|start|create|compose|container)\\b|\\bdocker-compose\\b|\\brun-singularity\\b|(^|[;&|(`])\\s*[^\\s;&|()<>`]*\\.(?i:sif|simg)(\\s|$)");
     static const QStringList runtimes = { "apptainer", "singularity" };
     static const QStringList otherRuntimes = { "docker", "podman", "docker-compose", "podman-compose", "nvidia-docker", "run-singularity", "udocker", "charliecloud", "ch-run", "enroot", "shifter" };
     static const QStringList globalOptions = { "-s", "--silent", "-q", "--quiet", "-d", "--debug", "-v", "--verbose", "--nocolor" };
@@ -886,7 +886,7 @@ bool modulePipelineContainer::RewriteContainerStep(QString &command, int step, Q
     /* anything left that looks like running a container is one the rewrite didn't understand */
     QRegularExpressionMatch m = containerRegex.match(rewritten);
     if (m.hasMatch()) {
-        errors << QString("Step %1: [%2] looks like it runs a container, but it isn't an apptainer or singularity exec, run or test command run directly by the step, so it can't be exported. Containers started from a script or inside $(...) can't be exported").arg(step).arg(m.captured(0).trimmed());
+        errors << QString("Step %1: [%2] looks like it runs a container, but it isn't an apptainer or singularity exec, run or test, or docker or podman run, command run directly by the step, so it can't be exported. Containers started from a script or inside $(...) can't be exported").arg(step).arg(m.captured(0).trimmed().remove(QRegularExpression("^[;&|(`\\s]+")));
         return true;
     }
 

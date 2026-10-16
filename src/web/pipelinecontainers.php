@@ -304,8 +304,8 @@
 			}
 			foreach (explode("\n", $command) as $line) {
 				if (substr(ltrim($line), 0, 1) == "#") { continue; }
-				if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\s+(exec|run|shell|instance|test|start|create|compose|container)\b|\bdocker-compose\b|\brun-singularity\b|[A-Za-z0-9_}-]\.(?i:sif|simg)\b/', $line, $m)) {
-					$containersteps[] = "<tt>" . htmlspecialchars(trim($m[0])) . "</tt> (step " . (int)$step['ps_order'] . ")";
+				if (preg_match('/(^|[^A-Za-z0-9_.-])(apptainer|singularity|docker|podman)\s+(exec|run|shell|instance|test|start|create|compose|container)\b|\bdocker-compose\b|\brun-singularity\b|(^|[;&|(`])\s*[^\s;&|()<>`]*\.(?i:sif|simg)(\s|$)/', $line, $m)) {
+					$containersteps[] = "<tt>" . htmlspecialchars(ltrim(trim($m[0]), ";&|(` ")) . "</tt> (step " . (int)$step['ps_order'] . ")";
 					break;
 				}
 			}
