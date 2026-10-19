@@ -14,21 +14,23 @@ Detailed design: [universal-import.md](universal-import.md)
 
 ## 4. AWS S3 Storage
 
-## 5. Project Usage
+## 5. Avicenna Automated Import
+
+## 6. Project Usage
 
 **Status:** Completed. Implemented in `projectusage.php`.
 
-## 6. PHI Audit
+## 7. PHI Audit
 
-## 7. User Permissions
+## 8. User Permissions
 
 Detailed design and page status: [permissions.md](permissions.md)
 
-## 8. 21 CFR Part 11 Compliance
+## 9. 21 CFR Part 11 Compliance
 
 Detailed analysis: [21-cfr-part-11-gap-analysis.md](21-cfr-part-11-gap-analysis.md)
 
-## 9. Pipeline Export as Apptainer Container
+## 10. Pipeline Export as Apptainer Container
 
 **Status:** Completed.
 
