@@ -65,6 +65,17 @@ public:
     bool WriteUpdate();
     bool ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m);
 
+    /* Embed a copy of the in-memory database as "squirrel.db" in the package,
+       so a later Read() can load it directly instead of re-parsing
+       squirrel.json and re-inserting every row. Write() and WriteUpdate() call
+       this automatically after writing squirrel.json. The copy is stamped with
+       a fingerprint of the archive's squirrel.json - its CRC32 and size from the
+       archive index, so checking it extracts nothing (Read() ignores the copy
+       if the JSON has since changed) and with whether this object's data came from a full
+       read (full reads ignore a copy made from a quick read). PHI params and
+       StagedFiles are scrubbed from the copy; the live database is untouched. */
+    bool WriteEmbeddedDatabase(QString &m);
+
     /* get/set options */
     QString GetDatabaseUUID() { return databaseUUID; } /*!< get the database UUID */
     QString GetPackagePath();
@@ -78,6 +89,7 @@ public:
     void SetOverwritePackage(bool o);
     void SetPackagePath(QString p) { packagePath = p; } /*!< Set the package path */
     void SetQuickRead(bool q);
+    void SetUseEmbeddedDatabase(bool u) { useEmbeddedDb = u; } /*!< false forces Read() to parse squirrel.json, ignoring any squirrel.db */
     void SetSystemTempDir(QString tmpdir);
     void SetWriteLog(bool w) { writeLog = w; }
 
@@ -110,6 +122,13 @@ public:
     QList<squirrelStudy> GetStudyList(qint64 subjectRowID);
     QList<squirrelSubject> GetSubjectList();
 
+    /* lightweight row counts, for UIs that only need "how many" without
+       paying to construct every row's full object (e.g. explore's tree) */
+    qint64 CountStudies(qint64 subjectRowID);
+    qint64 CountSeries(qint64 studyRowID);
+    qint64 CountObservations(qint64 subjectRowID);
+    qint64 CountInterventions(qint64 subjectRowID);
+
     /* get individual objects */
     squirrelAnalysis GetAnalysis(qint64 analysisRowID);
     squirrelDataDictionary GetDataDictionary(qint64 dataDictionaryRowID);
@@ -137,7 +156,7 @@ public:
     qint64 FindObservation(QString subjectID, QString observationName, QDateTime startDate);
 
     /* extract objects */
-    bool ExtractObject(ObjectType object, qint64 subjectRowID, QString outDir /*, bool recursive=false*/);
+    bool ExtractObject(ObjectType object, qint64 objectRowID, QString outDir, QString &m /*, bool recursive=false*/);
 
     /* remove objects */
     bool RemoveObject(ObjectType object, qint64 objectRowID);
@@ -156,6 +175,13 @@ public:
     qint64 GetFreeDiskSpace(); /* this is not named GetDiskFreeSpace() because of collision with Windows API */
     qint64 GetObjectCount(ObjectType object);
     qint64 GetUnzipSize();
+
+    /* keeping data files at their virtual paths. Snapshot the paths before an
+       operation that can change them (renaming IDs, renumbering, resequencing),
+       then call MoveDataPaths() to move the files in the archive to match */
+    QHash<QString, QString> GetDataPaths();
+    void ResequenceAll();
+    bool MoveDataPaths(const QHash<QString, QString> &before, QString &m);
 
     /* validation functions */
     QString GetTempDir();
@@ -182,15 +208,21 @@ public:
     bool quiet=false;
 
     /* printing of information to console */
-    QString PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID = -1);
+    QString PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID = -1, qint64 subjectRowID = -1);
     QString PrintDataDictionary(PrintFormat printFormat=List);
+    QString PrintDataDictionary(DatasetType dataType, PrintFormat printFormat);
+    QString PrintDataDictionaryItems(DatasetType dataType, PrintFormat printFormat);
     QString PrintExperiments(PrintFormat printFormat=List);
+    QString PrintExperiments(DatasetType dataType, PrintFormat printFormat);
     QString PrintGroupAnalyses(PrintFormat printFormat=List);
+    QString PrintGroupAnalyses(DatasetType dataType, PrintFormat printFormat);
     QString PrintInterventions(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
     QString PrintObservations(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
     QString PrintPackage();
+    QString PrintParams(PrintFormat printFormat, qint64 studyRowID, qint64 subjectRowID, int seriesNum = -1);
     QString PrintPipelines(PrintFormat printFormat=List);
-    QString PrintSeries(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID);
+    QString PrintPipelines(DatasetType dataType, PrintFormat printFormat);
+    QString PrintSeries(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID, qint64 subjectRowID = -1);
     QString PrintStudies(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
     QString PrintSubjects(DatasetType dataType, PrintFormat printFormat);
     QString PrintTree();
@@ -216,6 +248,15 @@ private:
     bool InitializeDatabase();
     bool MakeTempDir(QString &dir);
 
+    /* Read() helper - loads "squirrel.db" (see WriteEmbeddedDatabase()) when
+       the package has one that is current (its JSON hash matches the archive's
+       squirrel.json) and complete enough (made from a full read, if this is a
+       full read), skipping JSON parsing and per-row insertion. Returns false
+       if there is no usable embedded database or loading it fails, so the
+       caller falls back to the normal JSON-based read. */
+    bool ReadEmbeddedDatabase();
+    QString GetArchiveJsonHash(bool legacySha256 = false); /* fingerprint of the archive's squirrel.json (CRC32+size from the archive index), empty if unreadable */
+
     /* 7zip archive functions */
     bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
     bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
@@ -226,6 +267,7 @@ private:
     bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m);
     bool PreloadArchiveForRead(QHash<QString, QByteArray> &paramsByPath, QHash<QString, QStringList> &filesBySeriesDir, QString &m);
     bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
+    bool RenameDirectoriesInArchive(QList<QStringPair> renames, QString archivePath, QString &m);
     bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
 
     /* logMutex guards log, logBuffer, progress and lastLoggedProgressPct so the
@@ -258,6 +300,8 @@ private:
     bool isValid;
     bool overwritePackage;
     bool quickRead; /* set true to skip reading of the params.json files */
+    bool useEmbeddedDb = true; /* false to make Read() ignore squirrel.db */
+    bool dbFromFullRead = false; /* true if the live database holds a complete (non-quick) read of the package */
     bool writeLog;
 };
 

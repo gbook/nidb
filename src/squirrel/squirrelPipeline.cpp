@@ -94,6 +94,36 @@ bool squirrelPipeline::Get() {
         flags.SetupUseProfile = q.value("FlagSetupUseProfile").toBool();
         flags.SetupUseTempDirectory = q.value("FlagSetupUseTempDirectory").toBool();
 
+        /* get the data steps */
+        dataSteps.clear();
+        QSqlQuery qd(QSqlDatabase::database(databaseUUID));
+        qd.prepare("select * from PipelineDataStep where PipelineRowID = :id order by StepNumber asc");
+        qd.bindValue(":id", objectID);
+        utils::SQLQuery(qd, __FUNCTION__, __FILE__, __LINE__);
+        while (qd.next()) {
+            dataStep ds;
+            ds.ExportBehavioralDirectoryFormat = qd.value("ExportBehavioralDirectoryFormat").toString();
+            ds.ExportBehavioralDirectoryName = qd.value("ExportBehavioralDirectoryName").toString();
+            ds.ExportDataFormat = qd.value("ExportDataFormat").toString();
+            ds.ExportSubDirectoryName = qd.value("ExportSubDirectoryName").toString();
+            ds.SearchAssociationType = qd.value("SearchAssociationType").toString();
+            ds.SearchDataLevel = qd.value("SearchDataLevel").toString();
+            ds.SearchImageType = qd.value("SearchImageType").toString();
+            ds.SearchModality = qd.value("SearchModality").toString();
+            ds.SearchNumberBOLDreps = qd.value("SearchNumberBOLDreps").toString();
+            ds.SearchProtocol = qd.value("SearchProtocol").toString();
+            ds.SearchSeriesCriteria = qd.value("SearchSeriesCriteria").toString();
+            ds.StepNumber = qd.value("StepNumber").toInt();
+            ds.flags.IsEnabled = qd.value("FlagIsEnabled").toBool();
+            ds.flags.IsOptional = qd.value("FlagIsOptional").toBool();
+            ds.flags.ExportGzip = qd.value("FlagExportGzip").toBool();
+            ds.flags.ExportPreserveSeriesNumber = qd.value("FlagExportPreserveSeriesNumber").toBool();
+            ds.flags.IsPrimaryProtocol = qd.value("FlagIsPrimaryProtocol").toBool();
+            ds.flags.ExportWritePhaseDirectory = qd.value("FlagExportWritePhaseDirectory").toBool();
+            ds.flags.ExportWriteSeriesDirectory = qd.value("FlagExportWriteSeriesDirectory").toBool();
+            dataSteps.append(ds);
+        }
+
         /* get any staged files */
         stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Pipeline);
 
@@ -302,6 +332,36 @@ bool squirrelPipeline::Store() {
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    /* store the data steps, replacing any previously stored */
+    QSqlQuery qd(QSqlDatabase::database(databaseUUID));
+    qd.prepare("delete from PipelineDataStep where PipelineRowID = :id");
+    qd.bindValue(":id", objectID);
+    utils::SQLQuery(qd, __FUNCTION__, __FILE__, __LINE__);
+    foreach (dataStep ds, dataSteps) {
+        qd.prepare("insert into PipelineDataStep (PipelineRowID, ExportBehavioralDirectoryFormat, ExportBehavioralDirectoryName, ExportDataFormat, ExportSubDirectoryName, SearchAssociationType, SearchDataLevel, SearchImageType, SearchModality, SearchNumberBOLDreps, SearchProtocol, SearchSeriesCriteria, StepNumber, FlagIsEnabled, FlagIsOptional, FlagExportGzip, FlagExportPreserveSeriesNumber, FlagIsPrimaryProtocol, FlagExportWritePhaseDirectory, FlagExportWriteSeriesDirectory) values (:PipelineRowID, :ExportBehavioralDirectoryFormat, :ExportBehavioralDirectoryName, :ExportDataFormat, :ExportSubDirectoryName, :SearchAssociationType, :SearchDataLevel, :SearchImageType, :SearchModality, :SearchNumberBOLDreps, :SearchProtocol, :SearchSeriesCriteria, :StepNumber, :FlagIsEnabled, :FlagIsOptional, :FlagExportGzip, :FlagExportPreserveSeriesNumber, :FlagIsPrimaryProtocol, :FlagExportWritePhaseDirectory, :FlagExportWriteSeriesDirectory)");
+        qd.bindValue(":PipelineRowID", objectID);
+        qd.bindValue(":ExportBehavioralDirectoryFormat", ds.ExportBehavioralDirectoryFormat);
+        qd.bindValue(":ExportBehavioralDirectoryName", ds.ExportBehavioralDirectoryName);
+        qd.bindValue(":ExportDataFormat", ds.ExportDataFormat);
+        qd.bindValue(":ExportSubDirectoryName", ds.ExportSubDirectoryName);
+        qd.bindValue(":SearchAssociationType", ds.SearchAssociationType);
+        qd.bindValue(":SearchDataLevel", ds.SearchDataLevel);
+        qd.bindValue(":SearchImageType", ds.SearchImageType);
+        qd.bindValue(":SearchModality", ds.SearchModality);
+        qd.bindValue(":SearchNumberBOLDreps", ds.SearchNumberBOLDreps);
+        qd.bindValue(":SearchProtocol", ds.SearchProtocol);
+        qd.bindValue(":SearchSeriesCriteria", ds.SearchSeriesCriteria);
+        qd.bindValue(":StepNumber", ds.StepNumber);
+        qd.bindValue(":FlagIsEnabled", ds.flags.IsEnabled);
+        qd.bindValue(":FlagIsOptional", ds.flags.IsOptional);
+        qd.bindValue(":FlagExportGzip", ds.flags.ExportGzip);
+        qd.bindValue(":FlagExportPreserveSeriesNumber", ds.flags.ExportPreserveSeriesNumber);
+        qd.bindValue(":FlagIsPrimaryProtocol", ds.flags.IsPrimaryProtocol);
+        qd.bindValue(":FlagExportWritePhaseDirectory", ds.flags.ExportWritePhaseDirectory);
+        qd.bindValue(":FlagExportWriteSeriesDirectory", ds.flags.ExportWriteSeriesDirectory);
+        utils::SQLQuery(qd, __FUNCTION__, __FILE__, __LINE__);
+    }
+
     /* store any staged filepaths */
     if (!isNewObject || !stagedFiles.isEmpty())
         utils::StoreStagedFileList(databaseUUID, objectID, Pipeline, stagedFiles);
@@ -405,6 +465,57 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
 
     /* return JSON object */
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the object data as a hash of 'Object.Variable' keys, for printing
+ * @param d the dataset type (ID, basic, or full)
+ * @return hash of the requested variables
+ */
+QHash<QString, QString> squirrelPipeline::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    data["Pipeline.PipelineName"] = PipelineName;
+    if (d == DatasetBasic || d == DatasetFull) {
+        data["Pipeline.PipelineVersion"] = QString("%1").arg(PipelineVersion);
+        data["Pipeline.PipelineAnalysisLevel"] = QString("%1").arg(PipelineAnalysisLevel);
+        data["Pipeline.PipelineCreateDate"] = PipelineCreateDate.toString("yyyy-MM-dd HH:mm:ss");
+        data["Pipeline.PipelineDescription"] = PipelineDescription;
+        data["Pipeline.DataStepCount"] = QString("%1").arg(dataSteps.size());
+    }
+    if (d == DatasetFull) {
+        data["Pipeline.ClusterEngine"] = ClusterEngine;
+        data["Pipeline.ClusterMaxWallTime"] = QString("%1").arg(ClusterMaxWallTime);
+        data["Pipeline.ClusterMemory"] = QString("%1").arg(ClusterMemory);
+        data["Pipeline.ClusterNumberConcurrentAnalyses"] = QString("%1").arg(ClusterNumberConcurrentAnalyses);
+        data["Pipeline.ClusterNumberCores"] = QString("%1").arg(ClusterNumberCores);
+        data["Pipeline.ClusterQueue"] = ClusterQueue;
+        data["Pipeline.ClusterSubmitDelay"] = QString("%1").arg(ClusterSubmitDelay);
+        data["Pipeline.ClusterSubmitHost"] = ClusterSubmitHost;
+        data["Pipeline.ClusterUser"] = ClusterUser;
+        data["Pipeline.FlagSetupUseProfile"] = flags.SetupUseProfile ? "true" : "false";
+        data["Pipeline.FlagSetupUseTempDirectory"] = flags.SetupUseTempDirectory ? "true" : "false";
+        data["Pipeline.PipelineCompleteFiles"] = PipelineCompleteFiles.join(",");
+        data["Pipeline.PipelineDirectory"] = PipelineDirectory;
+        data["Pipeline.PipelineDirectoryStructure"] = PipelineDirectoryStructure;
+        data["Pipeline.PipelineNotes"] = PipelineNotes;
+        data["Pipeline.PipelineResultScript"] = PipelineResultScript;
+        data["Pipeline.SearchDependencyLevel"] = SearchDependencyLevel;
+        data["Pipeline.SearchDependencyLinkType"] = SearchDependencyLinkType;
+        data["Pipeline.SearchGroup"] = SearchGroup;
+        data["Pipeline.SearchGroupType"] = SearchGroupType;
+        data["Pipeline.SearchParentPipelines"] = SearchParentPipelines.join(",");
+        data["Pipeline.SetupDataCopyMethod"] = SetupDataCopyMethod;
+        data["Pipeline.SetupDependencyDirectory"] = SetupDependencyDirectory;
+        data["Pipeline.SetupTempDirectory"] = SetupTempDirectory;
+        data["Pipeline.VirtualPath"] = VirtualPath();
+    }
+
+    return data;
 }
 
 

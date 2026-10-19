@@ -29,7 +29,7 @@ class extract
 public:
     extract();
 
-    bool DoExtract(QString packagePath, QString outputPath, QString objectType, QString objectIdentifier, QString subjectID, int studyNum, QString &m);
+    bool DoExtract(QString packagePath, QString outputPath, QString objectType, QString objectIdentifier, QString subjectID, int studyNum, QString objectDate, bool debug, bool quiet, QString &m);
 
 };
 

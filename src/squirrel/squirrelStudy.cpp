@@ -523,6 +523,7 @@ QJsonObject squirrelStudy::ToJSON() {
         s.parentSubjectSeqNum = parentSubjectSeqNum;
         s.parentStudyNumber = StudyNumber;
         s.parentStudySeqNum = SequenceNumber;
+        s.SetDirFormat(subjectDirFormat, studyDirFormat, seriesDirFormat);
         JSONseries.append(s.ToJSON());
     }
     if (JSONseries.size() > 0) {
@@ -542,6 +543,7 @@ QJsonObject squirrelStudy::ToJSON() {
         a.parentSubjectSeqNum = parentSubjectSeqNum;
         a.parentStudyNumber = StudyNumber;
         a.parentStudySeqNum = SequenceNumber;
+        a.SetDirFormat(subjectDirFormat, studyDirFormat);
         JSONanalysis.append(a.ToJSON());
     }
     if (JSONanalysis.size() > 0) {
@@ -607,7 +609,7 @@ QList<QPair<QString,QString>> squirrelStudy::GetStagedFileList() {
         s.parentStudyNumber = q.value("ParentStudyNumber").toInt();
         s.parentStudySeqNum = q.value("ParentStudySeqNum").toInt();
         s.stagedFiles = utils::GetStagedFileList(databaseUUID, s.GetObjectID(), Series);
-        s.SetDirFormat(subjectDirFormat, studyDirFormat, "orig");
+        s.SetDirFormat(subjectDirFormat, studyDirFormat, seriesDirFormat);
         stagedList += s.GetStagedFileList();
     }
 

@@ -97,26 +97,28 @@ bool squirrelGroupAnalysis::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert into GroupAnalysis (GroupAnalysisName, Description, Datetime, FileCount, Size, VirtualPath) values (:GroupAnalysisName, :Description, :Datetime, :FileCount, :Size, :VirtualPath)");
+        q.prepare("insert into GroupAnalysis (GroupAnalysisName, Description, Datetime, Notes, FileCount, Size, VirtualPath) values (:GroupAnalysisName, :Description, :Datetime, :Notes, :FileCount, :Size, :VirtualPath)");
         q.bindValue(":GroupAnalysisName", GroupAnalysisName);
         q.bindValue(":Description", Description);
+        q.bindValue(":Notes", Notes);
         q.bindValue(":Datetime", DateTime);
         q.bindValue(":FileCount", FileCount);
         q.bindValue(":Size", Size);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toLongLong();
     }
     /* ... otherwise update */
     else {
-        q.prepare("update GroupAnalysis set GroupAnalysisName = :GroupAnalysisName, Description = :Description, Datetime = :Datetime, FileCount = :FileCount, Size = :Size, VirtualPath = :Virtualpath where GroupAnalysisRowID = :id");
+        q.prepare("update GroupAnalysis set GroupAnalysisName = :GroupAnalysisName, Description = :Description, Datetime = :Datetime, Notes = :Notes, FileCount = :FileCount, Size = :Size, VirtualPath = :VirtualPath where GroupAnalysisRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":GroupAnalysisName", GroupAnalysisName);
         q.bindValue(":Description", Description);
+        q.bindValue(":Notes", Notes);
         q.bindValue(":Datetime", DateTime);
         q.bindValue(":FileCount", FileCount);
         q.bindValue(":Size", Size);
-        q.bindValue(":VirtualPath", virtualPath);
+        q.bindValue(":VirtualPath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
@@ -144,9 +146,36 @@ QJsonObject squirrelGroupAnalysis::ToJSON() {
     json["Notes"] = Notes;
     json["FileCount"] = FileCount;
     json["Size"] = Size;
-    json["VirtualPath"] = virtualPath;
+    json["VirtualPath"] = VirtualPath();
 
     return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the object data as a hash of 'Object.Variable' keys, for printing
+ * @param d the dataset type (ID, basic, or full)
+ * @return hash of the requested variables
+ */
+QHash<QString, QString> squirrelGroupAnalysis::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    data["GroupAnalysis.GroupAnalysisName"] = GroupAnalysisName;
+    if (d == DatasetBasic || d == DatasetFull) {
+        data["GroupAnalysis.Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+        data["GroupAnalysis.Description"] = Description;
+        data["GroupAnalysis.FileCount"] = QString("%1").arg(FileCount);
+        data["GroupAnalysis.Size"] = QString("%1").arg(Size);
+    }
+    if (d == DatasetFull) {
+        data["GroupAnalysis.Notes"] = Notes;
+        data["GroupAnalysis.VirtualPath"] = VirtualPath();
+    }
+
+    return data;
 }
 
 

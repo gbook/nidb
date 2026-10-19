@@ -58,6 +58,7 @@ public:
     bool isValid() { return Validate(); }
     qint64 GetObjectID() { return objectID; }
     void AnonymizeParams();
+    static QStringList AnonymizedParamKeys(); /* param keys AnonymizeParams() removes (may contain PHI) */
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
     void SetDebug(bool d) { debug = d; }
     void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }

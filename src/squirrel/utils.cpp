@@ -927,32 +927,68 @@ namespace utils {
     /* ---------------------------------------------------------- */
     /* --------- StringToDatetime ------------------------------- */
     /* ---------------------------------------------------------- */
+    /**
+     * @brief Parse a datetime string into a local QDateTime, without the cost of
+     * QDateTime::fromString() (this runs once per date field on every
+     * observation/intervention when reading a package).
+     *
+     * Accepts the format the library writes, "yyyy-MM-dd HH:mm:ss", plus:
+     *   "yyyy-MM-ddTHH:mm:ss", with optional ".zzz" and trailing "Z"/offset (ignored)
+     *   "yyyy-MM-dd HH:mm" and "yyyy-MM-dd" (seconds / time default to 0)
+     *   compact "yyyyMMdd", "yyyyMMddTHHmmss", "yyyyMMddTHHmmsszzz"
+     * The time is taken as local time, exactly as written, with no timezone
+     * conversion, so a read/write round trip never shifts it.
+     * @param dt the datetime string
+     * @return the datetime, or an invalid QDateTime if dt is empty or malformed
+     */
     QDateTime StringToDatetime(QString dt) {
-        //dt = dt.trimmed();
+        const QStringView s = QStringView(dt).trimmed();
+        if (s.isEmpty()) { return QDateTime(); }
 
-        if (dt == "") { return QDateTime(); }
-
-        //dt = dt.replace(' ', 'T') + "Z";
-
-        //2025-09-26T18:14:20Z
-
-        //QDate date = QDate(dt.mid(0,4).toInt(), dt.mid(5,2).toInt(), dt.mid(8,2).toInt());
-        //QTime time = QTime(dt.mid(11,2).toInt(), dt.mid(14,2).toInt(), dt.mid(17,2).toInt());
-
-        //QDateTime qdt = QDateTime::fromString(datetime, Qt::ISODate);
-        //QDateTime qdt = QDateTime(date, time);
-        //qdt = qdt.toLocalTime();
-
-        /* thank you to the internet for this very efficient datetime conversion (https://forum.qt.io/topic/139690) */
-        auto DateTimeParser = [](const QStringView string) -> QDateTime {
-            const QDate date(string.left(4).toInt(), string.mid(4, 2).toInt(), string.mid(6, 2).toInt());
-            const QTime time(string.mid(9, 2).toInt(), string.mid(11, 2).toInt(), string.mid(13, 2).toInt(), string.mid(15, 3).toInt());
-            QDateTime dt(date, time);
-            return dt;
+        /* fixed-width run of digits at pos, or -1 if out of range / not all digits */
+        auto num = [&s](qsizetype pos, qsizetype len) -> int {
+            if (pos < 0 || pos + len > s.size()) return -1;
+            int v = 0;
+            for (qsizetype i = pos; i < pos + len; i++) {
+                if (!s[i].isDigit()) return -1;
+                v = v * 10 + s[i].digitValue();
+            }
+            return v;
         };
 
+        const bool dashed = (s.size() >= 10) && (s[4] == u'-') && (s[7] == u'-');
+        const QDate date = dashed ? QDate(num(0, 4), num(5, 2), num(8, 2))
+                                  : QDate(num(0, 4), num(4, 2), num(6, 2));
+        if (!date.isValid()) { return QDateTime(); }
 
-        return DateTimeParser(dt);
+        qsizetype t = dashed ? 10 : 8; /* index of the date/time separator */
+        if (s.size() == t) { return QDateTime(date, QTime(0, 0)); }
+        if ((s[t] != u' ') && (s[t] != u'T')) { return QDateTime(); }
+
+        int h, mi, sec = 0, ms = 0;
+        if ((s.size() >= t + 6) && (s[t + 3] == u':')) {
+            /* HH:mm[:ss[.zzz]] */
+            h = num(t + 1, 2);
+            mi = num(t + 4, 2);
+            if ((s.size() >= t + 9) && (s[t + 6] == u':')) {
+                sec = num(t + 7, 2);
+                if ((s.size() >= t + 13) && (s[t + 9] == u'.'))
+                    ms = num(t + 10, 3);
+            }
+        }
+        else {
+            /* compact HHmmss[zzz] */
+            h = num(t + 1, 2);
+            mi = num(t + 3, 2);
+            sec = num(t + 5, 2);
+            if ((s.size() >= t + 10) && (num(t + 7, 3) >= 0))
+                ms = num(t + 7, 3);
+        }
+
+        const QTime time(h, mi, sec, ms);
+        if (!time.isValid()) { return QDateTime(); }
+
+        return QDateTime(date, time);
     }
 
 

@@ -549,6 +549,7 @@ QJsonObject squirrelSubject::ToJSON() {
         s.Populate(q);
         s.parentSubjectID = ID;
         s.parentSubjectSeqNum = SequenceNumber;
+        s.SetDirFormat(subjectDirFormat, studyDirFormat, seriesDirFormat);
         JSONstudies.append(s.ToJSON());
     }
     if (JSONstudies.size() > 0) {
@@ -640,6 +641,7 @@ QList<QPair<QString,QString>> squirrelSubject::GetStagedFileList() {
         squirrelStudy s(databaseUUID);
         s.SetObjectID(q.value("StudyRowID").toLongLong());
         if (s.Get()) {
+            s.SetDirFormat(subjectDirFormat, studyDirFormat, seriesDirFormat);
             stagedList += s.GetStagedFileList();
         }
     }

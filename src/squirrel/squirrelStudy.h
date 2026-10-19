@@ -60,7 +60,7 @@ public:
     qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
     void SetDebug(bool d) { debug = d; }
-    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat) {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat, QString series_DirFormat = "orig") {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
     void SetObjectID(qint64 id) { objectID = id; }
 
     qint64 subjectRowID = -1;
@@ -96,6 +96,7 @@ private:
     QString err;
     QString studyDirFormat;
     QString subjectDirFormat;
+    QString seriesDirFormat = "orig";  /*!< passed down to child series */
     bool debug;
     bool valid;
     bool removed; /* true once Remove() has deleted this object from the database */

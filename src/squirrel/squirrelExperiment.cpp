@@ -139,6 +139,29 @@ QJsonObject squirrelExperiment::ToJSON() {
 
 
 /* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the object data as a hash of 'Object.Variable' keys, for printing
+ * @param d the dataset type (ID, basic, or full)
+ * @return hash of the requested variables
+ */
+QHash<QString, QString> squirrelExperiment::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    data["Experiment.ExperimentName"] = ExperimentName;
+    if (d == DatasetBasic || d == DatasetFull) {
+        data["Experiment.FileCount"] = QString("%1").arg(FileCount);
+        data["Experiment.Size"] = QString("%1").arg(Size);
+    }
+    if (d == DatasetFull)
+        data["Experiment.VirtualPath"] = VirtualPath();
+
+    return data;
+}
+
+
+/* ------------------------------------------------------------ */
 /* ----- PrintExperiment -------------------------------------- */
 /* ------------------------------------------------------------ */
 /**

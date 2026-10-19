@@ -61,7 +61,7 @@ public:
     int GetNextStudyNumber();
     qint64 GetObjectID() { return objectID; }
     void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
-    void SetDirFormat(QString subject_DirFormat) {subjectDirFormat = subject_DirFormat; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat = "orig", QString series_DirFormat = "orig") {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
     void SetObjectID(qint64 id) { objectID = id; }
 
     QString msg;                /*!< reason(s) the object is invalid, set by Validate(). Blank if the object is valid */
@@ -89,6 +89,8 @@ private:
     QString err;
     qint64 objectID;
     QString subjectDirFormat;
+    QString studyDirFormat = "orig";   /*!< passed down to child studies */
+    QString seriesDirFormat = "orig";  /*!< passed down to child series */
     QString databaseUUID;
 };
 

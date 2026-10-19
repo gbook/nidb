@@ -88,14 +88,7 @@ bool squirrelAnalysis::Get() {
         Populate(q);
 
         /* get any staged files */
-        stagedFiles.clear();
-        q.prepare("select * from StagedFiles where ObjectRowID = :id and ObjectType = :type");
-        q.bindValue(":id", objectID);
-        q.bindValue(":type", "analysis");
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        while (q.next()) {
-            stagedFiles.append(q.value("StagedPath").toString());
-        }
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, Analysis);
 
         return true;
     }
@@ -122,6 +115,15 @@ bool squirrelAnalysis::Get() {
 bool squirrelAnalysis::Store() {
     QSqlQuery q(QSqlDatabase::database(databaseUUID));
     bool isNewObject = (objectID < 0);
+
+    /* the analysis only stores its pipeline's row ID, so link it by name if that hasn't been done */
+    if ((pipelineRowID < 0) && (PipelineName != "")) {
+        q.prepare("select PipelineRowID from Pipeline where PipelineName = :name");
+        q.bindValue(":name", PipelineName);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        if (q.first())
+            pipelineRowID = q.value("PipelineRowID").toLongLong();
+    }
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
@@ -172,22 +174,8 @@ bool squirrelAnalysis::Store() {
     }
 
     /* store any staged files */
-    if ((objectID >= 0) && (!isNewObject || !stagedFiles.isEmpty())) {
-        /* delete previously staged files from the database */
-        q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
-        q.bindValue(":id", objectID);
-        q.bindValue(":type", "analysis");
-        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-
-        QString path;
-        foreach (path, stagedFiles) {
-            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
-            q.bindValue(":id", objectID);
-            q.bindValue(":type", "analysis");
-            q.bindValue(":path", path);
-            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-        }
-    }
+    if ((objectID >= 0) && (!isNewObject || !stagedFiles.isEmpty()))
+        utils::StoreStagedFileList(databaseUUID, objectID, Analysis, stagedFiles);
     return true;
 }
 

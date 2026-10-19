@@ -33,144 +33,141 @@ extract::extract() {}
  * @param packagePath path to the squirrel package file
  * @param outputPath directory where extracted files will be written
  * @param objectType string name of the object type to extract
- * @param objectIdentifier identifier (ID or name) of the object to extract
- * @param subjectID subject ID for study/series scoped extractions
- * @param studyNum study number for series scoped extractions
+ * @param objectIdentifier identifier (ID, name, or number) of the object to extract
+ * @param subjectID subject ID for study/series/analysis/observation/intervention scoped extractions
+ * @param studyNum study number for series/analysis scoped extractions
+ * @param objectDate DateStart of the observation or intervention to extract
+ * @param debug enable debug logging
+ * @param quiet suppress progress output
  * @param m output message describing success or failure
  * @return true if successful
  */
-bool extract::DoExtract(QString packagePath, QString outputPath, QString objectType, QString objectIdentifier, QString subjectID, int studyNum, QString &m) {
+bool extract::DoExtract(QString packagePath, QString outputPath, QString objectType, QString objectIdentifier, QString subjectID, int studyNum, QString objectDate, bool debug, bool quiet, QString &m) {
 
-    utils::Print(QString("Extracting subject [%1] from package [%2] to directory [%3]...").arg(objectIdentifier).arg(packagePath).arg(outputPath));
+    ObjectType object = squirrel::ObjectTypeToEnum(objectType);
+    switch (object) {
+        case Subject: case Study: case Series: case Analysis: case Observation: case Intervention:
+        case Experiment: case Pipeline: case GroupAnalysis: case DataDictionary: break;
+        default:
+            m = "Invalid object type [" + objectType + "] specified. Valid types: subject study series analysis observation intervention experiment pipeline groupanalysis datadictionary";
+            return false;
+    }
+
+    /* check the required parameters for this object type */
+    if (outputPath.isEmpty()) {
+        m = "Missing --outdir";
+        return false;
+    }
+    if (objectIdentifier.isEmpty()) {
+        m = "Missing --objectid";
+        return false;
+    }
+    bool needsSubject = (object == Study || object == Series || object == Analysis || object == Observation || object == Intervention);
+    bool needsStudy = (object == Series || object == Analysis);
+    if (needsSubject && subjectID.isEmpty()) {
+        m = QString("Missing --subjectid, which is required for object type [%1]").arg(objectType);
+        return false;
+    }
+    if (needsStudy && studyNum <= 0) {
+        m = QString("Missing or invalid --studynum, which is required for object type [%1]").arg(objectType);
+        return false;
+    }
+    if ((object == Observation || object == Intervention) && objectDate.isEmpty()) {
+        m = QString("Missing --objectdate, which is required for object type [%1]").arg(objectType);
+        return false;
+    }
+    int objectNum = 0;
+    if (object == Study || object == Series) {
+        bool ok;
+        objectNum = objectIdentifier.toInt(&ok);
+        if (!ok || objectNum <= 0) {
+            m = QString("Invalid --objectid [%1]. A %2 is identified by its number").arg(objectIdentifier).arg(objectType);
+            return false;
+        }
+    }
 
     /* read squirrel package */
-    squirrel *sqrl = new squirrel();
+    squirrel *sqrl = new squirrel(debug, quiet);
     sqrl->SetFileMode(FileMode::ExistingPackage);
     sqrl->SetPackagePath(packagePath);
     sqrl->SetQuickRead(true);
-    sqrl->Read();
+    if (!sqrl->Read()) {
+        m = "Unable to read squirrel package [" + packagePath + "]";
+        delete sqrl;
+        return false;
+    }
+
+    /* find the object */
+    qint64 rowID = -1;
+    QString desc;
+    switch (object) {
+        case Subject:
+            rowID = sqrl->FindSubject(objectIdentifier);
+            desc = QString("subject [%1]").arg(objectIdentifier);
+            break;
+        case Study:
+            rowID = sqrl->FindStudy(subjectID, objectNum);
+            desc = QString("study [%1-%2]").arg(subjectID).arg(objectNum);
+            break;
+        case Series:
+            rowID = sqrl->FindSeries(subjectID, studyNum, objectNum);
+            desc = QString("series [%1-%2-%3]").arg(subjectID).arg(studyNum).arg(objectNum);
+            break;
+        case Analysis:
+            rowID = sqrl->FindAnalysis(subjectID, studyNum, objectIdentifier);
+            desc = QString("analysis [%1-%2-%3]").arg(subjectID).arg(studyNum).arg(objectIdentifier);
+            break;
+        case Observation:
+            rowID = sqrl->FindObservation(subjectID, objectIdentifier, utils::StringToDatetime(objectDate));
+            desc = QString("observation [%1] with DateStart [%2] for subject [%3]").arg(objectIdentifier).arg(objectDate).arg(subjectID);
+            break;
+        case Intervention:
+            rowID = sqrl->FindIntervention(subjectID, objectIdentifier, utils::StringToDatetime(objectDate));
+            desc = QString("intervention [%1] with DateStart [%2] for subject [%3]").arg(objectIdentifier).arg(objectDate).arg(subjectID);
+            break;
+        case Experiment:
+            rowID = sqrl->FindExperiment(objectIdentifier);
+            desc = QString("experiment [%1]").arg(objectIdentifier);
+            break;
+        case Pipeline:
+            rowID = sqrl->FindPipeline(objectIdentifier);
+            desc = QString("pipeline [%1]").arg(objectIdentifier);
+            break;
+        case GroupAnalysis:
+            rowID = sqrl->FindGroupAnalysis(objectIdentifier);
+            desc = QString("groupanalysis [%1]").arg(objectIdentifier);
+            break;
+        case DataDictionary:
+            rowID = sqrl->FindDataDictionary(objectIdentifier);
+            desc = QString("datadictionary [%1]").arg(objectIdentifier);
+            break;
+        default: break;
+    }
+    if (rowID < 0) {
+        m = desc.left(1).toUpper() + desc.mid(1) + " not found in package [" + packagePath + "]";
+        delete sqrl;
+        return false;
+    }
 
     /* create outputDir */
     QString m2;
-    if (utils::MakePath(outputPath, m2)) {
-        utils::Print("Created output path [" + outputPath + "]");
-    }
-    else {
-        utils::Print("Error creating output path [" + outputPath + "]. Message [" + m2 + "]");
+    if (!utils::MakePath(outputPath, m2)) {
+        m = "Error creating output path [" + outputPath + "]. Message [" + m2 + "]";
         delete sqrl;
         return false;
     }
 
-    ObjectType object = sqrl->ObjectTypeToEnum(objectType);
-    if (object == Subject) {
-        /* find the subjectRowID */
-        qint64 subjectRowID = sqrl->FindSubject(objectIdentifier);
-        if (subjectRowID < 0) {
-            utils::Print("Subject [" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the subject */
-        utils::Print("Extracting subject [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Subject, subjectRowID, outputPath);
-    }
-    else if (object == Study) {
-        /* find the studyRowID */
-        qint64 studyRowID = sqrl->FindStudy(subjectID, objectIdentifier.toInt());
-        if (studyRowID < 0) {
-            utils::Print("Study [" + subjectID + "-" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the study */
-        utils::Print("Extracting study [" + subjectID + "-" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Study, studyRowID, outputPath);
-    }
-    else if (object == Series) {
-        /* find the seriesRowID */
-        qint64 seriesRowID = sqrl->FindSeries(subjectID, studyNum, objectIdentifier.toInt());
-        if (seriesRowID < 0) {
-            utils::Print(QString("Series [%1-%2-%3] not found in this package").arg(subjectID).arg(studyNum).arg(objectIdentifier));
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the series */
-        utils::Print("Extracting series [" + subjectID + "-" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Series, seriesRowID, outputPath);
-    }
-    else if (object == Analysis) {
-        /* find the analysisRowID */
-        qint64 analysisRowID = sqrl->FindAnalysis(subjectID, studyNum, objectIdentifier);
-        if (analysisRowID < 0) {
-            utils::Print(QString("Analysis [%1-%2-%3] not found in this package").arg(subjectID).arg(studyNum).arg(objectIdentifier));
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the analysis */
-        utils::Print("Extracting analysis [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Analysis, analysisRowID, outputPath);
-    }
-    else if (object == Experiment) {
-        /* find the experimentRowID */
-        qint64 experimentRowID = sqrl->FindExperiment(objectIdentifier);
-        if (experimentRowID < 0) {
-            utils::Print("Experiment [" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the experiment */
-        utils::Print("Extracting experiment [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Experiment, experimentRowID, outputPath);
-    }
-    else if (object == Pipeline) {
-        /* find the pipelineRowID */
-        qint64 pipelineRowID = sqrl->FindPipeline(objectIdentifier);
-        if (pipelineRowID < 0) {
-            utils::Print("Pipeline [" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the pipeline */
-        utils::Print("Extracting pipeline [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(Pipeline, pipelineRowID, outputPath);
-    }
-    else if (object == GroupAnalysis) {
-        /* find the groupAnalysisRowID */
-        qint64 groupAnalysisRowID = sqrl->FindGroupAnalysis(objectIdentifier);
-        if (groupAnalysisRowID < 0) {
-            utils::Print("GroupAnalysis [" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the groupAnalysis */
-        utils::Print("Extracting groupAnalysis [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(GroupAnalysis, groupAnalysisRowID, outputPath);
-    }
-    else if (object == DataDictionary) {
-        /* find the dataDictionaryRowID */
-        qint64 dataDictionaryRowID = sqrl->FindDataDictionary(objectIdentifier);
-        if (dataDictionaryRowID < 0) {
-            utils::Print("DataDictionary [" + objectIdentifier + "] not found in this package");
-            delete sqrl;
-            return false;
-        }
-
-        /* extract the dataDictionary */
-        utils::Print("Extracting dataDictionary [" + objectIdentifier + "] to output path [" + outputPath + "]");
-        sqrl->ExtractObject(DataDictionary, dataDictionaryRowID, outputPath);
-    }
-    else {
-        m = "Invalid oject type [" + sqrl->ObjectTypeToString(object) + "] specified";
+    /* extract the object */
+    if (!quiet)
+        utils::Print("Extracting " + desc + " from package [" + packagePath + "] to directory [" + outputPath + "]");
+    if (!sqrl->ExtractObject(object, rowID, outputPath, m2)) {
+        m = "Error extracting " + desc + ". Message [" + m2 + "]";
         delete sqrl;
         return false;
     }
+
+    if (!quiet)
+        utils::Print("Extracted " + desc + " to [" + outputPath + "]");
 
     delete sqrl;
     return true;

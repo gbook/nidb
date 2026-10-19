@@ -570,14 +570,15 @@ QString squirrelSeries::VirtualPath() {
 
 
 /* ---------------------------------------------------------- */
-/* --------- AnonymizeParams -------------------------------- */
+/* --------- AnonymizedParamKeys ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Remove selected fields from the series params that may contain PHI
+ * @brief The series param keys that may contain PHI, and are removed by
+ * AnonymizeParams(). Also used to scrub the embedded squirrel.db.
+ * @return list of param keys
  */
-void squirrelSeries::AnonymizeParams() {
+QStringList squirrelSeries::AnonymizedParamKeys() {
 
-    QHash<QString, QString> p;
     QStringList anonFields;
     anonFields << "AcquisitionDate";
     anonFields << "AcquisitionTime";
@@ -612,6 +613,21 @@ void squirrelSeries::AnonymizeParams() {
     anonFields << "StudyDescription";
     anonFields << "StudyTime";
     anonFields << "UniqueSeriesString";
+
+    return anonFields;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AnonymizeParams -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Remove selected fields from the series params that may contain PHI
+ */
+void squirrelSeries::AnonymizeParams() {
+
+    QHash<QString, QString> p;
+    const QStringList anonFields = AnonymizedParamKeys();
 
     for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
         if (!anonFields.contains(a.key()))

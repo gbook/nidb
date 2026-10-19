@@ -1,6 +1,6 @@
 # Exporting a pipeline as an Apptainer container
 
-Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-13):** the web UI (`pipelinecontainers.php`) and the `pipeline_containers` table are implemented. The backend (`modulePipelineContainer`) is partly implemented: see §9. Exporting pipelines that run their own containers is in §11: written 2026-10-15/16, not yet compiled or run in NiDB.
+Design notes for exporting a NiDB pipeline as a standalone Apptainer (`.sif`) image that anyone can run without NiDB. Written 2026-10-05, decisions in §10. **Status (2026-10-19):** completed, tested and working in NiDB: the web UI (`pipelinecontainers.php`), the `pipeline_containers` table, the backend (`modulePipelineContainer`), and exporting pipelines that run their own containers (§11). Remaining follow-ups are listed in §9.
 
 Companion docs: `doc/pipeline-execution.md` (how a pipeline runs today), `doc/analysis-api.md` (the check-in API that the container will *not* use).
 
@@ -551,7 +551,7 @@ To do, as of 2026-10-15:
 | `build-container.sh` | Test with Apptainer, and on a `dpkg` (Debian/Ubuntu) node. So far a full build has worked with Singularity 3.x on a CentOS 7 node. |
 | `pipelines.php` | Container settings (extra include/exclude paths, base image override). |
 | SQL | Columns for those settings on `pipelines` and `pipeline_options` (versioned like the other options). |
-| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15; phases 3 (`docker run` / `podman run` translation) and 4 (database and UI) written 2026-10-16, apart from the download and per-image source URIs. None of it compiled or run in NiDB yet. See §11 "Implementation order". |
+| Referenced-image export (§11) | Phases 1 (export side, `run.sh --segment`, `run-pipeline.sh`) and 2 (the build) written 2026-10-15; phases 3 (`docker run` / `podman run` translation) and 4 (database and UI) written 2026-10-16, apart from the download and per-image source URIs. Tested and working in NiDB (2026-10-19). See §11 "Implementation order". |
 
 ---
 
@@ -578,7 +578,7 @@ To do, as of 2026-10-15:
 
 ## 11. Pipelines that run containers (referenced images)
 
-**Status (2026-10-16):** all four phases of the implementation order (below) are written, apart from the download and per-image source URIs: the export side, the build, `docker run` translation, and the database and UI. A pipeline with container steps can be exported and built, end to end, and `pipelinecontainers.php` shows it as a launcher. None of it has been compiled or run in NiDB yet.
+**Status (2026-10-16):** all four phases of the implementation order (below) are written, apart from the download and per-image source URIs: the export side, the build, `docker run` translation, and the database and UI. A pipeline with container steps can be exported and built, end to end, and `pipelinecontainers.php` shows it as a launcher. Tested and working in NiDB (2026-10-19).
 
 Pipelines whose steps run their own containers (fMRIPrep, QSIPrep, FreeSurfer images, ...) can't go into a single `.sif`, because that would mean running containers inside a container (§7). Instead, such a pipeline is exported as a **launcher** that runs on the user's machine and starts each step in exactly one container, so nothing is nested:
 
@@ -803,7 +803,7 @@ module load apptainer
 
 ### Implementation order
 
-1. **Done (2026-10-15), not yet compiled or run in NiDB.** Step sorting, placeholders and segments for Apptainer and Singularity container steps (`TokenizeCommand()`, `RewriteContainerStep()`, `RewriteBinds()`, `RenderScriptTemplate()`, `CheckSegments()`); the build directory files; `run.sh --segment`; `run-pipeline.sh` with the image cache, locking, `--fetch-images` and the batch job check. The two scripts were tested outside NiDB with a stand-in `apptainer`.
-2. **Done (2026-10-15), not yet compiled or run in NiDB.** The build: pinning `docker://`, `oras://` and local Docker-built images; the reference run through `run-pipeline.sh`, with only native segments traced; per-segment resources; the export directory; validation with the pinned images; reporting the directory. The stop in `PrepareExport()` is removed, and `pipelinecontainers.php` shows container steps as an info note. The build was tested outside NiDB, end to end, with a stand-in `apptainer` and a stand-in registry and API (`curl`), and the real `strace` and software capture: a pipeline with native and container steps, one with only container steps, and an image that can't be pinned. Not tested yet: a real registry, a real image, and a real cluster job.
-3. **Done (2026-10-16), not yet compiled or run in NiDB.** `docker run` / `podman run` translation (`TranslateDockerRun()`, see "Translating `docker run`"), and `docker pull` as a no-op. `pipelinecontainers.php` shows those steps as launcher steps.
-4. **Done (2026-10-16), not yet compiled or run in NiDB**, apart from the per-image source URIs and the download. `container_type` and `pipeline_container_images`, filled in at export and by `containercomplete`; `pipelinecontainers.php`. See "Database and UI".
+1. **Done (2026-10-15), tested in NiDB 2026-10-19.** Step sorting, placeholders and segments for Apptainer and Singularity container steps (`TokenizeCommand()`, `RewriteContainerStep()`, `RewriteBinds()`, `RenderScriptTemplate()`, `CheckSegments()`); the build directory files; `run.sh --segment`; `run-pipeline.sh` with the image cache, locking, `--fetch-images` and the batch job check. The two scripts were tested outside NiDB with a stand-in `apptainer`.
+2. **Done (2026-10-15), tested in NiDB 2026-10-19.** The build: pinning `docker://`, `oras://` and local Docker-built images; the reference run through `run-pipeline.sh`, with only native segments traced; per-segment resources; the export directory; validation with the pinned images; reporting the directory. The stop in `PrepareExport()` is removed, and `pipelinecontainers.php` shows container steps as an info note. The build was tested outside NiDB, end to end, with a stand-in `apptainer` and a stand-in registry and API (`curl`), and the real `strace` and software capture: a pipeline with native and container steps, one with only container steps, and an image that can't be pinned. Not tested yet: a real registry, a real image, and a real cluster job.
+3. **Done (2026-10-16), tested in NiDB 2026-10-19.** `docker run` / `podman run` translation (`TranslateDockerRun()`, see "Translating `docker run`"), and `docker pull` as a no-op. `pipelinecontainers.php` shows those steps as launcher steps.
+4. **Done (2026-10-16), tested in NiDB 2026-10-19**, apart from the per-image source URIs and the download. `container_type` and `pipeline_container_images`, filled in at export and by `containercomplete`; `pipelinecontainers.php`. See "Database and UI".

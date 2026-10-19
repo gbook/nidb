@@ -12,11 +12,13 @@ enum ObjectType {
     BehSeries,
     DataDictionary,
     DataDictionaryItem,
+    DataStep,
     Experiment,
     GroupAnalysis,
     Intervention,
     Observation,
     Package,
+    Params,
     Pipeline,
     Series,
     Study,
@@ -33,6 +35,7 @@ struct infoQuery {
     ObjectType object;
     QString subjectID;
     int studyNum;
+    int seriesNum;
     DatasetType dataset;
     PrintFormat printFormat;
 };
@@ -44,6 +47,8 @@ struct modification {
     QString objectData;       /* the object data, likely in URL style format */
     QString objectID;         /* object identifier string. Example: subject ID, experiment name, pipeline name, etc */
     QString subjectID;        /* parent subject ID, used for study/series/analysis/observation/intervention operations */
+    QString objectDate;       /* DateStart of an existing observation or intervention, used with objectID to find it */
+    QString itemID;           /* VariableName of a data dictionary item, or StepNumber of a pipeline data step */
     int studyNumber;          /* study number */
     int seriesNumber;         /* series number */
     int renumberDigits;       /* (renumber operation) number of digits in the new subject IDs */

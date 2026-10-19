@@ -2,28 +2,28 @@ INSERT IGNORE INTO `instance` (`instance_id`, `instance_uid`, `instance_name`, `
 (1, 'I1234ABC', 'NiDB', 1, 1);
 
 INSERT IGNORE INTO `modalities` (`mod_code`, `mod_desc`, `mod_enabled`) VALUES
-('MR', 'Magnetic resonance imaging', 1),
-('CT', 'Computed tomography', 1),
+('MR', 'Magnetic Resonance Imaging', 1),
+('CT', 'Computed Tomography', 1),
 ('EEG', 'Electroencephalography', 1),
-('VIDEO', 'Video', 1),
+('VIDEO', 'Video files', 1),
 ('ECG', 'Electrocardiogram', 1),
 ('US', 'Ultrasound', 1),
 ('MEG', 'Magnetoencephalography', 1),
 ('XRAY', 'X-ray', 1),
-('PT', 'Positron emission tomography', 1),
+('PT', 'Positron Emission Tomography', 1),
 ('OT', 'Other DICOM', 1),
 ('PPI', 'Pre-pulse inhibition', 1),
 ('ET', 'Eye-tracking', 1),
 ('XA', 'X-ray angiography', 1),
 ('CR', 'Computed radiography (digital x-ray)', 1),
 ('SURGERY', 'Pre-surgical Mapping', 1),
-('AUDIO', 'Audio', 1),
+('AUDIO', 'Audio files', 1),
 ('SNP', 'SNP genetic information', 1),
 ('CONSENT', 'Consent form', 1),
-('TMS', 'Transcranial magnetic stimulation', 1),
+('TASK', 'Task', 1),
 ('GSR', 'Galvanic skin response', 1),
-('DOC', 'Documents', 1),
-('TASK', 'Task', 1);
+('IMAGE', 'Image & picture files (png, gif, jpg, tiff, iSyntax, etc)', 1),
+('PSG', 'Polysomnography', 1);
 
 delete from modules;
 

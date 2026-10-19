@@ -27,6 +27,7 @@
 #include <QString>
 #include <QDateTime>
 #include <QJsonObject>
+#include "squirrelTypes.h"
 
 /**
  * @brief The squirrelGroupAnalysis class
@@ -36,6 +37,7 @@ class squirrelGroupAnalysis
 public:
     squirrelGroupAnalysis(QString dbID);
     QJsonObject ToJSON();
+    QHash<QString, QString> GetData(DatasetType d);
     QString PrintGroupAnalysis();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */

@@ -29,6 +29,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include "squirrelTypes.h"
 
 /**
  * @brief The dataStep struct
@@ -77,6 +78,7 @@ class squirrelPipeline
 public:
     squirrelPipeline(QString dbID);
     QJsonObject ToJSON(QString path);
+    QHash<QString, QString> GetData(DatasetType d);
     QString PrintPipeline();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */
@@ -114,7 +116,7 @@ public:
     QString SetupWriteBids;
     QStringList PipelineCompleteFiles;      /*!< list of files that must exists to indicate the analysis was complete */
     QStringList SearchParentPipelines;    /*!< list of pipelines on which this pipeline depends */
-    int ClusterMaxWallTime;         /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (seconds) */
+    int ClusterMaxWallTime;         /*!< [NiDB] maximum allowed clock (wall) time the analysis is allowed to run (minutes) */
     int ClusterMemory;              /*!< [NiDB] memory requested */
     int ClusterNumberConcurrentAnalyses;   /*!< [NiDB] max number of concurrent analyses allowed to run */
     int ClusterNumberCores;         /*!< [NiDB] number of cores requested */

@@ -26,6 +26,7 @@
 #include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The experiment class
@@ -34,7 +35,8 @@ class squirrelExperiment
 {
 public:
     squirrelExperiment(QString dbID);
-    QJsonObject ToJSON();   /* returns a JSON object */
+    QJsonObject ToJSON();
+    QHash<QString, QString> GetData(DatasetType d);   /* returns a JSON object */
     QString PrintExperiment(); /* prints the object */
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */

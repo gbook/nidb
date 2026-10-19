@@ -26,6 +26,7 @@
 #include <QString>
 #include <QJsonObject>
 #include <QJsonArray>
+#include "squirrelTypes.h"
 
 /**
  * @brief The dataDictionaryItem structure
@@ -50,6 +51,8 @@ public:
     squirrelDataDictionary(QString dbID);
 
     QJsonObject ToJSON();
+    QHash<QString, QString> GetData(DatasetType d);
+    QHash<QString, QString> GetItemData(const dataDictionaryItem &item, DatasetType d);
     QString PrintDataDictionary();
     bool Get();             /* gets the object data from the database */
     bool Store();           /* saves the object data from this object into the database */

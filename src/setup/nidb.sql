@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 16, 2026 at 03:12 PM
+-- Generation Time: Oct 19, 2026 at 04:52 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2629,6 +2629,29 @@ CREATE TABLE `pr_series` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `psg_series`
+--
+
+CREATE TABLE `psg_series` (
+  `psgseries_id` int(11) NOT NULL,
+  `study_id` int(11) DEFAULT NULL,
+  `series_num` int(11) DEFAULT NULL,
+  `series_desc` varchar(255) DEFAULT NULL,
+  `series_altdesc` varchar(255) DEFAULT NULL,
+  `series_protocol` varchar(255) DEFAULT NULL,
+  `series_datetime` datetime DEFAULT NULL,
+  `series_numfiles` int(11) NOT NULL DEFAULT 0 COMMENT 'total number of files',
+  `series_size` double NOT NULL DEFAULT 0 COMMENT 'size of all the files',
+  `series_notes` longtext DEFAULT NULL,
+  `series_duration` bigint(20) DEFAULT NULL,
+  `series_createdby` varchar(50) DEFAULT NULL,
+  `ishidden` tinyint(1) NOT NULL DEFAULT 0,
+  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `publicdataset_downloads`
 --
 
@@ -4594,6 +4617,14 @@ ALTER TABLE `pr_series`
   ADD KEY `ishidden` (`ishidden`);
 
 --
+-- Indexes for table `psg_series`
+--
+ALTER TABLE `psg_series`
+  ADD PRIMARY KEY (`psgseries_id`),
+  ADD KEY `study_id` (`study_id`,`series_num`),
+  ADD KEY `ishidden` (`ishidden`);
+
+--
 -- Indexes for table `publicdataset_downloads`
 --
 ALTER TABLE `publicdataset_downloads`
@@ -5673,6 +5704,12 @@ ALTER TABLE `project_templatestudyitems`
 --
 ALTER TABLE `pr_series`
   MODIFY `prseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `psg_series`
+--
+ALTER TABLE `psg_series`
+  MODIFY `psgseries_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `publicdataset_downloads`
