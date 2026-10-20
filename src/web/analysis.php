@@ -1116,10 +1116,10 @@
 						<td style="font-size:9pt; white-space:nowrap">
 							<? if (strlen($analysis_statusmessage) > 50) { echo "<span title='$analysis_statusmessage'>" . substr($analysis_statusmessage, 0, 50) . "...</span>"; } else { echo $analysis_statusmessage; } ?><br>
 							<?
-								if (strpos($analysis_statusmessage,"processing step") !== false) {
-									$parts = explode(" ",$analysis_statusmessage);
-									$stepnum = $parts[2];
-									$steptotal = $parts[4];
+								/* progress bar for messages like 'Processing step 2 of 5' or 'Processing supplement step 2 of 5' */
+								if (preg_match('/processing .*?step (\d+) of (\d+)/i', $analysis_statusmessage ?? '', $stepmatches) && ((int)$stepmatches[2] > 0)) {
+									$stepnum = (int)$stepmatches[1];
+									$steptotal = (int)$stepmatches[2];
 							?>
 							<img src="ajaxapi.php?action=horizontalchart&b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
 							<? } ?>
