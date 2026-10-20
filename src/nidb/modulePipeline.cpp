@@ -270,7 +270,7 @@ int modulePipeline::Run() {
             int jobid(-1);
             if (n->SubmitClusterJob(jobFilePath, p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], p.clusterUser, p.clusterQueue, qm, jobid, qresult)) {
                 n->Log(QString("[%1] Successfully submitted job to cluster [" + qresult + "]").arg(p.name), __FUNCTION__);
-                UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.clusterQueue + "]", jobid, -1, "", true, false, 0, 0);
+                UpdateAnalysisStatus(analysisRowID, "submitted", "Submitted to [" + p.clusterQueue + "]", jobid, -1, "", false, true, 0, 0);
                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, "","");
             }
             else {
@@ -667,7 +667,7 @@ int modulePipeline::Run() {
                             m = QString("Successfully submitted job %1 to %2 cluster. analysisRowID %3").arg(jobid).arg(p.clusterType).arg(analysisRowID);
                             n->Log(m, __FUNCTION__);
                             n->Debug("Job submission result [" + qresult + "]", __FUNCTION__);
-                            UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", true, false, 0, 0);
+                            UpdateAnalysisStatus(analysisRowID, "submitted", m, jobid, numseriesdownloaded, "", false, true, 0, 0);
                             n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::success, 0, QString("Submitted job %1 to %2 cluster. Result [%3]").arg(jobid).arg(p.clusterType).arg(qresult), "");
                             RecordPipelineEvent(pipelineid, runnum, -1, "submitAnalysis", m);
                         }
