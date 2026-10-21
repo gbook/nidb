@@ -23,6 +23,8 @@
 #include "moduleUpload.h"
 #include "bids.h"
 #include <QSqlQuery>
+#include <QSet>
+#include <QTextStream>
 
 /* ---------------------------------------------------------- */
 /* --------- moduleUpload ----------------------------------- */
@@ -67,6 +69,10 @@ int moduleUpload::Run() {
     /* archive any squirrel */
     ret |= ArchiveSelectedSquirrel();
     n->Log(QString("Finished ArchiveSelectedSquirrel() ret [%1]").arg(ret));
+
+    /* archive any import wizard uploads */
+    ret |= ArchiveSelectedUniversal();
+    n->Log(QString("Finished ArchiveSelectedUniversal() ret [%1]").arg(ret));
 
     n->Log("Leaving the upload module");
     return ret;
@@ -147,8 +153,8 @@ bool moduleUpload::ReadUploads() {
                 continue;
             }
 
-            /* if modality is blank. BIDS and squirrel packages carry the modality of each study themselves */
-            if ((upload_modality == "") && (upload_type != "bids") && (upload_type != "squirrel")) {
+            /* if modality is blank. BIDS and squirrel packages carry the modality of each study themselves, and import wizard uploads of each series */
+            if ((upload_modality == "") && (upload_type != "bids") && (upload_type != "squirrel") && (upload_type != "universal")) {
                 io->AppendUploadLog("Error. Modality was blank [" + upload_modality + "]");
                 ret = 1;
 
@@ -162,7 +168,21 @@ bool moduleUpload::ReadUploads() {
             /* copy in files from uploadtmp or nfs to the uploadstagingdir */
             io->AppendUploadLog(QString("Beginning copy of data from original path [%1] to upload staging path [%2]").arg(upload_datapath).arg(uploadstagingpath));
             QString systemstring = QString("rsync -a --stats %1/ %2/").arg(upload_datapath).arg(uploadstagingpath);
-            io->AppendUploadLog(SystemCommand(systemstring, true, true));
+            if ((upload_type == "universal") && (upload_source == "nfs")) {
+                /* only the files in the import wizard's manifest. Symlinks that point outside the folder are skipped (D12) */
+                QString listfile = uploadstagingpath + ".files";
+                QString m;
+                if (!WriteManifestFileList(q.value("upload_manifestpath").toString(), listfile, m)) {
+                    io->AppendUploadLog("Error: " + m);
+                    SetUploadStatus(uploadRowID, "parsingerror");
+                    continue;
+                }
+                systemstring = QString("rsync -a -r --safe-links --stats --files-from=%1 %2/ %3/").arg(ShellQuote(listfile)).arg(ShellQuote(upload_datapath)).arg(ShellQuote(uploadstagingpath));
+                io->AppendUploadLog(SystemCommand(systemstring, true, true));
+                QFile::remove(listfile);
+            }
+            else
+                io->AppendUploadLog(SystemCommand(systemstring, true, true));
             //n->Log("Checkpoint E");
 
             /* remove the uploadtmp directory, if it was uploaded from the web */
@@ -176,14 +196,17 @@ bool moduleUpload::ReadUploads() {
                 }
             }
 
-            /* unzip any files in the uploadstagingdir (do not recurse into a BIDS directory) */
-            io->AppendUploadLog("Unzipping files located in [" + uploadstagingpath + "]");
-            QString unzipOutput;
-            if (upload_type == "bids")
-                unzipOutput = UnzipDirectory(uploadstagingpath, false);
-            else
-                unzipOutput = UnzipDirectory(uploadstagingpath, true);
-            io->AppendUploadLog("Unzip output" + unzipOutput);
+            /* unzip any files in the uploadstagingdir (do not recurse into a BIDS directory). Import wizard uploads
+               hold only the files the user mapped, and archives aren't among them */
+            if (upload_type != "universal") {
+                io->AppendUploadLog("Unzipping files located in [" + uploadstagingpath + "]");
+                QString unzipOutput;
+                if (upload_type == "bids")
+                    unzipOutput = UnzipDirectory(uploadstagingpath, false);
+                else
+                    unzipOutput = UnzipDirectory(uploadstagingpath, true);
+                io->AppendUploadLog("Unzip output" + unzipOutput);
+            }
 
             /* get information about the uploaded data from the uploadstagingdir (after unzipping any zip files) */
             qint64 c = 0;
@@ -214,6 +237,10 @@ bool moduleUpload::ReadUploads() {
 
                     delete sqrl;
                 }
+            }
+            else if (upload_type == "universal") {
+                /* the import wizard already mapped every file to its subject, study, and series */
+                ParseUniversalUpload(uploadRowID, uploadstagingpath, q.value("upload_manifestpath").toString(), q.value("upload_destprojectid").toInt(), q.value("upload_autoarchive").toBool());
             }
             else if (upload_type == "bids") {
                 /* there should only be one BIDS dataset in this directory */
@@ -938,7 +965,7 @@ bool moduleUpload::ArchiveSelectedFiles() {
     bool ret(false);
 
     /* get list of uploads that are ready to be archived */
-    q.prepare("select * from uploads where upload_status = 'queueforarchive' and upload_type <> 'squirrel'");
+    q.prepare("select * from uploads where upload_status = 'queueforarchive' and upload_type <> 'squirrel' and upload_type <> 'universal'");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     if (q.size() > 0) {
         while (q.next()) {
@@ -1700,4 +1727,583 @@ int moduleUpload::InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString u
     }
 
     return parsedSeriesRowID;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- WriteManifestFileList -------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write the paths in an import wizard manifest to a file, one per line, for `rsync --files-from`
+ * @param manifestpath The manifest JSON file
+ * @param listfile The file to write
+ * @param msg [returned] What went wrong
+ * @return true if written
+ */
+bool moduleUpload::WriteManifestFileList(QString manifestpath, QString listfile, QString &msg) {
+    QFile mf(manifestpath);
+    if (!mf.open(QIODevice::ReadOnly)) { msg = QString("Unable to read the manifest [%1]").arg(manifestpath); return false; }
+    QJsonObject manifest = QJsonDocument::fromJson(mf.readAll()).object();
+    mf.close();
+
+    QFile lf(listfile);
+    if (!lf.open(QIODevice::WriteOnly | QIODevice::Truncate)) { msg = QString("Unable to write the file list [%1]").arg(listfile); return false; }
+    QTextStream out(&lf);
+    int count(0);
+    for (const QJsonValue &subj : manifest.value("subjects").toArray())
+        for (const QJsonValue &st : subj.toObject().value("studies").toArray())
+            for (const QJsonValue &se : st.toObject().value("series").toArray())
+                for (const QJsonValue &p : se.toObject().value("paths").toArray()) {
+                    out << p.toArray()[0].toString() << "\n";
+                    count++;
+                }
+    lf.close();
+    if (count == 0) { msg = QString("The manifest [%1] lists no files").arg(manifestpath); return false; }
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- SeriesTableColumns ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief The columns of a modality's series table, which differ between modalities (e.g. mr_series has `numfiles`
+ * and `data_type`, several tables have no `series_status`). Read from information_schema and cached
+ * @param modality Modality code, e.g. `EEG`
+ * @return Column names, or an empty list if the modality has no `<modality>_series` table
+ */
+QStringList moduleUpload::SeriesTableColumns(QString modality) {
+    QString table = modality.toLower() + "_series";
+    if (seriesColumns.contains(table))
+        return seriesColumns[table];
+
+    QStringList cols;
+    QSqlQuery q;
+    q.prepare("select column_name from information_schema.columns where table_schema = database() and table_name = :table");
+    q.bindValue(":table", table);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next())
+        cols.append(q.value(0).toString().toLower());
+    seriesColumns[table] = cols;
+    return cols;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ParseUniversalUpload --------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Load an import wizard upload into upload_subjects/upload_studies/upload_series from its manifest (the mapping the
+ * user previewed, resolved to file paths; see importupload_functions.php). Each subject and study is matched against NiDB,
+ * and a series that can't be archived as it is gets an `uploadseries_problem`. Then the upload is queued for archiving if
+ * `upload_autoarchive` is set and nothing has a problem, otherwise it waits for the user's review
+ * @param uploadRowID uploadRowID
+ * @param stagingpath The upload's staging directory, holding the files at their manifest paths
+ * @param manifestpath The manifest JSON file
+ * @param projectRowID The destination project
+ * @param autoarchive Queue for archiving straight away if nothing needs review
+ * @return true if the manifest was loaded
+ */
+bool moduleUpload::ParseUniversalUpload(int uploadRowID, QString stagingpath, QString manifestpath, int projectRowID, bool autoarchive) {
+    QSqlQuery q;
+
+    QFile mf(manifestpath);
+    if (!mf.open(QIODevice::ReadOnly)) {
+        io->AppendUploadLog(QString("Error: unable to read the manifest [%1]").arg(manifestpath));
+        SetUploadStatus(uploadRowID, "parsingerror");
+        return false;
+    }
+    QJsonParseError jerr;
+    QJsonDocument doc = QJsonDocument::fromJson(mf.readAll(), &jerr);
+    mf.close();
+    QJsonObject manifest = doc.object();
+    if ((jerr.error != QJsonParseError::NoError) || (manifest.value("upload_id").toInt() != uploadRowID)) {
+        io->AppendUploadLog(QString("Error: the manifest [%1] is not valid for this upload [%2]").arg(manifestpath).arg(jerr.errorString()));
+        SetUploadStatus(uploadRowID, "parsingerror");
+        return false;
+    }
+
+    /* start from nothing, so loading the same upload again can't duplicate it */
+    q.prepare("delete c from upload_series c join upload_studies b on c.uploadstudy_id = b.uploadstudy_id join upload_subjects a on b.uploadsubject_id = a.uploadsubject_id where a.upload_id = :uploadid");
+    q.bindValue(":uploadid", uploadRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    q.prepare("delete b from upload_studies b join upload_subjects a on b.uploadsubject_id = a.uploadsubject_id where a.upload_id = :uploadid");
+    q.bindValue(":uploadid", uploadRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    q.prepare("delete from upload_subjects where upload_id = :uploadid");
+    q.bindValue(":uploadid", uploadRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    QJsonArray subjects = manifest.value("subjects").toArray();
+    int numSeries(0), numProblems(0), numFiles(0);
+    for (int si = 0; si < subjects.size(); si++) {
+        QJsonObject subj = subjects[si].toObject();
+        QString patientID = subj.value("id").toString().trimmed();
+
+        /* check if this module should be running, and if the upload was changed by someone else */
+        n->ModuleRunningCheckIn();
+        if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return false; }
+        if (GetUploadStatus(uploadRowID) != "parsing") return false;
+
+        /* the subject: by UID or alternate UID, like the DICOM import */
+        QList<int> matches;
+        q.prepare("select distinct a.subject_id from subjects a left join subject_altuid b on a.subject_id = b.subject_id where a.isactive = 1 and (a.uid = :id or b.altuid = :id)");
+        q.bindValue(":id", patientID);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next())
+            matches.append(q.value(0).toInt());
+        QString subjectProblem;
+        if (matches.size() > 1)
+            subjectProblem = QString("The subject ID matches %1 subjects in NiDB").arg(matches.size());
+        int matchingSubjectRowID = (matches.size() == 1) ? matches[0] : -1;
+
+        int enrollmentRowID(-1);
+        if (matchingSubjectRowID > 0) {
+            q.prepare("select enrollment_id from enrollment where subject_id = :subjectid and project_id = :projectid");
+            q.bindValue(":subjectid", matchingSubjectRowID);
+            q.bindValue(":projectid", projectRowID);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.first())
+                enrollmentRowID = q.value(0).toInt();
+        }
+
+        q.prepare("insert into upload_subjects (upload_id, uploadsubject_patientid, matchingsubjectid) values (:uploadid, :patientid, :matchingsubjectid)");
+        q.bindValue(":uploadid", uploadRowID);
+        q.bindValue(":patientid", patientID);
+        q.bindValue(":matchingsubjectid", (matchingSubjectRowID > 0) ? QVariant(matchingSubjectRowID) : QVariant(QMetaType::fromType<int>()));
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        int uploadSubjectRowID = q.lastInsertId().toInt();
+
+        QJsonArray studies = subj.value("studies").toArray();
+        for (int sti = 0; sti < studies.size(); sti++) {
+            QJsonObject st = studies[sti].toObject();
+            QString modality = st.value("modality").toString();
+            QString visit = st.value("visit").toString().trimmed();
+            QString datesource = st.value("datesource").toString();
+            QJsonArray seriesList = st.value("series").toArray();
+            QString studyProblem = subjectProblem;
+
+            QStringList cols = SeriesTableColumns(modality);
+            if ((studyProblem == "") && cols.isEmpty())
+                studyProblem = QString("NiDB has no series table for modality [%1]").arg(modality);
+
+            /* the study date: from the manifest, or from the first file's headers */
+            QString studyDateTime;
+            if (datesource == "header") {
+                QString first;
+                if (!seriesList.isEmpty()) {
+                    QJsonArray p0 = seriesList[0].toObject().value("paths").toArray();
+                    if (!p0.isEmpty()) first = stagingpath + "/" + p0[0].toArray()[0].toString();
+                }
+                QHash<QString, QString> tags;
+                QString m;
+                QDateTime dt;
+                if ((first != "") && QFileInfo(first).isFile() && img->GetImageFileTags(first, tags, m)) {
+                    dt = QDateTime::fromString(tags["StudyDateTime"].trimmed(), "yyyy-MM-dd HH:mm:ss");
+                    if (!dt.isValid())
+                        dt = QDateTime(QDate::fromString(tags["StudyDate"].trimmed().left(10), "yyyy-MM-dd"), QTime(0, 0));
+                }
+                if (dt.isValid())
+                    studyDateTime = dt.toString("yyyy-MM-dd HH:mm:ss");
+                else if (studyProblem == "")
+                    studyProblem = "No study date in the file headers";
+            }
+            else {
+                QDate d = QDate::fromString(st.value("date").toString(), "yyyy-MM-dd");
+                if (d.isValid())
+                    studyDateTime = d.toString("yyyy-MM-dd") + " 00:00:00";
+                else if (studyProblem == "")
+                    studyProblem = "The study date is not valid";
+            }
+
+            /* an existing study of the enrolled subject: same modality and visit label, or with no label the same date */
+            int matchingStudyRowID(-1);
+            if ((enrollmentRowID > 0) && (studyDateTime != "")) {
+                if (visit != "") {
+                    q.prepare("select study_id from studies where enrollment_id = :enrollmentid and study_modality = :modality and study_type = :visit");
+                    q.bindValue(":visit", visit);
+                }
+                else {
+                    q.prepare("select study_id from studies where enrollment_id = :enrollmentid and study_modality = :modality and date(study_datetime) = :date");
+                    q.bindValue(":date", studyDateTime.left(10));
+                }
+                q.bindValue(":enrollmentid", enrollmentRowID);
+                q.bindValue(":modality", modality);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                if (q.size() == 1) {
+                    q.first();
+                    matchingStudyRowID = q.value(0).toInt();
+                }
+                else if ((q.size() > 1) && (studyProblem == ""))
+                    studyProblem = QString("Matches %1 existing studies in NiDB").arg(q.size());
+            }
+
+            /* series numbers already used in that study */
+            QSet<int> usedNumbers;
+            if ((matchingStudyRowID > 0) && !cols.isEmpty()) {
+                q.prepare(QString("select series_num from %1_series where study_id = :studyid").arg(modality.toLower()));
+                q.bindValue(":studyid", matchingStudyRowID);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                while (q.next())
+                    usedNumbers.insert(q.value(0).toInt());
+            }
+
+            QString firstFiletype = seriesList.isEmpty() ? "" : seriesList[0].toObject().value("filetype").toString();
+            q.prepare("insert into upload_studies (uploadsubject_id, uploadstudy_desc, uploadstudy_date, uploadstudy_modality, uploadstudy_datatype, uploadstudy_visit, uploadstudy_datesource, matchingstudyid) values (:subjectid, :desc, :date, :modality, :datatype, :visit, :datesource, :matchingstudyid)");
+            q.bindValue(":subjectid", uploadSubjectRowID);
+            q.bindValue(":desc", visit);
+            q.bindValue(":date", (studyDateTime != "") ? QVariant(studyDateTime) : QVariant(QMetaType::fromType<QString>()));
+            q.bindValue(":modality", modality);
+            q.bindValue(":datatype", firstFiletype);
+            q.bindValue(":visit", visit);
+            q.bindValue(":datesource", datesource);
+            q.bindValue(":matchingstudyid", (matchingStudyRowID > 0) ? QVariant(matchingStudyRowID) : QVariant(QMetaType::fromType<int>()));
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            int uploadStudyRowID = q.lastInsertId().toInt();
+
+            QSet<int> pathNumbers;
+            for (int sei = 0; sei < seriesList.size(); sei++) {
+                QJsonObject se = seriesList[sei].toObject();
+                int seriesNum = se.value("num").toInt();
+                QString numsource = se.value("numsource").toString();
+                QString problem = studyProblem;
+
+                /* the files: each path is a file, or a folder imported whole (e.g. .mff). They are copied into the
+                   series by name, so two with the same name can't share a series */
+                QJsonArray paths = se.value("paths").toArray();
+                QJsonArray units;
+                QSet<QString> names;
+                int missing(0), links(0), clashes(0);
+                qint64 seriesFiles(0), seriesSize(0);
+                for (int pi = 0; pi < paths.size(); pi++) {
+                    QJsonArray p = paths[pi].toArray();
+                    QString rel = p[0].toString();
+                    bool bundle = (p[3].toInt() == 1);
+                    QString full = stagingpath + "/" + rel;
+                    QFileInfo fi(full);
+                    if (fi.isSymLink()) { links++; continue; }
+                    if (bundle ? !fi.isDir() : !fi.isFile()) { missing++; continue; }
+                    if (bundle) {
+                        qint64 c(0), b(0);
+                        GetDirSizeAndFileCount(full, c, b, true);
+                        seriesFiles += c;
+                        seriesSize += b;
+                    }
+                    else {
+                        seriesFiles++;
+                        seriesSize += fi.size();
+                    }
+                    if (names.contains(fi.fileName())) clashes++;
+                    names.insert(fi.fileName());
+                    units.append(QJsonArray({ rel, bundle ? 1 : 0 }));
+                }
+                if (problem == "") {
+                    if (missing > 0) problem = QString("%1 of %2 files are missing on the server").arg(missing).arg(paths.size());
+                    else if (links > 0) problem = QString("%1 files are symbolic links, which aren't imported").arg(links);
+                    else if (clashes > 0) problem = "Two files in this series have the same name";
+                    else if ((numsource == "path") && usedNumbers.contains(seriesNum)) problem = QString("Series %1 already exists in the NiDB study").arg(seriesNum);
+                    else if ((numsource == "path") && pathNumbers.contains(seriesNum)) problem = QString("Series number %1 is used twice in this study").arg(seriesNum);
+                }
+                if (numsource == "path") pathNumbers.insert(seriesNum);
+
+                QJsonObject filelist;
+                filelist["numsource"] = numsource;
+                filelist["units"] = units;
+
+                QString desc = se.value("desc").toString().left(250);
+                q.prepare("insert into upload_series (uploadstudy_id, uploadseries_status, uploadseries_desc, uploadseries_protocol, uploadseries_num, uploadseries_date, uploadseries_numfiles, uploadseries_filelist, uploadseries_modality, uploadseries_filetype, uploadseries_size, uploadseries_problem) values (:studyid, :status, :desc, :desc, :num, :date, :numfiles, :filelist, :modality, :filetype, :size, :problem)");
+                q.bindValue(":studyid", uploadStudyRowID);
+                q.bindValue(":status", (problem == "") ? "import" : "");
+                q.bindValue(":desc", desc);
+                q.bindValue(":num", seriesNum);
+                q.bindValue(":date", (studyDateTime != "") ? QVariant(studyDateTime) : QVariant(QMetaType::fromType<QString>()));
+                q.bindValue(":numfiles", seriesFiles);
+                q.bindValue(":filelist", QString(QJsonDocument(filelist).toJson(QJsonDocument::Compact)));
+                q.bindValue(":modality", modality);
+                q.bindValue(":filetype", se.value("filetype").toString().left(255));
+                q.bindValue(":size", seriesSize);
+                q.bindValue(":problem", (problem == "") ? QVariant(QMetaType::fromType<QString>()) : QVariant(problem.left(255)));
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+                numSeries++;
+                numFiles += seriesFiles;
+                if (problem != "") numProblems++;
+            }
+        }
+
+        SetUploadStatus(uploadRowID, "parsing", 100.0 * (si + 1) / subjects.size());
+    }
+
+    /* the manifest is in the database now */
+    if (!QFile::remove(manifestpath))
+        io->AppendUploadLog(QString("Unable to remove the manifest [%1]").arg(manifestpath));
+
+    io->AppendUploadLog(QString("Loaded [%1] subjects, [%2] series, [%3] files from the import wizard manifest. [%4] series need review").arg(subjects.size()).arg(numSeries).arg(numFiles).arg(numProblems));
+    AddImportDecision(uploadRowID, "parse", "series", "", QString::number(numSeries), QString("{\"files\": %1, \"problems\": %2}").arg(numFiles).arg(numProblems));
+
+    if (autoarchive && (numProblems == 0) && (numSeries > 0)) {
+        io->AppendUploadLog("Nothing needs review, so the upload is queued for archiving");
+        SetUploadStatus(uploadRowID, "queueforarchive", 0.0);
+    }
+    else
+        SetUploadStatus(uploadRowID, "parsingcomplete", 100.0);
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AddImportDecision ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Append an event by NiDB to an upload's decision log (import_decisions, doc/universal-import.md §6.5)
+ * @param uploadRowID uploadRowID
+ * @param step The step, e.g. `parse`, `archive`, `outcome`
+ * @param target What it applies to
+ * @param oldValue Previous value
+ * @param newValue New value
+ * @param detailJson Details as JSON, or empty
+ */
+void moduleUpload::AddImportDecision(int uploadRowID, QString step, QString target, QString oldValue, QString newValue, QString detailJson) {
+    QSqlQuery q;
+    q.prepare("insert into import_decisions (upload_id, recipe_id, user_id, decision_date, decision_step, decision_source, decision_target, decision_old, decision_new, decision_detail) select upload_id, upload_recipeid, null, now(), :step, 'nidb', :target, :old, :new, :detail from uploads where upload_id = :uploadid");
+    q.bindValue(":step", step);
+    q.bindValue(":target", target);
+    q.bindValue(":old", oldValue);
+    q.bindValue(":new", newValue);
+    q.bindValue(":detail", (detailJson == "") ? QVariant(QMetaType::fromType<QString>()) : QVariant(detailJson));
+    q.bindValue(":uploadid", uploadRowID);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ArchiveSelectedUniversal ----------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Archive the series of import wizard uploads that are queued for archiving: create or find the subject, enrollment,
+ * and study, then copy each series' files (as they are, D3) into `<archivedir>/<UID>/<studynum>/<seriesnum>/<modality>`
+ * @return `true` if any upload was archived
+ */
+bool moduleUpload::ArchiveSelectedUniversal() {
+    QSqlQuery q;
+    bool ret(false);
+
+    q.prepare("select upload_id, upload_destprojectid, upload_stagingpath from uploads where upload_status = 'queueforarchive' and upload_type = 'universal'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        n->ModuleRunningCheckIn();
+        if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return ret; }
+
+        ret = true;
+        int uploadRowID = q.value("upload_id").toInt();
+        int projectRowID = q.value("upload_destprojectid").toInt();
+        QString stagingpath = q.value("upload_stagingpath").toString();
+        io->SetUploadID(uploadRowID);
+        io->AppendUploadLog(QString("Beginning archiving of import wizard upload [%1] into project [%2]").arg(uploadRowID).arg(projectRowID));
+        SetUploadStatus(uploadRowID, "archiving", 0.0);
+
+        QSqlQuery q2;
+        q2.prepare("select a.uploadsubject_id, a.uploadsubject_patientid, a.matchingsubjectid, b.uploadstudy_id, b.uploadstudy_date, b.uploadstudy_modality, b.uploadstudy_visit, b.matchingstudyid, c.uploadseries_id, c.uploadseries_num, c.uploadseries_desc, c.uploadseries_filetype, c.uploadseries_filelist from upload_series c join upload_studies b on c.uploadstudy_id = b.uploadstudy_id join upload_subjects a on b.uploadsubject_id = a.uploadsubject_id where a.upload_id = :uploadid and c.uploadseries_status = 'import' order by a.uploadsubject_id, b.uploadstudy_id, c.uploadseries_num");
+        q2.bindValue(":uploadid", uploadRowID);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__);
+        int numSeries = q2.size();
+        int done(0), failed(0), newSubjects(0), newStudies(0);
+
+        /* uploadsubject_id -> [subjectRowID, enrollmentRowID], uploadstudy_id -> studyRowID, studyRowID -> series numbers in use */
+        QHash<int, QPair<int, int>> subjectRows;
+        QHash<int, QString> subjectUIDs;
+        QHash<int, int> studyRows;
+        QHash<int, QSet<int>> studyNumbers;
+
+        while (q2.next()) {
+            n->ModuleRunningCheckIn();
+            if (!n->ModuleCheckIfActive()) { n->Log("Module is now inactive, stopping the module"); return ret; }
+
+            int uploadSubjectRowID = q2.value("uploadsubject_id").toInt();
+            int uploadStudyRowID = q2.value("uploadstudy_id").toInt();
+            int uploadSeriesRowID = q2.value("uploadseries_id").toInt();
+            QString patientID = q2.value("uploadsubject_patientid").toString();
+            QString modality = q2.value("uploadstudy_modality").toString();
+            QString visit = q2.value("uploadstudy_visit").toString();
+            QString studyDateTime = q2.value("uploadstudy_date").toDateTime().toString("yyyy-MM-dd HH:mm:ss");
+            QString err;
+
+            /* the subject and its enrollment */
+            if (!subjectRows.contains(uploadSubjectRowID)) {
+                int subjectRowID(-1), enrollmentRowID(-1);
+                QString subjectUID;
+                if (!q2.value("matchingsubjectid").isNull()) {
+                    subjectRowID = q2.value("matchingsubjectid").toInt();
+                    subject s(n);
+                    s.searchMethod = SubjectSearchMethod::RowId;
+                    s.searchSubjectRowID = subjectRowID;
+                    if (s.Load()) subjectUID = s.uid;
+                    else subjectRowID = -1;
+                }
+                else if (io->CreateSubject(patientID, patientID, "0000-00-00", "U", 0.0, 0.0, subjectRowID, subjectUID))
+                    newSubjects++;
+                if ((subjectRowID > 0) && io->GetOrCreateEnrollment(subjectRowID, projectRowID, enrollmentRowID)) {
+                    if (patientID.compare(subjectUID, Qt::CaseInsensitive) != 0)
+                        io->SetAlternateIDs(subjectRowID, enrollmentRowID, QStringList(patientID));
+                }
+                else
+                    enrollmentRowID = -1;
+                subjectRows[uploadSubjectRowID] = qMakePair(subjectRowID, enrollmentRowID);
+                subjectUIDs[uploadSubjectRowID] = subjectUID;
+            }
+            int subjectRowID = subjectRows[uploadSubjectRowID].first;
+            int enrollmentRowID = subjectRows[uploadSubjectRowID].second;
+            if ((subjectRowID < 1) || (enrollmentRowID < 1))
+                err = QString("Unable to find or create subject [%1] in project [%2]").arg(patientID).arg(projectRowID);
+
+            /* the study */
+            QStringList cols = SeriesTableColumns(modality);
+            if ((err == "") && cols.isEmpty())
+                err = QString("NiDB has no series table for modality [%1]").arg(modality);
+            if ((err == "") && !QDateTime::fromString(studyDateTime, "yyyy-MM-dd HH:mm:ss").isValid())
+                err = "The study has no valid date";
+            if ((err == "") && !studyRows.contains(uploadStudyRowID)) {
+                int studyRowID(-1), studyNum(-1);
+                if (!q2.value("matchingstudyid").isNull())
+                    studyRowID = q2.value("matchingstudyid").toInt();
+                else if (io->CreateStudy(subjectRowID, enrollmentRowID, studyDateTime, "", modality, patientID, 0.0, 0.0, 0.0, visit, "", "", "", "", "", studyRowID, studyNum) && (studyRowID > 0)) {
+                    newStudies++;
+                    QSqlQuery q3;
+                    q3.prepare("update studies set study_type = :visit where study_id = :studyid");
+                    q3.bindValue(":visit", visit);
+                    q3.bindValue(":studyid", studyRowID);
+                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                }
+                studyRows[uploadStudyRowID] = studyRowID;
+                if (studyRowID > 0) {
+                    QSet<int> used;
+                    QSqlQuery q3;
+                    q3.prepare(QString("select series_num from %1_series where study_id = :studyid").arg(modality.toLower()));
+                    q3.bindValue(":studyid", studyRowID);
+                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                    while (q3.next()) used.insert(q3.value(0).toInt());
+                    studyNumbers[studyRowID] = used;
+                }
+            }
+            int studyRowID = (err == "") ? studyRows.value(uploadStudyRowID, -1) : -1;
+            if ((err == "") && (studyRowID < 1))
+                err = "Unable to find or create the study";
+
+            /* the series number: from the path as given, otherwise the next free number in the study */
+            QJsonObject filelist = QJsonDocument::fromJson(q2.value("uploadseries_filelist").toByteArray()).object();
+            int seriesNum = q2.value("uploadseries_num").toInt();
+            if (err == "") {
+                QSet<int> &used = studyNumbers[studyRowID];
+                if (used.contains(seriesNum)) {
+                    if (filelist.value("numsource").toString() == "path")
+                        err = QString("Series %1 already exists in the study").arg(seriesNum);
+                    else {
+                        int maxNum = 0;
+                        for (int x : used) maxNum = qMax(maxNum, x);
+                        seriesNum = maxNum + 1;
+                    }
+                }
+                if (err == "") used.insert(seriesNum);
+            }
+
+            /* the series row, then its files */
+            if (err == "") {
+                study stud(studyRowID, n);
+                QString mod = modality.toLower();
+                QString datatype = q2.value("uploadseries_filetype").toString().toLower().remove(QRegularExpression("[^a-z0-9]"));
+                if (datatype == "") datatype = "other";
+                QString seriesPath = QString("%1/%2/%3/%4").arg(n->cfg["archivedir"]).arg(subjectUIDs[uploadSubjectRowID]).arg(stud.GetStudyNum()).arg(seriesNum);
+                QString dataPath = seriesPath + "/" + ((mod == "mr") ? datatype : mod);
+                QString desc = q2.value("uploadseries_desc").toString();
+
+                QSqlQuery q3;
+                q3.prepare(QString("insert into %1_series (study_id, series_num, series_datetime, series_desc) values (:studyid, :num, :datetime, :desc)").arg(mod));
+                q3.bindValue(":studyid", studyRowID);
+                q3.bindValue(":num", seriesNum);
+                q3.bindValue(":datetime", studyDateTime);
+                q3.bindValue(":desc", desc);
+                n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                qint64 seriesRowID = q3.lastInsertId().toLongLong();
+                QString pk = mod + "series_id"; /* every series table's key is <modality>series_id */
+
+                QString m;
+                if ((seriesRowID < 1) || !MakePath(dataPath, m))
+                    err = QString("Unable to create the series [%1] %2").arg(dataPath).arg(m);
+                else {
+                    QJsonArray units = filelist.value("units").toArray();
+                    for (int ui = 0; (ui < units.size()) && (err == ""); ui++) {
+                        QJsonArray u = units[ui].toArray();
+                        QString src = stagingpath + "/" + u[0].toString();
+                        if (u[1].toInt() == 1) {
+                            QString out = SystemCommand(QString("cp -a %1 %2/").arg(ShellQuote(src)).arg(ShellQuote(dataPath)), false).trimmed();
+                            if (out != "") err = QString("Error copying [%1]: %2").arg(src).arg(out);
+                        }
+                        else if (!NiDBCopyFile(src, dataPath, m))
+                            err = QString("Error copying [%1]: %2").arg(src).arg(m);
+                    }
+                    SystemCommand(QString("chmod -Rf 777 %1").arg(ShellQuote(seriesPath)), false);
+
+                    qint64 c(0), b(0);
+                    GetDirSizeAndFileCount(dataPath, c, b, true);
+                    QStringList sets = { "series_size = :size" };
+                    if (cols.contains("series_numfiles")) sets << "series_numfiles = :numfiles";
+                    if (cols.contains("numfiles")) sets << "numfiles = :numfiles";
+                    if (cols.contains("series_protocol")) sets << "series_protocol = :desc";
+                    if (cols.contains("series_notes")) sets << "series_notes = :notes";
+                    if (cols.contains("series_createdby")) sets << "series_createdby = 'import'";
+                    if (cols.contains("series_status")) sets << "series_status = :status";
+                    if (cols.contains("data_type")) sets << "data_type = :datatype";
+                    q3.prepare(QString("update %1_series set %2 where %3 = :seriesid").arg(mod).arg(sets.join(", ")).arg(pk));
+                    q3.bindValue(":size", b);
+                    if (cols.contains("series_numfiles") || cols.contains("numfiles")) q3.bindValue(":numfiles", c);
+                    if (cols.contains("series_protocol")) q3.bindValue(":desc", desc);
+                    if (cols.contains("series_notes")) q3.bindValue(":notes", QString("Imported by the import wizard, upload %1").arg(uploadRowID));
+                    if (cols.contains("series_status")) q3.bindValue(":status", (err == "") ? "complete" : "error");
+                    if (cols.contains("data_type")) q3.bindValue(":datatype", datatype);
+                    q3.bindValue(":seriesid", seriesRowID);
+                    n->SQLQuery(q3, __FUNCTION__, __FILE__, __LINE__);
+                }
+            }
+
+            QSqlQuery q4;
+            if (err == "") {
+                q4.prepare("update upload_series set uploadseries_status = 'archived' where uploadseries_id = :id");
+                io->AppendUploadLog(QString("Archived series [%1] of subject [%2] study [%3]").arg(seriesNum).arg(patientID).arg(studyRowID));
+            }
+            else {
+                failed++;
+                q4.prepare("update upload_series set uploadseries_problem = :problem where uploadseries_id = :id");
+                q4.bindValue(":problem", err.left(255));
+                io->AppendUploadLog(QString("Error archiving upload series [%1]: %2").arg(uploadSeriesRowID).arg(err));
+            }
+            q4.bindValue(":id", uploadSeriesRowID);
+            n->SQLQuery(q4, __FUNCTION__, __FILE__, __LINE__);
+
+            done++;
+            SetUploadStatus(uploadRowID, "archiving", 100.0 * done / qMax(1, numSeries));
+        }
+
+        QString outcome = QString("{\"series\": %1, \"failed\": %2, \"newsubjects\": %3, \"newstudies\": %4}").arg(done - failed).arg(failed).arg(newSubjects).arg(newStudies);
+        AddImportDecision(uploadRowID, "outcome", "archive", "", (failed == 0) ? "success" : "partial", outcome);
+        QSqlQuery q5;
+        q5.prepare(QString("update import_recipes a join uploads b on a.recipe_id = b.upload_recipeid set a.%1 = a.%1 + 1 where b.upload_id = :uploadid").arg((failed == 0) ? "recipe_successcount" : "recipe_correctioncount"));
+        q5.bindValue(":uploadid", uploadRowID);
+        n->SQLQuery(q5, __FUNCTION__, __FILE__, __LINE__);
+
+        if ((failed > 0) || (numSeries == 0)) {
+            io->AppendUploadLog(QString("Archived [%1] of [%2] series. [%3] failed").arg(done - failed).arg(numSeries).arg(failed));
+            SetUploadStatus(uploadRowID, "archiveerror", -1.0);
+        }
+        else {
+            io->AppendUploadLog(QString("Completed archiving of upload [%1]: [%2] series, [%3] new subjects, [%4] new studies").arg(uploadRowID).arg(done).arg(newSubjects).arg(newStudies));
+            SetUploadStatus(uploadRowID, "archivecomplete", 100.0);
+            QString m;
+            if (SafeDeletePath(stagingpath, n->cfg["uploadstagingdir"], m))
+                io->AppendUploadLog(QString("Removed upload staging directory [%1]").arg(stagingpath));
+            else
+                io->AppendUploadLog(QString("Error removing upload staging directory [%1]: %2").arg(stagingpath).arg(m));
+        }
+    }
+    return ret;
 }

@@ -55,6 +55,14 @@ private:
     int InsertOrUpdateParsedStudy(int parsedStudyRowID, QString upload_studycriteria, int subjectRowID, int StudyNumber, QString StudyDateTime, QString Modality, QString StudyInstanceUID, QString StudyDescription, QString FileType, QString Equipment, QString Operator, QString &msg);
     int InsertOrUpdateParsedSeries(qint64 parsedSeriesRowID, QString upload_seriescriteria, qint64 studyRowID, QString SeriesDateTime, qint64 SeriesNumber, QString SeriesInstanceUID, QStringList &files, qint64 &numfiles, QString SeriesDescription, QString ProtocolName, QString RepetitionTime, QString EchoTime, QString SpacingBetweenSlices, QString SliceThickness, int Rows, int Columns, QString &msg);
     UploadOptions GetUploadOptions(int uploadRowID);
+
+    /* import wizard uploads (upload_type 'universal') */
+    QHash<QString, QStringList> seriesColumns; /* <modality>_series table -> its columns */
+    QStringList SeriesTableColumns(QString modality);
+    bool WriteManifestFileList(QString manifestpath, QString listfile, QString &msg);
+    bool ParseUniversalUpload(int uploadRowID, QString stagingpath, QString manifestpath, int projectRowID, bool autoarchive);
+    bool ArchiveSelectedUniversal();
+    void AddImportDecision(int uploadRowID, QString step, QString target, QString oldValue, QString newValue, QString detailJson);
 };
 
 #endif // MODULEUPLOAD_H

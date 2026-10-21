@@ -68,6 +68,10 @@
 	$keyword = GetVariable("keyword");
 	$userspecifiedpatientid = GetVariable("userspecifiedpatientid");
 	
+	/* imports made by the import wizard are uploaded, reviewed, and archived there */
+	if (in_array($action, array('uploadfiles', 'finalizeupload', 'queueforarchive', 'displayimport', 'reparse'), true) && IsWizardUpload($uploadid))
+		RedirectTo("importwizard.php?action=review&uploadid=$uploadid");
+
 	ShowFlashMessage();
 
 	/* determine action */
@@ -134,6 +138,23 @@
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- IsWizardUpload --------------------- */
+	/* -------------------------------------------- */
+	/* true if the upload was created by the import wizard (importwizard.php) */
+	function IsWizardUpload($uploadid) {
+		$uploadid = (int)$uploadid;
+		if ($uploadid < 1) return false;
+		$sqlstring = "select upload_type from uploads where upload_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $uploadid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($uploadid));
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return ($row && ($row['upload_type'] == 'universal'));
+	}
 
 	
 	/* -------------------------------------------- */
@@ -1269,7 +1290,8 @@
 						$statuscolor = "secondary blue";
 						$buttoncolor = "blue";
 						$buttonlabel = "View Import";
-						$label = ($source == "web") ? "<a class='ui blue ribbon label' href='importimaging.php?action=uploadfiles&uploadid=$uploadid'>Upload / Resume Files</a>" : "";
+						/* import wizard uploads keep each file's folder, which this page's resume can't do */
+						$label = (($source == "web") && ($filetype != "universal")) ? "<a class='ui blue ribbon label' href='importimaging.php?action=uploadfiles&uploadid=$uploadid'>Upload / Resume Files</a>" : "";
 						break;
 
 					default:
@@ -1283,7 +1305,7 @@
 				<p>
 				<div class="ui top attached <?=$statuscolor?> segment">
 					<?=$label?>
-					<a class="ui <?=$buttoncolor?> button" href="importimaging.php?action=displayimport&uploadid=<?=$uploadid?>"><?=$buttonlabel?></a>
+					<a class="ui <?=$buttoncolor?> button" href="<?=($filetype == "universal") ? "importwizard.php?action=review&uploadid=$uploadid" : "importimaging.php?action=displayimport&uploadid=$uploadid"?>"><?=$buttonlabel?></a>
 					<span style="font-size: larger;">Importing <b><?=$filecount?> files</b> into <b><?=$projectname?></b> Started <?=date("r", strtotime($startdate))?></span>
 				</div>
 				

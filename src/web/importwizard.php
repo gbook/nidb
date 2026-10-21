@@ -36,20 +36,34 @@
 
 	Map (imaging): the browser applies the user's path mapping to every file
 	(scripts/importmap.js), and the 'match' action checks the resulting subjects and
-	studies against NiDB. Nothing is uploaded or saved yet. */
+	studies against NiDB.
+
+	Details, upload & import (imaging): the 'createupload' action saves the manifest
+	(the mapping resolved to files), a recipe version, and the decision log; local files
+	go to tusupload.php with their relative paths, then 'completeupload' hands the import
+	to moduleUpload, and 'uploadstatus' follows it. action=review shows what the server
+	found, and the 'archive' POST queues the chosen series. See importupload_functions.php */
 
 	define("LEGIT_REQUEST", true);
 
 	session_start();
-	ob_start(); /* the mutating steps (upload, recipe save) will use POST/Redirect/GET */
+	ob_start(); /* the review page's archive form uses POST/Redirect/GET */
 
-	/* the inspect and match actions return JSON, so they run before any page HTML */
-	if (in_array($_POST['action'] ?? '', array('inspect', 'match'), true)) {
+	/* the JSON actions run before any page HTML */
+	$jsonactions = array('inspect', 'match', 'createupload', 'completeupload', 'uploadstatus');
+	if (in_array($_POST['action'] ?? '', $jsonactions, true)) {
 		require "functions.php";
 		require "includes_php.php";
+		require "tus_functions.php";
 		require "importinspect_functions.php";
-		if ($_POST['action'] == 'inspect') InspectData();
-		else MatchData();
+		require "importupload_functions.php";
+		switch ($_POST['action']) {
+			case 'inspect': InspectData(); break;
+			case 'match': MatchData(); break;
+			case 'createupload': IUCreateUpload(); break;
+			case 'completeupload': IUCompleteUpload(); break;
+			case 'uploadstatus': IUUploadStatus(); break;
+		}
 		exit(0);
 	}
 ?>
@@ -66,18 +80,36 @@
 	require "functions.php";
 	require "includes_php.php";
 	require "includes_html.php";
+	require "tus_functions.php";
 	require "importinspect_functions.php";
-	require "menu.php";
+	require "importupload_functions.php";
 
 	$username = $_SESSION['username'];
 	$instanceid = (int)$_SESSION['instanceid'];
 
 	/* ----- setup variables ----- */
+	$action = GetVariable("action");
 	$projectid = (int)GetVariable("projectid");
+	$uploadid = (int)GetVariable("uploadid");
+
+	/* archive the series chosen on the review page, then back to the review (PRG) */
+	if (($action == "archive") && ($_SERVER['REQUEST_METHOD'] == 'POST')) {
+		if (VerifyCSRFToken(false))
+			list($kind, $msg) = IUArchiveSelected($uploadid, $_POST['uploadseriesid'] ?? array());
+		else
+			list($kind, $msg) = array('error', "This request could not be verified, and was not performed. Your session may have expired - please reload the page and try again.");
+		$_SESSION['flash'] = '<div class="ui container"><div class="ui ' . (($kind == 'error') ? 'error' : 'success') . ' message">' . htmlspecialchars($msg) . '</div></div>';
+		RedirectTo("importwizard.php?action=review&uploadid=$uploadid");
+	}
+
+	require "menu.php";
 
 	ShowFlashMessage();
 
-	DisplayWizard($username, $instanceid, $projectid);
+	if ($action == "review")
+		IUDisplayReview($uploadid);
+	else
+		DisplayWizard($username, $instanceid, $projectid);
 
 
 	/* ------------------------------------ functions ------------------------------------ */
@@ -274,7 +306,7 @@
 				</h2>
 			</div>
 			<div class="ui attached warning message">
-				<i class="flask icon"></i> <b>Mockup.</b> This page is a scaffold for the universal import design (<code>doc/universal-import.md</code>). Nothing is uploaded or saved.
+				<i class="flask icon"></i> <b>In development.</b> This page implements the universal import design (<code>doc/universal-import.md</code>). Nothing is uploaded until the last step, which creates a real import.
 			</div>
 
 			<!-- step bar, filled in by RenderSteps() from WIZARD_PATHS -->
@@ -514,7 +546,68 @@
 
 					<div class="ui divider"></div>
 					<button class="ui button" onClick="GoBack()"><i class="left arrow icon"></i> Back</button>
-					<button class="ui primary right floated disabled button" title="Not built yet: details, upload, and import (doc/universal-import.md §5 steps 5 and 6)">Details &amp; upload <i class="right arrow icon"></i></button>
+					<button class="ui primary right floated button" onClick="GoDetails()">Details &amp; upload <i class="right arrow icon"></i></button>
+				</div>
+
+				<!-- ======== Step 5 (imaging): details ======== -->
+				<div class="wizpanel" id="panel-details">
+					<h3 class="ui header">Details
+						<div class="sub header">Anything NiDB still needs, then what will be imported</div>
+					</h3>
+					<div id="det-started"></div>
+					<div id="det-blocking"></div>
+
+					<div class="ui segment" id="det-dates" style="display:none">
+						<h4 class="ui header">Studies without a date
+							<div class="sub header">Every study in NiDB has a date, and neither the path nor the files give one for these</div>
+						</h4>
+						<div class="ui form">
+							<div class="inline field">
+								<label>Date for all of them</label>
+								<input type="date" id="det-alldate" style="width: auto">
+								<button class="ui small button" onClick="SetAllDates()">Use this date</button>
+							</div>
+						</div>
+						<table class="ui very compact small table" id="det-datetable">
+							<thead><tr><th>Subject</th><th>Study</th><th class="right aligned">Series</th><th>Date</th></tr></thead>
+							<tbody></tbody>
+						</table>
+						<p class="ui grey text" id="det-datemore"></p>
+					</div>
+
+					<div id="det-notes"></div>
+					<div id="det-skipped"></div>
+					<div class="ui tiny five statistics" id="det-stats" style="margin: 1.5em 0"></div>
+
+					<div class="ui form">
+						<div class="grouped fields">
+							<label>When the server has checked the files</label>
+							<div class="field">
+								<div class="ui radio checkbox"><input type="radio" name="det-archive" value="1" checked><label>Archive them straight away. If anything needs attention, NiDB stops and asks you to review it</label></div>
+							</div>
+							<div class="field">
+								<div class="ui radio checkbox"><input type="radio" name="det-archive" value="0"><label>Let me review them first</label></div>
+							</div>
+						</div>
+					</div>
+
+					<div class="ui divider"></div>
+					<button class="ui button" onClick="GoBack()"><i class="left arrow icon"></i> Back</button>
+					<button class="ui primary right floated button" id="det-upload" onClick="StartUpload()">Upload &amp; import <i class="right arrow icon"></i></button>
+					<div id="det-error"></div>
+				</div>
+
+				<!-- ======== Step 6 (imaging): upload and import ======== -->
+				<div class="wizpanel" id="panel-upload">
+					<h3 class="ui header">Upload &amp; import
+						<div class="sub header" id="up-sub"></div>
+					</h3>
+					<div class="ui relaxed list" id="up-stages"></div>
+					<div class="ui indicating progress" id="up-progress" style="display:none"><div class="bar"><div class="progress"></div></div><div class="label" id="up-progresslabel"></div></div>
+					<div id="up-error"></div>
+					<button class="ui button" id="up-retry" style="display:none" onClick="RetryUploads()"><i class="redo icon"></i> Retry the files that failed</button>
+					<div id="up-done"></div>
+					<div class="ui grey text" id="up-log" style="margin-top: 1em; font-size: 0.9em"></div>
 				</div>
 
 				<!-- ======== Step 2b: non-imaging import ======== -->
@@ -614,6 +707,7 @@
 		<script src="scripts/importinspect.js?v=<?=(int)@filemtime(__DIR__ . "/scripts/importinspect.js")?>"></script>
 		<script src="scripts/importmap.js?v=<?=(int)@filemtime(__DIR__ . "/scripts/importmap.js")?>"></script>
 		<script src="scripts/sqrlreader.js?v=<?=(int)@filemtime(__DIR__ . "/scripts/sqrlreader.js")?>"></script>
+		<script src="scripts/tus.min.js?v=<?=(int)@filemtime(__DIR__ . "/scripts/tus.min.js")?>"></script>
 		<script>
 		/* from the server: inspection settings and file types, the enabled modalities, and the CSRF token for the inspect request */
 		var II_CONFIG = <?=json_encode(IIBrowserConfig(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_UNESCAPED_SLASHES)?>;
@@ -638,7 +732,8 @@
 				{ title: "Choose data", desc: "Project and folder", panel: "imaging" },
 				{ title: "Inspect", desc: "What we think you have", panel: "inspect" },
 				{ title: "Map", desc: "Subject / study / series", panel: "map" },
-				{ title: "Upload & import", desc: "Only the files you keep" }
+				{ title: "Details", desc: "Anything missing", panel: "details" },
+				{ title: "Upload & import", desc: "Only the files you keep", panel: "upload" }
 			],
 			nonimaging: [
 				{ title: "Type of data", desc: "Non-imaging", panel: "start" },
@@ -871,8 +966,12 @@
 			/* the inspection isn't kept across a reload */
 			if (((state.panel == "inspect") || (state.panel == "map")) && !inspection)
 				state.panel = "imaging";
-			if ((state.panel == "map") && !inspection.map)
+			if (((state.panel == "map") || (state.panel == "details")) && !inspection.map)
 				state.panel = "inspect";
+			if ((state.panel == "details") && !mapTree)
+				state.panel = "map";
+			if ((state.panel == "upload") && !uploadState)
+				state.panel = inspection ? "details" : "imaging";
 
 			RenderSteps();
 			var panel = state.panel;
@@ -885,6 +984,8 @@
 			if (panel == "nonimaging") RenderIdentified("nonimaging");
 			if (panel == "squirrel") RenderIdentified("squirrel");
 			if (panel == "map") ScheduleMap(0);
+			if (panel == "details") RenderDetails();
+			if (panel == "upload") RenderUpload();
 		}
 
 		/* ======================================================================
@@ -1104,10 +1205,13 @@
 
 			var ready;
 			var mapfiles = null; /* every file's [path, size, mtime], for the mapping step */
+			var fileobjs = null; /* path -> File, for the upload */
+			var nfsroot = "";
 			if (loc == "nfs") {
 				var nfspath = document.getElementById("imaging-nfspath").value.trim();
 				if (nfspath == "") { ShowInspectError("Enter the path of the folder on the server"); return; }
 				fd.append("nfspath", nfspath);
+				nfsroot = nfspath;
 				SetProgress("Inspecting the folder on the server. Large folders can take a few minutes", null);
 				ready = Promise.resolve();
 			}
@@ -1119,6 +1223,13 @@
 					SetProgress("Reading file headers on this computer (" + done + " of " + total + " sampled files)", (total > 0) ? done / total : 1);
 				}).then(function(profile) {
 					mapfiles = profile.files;
+					/* the same paths as the profile: a chosen folder's own name (the root) is left off */
+					fileobjs = new Map();
+					for (var i = 0; i < files.length; i++) {
+						var p = (loc == "localfolder") ? (files[i].webkitRelativePath || files[i].name) : files[i].name;
+						if (profile.root && (p.indexOf(profile.root + "/") == 0)) p = p.substring(profile.root.length + 1);
+						fileobjs.set(p, files[i]);
+					}
 					return ImportInspect.PackProfile(profile);
 				}).then(function(packed) {
 					fd.append("encoding", packed.encoding);
@@ -1142,7 +1253,9 @@
 				});
 			}).then(function(result) {
 				/* for NFS the server sends the file list; for local data it's the list the profile was built from */
-				inspection = { result: result, source: loc, projectid: projectid, layout: (result.layouts[0] || {}).code, groups: {}, files: (loc == "nfs") ? (result.files || []) : mapfiles, map: null };
+				inspection = { result: result, source: loc, projectid: projectid, layout: (result.layouts[0] || {}).code, groups: {}, files: (loc == "nfs") ? (result.files || []) : mapfiles, fileobjs: fileobjs, nfspath: nfsroot, map: null };
+				detDates = {};
+				uploadState = null;
 				delete result.files;
 				result.groups.forEach(function(g) { inspection.groups[g.key] = { include: g.include, type: g.type, modality: g.modality }; });
 				SetProgress(null);
@@ -1416,8 +1529,10 @@
 			var layout = null;
 			r.layouts.forEach(function(l) { if (l.code == inspection.layout) layout = l; });
 			var map = inspection.map;
-			if (!map || (map.layout != inspection.layout))
+			if (!map || (map.layout != inspection.layout)) {
 				map = { layout: inspection.layout, mapping: ImportMap.DefaultMapping(layout, prepared, r) };
+				map.defaultmapping = JSON.parse(JSON.stringify(map.mapping));
+			}
 			map.prepared = prepared;
 			map.examples = ImportMap.ShapeExamples(prepared.units, 10);
 			inspection.map = map;
@@ -1585,7 +1700,7 @@
 		/* "1 file doesn't", "3 files don't" */
 		function Plural(n, one, many) { return n.toLocaleString() + " " + ((n == 1) ? one : many); }
 
-		function StudyKey(id, st) { return [id, st.modality, st.date, st.label].join("\u0001"); }
+		function StudyKey(id, st) { return ImportMap.StudyKey(id, st); }
 
 		function RenderMapResult() {
 			var t = mapTree;
@@ -1812,6 +1927,422 @@
 					RenderMapTree();
 				});
 			}, 600);
+		}
+
+		/* ======================================================================
+		   Details, upload & import (importupload_functions.php)
+		   ====================================================================== */
+
+		var detDates = {};      /* StudyKey -> YYYY-MM-DD, for studies with no date */
+		var uploadState = null; /* {uploadid, items, ...} once the import is created */
+		var DET_MAXDATEROWS = 200;
+
+		function GoDetails() {
+			SetState({ path: state.path, panel: "details", node: state.node, trail: state.trail, result: state.result });
+			window.scrollTo(0, 0);
+		}
+
+		/* studies the user has to date */
+		function UndatedStudies() {
+			var out = [];
+			mapTree.subjects.forEach(function(s) {
+				s.studylist.forEach(function(st) { if (st.datesource == "none") out.push({ subject: s.id, study: st, key: ImportMap.StudyKey(s.id, st) }); });
+			});
+			return out;
+		}
+
+		function SetStudyDate(key, v) {
+			if (/^\d{4}-\d\d-\d\d$/.test(v)) detDates[key] = v;
+			else delete detDates[key];
+			RenderDetailsSummary();
+		}
+
+		function SetAllDates() {
+			var v = document.getElementById("det-alldate").value;
+			if (!/^\d{4}-\d\d-\d\d$/.test(v)) return;
+			UndatedStudies().forEach(function(u) { detDates[u.key] = v; });
+			RenderDetails();
+		}
+
+		function Note(cls, lines, button) {
+			var msg = El("div", "ui " + cls + " message");
+			if (lines.length == 1) msg.appendChild(El("p", "", lines[0]));
+			else {
+				var ul = El("ul", "list");
+				lines.forEach(function(l) { ul.appendChild(El("li", "", l)); });
+				msg.appendChild(ul);
+			}
+			if (button) msg.appendChild(button);
+			return msg;
+		}
+
+		function RenderDetails() {
+			var t = mapTree;
+			var prep = inspection.map.prepared;
+
+			/* an import was already started from this inspection */
+			var started = document.getElementById("det-started");
+			started.innerHTML = "";
+			if (uploadState) {
+				var bs = El("button", "ui small button", "Show its progress");
+				bs.onclick = function() { SetState({ path: state.path, panel: "upload", node: state.node, trail: state.trail, result: state.result }); };
+				started.appendChild(Note("info", ["Import " + uploadState.uploadid + " was started from this page. To import the data again, start over from \"Choose data\""], bs));
+			}
+
+			/* things that stop the upload */
+			var blocking = document.getElementById("det-blocking");
+			blocking.innerHTML = "";
+			if (t.checks.nomodality > 0) {
+				var bi = El("button", "ui small button", "Back to Inspect");
+				bi.onclick = function() { SetState({ path: state.path, panel: "inspect", node: state.node, trail: state.trail, result: state.result }); };
+				blocking.appendChild(Note("error", [Plural(t.checks.nomodality, "series has", "series have") + " no modality. Set the modality of their file groups on the Inspect step"], bi));
+			}
+			if (t.counts.series == 0)
+				blocking.appendChild(Note("error", ["Nothing fits the mapping, so there is nothing to import. Go back to the Map step"]));
+
+			/* dates */
+			var undated = UndatedStudies();
+			document.getElementById("det-dates").style.display = (undated.length > 0) ? "" : "none";
+			var tbody = document.querySelector("#det-datetable tbody");
+			tbody.innerHTML = "";
+			undated.slice(0, DET_MAXDATEROWS).forEach(function(u) {
+				var tr = El("tr");
+				tr.appendChild(El("td", "", u.subject));
+				tr.appendChild(El("td", "", u.study.modality + (u.study.label ? " “" + u.study.label + "”" : "")));
+				tr.appendChild(El("td", "right aligned", u.study.series.length.toLocaleString()));
+				var td = El("td");
+				var inp = El("input");
+				inp.type = "date";
+				inp.value = detDates[u.key] || "";
+				inp.oninput = function() { SetStudyDate(u.key, this.value); };
+				td.appendChild(inp);
+				tr.appendChild(td);
+				tbody.appendChild(tr);
+			});
+			document.getElementById("det-datemore").textContent = (undated.length > DET_MAXDATEROWS) ? "Showing " + DET_MAXDATEROWS + " of " + undated.length.toLocaleString() + " studies. \"Use this date\" sets all of them" : "";
+
+			/* things to know, none of which stop the upload */
+			var notes = [];
+			if (t.counts.misfits > 0) notes.push(Plural(t.counts.misfits, "file doesn't", "files don't") + " fit the mapping and won't be imported");
+			if (prep.dataset.count > 0) notes.push(Plural(prep.dataset.count, "dataset file", "dataset files") + " (such as README or dataset_description.json) won't be imported. This version imports series only");
+			if (prep.archives.count > 0) notes.push(Plural(prep.archives.count, "archive", "archives") + " (.zip, .7z, ...) won't be imported. Unpack them and import the contents");
+			if (prep.excluded.count > 0) notes.push(Plural(prep.excluded.count, "file is", "files are") + " in file groups you chose not to import");
+			if (t.checks.mtimestudies > 0) notes.push(Plural(t.checks.mtimestudies, "study is", "studies are") + " dated by file modification time");
+			if (t.checks.duplicatenumbers > 0) notes.push(Plural(t.checks.duplicatenumbers, "series number is", "series numbers are") + " used twice in a study. Those series will need review");
+			if (matchResult) {
+				var amb = 0, other = 0;
+				t.subjects.forEach(function(s) { var m = matchResult.subjects[s.id]; if (m && (m.status == "ambiguous")) amb++; if (m && (m.status == "other")) other++; });
+				if (amb > 0) notes.push(Plural(amb, "subject ID matches", "subject IDs match") + " more than one subject in NiDB. Their series will need review");
+				if (other > 0) notes.push(Plural(other, "subject is", "subjects are") + " already in NiDB but not in this project, and will be enrolled in it");
+			}
+			var hdrdates = 0;
+			t.subjects.forEach(function(s) { s.studylist.forEach(function(st) { if (st.datesource == "header") hdrdates++; }); });
+			if (hdrdates > 0) notes.push(Plural(hdrdates, "study", "studies") + " will be dated from the file headers on the server");
+			var phi = inspection.result.phiwarnings || [];
+			var nb = document.getElementById("det-notes");
+			nb.innerHTML = "";
+			if (notes.length > 0) nb.appendChild(Note("warning", notes));
+			if (phi.length > 0) nb.appendChild(Note("info", ["Possible patient information was seen during the inspection. Files and names are archived as they are"].concat(phi)));
+
+			RenderDetailsSummary();
+		}
+
+		/* the counts and the upload button, which change as dates are entered */
+		function RenderDetailsSummary() {
+			var t = mapTree;
+			var mf = ImportMap.Manifest(t, detDates);
+			var undated = UndatedStudies().filter(function(u) { return !detDates[u.key]; }).length;
+			var local = (inspection.source != "nfs");
+			var stats = [
+				[mf.counts.subjects, "Subjects"], [mf.counts.studies, "Studies"], [mf.counts.series, "Series"],
+				[mf.counts.files, local ? "Files to upload" : "Files"], [HumanSize(mf.counts.size), "Size"]
+			];
+			var box = document.getElementById("det-stats");
+			box.innerHTML = "";
+			stats.forEach(function(x) {
+				var st = El("div", "statistic");
+				st.appendChild(El("div", "value", (typeof x[0] == "number") ? x[0].toLocaleString() : x[0]));
+				st.appendChild(El("div", "label", x[1]));
+				box.appendChild(st);
+			});
+			var sk = document.getElementById("det-skipped");
+			sk.innerHTML = "";
+			if (mf.skipped.series > 0)
+				sk.appendChild(Note("warning", [Plural(mf.skipped.series, "series is", "series are") + " left out because a path has a hidden folder or file (a name starting with '.'), for example " + mf.skipped.examples.join(", ")]));
+
+			var blocked = (t.checks.nomodality > 0) || (mf.counts.series == 0) || (undated > 0) || !!uploadState;
+			var btn = document.getElementById("det-upload");
+			btn.classList.toggle("disabled", blocked);
+			btn.firstChild.textContent = local ? "Upload " + Plural(mf.counts.files, "file", "files") + " & import " : "Import from the server ";
+			btn.title = (undated > 0) ? Plural(undated, "study still needs", "studies still need") + " a date" : "";
+		}
+
+		/* what NiDB guessed and what the user chose, for the import's decision log (D8) */
+		function BuildDecisions(autoarchive) {
+			var r = inspection.result;
+			var d = [];
+			d.push({ step: "inspect", source: "nidb", target: "summary", detail: { source: inspection.source, files: r.summary.numfiles, size: r.summary.totalsize, layouts: r.layouts.map(function(l) { return l.code; }) } });
+			var guess = (r.layouts[0] || {}).code || "";
+			d.push({ step: "detect", source: (inspection.layout != guess) ? "user" : "nidb", target: "layout", old: guess, "new": inspection.layout });
+			r.groups.forEach(function(g) {
+				var e = inspection.groups[g.key];
+				var changed = (e.include != g.include) || ((e.modality || "") != (g.modality || ""));
+				d.push({ step: "axes", source: changed ? "user" : "nidb", target: "group:" + g.key, old: JSON.stringify({ include: g.include, modality: g.modality || "", type: g.type || "" }), "new": JSON.stringify({ include: e.include, modality: e.modality || "", type: e.type || "" }), detail: { count: g.count, role: g.role } });
+			});
+			var def = inspection.map.defaultmapping || { roles: {}, delims: {} };
+			var m = inspection.map.mapping;
+			var keys = {};
+			Object.keys(def.roles).concat(Object.keys(m.roles)).forEach(function(k) { keys[k] = true; });
+			Object.keys(keys).forEach(function(k) {
+				var a = def.roles[k] || "", b = m.roles[k] || "";
+				d.push({ step: "mapping", source: (a != b) ? "user" : "nidb", target: "path:" + k, old: a, "new": b });
+			});
+			["datesource", "grouping"].forEach(function(k) { d.push({ step: "mapping", source: (def[k] != m[k]) ? "user" : "nidb", target: "mapping:" + k, old: def[k], "new": m[k] }); });
+			Object.keys(m.delims || {}).forEach(function(k) { d.push({ step: "mapping", source: "user", target: "delims:" + k, old: ImportMap.DELIMS, "new": m.delims[k] }); });
+			if (m.subjectconst.trim() != "") d.push({ step: "mapping", source: "user", target: "mapping:subjectconst", "new": m.subjectconst.trim() });
+			var ndates = Object.keys(detDates).length;
+			if (ndates > 0) d.push({ step: "details", source: "user", target: "studydates", "new": String(ndates), detail: { dates: Object.keys(detDates).map(function(k) { return detDates[k]; }).filter(function(v, i, a) { return a.indexOf(v) == i; }).slice(0, 50) } });
+			d.push({ step: "details", source: "user", target: "autoarchive", old: "1", "new": autoarchive ? "1" : "0" });
+			if (matchResult) {
+				var sc = {}, tc = {};
+				mapTree.subjects.forEach(function(s) {
+					var x = matchResult.subjects[s.id]; if (x) sc[x.status] = (sc[x.status] || 0) + 1;
+					s.studylist.forEach(function(st) { var y = matchResult.studies[ImportMap.StudyKey(s.id, st)]; if (y) tc[y.status] = (tc[y.status] || 0) + 1; });
+				});
+				d.push({ step: "match", source: "nidb", target: "preview", detail: { subjects: sc, studies: tc } });
+			}
+			(r.phiwarnings || []).forEach(function(w) { d.push({ step: "phiwarning", source: "nidb", target: "inspection", "new": w }); });
+			return d;
+		}
+
+		/* POST to the wizard and return the JSON result, or throw with the server's message */
+		function PostJSON(fd) {
+			return fetch("importwizard.php", { method: "POST", body: fd, credentials: "same-origin" }).then(function(r) {
+				return r.text().then(function(t) {
+					var j;
+					try { j = JSON.parse(t); }
+					catch (e) { throw new Error(/login\.php/.test(r.url) ? "Your session has expired. Reload the page and log in again" : "The server sent an unexpected response"); }
+					if (!j.success) throw new Error(j.message || "The request failed");
+					return j.result;
+				});
+			});
+		}
+
+		/* ---------- creating the import ---------- */
+
+		function StartUpload() {
+			var btn = document.getElementById("det-upload");
+			if (btn.classList.contains("disabled") || uploadState) return;
+			document.getElementById("det-error").innerHTML = "";
+			var autoarchive = document.querySelector('input[name="det-archive"]:checked').value == "1";
+			var mf = ImportMap.Manifest(mapTree, detDates);
+			var r = inspection.result;
+			var mods = {};
+			r.groups.forEach(function(g) { var e = inspection.groups[g.key]; if (e.include && e.modality && (g.role == "primary")) mods[e.modality] = true; });
+			var axes = { modality: Object.keys(mods), filetype: r.axes.filetype.values, subtypes: r.axes.filetype.subtypes, layout: inspection.layout };
+			var groups = r.groups.map(function(g) { return { key: g.key, include: inspection.groups[g.key].include }; });
+			var ex = inspection.map.examples[0];
+			var meta = { recipe: ImportMap.Recipe(inspection.map.mapping, axes, groups, ex ? ex.unit : null, mapTree), profile: r, decisions: BuildDecisions(autoarchive) };
+
+			btn.classList.add("loading", "disabled");
+			var fd = new FormData();
+			fd.append("action", "createupload");
+			fd.append("csrftoken", CSRF_TOKEN);
+			fd.append("projectid", inspection.projectid);
+			fd.append("source", inspection.source);
+			if (inspection.source == "nfs") fd.append("nfspath", inspection.nfspath);
+			fd.append("autoarchive", autoarchive ? "1" : "0");
+			Promise.all([ImportInspect.PackProfile(mf.manifest), ImportInspect.PackProfile(meta)]).then(function(packed) {
+				fd.append("manifestencoding", packed[0].encoding);
+				fd.append("manifest", packed[0].blob, "manifest");
+				fd.append("metaencoding", packed[1].encoding);
+				fd.append("meta", packed[1].blob, "meta");
+				return PostJSON(fd);
+			}).then(function(res) {
+				uploadState = { uploadid: res.uploadid, counts: res.counts, manifest: mf.manifest, items: [], status: null, timer: null };
+				btn.classList.remove("loading");
+				SetState({ path: state.path, panel: "upload", node: state.node, trail: state.trail, result: state.result });
+				window.scrollTo(0, 0);
+				if (inspection.source == "nfs") FollowImport();
+				else UploadFiles();
+			}).catch(function(e) {
+				btn.classList.remove("loading", "disabled");
+				document.getElementById("det-error").appendChild(Note("error", [e.message || String(e)]));
+			});
+		}
+
+		/* ---------- sending local files ---------- */
+
+		var UP_CHUNKSIZE = 50 * 1024 * 1024; /* each PATCH request stays well under Apache's 1 GiB LimitRequestBody default */
+		var UP_CONCURRENCY = 3;
+
+		/* the File for every path in the manifest; a bundle (e.g. .mff) is every file inside its folder */
+		function UploadItems(manifest) {
+			var want = new Set(), bundles = new Set();
+			manifest.subjects.forEach(function(s) { s.studies.forEach(function(st) { st.series.forEach(function(se) { se.paths.forEach(function(p) { (p[3] ? bundles : want).add(p[0]); }); }); }); });
+			var items = [];
+			inspection.fileobjs.forEach(function(file, path) {
+				var take = want.has(path);
+				if (!take && (bundles.size > 0)) {
+					var parts = path.split("/");
+					for (var i = parts.length - 1; (i > 0) && !take; i--) take = bundles.has(parts.slice(0, i).join("/"));
+				}
+				if (take) items.push({ file: file, path: path, sent: 0, state: "waiting", upload: null });
+			});
+			return items;
+		}
+
+		function UploadFiles() {
+			uploadState.items = UploadItems(uploadState.manifest);
+			uploadState.total = uploadState.items.reduce(function(n, it) { return n + it.file.size; }, 0);
+			window.onbeforeunload = function() { return "Files are still uploading. Leaving this page stops the upload"; };
+			RenderUpload();
+			PumpUploads();
+		}
+
+		function PumpUploads() {
+			var active = uploadState.items.filter(function(it) { return it.state == "uploading"; }).length;
+			for (var i = 0; (i < uploadState.items.length) && (active < UP_CONCURRENCY); i++) {
+				var it = uploadState.items[i];
+				if (it.state != "waiting") continue;
+				StartItem(it);
+				active++;
+			}
+			if (active == 0) UploadsSettled();
+		}
+
+		function StartItem(it) {
+			it.state = "uploading";
+			if (!it.upload) {
+				it.upload = new tus.Upload(it.file, {
+					endpoint: "tusupload.php",
+					chunkSize: UP_CHUNKSIZE,
+					retryDelays: [0, 1000, 3000, 5000, 10000, 20000, 30000, 60000],
+					metadata: { filename: it.file.name, relativepath: it.path, context: String(uploadState.uploadid) },
+					storeFingerprintForResuming: false,
+					onProgress: function(sent) { it.sent = sent; RenderUploadProgress(); },
+					onError: function(err) {
+						it.state = "error";
+						it.error = (err.originalResponse && err.originalResponse.getBody()) ? err.originalResponse.getBody() : String(err.message || err);
+						RenderUploadProgress();
+						PumpUploads();
+					},
+					onSuccess: function() {
+						it.state = "done";
+						it.sent = it.file.size;
+						RenderUploadProgress();
+						PumpUploads();
+					}
+				});
+			}
+			it.upload.start();
+		}
+
+		function RetryUploads() {
+			document.getElementById("up-retry").style.display = "none";
+			document.getElementById("up-error").innerHTML = "";
+			uploadState.items.forEach(function(it) { if (it.state == "error") it.state = "waiting"; });
+			PumpUploads();
+		}
+
+		function UploadsSettled() {
+			var failed = uploadState.items.filter(function(it) { return it.state == "error"; });
+			if (failed.length > 0) {
+				document.getElementById("up-error").appendChild(Note("error", [Plural(failed.length, "file", "files") + " didn't upload, for example " + failed[0].path + ": " + failed[0].error]));
+				document.getElementById("up-retry").style.display = "";
+				return;
+			}
+			var fd = new FormData();
+			fd.append("action", "completeupload");
+			fd.append("csrftoken", CSRF_TOKEN);
+			fd.append("uploadid", uploadState.uploadid);
+			PostJSON(fd).then(function() {
+				window.onbeforeunload = null;
+				uploadState.uploaded = true;
+				FollowImport();
+			}).catch(function(e) {
+				document.getElementById("up-error").appendChild(Note("error", [e.message || String(e)]));
+			});
+		}
+
+		function RenderUploadProgress() {
+			var done = 0, sent = 0;
+			uploadState.items.forEach(function(it) { sent += it.sent; if (it.state == "done") done++; });
+			var pct = (uploadState.total > 0) ? Math.floor(100 * sent / uploadState.total) : 100;
+			$("#up-progress").progress({ percent: pct });
+			document.getElementById("up-progresslabel").textContent = "Uploaded " + done.toLocaleString() + " of " + Plural(uploadState.items.length, "file", "files") + " · " + HumanSize(sent) + " of " + HumanSize(uploadState.total);
+		}
+
+		/* ---------- following the import on the server ---------- */
+
+		var UP_FINAL = ["parsingcomplete", "archivecomplete", "uploaderror", "parsingerror", "archiveerror", "cancelled"];
+
+		function FollowImport() {
+			RenderUpload();
+			var fd = new FormData();
+			fd.append("action", "uploadstatus");
+			fd.append("csrftoken", CSRF_TOKEN);
+			fd.append("uploadid", uploadState.uploadid);
+			PostJSON(fd).then(function(st) {
+				uploadState.status = st;
+				RenderUpload();
+				if (UP_FINAL.indexOf(st.status) < 0) uploadState.timer = setTimeout(FollowImport, 5000);
+			}).catch(function() {
+				uploadState.timer = setTimeout(FollowImport, 15000);
+			});
+		}
+
+		/* the stages: create, upload (local data), check on the server, archive */
+		function RenderUpload() {
+			if (!uploadState) return;
+			var local = (inspection.source != "nfs");
+			var st = uploadState.status ? uploadState.status.status : null;
+			var pct = (uploadState.status && (uploadState.status.percent !== null)) ? " (" + Math.floor(uploadState.status.percent) + "%)" : "";
+			var order = ["uploading", "uploadcomplete", "parsing", "parsingcomplete", "queueforarchive", "archiving", "archivecomplete"];
+			var at = st ? order.indexOf(st) : (uploadState.uploaded ? 1 : 0);
+			var failed = (st == "uploaderror") || (st == "parsingerror") || (st == "archiveerror") || (st == "cancelled");
+			var c = uploadState.counts;
+			document.getElementById("up-sub").textContent = "Import " + uploadState.uploadid + " · " + Plural(c.subjects, "subject", "subjects") + ", " + Plural(c.studies, "study", "studies") + ", " + Plural(c.series, "series", "series") + ", " + Plural(c.files, "file", "files");
+
+			var stages = [["check", "Import created", "done"]];
+			if (local) stages.push(["upload", "Upload the files from this computer", uploadState.uploaded || (at >= 1) ? "done" : "active"]);
+			var parseState = (at >= 3) ? "done" : ((at >= 1) ? "active" : "waiting");
+			stages.push(["server", (at == 1) ? "Waiting for the server to pick up the import" : "The server copies and checks the files" + ((st == "parsing") ? pct : ""), parseState]);
+			var review = (st == "parsingcomplete");
+			var archState = (at >= 6) ? "done" : ((at >= 4) ? "active" : "waiting");
+			stages.push(["archive", review ? "Waiting for your review" : "Archive" + ((st == "archiving") ? pct : ""), review ? "active" : archState]);
+			if (failed) stages[stages.length - (at >= 4 ? 1 : 2)][2] = "error";
+
+			var list = document.getElementById("up-stages");
+			list.innerHTML = "";
+			stages.forEach(function(s) {
+				var item = El("div", "item");
+				var icon = { done: "green check circle", active: "blue spinner loading", waiting: "grey circle outline", error: "red times circle" }[s[2]];
+				if ((s[2] == "active") && review && (s[0] == "archive")) icon = "orange hand point right";
+				item.appendChild(El("i", icon + " icon"));
+				item.appendChild(El("div", "content", s[1]));
+				list.appendChild(item);
+			});
+
+			var showbar = local && !uploadState.uploaded && (uploadState.items.length > 0);
+			document.getElementById("up-progress").style.display = showbar ? "" : "none";
+			if (showbar) RenderUploadProgress();
+
+			var done = document.getElementById("up-done");
+			done.innerHTML = "";
+			var link = El("a", "ui small button", "Open the import");
+			link.href = "importwizard.php?action=review&uploadid=" + uploadState.uploadid;
+			if (st == "archivecomplete") done.appendChild(Note("success", ["The data has been archived"], link));
+			else if (review) {
+				var problems = (uploadState.status.series || []).filter(function(x) { return x.problem; }).reduce(function(n, x) { return n + x.count; }, 0);
+				done.appendChild(Note(problems ? "warning" : "info", [problems ? Plural(problems, "series needs", "series need") + " attention. Review the import and archive the rest" : "The files have been checked. Review them and choose what to archive"], link));
+			}
+			else if (failed) done.appendChild(Note("error", ["The import stopped with status \"" + st + "\". The log has the details"], link));
+			else if (at >= 1) done.appendChild(Note("info", ["The server works through imports in turn, so this can take a few minutes. You can leave this page; the import continues, and you can open it any time from Data → Import imaging"], link));
+
+			var log = document.getElementById("up-log");
+			log.innerHTML = "";
+			((uploadState.status && uploadState.status.log) || []).slice().reverse().forEach(function(l) { log.appendChild(El("div", "", l[0] + "  " + l[1])); });
 		}
 
 		/* initial state: from the history (page reload) or the URL hash */

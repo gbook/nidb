@@ -39,7 +39,8 @@
 		'endpoint' => 'tusupload.php',
 		'contextpattern' => '/^[1-9][0-9]*$/',
 		'resolve' => 'ImportTusResolve',
-		'log' => 'ImportTusLog'
+		'log' => 'ImportTusLog',
+		'relativepaths' => true /* the import wizard keeps each file's path within the chosen folder */
 	));
 
 

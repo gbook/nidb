@@ -46,7 +46,8 @@ for the reference implementation.
 | `importimaging.php` | 5 | ✅ |
 | `importnonimaging.php` | 2 | ⬜ |
 | `importremote.php` | 2 | ⬜ |
-| `importwizard.php` | 1 | ⬜ |
+| `importupload_functions.php` | 1 | ✅ |
+| `importwizard.php` | 1 | ✅ |
 | `instance.php` | 1 | ⬜ |
 | `instruments.php` | 4 | ⬜ |
 | `interventions.php` | 1 | ⬜ |
@@ -81,4 +82,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-10-20 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-10-21 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

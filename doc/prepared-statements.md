@@ -60,11 +60,12 @@ user input is fine as-is).
 | `groups.php` | 14 | 29 | ✅ |
 | `icd10.php` | 0 | 1 | ✅ |
 | `import.php` | 28 | 0 | ⬜ |
-| `importimaging.php` | 20 | 11 | ⬜ |
+| `importimaging.php` | 20 | 12 | ⬜ |
 | `importinspect_functions.php` | 0 | 1 | ✅ |
 | `importlog.php` | 9 | 0 | ⬜ |
 | `importnonimaging.php` | 21 | 0 | ⬜ |
 | `importremote.php` | 1 | 16 | ⬜ |
+| `importupload_functions.php` | 0 | 4 | ✅ |
 | `importwizard.php` | 0 | 2 | ✅ |
 | `includes_php.php` | 2 | 0 | ⬜ |
 | `index.php` | 4 | 10 | ⬜ |
@@ -126,4 +127,4 @@ user input is fine as-is).
 | `viewanalysis.php` | 25 | 2 | ✅ |
 | `viewimage.php` | 1 | 0 | ⬜ |
 
-_Regenerated 2026-10-20 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._
+_Regenerated 2026-10-21 by `tools/track-php-conventions.sh`. Counts are a guide; a direct query with no user input needs no change._

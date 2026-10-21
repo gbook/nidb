@@ -60,6 +60,9 @@
 	     log             (optional) callable ($context, $message), called when a file is created, completed, or discarded
 	     checkdiskspace  (optional, default true) refuse a file larger than the free space in its directory
 	     maxsize         (optional, default 0 = no limit) largest file size accepted, in bytes
+	     relativepaths   (optional, default false) accept a 'relativepath' metadata entry (e.g. "S01/visit1/rest.eeg"),
+	                     and save the file at that path under the context directory instead of by name only.
+	                     Paths with empty, '.', '..', or hidden parts are refused (see TusSanitizeRelativePath)
 	   The session must be started before calling; it is closed here, so a long request does not
 	   block the user's other pages. Ownership (.tus/owner) is always checked, after resolve */
 	function TusServe($config) {
@@ -145,6 +148,13 @@
 			TusRespond(400, array(), "Missing or invalid upload context");
 		}
 		$filename = TusSanitizeFilename($meta['filename'] ?? '');
+		$relativepath = "";
+		if (!empty($config['relativepaths']) && (($meta['relativepath'] ?? '') != '')) {
+			$relativepath = TusSanitizeRelativePath($meta['relativepath']);
+			if ($relativepath == "")
+				TusRespond(400, array(), "Invalid relative path");
+			$filename = $relativepath;
+		}
 
 		$savepath = TusResolve($config, $context, $userid, 403);
 		$tusdir = "$savepath/.tus";
@@ -284,6 +294,14 @@
 		$lock = fopen("$tusdir/finalize.lock", "c");
 		flock($lock, LOCK_EX);
 
+		/* a relative path's folders are made as needed (TusCreate already checked the path) */
+		$dir = dirname($info['filename']);
+		if (($dir != ".") && !is_dir("$savepath/$dir") && !@mkdir("$savepath/$dir", 0777, true)) {
+			flock($lock, LOCK_UN);
+			fclose($lock);
+			TusLog($config, $context, "Error creating directory [$savepath/$dir]");
+			TusRespond(500, array(), "Unable to save the completed file");
+		}
 		$finalname = TusUniqueFilename($savepath, $info['filename']);
 		$ok = rename("$tusdir/$hex.part", "$savepath/$finalname");
 		if ($ok) {
@@ -433,6 +451,25 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- TusSanitizeRelativePath ------------ */
+	/* -------------------------------------------- */
+	/* a client's relative path (e.g. "S01/visit1/rest.eeg"), or "" if it isn't acceptable: absolute, or with
+	   empty, '.', '..', or hidden parts (which also keeps files away from the .tus directory), control
+	   characters, or over 64 parts / 255 characters per part / 4000 characters. Same rule as
+	   IIValidRelPath() in importinspect_functions.php and UploadablePath() in scripts/importmap.js */
+	function TusSanitizeRelativePath($path) {
+		if (($path == "") || (strlen($path) > 4000) || (strpos($path, "\\") !== false)) return "";
+		$parts = explode("/", $path);
+		if (count($parts) > 64) return "";
+		foreach ($parts as $part) {
+			if (($part == "") || ($part[0] == ".") || (strlen($part) > 255) || preg_match('/[\x00-\x1f\x7f]/', $part))
+				return "";
+		}
+		return $path;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- TusUniqueFilename ------------------ */
 	/* -------------------------------------------- */
 	/* returns $name, or name_1.ext, name_2.ext... if that already exists in $dir */
@@ -442,7 +479,7 @@
 
 		$pi = pathinfo($name);
 		$ext = (isset($pi['extension']) && ($pi['extension'] != "")) ? "." . $pi['extension'] : "";
-		$base = $pi['filename'];
+		$base = (($pi['dirname'] != ".") ? $pi['dirname'] . "/" : "") . $pi['filename'];
 		for ($i = 1; ; $i++) {
 			$candidate = $base . "_$i" . $ext;
 			if (!file_exists("$dir/$candidate"))

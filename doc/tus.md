@@ -64,9 +64,12 @@ Up to `MAXPARALLEL` (3) files upload at once, in `CHUNKSIZE` (50 MB) chunks. Eac
 		'endpoint' => 'tusupload.php',
 		'contextpattern' => '/^[1-9][0-9]*$/',  /* upload_id */
 		'resolve' => 'ImportTusResolve',        /* upload_datapath, if status 'uploading' and source 'web' */
-		'log' => 'ImportTusLog'                 /* writes to upload_logs */
+		'log' => 'ImportTusLog',                /* writes to upload_logs */
+		'relativepaths' => true                 /* the import wizard keeps each file's folder */
 	));
 ```
+
+The import wizard (`importwizard.php`) sends each file with a `relativepath` metadata entry (e.g. `S01/visit1/rest.eeg`, relative to the chosen folder), so its upload directory mirrors the user's folder. `importimaging.php` sends names only, as before.
 
 On every request, `TusServe()` does the following:
 1. Reads `$_SESSION['userid']` and `validlogin`, then calls `session_write_close()` straight away. Without this, a long PATCH would hold the session lock and block every other page the user opens. The endpoint sets `$nologin = true` before including `includes_php.php`, so a user who isn't logged in gets an HTTP status instead of a redirect to `login.php`.
@@ -386,6 +389,7 @@ What each option means:
 | `log` | no | Callable `($context, $message)`, called when a file is created, completed, renamed, or discarded |
 | `maxsize` | no | Largest file accepted, in bytes. Reported as `Tus-Max-Size`; larger files get 413 |
 | `checkdiskspace` | no | Default `true`: refuse (413) a file larger than the free space in the context directory |
+| `relativepaths` | no | Default `false`. When `true`, a `relativepath` metadata entry saves the file at that path under the context directory (folders are created as needed) instead of by name only. `TusSanitizeRelativePath()` refuses (400) absolute paths, paths with empty, `.`, `..`, or hidden parts (which also protects `.tus`), control characters, or backslashes. A name clash still gets a `_1` suffix |
 
 ### 3.3 Function reference (`tus_functions.php`)
 
@@ -407,6 +411,7 @@ Helpers for any context directory, used by pages:
 | `TusRemoveState($dir)` | bool | Delete `.tus/`, keeping the files. The directory stops accepting uploads |
 | `TusDeleteTree($path)` | bool | Recursive delete. Symlinks are removed, not followed |
 | `TusSanitizeFilename($name)` | string | See 2.3 |
+| `TusSanitizeRelativePath($path)` | string | A safe relative path, or `""` if refused (see the `relativepaths` option) |
 | `TusUniqueFilename($dir, $name)` | string | `$name`, or `name_1.ext`, `name_2.ext`... if taken |
 
 Helpers for general contexts, used with `tuscontext.php`:
