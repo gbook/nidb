@@ -46,6 +46,7 @@ for the reference implementation.
 | `importimaging.php` | 5 | ✅ |
 | `importnonimaging.php` | 2 | ⬜ |
 | `importremote.php` | 2 | ⬜ |
+| `importwizard.php` | 1 | ⬜ |
 | `instance.php` | 1 | ⬜ |
 | `instruments.php` | 4 | ⬜ |
 | `interventions.php` | 1 | ⬜ |
@@ -56,9 +57,10 @@ for the reference implementation.
 | `mrqcchecklist.php` | 2 | ⬜ |
 | `nda.php` | 3 | ⬜ |
 | `ndarequests.php` | 1 | ⬜ |
+| `nonimaging.php` | 1 | ⬜ |
 | `observations.php` | 1 | ⬜ |
 | `packages.php` | 18 | ⬜ |
-| `pipelinecontainers.php` | 1 | ✅ |
+| `pipelinecontainers.php` | 2 | ✅ |
 | `pipelines.php` | 4 | ✅ |
 | `projectchecklist.php` | 1 | ⬜ |
 | `projects.php` | 9 | ⬜ |
@@ -79,4 +81,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-10-01 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-10-20 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

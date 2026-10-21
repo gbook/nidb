@@ -20,12 +20,16 @@ NiDB's storage model is already modality-agnostic (every modality has a `*_serie
 | D2 | The **initial scan runs on the web side (JavaScript in the browser + PHP), before upload** where possible, exploring the directory on the user's computer. | 2026-09-25 | Identification and mapping happen *before* any bytes are uploaded; only the files the user confirmed are sent. See §5 and §6.1. |
 | D3 | **All data is archived as the original files. No format conversion** on import (no DICOM→NIfTI, PAR/REC→NIfTI, etc.). Conversion is left to pipelines. | 2026-09-25 | Recipes have no conversion options. Archive stage stores files byte-for-byte. |
 | D5 | **No anonymization on import, for now.** Files (DICOM and non-DICOM) and filenames are archived exactly as uploaded. | 2026-09-25 | Wizard and recipes have no anonymization options. De-identification, if needed, happens before upload or later (e.g. at export). May be revisited. |
-| D6 | **Patient info (PHI/PII) found by the survey triggers a warning only.** It never blocks the import, requires no acknowledgement, and has no per-project enforcement setting. | 2026-09-25 | What counts as PHI/PII, and what is acceptable, varies by institution and project and can change during a project, so NiDB reports what it saw and leaves the judgement to the user. See §8. |
-| D7 | The JavaScript survey reads DICOM headers with an **existing DICOM parser library** (e.g. `dicomParser`), not a hand-written tag walker. | 2026-09-25 | Bundled with the web files like other JS libraries. See §6.2. |
+| D6 | **Patient info (PHI/PII) found by the inspection triggers a warning only.** It never blocks the import, requires no acknowledgement, and has no per-project enforcement setting. | 2026-09-25 | What counts as PHI/PII, and what is acceptable, varies by institution and project and can change during a project, so NiDB reports what it saw and leaves the judgement to the user. See §8. |
+| D7 | The JavaScript inspection reads DICOM headers with an **existing DICOM parser library** (e.g. `dicomParser`), not a hand-written tag walker. | 2026-09-25 | Bundled with the web files like other JS libraries. See §6.2. |
 | D8 | **Every universal import keeps a decision log in the database**, recording what NiDB guessed and what the user decided, in detail when the data didn't fit an existing recipe. Not in `[logdir]`, which is only for temporary log files from running modules. | 2026-09-25 | Gives a permanent audit record per import and feeds the learning in §7.3. See §6.5. |
 | D9 | **Submitting user-created recipes to the central NiDB repo is deferred.** The long-term goal is still to collect them so they ship to everyone. | 2026-09-25 | Not designed for now. Recipes should stay shareable (no PHI, self-contained JSON) so this can be added later. See §7.4. |
 | D10 | **Scope is imaging data** (anything stored in a `*_series` table) **plus basic subject demographics** (e.g. sex, DOB) found in headers or files like `participants.tsv`. Other non-imaging data stays with the existing `importnonimaging.php`. | 2026-09-25 | Measures, observations, interventions, etc. are out of scope. |
 | D4 | **Every upload records the exact recipe version it used.** Recipes are versioned and old versions are never modified or deleted. | 2026-09-25 | Provenance/audit trail (21 CFR Part 11). See §6.3. |
+| D11 | **The wizard is the single entry point for all imports.** It first asks whether the data is imaging, non-imaging, a squirrel package, or "not sure"; "not sure" walks the user through a short decision tree. | 2026-10-20 | Non-imaging is handed off to `importnonimaging.php` (consistent with D10), and squirrel packages to the squirrel import in `importimaging.php`. Mockup in `src/web/importwizard.php`. See §5 Step 0. |
+| D12 | **Server-side (NFS) inspection only reads paths under `[mountdir]`.** The path must resolve (after `realpath`) inside `[mountdir]`; symlinked folders aren't followed, and symlinked files are only read if they point inside the chosen folder. | 2026-10-20 | Stops the inspection from reading the archive or other projects' data, since it returns header details to the browser. Other roots could be added later with a config key. |
+| D13 | **The inspection profile carries no patient values.** Header readers report only whether patient fields (PatientName, PatientBirthDate, EDF patient field, …) are populated; PatientID is reduced to its format (`S012` → `A###`); PatientID and study/series UIDs become salted hashes, used only to count distinct values. The salt never leaves where it was made. | 2026-10-20 | PHI warnings (D6) still work, from the yes/no flags. File paths are still sent, since mapping needs them (§8). |
+| D14 | **squirrel packages are read in the browser with a small built-in reader** (`scripts/sqrlreader.js`), not a bundled 7-Zip. It parses the 7z index and decodes LZMA/LZMA2 (zip: central directory + the browser's deflate), reading only the index and `squirrel.json`'s block. | 2026-10-20 | No new dependency, and multi-GB packages are fine because squirrel writes 7z non-solid. 7z variants squirrel doesn't write (BCJ filters, AES, huge solid blocks) can't be previewed but can still be imported. |
 
 ## 2. What exists today (starting point)
 
@@ -128,16 +132,28 @@ NiDB converts the selection into a template, e.g. `{subject}/{studylabel}/{study
 
 A wizard layered over the existing upload/review flow. Each step shows NiDB's best guess with its evidence, and the user only acts where something is wrong or uncertain.
 
+### Step 0 — Imaging, non-imaging, squirrel, or not sure (D11)
+
+The wizard opens with one question: what kind of data is this? Four choices:
+
+- **Imaging**: any data kept as files (all `*_series` modalities, including EEG, eye tracking, task output, audio/video, documents). Continues to Step 1 below.
+- **Non-imaging**: observations and interventions, usually a spreadsheet. Hands off to the existing `importnonimaging.php` .csv import, with the project preselected.
+- **squirrel package**: a `.sqrl` file (7z) or `.zip` export, which can hold imaging and non-imaging data together. The user picks the package and the browser reads its `squirrel.json` (D14) to show the package details and counts: subjects, studies by modality, series, observations, interventions, analyses, pipelines, experiments, data dictionaries. "Upload this package" creates the upload through the existing squirrel import (`importimaging.php` `newimport`, `upload_type = 'squirrel'`) and goes to its upload page, where the file is chosen again (a browser can't pass a chosen file to another page). That path (`moduleUpload::ParseUploadedSquirrel()`) imports only subjects, studies, and series today; the wizard lists the rest as "Not yet" and warns when the package has any. If an imaging inspection finds a `.sqrl` file or an unpacked package (`squirrel.json` at the top), it suggests switching to the squirrel import. Packages on the server still use the import form's NFS option, with no preview.
+- **Not sure**: a short decision tree (files from a device or program? a squirrel package? table of per-subject values? need to keep the original files? measured or given?) that ends in imaging, non-imaging (observations, interventions, or both), squirrel, or "let NiDB take a look", which goes to the imaging path so the inspection can identify the data.
+
+The mockup (`importwizard.php`) defines the step bar for each path (`WIZARD_PATHS`) and the decision tree (`DECISION_TREE`, `TREE_RESULTS`) as JavaScript data, so the flow can be changed without touching the markup. It runs entirely in the browser; the imaging panel's "quick look" summarizes the chosen folder from the file list only (count, size, depth, extensions) as a stand-in for the Step 2 inspection.
+
 ### Step 1 — Choose data (nothing uploaded yet)
 
 The user picks the destination project, then points the wizard at their data:
 
-- **Local data (the main case):** "Choose folder" or drag-and-drop a folder onto the page. The browser gets read access to the file list and file contents **locally**; nothing is uploaded at this point.
-- **Server-side data (NFS path):** the user types a path and PHP scans it directly on the server.
+- **Local files:** "Choose files" picks one or more individual files. Useful for a single recording or a handful of files.
+- **Local folder (the main case):** "Choose folder" or drag-and-drop a folder onto the page, including all of its subfolders. For both local choices, the browser gets read access to the file list and file contents **locally**; nothing is uploaded at this point.
+- **Server-side folder (NFS path):** the user types a path and PHP inspects it directly on the server.
 
 **No modality or criteria questions up front** — those come after the scan.
 
-### Step 2 — Survey (automatic, fast, pre-upload)
+### Step 2 — Inspect (automatic, fast, pre-upload)
 
 For local data, JavaScript walks the chosen folder and builds a **data profile** from *metadata and small byte ranges only*:
 
@@ -196,6 +212,18 @@ Show the path template builder (§4.2) pre-filled with the guess, and a **side-b
 
 Per-row status: **existing / new / ambiguous / conflict** (e.g. series already archived, same UID). Ambiguous subject matches are resolved here, reusing today's `matching*id` columns.
 
+**As built (2026-10-20):** the mapping runs in the browser on every file (`scripts/importmap.js`). For NFS paths the inspect response includes the file list, so both sources behave the same.
+
+- **Each part of an example path gets a dropdown** (revised 2026-10-21, replacing role brushes). One row per folder and the file name asks "What is it?": subject ID, visit / study label, study date, series name, or series number. A name with several parts shows a row and dropdown per part underneath, unless the whole name is given a role ("Use the parts below" is the whole-name default). Names split into parts at `_ - .` and spaces by default; a "Split at" checkbox for each delimiter found in the name changes that per folder level or file name (saved as `delims` in the mapping, e.g. `{"f": "_"}` keeps `sub-01` whole). Changing delimiters clears that name's part roles, since the parts move. Dates and UIDs stay whole when they are a whole part. A role taken from several parts joins them with `_`. The example dropdown lists the most common path shapes, data files before companions. The pattern is shown with friendly names, e.g. `{subject}/{visit}/{date}_*.vhdr`. The study date fallback and the series grouping sit under "More options", and only apply when the path doesn't give them.
+- **Role keys are positional:** `d0` is the top folder, `d1.t0` the first part of the second folder, `f` the file name without its extension, `f.t2` its third part. A file that lacks a level or part "doesn't fit" and isn't imported; the reasons and examples are listed.
+- **Starting roles come from the detected structure:** folder levels for a folder tree (the detector sends `roles`), `sub-`/`ses-` labels for BIDS, file name parts for flat folders. All-DICOM data is sent to the existing DICOM import from the inspect step (an inspection hint with a "Go to the DICOM import" button), since DICOM files carry their own subject, study, and series. DICOM that continues to the mapping is treated as having untrustworthy headers: identity comes from the path, and only the study date can still come from the headers. `Apply` still supports header-sourced levels, but the page no longer offers them.
+- **Studies** are grouped by subject + modality + label + date. Without a date part, the date is the earliest file modification time (flagged), from the headers, or left for step 5. With no label or date part, there is one study per subject and modality.
+- **Series** are grouped by the series description/number parts. Without those, there is one series per file name (companions stay together) or one per folder (the default for DICOM and bundles). Numbers follow file name order unless a part gives them.
+- **Modality:** a series takes the modality of its data files (companions follow), so mixed-modality folders give separate studies.
+- **Checks:** files that don't fit, series with no modality, file-time dates, duplicate series numbers, and values whose shape differs from the rest (e.g. `S12` among `S###`).
+- **Matching:** the wizard's `match` action (Edit Data on the project, CSRF) checks the mapped subject IDs against subject UIDs and alternate IDs, like the DICOM import. Statuses: in this project (with UID), in NiDB but not enrolled (no UID shown), new, or matches more than one subject. A study exists when the enrolled subject has a study of the same modality with the same visit label (`study_type`), or, with no label, on the same date. Dates from file times aren't used for matching.
+- **Recipe preview:** the mapping is shown in the §6.4 recipe format. Subject patterns keep only character classes (`A###`), so no names or IDs are stored. Nothing is saved yet.
+
 ### Step 5 — Details & gaps
 
 Only asks for what's still missing: e.g. "12 studies have no date in the header or path — use file modification time, or enter a date?" No format conversion is offered; files are archived as the originals (D3).
@@ -208,7 +236,7 @@ Summary counts (N subjects new/existing, N studies, N series, N files to upload,
 2. For local data, **only the included files** are uploaded via tus, keeping their relative paths. Progress is shown per file and overall; the upload is resumable.
 3. When the upload completes, `moduleUpload` applies the recipe to the staged files (parse), then the normal review/archive stages run.
 
-The parse re-reads headers on the server for **every** file, not just the survey sample, so anything the sample missed (e.g. one file with a different PatientID) shows up in the review stage as a conflict.
+The parse re-reads headers on the server for **every** file, not just the inspection sample, so anything the sample missed (e.g. one file with a different PatientID) shows up in the review stage as a conflict.
 
 ### Step 7 — Save what we learned
 
@@ -224,13 +252,13 @@ If the upload used an existing recipe but the user corrected something, offer "U
 
 ```
  ─────────── browser + PHP (importwizard.php) ───────────   ───────────── C++ (moduleUpload) ─────────────
- choose ──► SURVEY ──► DETECT ──► user confirms ──► UPLOAD ──► PARSE ──► REVIEW ──► ARCHIVE ──► LEARN
+ choose ──► INSPECT ─► DETECT ──► user confirms ──► UPLOAD ──► PARSE ──► REVIEW ──► ARCHIVE ──► LEARN
  folder     JS builds  PHP runs   axes + mapping   included    applies   existing   existing    recipe use
             profile    detectors  → recipe version files only  recipe    UI         archiveIO   recorded
             JSON       + matching   saved (D4)     (tus)       → staging            (as-is, D3)
 ```
 
-- **SURVEY** runs in the browser (JavaScript) for local folders, or in PHP for NFS paths. Both produce the same profile JSON.
+- **INSPECT** runs in the browser (JavaScript) for local folders, or in PHP for NFS paths. Both produce the same profile JSON.
 - **DETECT** and recipe matching run in PHP on the profile. No files are needed on the server yet.
 - **UPLOAD** sends only the files the recipe includes. The recipe version is already chosen at this point, so the `uploads` row has `upload_recipeid` from the start.
 - **PARSE** becomes recipe-driven: instead of `GetImageFileTags()` + fixed criteria, it applies the recipe's grouping and identity rules to fill `upload_subjects/studies/series`. The DICOM and BIDS paths can later become built-in recipes rather than special cases.
@@ -267,7 +295,7 @@ A data-driven **file-type registry** table covers the simple cases (extension + 
 
 ### 6.2.1 Browser capabilities and limits
 
-- `<input type="file" webkitdirectory>` and drag-and-drop folders (`DataTransferItem.webkitGetAsEntry()`) work in all current major browsers and give the relative path, size, and `lastModified` of every file, plus read access to contents via `File.slice()`. This is enough for the whole survey.
+- `<input type="file" webkitdirectory>` and drag-and-drop folders (`DataTransferItem.webkitGetAsEntry()`) work in all current major browsers and give the relative path, size, and `lastModified` of every file, plus read access to contents via `File.slice()`. This is enough for the whole inspection.
 - The File System Access API (`showDirectoryPicker()`) is Chromium-only; not needed, but could be used where available.
 - Folders with hundreds of thousands of files: listing is fast, but header sniffing must stay sampled and run in batches (or a Web Worker) so the page stays responsive.
 - The browser can only read what the user explicitly selects. The profile sent to PHP holds file paths and a few header values, which may contain PHI (see §8).
@@ -307,7 +335,7 @@ import_recipe_uses (
 -- On uploads
 uploads.upload_type        += 'universal'
 uploads.upload_recipeid    int  NULL  -- the exact recipe VERSION row used (D4)
-uploads.upload_profile     longtext  -- survey result JSON
+uploads.upload_profile     longtext  -- inspection result JSON
 upload_series.uploadseries_modality, uploadseries_filetype  -- per-series, for mixed uploads
 ```
 
@@ -364,7 +392,7 @@ import_decisions (
   recipe_id      int NULL,         -- recipe version in effect when the event happened
   user_id        int NULL,         -- NULL for events generated by NiDB itself
   decision_date  datetime,
-  step           enum('survey','detect','match','axes','mapping','details','phiwarning','upload','parse','review','archive','recipe','outcome'),
+  step           enum('inspect','detect','match','axes','mapping','details','phiwarning','upload','parse','review','archive','recipe','outcome'),
   source         enum('nidb','user'),  -- NiDB's guess vs. the user's decision
   target         varchar(255),     -- what it applies to, e.g. 'group:*.edf', 'path:segment2', 'subject:S012'
   old_value      text NULL,        -- e.g. 'ET' (NiDB's guess)
@@ -377,7 +405,7 @@ This is separate from the existing free-text `upload_logs` (which stays for modu
 
 The log records:
 
-- the survey summary: file counts, extension groups, detected file types and layout, with confidence and evidence
+- the inspection summary: file counts, extension groups, detected file types and layout, with confidence and evidence
 - the recipe match result: which recipe versions were considered, their scores and dry-run coverage, and which one (if any) the user accepted
 - **every user decision**, with timestamp and user: axis changes (e.g. modality of the `.edf` group changed from ET to EEG), path segment role assignments, date-source choices, groups included or ignored, and subject/study match resolutions
 - PHI warnings that were shown (D6)
@@ -402,7 +430,7 @@ When a recipe is saved, store a fingerprint of the upload that produced it:
 
 ### 7.2 Matching a new upload
 
-After the survey, score each enabled recipe in scope (user → project → instance) against the new profile — e.g. weighted combination of extension-histogram similarity, path-shape overlap, and header-fact matches — and then **apply the candidate recipe in dry-run** to measure the fraction of files it maps cleanly. Recipes above a threshold are offered first ("★ Matches saved recipe … 94%"). The dry-run coverage is the most honest signal and is cheap because it only touches the profile, not file contents.
+After the inspection, score each enabled recipe in scope (user → project → instance) against the new profile — e.g. weighted combination of extension-histogram similarity, path-shape overlap, and header-fact matches — and then **apply the candidate recipe in dry-run** to measure the fraction of files it maps cleanly. Recipes above a threshold are offered first ("★ Matches saved recipe … 94%"). The dry-run coverage is the most honest signal and is cheap because it only touches the profile, not file contents.
 
 ### 7.3 Learning from corrections
 
@@ -421,13 +449,13 @@ Built-in recipes can live in the repo, e.g. `src/setup/recipes/*.json`, loaded b
 
 ## 8. Edge cases and concerns
 
-- **PHI in paths and filenames.** Directory names often contain patient names or MRNs. The survey must not display/log more than needed, and the recipe must never store sample values — only generalized patterns. Because there is no anonymization on import (D5), PHI in headers and filenames is archived as-is. Per D6, the wizard only **warns** when the survey sees likely patient info. The warning is factual and specific (what field, how many files, e.g. "DICOM PatientName is populated in 1,184 of 1,184 sampled files", "EDF patient field populated", "path segments look like names or dates of birth"), says nothing about whether that is acceptable, and never blocks or requires acknowledgement. The warning can also be written to the upload log so there is a record that it was shown.
+- **PHI in paths and filenames.** Directory names often contain patient names or MRNs. The inspection must not display/log more than needed, and the recipe must never store sample values — only generalized patterns. Because there is no anonymization on import (D5), PHI in headers and filenames is archived as-is. Per D6, the wizard only **warns** when the inspection sees likely patient info. The warning is factual and specific (what field, how many files, e.g. "DICOM PatientName is populated in 1,184 of 1,184 sampled files", "EDF patient field populated", "path segments look like names or dates of birth"), says nothing about whether that is acceptable, and never blocks or requires acknowledgement. The warning can also be written to the upload log so there is a record that it was shown.
 - **Missing study dates.** NiDB studies need a datetime. Fallback order must be explicit and visible (header → path → sidecar → file mtime → user entry), and mtime should be flagged as unreliable since copying resets it.
 - **One file, many series** (e.g. multi-run EEG in one file) and **many subjects in one file** — probably out of scope initially; detect and warn.
 - **Mixed modality uploads** — require per-series modality in the staging tables.
 - **Duplicates / re-imports** — hash files at parse time and flag series already archived.
-- **Huge uploads** — the browser survey must sample (e.g. first K files per extension group per directory shape) and batch its reads; full header parsing happens only on the server after upload.
-- **Survey sample vs. reality** — the survey sees a sample, so the server-side parse can find things the preview didn't (a different PatientID, a corrupt file). These must surface as conflicts in review, not silently diverge from what the user approved.
+- **Huge uploads** — the browser inspection must sample (e.g. first K files per extension group per directory shape) and batch its reads; full header parsing happens only on the server after upload.
+- **Inspection sample vs. reality** — the inspection sees a sample, so the server-side parse can find things the preview didn't (a different PatientID, a corrupt file). These must surface as conflicts in review, not silently diverge from what the user approved.
 - **PHI leaving the browser** — the profile includes paths and a few header values. Send only what detection needs, over the existing authenticated session. The profile and the decision log (§6.5) may contain paths and header values; they are stored in the database with the upload, and only the generalized fingerprint is kept with a recipe.
 - **Upload interrupted** — tus resumes, but the wizard state (recipe version, file list) must survive a page reload so the user can re-select the same folder and continue.
 - **Zips inside zips / vendor bundles that are directories** (`.mff`, `.ds`) — the registry needs a "directory is the file" concept.
@@ -436,7 +464,9 @@ Built-in recipes can live in the repo, e.g. `src/setup/recipes/*.json`, loaded b
 
 ## 9. Possible phasing
 
-1. **Survey + detect only.** `importwizard.php` with the JavaScript profiler and PHP detectors, showing "what we think you have" for a chosen folder, read-only, no upload. Low risk, immediately useful, and generates data for tuning detectors.
+1. **Inspect + detect only.** `importwizard.php` with the JavaScript profiler and PHP detectors, showing "what we think you have" for a chosen folder, read-only, no upload. Low risk, immediately useful, and generates data for tuning detectors.
+
+   **Status (2026-10-20): built.** `importwizard.php` (inspect action and results panel), `importinspect_functions.php` (file-type registry, NFS profiler, detectors, PHI warnings), and `scripts/importinspect.js` (browser profiler). The registry is a PHP array laid out like the planned `import_filetypes` table. DICOM headers are read with `dicomParser` from the existing Cornerstone3D bundle (`scripts/cs3d.bundle.js`, loaded only if a sampled file is DICOM) in the browser, and with DCMTK `dcmdump` on the server. Nothing is stored yet: no `import_*` tables, and no decision log (D8) until uploads are built. The mapping step (§5 step 4) is built as described there; steps 5–7 are not.
 2. **Recipe-driven upload and parse** for non-DICOM types with the path template builder, selective tus upload, and recipe versions recorded on the upload; DICOM/BIDS stay on current code paths.
 3. **Save/match recipes** (fingerprints, scoped recipes, dry-run coverage scoring).
 4. **Fold DICOM/BIDS/squirrel into built-in recipes**; retire the special-cased parse paths and the per-extension logic in `GetImageFileTags()`.

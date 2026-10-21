@@ -55,7 +55,7 @@
 		}
 		/* data */
 		if ($GLOBALS['cfg']['enabledatamenu']) {
-			?><a href="import.php" class="<? if ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") { echo "active"; } ?> item">Data</a><?
+			?><a href="import.php" class="<? if ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importwizard.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="downloads.php" || $page=="datasetrequests.php") { echo "active"; } ?> item">Data</a><?
 		}
 		/* calendar */
 		if ($GLOBALS['cfg']['enablecalendar']) {
@@ -254,13 +254,14 @@
 		}
 		
 		/* data sub-menu */
-		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
+		elseif ($page=="import.php" || $page=="importimaging.php" || $page=="importnonimaging.php" || $page=="importwizard.php" || $page=="importlog.php" || $page=="publicdownloads.php" || $page=="publicdatasets.php" || $page=="downloads.php" || $page=="datasetrequests.php" || $page=="packages.php") {
 			
 			if ($GLOBALS['cfg']['enabledatamenu']) {
 				?><a href="import.php" class="<? if (($page == "import.php") && ($action != "idmapper")) { echo "active"; } ?> blue item">Import</a><?
 				?><a href="packages.php" class="<? if ($page == "packages.php") { echo "active"; } ?> blue item">Packages</a><?
 				?><a href="importimaging.php" class="<? if ($page == "importimaging.php") { echo "active"; } ?> blue item">Import Imaging</a><?
 				?><a href="importnonimaging.php" class="<? if ($page == "importnonimaging.php") { echo "active"; } ?> blue item">Import Non-imaging</a><?
+				?><a href="importwizard.php" class="<? if ($page == "importwizard.php") { echo "active"; } ?> blue item">Import Wizard</a><?
 				?><a href="import.php?action=idmapper" class="<? if (($page == "import.php") && ($action == "idmapper")) { echo "active"; } ?> blue item">ID mapper</a><?
 				?><a href="importlog.php" class="<? if ($page == "importlog.php") { echo "active"; } ?> blue item">Import Log</a><?
 				?><a href="publicdownloads.php" class="<? if ($page == "publicdownloads.php") { echo "active"; } ?> blue item">Public Downloads</a><?

@@ -73,7 +73,7 @@
 	/* determine action */
 	switch ($action) {
 		case 'newimportform':
-			DisplayNewImportForm($username, $instanceid);
+			DisplayNewImportForm($username, $instanceid, $projectid, $filetype);
 			break;
 		case 'newimport':
 			ob_start();
@@ -139,7 +139,10 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayNewImportForm --------------- */
 	/* -------------------------------------------- */
-	function DisplayNewImportForm($username, $instanceid) {
+	/* $projectid and $filetype preselect the form, e.g. when the import wizard hands off a squirrel package */
+	function DisplayNewImportForm($username, $instanceid, $projectid = 0, $filetype = '') {
+		if (!in_array($filetype, array('auto', 'bids', 'squirrel'), true))
+			$filetype = '';
 		?>
 		<div class="ui container">
 			<div class="ui top attached grey segment">
@@ -181,14 +184,17 @@
 						<select name="projectid" required>
 							<option value="">Select project...</option>
 							<?
-								$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '$username') and a.instance_id = '$instanceid' order by project_name";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$sqlstring = "select a.project_id, a.project_name, a.project_costcenter from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) and a.instance_id = ? order by project_name";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								$instanceid = (int)$instanceid;
+								mysqli_stmt_bind_param($stmt, 'si', $username, $instanceid);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $instanceid]);
+								mysqli_stmt_close($stmt);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$project_id = $row['project_id'];
-									$project_name = $row['project_name'];
-									$project_costcenter = $row['project_costcenter'];
+									$project_id = (int)$row['project_id'];
+									$selected = ($project_id == (int)$projectid) ? "selected" : "";
 									?>
-									<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<?=$project_id?>" <?=$selected?>><?=htmlspecialchars($row['project_name'] ?? '')?> (<?=htmlspecialchars($row['project_costcenter'] ?? '')?>)</option>
 									<?
 								}
 							?>
@@ -198,7 +204,7 @@
 					<div class="three wide column"><h3 class="ui grey right aligned header">File Format</h3></div>
 					<div class="thirteen wide column">
 						<div class="ui fluid selection dropdown">
-							<input type="hidden" name="filetype" id="filetype" required>
+							<input type="hidden" name="filetype" id="filetype" value="<?=htmlspecialchars($filetype)?>" required>
 							<i class="dropdown icon"></i>
 							<div class="default text">Select file format</div>
 							<div class="menu">

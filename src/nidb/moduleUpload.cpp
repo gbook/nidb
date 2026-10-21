@@ -147,8 +147,8 @@ bool moduleUpload::ReadUploads() {
                 continue;
             }
 
-            /* if modality is blank */
-            if ((upload_modality == "") && (upload_type != "bids")) {
+            /* if modality is blank. BIDS and squirrel packages carry the modality of each study themselves */
+            if ((upload_modality == "") && (upload_type != "bids") && (upload_type != "squirrel")) {
                 io->AppendUploadLog("Error. Modality was blank [" + upload_modality + "]");
                 ret = 1;
 
