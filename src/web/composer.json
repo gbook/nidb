@@ -1,0 +1,12 @@
+{
+    "name": "nidb/html",
+    "description": "NiDB web",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Gregory Book",
+            "email": "gregory.a.book@gmail.com"
+        }
+    ],
+    "require": {}
+}
