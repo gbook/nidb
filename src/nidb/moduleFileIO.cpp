@@ -22,6 +22,9 @@
 
 #include "moduleFileIO.h"
 #include <QSqlQuery>
+#include <QSqlRecord>
+#include <QLocale>
+#include <QRegularExpression>
 
 /* ---------------------------------------------------------- */
 /* --------- moduleFileIO ----------------------------------- */
@@ -238,6 +241,100 @@ bool moduleFileIO::SetIORequestStatus(int requestid, QString status, QString msg
     else {
         return false;
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetAnalysisStoredSize -------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Get the number of files and disk size stored in the database for an analysis
+ * @param analysisid analysis RowID
+ * @param numfiles [return] number of files
+ * @param bytes [return] disk size in bytes
+ */
+void moduleFileIO::GetAnalysisStoredSize(qint64 analysisid, qint64 &numfiles, qint64 &bytes) {
+    numfiles = 0;
+    bytes = 0;
+
+    QSqlQuery q;
+    q.prepare("select analysis_numfiles, analysis_disksize from analysis where analysis_id = :analysisid");
+    q.bindValue(":analysisid", analysisid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.first()) {
+        numfiles = q.value("analysis_numfiles").toLongLong();
+        bytes = q.value("analysis_disksize").toLongLong();
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSeriesStoredSize ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Sum the number of files and disk size stored in the database for the series matching an ID
+ * @param modality Modality, which selects the <modality>_series table
+ * @param idcolumn Column to match, such as 'study_id' or '<modality>series_id'
+ * @param id Value to match in idcolumn
+ * @param numfiles [return] total number of files
+ * @param bytes [return] total size in bytes
+ */
+void moduleFileIO::GetSeriesStoredSize(QString modality, QString idcolumn, qint64 id, qint64 &numfiles, qint64 &bytes) {
+    numfiles = 0;
+    bytes = 0;
+
+    /* the modality and column become part of the SQL, so allow only plain identifiers */
+    modality = modality.toLower();
+    static const QRegularExpression identifier("^[a-z0-9_]+$");
+    if (!identifier.match(modality).hasMatch() || !identifier.match(idcolumn).hasMatch())
+        return;
+
+    /* the <modality>_series tables don't all have the same columns, so select everything and
+       use whichever count/size columns exist. A missing table is not fatal */
+    QSqlQuery q;
+    q.prepare(QString("select * from %1_series where %2 = :id").arg(modality).arg(idcolumn));
+    q.bindValue(":id", id);
+    bool ok = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &ok);
+    if (!ok)
+        return;
+
+    while (q.next()) {
+        QSqlRecord r = q.record();
+
+        /* some tables have 'numfiles', some 'series_numfiles', and some both */
+        qint64 files = 0;
+        if (r.indexOf("numfiles") >= 0)
+            files = q.value("numfiles").toLongLong();
+        if ((files == 0) && (r.indexOf("series_numfiles") >= 0))
+            files = q.value("series_numfiles").toLongLong();
+        if (r.indexOf("numfiles_beh") >= 0)
+            files += q.value("numfiles_beh").toLongLong();
+        numfiles += files;
+
+        if (r.indexOf("series_size") >= 0)
+            bytes += q.value("series_size").toLongLong();
+        if (r.indexOf("beh_size") >= 0)
+            bytes += q.value("beh_size").toLongLong();
+    }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- StoredSizeString ------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Format a file count and size for a fileio message, such as ' (1,234 files, 2.30 GB)'
+ * @param numfiles Number of files
+ * @param bytes Size in bytes
+ * @return The formatted string with a leading space, or an empty string if neither is known
+ */
+QString moduleFileIO::StoredSizeString(qint64 numfiles, qint64 bytes) {
+    if ((numfiles <= 0) && (bytes <= 0))
+        return "";
+
+    QLocale locale(QLocale::English, QLocale::UnitedStates);
+    return QString(" (%1 files, %2)").arg(locale.toString(numfiles)).arg(locale.formattedDataSize(bytes, 2, QLocale::DataSizeTraditionalFormat));
 }
 
 
@@ -488,6 +585,8 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 
     /* describe the analysis now, because after it's deleted the fileio Details can no longer be looked up */
     QString what = QString("analysis for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
+    qint64 numfiles, bytes;
+    GetAnalysisStoredSize(analysisid, numfiles, bytes);
 
     bool okToDeleteDBEntries = false;
 
@@ -560,7 +659,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
-    msg = QString("Analysis deleted for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
+    msg = QString("Analysis deleted for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename) + StoredSizeString(numfiles, bytes);
     return true;
 }
 
@@ -587,12 +686,19 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
 
     int numDeleted = 0;
     int numFailed = 0;
+    qint64 totalFiles = 0;
+    qint64 totalBytes = 0;
     if (q.size() > 0) {
         while (q.next()) {
             QString m;
             int analysisid = q.value("analysis_id").toInt();
-            if (DeleteAnalysis(analysisid, m))
+            qint64 numfiles, bytes;
+            GetAnalysisStoredSize(analysisid, numfiles, bytes);
+            if (DeleteAnalysis(analysisid, m)) {
                 numDeleted++;
+                totalFiles += numfiles;
+                totalBytes += bytes;
+            }
             else {
                 numFailed++;
                 n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(m));
@@ -603,7 +709,7 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
         n->Log("No analyses to delete for this pipeline");
     }
 
-    msg = QString("Pipeline [%1] deleted, along with %2 analyses").arg(pipelinename).arg(numDeleted);
+    msg = QString("Pipeline [%1] deleted, along with %2 analyses").arg(pipelinename).arg(numDeleted) + StoredSizeString(totalFiles, totalBytes);
     if (numFailed > 0)
         msg += QString(". %1 analyses could not be deleted, see the log for details").arg(numFailed);
 
@@ -626,6 +732,19 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     s.searchMethod = SubjectSearchMethod::RowId;
     s.searchSubjectRowID = subjectid;
     if (!s.Load()) { msg = "Subject was not valid: [" + s.msg + "]"; return false; }
+
+    /* total the stored file counts and sizes of all the subject's series, before they're deleted */
+    qint64 totalFiles = 0;
+    qint64 totalBytes = 0;
+    q.prepare("select a.study_id, a.study_modality from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid");
+    q.bindValue(":subjectid", subjectid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    while (q.next()) {
+        qint64 numfiles, bytes;
+        GetSeriesStoredSize(q.value("study_modality").toString(), "study_id", q.value("study_id").toLongLong(), numfiles, bytes);
+        totalFiles += numfiles;
+        totalBytes += bytes;
+    }
 
     QString newpath = QString("%1/%2-%3").arg(n->cfg["deleteddir"]).arg(s.uid).arg(GenerateRandomString(10));
     QDir d;
@@ -722,7 +841,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     n->Log(QString("Deleted [%1] rows from subjects table").arg(q.numRowsAffected()));
 
-    msg = QString("Subject %1 deleted").arg(s.uid);
+    msg = QString("Subject %1 deleted").arg(s.uid) + StoredSizeString(totalFiles, totalBytes);
     n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
 
     return true;
@@ -739,6 +858,8 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
     study s(studyid, n); /* get the study info */
     if (!s.isValid()) { msg = "Study was not valid: [" + s.msg + "]"; return false; }
     QString modality = s.modality.toLower();
+    qint64 numfiles, bytes;
+    GetSeriesStoredSize(modality, "study_id", studyid, numfiles, bytes);
 
     QString newpath = QString("%1/%2-%3-%4").arg(n->cfg["deleteddir"]).arg(s.GetUID()).arg(s.GetStudyNum()).arg(GenerateRandomString(10));
     QDir d;
@@ -756,7 +877,7 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
         q.bindValue(":studyid", studyid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-        msg = QString("%1 study deleted for %2%3").arg(s.modality.toUpper()).arg(s.GetUID()).arg(s.GetStudyNum());
+        msg = QString("%1 study deleted for %2%3").arg(s.modality.toUpper()).arg(s.GetUID()).arg(s.GetStudyNum()) + StoredSizeString(numfiles, bytes);
     }
     else {
         msg = QString("Error deleting %1 study %2%3. Unable to move [%4] to [%5]").arg(s.modality.toUpper()).arg(s.GetUID()).arg(s.GetStudyNum()).arg(s.GetPath()).arg(newpath);
@@ -778,6 +899,9 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
     series s(seriesid, modality, n); /* get the series info */
     if (!s.isValid) { msg = "Series was not valid: [" + s.msg + "]"; return false; }
 
+    qint64 numfiles, bytes;
+    GetSeriesStoredSize(modality, modality + "series_id", seriesid, numfiles, bytes);
+
     QString newpath = QString("%1/%2-%3-%4-%5").arg(n->cfg["deleteddir"]).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(GenerateRandomString(10));
     QDir d;
     if(d.rename(s.seriespath, newpath)) {
@@ -788,7 +912,7 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
         q.bindValue(":seriesid", seriesid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-        msg = QString("%1 series deleted for %2%3-%4 [%5]").arg(modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.protocol);
+        msg = QString("%1 series deleted for %2%3-%4 [%5]").arg(modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.protocol) + StoredSizeString(numfiles, bytes);
     }
     else {
         msg = QString("Error deleting %1 series %2%3-%4. Unable to move [%5] to [%6]").arg(modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.seriespath).arg(newpath);

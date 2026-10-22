@@ -56,6 +56,9 @@ public:
 
 private:
     nidb *n;
+    void GetAnalysisStoredSize(qint64 analysisid, qint64 &numfiles, qint64 &bytes);
+    void GetSeriesStoredSize(QString modality, QString idcolumn, qint64 id, qint64 &numfiles, qint64 &bytes);
+    QString StoredSizeString(qint64 numfiles, qint64 bytes);
 };
 
 #endif // MODULEFILEIO_H
