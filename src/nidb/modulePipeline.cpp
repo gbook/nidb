@@ -2216,8 +2216,8 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
     jobfile += "nidbapi() {\n";
     jobfile += "    local response\n";
     jobfile += "    response=$(curl -sS --connect-timeout 30 --max-time 300 --retry 3 \"$NIDB_APIURL\" -d \"analysisid=$NIDB_ANALYSISID\" --data-urlencode \"token=$NIDB_APITOKEN\" --data-urlencode \"hostname=$(hostname)\" \"$@\")\n";
-    jobfile += "    echo \"$response\"\n";
-    jobfile += "    echo \"$response\" | grep -q '\"success\":true'\n";
+    //jobfile += "    echo \"$response\"\n";
+    //jobfile += "    echo \"$response\" | grep -q '\"success\":true'\n";
     jobfile += "}\n";
     jobfile += "export -f nidbapi\n\n";
 
