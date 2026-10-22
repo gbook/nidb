@@ -31,6 +31,51 @@ require "includes_php.php";
 $action = GetVariable("action");
 $file   = GetVariable("file");
 $fileid = (int)GetVariable("fileid");
+$exportid = (int)GetVariable("exportid");
+
+/* ── serve the .sqrl file created by a package export ── */
+if ($exportid > 0) {
+	/* the user must own (or be an admin for) the package that was exported. Matches the
+	   UserOwnsPackage() check in packages.php */
+	$sqlstring = "select p.package_name from exportseries b join packages p on b.package_id = p.package_id join exports a on a.export_id = b.export_id where b.export_id = ? and a.filetype = 'package' and (p.user_id = ? or ? = 1) limit 1";
+	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+	$params = array($exportid, (int)$_SESSION['userid'], ($_SESSION['isadmin'] ? 1 : 0));
+	mysqli_stmt_bind_param($stmt, 'iii', ...$params);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+	mysqli_stmt_close($stmt);
+
+	if (!$row) {
+		http_response_code(404);
+		exit('Export not found, or you do not have permission to access it');
+	}
+
+	/* the path is built here from the export id, never from user input. moduleExport writes
+	   package exports to [exportdir]/NiDB-Squirrel-<exportid>.sqrl */
+	$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
+	if (!is_file($sqrlfile)) {
+		http_response_code(404);
+		exit('The export file no longer exists');
+	}
+
+	/* name the download after the package, keeping only filename-safe characters */
+	$basename = trim(preg_replace('/[^A-Za-z0-9._-]+/', '_', (string)$row['package_name']), '_.');
+	if ($basename == '') $basename = "NiDB-Squirrel";
+	$filename = "$basename-$exportid.sqrl";
+
+	set_time_limit(0);
+	header("Content-Description: File Transfer");
+	header("Content-Type: application/octet-stream");
+	header("Content-Disposition: attachment; filename=\"$filename\"");
+	header("Content-Transfer-Encoding: binary");
+	header("Cache-Control: private, must-revalidate");
+	header("Content-Length: " . filesize($sqrlfile));
+
+	/* discard any buffered output so it isn't prepended to the binary file */
+	while (ob_get_level() > 0) { ob_end_clean(); }
+	readfile($sqrlfile);
+	exit;
+}
 
 /* ── serve a file blob stored in the 'files' table ── */
 if ($fileid > 0) {

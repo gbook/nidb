@@ -486,6 +486,9 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 
     n->Log("Analysispath: [" + a.analysispath + "]");
 
+    /* describe the analysis now, because after it's deleted the fileio Details can no longer be looked up */
+    QString what = QString("analysis for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
+
     bool okToDeleteDBEntries = false;
 
     if (QDir(a.analysispath).exists()) {
@@ -504,6 +507,8 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
             QString p = a.analysispath;
             if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home") || (p.size() < 20)) {
                 n->Log("Path is not valid [" + p + "]");
+                msg = QString("Did not delete %1. Analysis path [%2] is not valid").arg(what).arg(p);
+                return false;
             }
             else {
                 QString systemstring = QString("rm -rf %1").arg(a.analysispath);
@@ -521,6 +526,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 
                     n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysisdeleteerror", "error", "Analysis directory not deleted. Probably because permissions have changed and NiDB does not have permission to delete the directory [" + a.analysispath + "]");
                     n->LogAnalysisEvent(analysisid, AnalysisEvent::ManageDelete, LogStatus::success, 0, "", "");
+                    msg = QString("Did not delete %1. Directory [%2] could not be removed").arg(what).arg(a.analysispath);
                     return false;
                 }
                 else {
@@ -554,6 +560,7 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
+    msg = QString("Analysis deleted for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
     return true;
 }
 
@@ -564,24 +571,41 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
 bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
     n->Log("In DeletePipeline()");
 
-    /* get list of analyses associated with this pipeline */
+    /* get the pipeline name now, because after it's deleted the fileio Details can no longer be looked up */
     QSqlQuery q;
+    q.prepare("select pipeline_name from pipelines where pipeline_id = :pipelineid");
+    q.bindValue(":pipelineid", pipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QString pipelinename;
+    if (q.first())
+        pipelinename = q.value("pipeline_name").toString().trimmed();
+
+    /* get list of analyses associated with this pipeline */
     q.prepare("select analysis_id from analysis where pipeline_id = :pipelineid");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    int numDeleted = 0;
+    int numFailed = 0;
     if (q.size() > 0) {
         while (q.next()) {
-            QString msg;
+            QString m;
             int analysisid = q.value("analysis_id").toInt();
-            if (!DeleteAnalysis(analysisid, msg))
-                n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(msg));
+            if (DeleteAnalysis(analysisid, m))
+                numDeleted++;
+            else {
+                numFailed++;
+                n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(m));
+            }
         }
     }
     else {
-        msg = "No analyses to delete for this pipeline";
         n->Log("No analyses to delete for this pipeline");
     }
+
+    msg = QString("Pipeline [%1] deleted, along with %2 analyses").arg(pipelinename).arg(numDeleted);
+    if (numFailed > 0)
+        msg += QString(". %1 analyses could not be deleted, see the log for details").arg(numFailed);
 
     /* delete the actual pipeline entry */
     q.prepare("delete from pipelines where pipeline_id = :pipelineid");
@@ -698,6 +722,7 @@ bool moduleFileIO::DeleteSubject(int subjectid, QString username, QString &msg) 
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     n->Log(QString("Deleted [%1] rows from subjects table").arg(q.numRowsAffected()));
 
+    msg = QString("Subject %1 deleted").arg(s.uid);
     n->InsertSubjectChangeLog(username, s.uid, "", "obliterate", msg);
 
     return true;
@@ -730,9 +755,11 @@ bool moduleFileIO::DeleteStudy(int studyid, QString &msg) {
         q.prepare("delete from studies where study_id = :studyid");
         q.bindValue(":studyid", studyid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+        msg = QString("%1 study deleted for %2%3").arg(s.modality.toUpper()).arg(s.GetUID()).arg(s.GetStudyNum());
     }
     else {
-        msg = QString("Error in moving [%1] to [%2]").arg(s.GetPath()).arg(newpath);
+        msg = QString("Error deleting %1 study %2%3. Unable to move [%4] to [%5]").arg(s.modality.toUpper()).arg(s.GetUID()).arg(s.GetStudyNum()).arg(s.GetPath()).arg(newpath);
         n->Log(msg);
         return false;
     }
@@ -761,9 +788,10 @@ bool moduleFileIO::DeleteSeries(int seriesid, QString modality, QString &msg) {
         q.bindValue(":seriesid", seriesid);
         n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+        msg = QString("%1 series deleted for %2%3-%4 [%5]").arg(modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.protocol);
     }
     else {
-        msg = QString("Error in moving series [%1] to [%2]").arg(s.seriespath).arg(newpath);
+        msg = QString("Error deleting %1 series %2%3-%4. Unable to move [%5] to [%6]").arg(modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum).arg(s.seriespath).arg(newpath);
         n->Log(msg);
         return false;
     }

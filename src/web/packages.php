@@ -2725,19 +2725,38 @@
 					<div class="content">
 						<ul>
 						<?
-							$sqlstring = "select a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = $packageid";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select distinct a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = ? order by a.submitdate desc";
+							$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+							$params = array((int)$packageid);
+							mysqli_stmt_bind_param($stmt, 'i', ...$params);
+							$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 							$numexports = mysqli_num_rows($result);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$exportid = $row['export_id'];
+								$exportid = (int)$row['export_id'];
 								$startdate = $row['startdate'];
 								$submitdate = $row['submitdate'];
 								$completeddate = $row['completedate'];
 								$status = $row['status'];
+
+								/* package exports are written to [exportdir]/NiDB-Squirrel-<exportid>.sqrl and
+								   served by getfile.php, which checks package ownership */
+								$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
 								?>
-								<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=$status?>
+								<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=htmlspecialchars($status ?? '')?>
+								<?
+								if (($row['filetype'] == 'package') && ($status == 'complete')) {
+									if (is_file($sqrlfile)) {
+										?> - <a href="getfile.php?exportid=<?=$exportid?>" title="Download squirrel package"><i class="download icon"></i>Download .sqrl</a> <span class="ui grey text">(<?=HumanReadableFilesize(filesize($sqrlfile))?>)</span><?
+									}
+									else {
+										?> - <span class="ui grey text">export file no longer exists</span><?
+									}
+								}
+								?>
+								</li>
 								<?
 							}
+							mysqli_stmt_close($stmt);
 						?>
 						</ul>
 					</div>
