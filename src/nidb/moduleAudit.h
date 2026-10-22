@@ -31,12 +31,15 @@ public:
 
     int Run();
 
-    /* individual audits. Each returns true if the audit ran, and sets m to a summary message */
-    bool AuditFilesExist(QString &m);
-    bool AuditPHI(QString &m);
-    bool AuditOrphanedObjects(QString &m);
+    /* individual audits. Each returns true if the audit ran to completion, and sets m to a summary message */
+    bool AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors, QString &m);
 
 private:
+    QString GetAuditStatus(qint64 auditid);
+    void SetAuditStatus(qint64 auditid, QString status, QString msg, bool ended=false);
+    void SetAuditProgress(qint64 auditid, qint64 progress, qint64 total);
+    void LogAuditIssue(qint64 auditid, QString issueType, QString objectType, qint64 objectid, QString msg, int fixed, QString fixedMsg);
+
     nidb *n;
 };
 

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 19, 2026 at 04:52 PM
+-- Generation Time: Oct 22, 2026 at 07:29 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -247,6 +247,43 @@ CREATE TABLE `audio_series` (
   `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `series_duration` bigint(20) DEFAULT NULL
 ) ENGINE=Aria DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audits`
+--
+
+CREATE TABLE `audits` (
+  `audit_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL COMMENT '0 indicates systemwide audit',
+  `audit_type` enum('seriesfiles','analysisfiles') NOT NULL,
+  `audit_fixerrors` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'true to fix audit errors, such as file count/size discrepancy',
+  `audit_status` enum('started','auditing','finishing','complete','error','stopped','') NOT NULL,
+  `audit_message` text DEFAULT NULL COMMENT 'Message associated with the status change',
+  `audit_objectprogress` bigint(20) DEFAULT NULL COMMENT 'the number of objects checked so far',
+  `audit_totalobjects` bigint(20) DEFAULT NULL COMMENT 'total number of objects that will be checked',
+  `audit_startdate` datetime DEFAULT NULL,
+  `audit_lastcheckin` datetime DEFAULT NULL,
+  `audit_enddate` datetime DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_log`
+--
+
+CREATE TABLE `audit_log` (
+  `auditlog_id` bigint(20) NOT NULL,
+  `audit_id` int(11) NOT NULL,
+  `issue_type` enum('fileSizeMismatch','fileCountMismatch') NOT NULL COMMENT 'The type of issue found',
+  `object_type` enum('subject','study','series','analysis') NOT NULL COMMENT 'The object that had the issue: subject, study, series, analysis, etc',
+  `object_id` int(11) NOT NULL COMMENT 'The database rowID of the object',
+  `issue_message` text NOT NULL COMMENT 'Description of the found issue',
+  `issue_fixed` tinyint(1) DEFAULT NULL COMMENT 'true if something was fixed',
+  `issue_fixedmessage` text DEFAULT NULL COMMENT 'description of what was fixed'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -1867,6 +1904,8 @@ CREATE TABLE `mr_series` (
   `is_derived` tinyint(1) NOT NULL DEFAULT 0,
   `numfiles_beh` int(11) NOT NULL DEFAULT 0,
   `beh_size` double NOT NULL DEFAULT 0,
+  `qc_numfiles` bigint(20) DEFAULT NULL COMMENT 'file count for QC',
+  `qc_size` bigint(20) DEFAULT NULL COMMENT 'total disk size for QC',
   `series_notes` longtext DEFAULT NULL,
   `series_status` varchar(20) DEFAULT NULL COMMENT 'pending, processing, complete',
   `series_createdby` varchar(50) DEFAULT NULL,
@@ -3879,6 +3918,19 @@ ALTER TABLE `audio_series`
   ADD PRIMARY KEY (`audioseries_id`);
 
 --
+-- Indexes for table `audits`
+--
+ALTER TABLE `audits`
+  ADD PRIMARY KEY (`audit_id`);
+
+--
+-- Indexes for table `audit_log`
+--
+ALTER TABLE `audit_log`
+  ADD PRIMARY KEY (`auditlog_id`),
+  ADD KEY `audit_id` (`audit_id`);
+
+--
 -- Indexes for table `audit_results`
 --
 ALTER TABLE `audit_results`
@@ -5129,6 +5181,18 @@ ALTER TABLE `assessment_series`
 --
 ALTER TABLE `audio_series`
   MODIFY `audioseries_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audits`
+--
+ALTER TABLE `audits`
+  MODIFY `audit_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audit_log`
+--
+ALTER TABLE `audit_log`
+  MODIFY `auditlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `audit_results`

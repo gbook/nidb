@@ -14,7 +14,7 @@ user input is fine as-is).
 | File | Direct | Prepared | Done |
 |------|-------:|---------:|:----:|
 | `admin.php` | 1 | 2 | ✅ |
-| `adminaudits.php` | 2 | 1 | ✅ |
+| `adminaudits.php` | 6 | 10 | ✅ |
 | `admindicomae.php` | 1 | 5 | ✅ |
 | `adminemail.php` | 1 | 0 | ✅ |
 | `adminerrorlogs.php` | 1 | 0 | ✅ |
