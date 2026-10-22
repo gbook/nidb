@@ -33,8 +33,11 @@ public:
 
     /* individual audits. Each returns true if the audit ran to completion, and sets m to a summary message */
     bool AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors, QString &m);
+    bool AuditAnalysisFiles(qint64 auditid, int projectid, bool fixErrors, QString &m);
 
 private:
+    bool AuditCheckIn(qint64 auditid, qint64 progress, qint64 total, QString &stopReason);
+    int CheckFileCountAndSize(qint64 auditid, bool fixErrors, QString objectType, qint64 objectid, QString objectDesc, QString path, QString table, QString idColumn, QString countColumn, QString sizeColumn, bool dbCountIsNull, qint64 dbCount, bool dbSizeIsNull, qint64 dbSize, qint64 diskCount, qint64 diskSize, qint64 &numFixed);
     QString GetAuditStatus(qint64 auditid);
     void SetAuditStatus(qint64 auditid, QString status, QString msg, bool ended=false);
     void SetAuditProgress(qint64 auditid, qint64 progress, qint64 total);

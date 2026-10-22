@@ -45,7 +45,7 @@
 
 	/* audit types, and their descriptions. Keys must match the audits.audit_type enum */
 	$audittypes = array(
-		'seriesfiles' => 'Series files - compare the file count and size of each series in the database against the files in the archive',
+		'seriesfiles' => 'Series QC files - compare the QC/QA file count and size of each MR series in the database against the files in the archive',
 		'analysisfiles' => 'Analysis files - compare the file count and size of each analysis in the database against the files in the analysis directory'
 	);
 
