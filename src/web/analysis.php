@@ -714,11 +714,9 @@
 		/* PRG: show any message stashed by a mutating action before it redirected here */
 		ShowFlashMessage();
 
-		/* prep the pagination */
-		if ($numperpage == "") { $numperpage = 500; }
-		if (($pagenum == "") || ($pagenum < 1)) { $pagenum = 1; }
-		$limitstart = ($pagenum-1)*$numperpage;
-		$limitcount = $numperpage;
+		/* no pagination - all analyses are listed and the table scrolls internally */
+		$limitstart = "";
+		$limitcount = "";
 
 		if (($sortorder == "asc") || ($sortorder == "")) { $newsortorder = "desc"; }
 		elseif ($sortorder == "desc") { $newsortorder = "asc"; }
@@ -763,9 +761,6 @@
 		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numrows = $row['count'];
-		//$numrows = mysqli_num_rows($result);
-		$numpages = ceil($numrows/$numperpage);
-		if ($pagenum > $numpages) { $pagenum = $numpages; }
 		?>
 		<div id="dialogbox" title="Dialog Box" style="display:none;">Loading...</div>
 		<script type="text/javascript">
@@ -786,46 +781,12 @@
 		</script>
 
 		<table width="100%" class="tablepage">
-			<form method="post" action="analysis.php" id="numperpageform" class="ui form">
-			<input type="hidden" name="action" value="viewanalyses">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
-			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
-			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
-			<input type="hidden" name="sortby" value="<?=$sortby?>">
-			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
 			<tr>
 				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
-				<td class="pagenum">
-					Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span>
-					<select name="numperpage" title="Change number per page" onChange="numperpageform.submit()" class="ui dropdown">
-						<option value="100" <?if ($numperpage == 100) { echo "selected"; } ?>>100
-						<option value="500" <?if ($numperpage == 500) { echo "selected"; } ?>>500
-						<option value="1000" <?if ($numperpage == 1000) { echo "selected"; } ?>>1,000
-						<option value="2000" <?if ($numperpage == 2000) { echo "selected"; } ?>>2,000
-						<option value="5000" <?if ($numperpage == 5000) { echo "selected"; } ?>>5,000
-						<option value="10000" <?if ($numperpage == 10000) { echo "selected"; } ?>>10,000
-						<option value="50000" <?if ($numperpage == 50000) { echo "selected"; } ?>>50,000
-					</select>
-				</td>
-				<td style="text-align: center">
+				<td style="text-align: right">
 					<a class="ui basic green button" href="analysis.php?action=exportanalysiscsv&id=<?=$id?>&searchuid=<?=urlencode($searchuid)?>&searchstatus=<?=urlencode($searchstatus)?>&searchsuccess=<?=urlencode($searchsuccess)?>&sortby=<?=urlencode($sortby)?>&sortorder=<?=urlencode($sortorder)?>" title="Export the entire list of analyses as a .csv">Export CSV</a>
 				</td>
-				<td style="text-align: right">
-					<div class="ui buttons">
-						<a class="ui button" title="First page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step backward icon"></i></a>
-				
-						<a class="ui button" title="Previous page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle left icon"></i></a>
-						
-						<a class="ui button" title="Reresh" href=""><i class="redo icon"></i></a>
-				
-						<a class="ui button" title="Next page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="angle right icon"></i></a>
-				
-						<a class="ui button" title="Last page" href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>&searchuid=<?=$searchuid?>&searchstatus=<?=$searchstatus?>&searchsuccess=<?=$searchsuccess?>&sortby=<?=$sortby?>&sortorder=<?=$sortorder?>"><i class="step forward icon"></i></a>
-					</div>
-				</td>
 			</tr>
-			</form>
 		</table>
 
 		<script>
@@ -841,12 +802,17 @@
 			}
 		</script>
 
+		<style>
+			/* scroll the analysis list inside its own box, keeping the header and filter rows visible */
+			.analysislistscroll { max-height: 80vh; overflow: auto; }
+			.analysislistscroll thead { position: sticky; top: 0; z-index: 2; }
+			.analysislistscroll thead tr.filterrow td { background-color: #fff; }
+		</style>
+		<div class="analysislistscroll">
 		<table id="analysistable" class="ui very compact small celled grey selectable top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
 			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="numperpage" value="<?=$numperpage?>">
-			<input type="hidden" name="pagenum" value="<?=$pagenum?>">
 			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
 			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
 			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
@@ -903,9 +869,7 @@
 					</th>
 					<th align="left" style="background-color: Lavender">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
-			</thead>
-			<tbody>
-				<tr>
+				<tr class="filterrow">
 					<td align="left">
 						<div class="ui input">
 							<input type="text" name="searchuid" placeholder="UID..." value="<?=$searchuid?>">
@@ -941,6 +905,7 @@
 					<td></td>
 					<td style="background-color: Lavender"><input type="submit" name="btnSubmitFilter" value="Filter" class="ui blue button"></td>
 				</tr>
+			</thead>
 			</form>
 			<form method="post" name="studieslist" id="studieslist" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="deleteanalyses" id="studieslistaction">
@@ -948,6 +913,7 @@
 			<input type="hidden" name="analysisnotes" value="">
 			<input type="hidden" name="analysisid" id="analysisid" value="">
 			<input type="hidden" name="id" value="<?=$id?>">
+			<tbody>
 				<?
 					$types = ''; $params = array();
 					$sqlstring = GetAnalysisListSQL($id, $searchuid, $searchstatus, $searchsuccess, $sortby, $sortorder, $limitstart, $limitcount, $types, $params);
@@ -1008,27 +974,9 @@
 							$uid = $row['uid'];
 							$visittype = $row['study_type'];
 							$pipeline_version = $row['pipeline_version'];
-							$pipeline_dependency = $row['pipeline_dependency'];
-							
+
 							if ($analysis_status == "") { $analysis_status = "unknown"; }
-							
-							if (!isset($pipeline_submithost)) {
-								$stmtA = mysqli_prepare($GLOBALS['linki'], "select pipeline_submithost from pipelines where pipeline_id = ?");
-								mysqli_stmt_bind_param($stmtA, 'i', $id);
-								$resultA = MySQLiBoundQuery($stmtA,__FILE__,__LINE__);
-								mysqli_stmt_close($stmtA);
-								$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-								$pipeline_submithost = $rowA['pipeline_submithost'];
-							}
-							if ($pipeline_submithost == "") { $pipeline_submithost = $GLOBALS['cfg']['clustersubmithost']; }
-							
-							$stmtA = mysqli_prepare($GLOBALS['linki'], "select pipeline_name, pipeline_submithost from pipelines where pipeline_id = ?");
-							mysqli_stmt_bind_param($stmtA, 'i', $pipeline_dependency);
-							$resultA = MySQLiBoundQuery($stmtA,__FILE__,__LINE__);
-							mysqli_stmt_close($stmtA);
-							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-							$pipeline_dep_name = $rowA['pipeline_name'];
-							
+
 							if ($notes == "") {
 								$notestitle = "Click to create notes";
 								$notescolor = "grey";
@@ -1184,6 +1132,7 @@
 				</script>
 			</tbody>
 		</table>
+		</div>
 		
 		<script>
 			$(document).ready(function() {
