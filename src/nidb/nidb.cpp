@@ -278,6 +278,10 @@ int nidb::ModuleGetNumThreads() {
     else if (module == "modulemanager") {
         numThreads = 1;
     }
+    else if (module == "audit") {
+        if (cfg["moduleauditthreads"] == "") numThreads = 1;
+        else numThreads = cfg["moduleauditthreads"].toInt();
+    }
     else if (module == "remoteimport") {
         if (cfg["moduleremoteimportthreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleremoteimportthreads"].toInt();

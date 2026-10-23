@@ -13,9 +13,9 @@ Reference count of every configuration variable against the PHP and C++ code bas
 
 | Metric | Value |
 |---|---:|
-| Config variables defined in writer | 110 |
-| Total references | 751 (PHP 477 / C++ 274) |
-| Used in both PHP and C++ | 61 |
+| Config variables defined in writer | 111 |
+| Total references | 754 (PHP 478 / C++ 276) |
+| Used in both PHP and C++ | 62 |
 | PHP-only | 49 |
 | C++-only | 0 |
 | Unused in both trees | 0 |
@@ -87,6 +87,7 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 | `localftpusername` | 2 | 0 | php |  |
 | `lockdir` | 3 | 9 | both |  |
 | `logdir` | 4 | 2 | both |  |
+| `moduleauditthreads` | 1 | 2 | both |  |
 | `modulebackupthreads` | 1 | 0 | php |  |
 | `moduleexportnonimagingthreads` | 1 | 2 | both |  |
 | `moduleexportthreads` | 1 | 2 | both |  |

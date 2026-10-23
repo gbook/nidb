@@ -3265,6 +3265,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		
 		/* set default values if they're not set in the config */
 
+		if (($GLOBALS['cfg']['moduleauditthreads'] != "") && (isset($GLOBALS['cfg']['moduleauditthreads']))) { $moduleauditthreads = $GLOBALS['cfg']['moduleauditthreads']; } else { $moduleauditthreads = "1"; }
 		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleexportnonimagingthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportnonimagingthreads']))) { $moduleexportnonimagingthreads = $GLOBALS['cfg']['moduleexportnonimagingthreads']; } else { $moduleexportnonimagingthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleexportthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportthreads']))) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
@@ -3484,6 +3485,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="number" name="modulebackupthreads" value="1" disabled></td>
 							<td></td>
 							<td><b>backup</b> module. Not multi-threaded</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">moduleauditthreads</td>
+							<td><input type="number" name="moduleauditthreads" value="<?=$moduleauditthreads?>"></td>
+							<td></td>
+							<td><b>audit</b> module. Recommended is 1</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">moduleminipipelinethreads</td>
@@ -4190,6 +4197,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($moduleqcthreads == "") { $moduleqcthreads = 2; }
 		if ($moduleuploadthreads == "") { $moduleuploadthreads = 1; }
 		if ($modulebackupthreads == "") { $modulebackupthreads = 1; }
+		if ($moduleauditthreads == "") { $moduleauditthreads = 1; }
 		if ($moduleminipipelinethreads == "") { $moduleminipipelinethreads = 4; }
 		
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
@@ -4272,6 +4280,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [mysqlclusterpassword] = $mysqlclusterpassword
 
 # ----- modules -----
+[moduleauditthreads] = $moduleauditthreads
 [modulebackupthreads] = $modulebackupthreads
 [moduleexportnonimagingthreads] = $moduleexportnonimagingthreads
 [moduleexportthreads] = $moduleexportthreads

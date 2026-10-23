@@ -71,6 +71,7 @@
     $c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
     $c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
 
+    $c['moduleauditthreads'] = GetVariable("moduleauditthreads");
     $c['modulebackupthreads'] = GetVariable("modulebackupthreads");
     $c['moduleexportnonimagingthreads'] = GetVariable("moduleexportnonimagingthreads");
     $c['moduleexportthreads'] = GetVariable("moduleexportthreads");
