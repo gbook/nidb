@@ -714,7 +714,7 @@
 		/* PRG: show any message stashed by a mutating action before it redirected here */
 		ShowFlashMessage();
 
-		/* no pagination - all analyses are listed and the table scrolls internally */
+		/* no pagination - all analyses are listed and the page scrolls */
 		$limitstart = "";
 		$limitcount = "";
 
@@ -777,6 +777,57 @@
 					this.checked = checked_status;
 				});
 			});
+
+			/* checkbox cells: click anywhere in the cell to toggle, click-drag down a column to set a range, shift-click to set everything since the last click */
+			var dragcol = null;			/* 'allstudies' or 'allanalyses' while dragging */
+			var dragboxes = null;		/* the checkboxes in the column being dragged */
+			var dragstate = false;		/* the checked state being applied */
+			var dragindex = -1;			/* index of the last row set during the drag */
+			var anchorcol = null;		/* column and row of the last click, for shift-click */
+			var anchorindex = -1;
+			var suppressclick = false;	/* the mousedown already set the checkbox, so cancel the browser's own toggle */
+
+			function SetRange(boxes, from, to, state) {
+				var lo = Math.min(from, to), hi = Math.max(from, to);
+				for (var i = lo; i <= hi; i++) { boxes[i].checked = state; }
+			}
+
+			$("#analysistable").on("mousedown", "td.allstudies, td.allanalyses", function(e) {
+				if (e.which != 1) return;
+				if ($(e.target).closest("a").length) return; /* let the study link work normally */
+				e.preventDefault(); /* no text selection while dragging */
+
+				var col = $(this).hasClass("allstudies") ? "allstudies" : "allanalyses";
+				var boxes = $("#analysistable td." + col + " > input[type='checkbox']");
+				var cb = $(this).children("input[type='checkbox']")[0];
+				var index = boxes.index(cb);
+				if (index < 0) return;
+				var state = !cb.checked;
+
+				if (e.shiftKey && (anchorcol == col) && (anchorindex >= 0)) { SetRange(boxes, anchorindex, index, state); }
+				else { cb.checked = state; }
+				if (e.target == cb) { suppressclick = true; }
+
+				dragcol = col; dragboxes = boxes; dragstate = state; dragindex = index;
+				anchorcol = col; anchorindex = index;
+			});
+
+			$("#analysistable").on("mouseover", "td.allstudies, td.allanalyses", function() {
+				if ((dragcol == null) || !$(this).hasClass(dragcol)) return;
+				var index = dragboxes.index($(this).children("input[type='checkbox']")[0]);
+				if ((index < 0) || (index == dragindex)) return;
+				SetRange(dragboxes, dragindex, index, dragstate); /* fill any rows skipped by a fast mouse movement */
+				dragindex = index; anchorindex = index;
+			});
+
+			$("#analysistable").on("click", "td.allstudies > input[type='checkbox'], td.allanalyses > input[type='checkbox']", function(e) {
+				if (suppressclick) { e.preventDefault(); suppressclick = false; }
+			});
+
+			$(document).on("mouseup", function() {
+				dragcol = null; dragboxes = null;
+				setTimeout(function() { suppressclick = false; }, 0); /* in case the drag ended away from the starting checkbox and no click fired */
+			});
 		});
 		</script>
 
@@ -803,12 +854,15 @@
 		</script>
 
 		<style>
-			/* scroll the analysis list inside its own box, keeping the header and filter rows visible */
-			.analysislistscroll { max-height: 80vh; overflow: auto; }
-			.analysislistscroll thead { position: sticky; top: 0; z-index: 2; }
-			.analysislistscroll thead tr.filterrow td { background-color: #fff; }
+			/* the page scrolls (single scrollbar); the header/filter rows stick to the top of the window and the action menu sticks to the bottom */
+			.analysislist thead { position: sticky; top: 0; z-index: 2; }
+			.analysislist thead tr.filterrow td { background-color: #fff; }
+			.analysisactions.ui.bottom.attached.menu { position: sticky; bottom: 0; z-index: 3; background-color: #fff; }
+			/* the whole checkbox cell is clickable/draggable */
+			#analysistable td.allstudies, #analysistable td.allanalyses { cursor: pointer; }
+			#analysistable td.allstudies:hover, #analysistable td.allanalyses:hover { box-shadow: inset 0 0 0 2px #2185d0; }
 		</style>
-		<div class="analysislistscroll">
+		<div class="analysislist">
 		<table id="analysistable" class="ui very compact small celled grey selectable top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
@@ -1142,7 +1196,7 @@
 				});
 			});
 		</script>
-		<div class="ui bottom attached menu">
+		<div class="ui bottom attached menu analysisactions">
 			<div class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles">
 				<div class="ui action input">
 					<select name="studygroupid" class="ui selection dropdown">
