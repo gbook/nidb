@@ -20,7 +20,6 @@ NeuroInformatics Database (NiDB) is a full neuroimaging database system to store
 
 %install # This section installs the files to the BUILDROOT dir, which is basically a copy of what the user's computer will look like after the RPM installs
 mkdir -p %{buildroot}/usr/lib/sqldrivers
-mkdir -p %{buildroot}/usr/local/bin
 mkdir -p %{buildroot}/nidb/bin
 mkdir -p %{buildroot}/nidb/bin/sqldrivers
 mkdir -p %{buildroot}/nidb/lock
@@ -33,7 +32,6 @@ cp -f %{_sourcedir}/src/setup/rpm_post_install.sh %{buildroot}/nidb/setup/ # RPM
 cp -rf %{_sourcedir}/src/web/* %{buildroot}/var/www/html/ # copy web files to the end location
 rm -f %{buildroot}/var/www/html/download # do NOT package the download symlink; the posttrans scriptlet creates it if absent so upgrades never clobber a custom download path
 cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
-cp -f %{_builddir}/bin/squirrel/squirrel %{buildroot}/usr/local/bin/ # squirrel utilities
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
@@ -86,7 +84,6 @@ cp -rf /usr/local/share/dcmtk-3.7.0/* %{buildroot}/usr/local/share/dcmtk-3.7.0/ 
 /nidb
 /var/www/html
 /usr/lib/*
-/usr/local/bin/*
 /usr/local/share/dcmtk-3.7.0
 
 %pre

@@ -85,7 +85,7 @@ for ENTRY in "${INSTALLERS[@]}"; do
 			wsl.exe -d "$DISTRO" --cd / --exec bash -c \
 				". /etc/os-release && VERSION_ID=\${VERSION_ID%%.*} && TAG=\${ID:?}\${VERSION_ID:?} && cd $SHARED && \
 				 { dpkg -s libgl-dev >/dev/null 2>&1 || { echo 'libgl-dev is required to link nidb (Qt adds -lGL). Install it with: sudo apt install libgl-dev'; exit 1; }; } && \
-				 rm -f bin/\$TAG/nidb/nidb bin/\$TAG/squirrel/squirrel && \
+				 rm -f bin/\$TAG/nidb/nidb && \
 				 PATH=$CLEANPATH bash build-rpm.sh $QMAKEBIN $SHARED/src $SHARED/bin/\$TAG && \
 				 PATH=$CLEANPATH bash makeInstaller\${ID^}\$VERSION_ID.sh bin/\$TAG && \
 				 mkdir -p $SHARED/installers && \

@@ -74,14 +74,6 @@ cd $BUILDDIR/squirrel
 make -j 16
 echo -e "\n Built squirrel library in $BUILDDIR/squirrel\n"
 
-# ----- build squirrel command line utilities -----
-echo -e "\nBuilding squirrel utilities\n"
-echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrel.pro -spec linux-g++
-$QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrel.pro -spec linux-g++
-cd $BUILDDIR/squirrel
-make -B -j 16
-echo -e "\n Built squirrel utilites in $BUILDDIR/squirrel\n"
-
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"
 # create make file in the build directory

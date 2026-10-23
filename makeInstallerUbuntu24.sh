@@ -5,7 +5,7 @@
 # ships a postinst maintainer script (src/setup/deb_post_install.sh) that dpkg
 # runs after unpacking -- the Debian equivalents of the spec's Requires: and
 # %post. Run from the project root AFTER building the binaries (build-rpm.sh or
-# equivalent), so bin/nidb/nidb and bin/squirrel/ exist. An optional first argument
+# equivalent), so bin/nidb/nidb exists. An optional first argument
 # names a different build directory (e.g. bin/ubuntu24), as used by makeAllInstallers.sh.
 #
 # Same as the Debian 12 builder except for noble-specific package names:
@@ -23,7 +23,6 @@ BUILDDIR=${1:-bin}                                  # where build-rpm.sh put the
 PACKAGE=nidb_${VERSION}
 DEBDIR=$PACKAGE/DEBIAN
 LIBDIR=$PACKAGE/usr/lib/x86_64-linux-gnu           # multiarch shared-lib location
-BINDIR=$PACKAGE/usr/local/bin
 NIDBDIR=$PACKAGE/nidb
 WEBDIR=$PACKAGE/var/www/html
 DCMTKSHARE=$PACKAGE/usr/local/share/dcmtk-3.7.0
@@ -33,14 +32,13 @@ SQLDRV_NIDB=$NIDBDIR/bin/sqldrivers
 # start clean so a rebuild never carries stale files
 rm -rf "$PACKAGE"
 
-mkdir -p "$DEBDIR" "$LIBDIR" "$BINDIR" "$WEBDIR" "$DCMTKSHARE" \
+mkdir -p "$DEBDIR" "$LIBDIR" "$WEBDIR" "$DCMTKSHARE" \
          "$NIDBDIR/bin" "$NIDBDIR/lock" "$NIDBDIR/logs" "$NIDBDIR/qcmodules" "$NIDBDIR/setup" \
          "$SQLDRV_SYS" "$SQLDRV_NIDB"
 
 # ----- program files (mirrors the RPM %install) -----
 echo 'Copying NiDB binaries, web files, tools, qcmodules, and setup files...'
 cp -f  $BUILDDIR/nidb/nidb  "$NIDBDIR/bin/"
-cp -f  $BUILDDIR/squirrel/squirrel  "$BINDIR/"          # squirrel command-line utility
 cp -rf tools/*                        "$NIDBDIR/bin/"     # bundled helper tools
 cp -rf src/qcmodules/*                "$NIDBDIR/qcmodules/"
 cp -f  src/setup/*                    "$NIDBDIR/setup/"
@@ -58,7 +56,6 @@ chmod 0755 "$DEBDIR/preinst"
 
 # ----- shared libraries -----
 echo 'Copying shared libraries...'
-cp -f $BUILDDIR/squirrel/libsquirrel*  "$LIBDIR/" 2>/dev/null || true
 cp -f $BUILDDIR/bit7z/libbit7z64.a  "$LIBDIR/" 2>/dev/null || true
 # DCMTK (versioned .so files; wildcard tolerates version differences)
 cp -f /usr/local/lib/libcmr*          "$LIBDIR/" 2>/dev/null || true

@@ -141,9 +141,20 @@ squirrel::~squirrel()
 /* ---------------------------------------------------------- */
 /**
  * @brief Locate the 7-zip shared library on disk and store its path
+ *
+ * The SQUIRREL_7ZIP_LIB environment variable, if it names an existing file, takes
+ * precedence over the system locations. The Python wheel uses this to load the
+ * 7z.so it ships, so it does not depend on (or mismatch the ABI of) a system 7-zip.
  * @return true if the library was found, false otherwise
  */
 bool squirrel::Get7zipLibPath() {
+    QString envLib = qEnvironmentVariable("SQUIRREL_7ZIP_LIB");
+    if (!envLib.isEmpty() && QFile::exists(envLib)) {
+        p7zipLibPath = envLib;
+        Debug("Using 7zip library from SQUIRREL_7ZIP_LIB: " + envLib, __FUNCTION__);
+        return true;
+    }
+
 #ifdef Q_OS_WINDOWS
     if (QFile::exists("C:/Program Files/7-Zip/7z.dll")) {
         p7zipLibPath = "C:/Program Files/7-Zip/7z.dll";
@@ -4771,53 +4782,43 @@ bool squirrel::UpdateMemoryFileToArchive(QString file, QString compressedFilePat
  */
 bool squirrel::ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m) {
 
-    QString systemstring = QString("7za x -y %1 -o%2").arg(archivePath).arg(destinationPath);
-    m += systemstring + "\n";
     Log(QString("Extracting %1 to %2").arg(archivePath).arg(destinationPath));
-    Log(utils::SystemCommand(systemstring));
-    if (utils::FileExists(destinationPath)) {
-        m += destinationPath + " exists\n";
-        return true;
-    }
-    else {
-        m += destinationPath + " does not exist\n";
+
+    if (!QFile::exists(archivePath)) {
+        m = "Unable to extract archive [" + archivePath + "] because it does not exist";
         return false;
     }
 
-    // try {
-    //     using namespace bit7z;
-    //     Bit7zLibrary lib(p7zipLibPath.toStdString());
+    try {
+        using namespace bit7z;
+        Bit7zLibrary lib(p7zipLibPath.toStdString());
 
-    //     if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
-    //         //bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
-    //         //archive.setProgressCallback(progressCallback);
-    //         //archive.setTotalCallback(totalArchiveSizeCallback);
-    //         //archive.extractTo(destinationPath.toStdString());
+        /* the extractor creates the destination if it is missing, but do it here so a
+           failure to create it is reported before any extraction starts */
+        if (!QDir().mkpath(destinationPath)) {
+            m = "Unable to create destination directory [" + destinationPath + "]";
+            return false;
+        }
 
-    //         bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::Zip);
-    //         extractor.setProgressCallback(progressCallback);
-    //         extractor.setTotalCallback(totalArchiveSizeCallback);
-    //         extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
-    //     }
-    //     else {
-    //         //bit7z::BitArchiveReader archive(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
-    //         //archive.setProgressCallback(progressCallback);
-    //         //archive.setTotalCallback(totalArchiveSizeCallback);
-    //         //archive.extractTo(destinationPath.toStdString());
+        const BitInFormat &format = archivePath.endsWith(".zip", Qt::CaseInsensitive) ? BitFormat::Zip : BitFormat::SevenZip;
+        BitFileExtractor extractor(lib, format);
+        extractor.setProgressCallback(progressCallback);
+        extractor.setTotalCallback(totalArchiveSizeCallback);
+        extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
 
-    //         bit7z::BitFileExtractor extractor(lib, bit7z::BitFormat::SevenZip);
-    //         extractor.setProgressCallback(progressCallback);
-    //         extractor.setTotalCallback(totalArchiveSizeCallback);
-    //         extractor.extract(archivePath.toStdString(), destinationPath.toStdString());
-    //    }
-    //    m = "Successfully extracted archive [" + archivePath + "] to directory [" + destinationPath + "]";
-    //    return true;
-    //}
-    //catch ( const bit7z::BitException& ex ) {
-    //    /* Do something with ex.what()...*/
-    //    m = "Unable to extract archive to directory using bit7z library [" + QString(ex.what()) + "]";
-    //    return false;
-    //}
+        m = "Successfully extracted archive [" + archivePath + "] to directory [" + destinationPath + "]";
+        return true;
+    }
+    catch ( const bit7z::BitException& ex ) {
+        m = "Unable to extract archive to directory using bit7z library [" + QString(ex.what()) + "]";
+        return false;
+    }
+    catch ( const std::exception& ex ) {
+        /* catch std::filesystem_error etc. so the library returns an error instead of
+           terminating the application */
+        m = "Unable to extract archive to directory [" + QString(ex.what()) + "]";
+        return false;
+    }
 }
 
 
