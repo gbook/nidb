@@ -135,10 +135,13 @@ int moduleAudit::Run() {
 /* --------- AuditSeriesFiles ------------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Compare the QC/QA file count and size stored for each MR series (mr_series.qc_numfiles,
- * qc_size) against the files on disk in the series' qa/ and qc/ directories. Any difference is
- * logged to `audit_log`, and if fixErrors is true, the database is updated to match the disk.
- * A series with no stored values (NULL) and no QC/QA files on disk is not an issue.
+ * @brief Compare the file counts and sizes stored for each MR series against the files on disk.
+ * Three sets of files are checked, each against its own columns:
+ *   data - the series' <data_type>/ directory (mr_series.numfiles, series_size)
+ *   beh  - the series' beh/ directory (mr_series.numfiles_beh, beh_size)
+ *   QC   - the series' qa/ (mriqa module) and qc/ (qc module) directories (mr_series.qc_numfiles, qc_size)
+ * Any difference is logged to `audit_log`, and if fixErrors is true, the database is updated to
+ * match the disk. Stored values that are NULL, with nothing on disk, are not an issue.
  * @param auditid The audit_id
  * @param projectid The project to audit, or 0 for all projects
  * @param fixErrors true to update the database to match what is on disk
@@ -155,6 +158,15 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
         QString uid;
         int studynum;
         int seriesnum;
+        QString datatype;
+        bool numFilesIsNull;
+        bool sizeIsNull;
+        qint64 numFiles;
+        qint64 size;
+        bool behNumFilesIsNull;
+        bool behSizeIsNull;
+        qint64 behNumFiles;
+        qint64 behSize;
         bool qcNumFilesIsNull;
         bool qcSizeIsNull;
         qint64 qcNumFiles;
@@ -163,7 +175,7 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
     QList<seriesInfo> seriesList;
 
     QSqlQuery q;
-    QString sql = "select a.mrseries_id, a.series_num, a.qc_numfiles, a.qc_size, b.study_num, d.uid from mr_series a inner join studies b on a.study_id = b.study_id inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1";
+    QString sql = "select a.mrseries_id, a.series_num, a.data_type, a.numfiles, a.series_size, a.numfiles_beh, a.beh_size, a.qc_numfiles, a.qc_size, b.study_num, d.uid from mr_series a inner join studies b on a.study_id = b.study_id inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1";
     if (projectid > 0)
         sql += " and c.project_id = :projectid";
     sql += " order by a.mrseries_id";
@@ -182,6 +194,15 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
         s.uid = q.value("uid").toString().trimmed();
         s.studynum = q.value("study_num").toInt();
         s.seriesnum = q.value("series_num").toInt();
+        s.datatype = q.value("data_type").toString().trimmed();
+        s.numFilesIsNull = q.value("numfiles").isNull();
+        s.sizeIsNull = q.value("series_size").isNull();
+        s.numFiles = q.value("numfiles").toLongLong();
+        s.size = q.value("series_size").toLongLong();
+        s.behNumFilesIsNull = q.value("numfiles_beh").isNull();
+        s.behSizeIsNull = q.value("beh_size").isNull();
+        s.behNumFiles = q.value("numfiles_beh").toLongLong();
+        s.behSize = q.value("beh_size").toLongLong();
         s.qcNumFilesIsNull = q.value("qc_numfiles").isNull();
         s.qcSizeIsNull = q.value("qc_size").isNull();
         s.qcNumFiles = q.value("qc_numfiles").toLongLong();
@@ -191,11 +212,12 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
 
     qint64 total = seriesList.size();
     SetAuditProgress(auditid, 0, total);
-    n->Log(QString("Checking QC/QA files for [%1] MR series").arg(total));
+    n->Log(QString("Checking data, beh, and QC/QA files for [%1] MR series").arg(total));
 
     QString archivedir = n->cfg["archivedir"];
     qint64 numChecked = 0;
     qint64 numSkipped = 0;
+    qint64 numNoDataType = 0;
     qint64 numIssues = 0;
     qint64 numFixed = 0;
 
@@ -222,16 +244,34 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
             continue;
         }
 
-        /* QC/QA files are stored in the series' qa/ (mriqa module) and qc/ (qc module) directories */
         QString seriespath = QString("%1/%2/%3/%4").arg(archivedir).arg(s.uid).arg(s.studynum).arg(s.seriesnum);
+        QString seriesdesc = QString("MR series %1/%2/%3").arg(s.uid).arg(s.studynum).arg(s.seriesnum);
+        numChecked++;
+
+        /* data files are stored in the <data_type>/ directory, and are counted non-recursively, the
+           same as when the series is archived. Without a valid data_type, the data directory is unknown */
+        if ((s.datatype == "") || s.datatype.contains('/') || (s.datatype == "..") || (s.datatype == ".")) {
+            n->Log(QString("Not checking data files for series [%1] because its data_type [%2] is invalid").arg(s.seriesid).arg(s.datatype));
+            numNoDataType++;
+        }
+        else {
+            QString datapath = seriespath + "/" + s.datatype;
+            qint64 dataCount = 0, dataSize = 0;
+            GetDirSizeAndFileCount(datapath, dataCount, dataSize);
+            numIssues += CheckFileCountAndSize(auditid, fixErrors, "series", s.seriesid, seriesdesc + " data", datapath, "mr_series", "mrseries_id", "numfiles", "series_size", s.numFilesIsNull, s.numFiles, s.sizeIsNull, s.size, dataCount, dataSize, numFixed);
+        }
+
+        /* behavioral files are stored in the beh/ directory, also counted non-recursively */
+        QString behpath = seriespath + "/beh";
+        qint64 behCount = 0, behSize = 0;
+        GetDirSizeAndFileCount(behpath, behCount, behSize);
+        numIssues += CheckFileCountAndSize(auditid, fixErrors, "series", s.seriesid, seriesdesc + " beh", behpath, "mr_series", "mrseries_id", "numfiles_beh", "beh_size", s.behNumFilesIsNull, s.behNumFiles, s.behSizeIsNull, s.behSize, behCount, behSize, numFixed);
+
+        /* QC/QA files are stored in the qa/ (mriqa module) and qc/ (qc module) directories */
         qint64 qaCount = 0, qaSize = 0, qcCount = 0, qcSize = 0;
         GetDirSizeAndFileCount(seriespath + "/qa", qaCount, qaSize, true);
         GetDirSizeAndFileCount(seriespath + "/qc", qcCount, qcSize, true);
-        qint64 diskCount = qaCount + qcCount;
-        qint64 diskSize = qaSize + qcSize;
-        numChecked++;
-
-        numIssues += CheckFileCountAndSize(auditid, fixErrors, "series", s.seriesid, QString("MR series %1/%2/%3 QC/QA").arg(s.uid).arg(s.studynum).arg(s.seriesnum), seriespath, "mr_series", "mrseries_id", "qc_numfiles", "qc_size", s.qcNumFilesIsNull, s.qcNumFiles, s.qcSizeIsNull, s.qcSize, diskCount, diskSize, numFixed);
+        numIssues += CheckFileCountAndSize(auditid, fixErrors, "series", s.seriesid, seriesdesc + " QC/QA", seriespath + "/{qa,qc}", "mr_series", "mrseries_id", "qc_numfiles", "qc_size", s.qcNumFilesIsNull, s.qcNumFiles, s.qcSizeIsNull, s.qcSize, qaCount + qcCount, qaSize + qcSize, numFixed);
     }
 
     SetAuditProgress(auditid, total, total);
@@ -239,6 +279,8 @@ bool moduleAudit::AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors
     m = QString("Checked %1 of %2 MR series. Found %3 issues, fixed %4").arg(numChecked).arg(total).arg(numIssues).arg(numFixed);
     if (numSkipped > 0)
         m += QString(". Skipped %1 series with an invalid path (see the module log)").arg(numSkipped);
+    if (numNoDataType > 0)
+        m += QString(". Did not check data files for %1 series with a blank or invalid data_type (see the module log)").arg(numNoDataType);
 
     return true;
 }
