@@ -189,6 +189,25 @@
 							</td>
 						</tr>
 						<?
+						/* breakdown of the modality's size, ie MR data and QC/QA files */
+						foreach ($m['subitems'] as $sub) {
+							$subpct = ($imagingtotals['size'] > 0) ? ($sub['size'] / $imagingtotals['size']) * 100.0 : 0;
+							?>
+							<tr style="color: gray">
+								<td style="padding-left: 2em"><?=htmlspecialchars($sub['label'])?></td>
+								<td></td>
+								<td></td>
+								<td class="right aligned"><?=number_format($sub['files'])?></td>
+								<td class="right aligned"><?=HumanReadableFilesize($sub['size'])?></td>
+								<td class="right aligned tt"><?=number_format($sub['size'])?></td>
+								<td>
+									<div class="ui tiny grey progress" style="margin: 0" data-percent="<?=(int)round($subpct)?>" title="<?=number_format($subpct, 1)?>%">
+										<div class="bar" style="width: <?=number_format($subpct, 1, '.', '')?>%; min-width: 0"></div>
+									</div>
+								</td>
+							</tr>
+							<?
+						}
 					}
 					?>
 				</tbody>
@@ -204,7 +223,7 @@
 					</tr>
 				</tfoot>
 			</table>
-			<div style="color: gray; font-size: smaller">Sizes are the archived series sizes recorded in the database. Studies are counted once per modality; a study with multiple modalities is counted once in the total.</div>
+			<div style="color: gray; font-size: smaller">Sizes are the archived series sizes recorded in the database. MR sizes include the QC/QA files (the series' qa/ and qc/ directories). Studies are counted once per modality; a study with multiple modalities is counted once in the total.</div>
 			<? } ?>
 
 			<h3 class="ui dividing header">Analysis data</h3>
@@ -399,7 +418,8 @@
 	/* ------- GetImagingUsage -------------------- */
 	/* -------------------------------------------- */
 	/* Returns [per-modality rows (sorted by size, largest first), totals] of the project's imaging
-	   data across every modality that has a *_series table */
+	   data across every modality that has a *_series table. A modality that records QC/QA files (MR)
+	   includes them in its size, and lists its data and QC/QA sizes separately in 'subitems' */
 	function GetImagingUsage($projectid) {
 		$projectid = (int)$projectid;
 		$rows = array();
@@ -414,9 +434,9 @@
 		}
 
 		/* find the series tables that exist, and which file-count column each has. Most use
-		   series_numfiles; mr_series uses numfiles */
+		   series_numfiles; mr_series uses numfiles. mr_series also records its QC/QA files (qc_numfiles, qc_size) */
 		$tables = array();
-		$sqlstring = "select table_name, column_name from information_schema.columns where table_schema = database() and table_name like '%\_series' and column_name in ('study_id', 'series_size', 'series_numfiles', 'numfiles')";
+		$sqlstring = "select table_name, column_name from information_schema.columns where table_schema = database() and table_name like '%\_series' and column_name in ('study_id', 'series_size', 'series_numfiles', 'numfiles', 'qc_numfiles', 'qc_size')";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$row = array_change_key_case($row, CASE_LOWER);
@@ -435,8 +455,12 @@
 			else
 				$filecol = "0";
 
+			/* QC/QA files are only recorded for some modalities (MR) */
+			$hasqc = isset($tables[$table]['qc_numfiles']) && isset($tables[$table]['qc_size']);
+			$qccols = $hasqc ? ", coalesce(sum(a.qc_numfiles),0) 'qcfiles', coalesce(sum(a.qc_size),0) 'qcsize'" : "";
+
 			/* $table is validated against information_schema above, so it is safe to use in the query */
-			$sqlstring = "select count(distinct a.study_id) 'studies', count(*) 'series', coalesce(sum($filecol),0) 'files', coalesce(sum(a.series_size),0) 'size' from `$table` a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ?";
+			$sqlstring = "select count(distinct a.study_id) 'studies', count(*) 'series', coalesce(sum($filecol),0) 'files', coalesce(sum(a.series_size),0) 'size'$qccols from `$table` a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $projectid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
@@ -446,10 +470,21 @@
 			if (($row['series'] ?? 0) == 0)
 				continue;
 
-			$rows[] = array('modality' => $modality, 'desc' => $desc ?? '', 'studies' => (int)$row['studies'], 'series' => (int)$row['series'], 'files' => (float)$row['files'], 'size' => (float)$row['size']);
+			/* the modality's files and size are its data plus any QC/QA files, which are also listed separately */
+			$files = (float)$row['files'];
+			$size = (float)$row['size'];
+			$subitems = array();
+			if ($hasqc) {
+				$subitems[] = array('label' => 'Data', 'files' => $files, 'size' => $size);
+				$subitems[] = array('label' => 'QC/QA', 'files' => (float)$row['qcfiles'], 'size' => (float)$row['qcsize']);
+				$files += (float)$row['qcfiles'];
+				$size += (float)$row['qcsize'];
+			}
+
+			$rows[] = array('modality' => $modality, 'desc' => $desc ?? '', 'studies' => (int)$row['studies'], 'series' => (int)$row['series'], 'files' => $files, 'size' => $size, 'subitems' => $subitems);
 			$totals['series'] += (int)$row['series'];
-			$totals['files'] += (float)$row['files'];
-			$totals['size'] += (float)$row['size'];
+			$totals['files'] += $files;
+			$totals['size'] += $size;
 		}
 
 		usort($rows, function($a, $b) { return $b['size'] <=> $a['size']; });
