@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 
 	require "functions.php";
 	require "includes_php.php";
@@ -56,6 +57,11 @@
 
 	/* in-place edit of the NDA project number / submission id - saves and returns a short status string */
 	if ($action == "updatendainfoajax") {
+		/* mutating: must be a POST carrying this session's CSRF token (sent by ndaSaveInfo() below) */
+		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || (!VerifyCSRFToken(false))) {
+			echo "error";
+			exit;
+		}
 		$ok = UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
 		echo $ok ? "success" : "error";
 		exit;
@@ -74,22 +80,34 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	$action = GetSafeAction(array("updatendainfo", "updatendamapping", "updatendaproject")); /* mutating actions require POST + CSRF token */
+
 	/* ----- route the action ----- */
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 	switch ($action) {
 		case 'updatendainfo':
-			UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile);
-			DisplayNDA($projectid);
+			ob_start();
+			if (UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile))
+				Notice("NDA submission info saved");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("nda.php?projectid=$projectid");
 			break;
 		case 'updatendamapping':
+			ob_start();
 			UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids);
-			EditNDAMapping($projectid);
+			Notice("NDA mapping saved");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("nda.php?action=editndamapping&projectid=$projectid");
 			break;
 		case 'editndamapping':
 			EditNDAMapping($projectid);
 			break;
 		case 'updatendaproject':
+			ob_start();
 			UpdateNDAProject($projectid, $nda_collectionid, $expected_data, $submission_dates);
-			DisplayNDA($projectid);
+			Notice("NDA project information saved");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("nda.php?projectid=$projectid");
 			break;
 		case 'editndaproject':
 			EditNDAProjectForm($projectid);
@@ -106,6 +124,7 @@
 	/* ------- DisplayNDA ------------------------- */
 	/* -------------------------------------------- */
 	function DisplayNDA($projectid) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		$projectid = (int)$projectid;
 
 		if ($projectid < 1) {
@@ -156,6 +175,7 @@
 				body.append('exportid', exportid);
 				body.append('ndaprojectnumber', proj);
 				body.append('ndasubmissionid', sub);
+				body.append('csrftoken', <?=json_encode($_SESSION['csrftoken'] ?? '')?>);
 
 				fetch('nda.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString() })
 					.then(function(r) { return r.text(); })
@@ -222,6 +242,7 @@
 				<td class="collapsing">
 					<form id="<?=$b_name?>form" class="ui form" action="nda.php" enctype="multipart/form-data" method="post">
 						<input type="hidden" name="action" value="updatendainfo">
+						<?=CSRFTokenField()?>
 						<input type="hidden" name="projectid" value="<?=$projectid?>">
 						<input type="hidden" name="exportid" value="<?=$exportid?>">
 					</form>
@@ -439,6 +460,7 @@
 			<h2 class="ui header">Edit NDA Project Information</h2>
 			<form class="ui form" action="nda.php" method="post">
 				<input type="hidden" name="action" value="updatendaproject">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="projectid" value="<?=$projectid?>">
 				<div class="field">
 					<label>NDA Collection ID</label>
@@ -656,6 +678,7 @@
 	/* ------- EditNDAMapping --------------------- */
 	/* -------------------------------------------- */
 	function EditNDAMapping($projectid) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		$projectid = (int)$projectid;
 
 		if ($projectid < 1) {
@@ -705,6 +728,7 @@
 		<div class="ui text container grid">
 		<form action="nda.php" method="post">
 		<input type="hidden" name="action" value="updatendamapping">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<b>NDA mapping</b>
 		<br>

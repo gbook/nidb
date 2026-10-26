@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -46,14 +47,14 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
-		$analysisdirid = GetVariable("analysisdirid");
+		$action = GetSafeAction(array("addpath", "updatepath", "deletepath", "addcluster", "updatecluster", "deletecluster")); /* mutating actions require POST + CSRF token */
+		$analysisdirid = (int)GetVariable("analysisdirid");
 		$nidbpath = GetVariable("nidbpath");
 		$clusterpath = GetVariable("clusterpath");
 		$shortname = GetVariable("shortname");
 		$dirformat = GetVariable("dirformat");
 
-		$clusterid = GetVariable("clusterid");
+		$clusterid = (int)GetVariable("clusterid");
 		$clustername = GetVariable("clustername");
 		$clusterdesc = GetVariable("clusterdesc");
 		$clustertype = GetVariable("clustertype");
@@ -62,10 +63,8 @@
 		$clustersubmithostuser = GetVariable("clustersubmithostuser");
 		$clusterqueue = GetVariable("clusterqueue");
 		
-		//PrintVariable($_POST);
-
-		//exit(0);
 		/* determine action */
+		/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 		if ($action == "editpathform") {
 			DisplayPathForm("edit", $analysisdirid);
 		}
@@ -73,15 +72,22 @@
 			DisplayPathForm("add", "");
 		}
 		elseif ($action == "updatepath") {
+			ob_start();
 			UpdatePath($analysisdirid, $nidbpath, $clusterpath, $shortname, $dirformat);
-			DisplayClusterSettings();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		elseif ($action == "addpath") {
+			ob_start();
 			AddPath($nidbpath, $clusterpath, $shortname, $dirformat);
-			DisplayClusterSettings();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		elseif ($action == "deletepath") {
+			ob_start();
 			DeletePath($analysisdirid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		elseif ($action == "editclusterform") {
 			DisplayClusterForm("edit", $clusterid);
@@ -90,15 +96,22 @@
 			DisplayClusterForm("add", "");
 		}
 		elseif ($action == "updatecluster") {
+			ob_start();
 			UpdateCluster($clusterid, $clustername, $clusterdesc, $clustertype, $clusteruser, $clustersubmithost, $clustersubmithostuser, $clusterqueue);
-			DisplayClusterSettings();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		elseif ($action == "addcluster") {
+			ob_start();
 			AddCluster($clustername, $clusterdesc, $clustertype, $clusteruser, $clustersubmithost, $clustersubmithostuser, $clusterqueue);
-			DisplayClusterSettings();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		elseif ($action == "deletecluster") {
+			ob_start();
 			DeleteCluster($clusterid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("clustersettings.php");
 		}
 		else {
 			DisplayClusterSettings();
@@ -112,18 +125,17 @@
 	/* ------- UpdatePath ------------------------- */
 	/* -------------------------------------------- */
 	function UpdatePath($analysisdirid, $nidbpath, $clusterpath, $shortname, $dirformat) {
-		/* perform data checks */
-		$analysisdirid = mysqli_real_escape_string($GLOBALS['linki'], $analysisdirid);
-		$nidbpath = mysqli_real_escape_string($GLOBALS['linki'], $nidbpath);
-		$clusterpath = mysqli_real_escape_string($GLOBALS['linki'], $clusterpath);
-		$shortname = mysqli_real_escape_string($GLOBALS['linki'], $shortname);
-		$dirformat = mysqli_real_escape_string($GLOBALS['linki'], $dirformat);
+		$analysisdirid = (int)$analysisdirid;
+		if ($dirformat != "uidfirst")
+			$dirformat = "pipelinefirst";
 		
-		/* update the site */
-		$sqlstring = "update analysisdirs set nidbpath = '$nidbpath', clusterpath = '$clusterpath', shortname = '$shortname', dirformat = '$dirformat' where analysisdir_id = $analysisdirid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update analysisdirs set nidbpath = ?, clusterpath = ?, shortname = ?, dirformat = ? where analysisdir_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssi', $nidbpath, $clusterpath, $shortname, $dirformat, $analysisdirid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($nidbpath, $clusterpath, $shortname, $dirformat, $analysisdirid));
+		mysqli_stmt_close($stmt);
 		
-		Notice("Path $pathname updated");
+		Notice("Path " . htmlspecialchars($shortname ?? '') . " updated");
 	}
 
 
@@ -131,20 +143,16 @@
 	/* ------- AddPath ---------------------------- */
 	/* -------------------------------------------- */
 	function AddPath($nidbpath, $clusterpath, $shortname, $dirformat) {
-		/* perform data checks */
-		$nidbpath = mysqli_real_escape_string($GLOBALS['linki'], $nidbpath);
-		$clusterpath = mysqli_real_escape_string($GLOBALS['linki'], $clusterpath);
-		$shortname = mysqli_real_escape_string($GLOBALS['linki'], $shortname);
-		$dirformat = mysqli_real_escape_string($GLOBALS['linki'], $dirformat);
-
 		if ($dirformat != "uidfirst")
 			$dirformat = "pipelinefirst";
 		
-		/* insert the new analysis dir */
-		$sqlstring = "insert into analysisdirs (nidbpath, clusterpath, shortname, dirformat) values ('$nidbpath', '$clusterpath', '$shortname', '$dirformat')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into analysisdirs (nidbpath, clusterpath, shortname, dirformat) values (?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssss', $nidbpath, $clusterpath, $shortname, $dirformat);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($nidbpath, $clusterpath, $shortname, $dirformat));
+		mysqli_stmt_close($stmt);
 		
-		Notice("Path $pathname added");
+		Notice("Path " . htmlspecialchars($shortname ?? '') . " added");
 	}
 
 
@@ -152,29 +160,30 @@
 	/* ------- DeletePath ------------------------- */
 	/* -------------------------------------------- */
 	function DeletePath($analysisdirid) {
-		$sqlstring = "delete from analysisdirs where analysisdir_id = $analysisdirid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$analysisdirid = (int)$analysisdirid;
+		$sqlstring = "delete from analysisdirs where analysisdir_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $analysisdirid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($analysisdirid));
+		mysqli_stmt_close($stmt);
 
-		Notice("Path added");
+		Notice("Path deleted");
 	}	
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateCluster ---------------------- */
 	/* -------------------------------------------- */
-	function UpdateCluster($analysisdirid, $nidbpath, $clusterpath, $shortname, $dirformat) {
-		/* perform data checks */
-		$analysisdirid = mysqli_real_escape_string($GLOBALS['linki'], $analysisdirid);
-		$nidbpath = mysqli_real_escape_string($GLOBALS['linki'], $nidbpath);
-		$clusterpath = mysqli_real_escape_string($GLOBALS['linki'], $clusterpath);
-		$shortname = mysqli_real_escape_string($GLOBALS['linki'], $shortname);
-		$dirformat = mysqli_real_escape_string($GLOBALS['linki'], $dirformat);
+	function UpdateCluster($clusterid, $clustername, $clusterdesc, $clustertype, $clusteruser, $clustersubmithost, $clustersubmithostuser, $clusterqueue) {
+		$clusterid = (int)$clusterid;
 		
-		/* update the site */
-		$sqlstring = "update analysisdirs set nidbpath = '$nidbpath', clusterpath = '$clusterpath', shortname = '$shortname', dirformat = '$dirformat' where analysisdir_id = $analysisdirid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update compute_cluster set cluster_name = ?, cluster_desc = ?, cluster_type = ?, submit_hostname = ?, submithost_username = ?, cluster_username = ?, queues = ? where computecluster_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssssi', $clustername, $clusterdesc, $clustertype, $clustersubmithost, $clustersubmithostuser, $clusteruser, $clusterqueue, $clusterid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($clustername, $clusterdesc, $clustertype, $clustersubmithost, $clustersubmithostuser, $clusteruser, $clusterqueue, $clusterid));
+		mysqli_stmt_close($stmt);
 		
-		Notice("Path $pathname updated");
+		Notice("Cluster " . htmlspecialchars($clustername ?? '') . " updated");
 	}
 
 
@@ -182,22 +191,13 @@
 	/* ------- AddCluster ------------------------- */
 	/* -------------------------------------------- */
 	function AddCluster($clustername, $clusterdesc, $clustertype, $clusteruser, $clustersubmithost, $clustersubmithostuser, $clusterqueue) {
-
-		/* perform data checks */
-		$clustername = mysqli_real_escape_string($GLOBALS['linki'], $clustername);
-		$clusterdesc = mysqli_real_escape_string($GLOBALS['linki'], $clusterdesc);
-		$clustertype = mysqli_real_escape_string($GLOBALS['linki'], $clustertype);
-		$clusteruser = mysqli_real_escape_string($GLOBALS['linki'], $clusteruser);
-		$clustersubmithost = mysqli_real_escape_string($GLOBALS['linki'], $clustersubmithost);
-		$clustersubmithostuser = mysqli_real_escape_string($GLOBALS['linki'], $clustersubmithostuser);
-		$clusterqueue = mysqli_real_escape_string($GLOBALS['linki'], $clusterqueue);
-
-		/* insert the new analysis dir */
-		$sqlstring = "insert into compute_cluster (cluster_name, cluster_desc, cluster_type, submit_hostname, submithost_username, cluster_username, queues) values ('$clustername', '$clusterdesc', '$clustertype', '$clustersubmithost', '$clustersubmithostuser', '$clusteruser', '$clusterqueue')";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into compute_cluster (cluster_name, cluster_desc, cluster_type, submit_hostname, submithost_username, cluster_username, queues) values (?, ?, ?, ?, ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssss', $clustername, $clusterdesc, $clustertype, $clustersubmithost, $clustersubmithostuser, $clusteruser, $clusterqueue);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($clustername, $clusterdesc, $clustertype, $clustersubmithost, $clustersubmithostuser, $clusteruser, $clusterqueue));
+		mysqli_stmt_close($stmt);
 		
-		Notice("Cluster $clustername added");
+		Notice("Cluster " . htmlspecialchars($clustername ?? '') . " added");
 	}
 
 
@@ -205,10 +205,14 @@
 	/* ------- DeleteCluster ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteCluster($clusterid) {
-		$sqlstring = "delete from analysisdirs where analysisdir_id = $analysisdirid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$clusterid = (int)$clusterid;
+		$sqlstring = "delete from compute_cluster where computecluster_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $clusterid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($clusterid));
+		mysqli_stmt_close($stmt);
 
-		Notice("Path added");
+		Notice("Cluster deleted");
 	}	
 	
 	
@@ -219,20 +223,25 @@
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from analysisdirs where analysisdir_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$id = (int)$id;
+			$sqlstring = "select * from analysisdirs where analysisdir_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$shortname = $row['shortname'];
-			$nidbpath = $row['nidbpath'];
-			$clusterpath = $row['clusterpath'];
-			$dirformat = $row['dirformat'];
+			mysqli_stmt_close($stmt);
+			$shortname = $row['shortname'] ?? '';
+			$nidbpath = $row['nidbpath'] ?? '';
+			$clusterpath = $row['clusterpath'] ?? '';
+			$dirformat = $row['dirformat'] ?? '';
 		
-			$formaction = "update";
-			$formtitle = "Updating $shortname";
+			$formaction = "updatepath";
+			$formtitle = "Updating " . htmlspecialchars($shortname);
 			$submitbuttonlabel = "Update";
 		}
 		else {
-			$formaction = "add";
+			$shortname = $nidbpath = $clusterpath = $dirformat = "";
+			$formaction = "addpath";
 			$formtitle = "Add new path";
 			$submitbuttonlabel = "Add";
 		}
@@ -241,29 +250,30 @@
 		<div class="ui text container">
 			<form method="post" action="clustersettings.php" class="ui form">
 			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="analysisdirid" value="<?=$id?>">
+			<input type="hidden" name="analysisdirid" value="<?=(int)$id?>">
+			<?=CSRFTokenField()?>
 
 			<h2 class="ui dividing header"><?=$formtitle?></h2>
 
 			<div class="field">
 				<label>Name</label>
-				<input name="shortname" value="<?=$shortname?>">
+				<input name="shortname" value="<?=htmlspecialchars($shortname)?>">
 			</div>
 
 			<div class="field">
 				<label>NiDB path <i class="question circle outline icon" title="As the path appears on the NiDB server"></i></label>
-				<input type="text" id="nidbpath" name="nidbpath" value="<?=$nidbpath?>" style="font-family: monospace">
+				<input type="text" id="nidbpath" name="nidbpath" value="<?=htmlspecialchars($nidbpath)?>" style="font-family: monospace">
 			</div>
 			
 			<div class="field">
 				<label>Cluster path <i class="question circle outline icon" title="As the path appears on the compute cluster"></i></label>
-				<input name="clusterpath" value="<?=$clusterpath?>" style="font-family: monospace">
+				<input name="clusterpath" value="<?=htmlspecialchars($clusterpath)?>" style="font-family: monospace">
 			</div>
 
 			<div class="field">
 				<label>Directory structure</label>
 				<div class="ui selection dropdown">
-					<input type="hidden" name="dirformat" value="<?=$dirformat?>">
+					<input type="hidden" name="dirformat" value="<?=htmlspecialchars($dirformat)?>">
 					<i class="dropdown icon"></i>
 					<div class="default text">Dir format</div>
 					<div class="scrollhint menu">
@@ -293,22 +303,27 @@
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from compute_cluster where computecluster_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$id = (int)$id;
+			$sqlstring = "select * from compute_cluster where computecluster_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$clustername = $row['cluster_name'];
-			$clusterdesc = $row['cluster_desc'];
-			$clustertype = $row['cluster_type'];
-			$submithost = $row['submit_hostname'];
-			$submithostuser = $row['submithost_username'];
-			$clusteruser = $row['cluster_username'];
-			$queue = $row['queues'];
+			mysqli_stmt_close($stmt);
+			$clustername = $row['cluster_name'] ?? '';
+			$clusterdesc = $row['cluster_desc'] ?? '';
+			$clustertype = $row['cluster_type'] ?? '';
+			$submithost = $row['submit_hostname'] ?? '';
+			$submithostuser = $row['submithost_username'] ?? '';
+			$clusteruser = $row['cluster_username'] ?? '';
+			$queue = $row['queues'] ?? '';
 		
 			$formaction = "updatecluster";
-			$formtitle = "Updating $shortname cluster";
+			$formtitle = "Updating " . htmlspecialchars($clustername) . " cluster";
 			$submitbuttonlabel = "Update";
 		}
 		else {
+			$clustername = $clusterdesc = $clustertype = $submithost = $submithostuser = $clusteruser = $queue = "";
 			$formaction = "addcluster";
 			$formtitle = "Add new cluster";
 			$submitbuttonlabel = "Add";
@@ -350,7 +365,8 @@
 		<div class="ui text container">
 			<form method="post" action="clustersettings.php" class="ui fluid form">
 			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="clusterid" value="<?=$id?>">
+			<input type="hidden" name="clusterid" value="<?=(int)$id?>">
+			<?=CSRFTokenField()?>
 
 			<h2 class="ui dividing header"><?=$formtitle?></h2>
 
@@ -359,7 +375,7 @@
 					<td class="label" valign="top" align="right">Cluster short name</td>
 					<td valign="top">
 						<div class="ui fluid input">
-							<input type="text" name="clustername" value="<?=$clustername?>" id="clustername" onChange="CheckHostnameStatus()">
+							<input type="text" name="clustername" value="<?=htmlspecialchars($clustername)?>" id="clustername" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -367,7 +383,7 @@
 					<td class="label" valign="top" align="right">Cluster description</td>
 					<td valign="top">
 						<div class="ui fluid input">
-							<input type="text" name="clusterdesc" value="<?=$clusterdesc?>" id="clusterdesc" onChange="CheckHostnameStatus()">
+							<input type="text" name="clusterdesc" value="<?=htmlspecialchars($clusterdesc)?>" id="clusterdesc" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -375,7 +391,7 @@
 					<td class="label" valign="top" align="right">Cluster type</td>
 					<td valign="top">
 						<div class="ui selection fluid dropdown">
-							<input type="hidden" name="clustertype" id="clustertype" value="<?=$clustertype?>" onChange="CheckHostnameStatus()">
+							<input type="hidden" name="clustertype" id="clustertype" value="<?=htmlspecialchars($clustertype)?>" onChange="CheckHostnameStatus()">
 							<i class="dropdown icon"></i>
 							<div class="default text">Cluster...</div>
 							<div class="scrollhint menu">
@@ -389,7 +405,7 @@
 					<td class="label" valign="top" align="right">Cluster user</td>
 					<td valign="top">
 						<div class="ui fluid input">
-							<input type="text" name="clusteruser" value="<?=$clusteruser?>" id="clusteruser" onChange="CheckHostnameStatus()">
+							<input type="text" name="clusteruser" value="<?=htmlspecialchars($clusteruser)?>" id="clusteruser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -397,7 +413,7 @@
 					<td class="label" valign="top" align="right">Submit hostname</td>
 					<td valign="top">
 						<div class="ui fluid input" id="clustersubmithostinput">
-							<input type="text" name="clustersubmithost" id="clustersubmithost" value="<?=$submithost?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
+							<input type="text" name="clustersubmithost" id="clustersubmithost" value="<?=htmlspecialchars($submithost)?>" onChange="CheckHostnameStatus()" onLoad="CheckHostnameStatus()">
 						</div>
 						<div id="hostup"></div>
 					</td>
@@ -406,7 +422,7 @@
 					<td class="label" valign="top" align="right">Submit host username</td>
 					<td valign="top">
 						<div class="ui fluid input">
-							<input type="text" name="clustersubmithostuser" value="<?=$submithostuser?>" id="clustersubmithostuser" onChange="CheckHostnameStatus()">
+							<input type="text" name="clustersubmithostuser" value="<?=htmlspecialchars($submithostuser)?>" id="clustersubmithostuser" onChange="CheckHostnameStatus()">
 						</div>
 					</td>
 				</tr>
@@ -414,7 +430,7 @@
 					<td class="label" valign="top" align="right">Queue(s)<br><span class="tiny">Comma separated list</span></td>
 					<td valign="top">
 						<div class="ui fluid input">
-							<input type="text" name="clusterqueue" value="<?=$queue?>" required>
+							<input type="text" name="clusterqueue" value="<?=htmlspecialchars($queue)?>" required>
 						</div>
 					</td>
 				</tr>
@@ -439,6 +455,7 @@
 	/* ------- DisplayClusterSettings ------------- */
 	/* -------------------------------------------- */
 	function DisplayClusterSettings() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 	<div class="ui container">
 		<div class="ui two column grid">
@@ -471,10 +488,10 @@
 						$dirformat = $row['dirformat'];
 						?>
 						<tr>
-							<td><a href="clustersettings.php?action=editpathform&analysisdirid=<?=$id?>"><?=$shortname?></td>
-							<td><tt><?=$nidbpath?></tt></td>
-							<td><tt><?=$clusterpath?></tt></td>
-							<td><?=$dirformat?></td>
+							<td><a href="clustersettings.php?action=editpathform&analysisdirid=<?=$id?>"><?=htmlspecialchars($shortname ?? '')?></a></td>
+							<td><tt><?=htmlspecialchars($nidbpath ?? '')?></tt></td>
+							<td><tt><?=htmlspecialchars($clusterpath ?? '')?></tt></td>
+							<td><?=htmlspecialchars($dirformat ?? '')?></td>
 						</tr>
 						<? 
 					}

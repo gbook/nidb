@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -47,17 +48,18 @@
 	}
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("deleteoldpipelineprocs")); /* mutating actions require POST + CSRF token */
 
-	/* optionally clean up stale pipeline process rows before rendering */
-	$pipelineMsg = "";
+	/* optionally clean up stale pipeline process rows, then redirect (POST/Redirect/GET) so a refresh doesn't re-submit.
+	   The message is shown in the pipeline module's cell by ShowFlashMessage() */
 	if ($action == "deleteoldpipelineprocs") {
 		$n = DeleteOldPipelineProcs();
-		$pipelineMsg = "Deleted $n stale pipeline process row(s) (last check-in over 30 days ago).";
+		$_SESSION['flash'] = '<div class="ui small positive message">' . htmlspecialchars("Deleted $n stale pipeline process row(s) (last check-in over 30 days ago).") . '</div>';
+		RedirectTo("status.php");
 	}
 
 	/* this page has a single status view */
-	DisplayStatus($pipelineMsg);
+	DisplayStatus();
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
@@ -66,7 +68,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayStatus ---------------------- */
 	/* -------------------------------------------- */
-	function DisplayStatus($pipelineMsg = "") {
+	function DisplayStatus() {
 
 		# get DB status from the existing connection
 		$dbStatus = explode("  ", mysqli_stat($GLOBALS['linki']));
@@ -459,11 +461,10 @@
 				<tr>
 					<td><h3 class="header"><a href="adminmodules.php?action=viewlogs&modulename=pipeline" title="View pipeline.pl logs">Pipeline module</a></h3></td>
 					<td>
-						<? if ($pipelineMsg != "") { ?>
-							<div class="ui small positive message"><?=htmlspecialchars($pipelineMsg)?></div>
-						<? } ?>
+						<? ShowFlashMessage(); /* message from deleteoldpipelineprocs, which redirected here (PRG) */ ?>
 						<form method="post" action="status.php" onsubmit="return confirm('Delete all pipeline process rows whose last check-in was more than 30 days ago?');" style="margin-bottom: 10px">
 							<input type="hidden" name="action" value="deleteoldpipelineprocs">
+							<?=CSRFTokenField()?>
 							<button class="ui small red button" type="submit"><i class="trash icon"></i> Delete processes older than 30 days</button>
 						</form>
 						<table class="ui very small very compact celled selectable grey table">

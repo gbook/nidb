@@ -47,8 +47,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
-		$id = GetVariable("id");
+		$action = GetSafeAction(array("add", "update", "delete")); /* mutating actions require POST + CSRF token */
+		$id = (int)GetVariable("id");
 		$sitename = GetVariable("sitename");
 		$siteaddress = GetVariable("siteaddress");
 		$sitecontact = GetVariable("sitecontact");
@@ -179,6 +179,7 @@
 			<form method="post" action="adminsites.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
 				<input type="hidden" name="id" value="<?=$id?>">
+				<?=CSRFTokenField()?>
 
 				<div class="required field">
 					<label>Site Name</label>

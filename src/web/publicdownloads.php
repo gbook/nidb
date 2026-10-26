@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -42,15 +43,23 @@
 	require "nidbapi.php";
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("changepassword", "delete")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
+	$password = GetVariable("password");
 	
 	/* determine action */
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit. Neither has a form in the UI yet */
 	if ($action == "changepassword") {
-		ChangePassword($id);
+		ob_start();
+		ChangePassword($id, $password);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("publicdownloads.php");
 	}
 	elseif ($action == "delete") {
+		ob_start();
 		DeleteDownload($id);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("publicdownloads.php");
 	}
 	else {
 		DisplayDownloadList();
@@ -64,14 +73,17 @@
 	/* ------- ChangePassword --------------------- */
 	/* -------------------------------------------- */
 	function ChangePassword($id, $password) {
-		/* perform data checks */
-		$pwd = sha1($password);
+		$id = (int)$id;
+		$pwd = sha1((string)$password);
 		
-		/* update the site */
-		$sqlstring = "update public_downloads set pd_password = '$pwd' where pd_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* only the download's creator can change its password */
+		$sqlstring = "update public_downloads set pd_password = ? where pd_id = ? and pd_createdby = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sis', $pwd, $id, $_SESSION['username']);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array('(password)', $id, $_SESSION['username']));
+		mysqli_stmt_close($stmt);
 		
-		?><div align="center"><span class="message"><?=$id?> updated</span></div><br><br><?
+		Notice("Download $id password updated");
 	}
 
 
@@ -88,6 +100,7 @@
 	/* ------- DisplayDownloadList ---------------- */
 	/* -------------------------------------------- */
 	function DisplayDownloadList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 	?>
 	<script>
 		function CopyToClipboard(id) {
@@ -123,9 +136,11 @@
 		</thead>
 		<tbody>
 			<?
-				$sqlstring = "select * from public_downloads where pd_createdby = '" . $_SESSION['username'] . "' or pd_shareinternal = 1 order by pd_createdate desc";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from public_downloads where pd_createdby = ? or pd_shareinternal = 1 order by pd_createdate desc";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 's', $_SESSION['username']);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($_SESSION['username']));
+				mysqli_stmt_close($stmt);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$id = $row['pd_id'];
 					$createdate = $row['pd_createdate'];
@@ -145,18 +160,18 @@
 					$key = strtoupper($row['pd_key']);
 			?>
 			<tr>
-				<td><?=$desc?></td>
-				<td><?=$status?></td>
-				<td style="font-size:9pt"><?=$createdate?></td>
-				<td style="font-size:9pt"><?=$expiredate?></td>
-				<td><i class="sticky note outline icon" title="<?=$notes?>"></i></td>
+				<td><?=htmlspecialchars($desc ?? '')?></td>
+				<td><?=htmlspecialchars($status ?? '')?></td>
+				<td style="font-size:9pt"><?=htmlspecialchars($createdate ?? '')?></td>
+				<td style="font-size:9pt"><?=htmlspecialchars($expiredate ?? '')?></td>
+				<td><i class="sticky note outline icon" title="<?=htmlspecialchars($notes ?? '')?>"></i></td>
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($zipsize)?></td>
 				<td style="font-size:9pt" align="right"><?=HumanReadableFilesize($unzipsize)?></td>
-				<td><?=$createdby?></td>
-				<td style="font-size:8pt"><tt><?=$password?></tt></td>
+				<td><?=htmlspecialchars($createdby ?? '')?></td>
+				<td style="font-size:8pt"><tt><?=htmlspecialchars($password)?></tt></td>
 				<td>
 					<div class="ui action input">
-						<input type="text" size="80" id="linktext<?=$id?>" value="<?=$GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key"?>">
+						<input type="text" size="80" id="linktext<?=$id?>" value="<?=htmlspecialchars($GLOBALS['cfg']['siteurl'] . "/pd.php?k=$key")?>">
 						<button class="ui button" onClick="CopyToClipboard('linktext<?=$id?>')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 					</div>
 				</td>

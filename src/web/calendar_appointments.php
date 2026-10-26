@@ -23,7 +23,7 @@
 
 	define("LEGIT_REQUEST", true);
 	
-	ob_start(); // for any page redirects
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 	session_start();
 ?>
 
@@ -41,13 +41,13 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	$currentcal = $_COOKIE['currentcal'];
+	$currentcal = (int)($_COOKIE['currentcal'] ?? 0);
 
 	//PrintVariable($_POST);
 	//exit(0);
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("add", "edit", "editall", "delete", "deleteall", "cancel", "cancelall")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$calendarid = (int)GetVariable("calendarid");
 	$projectid = (int)GetVariable("projectid");
@@ -82,11 +82,6 @@
 	if ($isalldayevent == "yes") { $isalldayevent = "1"; } else { $isalldayevent = "0"; }
 	if ($istimerequest == "yes") { $istimerequest = "1"; } else { $istimerequest = "0"; }
 
-	/* need this here because of the redirects */
-	if (($action == "edit") || ($action == "delete") || ($action == "cancel")) {
-	?><!--<META HTTP-EQUIV="refresh" CONTENT="3;URL=calendar.php">--><?
-	}
-	
 	// default project ID, for now
 	if ($projectid == "") { $projectid = 0; }
 	
@@ -94,7 +89,8 @@
 	if ($action == "addform") {
 		DisplayForm("", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate);
 	}
-	if ($action == "add") {
+	/* mutating actions use POST/Redirect/GET (to calendar.php) so a refresh/Back doesn't re-submit */
+	elseif ($action == "add") {
 		Add("add", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 0);
 	}
 	elseif ($action == "editform") {
@@ -107,16 +103,28 @@
 		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 1);
 	}
 	elseif ($action == "delete") {
+		ob_start();
 		Delete($id, $currentcal, 0);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar.php");
 	}
 	elseif ($action == "deleteall") {
+		ob_start();
 		Delete($groupid, $currentcal, 1);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar.php");
 	}
 	elseif ($action == "cancel") {
+		ob_start();
 		Cancel($id, $currentcal, $cancelreason, $notifyusers, 0);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar.php");
 	}
 	elseif ($action == "cancelall") {
+		ob_start();
 		Cancel($groupid, $currentcal, $cancelreason, $notifyusers, 1);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar.php");
 	}
 	elseif (($action == "") || ($action == "list")) {
 		//DisplayList();
@@ -135,8 +143,15 @@
 		if (!strtotime($startdatetime)) { DisplayForm("", "'Start date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		if (!strtotime($enddatetime)) { DisplayForm("", "'End date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 		
-		$details = mysqli_real_escape_string($GLOBALS['linki'], $details);
-		$title = mysqli_real_escape_string($GLOBALS['linki'], $title);
+		$calendarid = (int)$calendarid;
+		$projectid = (int)$projectid;
+		$id = (int)$id;
+		$groupid = (int)$groupid;
+		$isalldayevent = (int)$isalldayevent;
+		$istimerequest = (int)$istimerequest;
+		$startdatetimes = array();
+		$enddatetimes = array();
+		$appts = array();
 
 		/* check if this appointment repeats */
 		if (!$repeats) {
@@ -307,14 +322,13 @@
 				// }
 				
 				/* check to see if this appointment overlaps an existing appt on the same calendar */
-				if ($method == "add") {
-					$sqlstring = "select * from calendar_appointments where ( (appt_startdate > '$startdatetime' and appt_startdate < '$enddatetime') or (appt_enddate > '$startdatetime' and appt_enddate < '$enddatetime') or (appt_startdate = '$startdatetime' and appt_enddate = '$enddatetime') or (appt_startdate < '$startdatetime' and appt_enddate > '$startdatetime') or (appt_startdate < '$enddatetime' and appt_enddate > '$enddatetime') ) and appt_calendarid = $calendarid and appt_deletedate > now() and appt_canceldate > now() and appt_istimerequest <> 1";
-				}
-				else {
-					$sqlstring = "select * from calendar_appointments where ( (appt_startdate > '$startdatetime' and appt_startdate < '$enddatetime') or (appt_enddate > '$startdatetime' and appt_enddate < '$enddatetime') or (appt_startdate = '$startdatetime' and appt_enddate = '$enddatetime') or (appt_startdate < '$startdatetime' and appt_enddate > '$startdatetime') or (appt_startdate < '$enddatetime' and appt_enddate > '$enddatetime') ) and appt_calendarid = $calendarid and appt_deletedate > now() and appt_canceldate > now() and appt_id != $id and appt_istimerequest <> 1";
-				}
-				//echo "<br>$sqlstring<br>";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from calendar_appointments where ( (appt_startdate > ? and appt_startdate < ?) or (appt_enddate > ? and appt_enddate < ?) or (appt_startdate = ? and appt_enddate = ?) or (appt_startdate < ? and appt_enddate > ?) or (appt_startdate < ? and appt_enddate > ?) ) and appt_calendarid = ? and appt_deletedate > now() and appt_canceldate > now() and appt_id != ? and appt_istimerequest <> 1";
+				$excludeid = ($method == "add") ? 0 : $id; /* when updating, don't count the appointment itself */
+				$params = array($startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $startdatetime, $enddatetime, $enddatetime, $calendarid, $excludeid);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ssssssssssii', ...$params);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				mysqli_stmt_close($stmt);
 				if (mysqli_num_rows($result) > 0) {
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$tstart = $row['appt_startdate'];
@@ -329,70 +343,65 @@
 
 			/* if we get to this point, its safe to add to the database */
 			if ($method == "add") {
-				$sqlstring = "insert into calendar_appointments (appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values ('$username', $calendarid, $projectid, '$title', '$details', '$startdatetime', '$enddatetime', $isalldayevent, $istimerequest)";
-				//echo "$sqlstring<br>";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				/* CALULATE&POPULATE GROUP ID */
+				$sqlstring = "insert into calendar_appointments (appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				$params = array($username, $calendarid, $projectid, $title, $details, $startdatetime, $enddatetime, $isalldayevent, $istimerequest);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'siissssii', ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				$newid = mysqli_insert_id($GLOBALS['linki']);
+				mysqli_stmt_close($stmt);
+				/* CALULATE&POPULATE GROUP ID (see security-issues.md N26: this condition never groups a series) */
 				if ($groupid != 0) {
-					$groupid = mysqli_insert_id($GLOBALS['linki']);
-					$sqlstring = "update calendar_appointments set appt_groupid = $groupid where appt_id = $groupid";
-					//echo "$sqlstring<br>";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$groupid = $newid;
+					$sqlstring = "update calendar_appointments set appt_groupid = ? where appt_id = ?";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'ii', $groupid, $groupid);
+					MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($groupid, $groupid));
+					mysqli_stmt_close($stmt);
 				}
 				
 			}
 			else {
 				if ($groupid != 0) {
-					$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					if (mysqli_num_rows($result) > 1) {
+					$sqlstring = "select count(*) 'num' from calendar_appointments where appt_groupid = ?";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $groupid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($groupid));
+					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+					mysqli_stmt_close($stmt);
+					if ((int)($row['num'] ?? 0) > 1) {
 						$repeats = true;
 					}
 				}
 				
 				if ($editall) {
-					$sqlstring = "update calendar_appointments set appt_username = '$username', appt_calendarid = $calendarid, appt_projectid = $projectid, appt_title = '$title', appt_details = '$details', appt_isalldayevent = $isalldayevent, appt_istimerequest = $istimerequest where appt_groupid = $groupid";
+					/* group 0 means "not in a series", so never act on all of those at once */
+					if ($groupid < 1) { DisplayForm($id, "This appointment is not part of a series", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
+					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_groupid = ?";
+					$types = 'siissiii';
+					$params = array($username, $calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $groupid);
+				}
+				elseif ($repeats) {
+					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
+					$types = 'siissiii';
+					$params = array($username, $calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $id);
 				}
 				else {
-					if ($repeats) {
-						$sqlstring = "update calendar_appointments set appt_username = '$username', appt_calendarid = $calendarid, appt_projectid = $projectid, appt_title = '$title', appt_details = '$details', appt_isalldayevent = $isalldayevent, appt_istimerequest = $istimerequest where appt_id = $id";
-					}
-					else {
-						$sqlstring = "update calendar_appointments set appt_username = '$username', appt_calendarid = $calendarid, appt_projectid = $projectid, appt_title = '$title', appt_details = '$details', appt_startdate = '$startdatetime', appt_enddate = '$enddatetime', appt_isalldayevent = $isalldayevent, appt_istimerequest = $istimerequest where appt_id = $id";
-					}
+					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_startdate = ?, appt_enddate = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
+					$types = 'siissssiii';
+					$params = array($username, $calendarid, $projectid, $title, $details, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $id);
 				}
-				//echo "$sqlstring<br>";
-				//exit(0);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, $types, ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				mysqli_stmt_close($stmt);
 			}
 		}
-		?>
-		<div align="center">
-		<?
-			if ($method == "add") { Notice("Appointment added"); } else { echo Notice("Appointment updated"); }
-		?>
-		<br>
-		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
-		</div>
-		<?
-	}	
-
-	
-	/* ----------------------------------------------- */
-	/* --------- Edit -------------------------------- */
-	/* ----------------------------------------------- */
-	function Edit($id, $username, $groupid, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate) {
-		
-		/* check if any form elements are bad, if so redisplay the addform */
-		if ($name == "") { EditForm("'<b>Calendar Appointment</b>' was blank, original values now displayed",$id); return; }
-		if ($description == "") { EditForm("'<b>Description</b>' was blank, original values now displayed",$id); return; }
-		if ($location == "") { EditForm("'<b>Location</b>' was blank, original values now displayed",$id); return; }
-		
-		/* if we get to this point, its safe to add to the database */
-		$sqlstring = "update calendars set calendar_name = '$name', calendar_description = '$description', calendar_location = '$location' where calendar_id = '$id'";
-		//echo $sqlstring;
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		DisplayList();
+		/* success: redirect to the calendar (POST/Redirect/GET). Validation failures above re-render the form instead */
+		ob_start();
+		if ($method == "add") { Notice("Appointment added"); } else { Notice("Appointment updated"); }
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar.php");
 	}	
 
 	
@@ -400,18 +409,20 @@
 	/* --------- Delete ------------------------------ */
 	/* ----------------------------------------------- */
 	function Delete($id, $currentcal, $deleteall) {
+		$id = (int)$id;
 		if ($deleteall) {
-			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid in (select appt_groupid from calendar_appointments where appt_id = '$id')";
+			/* $id is the group id here. Group 0 means "not in a series", so never act on all of those at once */
+			if ($id < 1) { Error("This appointment is not part of a series"); return; }
+			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid = ?";
 		}
 		else {
-			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = '$id'";
+			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = ?";
 		}
-
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		mysqli_stmt_close($stmt);
 		Notice("Appointment deleted");
-		?>
-		<a href="calendar.php" class="ui button"><i class="arrow alternate circle left icon"></i> Back to calendar</a><br>
-		<?
 	}	
 
 
@@ -420,9 +431,13 @@
 	/* ----------------------------------------------- */
 	function Cancel($id, $currentcal, $cancelreason, $notifyusers, $cancelall) {
 		/* get appointment info before changing it */
-		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$calid = $row['appt_calendarid'];
 		$prjid = $row['appt_projectid'];
 		$startdate = date('M j, Y', strtotime($row['appt_startdate']));
@@ -433,13 +448,17 @@
 		$endtime   = date('g:i a', strtotime($row['appt_enddate']));
 
 		if ($cancelall) {
-			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_groupid = '$id'";
+			/* $id is the group id here. Group 0 means "not in a series", so never act on all of those at once */
+			if ($id < 1) { Error("This appointment is not part of a series"); return; }
+			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_groupid = ?";
 		}
 		else {
-			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_id = '$id'";
+			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_id = ?";
 		}
-		echo $sqlstring;
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		mysqli_stmt_close($stmt);
 		
 		/* send an email if necessary */
 		if ($notifyusers != "") {
@@ -448,8 +467,12 @@
 			
 			/* get a list of users who care about this calendar and send an email */
 			$recipients = array();
-			$sqlstring = "select b.user_email 'email' from calendar_notifications a left join users b on a.not_userid = b.user_id where not_calendarid = $calid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$calid = (int)$calid;
+			$sqlstring = "select b.user_email 'email' from calendar_notifications a left join users b on a.not_userid = b.user_id where not_calendarid = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $calid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($calid));
+			mysqli_stmt_close($stmt);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$recipients[] = $row['email'];
 			}
@@ -457,10 +480,7 @@
 			
 			/* get a list of users who care about this project and send an email */
 		}
-		?>
-		<br>
-		Appointment cancelled. Redirecting to calendar.
-		<?
+		Notice("Appointment cancelled");
 	}	
 	
 	
@@ -517,12 +537,14 @@
 		
 		$repeats = false;
 		$apptrepeatscheck = "";
-		if ($id != 0) {
+		/* compare as int: the add form passes $id = "", and on PHP 8 "" != 0 is true, which sent new appointments down the edit path */
+		if ((int)$id > 0) {
 			$type = "edit";
 			$pagetitle = "Edit Appointment";
 			$submitbutton = "Update";
 			
-			$sqlstring = "select * from calendar_appointments where appt_id = $id";
+			$id = (int)$id;
+			$sqlstring = "select * from calendar_appointments where appt_id = $id"; /* $id is cast to int above */
 			//echo $sqlstring;
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -541,7 +563,8 @@
 			$details = $row['appt_details'];
 
 			if ($groupid != 0) {
-				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid";
+				$groupid = (int)$groupid;
+				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid"; /* database integer */
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 1) {
 					$pagetitle = "Edit Recurring Appointment";
@@ -582,6 +605,7 @@
 			<input type="hidden" name="action" value="<?=$type?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="groupid" value="<?=$groupid?>">
+			<?=CSRFTokenField()?>
 			
 			<h3 class="ui dividing header">Appointment</h3>
 			<div class="required field">
@@ -767,6 +791,7 @@
 				<input type="hidden" name="action" value="cancel">
 				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="groupid" value="<?=$groupid?>">
+			<?=CSRFTokenField()?>
 				<div class="field">
 					<label>Cancellation reason</label>
 					<input type="text" name="cancelreason">
@@ -788,6 +813,7 @@
 				<input type="hidden" name="action" value="delete">
 				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="groupid" value="<?=$groupid?>">
+			<?=CSRFTokenField()?>
 				<div class="field" align="right">
 					<input type="submit" value="Delete this only" onClick="document.form4.elements['action'].value = 'delete'; return confirm('You\'re for serious. You want to delete this appointment?');" class="ui red button">
 					<?	if ($repeats) { ?>

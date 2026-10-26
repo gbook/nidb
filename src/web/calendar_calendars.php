@@ -42,7 +42,7 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("add", "edit", "delete")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$name = GetVariable("name");
 	$description = GetVariable("description");
@@ -52,7 +52,7 @@
 	if ($action == "addform") {
 		AddForm("",$name, $description, $location);
 	}
-	if ($action == "add") {
+	elseif ($action == "add") {
 		Add($name, $description, $location);
 	}
 	elseif ($action == "editform") {
@@ -64,7 +64,7 @@
 	elseif ($action == "delete") {
 		Delete($id);
 	}
-	elseif (($action == "") || ($action == "list")) {
+	else {
 		DisplayList();
 	}
 	
@@ -73,6 +73,7 @@
 	/* --------- DisplayList ------------------------- */
 	/* ----------------------------------------------- */
 	function DisplayList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		?>
 		
 		<div class="ui container">
@@ -109,7 +110,12 @@
 						<td><?=$description?></td>
 						<td><?=$location?></td>
 						<td class="center aligned">
-							<a href="calendar_calendars.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure?')"><i class="ui red alternate trash icon"></i></a>
+							<form method="post" action="calendar_calendars.php" style="display: inline" onsubmit="return confirm('Are you sure?')">
+								<input type="hidden" name="action" value="delete">
+								<input type="hidden" name="id" value="<?=$id?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui mini basic icon button" title="Delete calendar"><i class="red alternate trash icon"></i></button>
+							</form>
 						</td>
 					</tr>
 					<?
@@ -137,7 +143,7 @@
 		mysqli_stmt_bind_param($stmt, 'sss', $name, $description, $location);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
-		DisplayList();
+		RedirectWithNotice("Calendar added");
 	}	
 
 	
@@ -157,7 +163,7 @@
 		mysqli_stmt_bind_param($stmt, 'sssi', $name, $description, $location, $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
-		DisplayList();
+		RedirectWithNotice("Calendar updated");
 	}	
 
 	
@@ -170,8 +176,21 @@
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
-		DisplayList();
+		RedirectWithNotice("Calendar deleted");
 	}	
+
+
+	/* ----------------------------------------------- */
+	/* --------- RedirectWithNotice (PRG) ------------ */
+	/* ----------------------------------------------- */
+	/* a mutating action succeeded: stash the message and redirect to the list (GET), so a
+	   refresh/Back doesn't re-submit. Validation failures re-render their form instead. */
+	function RedirectWithNotice($msg) {
+		ob_start();
+		Notice($msg);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("calendar_calendars.php");
+	}
 	
 	
 	/* ----------------------------------------------- */
@@ -192,6 +211,7 @@
 
 			<form action="calendar_calendars.php" method="post" id="form1" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="add">
+				<?=CSRFTokenField()?>
 
 				<? if ($message != '') { ?>
 				<div class="ui negative message"><?=$message?></div>
@@ -248,6 +268,7 @@
 
 			<form action="calendar_calendars.php" method="post" id="form1" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="edit">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="id" value="<?=$id?>">
 
 				<? if ($message != '') { ?>

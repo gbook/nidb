@@ -98,6 +98,7 @@
 	/* ----------------------------------------------- */
 	function DisplayMenu($year, $month, $day, $menuitem) {
 		global $currentcal;
+		ShowFlashMessage(); /* message from calendar_appointments.php, which redirects here after a change (PRG) */
 		global $currentcalname;
 
 		$caldate = mktime(0,0,0,$month,$day,$year);

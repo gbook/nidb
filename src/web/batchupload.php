@@ -50,7 +50,14 @@
 	
 	/* determine action */
 	if (($selfcall && $action == "upload")) {
-		UploadFile($seriesid, $modality, $file);
+		/* mutating: must be a POST carrying this session's CSRF token (Dropzone posts the form's hidden inputs,
+		   including the token). Answer with an HTTP error, not the page, so Dropzone shows the upload as failed */
+		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || (!VerifyCSRFToken(false))) {
+			http_response_code(403);
+			echo "This upload could not be verified. Your session may have expired - please reload the page and try again.";
+			exit;
+		}
+		UploadFile($seriesid, $modality);
 	}
 	else {
 		?>
@@ -234,6 +241,7 @@
 								</script>
 								<form action="batchupload.php" class="dropzone" id="dropzone<?=$seriesid?>">
 									<input name="action" type="hidden" value="upload">
+									<?=CSRFTokenField()?>
 									<input name="seriesid" type="hidden" value="<?=$seriesid?>">
 									<input name="modality" type="hidden" value="<?=$modality?>">
 									<div class="fallback">

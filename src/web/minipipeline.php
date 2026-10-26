@@ -23,6 +23,7 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -50,7 +51,7 @@
 		$selfcall = false;
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("add", "update", "delete", "rerunjob")); /* mutating actions require POST + CSRF token */
 	$mpid = (int)GetVariable("mpid");
 	$mpjobid = (int)GetVariable("mpjobid");
 	$projectid = (int)GetVariable("projectid");
@@ -61,6 +62,7 @@
 	$scriptdeleteids = GetVariable("scriptdeleteids");
 	if (!is_array($scriptdeleteids)) $scriptdeleteids = array();
 	$scriptparams = GetVariable("scriptparams");
+	if (!is_array($scriptparams)) $scriptparams = array();
 	$scriptid = (int)GetVariable("scriptid");
 	
 	/* determine action */
@@ -70,29 +72,36 @@
 	elseif (($action == "addform") && ($selfcall)) {
 		DisplayMiniPipelineForm($projectid, "add", "");
 	}
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 	elseif (($action == "update") && ($selfcall)) {
-		if (UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams))
-			DisplayMiniPipelineList($projectid);
-		else
-			DisplayMiniPipelineForm($projectid, "edit", $mpid);
+		ob_start();
+		UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
 	elseif (($action == "viewjobs") && ($selfcall)) {
 		DisplayMiniPipelineJobs($mpid, $projectid);
 	}
 	elseif (($action == "add") && ($selfcall)) {
+		ob_start();
 		AddMiniPipeline($projectid, $minipipelinename);
-		DisplayMiniPipelineList($projectid);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
 	elseif (($action == "delete") && ($selfcall)) {
+		ob_start();
 		DeleteMiniPipeline($mpid);
-		DisplayMiniPipelineList($projectid);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
 	elseif (($action == "viewscript") && ($selfcall)) {
 		ViewScript($projectid, $scriptid);
 	}
 	elseif (($action == "rerunjob") && ($selfcall)) {
-		ReRunJob($mpjobid);
-		DisplayMiniPipelineJobs($mpid, $projectid);
+		ob_start();
+		ReRunJob($mpjobid, $mpid);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("minipipeline.php?action=viewjobs&mpid=$mpid&projectid=$projectid");
 	}
 	else {
 		DisplayMiniPipelineList($projectid);
@@ -105,10 +114,14 @@
 	/* -------------------------------------------- */
 	/* ------- ReRunJob --------------------------- */
 	/* -------------------------------------------- */
-	function ReRunJob($mpjobid) {
-		$mpjobid = mysqli_real_escape_string($GLOBALS['linki'], $mpjobid);
-		$sqlstring = "update minipipeline_jobs set mp_status = 'pending', mp_queuedate = now() where minipipelinejob_id = $mpjobid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	function ReRunJob($mpjobid, $mpid) {
+		$mpjobid = (int)$mpjobid;
+		$mpid = (int)$mpid;
+		$sqlstring = "update minipipeline_jobs set mp_status = 'pending', mp_queuedate = now() where minipipelinejob_id = ? and minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $mpjobid, $mpid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpjobid, $mpid));
+		mysqli_stmt_close($stmt);
 		
 		Notice("Minipipeline job queued to be re-run");
 	}
@@ -118,80 +131,127 @@
 	/* ------- UpdateMiniPipeline ----------------- */
 	/* -------------------------------------------- */
 	function UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams) {
-		/* perform data checks */
-		$minipipelinename = mysqli_real_escape_string($GLOBALS['linki'], $minipipelinename);
+		$mpid = (int)$mpid;
+		if (!ValidID($mpid,'MiniPipeline ID')) { return; }
 		
 		if (is_null($scriptentrypointid) || ($scriptentrypointid == 0)) {
-			echo "No entry point set. An entry point script must be set.<br><br>";
-			//return false;
+			Notice("No entry point set. An entry point script must be set.");
 		}
 			
 		/* update the minipipeline */
-		$sqlstring = "update minipipelines set mp_version = mp_version + 1, mp_name = '$minipipelinename', mp_modifydate = now() where minipipeline_id = $mpid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update minipipelines set mp_version = mp_version + 1, mp_name = ?, mp_modifydate = now() where minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $minipipelinename, $mpid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($minipipelinename, $mpid));
+		mysqli_stmt_close($stmt);
 		
-		/* update executable flags */
-		$sqlstring = "update minipipeline_scripts set mp_executable = 0 where minipipeline_id = $mpid";
-		if (count($scriptexecutableids) > 0) {
-			$executablelist = implode(",", array_map('intval', (array)$scriptexecutableids));
-			$sqlstring = "update minipipeline_scripts set mp_executable = 1 where minipipelinescript_id in ($executablelist)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* script-level updates below only touch scripts belonging to this minipipeline */
+		
+		/* update executable flags: clear all, then set the checked ones */
+		$sqlstring = "update minipipeline_scripts set mp_executable = 0 where minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $mpid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+		mysqli_stmt_close($stmt);
+		$sqlstring = "update minipipeline_scripts set mp_executable = 1 where minipipelinescript_id = ? and minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		foreach ($scriptexecutableids as $scriptexecutableid) {
+			$scriptexecutableid = (int)$scriptexecutableid;
+			mysqli_stmt_bind_param($stmt, 'ii', $scriptexecutableid, $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($scriptexecutableid, $mpid));
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* update entry point flag */
 		if ((!is_null($scriptentrypointid)) && ($scriptentrypointid > -1)) {
+			$scriptentrypointid = (int)$scriptentrypointid;
+
 			/* remove previous flags */
-			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 0 where minipipeline_id = $mpid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 0 where minipipeline_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+			mysqli_stmt_close($stmt);
 
 			/* set new flag */
-			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 1 where minipipelinescript_id = $scriptentrypointid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "update minipipeline_scripts set mp_entrypoint = 1 where minipipelinescript_id = ? and minipipeline_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $scriptentrypointid, $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($scriptentrypointid, $mpid));
+			mysqli_stmt_close($stmt);
 		}
 		
 		/* update parameter lists */
+		$sqlstring = "update minipipeline_scripts set mp_parameterlist = ? where minipipelinescript_id = ? and minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		foreach ($scriptparams as $scriptid => $param) {
 			$scriptid = (int)$scriptid;
-			$param = mysqli_real_escape_string($GLOBALS['linki'], $param);
-			$sqlstring = "update minipipeline_scripts set mp_parameterlist = '$param' where minipipelinescript_id = $scriptid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$param = (string)$param;
+			mysqli_stmt_bind_param($stmt, 'sii', $param, $scriptid, $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($param, $scriptid, $mpid));
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
-		if (count($scriptdeleteids) > 0) {
-			$deletelist = implode(",", array_map('intval', (array)$scriptdeleteids));
-			$sqlstring = "delete from minipipeline_scripts where minipipelinescript_id in ($deletelist)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "delete from minipipeline_scripts where minipipelinescript_id = ? and minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		foreach ($scriptdeleteids as $scriptdeleteid) {
+			$scriptdeleteid = (int)$scriptdeleteid;
+			mysqli_stmt_bind_param($stmt, 'ii', $scriptdeleteid, $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($scriptdeleteid, $mpid));
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* add new files */
-		if( isset($_FILES['scripts']['name'])) {
-			$total_files = count($_FILES['scripts']['name']);
-			for($key = 0; $key < $total_files; $key++) {
-				// Check if file is selected
-				if(isset($_FILES['scripts']['name'][$key]) && $_FILES['scripts']['size'][$key] > 0) {
-					$scriptFilename = $_FILES['scripts']['name'][$key];
-					$scriptData = base64_encode(file_get_contents($_FILES['scripts']['tmp_name'][$key]));
-					$scriptSize = $_FILES['scripts']['size'][$key];
+		AddMiniPipelineScripts($mpid);
+		
+		Notice(htmlspecialchars($minipipelinename ?? '') . " updated");
+	}
 
-					/* insert the new minipipeline scripts */
-					$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize,
-mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename', '$scriptData', $scriptSize, now(), now())";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+	/* -------------------------------------------- */
+	/* ------- AddMiniPipelineScripts ------------- */
+	/* -------------------------------------------- */
+	/* store any scripts uploaded in the 'scripts[]' field with this minipipeline */
+	function AddMiniPipelineScripts($mpid) {
+		if (!isset($_FILES['scripts']['name']) || !is_array($_FILES['scripts']['name']))
+			return;
+
+		$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize, mp_scriptmodifydate, mp_scriptcreatedate) values (?, 1, 0, ?, ?, ?, now(), now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$total_files = count($_FILES['scripts']['name']);
+		for ($key = 0; $key < $total_files; $key++) {
+			/* check if file is selected */
+			if (isset($_FILES['scripts']['name'][$key]) && $_FILES['scripts']['size'][$key] > 0) {
+				/* the backend writes each script to <tmpdir>/<name> and runs the entry point by name, so the name
+				   must be a plain filename that is also safe on a command line */
+				$scriptFilename = basename($_FILES['scripts']['name'][$key]);
+				if (!preg_match('/^[A-Za-z0-9._-]+$/', $scriptFilename) || ($scriptFilename == ".") || ($scriptFilename == "..")) {
+					Error("Script <tt>" . htmlspecialchars($scriptFilename) . "</tt> was not added. Script names may only contain letters, numbers, and <tt>. _ -</tt>");
+					continue;
 				}
+				$scriptData = base64_encode(file_get_contents($_FILES['scripts']['tmp_name'][$key]));
+				$scriptSize = (int)$_FILES['scripts']['size'][$key];
+
+				mysqli_stmt_bind_param($stmt, 'issi', $mpid, $scriptFilename, $scriptData, $scriptSize);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid, $scriptFilename, '(script)', $scriptSize));
 			}
 		}
-		
-		?><div align="center"><span class="message"><?=$minipipelinename?> updated</span></div><br><br><?
-		return true;
+		mysqli_stmt_close($stmt);
 	}
 
 	/* -------------------------------------------- */
 	/* ------- DisplayMiniPipelineJobs ------------ */
 	/* -------------------------------------------- */
 	function DisplayMiniPipelineJobs($mpid, $projectid) {
-		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = $mpid order by a.mp_queuedate desc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+		$mpid = (int)$mpid;
+		$projectid = (int)$projectid;
+		$sqlstring = "select a.*, b.mp_name from minipipeline_jobs a left join minipipelines b on a.minipipeline_id = b.minipipeline_id where a.minipipeline_id = ? order by a.mp_queuedate desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $mpid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+		mysqli_stmt_close($stmt);
 		?>
 		<a class="ui primary button" href="minipipeline.php?projectid=<?=$projectid?>"><i class="arrow alternate circle left icon"></i> Back</a>
 		<table class="ui celled selectable grey compact table">
@@ -252,7 +312,14 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 				<td valign="top"><?=$numinserts?></td>
 				<td valign="top">
 					<? if ($status != "pending") { ?>
-					<a class="ui very compact button" href="minipipeline.php?action=rerunjob&mpjobid=<?=$mpjobid?>&projectid=<?=$projectid?>&mpid=<?=$mpid?>">Rerun</a>
+					<form method="post" action="minipipeline.php" style="display: inline">
+						<input type="hidden" name="action" value="rerunjob">
+						<input type="hidden" name="mpjobid" value="<?=$mpjobid?>">
+						<input type="hidden" name="mpid" value="<?=$mpid?>">
+						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<?=CSRFTokenField()?>
+						<button type="submit" class="ui very compact button">Rerun</button>
+					</form>
 					<? } ?>
 				</td>
 			</tr>
@@ -270,32 +337,20 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	/* ------- AddMiniPipeline -------------------- */
 	/* -------------------------------------------- */
 	function AddMiniPipeline($projectid, $minipipelinename) {
-		/* perform data checks */
-		$minipipelinename = mysqli_real_escape_string($GLOBALS['linki'], $minipipelinename);
+		$projectid = (int)$projectid;
+		if (!ValidID($projectid,'Project ID')) { return; }
 		
 		/* insert the new minipipeline */
-		$sqlstring = "insert into minipipelines (project_id, mp_version, mp_name, mp_modifydate, mp_createdate) values ($projectid, 1, '$minipipelinename', now(), now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into minipipelines (project_id, mp_version, mp_name, mp_modifydate, mp_createdate) values (?, 1, ?, now(), now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $minipipelinename);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($projectid, $minipipelinename));
 		$mpid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 
-		if( isset($_FILES['scripts']['name'])) {
-			$total_files = count($_FILES['scripts']['name']);
-			for($key = 0; $key < $total_files; $key++) {
-				// Check if file is selected
-				if(isset($_FILES['scripts']['name'][$key]) && $_FILES['scripts']['size'][$key] > 0) {
-					$scriptFilename = $_FILES['scripts']['name'][$key];
-					$scriptData = base64_encode(file_get_contents($_FILES['scripts']['tmp_name'][$key]));
-					$scriptSize = filesize($_FILES['scripts']['tmp_name'][$key]) + 0;
+		AddMiniPipelineScripts($mpid);
 
-					/* insert the new minipipeline scripts */
-					$sqlstring = "insert into minipipeline_scripts (minipipeline_id, mp_version, mp_executable, mp_scriptname, mp_script, mp_scriptsize,
-mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename', '$scriptData', $scriptSize, now(), now())";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-
-		?><div align="center"><span class="message"><?=$minipipelinename?> added</span></div><br><br><?
+		Notice(htmlspecialchars($minipipelinename ?? '') . " added");
 	}
 
 
@@ -305,13 +360,15 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 	function DeleteMiniPipeline($mpid) {
 		if (!ValidID($mpid,'MiniPipeline ID')) { return; }
 		
-		$sqlstring = "delete from minipipelines where minipipeline_id = $mpid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$mpid = (int)$mpid;
+		foreach (array("delete from minipipelines where minipipeline_id = ?", "delete from minipipeline_scripts where minipipeline_id = ?") as $sqlstring) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $mpid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+			mysqli_stmt_close($stmt);
+		}
 		
-		$sqlstring = "delete from minipipeline_scripts where minipipeline_id = $mpid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		?>Minipipeline deleted<br><br><?
+		Notice("Mini-pipeline deleted");
 	}	
 	
 	
@@ -325,9 +382,13 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			if (!ValidID($mpid,'MiniPipeline ID'))
 				return;
 			
-			$sqlstring = "select * from minipipelines where minipipeline_id = $mpid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$mpid = (int)$mpid;
+			$sqlstring = "select * from minipipelines where minipipeline_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $mpid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$minipipelineid = $row['minipipeline_id'];
 			$name = $row['mp_name'];
 		
@@ -336,6 +397,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			$submitbuttonlabel = "Update";
 		}
 		else {
+			$name = "";
 			$formaction = "add";
 			$formtitle = "New mini-pipeline";
 			$submitbuttonlabel = "Add";
@@ -350,6 +412,7 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="mpid" value="<?=$mpid?>">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<?=CSRFTokenField()?>
 
 			<div class="field">
 				<label>Name</label>
@@ -373,8 +436,11 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 							<th>Remove?</th>
 						</thead>
 						<?
-						$sqlstring = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from minipipeline_scripts where minipipeline_id = ? order by mp_scriptname asc";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $mpid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+						mysqli_stmt_close($stmt);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$scriptid = $row['minipipelinescript_id'];
 							$script = $row['mp_scriptname'];
@@ -405,13 +471,25 @@ mp_scriptmodifydate, mp_scriptcreatedate) values($mpid, 1, 0, '$scriptFilename',
 			</div>
 			<div class="ui two column grid">
 				<div class="column">
-					<a class="ui red button" href="minipipeline.php?mpid=1&projectid=1&action=delete" onclick="return confirm('Are you sure you want to delete?')"><i class="trash icon"></i>Delete</a>
+					<? if ($type == "edit") { ?>
+					<!-- forms can't nest, so this submits the separate delete form below -->
+					<button type="submit" form="deleteminipipelineform" class="ui red button"><i class="trash icon"></i>Delete</button>
+					<? } ?>
 				</div>
 				<div class="column" align="right">
 					<a class="ui button" href="minipipeline.php?projectid=<?=$projectid?>">Cancel</a>
 					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
+			</div>
 			</form>
+			<? if ($type == "edit") { ?>
+			<form method="post" action="minipipeline.php" id="deleteminipipelineform" onsubmit="return confirm('Are you sure you want to delete this mini-pipeline and all of its scripts? Any variables created by it will remain in the database.')">
+				<input type="hidden" name="action" value="delete">
+				<input type="hidden" name="mpid" value="<?=$mpid?>">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 			<div class="ui attached segment">
 				<br>
 				<div class="ui accordion">
@@ -453,6 +531,8 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 	/* ------- DisplayMiniPipelineList ------------ */
 	/* -------------------------------------------- */
 	function DisplayMiniPipelineList($projectid) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+		$projectid = (int)$projectid;
 		if (!ValidID($projectid,'Project ID')) { return; }
 		
 		?>
@@ -473,8 +553,11 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 				</thead>
 				<tbody>
 					<?
-						$sqlstring = "select * from minipipelines where project_id = $projectid order by mp_name asc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from minipipelines where project_id = ? order by mp_name asc";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $projectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($projectid));
+						mysqli_stmt_close($stmt);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$mpid = $row['minipipeline_id'];
 							$name = $row['mp_name'];
@@ -491,8 +574,9 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 								<td valign="top"><?=$mpmodifydate?></td>
 								<td valign="top" align="center">
 								<?
-									$sqlstringA = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_script asc";
-									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$mpid = (int)$mpid;
+									$sqlstringA = "select * from minipipeline_scripts where minipipeline_id = $mpid order by mp_scriptname asc";
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__); /* $mpid is a database integer */
 									if (mysqli_num_rows($resultA) > 0) {
 								?>
 									<table style="font-size: 9pt" class="ui very small very compact celled selectable table">
@@ -531,7 +615,6 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 									}
 									?>
 								</td>
-								<!--<td valign="top" align="center"><a href="minipipeline.php?mpid=<?=$mpid?>&projectid=<?=$projectid?>&action=delete" class="ui red button" onclick="return confirm('********** STOP!! **********\n<?=$GLOBALS['username']?>, are you sure you want to COMPLETELY DELETE this mini-pipeline? Click Ok ONLY if you want to DELETE the mini-pipeline. This cannot be undone. But any variables created using this pipeline will remain in the database.')"><i class="trash alternate icon"></i></a></td>-->
 							</tr>
 							<?
 						}
@@ -548,15 +631,16 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 	/* -------------------------------------------- */
 	function ViewScript($projectid, $scriptid) {
 
-		/* perform data checks */
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$scriptid = mysqli_real_escape_string($GLOBALS['linki'], $scriptid);
-		
+		$projectid = (int)$projectid;
+		$scriptid = (int)$scriptid;
 		if (!ValidID($projectid,'Project ID')) { return; }
 		if (!ValidID($scriptid,'Script ID')) { return; }
 		
-		$sqlstring = "select * from minipipeline_scripts where minipipelinescript_id = $scriptid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from minipipeline_scripts where minipipelinescript_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $scriptid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($scriptid));
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$mpid = $row['minipipeline_id'];

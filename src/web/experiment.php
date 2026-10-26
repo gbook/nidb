@@ -23,21 +23,11 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 
 	require "functions.php";
 	require "includes_php.php";
 
-	//PrintVariable($_FILES);
-	//PrintVariable($_POST);
-
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpfilename = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpfilename))
-		$selfcall = true;
-	else
-		$selfcall = false;
-	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$expid = (int)GetVariable("expid");
@@ -47,12 +37,21 @@
 	$filedeleteids = GetVariable("filedeleteids");
 	if (!is_array($filedeleteids)) $filedeleteids = array();
 	$fileid = (int)GetVariable("fileid");
-	
+
+	/* experiments belong to a project: View Data to list/view/download them, Edit Data to add/change/delete.
+	   For an existing experiment (or one of its files) the project is looked up from the database, never
+	   taken from the request */
+	if ($action == "viewfile")
+		$expid = GetExperimentIDForFile($fileid);
+	if (in_array($action, array("editform", "update", "delete", "download", "viewfile")))
+		$projectid = GetExperimentProjectID($expid);
+	$canview = ExperimentProjectPerm($projectid, 'viewdata');
+	$canedit = ExperimentProjectPerm($projectid, 'modifydata');
+
 	/* determine action */
-	if (($action == "download") && ($selfcall)) {
-		DownloadExperiment($expid);
+	if (($action == "download") && ($canview)) {
+		DownloadExperiment($expid); /* sends the zip and exits, before any HTML */
 	}
-	else {
 ?>
 <html>
 	<head>
@@ -62,80 +61,157 @@
 <body>
 	<div id="wrapper">
 <?
-		require "includes_html.php";
-		require "menu.php";
+	require "includes_html.php";
+	require "menu.php";
 
-		if (($action == "editform") && ($selfcall))  {
-			DisplayExperimentForm($projectid, "edit", $expid);
-		}
-		elseif (($action == "addform") && ($selfcall)) {
-			DisplayExperimentForm($projectid, "add", "");
-		}
-		elseif (($action == "update") && ($selfcall)) {
-			if (UpdateExperiment($expid, $experimentname, $experimentdesc, $filedeleteids))
-				DisplayExperimentList($projectid);
-			else
-				DisplayExperimentForm($projectid, "edit", $expid);
-		}
-		elseif (($action == "add") && ($selfcall)) {
-			AddExperiment($projectid, $experimentname, $experimentdesc);
-			DisplayExperimentList($projectid);
-		}
-		elseif (($action == "delete") && ($selfcall)) {
-			DeleteExperiment($expid);
-			DisplayExperimentList($projectid);
-		}
-		elseif (($action == "viewfile") && ($selfcall)) {
-			ViewFile($projectid, $fileid);
-		}
-		else {
-			DisplayExperimentList($projectid);
-		}
-	}	
+	$action = GetSafeAction(array("add", "update", "delete")); /* mutating actions require POST + CSRF token */
+	$needsedit = in_array($action, array("addform", "add", "update", "delete"));
+
+	if ((!$canview) || ($needsedit && !$canedit)) {
+		Error("You do not have permission to " . ($needsedit ? "change" : "view") . " experiments in this project");
+		if ($canview) DisplayExperimentList($projectid, $canedit);
+	}
+	elseif ($action == "editform") {
+		DisplayExperimentForm($projectid, "edit", $expid, $canedit);
+	}
+	elseif ($action == "addform") {
+		DisplayExperimentForm($projectid, "add", "", $canedit);
+	}
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
+	elseif ($action == "update") {
+		ob_start();
+		UpdateExperiment($expid, $experimentname, $experimentdesc, $filedeleteids);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("experiment.php?projectid=$projectid");
+	}
+	elseif ($action == "add") {
+		ob_start();
+		AddExperiment($projectid, $experimentname, $experimentdesc);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("experiment.php?projectid=$projectid");
+	}
+	elseif ($action == "delete") {
+		ob_start();
+		DeleteExperiment($expid);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("experiment.php?projectid=$projectid");
+	}
+	elseif ($action == "viewfile") {
+		ViewFile($projectid, $fileid);
+	}
+	else {
+		DisplayExperimentList($projectid, $canedit);
+	}
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetExperimentProjectID ------------- */
+	/* -------------------------------------------- */
+	/* the project an experiment belongs to, or 0 if the experiment doesn't exist */
+	function GetExperimentProjectID($expid) {
+		$expid = (int)$expid;
+		if ($expid < 1) return 0;
+
+		$sqlstring = "select project_id from experiments where experiment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $expid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($expid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['project_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetExperimentIDForFile ------------- */
+	/* -------------------------------------------- */
+	/* the experiment an experiment file belongs to, or 0 if the file doesn't exist */
+	function GetExperimentIDForFile($fileid) {
+		$fileid = (int)$fileid;
+		if ($fileid < 1) return 0;
+
+		$sqlstring = "select experiment_id from experiment_files where experimentfile_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['experiment_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ExperimentProjectPerm -------------- */
+	/* -------------------------------------------- */
+	/* true if the current user has $perm ('viewdata' or 'modifydata') on the project */
+	function ExperimentProjectPerm($projectid, $perm) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1) return false;
+
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, $perm, $projectid) == 1);
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateExperiment ------------------- */
 	/* -------------------------------------------- */
 	function UpdateExperiment($expid, $experimentname, $experimentdesc, $filedeleteids) {
-		/* perform data checks */
-		$experimentname = mysqli_real_escape_string($GLOBALS['linki'], $experimentname);
-		$experimentdesc = mysqli_real_escape_string($GLOBALS['linki'], $experimentdesc);
+		$expid = (int)$expid;
+		if (!ValidID($expid,'Experiment ID')) { return; }
 		
 		/* update the experiment */
-		$sqlstring = "update experiments set exp_version = exp_version + 1, exp_name = '$experimentname', exp_desc = '$experimentdesc', exp_modifydate = now() where experiment_id = $expid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update experiments set exp_version = exp_version + 1, exp_name = ?, exp_desc = ?, exp_modifydate = now() where experiment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssi', $experimentname, $experimentdesc, $expid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($experimentname, $experimentdesc, $expid));
+		mysqli_stmt_close($stmt);
 		
-		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well */
-		if (count($filedeleteids) > 0) {
-			$deletelist = implode(",", array_map('intval', (array)$filedeleteids));
-			$sqlstring = "delete from experiment_files where experimentfile_id in ($deletelist)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* remove files to be removed last... in case the user updated an option and wanted to delete it as well.
+		   Only files belonging to this experiment can be removed */
+		$sqlstring = "delete from experiment_files where experimentfile_id = ? and experiment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		foreach ($filedeleteids as $filedeleteid) {
+			$filedeleteid = (int)$filedeleteid;
+			mysqli_stmt_bind_param($stmt, 'ii', $filedeleteid, $expid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($filedeleteid, $expid));
 		}
+		mysqli_stmt_close($stmt);
 		
 		/* add new files */
-		if( isset($_FILES['files']['name'])) {
-			$total_files = count($_FILES['files']['name']);
-			for($key = 0; $key < $total_files; $key++) {
-				// Check if file is selected
-				if(isset($_FILES['files']['name'][$key]) && $_FILES['files']['size'][$key] > 0) {
-					$fileFilename = $_FILES['files']['name'][$key];
-					$fileData = base64_encode(file_get_contents($_FILES['files']['tmp_name'][$key]));
-					$fileSize = $_FILES['files']['size'][$key];
+		AddExperimentFiles($expid);
+		
+		Notice(htmlspecialchars($experimentname ?? '') . " updated");
+	}
 
-					/* insert the new experiment files */
-					$sqlstring = "insert into experiment_files (experiment_id, file_name, file, file_size,
-file_createdate, file_modifydate) values($expid, '$fileFilename', '$fileData', $fileSize, now(), now())";
-					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
+
+	/* -------------------------------------------- */
+	/* ------- AddExperimentFiles ----------------- */
+	/* -------------------------------------------- */
+	/* store any files uploaded in the 'files[]' field with this experiment */
+	function AddExperimentFiles($expid) {
+		if (!isset($_FILES['files']['name']) || !is_array($_FILES['files']['name']))
+			return;
+
+		$sqlstring = "insert into experiment_files (experiment_id, file_name, file, file_size, file_createdate, file_modifydate) values (?, ?, ?, ?, now(), now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$total_files = count($_FILES['files']['name']);
+		for ($key = 0; $key < $total_files; $key++) {
+			/* check if file is selected */
+			if (isset($_FILES['files']['name'][$key]) && $_FILES['files']['size'][$key] > 0) {
+				/* basename: the name is later used as a path when the experiment is downloaded */
+				$fileFilename = basename($_FILES['files']['name'][$key]);
+				if (($fileFilename == "") || ($fileFilename == ".") || ($fileFilename == "..")) continue;
+				$fileData = base64_encode(file_get_contents($_FILES['files']['tmp_name'][$key]));
+				$fileSize = (int)$_FILES['files']['size'][$key];
+
+				mysqli_stmt_bind_param($stmt, 'issi', $expid, $fileFilename, $fileData, $fileSize);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($expid, $fileFilename, '(file)', $fileSize));
 			}
 		}
-		
-		Notice("$experimentname updated");
-		return true;
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -143,33 +219,20 @@ file_createdate, file_modifydate) values($expid, '$fileFilename', '$fileData', $
 	/* ------- AddExperiment ---------------------- */
 	/* -------------------------------------------- */
 	function AddExperiment($projectid, $experimentname, $experimentdesc) {
-		/* perform data checks */
-		$experimentname = mysqli_real_escape_string($GLOBALS['linki'], $experimentname);
-		$experimentdesc = mysqli_real_escape_string($GLOBALS['linki'], $experimentdesc);
+		$projectid = (int)$projectid;
+		if (!ValidID($projectid,'Project ID')) { return; }
 
 		/* insert the new experiment */
-		$sqlstring = "insert into experiments (project_id, exp_version, exp_name, exp_desc, exp_modifydate, exp_createdate) values ($projectid, 1, '$experimentname', '$experimentdesc', now(), now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into experiments (project_id, exp_version, exp_name, exp_desc, exp_modifydate, exp_createdate) values (?, 1, ?, ?, now(), now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iss', $projectid, $experimentname, $experimentdesc);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($projectid, $experimentname, $experimentdesc));
 		$expid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 
-		if( isset($_FILES['files']['name'])) {
-			$total_files = count($_FILES['files']['name']);
-			for($key = 0; $key < $total_files; $key++) {
-				// Check if file is selected
-				if(isset($_FILES['files']['name'][$key]) && $_FILES['files']['size'][$key] > 0) {
-					$fileFilename = $_FILES['files']['name'][$key];
-					$fileData = base64_encode(file_get_contents($_FILES['files']['tmp_name'][$key]));
-					$fileSize = filesize($_FILES['files']['tmp_name'][$key]) + 0;
+		AddExperimentFiles($expid);
 
-					/* insert the new experiment files */
-					$sqlstring = "insert into experiment_files (experiment_id, file_name, file, file_size,
-file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $fileSize, now(), now())";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				}
-			}
-		}
-
-		Notice("$experimentname added");
+		Notice(htmlspecialchars($experimentname ?? '') . " added");
 	}
 
 
@@ -179,11 +242,13 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	function DeleteExperiment($expid) {
 		if (!ValidID($expid,'Experiment ID')) { return; }
 		
-		$sqlstring = "delete from experiments where experiment_id = $expid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		$sqlstring = "delete from experiment_files where experiment_id = $expid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$expid = (int)$expid;
+		foreach (array("delete from experiments where experiment_id = ?", "delete from experiment_files where experiment_id = ?") as $sqlstring) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $expid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($expid));
+			mysqli_stmt_close($stmt);
+		}
 		
 		Notice("Experiment deleted");
 	}	
@@ -192,25 +257,31 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	/* -------------------------------------------- */
 	/* ------- DisplayExperimentForm -------------- */
 	/* -------------------------------------------- */
-	function DisplayExperimentForm($projectid, $type, $expid) {
+	function DisplayExperimentForm($projectid, $type, $expid, $canedit) {
+		$projectid = (int)$projectid;
+		$readonly = $canedit ? "" : "disabled"; /* users with View Data only see the experiment, without edit controls */
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
 			if (!ValidID($expid,'Experiment ID'))
 				return;
 			
-			$sqlstring = "select * from experiments where experiment_id = $expid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$expid = (int)$expid;
+			$sqlstring = "select * from experiments where experiment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $expid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($expid));
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$experimentid = $row['experiment_id'];
-			$name = $row['exp_name'];
-			$desc = $row['exp_desc'];
+			mysqli_stmt_close($stmt);
+			$name = $row['exp_name'] ?? '';
+			$desc = $row['exp_desc'] ?? '';
 		
 			$formaction = "update";
-			$formtitle = "$name";
+			$formtitle = htmlspecialchars($name);
 			$submitbuttonlabel = "Update";
 		}
 		else {
+			$name = $desc = "";
 			$formaction = "add";
 			$formtitle = "New Experiment";
 			$submitbuttonlabel = "Add";
@@ -225,18 +296,19 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="expid" value="<?=$expid?>">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<?=CSRFTokenField()?>
 
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="experimentname" value="<?=$name?>" maxlength="255" required>
+					<input type="text" name="experimentname" value="<?=htmlspecialchars($name)?>" maxlength="255" required <?=$readonly?>>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Description (Task instructions, README, how to analyze, etc)</label>
 				<div class="field">
-					<textarea name="experimentdesc"><?=$desc?></textarea>
+					<textarea name="experimentdesc" <?=$readonly?>><?=htmlspecialchars($desc)?></textarea>
 				</div>
 			</div>
 			
@@ -250,11 +322,13 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							<th>Size</th>
 							<th>Create date</th>
 							<th>Modify date</th>
-							<th>Remove?</th>
+							<? if ($canedit) { ?><th>Remove?</th><? } ?>
 						</thead>
 						<?
-						$sqlstring = "select * from experiment_files where experiment_id = $expid order by file_name asc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from experiment_files where experiment_id = ? order by file_name asc";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $expid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($expid));
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$fileid = $row['experimentfile_id'];
 							$file = $row['file_name'];
@@ -263,31 +337,46 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							$modifydate = date('M j, Y h:ia',strtotime($row['file_modifydate']));
 							?>
 							<tr>
-								<td><tt style="font-size: larger"><a href="experiment.php?action=viewfile&projectid=<?=$projectid?>&fileid=<?=$fileid?>"><?=$file?></a></tt></td>
-								<td><?=$filesize?></td>
+								<td><tt style="font-size: larger"><a href="experiment.php?action=viewfile&fileid=<?=(int)$fileid?>"><?=htmlspecialchars($file)?></a></tt></td>
+								<td><?=(int)$filesize?></td>
 								<td style="font-size: smaller"><?=$createdate?></td>
 								<td style="font-size: smaller"><?=$modifydate?></td>
-								<td><input type="checkbox" name="filedeleteids[]" value="<?=$fileid?>"></td>
+								<? if ($canedit) { ?><td><input type="checkbox" name="filedeleteids[]" value="<?=(int)$fileid?>"></td><? } ?>
 							</tr>
 							<?
 						}
+						mysqli_stmt_close($stmt);
 						?>
 					</table>
 					<br>
 					<? } ?>
+					<? if ($canedit) { ?>
 					Add file(s) <input type="file" name="files[]" multiple>
 					<span class="tiny">Max individual file size 4GB. Max filename length 255 characters</span>
+					<? } ?>
 				</div>
 			</div>
 			<div class="ui two column grid">
 				<div class="column">
-					<a class="ui red button" href="experiment.php?expid=1&projectid=1&action=delete" onclick="return confirm('Are you sure you want to delete?')"><i class="trash icon"></i>Delete</a>
+					<? if (($type == "edit") && ($canedit)) { ?>
+					<!-- forms can't nest, so this submits the separate delete form below -->
+					<button type="submit" form="deleteexperimentform" class="ui red button"><i class="trash icon"></i>Delete</button>
+					<? } ?>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="experiment.php?projectid=<?=$projectid?>">Cancel</a>
-					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+					<a class="ui button" href="experiment.php?projectid=<?=$projectid?>"><?=$canedit ? "Cancel" : "Back"?></a>
+					<? if ($canedit) { ?><input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>"><? } ?>
 				</div>
+			</div>
 			</form>
+			<? if (($type == "edit") && ($canedit)) { ?>
+			<form method="post" action="experiment.php" id="deleteexperimentform" onsubmit="return confirm('Are you sure you want to delete this experiment and all of its files?')">
+				<input type="hidden" name="action" value="delete">
+				<input type="hidden" name="expid" value="<?=$expid?>">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 		</div>
 	<?
 	}
@@ -296,13 +385,17 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	/* -------------------------------------------- */
 	/* ------- DisplayExperimentList -------------- */
 	/* -------------------------------------------- */
-	function DisplayExperimentList($projectid) {
+	function DisplayExperimentList($projectid, $canedit) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+		$projectid = (int)$projectid;
 		if (!ValidID($projectid,'Project ID')) { return; }
 		
 		?>
 		<div class="ui container">
+			<? if ($canedit) { ?>
 			<button class="ui primary large button" onClick="window.location.href='experiment.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create experiment</button>
 			<br><br>
+			<? } ?>
 			<table class="ui celled selectable grey compact table">
 				<thead>
 					<tr>
@@ -317,8 +410,10 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 				</thead>
 				<tbody>
 					<?
-						$sqlstring = "select * from experiments where project_id = $projectid order by exp_name asc";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from experiments where project_id = ? order by exp_name asc";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $projectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($projectid));
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 							$expid = $row['experiment_id'];
 							$name = $row['exp_name'];
@@ -329,12 +424,13 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 							?>
 							<tr>
 								<td valign="top">
-									<a href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>"><b><?=$name?></b></a>
+									<a href="experiment.php?action=editform&expid=<?=(int)$expid?>"><b><?=htmlspecialchars($name ?? '')?></b></a>
 								</td>
 								<td valign="top" align="center">
 								<?
+									$expid = (int)$expid;
 									$sqlstringA = "select sum(file_size) total_size, count(file_name) file_count from experiment_files where experiment_id = $expid";
-									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__); /* $expid is a database integer */
 									if (mysqli_num_rows($resultA) > 0) {
 										$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 										$size = HumanReadableFilesize($rowA['total_size']);
@@ -347,8 +443,8 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 									}
 									?>
 								</td>
-								<td valign="top" class="ui center aligned"><a href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=$name?> experiment"><i class="large download icon"></i></a></td>
-								<td valign="top"><?=$version?></td>
+								<td valign="top" class="ui center aligned"><a href="experiment.php?action=download&expid=<?=$expid?>" title="Download <?=htmlspecialchars($name ?? '')?> experiment"><i class="large download icon"></i></a></td>
+								<td valign="top"><?=(int)$version?></td>
 								<td valign="top"><?=$createdate?></td>
 								<td valign="top"><?=$modifydate?></td>
 								<td valign="top" class="ui center aligned"><a href="packages.php?action=addobject&objecttype=experiment&objectids[]=<?=$expid?>"><img src="images/squirrel-icon-64.png" height="24"></img></a></td>
@@ -368,15 +464,16 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	/* -------------------------------------------- */
 	function ViewFile($projectid, $fileid) {
 
-		/* perform data checks */
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$fileid = mysqli_real_escape_string($GLOBALS['linki'], $fileid);
-		
+		$projectid = (int)$projectid;
+		$fileid = (int)$fileid;
 		if (!ValidID($projectid,'Project ID')) { return; }
 		if (!ValidID($fileid,'File ID')) { return; }
 		
-		$sqlstring = "select * from experiment_files where experimentfile_id = $fileid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from experiment_files where experimentfile_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$expid = $row['experiment_id'];
@@ -389,16 +486,16 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			?>
 			
 			<div class="ui text container">
-				<a href="experiment.php?action=editform&expid=<?=$expid?>&projectid=<?=$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
+				<a href="experiment.php?action=editform&expid=<?=(int)$expid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
 				<br>
 				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>File name</td>
-						<td><h3 class="ui header"><?=$filename?></h3></td>
+						<td><h3 class="ui header"><?=htmlspecialchars($filename ?? '')?></h3></td>
 					</tr>
 					<tr>
 						<td>File size</td>
-						<td><?=$filesize?> <span class="tiny">bytes</span></td>
+						<td><?=(int)$filesize?> <span class="tiny">bytes</span></td>
 					</tr>
 					<tr>
 						<td>Create date</td>
@@ -412,7 +509,7 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 			</div>
 			<div style="padding: 20px">
 				Displaying entire file
-				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
+				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=htmlspecialchars($contents, ENT_QUOTES | ENT_SUBSTITUTE)?></pre></tt>
 			</div>
 			<?
 		}
@@ -423,40 +520,47 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 	/* ------- DownloadExperiment ----------------- */
 	/* -------------------------------------------- */
 	function DownloadExperiment($experimentid) {
-		$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentid);
+		$experimentid = (int)$experimentid;
 
 		if (!ValidID($experimentid,'Experiment ID')) { return; }
 		
 		/* get list of files, and get the files */
-		$sqlstring = "select * from experiment_files where experiment_id = $experimentid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
+		$sqlstring = "select count(*) 'num' from experiment_files where experiment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $experimentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($experimentid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ((int)($row['num'] ?? 0) > 0) {
 			
-			/* create temp dir */
-			$tmppath = $GLOBALS['cfg']['tmpdir'] . '/' . GenerateRandomString(20);
+			/* create a private temp dir to assemble the zip in; removed again below */
+			$tmppath = $GLOBALS['cfg']['tmpdir'] . '/' . bin2hex(random_bytes(10));
+			mkdir($tmppath, 0700, true);
 			
-			/* create the directory in which the files are stored until the import module takes them */
-			mkdir($tmppath, 0, true);
-			chmod($tmppath, 0777);
-			
-			$sqlstring = "select exp_name from experiments where experiment_id = $experimentid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$sqlstring = "select exp_name from experiments where experiment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $experimentid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($experimentid));
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row !== null) {
 				$expname = $row['exp_name'];
 				$expname = preg_replace("/[^A-Za-z0-9]/", '', $expname);
 			}
 			else {
 				$expname = "experiment";
 			}
+			if ($expname == "") $expname = "experiment";
 			
 			$zipfilename = "$tmppath/$expname.zip";
 			
-			$sqlstringA = "select * from experiment_files where experiment_id = $experimentid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$sqlstringA = "select * from experiment_files where experiment_id = ?";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'i', $experimentid);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, array($experimentid));
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 				$fileid = $rowA['experimentfile_id'];
-				$filename = $rowA['file_name'];
+				$filename = basename($rowA['file_name']); /* never write outside the temp dir, whatever name was stored */
 				$contents = base64_decode($rowA['file']);
 				$filesize = $rowA['file_size'];
 				$createdate = date('M j, Y h:ia',strtotime($rowA['file_createdate']));
@@ -476,20 +580,27 @@ file_modifydate, file_createdate) values($expid, '$fileFilename', '$fileData', $
 				}
 			}
 			
-			$systemstring = "cd $tmppath; zip $zipfilename *";
-			//PrintVariable($systemstring);
+			/* zip the experiment's files (everything written to the dir) */
+			$writtenfiles = array_values(array_diff(scandir($tmppath), array('.', '..')));
+			$systemstring = "cd " . escapeshellarg($tmppath) . " && zip " . escapeshellarg($zipfilename) . " -- " . implode(" ", array_map('escapeshellarg', $writtenfiles));
 			shell_exec($systemstring);
+			
+			/* discard any buffered page output so the zip isn't corrupted */
+			while (ob_get_level() > 0) ob_end_clean();
 			
 			/* send the .zip file to the browser */
 			header("Content-Description: File Transfer");
-			header("Content-Disposition: attachment; filename=$expname.zip");
+			header("Content-Disposition: attachment; filename=\"$expname.zip\"");
 			header("Content-Type: application/zip");
-			header("Content-length: " . filesize($zipfilename) . "\n\n");
+			header("Content-length: " . filesize($zipfilename));
 			header("Content-Transfer-Encoding: binary");
-			// output data to the browser
 			readfile($zipfilename);
-			unlink($zipfilename);
-			rmdir($tmppath);
+			
+			/* remove everything that was written, so no copy of the experiment is left in tmpdir */
+			foreach ($writtenfiles as $writtenfile)
+				@unlink("$tmppath/$writtenfile");
+			@unlink($zipfilename);
+			@rmdir($tmppath);
 			exit(0);
 		}
 	}

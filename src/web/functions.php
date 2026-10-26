@@ -3028,6 +3028,29 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
+	/* ------- GetSafeAction ---------------------- */
+	/* -------------------------------------------- */
+	/* returns the request's "action". If the action is in $mutatingactions, it is only returned when
+	   the request is a POST carrying this session's CSRF token; otherwise an error is displayed and ""
+	   is returned, so the page falls through to its default (read-only) view. This blocks mutating
+	   actions triggered by a link, an <img> tag, a prefetcher, or a form on another site. */
+	function GetSafeAction($mutatingactions) {
+		$action = GetVariable("action");
+
+		if (in_array($action, $mutatingactions, true)) {
+			if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+				Error("This action must be submitted from a form, and was not performed. Please return to the page and try again.");
+				return "";
+			}
+			if (!VerifyCSRFToken())
+				return "";
+		}
+
+		return $action;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- Error ------------------------------ */
 	/* -------------------------------------------- */
 	function Error($msg, $close=true) {
@@ -3179,9 +3202,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- StoreFileToSQL --------------------- */
 	/* -------------------------------------------- */
 	function StoreFileToSQL($filename, $filecontenttype, $fileblob, $filesize) {
-		$sqlstring = "insert into files (file_name, file_contenttype, file_blob, file_size, file_date) values ('$filename', '$filecontenttype', '$fileblob', $filesize, now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$filesize = (int)$filesize;
+		$sqlstring = "insert into files (file_name, file_contenttype, file_blob, file_size, file_date) values (?, ?, ?, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssi', $filename, $filecontenttype, $fileblob, $filesize);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($filename, $filecontenttype, '(blob)', $filesize));
 		$fileid = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		
 		return $fileid;
 	}
@@ -3191,8 +3218,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- DeleteFileFromSQL ------------------ */
 	/* -------------------------------------------- */
 	function DeleteFileFromSQL($fileid) {
-		$sqlstring = "delete from files where file_id = $fileid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$fileid = (int)$fileid;
+		$sqlstring = "delete from files where file_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -3200,13 +3231,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- GetFileInfoFromSQL ----------------- */
 	/* -------------------------------------------- */
 	function GetFileInfoFromSQL($fileid) {
-		$sqlstring = "select file_name, file_contenttype, file_size, file_date from files where file_id = $fileid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$fileid = (int)$fileid;
+		$sqlstring = "select file_name, file_contenttype, file_size, file_date from files where file_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$filename = $row['file_name'];
-		$filecontenttype = $row['file_contenttype'];
-		$filesize = $row['file_size'];
-		$filedate = $row['file_date'];
+		mysqli_stmt_close($stmt);
+		$filename = $row['file_name'] ?? '';
+		$filecontenttype = $row['file_contenttype'] ?? '';
+		$filesize = $row['file_size'] ?? 0;
+		$filedate = $row['file_date'] ?? '';
 
 		return array($filename, $filecontenttype, $filesize, $filedate);
 	}

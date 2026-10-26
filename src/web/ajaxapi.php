@@ -142,9 +142,6 @@
 		case 'getseriesthumbnail':
 			GetSeriesThumbnail(GetVariable("seriesid"), GetVariable("modality"));
 			break;
-		case 'downloadfile':
-			DownloadFile(GetVariable("fileid"));
-			break;
 		case 'horizontalchart':
 			HorizontalChart(GetVariable("w"), GetVariable("h"), GetVariable("v"), GetVariable("c"), GetVariable("b"));
 			break;
@@ -1527,33 +1524,6 @@
 		if (file_exists($thumbpath)) {
 			?><a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="photo video icon"></i></a><?
 		}
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DownloadFile ----------------------- */
-	/* -------------------------------------------- */
-	function DownloadFile($fileid) {
-		$fileid = (int)$fileid;
-		if ($fileid < 1) { return; }
-
-		list($filename, $filecontenttype, $fileblob, $filesize, $filedate) = GetFileFromSQL($fileid);
-		if ($filename == "") { return; }
-
-		/* discard any buffered output so the binary blob is not corrupted */
-		while (ob_get_level() > 0) { ob_end_clean(); }
-
-		header("Pragma: public");
-		header("Expires: 0");
-		header("Cache-Control: must-revalidate, post-check=0, pre-check=0");
-		header("Cache-Control: public");
-		header("Content-Description: File Transfer");
-		header("Content-type: $filecontenttype");
-		header("Content-Disposition: attachment; filename=\"$filename\"");
-		header("Content-Transfer-Encoding: binary");
-		header("Content-Length: $filesize");
-
-		echo $fileblob;
 	}
 
 

@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -40,7 +41,7 @@
 	require "includes_html.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("addrating", "delete")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$ratingid = (int)GetVariable("ratingid");
 	$type = GetVariable("type");
@@ -48,13 +49,15 @@
 	$value = GetVariable("rating_value");
 	$notes = GetVariable("rating_notes");
 
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
+	$thispage = "ratings.php?id=$id&type=" . urlencode($type ?? '') . "&modality=" . urlencode($modality ?? '');
 	if ($action == "addrating") {
 		AddRating($username, $modality, $type, $id, $value, $notes);
-		DisplayRatings($id, $type, $modality, $username);
+		RedirectTo($thispage);
 	}
 	elseif ($action == "delete") {
 		DeleteRating($ratingid);
-		DisplayRatings($id, $type, $modality, $username);
+		RedirectTo($thispage);
 	}
 	else {
 		DisplayRatings($id, $type, $modality, $username);
@@ -65,15 +68,22 @@
 	/* ------- AddRating -------------------------- */
 	/* -------------------------------------------- */
 	function AddRating($username, $modality, $type, $id, $value, $notes) {
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($username));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
+		mysqli_stmt_close($stmt);
+		$userid = (int)($row['user_id'] ?? 0);
+		if ($userid < 1) { return; }
 
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-
-		$sqlstring = "insert into ratings (rater_id, data_id, data_modality, rating_type, rating_value, rating_notes, rating_date) values ($userid, $id, '$modality', '$type', $value, '$notes', now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$value = (int)$value;
+		$sqlstring = "insert into ratings (rater_id, data_id, data_modality, rating_type, rating_value, rating_notes, rating_date) values (?, ?, ?, ?, ?, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iissis', $userid, $id, $modality, $type, $value, $notes);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($userid, $id, $modality, $type, $value, $notes));
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -81,8 +91,12 @@
 	/* ------- DeleteRating ----------------------- */
 	/* -------------------------------------------- */
 	function DeleteRating($ratingid) {
-		$sqlstring = "delete from ratings where rating_id = '$ratingid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$ratingid = (int)$ratingid;
+		$sqlstring = "delete from ratings where rating_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $ratingid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($ratingid));
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -122,8 +136,9 @@
 				<form class="ui form" action="ratings.php" method="post">
 					<input type="hidden" name="action" value="addrating">
 					<input type="hidden" name="id" value="<?=htmlspecialchars($id)?>">
-					<input type="hidden" name="type" value="<?=htmlspecialchars($type)?>">
-					<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+					<input type="hidden" name="type" value="<?=htmlspecialchars($type ?? '')?>">
+					<input type="hidden" name="modality" value="<?=htmlspecialchars($modality ?? '')?>">
+					<?=CSRFTokenField()?>
 					<div class="fields">
 						<div class="six wide field">
 							<label>Rating</label>
@@ -155,8 +170,12 @@
 			<!-- Existing ratings table -->
 			<div class="ui bottom attached segment">
 				<? if ($type == "series") {
-					$sqlstring = "select * from ratings a left join users b on a.rater_id = b.user_id where a.data_id = $id order by a.rating_date desc";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$id = (int)$id;
+					$sqlstring = "select * from ratings a left join users b on a.rater_id = b.user_id where a.data_id = ? order by a.rating_date desc";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $id);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+					mysqli_stmt_close($stmt);
 					if (mysqli_num_rows($result) < 1) { ?>
 						<div class="ui message">No ratings have been added yet.</div>
 					<? } else { ?>
@@ -188,9 +207,15 @@
 									<td><div class="<?=$label_class?>"><?=$label_text?></div></td>
 									<td><?=$rating_notes?></td>
 									<td style="text-align:center">
-										<a class="ui mini red basic icon button" href="ratings.php?action=delete&ratingid=<?=$rating_id?>&id=<?=$id?>&type=<?=$type?>&modality=<?=$modality?>" title="Delete rating">
-											<i class="trash icon"></i>
-										</a>
+										<form method="post" action="ratings.php" style="display: inline" onsubmit="return confirm('Delete this rating?')">
+											<input type="hidden" name="action" value="delete">
+											<input type="hidden" name="ratingid" value="<?=(int)$rating_id?>">
+											<input type="hidden" name="id" value="<?=$id?>">
+											<input type="hidden" name="type" value="<?=htmlspecialchars($type ?? '')?>">
+											<input type="hidden" name="modality" value="<?=htmlspecialchars($modality ?? '')?>">
+											<?=CSRFTokenField()?>
+											<button type="submit" class="ui mini red basic icon button" title="Delete rating"><i class="trash icon"></i></button>
+										</form>
 									</td>
 								</tr>
 								<?

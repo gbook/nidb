@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -41,7 +42,6 @@
 	require "nidbapi.php";
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
 	$id = (int)GetVariable("id");
 	$connname = GetVariable("connname");
 	$remoteserver = GetVariable("remoteserver");
@@ -51,9 +51,11 @@
 	$remoteprojectid = (int)GetVariable("remoteprojectid");
 	$remotesiteid = (int)GetVariable("remotesiteid");
 	
-	if (!$nomenu) {
+	if (empty($nomenu)) {
 		require "menu.php";
 	}
+	
+	$action = GetSafeAction(array("add", "update", "delete")); /* mutating actions require POST + CSRF token */
 	
 	/* determine action */
 	if ($action == "editform") {
@@ -62,17 +64,24 @@
 	elseif ($action == "addform") {
 		DisplayConnectionForm("add", "");
 	}
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 	elseif ($action == "update") {
+		ob_start();
 		UpdateConnection($id, $connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid);
-		DisplayConnectionList();
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("remoteconnections.php");
 	}
 	elseif ($action == "add") {
+		ob_start();
 		AddConnection($connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid);
-		DisplayConnectionList();
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("remoteconnections.php");
 	}
 	elseif ($action == "delete") {
+		ob_start();
 		DeleteConnection($id);
-		DisplayConnectionList();
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("remoteconnections.php");
 	}
 	else {
 		DisplayConnectionList();
@@ -83,24 +92,54 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetCurrentUserIDForConnections ----- */
+	/* -------------------------------------------- */
+	/* remote connections belong to the user who created them */
+	function GetCurrentUserIDForConnections() {
+		$sqlstring = "select user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($GLOBALS['username']));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['user_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidConnectionFields -------------- */
+	/* -------------------------------------------- */
+	/* the server and username are later placed on a curl command line (ajaxapi.php RemoteExportStatus),
+	   so only allow plain http(s) URLs and simple usernames. Displays an error and returns false if invalid */
+	function ValidConnectionFields($remoteserver, $remoteusername) {
+		if (!preg_match('#^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?$#', (string)$remoteserver)) {
+			Error("Server must be a plain http:// or https:// URL (letters, numbers, <tt>. - _ ~ /</tt> and an optional port). Connection was not saved.");
+			return false;
+		}
+		if (!preg_match('/^[A-Za-z0-9._@-]+$/', (string)$remoteusername)) {
+			Error("Remote username may only contain letters, numbers, and <tt>. _ @ -</tt>. Connection was not saved.");
+			return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddConnection ---------------------- */
 	/* -------------------------------------------- */
 	function AddConnection($connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid) {
-		/* perform data checks */
-		$connname = mysqli_real_escape_string($GLOBALS['linki'], $connname);
-		$remoteserver = mysqli_real_escape_string($GLOBALS['linki'], $remoteserver);
-		$remoteusername = mysqli_real_escape_string($GLOBALS['linki'], $remoteusername);
-		$remotepassword = mysqli_real_escape_string($GLOBALS['linki'], $remotepassword);
-		$remoteinstanceid = mysqli_real_escape_string($GLOBALS['linki'], $remoteinstanceid);
-		$remoteprojectid = mysqli_real_escape_string($GLOBALS['linki'], $remoteprojectid);
-		$remotesiteid = mysqli_real_escape_string($GLOBALS['linki'], $remotesiteid);
+		if (!ValidConnectionFields($remoteserver, $remoteusername)) { return; }
+		$userid = GetCurrentUserIDForConnections();
+		if ($userid < 1) { return; }
 
-		/* insert the new site */
-		$sqlstring = "insert into remote_connections (conn_name, user_id, remote_server, remote_username, remote_password, remote_instanceid, remote_projectid, remote_siteid) values ('$connname', (select user_id from users where username = '" . $GLOBALS['username'] . "'), '$remoteserver', '$remoteusername', sha1('$remotepassword'), '$remoteinstanceid', '$remoteprojectid', '$remotesiteid')";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* the remote password is stored as sha1(), which is what the remote api.php is sent */
+		$sqlstring = "insert into remote_connections (conn_name, user_id, remote_server, remote_username, remote_password, remote_instanceid, remote_projectid, remote_siteid) values (?, ?, ?, ?, sha1(?), ?, ?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sisssiii', $connname, $userid, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($connname, $userid, $remoteserver, $remoteusername, '(password)', $remoteinstanceid, $remoteprojectid, $remotesiteid));
+		mysqli_stmt_close($stmt);
 		
-		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
+		Notice("Connection " . htmlspecialchars($connname ?? '') . " added");
 	}
 
 	
@@ -108,21 +147,18 @@
 	/* ------- UpdateConnection ------------------- */
 	/* -------------------------------------------- */
 	function UpdateConnection($id, $connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid) {
-		/* perform data checks */
-		$connname = mysqli_real_escape_string($GLOBALS['linki'], $connname);
-		$remoteserver = mysqli_real_escape_string($GLOBALS['linki'], $remoteserver);
-		$remoteusername = mysqli_real_escape_string($GLOBALS['linki'], $remoteusername);
-		$remotepassword = mysqli_real_escape_string($GLOBALS['linki'], $remotepassword);
-		$remoteinstanceid = mysqli_real_escape_string($GLOBALS['linki'], $remoteinstanceid);
-		$remoteprojectid = mysqli_real_escape_string($GLOBALS['linki'], $remoteprojectid);
-		$remotesiteid = mysqli_real_escape_string($GLOBALS['linki'], $remotesiteid);
+		if (!ValidConnectionFields($remoteserver, $remoteusername)) { return; }
+		$id = (int)$id;
+		$userid = GetCurrentUserIDForConnections();
 
-		/* insert the new site */
-		$sqlstring = "update remote_connections set conn_name = '$connname', remote_server = '$remoteserver', remote_username = '$remoteusername', remote_password = sha1('$remotepassword'), remote_instanceid = '$remoteinstanceid', remote_projectid = '$remoteprojectid', remote_siteid = '$remotesiteid' where remoteconn_id = $id";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* only the owner's own connection can be updated */
+		$sqlstring = "update remote_connections set conn_name = ?, remote_server = ?, remote_username = ?, remote_password = sha1(?), remote_instanceid = ?, remote_projectid = ?, remote_siteid = ? where remoteconn_id = ? and user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssiiiii', $connname, $remoteserver, $remoteusername, $remotepassword, $remoteinstanceid, $remoteprojectid, $remotesiteid, $id, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($connname, $remoteserver, $remoteusername, '(password)', $remoteinstanceid, $remoteprojectid, $remotesiteid, $id, $userid));
+		mysqli_stmt_close($stmt);
 		
-		?><div align="center"><span class="message"><?=$sitename?> added</span></div><br><br><?
+		Notice("Connection " . htmlspecialchars($connname ?? '') . " updated");
 	}
 	
 
@@ -130,10 +166,17 @@
 	/* ------- DeleteConnection ------------------- */
 	/* -------------------------------------------- */
 	function DeleteConnection($id) {
-		$sqlstring = "delete from remote_connections where remoteconn_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$userid = GetCurrentUserIDForConnections();
+
+		/* only the owner's own connection can be deleted */
+		$sqlstring = "delete from remote_connections where remoteconn_id = ? and user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $id, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id, $userid));
+		mysqli_stmt_close($stmt);
 		
-		?><div align="center"><span class="message">Connection <?=$id?> deleted</span></div><br><br><?
+		Notice("Connection deleted");
 	}	
 	
 	
@@ -144,22 +187,32 @@
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
-			$sqlstring = "select * from remote_connections where remoteconn_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			/* only the owner's own connection can be viewed */
+			$id = (int)$id;
+			$userid = GetCurrentUserIDForConnections();
+			$sqlstring = "select * from remote_connections where remoteconn_id = ? and user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $id, $userid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id, $userid));
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row === null) {
+				Error("Connection not found");
+				return;
+			}
 			$connname = $row['conn_name'];
 			$remoteserver = $row['remote_server'];
 			$remoteusername = $row['remote_username'];
-			$remotepassword = $row['remote_password'];
 			$remoteinstanceid = $row['remote_instanceid'];
 			$remoteprojectid = $row['remote_projectid'];
 			$remotesiteid = $row['remote_siteid'];
 		
 			$formaction = "update";
-			$formtitle = "Updating $sitename";
+			$formtitle = "Updating " . htmlspecialchars($connname ?? '');
 			$submitbuttonlabel = "Update";
 		}
 		else {
+			$connname = $remoteserver = $remoteusername = $remoteinstanceid = $remoteprojectid = $remotesiteid = "";
 			$formaction = "add";
 			$formtitle = "Add new connection";
 			$submitbuttonlabel = "Add";
@@ -170,7 +223,8 @@
 		<table class="entrytable">
 			<form method="post" action="remoteconnections.php" autocomplete="off">
 			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="id" value="<?=(int)$id?>">
+			<?=CSRFTokenField()?>
 			<tr>
 				<td colspan="2" align="center">
 					<b><?=$formtitle?></b>
@@ -178,15 +232,15 @@
 			</tr>
 			<tr>
 				<td>Name</td>
-				<td><input type="text" name="connname" value="<?=$connname?>" maxlength="255" required></td>
+				<td><input type="text" name="connname" value="<?=htmlspecialchars($connname ?? '')?>" maxlength="255" required></td>
 			</tr>
 			<tr>
 				<td>Server</td>
-				<td><input type="url" name="remoteserver" required value="<?=$remoteserver?>"></td>
+				<td><input type="url" name="remoteserver" required value="<?=htmlspecialchars($remoteserver ?? '')?>"></td>
 			</tr>
 			<tr>
 				<td>Remote username</td>
-				<td><input type="text" name="remoteusername" autocomplete="off" required value="<?=$remoteusername?>"></td>
+				<td><input type="text" name="remoteusername" autocomplete="off" required value="<?=htmlspecialchars($remoteusername ?? '')?>"></td>
 			</tr>
 			<tr>
 				<td>Remote password</td>
@@ -194,15 +248,15 @@
 			</tr>
 			<tr>
 				<td>Remote instance</td>
-				<td><input type="text" name="remoteinstanceid" required value="<?=$remoteinstanceid?>"></td>
+				<td><input type="text" name="remoteinstanceid" required value="<?=htmlspecialchars($remoteinstanceid ?? '')?>"></td>
 			</tr>
 			<tr>
 				<td>Remote project</td>
-				<td><input type="text" name="remoteprojectid" required value="<?=$remoteprojectid?>"></td>
+				<td><input type="text" name="remoteprojectid" required value="<?=htmlspecialchars($remoteprojectid ?? '')?>"></td>
 			</tr>
 			<tr>
 				<td>Remote site</td>
-				<td><input type="text" name="remotesiteid" required value="<?=$remotesiteid?>"></td>
+				<td><input type="text" name="remotesiteid" required value="<?=htmlspecialchars($remotesiteid ?? '')?>"></td>
 			</tr>
 			<tr>
 				<td colspan="2" align="center">
@@ -219,6 +273,8 @@
 	/* ------- DisplayConnectionList -------------- */
 	/* -------------------------------------------- */
 	function DisplayConnectionList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+		$userid = GetCurrentUserIDForConnections();
 	?>
 
 	<div class="ui container">
@@ -238,8 +294,11 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sqlstring = "select * from remote_connections where user_id = ? order by conn_name";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $userid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($userid));
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 						$id = $row['remoteconn_id'];
 						$connname = $row['conn_name'];
@@ -251,14 +310,21 @@
 						$remotesiteid = $row['remote_siteid'];
 				?>
 				<tr>
-					<td><a href="remoteconnections.php?action=editform&id=<?=$id?>"><?=$connname?></a></td>
-					<td><?=$remoteserver?></td>
-					<td><?=$remoteusername?></td>
-					<td style="font-size:10pt"><?=strtoupper($remotepassword)?></td>
-					<td><?=$remoteinstanceid?></td>
-					<td><?=$remoteprojectid?></td>
-					<td><?=$remotesiteid?></td>
-					<td><a class="ui red button" href="remoteconnections.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this connection?')"><i class="trash icon"></i></a></td>
+					<td><a href="remoteconnections.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($connname ?? '')?></a></td>
+					<td><?=htmlspecialchars($remoteserver ?? '')?></td>
+					<td><?=htmlspecialchars($remoteusername ?? '')?></td>
+					<td style="font-size:10pt"><?=htmlspecialchars(strtoupper($remotepassword ?? ''))?></td>
+					<td><?=htmlspecialchars($remoteinstanceid ?? '')?></td>
+					<td><?=htmlspecialchars($remoteprojectid ?? '')?></td>
+					<td><?=htmlspecialchars($remotesiteid ?? '')?></td>
+					<td>
+						<form method="post" action="remoteconnections.php" style="display: inline" onsubmit="return confirm('Are you sure you want to delete this connection?')">
+							<input type="hidden" name="action" value="delete">
+							<input type="hidden" name="id" value="<?=(int)$id?>">
+							<?=CSRFTokenField()?>
+							<button type="submit" class="ui red icon button" title="Delete connection"><i class="trash icon"></i></button>
+						</form>
+					</td>
 				</tr>
 				<? 
 					}

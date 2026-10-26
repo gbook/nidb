@@ -46,7 +46,7 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		$action = GetSafeAction(array("addlink", "deletelink")); /* mutating actions require POST + CSRF token */
 		$linkid = GetVariable("linkid");
 		$linkurl = GetVariable("linkurl");
 		$linktext = GetVariable("linktext");
@@ -197,6 +197,7 @@
 			
 			<form method="post" action="admin.php" class="ui form">
 			<input type="hidden" name="action" value="addlink">
+			<?=CSRFTokenField()?>
 				<div class="fields">
 					<div class="four wide field">
 						<input type="url" name="linkurl" placeholder="URL">
@@ -223,7 +224,14 @@
 				$linkdesc = $row['link_desc'];
 				?>
 				<div class="item">
-					<div class="right floated content"><a href="admin.php?action=deletelink&linkid=<?=$linkid?>"><i class="red trash icon"></i></div>
+					<div class="right floated content">
+						<form method="post" action="admin.php" style="display: inline" onsubmit="return confirm('Delete this link?')">
+							<input type="hidden" name="action" value="deletelink">
+							<input type="hidden" name="linkid" value="<?=$linkid?>">
+							<?=CSRFTokenField()?>
+							<button type="submit" class="ui mini basic icon button" title="Delete link"><i class="red trash icon"></i></button>
+						</form>
+					</div>
 					<div class="content">
 						<h3 class="header"><a href="<?=$linkurl?>"><?=$linktext?></a></h3>
 						<div class="description"><?=$linkdesc?></div>
