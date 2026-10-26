@@ -294,19 +294,49 @@
 	}
 	
 	/* -------------------------------------------- */
+	/* ------- UserCanModifySeries ---------------- */
+	/* -------------------------------------------- */
+	/* adding files to a series changes raw data, so it requires Edit Data on the series' project.
+	   $modality must already be validated (it is used in a table name) */
+	function UserCanModifySeries($seriesid, $modality) {
+		$tablename = GetSeriesTableName($modality);
+		if (($tablename == '') || ((int)$seriesid < 1))
+			return false;
+
+		$sqlstring = "select c.project_id from $tablename a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where a.$modality" . "series_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$seriesid = (int)$seriesid;
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($seriesid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row)
+			return false;
+
+		$projectid = (int)$row['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, 'modifydata', $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- UploadFile ------------------------- */
 	/* -------------------------------------------- */
 	function UploadFile($seriesid, $modality) {
-		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		$seriesid = (int)$seriesid;
+		$modality = strtolower(trim((string)$modality));
 
 		$output = "";
 		$success = false;
 
 		//header("HTTP/1.0 400 Bad Request");
 
-		if (!IsNiDBModality($modality)) {
-			$output = "Invalid modality [$modality]";
+		if ((GetSeriesTableName($modality) == '') || (!IsNiDBModality($modality))) {
+			echo "Invalid modality [" . htmlspecialchars($modality) . "]";
+			$success = false;
+		}
+		elseif (!UserCanModifySeries($seriesid, $modality)) {
+			echo "You do not have permission to add files to this series";
 			$success = false;
 		}
 		else {
@@ -323,7 +353,14 @@
 			mkdir($outpath, 0777, true);
 			chmod($outpath, 0777);
 			foreach ($_FILES['file']['name'] as $i => $name) {
-				echo "Working on file [$name]\n";
+				/* client-supplied filename: never allow directory components */
+				$name = basename((string)$name);
+				if (($name == '') || ($name == '.') || ($name == '..')) {
+					echo "ERROR invalid filename\n";
+					$success = false;
+					continue;
+				}
+				echo "Working on file [" . htmlspecialchars($name) . "]\n";
 				$filesize = 0;
 				error_reporting(E_ALL);
 				if (move_uploaded_file($_FILES['file']['tmp_name'][$i], "$outpath/$name")) {
@@ -343,11 +380,14 @@
 			
 			/* update the database to reflect the number of size of the files */
 			if ($modality == "mr")
-				$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
+				$sqlstring = "update mr_series set numfiles_beh = ?, beh_size = ? where mrseries_id = ?";
 			else
-				$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+				$sqlstring = "update $modality"."_series set series_numfiles = ?, series_size = ? where $modality"."series_id = ?";
 			
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'idi', $filecount, $filesize, $seriesid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($filecount, $filesize, $seriesid));
+			mysqli_stmt_close($stmt);
 		}
 		
 		if ($success) {

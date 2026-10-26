@@ -23,6 +23,7 @@
 
 	define("LEGIT_REQUEST", true);
 	
+	ob_start();
 	session_start();
 ?>
 
@@ -43,21 +44,37 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$seriesid = (int)GetVariable("seriesid");
-	$modality = GetVariable("modality");
-	$datatype = GetVariable("datatype");
-	$filename = GetVariable("filename");
-	$newfilename = GetVariable("newfilename");
-	
-	/* determine action */
-	if ($action == "delete") {
-		DeleteFile($seriesid, $modality, $datatype, $filename);
-		DisplayFileList($seriesid, $modality, $datatype);
+	$modality = strtolower(trim((string)GetVariable("modality")));
+	$datatype = (string)GetVariable("datatype");
+	$filename = (string)GetVariable("filename");
+	$newfilename = (string)GetVariable("newfilename");
+
+	/* modality is used in a table name and datatype in a path, so both must be plain identifiers */
+	if ((GetSeriesTableName($modality) == '') || (!IsNiDBModality($modality))) {
+		Error("Invalid modality");
 	}
-	elseif ($action == "rename") {
-		RenameFile($seriesid, $modality, $datatype, $filename, $newfilename);
-		DisplayFileList($seriesid, $modality, $datatype);
+	elseif (!preg_match('/^[A-Za-z0-9_-]+$/', $datatype)) {
+		Error("Invalid datatype");
+	}
+	/* determine action. delete and rename change raw data, so they must be POSTed with this
+	   session's CSRF token, then redirect back to the file list (Post/Redirect/GET) */
+	elseif (($action == "delete") || ($action == "rename")) {
+		$returnurl = "managefiles.php?seriesid=$seriesid&modality=" . urlencode($modality) . "&datatype=" . urlencode($datatype);
+		ob_start();
+		if (($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') {
+			Error("This action must be submitted from the file list");
+		}
+		elseif (VerifyCSRFToken()) {
+			if ($action == "delete")
+				DeleteFile($seriesid, $modality, $datatype, $filename);
+			else
+				RenameFile($seriesid, $modality, $datatype, $filename, $newfilename);
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo($returnurl);
 	}
 	else {
+		ShowFlashMessage();
 		DisplayFileList($seriesid, $modality, $datatype);
 	}
 	
@@ -66,39 +83,112 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- GetSeries -------------------------- */
+	/* -------------------------------------------- */
+	/* the series row plus the study/subject/project it belongs to, or null. $modality must already be
+	   validated (it is used in a table name) */
+	function GetSeries($seriesid, $modality) {
+		$tablename = GetSeriesTableName($modality);
+		$seriesid = (int)$seriesid;
+		if (($tablename == '') || ($seriesid < 1))
+			return null;
+
+		$sqlstring = "select a.*, b.study_num, b.study_id, c.project_id, d.uid, d.subject_id from $tablename a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($seriesid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return ($row) ? $row : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UserHasSeriesPerm ------------------ */
+	/* -------------------------------------------- */
+	/* $perm is 'viewdata' to list files, 'modifydata' to delete or rename them */
+	function UserHasSeriesPerm($series, $perm) {
+		$projectid = (int)($series['project_id'] ?? 0);
+		if ($projectid < 1)
+			return false;
+
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, $perm, $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetDataDir ------------------------- */
 	/* -------------------------------------------- */
-	function GetDataDir($seriesid, $modality, $datatype) {
-		$modality = strtolower($modality);
-		
-		$sqlstring = "select a.series_num, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
-		
-		$result2 = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-		$study_num = $row['study_num'];
-		$uid = $row['uid'];
-		$series_num = $row['series_num'];
+	/* the series' data directory, resolved with realpath(), or '' if it doesn't exist or isn't inside
+	   the archive. A blank UID, study, or series number would point at a parent directory */
+	function GetDataDir($series, $datatype) {
+		$uid = trim((string)($series['uid'] ?? ''));
+		$study_num = trim((string)($series['study_num'] ?? ''));
+		$series_num = trim((string)($series['series_num'] ?? ''));
+		if (($uid == '') || ($study_num == '') || ($series_num == '') || (!preg_match('/^[A-Za-z0-9_-]+$/', $datatype)))
+			return '';
+
 		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";
 		if (!file_exists($path)) {
 			$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/" . strtolower($datatype);
 		}
-		
-		return $path;
+
+		$realpath = realpath($path);
+		$archivedir = realpath($GLOBALS['cfg']['archivedir']);
+		if (($realpath === false) || ($archivedir === false) || ($archivedir == '/') || (!is_dir($realpath)))
+			return '';
+		if (substr($realpath, 0, strlen($archivedir) + 1) !== $archivedir . '/')
+			return '';
+
+		return $realpath;
 	}
-	
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetFileInDir ----------------------- */
+	/* -------------------------------------------- */
+	/* full path of $filename if it is a regular file directly inside $datadir, otherwise ''. Rejects
+	   directory components, ../, and symlinks that point elsewhere */
+	function GetFileInDir($datadir, $filename) {
+		if (($datadir == '') || ($filename == '') || ($filename !== basename($filename)) || ($filename == '.') || ($filename == '..'))
+			return '';
+
+		$realfile = realpath("$datadir/$filename");
+		if (($realfile === false) || (dirname($realfile) !== $datadir) || (!is_file($realfile)))
+			return '';
+
+		return $realfile;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DeleteFile ------------------------- */
 	/* -------------------------------------------- */
 	function DeleteFile($seriesid, $modality, $datatype, $filename) {
-		$filepath = GetDataDir($seriesid, $modality, $datatype) . "/$filename";
-		
+		$series = GetSeries($seriesid, $modality);
+		if (!$series) {
+			Error("Series not found");
+			return;
+		}
+		if (!UserHasSeriesPerm($series, 'modifydata')) {
+			Error("You do not have permission to change the files in this series");
+			return;
+		}
+
+		$filepath = GetFileInDir(GetDataDir($series, $datatype), $filename);
+		if ($filepath == '') {
+			Error("File [" . htmlspecialchars($filename) . "] was not found in this series");
+			return;
+		}
+
 		unlink($filepath);
 		if (file_exists($filepath)) {
-			echo "Could not delete $filepath";
+			Error("Could not delete " . htmlspecialchars($filepath));
 		}
 		else {
-			echo "Deleted $filepath";
+			Notice("Deleted " . htmlspecialchars($filepath));
 		}
 	}
 
@@ -108,80 +198,97 @@
 	/* -------------------------------------------- */
 	function RenameFile($seriesid, $modality, $datatype, $filename, $newfilename) {
 		$newfilename = preg_replace('/[^A-Za-z0-9_\-\.]/', '_', $newfilename);
-		
-		$datadir = GetDataDir($seriesid, $modality, $datatype);
-		$oldfilepath = "$datadir/$filename";
+		if (($newfilename == '') || ($newfilename == '.') || ($newfilename == '..')) {
+			Error("Invalid new filename");
+			return;
+		}
+
+		$series = GetSeries($seriesid, $modality);
+		if (!$series) {
+			Error("Series not found");
+			return;
+		}
+		if (!UserHasSeriesPerm($series, 'modifydata')) {
+			Error("You do not have permission to change the files in this series");
+			return;
+		}
+
+		$datadir = GetDataDir($series, $datatype);
+		$oldfilepath = GetFileInDir($datadir, $filename);
+		if ($oldfilepath == '') {
+			Error("File [" . htmlspecialchars($filename) . "] was not found in this series");
+			return;
+		}
 		$newfilepath = "$datadir/$newfilename";
+		if (file_exists($newfilepath)) {
+			Error("A file named [" . htmlspecialchars($newfilename) . "] already exists in this series");
+			return;
+		}
 
 		if (rename($oldfilepath, $newfilepath)) {
-			Notice("Successfully renamed [$oldfilepath] to [$newfilepath]");
+			Notice("Successfully renamed [" . htmlspecialchars($oldfilepath) . "] to [" . htmlspecialchars($newfilepath) . "]");
 		}
 		else {
-			Notice("Problem renaming [$oldfilepath] to [$newfilepath]");
+			Notice("Problem renaming [" . htmlspecialchars($oldfilepath) . "] to [" . htmlspecialchars($newfilepath) . "]");
 		}
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplayFileList -------------------- */
 	/* -------------------------------------------- */
 	function DisplayFileList($seriesid, $modality, $datatype) {
-	
-		$modality = strtolower($modality);
-		
-		$sqlstring = "select a.*, b.study_num, b.study_id, d.uid, d.subject_id from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
-		
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$seriesid = (int)$seriesid;
+
+		$row = GetSeries($seriesid, $modality);
+		if (!$row) {
+			Error("Series not found");
+			return;
+		}
+		if (!UserHasSeriesPerm($row, 'viewdata')) {
+			Error("You do not have permission to view the files in this series");
+			return;
+		}
+
 		$subjectid = $row['subject_id'];
 		$uid = $row['uid'];
 		$study_num = $row['study_num'];
 		$studyid = $row['study_id'];
-		$series_datetime = date('g:ia',strtotime($row['series_datetime']));
-		$protocol = $row['series_desc'];
-		$sequence = $row['series_sequencename'];
+		$protocol = $row['series_desc'] ?? '';
 		$series_num = $row['series_num'];
-		$series_tr = $row['series_tr'];
-		$series_te = $row['series_te'];
-		$series_flip = $row['series_flip'];
-		$series_spacingx = $row['series_spacingx'];
-		$series_spacingy = $row['series_spacingy'];
-		$series_spacingz = $row['series_spacingz'];
-		$series_fieldstrength = $row['series_fieldstrength'];
-		$img_rows = $row['img_rows'];
-		$img_cols = $row['img_cols'];
-		$img_slices = $row['img_slices'];
-		$bold_reps = $row['bold_reps'];
-		$numfiles = $row['numfiles'];
-		$series_size = $row['series_size'];
-		$series_status = $row['series_status'];
-		$series_notes = $row['series_notes'];
 
-		$datadir = GetDataDir($seriesid, $modality, $datatype);
+		$datadir = GetDataDir($row, $datatype);
+		if ($datadir == '') {
+			Error("The data directory for this series does not exist");
+			return;
+		}
 		
 		$files = scandir($datadir);
+		if ($files === false) $files = array();
 
 		/* update the DB with the files that actually exist */
 		$filecount = count(glob("$datadir/*"));
 		$filesize = GetDirectorySize($datadir);
 		if ($modality == "mr") {
-			$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
+			$sqlstring = "update mr_series set numfiles_beh = ?, beh_size = ? where mrseries_id = ?";
 		}
 		else {
-			$sqlstring = "update $modality"."_series set series_numfiles = $filecount, series_size = $filesize where $modality"."series_id = $seriesid";
+			$sqlstring = "update $modality" . "_series set series_numfiles = ?, series_size = ? where $modality" . "series_id = ?";
 		}
-		//echo "$sqlstring";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'idi', $filecount, $filesize, $seriesid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($filecount, $filesize, $seriesid));
+		mysqli_stmt_close($stmt);
 
 		?>
 		<b>Displaying files for</b>
 		<br><br>
 		<div style="padding: 1px 10px">
-		<b>Subject ID:</b> <?=$uid?><br>
-		<b>Study #:</b> <?=$study_num?><br>
-		<b>Series #:</b> <?=$series_num?><br>
-		<b>Datatype:</b> <?=$datatype?><br>
-		<b>Protocol:</b> <?=$protocol?>
+		<b>Subject ID:</b> <?=htmlspecialchars($uid ?? '')?><br>
+		<b>Study #:</b> <?=htmlspecialchars($study_num ?? '')?><br>
+		<b>Series #:</b> <?=htmlspecialchars($series_num ?? '')?><br>
+		<b>Datatype:</b> <?=htmlspecialchars($datatype)?><br>
+		<b>Protocol:</b> <?=htmlspecialchars($protocol)?>
 		</div>
 		<br><br>
 		<table class="ui very compact celled grey table">
@@ -201,6 +308,8 @@
 				<?
 					foreach ($files as $file) {
 						if (($file != ".") && ($file != "..")) {
+							$filehtml = htmlspecialchars($file);
+							$fileurl = urlencode("$datadir/$file");
 							$size = number_format(filesize("$datadir/$file"),0);
 							$pathparts = pathinfo("$datadir/$file");
 							$atime = date('M j, Y g:ia', fileatime("$datadir/$file"));
@@ -228,13 +337,13 @@
 							
 							?>
 							<tr style="font-size: 10pt">
-								<td><a href="getfile.php?action=download&file=<? echo "$datadir/$file"; ?>" style="color: darkblue; font-weight: bold"><?=$file?></a>
+								<td><a href="getfile.php?action=download&file=<?=$fileurl?>" style="color: darkblue; font-weight: bold"><?=$filehtml?></a>
 								<?
 									if ($datatype == "VIDEO") {
 										if ($filetype == "Flash Video") {
 										?>
-										<object type="application/x-shockwave-flash" width="320" height="260" wmode="transparent" data="flvplayer.swf?file=getfile.php%3Ffile%3D<? echo "$datadir/$file"; ?>&autoStart=false">
-											<param name="movie" value="flvplayer.swf?file=getfile.php%3Ffile%3D<? echo "$datadir/$file"; ?>&autoStart=false" />
+										<object type="application/x-shockwave-flash" width="320" height="260" wmode="transparent" data="flvplayer.swf?file=getfile.php%3Ffile%3D<?=urlencode($fileurl)?>&autoStart=false">
+											<param name="movie" value="flvplayer.swf?file=getfile.php%3Ffile%3D<?=urlencode($fileurl)?>&autoStart=false" />
 											<param name="wmode" value="transparent" />
 
 										</object>
@@ -243,20 +352,21 @@
 										else {
 										?>
 										<video controls="controls">
-											<source src="getfile.php?file=<? echo "$datadir/$file"; ?>">
+											<source src="getfile.php?file=<?=$fileurl?>">
 										</video>
 										<?
 										}
 									}
 								?>
 								</td>
-								<form action="managefiles.php" class="ui form">
+								<form action="managefiles.php" method="post" class="ui form">
+									<?=CSRFTokenField()?>
 									<input type="hidden" name="action" value="rename">
 									<input type="hidden" name="seriesid" value="<?=$seriesid?>">
-									<input type="hidden" name="modality" value="<?=$modality?>">
-									<input type="hidden" name="datatype" value="<?=$datatype?>">
-									<input type="hidden" name="filename" value="<?=$file?>">
-									<td><div class="ui fluid input"><input type="text" maxlength="255" name="newfilename" value="<?=$file?>"></div></td>
+									<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+									<input type="hidden" name="datatype" value="<?=htmlspecialchars($datatype)?>">
+									<input type="hidden" name="filename" value="<?=$filehtml?>">
+									<td><div class="ui fluid input"><input type="text" maxlength="255" name="newfilename" value="<?=$filehtml?>"></div></td>
 									<input type="submit" style="display:none">
 								</form>
 								<td><?=$filetype?></td>
@@ -264,7 +374,17 @@
 								<td><?=$ctime?></td>
 								<td><?=$atime?></td>
 								<td><?=$mtime?></td>
-								<td><a href="managefiles.php?action=delete&seriesid=<?=$seriesid?>&modality=<?=$modality?>&datatype=<?=$datatype?>&filename=<?=$file?>"><i class="ui large red trash alternate icon"></i></a></td>
+								<td>
+									<form action="managefiles.php" method="post" style="margin:0" onsubmit="return confirm('Delete this file?')">
+										<?=CSRFTokenField()?>
+										<input type="hidden" name="action" value="delete">
+										<input type="hidden" name="seriesid" value="<?=$seriesid?>">
+										<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+										<input type="hidden" name="datatype" value="<?=htmlspecialchars($datatype)?>">
+										<input type="hidden" name="filename" value="<?=$filehtml?>">
+										<button type="submit" class="ui basic icon button" style="box-shadow:none; padding:0" title="Delete"><i class="ui large red trash alternate icon"></i></button>
+									</form>
+								</td>
 							</tr>
 							<?
 						}
@@ -293,7 +413,7 @@
 
 				// if entry is directory then go recursive !
 				if  (is_dir($dirname."/".$file)){
-						  $folderSize += GetFolderSize($dirname.'/'.$file);
+						  $folderSize += GetDirectorySize($dirname.'/'.$file);
 
 				// if file then accumulate the size
 				} else {

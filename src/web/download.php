@@ -36,29 +36,27 @@
 	$modality = strtolower($modality);
 	
 	if ($type == "file") {
-		if (substr($filename,0,5) != "/tmp/") {
-			Error("You are attempting to download a file [$filename] from an incorrect location. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
+		/* only the query/group CSV exports that search.php and groups.php write to the top level of
+		   /tmp may be fetched here, and the file is deleted after it is sent. realpath() resolves ../
+		   and symlinks so the check can't be walked out of /tmp */
+		$realfile = realpath((string)$filename);
+		$basename = basename((string)$filename);
+		if (($realfile === false) || (dirname($realfile) !== '/tmp') || (!is_file($realfile)) || (!preg_match('/^[A-Za-z0-9_-]+\.csv$/', $basename)) || (basename($realfile) !== $basename)) {
+			Error("The file you are attempting to download does not exist, or is not in a downloadable location");
+		}
+		elseif (filesize($realfile) == 0) {
+			Error("The file you are attempting to download [" . htmlspecialchars($basename) . "] exists but is empty");
 		}
 		else {
-			if (!file_exists($filename)) {
-				Error("The file you are attempting to download [$filename] does not exist. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
-			}
-			else {
-				if (filesize($filename) == 0) {
-					/* this may not correctly check files larger than 2GB in size... not sure if they'd ever return 0 size if they did exist though... */
-					Error("The file you are attempting to download [$filename] exists but is empty. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
-				}
-				else {
-					header("Content-Description: File Transfer");
-					header("Content-Disposition: attachment; filename=$filename");
-					header("Content-Type: text/csv");
-					header("Content-length: " . filesize($filename) . "\n\n");
-					header("Content-Transfer-Encoding: binary");
-					// output data to the browser
-					readfile($filename);
-					unlink($filename);
-				}
-			}
+			header("Content-Description: File Transfer");
+			header("Content-Disposition: attachment; filename=\"$basename\"");
+			header("Content-Type: text/csv");
+			header("Content-Length: " . filesize($realfile));
+			header("Content-Transfer-Encoding: binary");
+			// output data to the browser
+			while (ob_get_level() > 0) { ob_end_clean(); }
+			readfile($realfile);
+			unlink($realfile);
 		}
 	}
 	else {

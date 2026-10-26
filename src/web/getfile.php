@@ -81,6 +81,13 @@ if ($exportid > 0) {
 if ($fileid > 0) {
 	$download = (GetVariable("download") === '1');
 
+	/* only serve the blob to someone allowed to see the object it is attached to. Answer 404 rather
+	   than 403 so file ids can't be probed for existence */
+	if (!UserCanViewFileBlob($fileid)) {
+		http_response_code(404);
+		exit('File not found');
+	}
+
 	$stmt = mysqli_prepare($GLOBALS['linki'], "select file_name, file_contenttype, file_blob, file_size from files where file_id = ?");
 	mysqli_stmt_bind_param($stmt, 'i', $fileid);
 	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -96,9 +103,16 @@ if ($fileid > 0) {
 	$fileName    = $row['file_name']        ?: 'file';
 	$blob        = $row['file_blob'];
 
+	/* the content type was supplied by whoever uploaded the file. Only display types that can't run
+	   script inline; anything else (html, svg, ...) is forced to download */
+	$inlinetypes = array('image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/bmp', 'application/pdf', 'text/plain', 'text/csv');
+	if (!in_array(strtolower(trim($contentType)), $inlinetypes, true))
+		$download = true;
+
 	header('Content-Type: '   . $contentType);
 	header('Content-Length: ' . strlen($blob));
 	header('Cache-Control: private, max-age=3600');
+	header('X-Content-Type-Options: nosniff');
 	header('Content-Disposition: ' . ($download ? 'attachment' : 'inline') . '; filename="' . addslashes($fileName) . '"');
 	echo $blob;
 	exit;
@@ -193,4 +207,50 @@ if ($file != "") {
 	}
 }
 else { echo "filename was blank"; }
+
+
+	/* -------------------------------------------- */
+	/* ------- UserCanViewFileBlob ---------------- */
+	/* -------------------------------------------- */
+	/* a row in 'files' has no owner of its own; it is attached to an observation (image/csv items)
+	   or to a dataset request (the DUA). Allow it if the current user may see that object */
+	function UserCanViewFileBlob($fileid) {
+		$fileid = (int)$fileid;
+		if ($fileid < 1)
+			return false;
+
+		if (IsAdminUser())
+			return true;
+
+		/* observation attachment: raw data, so View Data on a project the observation is enrolled in */
+		$sqlstring = "select distinct b.project_id from observations a join enrollment b on a.enrollment_id = b.enrollment_id where a.observation_fileid = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
+		$projectids = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$projectids[] = (int)$row['project_id'];
+		mysqli_stmt_close($stmt);
+
+		if (count($projectids) > 0) {
+			$perms = GetCurrentUserProjectPermissions($projectids);
+			foreach ($projectids as $projectid) {
+				if (GetPerm($perms, 'viewdata', $projectid))
+					return true;
+			}
+		}
+
+		/* dataset request DUA: the user who made the request, or the admin it is assigned to */
+		$username = (string)($_SESSION['username'] ?? '');
+		if ($username == '')
+			return false;
+		$sqlstring = "select count(*) 'num' from dataset_requests where dua_fileid = ? and (username = ? or admin_username = ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iss', $fileid, $username, $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid, $username, $username));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return ((int)($row['num'] ?? 0) > 0);
+	}
 ?>

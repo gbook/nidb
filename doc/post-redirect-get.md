@@ -53,6 +53,7 @@ for the reference implementation.
 | `instruments.php` | 4 | ⬜ |
 | `interventions.php` | 1 | ⬜ |
 | `login.php` | 1 | ⬜ |
+| `managefiles.php` | 2 | ✅ |
 | `menu.php` | 1 | ⬜ |
 | `merge.php` | 5 | ⬜ |
 | `minipipeline.php` | 1 | ⬜ |
