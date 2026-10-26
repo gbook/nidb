@@ -39,17 +39,6 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	//PrintVariable($_FILES);
-	//PrintVariable($_POST);
-
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpscriptname = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpscriptname))
-		$selfcall = true;
-	else
-		$selfcall = false;
-	
 	/* ----- setup variables ----- */
 	$action = GetSafeAction(array("add", "update", "delete", "rerunjob")); /* mutating actions require POST + CSRF token */
 	$mpid = (int)GetVariable("mpid");
@@ -64,51 +53,116 @@
 	$scriptparams = GetVariable("scriptparams");
 	if (!is_array($scriptparams)) $scriptparams = array();
 	$scriptid = (int)GetVariable("scriptid");
-	
+
+	/* mini-pipelines belong to a project and their scripts are run on the server, writing observations
+	   into the project: View Data to see them, Edit Data to add/change/delete/rerun. For an existing
+	   mini-pipeline (or one of its scripts) the project is looked up from the database, never taken
+	   from the request */
+	if ($action == "viewscript")
+		$mpid = GetMiniPipelineIDForScript($scriptid);
+	if (in_array($action, array("editform", "update", "delete", "viewjobs", "viewscript", "rerunjob")))
+		$projectid = GetMiniPipelineProjectID($mpid);
+	$canview = MiniPipelineProjectPerm($projectid, 'viewdata');
+	$canedit = MiniPipelineProjectPerm($projectid, 'modifydata');
+	$needsedit = in_array($action, array("addform", "add", "update", "delete", "rerunjob"));
+
 	/* determine action */
-	if (($action == "editform") && ($selfcall))  {
-		DisplayMiniPipelineForm($projectid, "edit", $mpid);
+	if ((!$canview) || ($needsedit && !$canedit)) {
+		Error("You do not have permission to " . ($needsedit ? "change" : "view") . " mini-pipelines in this project");
+		if ($canview) DisplayMiniPipelineList($projectid, $canedit);
 	}
-	elseif (($action == "addform") && ($selfcall)) {
-		DisplayMiniPipelineForm($projectid, "add", "");
+	elseif ($action == "editform") {
+		DisplayMiniPipelineForm($projectid, "edit", $mpid, $canedit);
+	}
+	elseif ($action == "addform") {
+		DisplayMiniPipelineForm($projectid, "add", "", $canedit);
 	}
 	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
-	elseif (($action == "update") && ($selfcall)) {
+	elseif ($action == "update") {
 		ob_start();
 		UpdateMiniPipeline($mpid, $minipipelinename, $scriptexecutableids, $scriptentrypointid, $scriptdeleteids, $scriptparams);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
-	elseif (($action == "viewjobs") && ($selfcall)) {
-		DisplayMiniPipelineJobs($mpid, $projectid);
+	elseif ($action == "viewjobs") {
+		DisplayMiniPipelineJobs($mpid, $projectid, $canedit);
 	}
-	elseif (($action == "add") && ($selfcall)) {
+	elseif ($action == "add") {
 		ob_start();
 		AddMiniPipeline($projectid, $minipipelinename);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
-	elseif (($action == "delete") && ($selfcall)) {
+	elseif ($action == "delete") {
 		ob_start();
 		DeleteMiniPipeline($mpid);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("minipipeline.php?projectid=$projectid");
 	}
-	elseif (($action == "viewscript") && ($selfcall)) {
+	elseif ($action == "viewscript") {
 		ViewScript($projectid, $scriptid);
 	}
-	elseif (($action == "rerunjob") && ($selfcall)) {
+	elseif ($action == "rerunjob") {
 		ob_start();
 		ReRunJob($mpjobid, $mpid);
 		$_SESSION['flash'] = ob_get_clean();
-		RedirectTo("minipipeline.php?action=viewjobs&mpid=$mpid&projectid=$projectid");
+		RedirectTo("minipipeline.php?action=viewjobs&mpid=$mpid");
 	}
 	else {
-		DisplayMiniPipelineList($projectid);
+		DisplayMiniPipelineList($projectid, $canedit);
 	}
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMiniPipelineProjectID ----------- */
+	/* -------------------------------------------- */
+	/* the project a mini-pipeline belongs to, or 0 if it doesn't exist */
+	function GetMiniPipelineProjectID($mpid) {
+		$mpid = (int)$mpid;
+		if ($mpid < 1) return 0;
+
+		$sqlstring = "select project_id from minipipelines where minipipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $mpid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($mpid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['project_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMiniPipelineIDForScript --------- */
+	/* -------------------------------------------- */
+	/* the mini-pipeline a script belongs to, or 0 if the script doesn't exist */
+	function GetMiniPipelineIDForScript($scriptid) {
+		$scriptid = (int)$scriptid;
+		if ($scriptid < 1) return 0;
+
+		$sqlstring = "select minipipeline_id from minipipeline_scripts where minipipelinescript_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $scriptid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($scriptid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['minipipeline_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MiniPipelineProjectPerm ------------ */
+	/* -------------------------------------------- */
+	/* true if the current user has $perm ('viewdata' or 'modifydata') on the project */
+	function MiniPipelineProjectPerm($projectid, $perm) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1) return false;
+
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, $perm, $projectid) == 1);
+	}
 
 
 	/* -------------------------------------------- */
@@ -243,7 +297,7 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMiniPipelineJobs ------------ */
 	/* -------------------------------------------- */
-	function DisplayMiniPipelineJobs($mpid, $projectid) {
+	function DisplayMiniPipelineJobs($mpid, $projectid, $canedit) {
 		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		$mpid = (int)$mpid;
 		$projectid = (int)$projectid;
@@ -299,19 +353,19 @@
 				</div>
 			</div>
 			<tr class="<? if (($status == "error") or ($numinserts < 1)) { echo "negative"; } ?>">
-				<td valign="top"><?=$mpname?></td>
-				<td valign="top"><?=$queuedate?></td>
-				<td valign="top"><?=$startdate?></td>
-				<td valign="top"><?=$enddate?></td>
-				<td valign="top"><?=$status?></td>
+				<td valign="top"><?=htmlspecialchars($mpname ?? '')?></td>
+				<td valign="top"><?=htmlspecialchars($queuedate ?? '')?></td>
+				<td valign="top"><?=htmlspecialchars($startdate ?? '')?></td>
+				<td valign="top"><?=htmlspecialchars($enddate ?? '')?></td>
+				<td valign="top"><?=htmlspecialchars($status ?? '')?></td>
 				<td valign="top" class="scrolling content">
 					<button class="ui compact basic button" id="viewlog<?=$i?>" onClick="$('#modal<?=$i?>').modal('show');"><i class="file alternate icon"></i> View Logs</button>
 				</td>
-				<td valign="top"><a href="studies.php?studyid=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-				<td valign="top"><?=$modality?></td>
-				<td valign="top"><?=$numinserts?></td>
+				<td valign="top"><a href="studies.php?studyid=<?=(int)$studyid?>"><?=htmlspecialchars($uid . $studynum)?></a></td>
+				<td valign="top"><?=htmlspecialchars($modality ?? '')?></td>
+				<td valign="top"><?=(int)$numinserts?></td>
 				<td valign="top">
-					<? if ($status != "pending") { ?>
+					<? if (($status != "pending") && ($canedit)) { ?>
 					<form method="post" action="minipipeline.php" style="display: inline">
 						<input type="hidden" name="action" value="rerunjob">
 						<input type="hidden" name="mpjobid" value="<?=$mpjobid?>">
@@ -375,7 +429,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMiniPipelineForm ------------ */
 	/* -------------------------------------------- */
-	function DisplayMiniPipelineForm($projectid, $type, $mpid) {
+	function DisplayMiniPipelineForm($projectid, $type, $mpid, $canedit) {
+		$projectid = (int)$projectid;
+		$readonly = $canedit ? "" : "disabled"; /* users with View Data only see the mini-pipeline, without edit controls */
 	
 		/* populate the fields if this is an edit */
 		if ($type == "edit") {
@@ -393,7 +449,7 @@
 			$name = $row['mp_name'];
 		
 			$formaction = "update";
-			$formtitle = "$name";
+			$formtitle = htmlspecialchars($name ?? '');
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -417,7 +473,7 @@
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="minipipelinename" value="<?=$name?>" maxlength="255" required>
+					<input type="text" name="minipipelinename" value="<?=htmlspecialchars($name ?? '')?>" maxlength="255" required <?=$readonly?>>
 				</div>
 			</div>
 			
@@ -433,7 +489,7 @@
 							<th>Entry point?</th>
 							<th>Create date</th>
 							<th>Modify date</th>
-							<th>Remove?</th>
+							<? if ($canedit) { ?><th>Remove?</th><? } ?>
 						</thead>
 						<?
 						$sqlstring = "select * from minipipeline_scripts where minipipeline_id = ? order by mp_scriptname asc";
@@ -451,13 +507,13 @@
 							$modifydate = date('M j, Y h:ia',strtotime($row['mp_scriptmodifydate']));
 							?>
 							<tr>
-								<td><tt style="font-size: larger"><a href="minipipeline.php?action=viewscript&projectid=<?=$projectid?>&scriptid=<?=$scriptid?>"><?=$script?></a></tt></td>
-								<td><?=$scriptsize?></td>
-								<td><input type="checkbox" name="scriptexecutableids[]" value="<?=$scriptid?>" <? if ($executable) { echo "checked"; }?>></td>
-								<td><input type="radio" name="scriptentrypointid" value="<?=$scriptid?>" <? if ($entrypoint) { echo "checked"; }?>></td>
+								<td><tt style="font-size: larger"><a href="minipipeline.php?action=viewscript&scriptid=<?=(int)$scriptid?>"><?=htmlspecialchars($script ?? '')?></a></tt></td>
+								<td><?=(int)$scriptsize?></td>
+								<td><input type="checkbox" name="scriptexecutableids[]" value="<?=(int)$scriptid?>" <? if ($executable) { echo "checked"; }?> <?=$readonly?>></td>
+								<td><input type="radio" name="scriptentrypointid" value="<?=(int)$scriptid?>" <? if ($entrypoint) { echo "checked"; }?> <?=$readonly?>></td>
 								<td style="font-size: smaller"><?=$createdate?></td>
 								<td style="font-size: smaller"><?=$modifydate?></td>
-								<td><input type="checkbox" name="scriptdeleteids[]" value="<?=$scriptid?>"></td>
+								<? if ($canedit) { ?><td><input type="checkbox" name="scriptdeleteids[]" value="<?=(int)$scriptid?>"></td><? } ?>
 							</tr>
 							<?
 						}
@@ -465,24 +521,26 @@
 					</table>
 					<br>
 					<? } ?>
+					<? if ($canedit) { ?>
 					Add script(s) <input type="file" name="scripts[]" multiple>
 					<span class="tiny">Max individual file size 4GB. Max filename length 255 characters</span>
+					<? } ?>
 				</div>
 			</div>
 			<div class="ui two column grid">
 				<div class="column">
-					<? if ($type == "edit") { ?>
+					<? if (($type == "edit") && ($canedit)) { ?>
 					<!-- forms can't nest, so this submits the separate delete form below -->
 					<button type="submit" form="deleteminipipelineform" class="ui red button"><i class="trash icon"></i>Delete</button>
 					<? } ?>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="minipipeline.php?projectid=<?=$projectid?>">Cancel</a>
-					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
+					<a class="ui button" href="minipipeline.php?projectid=<?=$projectid?>"><?=$canedit ? "Cancel" : "Back"?></a>
+					<? if ($canedit) { ?><input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>"><? } ?>
 				</div>
 			</div>
 			</form>
-			<? if ($type == "edit") { ?>
+			<? if (($type == "edit") && ($canedit)) { ?>
 			<form method="post" action="minipipeline.php" id="deleteminipipelineform" onsubmit="return confirm('Are you sure you want to delete this mini-pipeline and all of its scripts? Any variables created by it will remain in the database.')">
 				<input type="hidden" name="action" value="delete">
 				<input type="hidden" name="mpid" value="<?=$mpid?>">
@@ -530,14 +588,16 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 	/* -------------------------------------------- */
 	/* ------- DisplayMiniPipelineList ------------ */
 	/* -------------------------------------------- */
-	function DisplayMiniPipelineList($projectid) {
+	function DisplayMiniPipelineList($projectid, $canedit) {
 		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		$projectid = (int)$projectid;
 		if (!ValidID($projectid,'Project ID')) { return; }
 		
 		?>
 		<div class="ui container">
+			<? if ($canedit) { ?>
 			<button class="ui primary large button" onClick="window.location.href='minipipeline.php?projectid=<?=$projectid?>&action=addform'; return false;"><i class="plus square outline icon"></i> Create mini-pipeline</button>
+			<? } ?>
 			<br><br>
 			<table class="ui celled selectable grey compact table">
 				<thead>
@@ -567,9 +627,9 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 							
 							?>
 							<tr>
-								<td valign="top"><a class="ui primary compact button" href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="edit icon"></i> <?=$name?></td>
-								<td valign="top"><a class="ui compact basic button" href="minipipeline.php?action=viewjobs&mpid=<?=$mpid?>&projectid=<?=$projectid?>"><i class="file alternate icon"></i> View Jobs</td>
-								<td valign="top"><?=$version?></td>
+								<td valign="top"><a class="ui primary compact button" href="minipipeline.php?action=editform&mpid=<?=(int)$mpid?>"><i class="edit icon"></i> <?=htmlspecialchars($name ?? '')?></a></td>
+								<td valign="top"><a class="ui compact basic button" href="minipipeline.php?action=viewjobs&mpid=<?=(int)$mpid?>"><i class="file alternate icon"></i> View Jobs</a></td>
+								<td valign="top"><?=(int)$version?></td>
 								<td valign="top"><?=$mpcreatedate?></td>
 								<td valign="top"><?=$mpmodifydate?></td>
 								<td valign="top" align="center">
@@ -599,8 +659,8 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 										$modifydate = date('M j, Y h:ia',strtotime($rowA['mp_scriptmodifydate']));
 										?>
 										<tr>
-											<td><tt><?=$script?> <i><?=$params?></i></tt></td>
-											<td><?=$scriptsize?></td>
+											<td><tt><?=htmlspecialchars($script ?? '')?> <i><?=htmlspecialchars($params ?? '')?></i></tt></td>
+											<td><?=(int)$scriptsize?></td>
 											<td><? if ($executable) { echo "&#10004;"; }?></td>
 											<td><? if ($entrypoint) { echo "&#10004;"; }?></td>
 										</tr>
@@ -655,12 +715,12 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 			?>
 			
 			<div class="ui text container">
-				<a href="minipipeline.php?action=editform&mpid=<?=$mpid?>&projectid=<?=$projectid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
+				<a href="minipipeline.php?action=editform&mpid=<?=(int)$mpid?>" class="ui primary button"><b><i class="arrow alternate circle left icon"></i> Back</b></a>
 				<br>
 				<table class="ui very simple very compact small celled table">
 					<tr>
 						<td>Script name</td>
-						<td><h3 class="ui header"><?=$scriptname?></h3></td>
+						<td><h3 class="ui header"><?=htmlspecialchars($scriptname ?? '')?></h3></td>
 					</tr>
 					<tr>
 						<td>Executable?</td>
@@ -672,7 +732,7 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 					</tr>
 					<tr>
 						<td>Script size</td>
-						<td><?=$scriptsize?> <span class="tiny">bytes</span></td>
+						<td><?=(int)$scriptsize?> <span class="tiny">bytes</span></td>
 					</tr>
 					<tr>
 						<td>Create date</td>
@@ -686,7 +746,7 @@ intervention, Ketamine, 2018-03-17 19:56, 2018-03-17 19:58, 120, 2.2, ml, "Fine"
 			</div>
 			<div style="padding: 20px">
 				Displaying entire file
-				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=$contents?></pre></tt>
+				<tt><pre style="text-align: left; padding: 15px; border: 1px solid gray"><?=htmlspecialchars($contents, ENT_QUOTES | ENT_SUBSTITUTE)?></pre></tt>
 			</div>
 			<?
 		}

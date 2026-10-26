@@ -22,6 +22,20 @@
 
 #include "minipipeline.h"
 #include <QSqlQuery>
+#include <QRegularExpression>
+
+
+/* ---------------------------------------------------------- */
+/* --------- IsSafeScriptName ------------------------------- */
+/* ---------------------------------------------------------- */
+/* Script names come from the web upload (minipipeline.php). Each script is written to
+   <tmpdir>/<name>, and the entry point's name is run through "sh -c" (SandboxedSystemCommand),
+   so a name must be a plain filename that is also safe on a command line. minipipeline.php
+   applies the same rule on upload; this also covers names stored before that check existed. */
+static bool IsSafeScriptName(const QString &name) {
+    static const QRegularExpression re(QStringLiteral("^[A-Za-z0-9._-]+$"));
+    return (name != ".") && (name != "..") && re.match(name).hasMatch();
+}
 
 minipipeline::minipipeline(int id, nidb *a)
 {
@@ -72,6 +86,11 @@ void minipipeline::LoadMiniPipelineInfo() {
             mps.isExec = q.value("mp_executable").toBool();
             mps.isEntryPoint = q.value("mp_entrypoint").toBool();
             mps.filename = q.value("mp_scriptname").toString().trimmed();
+            if (!IsSafeScriptName(mps.filename)) {
+                msg = "Script name [" + mps.filename + "] is not allowed. Script names may only contain letters, numbers, and . _ - (rename or re-upload the script)";
+                isValid = false;
+                return;
+            }
             mps.filesize = q.value("mp_scriptsize").toInt();
             mps.parameterList = q.value("mp_parameterlist").toString().trimmed();
             mps.cDate = q.value("mp_scriptcreatedate").toDateTime();
@@ -102,6 +121,11 @@ bool minipipeline::WriteScripts(QString dir, QString &m) {
     }
 
     foreach (miniPipelineScript s, scripts) {
+        /* never write outside dir, whatever name was stored */
+        if (!IsSafeScriptName(s.filename)) {
+            m = "Script name [" + s.filename + "] is not allowed";
+            return false;
+        }
         QString filename = dir + "/" + s.filename;
 
         QFile f(filename);
