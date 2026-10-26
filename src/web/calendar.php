@@ -21,6 +21,7 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 	define("LEGIT_REQUEST", true);
+	ob_start(); /* buffer output so the calendar_select.php redirect and the currentview cookie work after HTML has started */
 	session_start();
 ?>
 
@@ -44,29 +45,25 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 
-	$currentcal = $_COOKIE['currentcal'];
-	$currentcalname = $_COOKIE['currentcalname'];
-	$currentview = $_COOKIE['currentview'];
-
-	if ($currentcal == "") {
-		header("Location: calendar_select.php");
+	/* no calendar chosen yet (cookie unset) -> pick one. 0 is a valid choice ("All Calendars") */
+	if (!isset($_COOKIE['currentcal']) || !is_string($_COOKIE['currentcal']) || ($_COOKIE['currentcal'] === "")) {
+		RedirectTo("calendar_select.php");
 	}
-	
-	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
-	if ($_POST["year"] == "") { $year = $_GET["year"]; } else { $year = $_POST["year"]; }
-	if ($_POST["month"] == "") { $month = $_GET["month"]; } else { $month = $_POST["month"]; }
-	if ($_POST["day"] == "") { $day = $_GET["day"]; } else { $day = $_POST["day"]; }
-	if ($_POST["datestart"] == "") { $datestart = $_GET["datestart"]; } else { $datestart = $_POST["datestart"]; }
-	if ($_POST["dateend"] == "") { $dateend = $_GET["dateend"]; } else { $dateend = $_POST["dateend"]; }
+	$currentcal = (int)$_COOKIE['currentcal'];
+	$currentview = $_COOKIE['currentview'] ?? '';
 
 	if ($action == "") {
 		$action = $currentview;
 	}
-	
-	/* check for blank dates */
-	if ($year == "") { $year = date("Y"); }
-	if ($month == "") { $month = date("m"); }
-	if ($day == "") { $day = date("d"); }
+
+	/* the date being viewed: integers, defaulting to today; the day is clamped to the month's length */
+	$year = (int)GetVariable("year");
+	$month = (int)GetVariable("month");
+	$day = (int)GetVariable("day");
+	if (($year < 1900) || ($year > 2200)) { $year = (int)date("Y"); }
+	if (($month < 1) || ($month > 12)) { $month = (int)date("m"); }
+	if ($day < 1) { $day = (int)date("d"); }
+	$day = min($day, cal_days_in_month(CAL_GREGORIAN, $month, $year));
 
 	$holidays = CalculateHolidays($year);
 	
@@ -99,7 +96,6 @@
 	function DisplayMenu($year, $month, $day, $menuitem) {
 		global $currentcal;
 		ShowFlashMessage(); /* message from calendar_appointments.php, which redirects here after a change (PRG) */
-		global $currentcalname;
 
 		$caldate = mktime(0,0,0,$month,$day,$year);
 		?>
@@ -142,7 +138,7 @@
 								$description = $row['calendar_description'];
 								$location = $row['calendar_location'];
 								?>
-								<option value="<?=$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=$name?>
+								<option value="<?=(int)$id?>" <? if ($currentcal == $id) { echo "selected"; } ?>><?=htmlspecialchars($name ?? '')?>
 								<?
 							}
 							?>
@@ -166,10 +162,25 @@
 
 
 	/* ----------------------------------------------- */
-	/* --------- CalendarAppointmentOverlapWhere ------ */
+	/* --------- CalendarAppointments ---------------- */
 	/* ----------------------------------------------- */
-	function CalendarAppointmentOverlapWhere($startdatetime, $enddatetime) {
-		return "a.appt_startdate <= '$enddatetime' and a.appt_enddate >= '$startdatetime'";
+	/* appointments overlapping $startdatetime..$enddatetime on the current calendar (0 = all calendars), as an
+	   array of rows. $type: "timed" (day/week grids), "allday" (day/week headers) or "all" (month, all-day first).
+	   'groupsize' > 1 means the appointment is in a series (whose times aren't editable on their own) */
+	function CalendarAppointments($startdatetime, $enddatetime, $currentcal, $type) {
+		$currentcal = (int)$currentcal;
+		if ($type == "timed") { $typewhere = "and a.appt_isalldayevent = 0"; $order = "a.appt_startdate"; }
+		elseif ($type == "allday") { $typewhere = "and a.appt_isalldayevent = 1"; $order = "a.appt_startdate"; }
+		else { $typewhere = ""; $order = "a.appt_isalldayevent, a.appt_startdate"; }
+		$sqlstring = "select a.*, b.project_name, c.calendar_name, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where (? = 0 or a.appt_calendarid = ?) $typewhere and a.appt_deletedate > now() and a.appt_canceldate > now() and a.appt_startdate <= ? and a.appt_enddate >= ? order by $order";
+		$params = array($currentcal, $currentcal, $enddatetime, $startdatetime);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iiss', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) $rows[] = $row;
+		mysqli_stmt_close($stmt);
+		return $rows;
 	}
 
 
@@ -200,6 +211,125 @@
 		return "Multi-day appt";
 	}
 	
+
+	/* ----------------------------------------------- */
+	/* --------- CalendarSlotPicker ------------------ */
+	/* ----------------------------------------------- */
+	/* hovering a day column highlights the 15-min slot under the cursor (with its start time); clicking opens the add form at that date/time.
+	   Dragging the bottom edge (.calresize) of an appointment changes its end time, in 15-min steps, posted to calendar_appointments.php?action=resize */
+	function CalendarSlotPicker($colselector, $apptselector, $slotheight, $currentcal) {
+		$pxperminute = $slotheight / 30;
+		?>
+		<style>
+			<?=$colselector?> { cursor: pointer; }
+			<?=$apptselector?> { cursor: default; }
+			.calslothover { position: absolute; left: 0; right: 0; height: <?=15 * $pxperminute?>px; z-index: 1; box-sizing: border-box; padding-left: 4px; background: rgba(56,110,175,0.18); border: 1px solid #386eaf; border-radius: 3px; color: #1b3f6b; font-size: 7.5pt; font-weight: bold; line-height: <?=15 * $pxperminute - 2?>px; pointer-events: none; display: none; }
+			.calresize { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 1; cursor: ns-resize; }
+			.calresize:hover, .calresizing .calresize { background: rgba(255,255,255,0.45); }
+			.calresizing { z-index: 4 !important; opacity: 0.85; }
+			.calsloptip { position: fixed; z-index: 1000; padding: 4px 8px; border-radius: 4px; background: rgba(32,33,36,0.92); color: white; font-size: 8.5pt; white-space: nowrap; pointer-events: none; display: none; }
+		</style>
+		<form id="calresizeform" method="post" action="calendar_appointments.php" style="display:none">
+			<?=CSRFTokenField()?>
+			<input type="hidden" name="action" value="resize">
+			<input type="hidden" name="id" value="">
+			<input type="hidden" name="enddate" value="">
+			<input type="hidden" name="endminutes" value="">
+		</form>
+		<script type="text/javascript">
+			$(document).ready(function() {
+				var pxperminute = <?=$pxperminute?>;
+				var drag = null;            /* the appointment being resized */
+				var suppressclick = false;  /* the click that ends a drag mustn't open the add form */
+				function SlotMinutes(col, e) {
+					var minutes = Math.floor((e.pageY - $(col).offset().top) / pxperminute / 15) * 15;
+					return Math.min(Math.max(minutes, 0), 1425);
+				}
+				function SlotLabel(minutes) {
+					if (minutes >= 1440) { return "midnight"; }
+					var hr = Math.floor(minutes / 60), min = minutes % 60;
+					var ampm = (hr < 12) ? "am" : "pm";
+					hr = hr % 12; if (hr == 0) { hr = 12; }
+					return hr + ":" + (min < 10 ? "0" : "") + min + ampm;
+				}
+				function SlotDateLabel(ymd) {
+					var months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+					var parts = ymd.split("-");
+					return months[parseInt(parts[1], 10) - 1] + " " + parseInt(parts[2], 10) + ", " + parts[0];
+				}
+				/* tooltip follows the cursor; fixed-positioned so the scrolling grid can't clip it, flipped left/up near the window edges */
+				var tip = $('<div class="calsloptip"></div>').appendTo("body");
+				function ShowTip(e, text) {
+					tip.text(text).show();
+					var x = e.clientX + 14, y = e.clientY + 18;
+					if (x + tip.outerWidth() > window.innerWidth - 4) { x = e.clientX - tip.outerWidth() - 10; }
+					if (y + tip.outerHeight() > window.innerHeight - 4) { y = e.clientY - tip.outerHeight() - 10; }
+					tip.css({ left: x + "px", top: y + "px" });
+				}
+				$("<?=$colselector?>").each(function() {
+					$(this).append('<div class="calslothover"></div>');
+				}).on("mousemove", function(e) {
+					if (drag) { return; }
+					var hover = $(this).children(".calslothover");
+					if ($(e.target).closest("<?=$apptselector?>").length) { hover.hide(); tip.hide(); return; }
+					var minutes = SlotMinutes(this, e);
+					hover.css("top", (minutes * pxperminute) + "px").text(SlotLabel(minutes)).show();
+					ShowTip(e, "Click to create an appt starting at " + SlotLabel(minutes) + " on " + SlotDateLabel($(this).attr("data-date")));
+				}).on("mouseleave", function() {
+					$(this).children(".calslothover").hide();
+					tip.hide();
+				}).on("click", function(e) {
+					if (suppressclick || $(e.target).closest("<?=$apptselector?>").length) { return; }
+					var minutes = SlotMinutes(this, e);
+					window.location.href = "calendar_appointments.php?action=addform&currentcal=<?=(int)$currentcal?>&startdate=" + encodeURIComponent($(this).attr("data-date")) + "&starttime=" + encodeURIComponent(SlotLabel(minutes));
+				});
+
+				/* drag-to-resize: the new end snaps to 15 min, at least one step after the start, at most midnight */
+				$("<?=$colselector?>").on("mousedown", ".calresize", function(e) {
+					if (e.which != 1) { return; }
+					e.preventDefault();
+					e.stopPropagation();
+					var appt = $(this).closest("<?=$apptselector?>");
+					drag = { appt: appt, col: appt.parent(), startmin: parseFloat(appt.css("top")) / pxperminute, origheight: appt.css("height"), endmin: null };
+					drag.col.children(".calslothover").hide();
+					appt.addClass("calresizing");
+					$("body").css("cursor", "ns-resize");
+				});
+				function EndDrag() {
+					var d = drag;
+					drag = null;
+					tip.hide();
+					$("body").css("cursor", "");
+					d.appt.removeClass("calresizing");
+					suppressclick = true;
+					setTimeout(function() { suppressclick = false; }, 0);
+					return d;
+				}
+				$(document).on("mousemove", function(e) {
+					if (!drag) { return; }
+					var minutes = Math.round((e.pageY - drag.col.offset().top) / pxperminute / 15) * 15;
+					minutes = Math.min(Math.max(minutes, Math.ceil((drag.startmin + 1) / 15) * 15), 1440);
+					drag.endmin = minutes;
+					drag.appt.css("height", ((minutes - drag.startmin) * pxperminute) + "px");
+					ShowTip(e, "Release to change the end time to " + SlotLabel(minutes));
+				}).on("mouseup", function() {
+					if (!drag) { return; }
+					var d = EndDrag();
+					if (d.endmin === null) { d.appt.css("height", d.origheight); return; }
+					var form = $("#calresizeform");
+					form.find("input[name=id]").val(d.appt.attr("data-id"));
+					form.find("input[name=enddate]").val(d.col.attr("data-date"));
+					form.find("input[name=endminutes]").val(d.endmin);
+					form.submit();
+				}).on("keydown", function(e) {
+					/* Esc cancels a drag */
+					if (drag && (e.key == "Escape")) { var d = EndDrag(); d.appt.css("height", d.origheight); }
+				});
+			});
+		</script>
+		<?
+	}
+
 
 	/* ----------------------------------------------- */
 	/* --------- DisplayYear ------------------------- */
@@ -271,6 +401,7 @@
 			.daycalnowline  { position: absolute; left: 0; right: 0; height: 2px; background: #87db8c; z-index: 3; pointer-events: none; }
 		</style>
 		<script>$(document).ready(function() { $('.daycalbody').scrollTop(<?=$scrolltop?>); });</script>
+		<? CalendarSlotPicker(".daycalcol", ".daycalappt", $slotheight, $currentcal); ?>
 
 		<div class="daycal">
 			<!-- Header: nav + date + add button -->
@@ -288,19 +419,11 @@
 
 			<!-- All-day appointments -->
 			<?
-			$alldayWhere = "appt_startdate <= '$enddatetime' and appt_enddate >= '$startdatetime'";
-			if ($currentcal == 0) {
-				$alldaySql = "select appt_id, appt_title from calendar_appointments where appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and $alldayWhere order by appt_startdate";
-			} else {
-				$alldaySql = "select appt_id, appt_title from calendar_appointments where appt_calendarid = $currentcal and appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and $alldayWhere order by appt_startdate";
-			}
-			$alldayResult = MySQLiQuery($alldaySql, __FILE__, __LINE__);
-			$alldayRows = [];
-			while ($r = mysqli_fetch_array($alldayResult, MYSQLI_ASSOC)) $alldayRows[] = $r;
+			$alldayRows = CalendarAppointments($startdatetime, $enddatetime, $currentcal, "allday");
 			if (!empty($alldayRows)) {
 				?><div class="daycalalldays"><?
 				foreach ($alldayRows as $r) {
-					?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=$r['appt_id']?>"><?=htmlspecialchars($r['appt_title'])?></a><?
+					?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=(int)$r['appt_id']?>"><?=htmlspecialchars($r['appt_title'] ?? '')?></a><?
 				}
 				?></div><?
 			}
@@ -319,17 +442,10 @@
 					}
 					?>
 				</div>
-				<div class="daycalcol">
+				<div class="daycalcol" data-date="<?=date('Y-m-d', mktime(0,0,0,$month,$day,$year))?>">
 					<?
-					$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
-					if ($currentcal == 0) {
-						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
-					} else {
-						$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
-					}
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 					$appts = array();
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					foreach (CalendarAppointments($startdatetime, $enddatetime, $currentcal, "timed") as $row) {
 						$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
 						$visibleEnd   = min(strtotime($row['appt_enddate']),   strtotime($enddatetime) + 1);
 						$top    = floor(($visibleStart - strtotime($startdatetime)) / 60);
@@ -349,6 +465,7 @@
 							'class'        => $apptclass,
 							'column'       => 0,
 							'columns'      => 1,
+							'resizable'    => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1), /* drag-to-resize only if not in a series and it ends on this day */
 						);
 					}
 
@@ -387,10 +504,11 @@
 						$left  = $appt['column'] * $width;
 						$width = $width - 1;
 						?>
-						<div class="daycalappt<?=$appt['class']?>" style="top:<?=$appt['top']?>px;height:<?=$appt['height']?>px;left:<?=$left?>%;width:<?=$width?>%">
-							<a href="calendar_appointments.php?action=editform&id=<?=$appt['id']?>"><b><?=htmlspecialchars($appt['title'])?></b></a>
+						<div class="daycalappt<?=$appt['class']?>" data-id="<?=(int)$appt['id']?>" style="top:<?=$appt['top']?>px;height:<?=$appt['height']?>px;left:<?=$left?>%;width:<?=$width?>%">
+							<? if ($appt['resizable']) { ?><div class="calresize" title="Drag to change the end time"></div><? } ?>
+							<a href="calendar_appointments.php?action=editform&id=<?=(int)$appt['id']?>"><b><?=htmlspecialchars($appt['title'] ?? '')?></b></a>
 							<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>
-							<div class="meta"><?=htmlspecialchars($appt['calendarname'])?> - <?=htmlspecialchars($appt['username'])?></div>
+							<div class="meta"><?=htmlspecialchars($appt['calendarname'] ?? '')?> - <?=htmlspecialchars($appt['username'] ?? '')?></div>
 						</div>
 						<?
 					}
@@ -519,6 +637,7 @@
 					weekbody.scrollTop(<?=$weekscrolltop?>);
 				});
 			</script>
+			<? CalendarSlotPicker(".weekcalcol", ".weekcalappt", $slotheight, $currentcal); ?>
 			<div class="weekcal">
 				<div class="weekcalnav">
 					<a href="calendar.php?action=week&year=<?=$prevyear?>&month=<?=$prevmonth?>&day=<?=$prevday?>"><i class="big black arrow alternate circle left icon" title="Previous week"></i></a>
@@ -535,14 +654,8 @@
 						<?
 						$hdStartdt = date('Y-m-d 00:00:00', strtotime($weekday['date']));
 						$hdEnddt   = date('Y-m-d 23:59:59', strtotime($weekday['date']));
-						if ($currentcal == 0) {
-							$hdSql = "select appt_id, appt_title from calendar_appointments where appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and appt_startdate <= '$hdEnddt' and appt_enddate >= '$hdStartdt' order by appt_startdate";
-						} else {
-							$hdSql = "select appt_id, appt_title from calendar_appointments where appt_calendarid = $currentcal and appt_isalldayevent = 1 and appt_deletedate > now() and appt_canceldate > now() and appt_startdate <= '$hdEnddt' and appt_enddate >= '$hdStartdt' order by appt_startdate";
-						}
-						$hdResult = MySQLiQuery($hdSql, __FILE__, __LINE__);
-						while ($hdRow = mysqli_fetch_array($hdResult, MYSQLI_ASSOC)) {
-							?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=$hdRow['appt_id']?>"><?=htmlspecialchars($hdRow['appt_title'])?></a><?
+						foreach (CalendarAppointments($hdStartdt, $hdEnddt, $currentcal, "allday") as $hdRow) {
+							?><a class="weekcalheadallday" href="calendar_appointments.php?action=editform&id=<?=(int)$hdRow['appt_id']?>"><?=htmlspecialchars($hdRow['appt_title'] ?? '')?></a><?
 						}
 						?>
 					</div>
@@ -575,18 +688,10 @@
 					$enddatetime = date('Y-m-d 23:59:59', strtotime($weekday['date']));
 					$todayclass = ($weekday['date'] == date('Y-m-d')) ? "today" : "";
 					?>
-					<div class="weekcalcol <?=$todayclass?>">
+					<div class="weekcalcol <?=$todayclass?>" data-date="<?=$weekday['date']?>">
 					<?
-						$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
-						if ($currentcal == 0) {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
-						}
-						else {
-							$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_isalldayevent = 0 and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_startdate";
-						}
-						$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 						$appts = array();
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						foreach (CalendarAppointments($startdatetime, $enddatetime, $currentcal, "timed") as $row) {
 							$id = $row['appt_id'];
 							$username = $row['appt_username'];
 							$projectname = $row['project_name'];
@@ -620,7 +725,8 @@
 								'end' => $top + $height,
 								'class' => $apptclass,
 								'column' => 0,
-								'columns' => 1
+								'columns' => 1,
+								'resizable' => (!$isallday) && ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1) /* drag-to-resize only if not in a series and it ends on this day */
 							);
 						}
 
@@ -670,10 +776,11 @@
 							$left = $appt['column']*$width;
 							$width = $width - 1;
 							?>
-							<div class="weekcalappt<?=$appt['class']?>" style="top: <?=$appt['top']?>px; height: <?=$appt['height']?>px; left: <?=$left?>%; width: <?=$width?>%">
-								<a href="calendar_appointments.php?action=editform&id=<?=$appt['id']?>"><b><?=$appt['title']?></b></a>
+							<div class="weekcalappt<?=$appt['class']?>" data-id="<?=(int)$appt['id']?>" style="top: <?=$appt['top']?>px; height: <?=$appt['height']?>px; left: <?=$left?>%; width: <?=$width?>%">
+								<? if ($appt['resizable']) { ?><div class="calresize" title="Drag to change the end time"></div><? } ?>
+								<a href="calendar_appointments.php?action=editform&id=<?=(int)$appt['id']?>"><b><?=htmlspecialchars($appt['title'] ?? '')?></b></a>
 								<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>
-								<div class="meta"><?=$appt['calendarname']?> - <?=$appt['username']?></div>
+								<div class="meta"><?=htmlspecialchars($appt['calendarname'] ?? '')?> - <?=htmlspecialchars($appt['username'] ?? '')?></div>
 							</div>
 							<?
 						}
@@ -820,8 +927,8 @@
 			else
 				$holidaystr = "";
 
-			$startdatetime = "$year-$month-$day_num 00:00:00";
-			$enddatetime = "$year-$month-$day_num 23:59:59";
+			$startdatetime = date('Y-m-d 00:00:00', $thedate);
+			$enddatetime = date('Y-m-d 23:59:59', $thedate);
 			
 			?>
 			<div class="column">
@@ -839,15 +946,7 @@
 					</h3>
 							<br>
 							<?
-							$apptDateWhere = CalendarAppointmentOverlapWhere($startdatetime, $enddatetime);
-							if ($currentcal == 0) {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
-							}
-							else {
-								$sqlstring = "select a.*, b.project_name, c.calendar_name from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where a.appt_calendarid = $currentcal and appt_deletedate > now() and appt_canceldate > now() and $apptDateWhere order by appt_isalldayevent, appt_startdate";
-							}
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							foreach (CalendarAppointments($startdatetime, $enddatetime, $currentcal, "all") as $row) {
 								$id = $row['appt_id'];
 								$username = $row['appt_username'];
 								$projectname = $row['project_name'];
@@ -863,8 +962,8 @@
 								<? if ($isrequest) { ?>
 									<span class="timerequest">&nbsp;Time request&nbsp;</span>
 								<? } ?>
-								<a href="calendar_appointments.php?action=editform&id=<?=$id?>"><span class="appttitle"><u><?=$title?></u></span></a><br>
-								<span class="apptowner"><?=$calendarname?> - <b><?=$username?></b></span>
+								<a href="calendar_appointments.php?action=editform&id=<?=(int)$id?>"><span class="appttitle"><u><?=htmlspecialchars($title ?? '')?></u></span></a><br>
+								<span class="apptowner"><?=htmlspecialchars($calendarname ?? '')?> - <b><?=htmlspecialchars($username ?? '')?></b></span>
 								<br><br>
 								<?
 							}

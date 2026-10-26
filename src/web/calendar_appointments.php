@@ -47,7 +47,7 @@
 	//exit(0);
 	
 	/* ----- setup variables ----- */
-	$action = GetSafeAction(array("add", "edit", "editall", "delete", "deleteall", "cancel", "cancelall")); /* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("add", "edit", "editall", "resize", "delete", "deleteall", "cancel", "cancelall")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$calendarid = (int)GetVariable("calendarid");
 	$projectid = (int)GetVariable("projectid");
@@ -101,6 +101,9 @@
 	}
 	elseif ($action == "editall") {
 		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 1);
+	}
+	elseif ($action == "resize") {
+		Resize($id, GetVariable("enddate"), GetVariable("endminutes"));
 	}
 	elseif ($action == "delete") {
 		ob_start();
@@ -415,9 +418,79 @@
 		if ($method == "add") { Notice("Appointment added"); } else { Notice("Appointment updated"); }
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("calendar.php");
-	}	
+	}
 
-	
+
+	/* ----------------------------------------------- */
+	/* --------- Resize ------------------------------ */
+	/* ----------------------------------------------- */
+	/* change only the end time of one appointment (dragging its bottom edge in calendar.php's day/week grid).
+	   $enddate is the grid day the drag ended on, $endminutes the minutes past its midnight (15-min steps, up to
+	   1440 = midnight). Same rules as the edit form: no all-day appointments or series members, no overlaps */
+	function Resize($id, $enddate, $endminutes) {
+		$id = (int)$id;
+		$endminutes = (int)$endminutes;
+
+		ob_start();
+		$redirect = "calendar.php";
+		$sqlstring = "select appt_calendarid, appt_title, appt_startdate, appt_isalldayevent, appt_istimerequest, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a where appt_id = ? and appt_deletedate > now() and appt_canceldate > now()";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		$appt = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$appt) {
+			Error("Appointment not found");
+		}
+		elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $enddate ?? '') || !strtotime($enddate) || ($endminutes < 0) || ($endminutes > 1440) || ($endminutes % 15 != 0)) {
+			Error("Invalid end time");
+		}
+		elseif ($appt['appt_isalldayevent']) {
+			Error("All-day appointments can't be resized");
+		}
+		elseif ((int)$appt['groupsize'] > 1) {
+			Error("Appointments in a series can't be resized. Edit the series instead");
+		}
+		else {
+			$startdatetime = $appt['appt_startdate'];
+			$enddatetime = date('Y-m-d H:i:s', strtotime($enddate) + $endminutes * 60);
+			$calendarid = (int)$appt['appt_calendarid'];
+			$redirect = "calendar.php?year=" . date('Y', strtotime($enddate)) . "&month=" . date('m', strtotime($enddate)) . "&day=" . date('d', strtotime($enddate)); /* back to the day that was being viewed */
+
+			$overlap = null;
+			if (!$appt['appt_istimerequest']) {
+				/* same overlap check as Add() */
+				$sqlstring = "select * from calendar_appointments where ( (appt_startdate > ? and appt_startdate < ?) or (appt_enddate > ? and appt_enddate < ?) or (appt_startdate = ? and appt_enddate = ?) or (appt_startdate < ? and appt_enddate > ?) or (appt_startdate < ? and appt_enddate > ?) ) and appt_calendarid = ? and appt_deletedate > now() and appt_canceldate > now() and appt_id != ? and appt_istimerequest <> 1";
+				$params = array($startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $startdatetime, $enddatetime, $enddatetime, $calendarid, $id);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ssssssssssii', ...$params);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				$overlap = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
+			}
+
+			if (strtotime($enddatetime) <= strtotime($startdatetime)) {
+				Error("The end time must be after the start time");
+			}
+			elseif ($overlap) {
+				Error("<b>The new end time overlaps with an existing appointment</b><br>[" . htmlspecialchars($overlap['appt_title'] . ": " . $overlap['appt_startdate'] . " - " . $overlap['appt_enddate']) . "]");
+			}
+			else {
+				/* appt_username (who created the appointment) is never changed by an edit */
+				$sqlstring = "update calendar_appointments set appt_enddate = ? where appt_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'si', $enddatetime, $id);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($enddatetime, $id));
+				mysqli_stmt_close($stmt);
+				Notice("'" . htmlspecialchars($appt['appt_title'] ?? '') . "' now ends at " . date('g:ia', strtotime($enddatetime)));
+			}
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo($redirect);
+	}
+
+
 	/* ----------------------------------------------- */
 	/* --------- Delete ------------------------------ */
 	/* ----------------------------------------------- */
@@ -601,6 +674,22 @@
 			$enddate = date('Y-m-d',strtotime($startdatetime));
 			$starttime = "12:00pm";
 			$endtime = "1:00pm";
+			/* a start time was passed in (clicked time slot in calendar.php, or form redisplay), snapped to the 15-min options; end defaults to +1 hour */
+			if (preg_match('/\d{1,2}:\d{2}\s*[ap]m/i', $startdatetime ?? '') && strtotime($startdatetime)) {
+				$startts = strtotime($startdatetime);
+				$startts = $startts - ($startts % 900);
+				$startdate = date('Y-m-d', $startts);
+				$starttime = date('g:ia', $startts);
+				if (preg_match('/\d{1,2}:\d{2}\s*[ap]m/i', $enddatetime ?? '') && strtotime($enddatetime) && (strtotime($enddatetime) > $startts)) {
+					$endts = strtotime($enddatetime);
+				}
+				else {
+					$endts = $startts + 3600;
+				}
+				$endts = $endts - ($endts % 900);
+				$enddate = date('Y-m-d', $endts);
+				$endtime = date('g:ia', $endts);
+			}
 			$calendarid = $currentcal;
 			if ($isalldayevent == "1") { $isalldayeventcheck = "checked"; } else { $isalldayeventcheck = ""; }
 			if ($istimerequest == "1") { $istimerequestcheck = "checked"; } else { $istimerequestcheck = ""; }
