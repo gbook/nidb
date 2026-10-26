@@ -1433,6 +1433,7 @@
 				</tr>
 			</table>
 			<?=$clusterModals?>
+			<? DisplayUsageChart($path); ?>
 		</div>
 		<script>
 			/* one delegated handler for all Details/View log buttons. Each button's data-modal holds the (unique) modal ID */
@@ -1801,6 +1802,145 @@
 	}
 
 	
+	/* -------------------------------------------- */
+	/* ------- DisplayUsageChart ------------------ */
+	/* -------------------------------------------- */
+	/* plots the CPU/memory log (usage_<jobid>.tsv) that the cluster job writes every 10 seconds.
+	   Older analyses don't have the file, so nothing is displayed for them */
+	function DisplayUsageChart($path) {
+		/* the job writes the log to the pipeline directory, but also check the analysis root */
+		$usageFiles = array();
+		foreach (array($path, dirname($path)) as $dir) {
+			$found = glob("$dir/usage_*.tsv");
+			if (is_array($found) && (count($found) > 0)) { $usageFiles = $found; break; }
+		}
+		if (count($usageFiles) == 0) { return; }
+
+		/* a re-run creates a new log with a new job ID, so show the most recent one */
+		usort($usageFiles, function($a, $b) { return filemtime($b) - filemtime($a); });
+		$usagePath = $usageFiles[0];
+
+		/* file format: '# memory.max: <bytes|max>' line, a header line, then
+		   epoch, cores_used, mem_current_mib, anon_mib, file_mib, peak_mib */
+		$memMax = "";
+		$t = $cores = $memCur = $memAnon = $memFile = $memPeak = array();
+		$fh = fopen($usagePath, 'r');
+		if ($fh === false) { return; }
+		while (($line = fgets($fh)) !== false) {
+			$line = rtrim($line, "\r\n");
+			if ($line == "") { continue; }
+			if ($line[0] == '#') {
+				if (preg_match('/^#\s*memory\.max:\s*(\S+)/', $line, $m)) { $memMax = $m[1]; }
+				continue;
+			}
+			$cols = preg_split('/\s+/', trim($line));
+			if (count($cols) < 6) { continue; } /* partially written last line */
+			$numeric = true;
+			for ($i = 0; $i < 6; $i++) { if (!is_numeric($cols[$i])) { $numeric = false; break; } }
+			if (!$numeric) { continue; } /* header line */
+
+			$t[] = (int)$cols[0];
+			$cores[] = (float)$cols[1];
+			$memCur[] = (float)$cols[2];
+			$memAnon[] = (float)$cols[3];
+			$memFile[] = (float)$cols[4];
+			$memPeak[] = (float)$cols[5];
+		}
+		fclose($fh);
+
+		/* memory.max is 'max' when the job has no memory limit */
+		$memLimit = is_numeric($memMax) ? round($memMax / 1048576, 1) : null;
+
+		$numSamples = count($t);
+
+		$chartData = array(
+			't' => $t,
+			'cores' => $cores,
+			'memCur' => $memCur,
+			'memAnon' => $memAnon,
+			'memFile' => $memFile,
+			'memPeak' => $memPeak,
+			'memLimit' => $memLimit
+		);
+		?>
+		<link rel="stylesheet" href="scripts/uplot/uPlot.min.css">
+		<script src="scripts/uplot/uPlot.iife.min.js"></script>
+		<div class="ui segment">
+			<h3 class="ui header">
+				CPU &amp; memory usage
+				<div class="sub header">
+					<tt><?=htmlspecialchars($usagePath)?></tt>
+					<? if (count($usageFiles) > 1) { ?> (most recent of <?=count($usageFiles)?> usage logs)<? } ?>
+				</div>
+			</h3>
+			<? if ($numSamples == 0) { ?>
+			<span class="ui grey text">No usage samples recorded yet</span>
+			<? } else { ?>
+			<div id="usageCpuChart"></div>
+			<div id="usageMemChart" style="margin-top: 15px"></div>
+			<script>
+				$(document).ready(function(){
+					const d = <?=json_encode($chartData)?>;
+					const cpuEl = document.getElementById('usageCpuChart');
+					const memEl = document.getElementById('usageMemChart');
+					if (typeof uPlot === 'undefined') { cpuEl.innerHTML = '<span class="ui red text">Chart library (uPlot) failed to load</span>'; return; }
+
+					const width = Math.max(400, cpuEl.clientWidth || 1000);
+					const fmtMem = function(v) { return (v == null) ? '-' : ((Math.abs(v) >= 1024) ? (v/1024).toFixed(2) + ' GiB' : v.toFixed(0) + ' MiB'); };
+					const axisColor = '#52514e';
+					const grid = { stroke: '#e5e4e0', width: 1 };
+
+					/* CPU and memory have different units, so they get separate charts with a synced cursor */
+					const cpuOpts = {
+						title: 'CPU',
+						width: width,
+						height: 220,
+						cursor: { sync: { key: 'nidbusage' } },
+						scales: { x: { time: true }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
+						series: [
+							{},
+							{ label: 'Cores used', stroke: '#2a78d6', fill: 'rgba(42,120,214,0.12)', width: 2, points: { show: false }, value: function(u, v) { return (v == null) ? '-' : v.toFixed(2); } }
+						],
+						axes: [
+							{ stroke: axisColor, grid: grid },
+							{ stroke: axisColor, grid: grid, label: 'Cores' }
+						]
+					};
+					new uPlot(cpuOpts, [d.t, d.cores], cpuEl);
+
+					const memSeries = [
+						{},
+						{ label: 'Current', stroke: '#2a78d6', fill: 'rgba(42,120,214,0.12)', width: 2, points: { show: false }, value: function(u, v) { return fmtMem(v); } },
+						{ label: 'Anonymous', stroke: '#eb6834', width: 2, points: { show: false }, value: function(u, v) { return fmtMem(v); } },
+						{ label: 'File cache', stroke: '#1baf7a', width: 2, points: { show: false }, value: function(u, v) { return fmtMem(v); } },
+						{ label: 'Peak', stroke: '#eda100', width: 2, dash: [6, 4], points: { show: false }, value: function(u, v) { return fmtMem(v); } }
+					];
+					const memData = [d.t, d.memCur, d.memAnon, d.memFile, d.memPeak];
+					if (d.memLimit !== null) {
+						memSeries.push({ label: 'Limit', stroke: axisColor, width: 1, dash: [2, 4], points: { show: false }, value: function(u, v) { return fmtMem(v); } });
+						memData.push(d.t.map(function() { return d.memLimit; }));
+					}
+					const memOpts = {
+						title: 'Memory',
+						width: width,
+						height: 260,
+						cursor: { sync: { key: 'nidbusage' } },
+						scales: { x: { time: true }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
+						series: memSeries,
+						axes: [
+							{ stroke: axisColor, grid: grid },
+							{ stroke: axisColor, grid: grid, size: 70, values: function(u, vals) { return vals.map(fmtMem); } }
+						]
+					};
+					new uPlot(memOpts, memData, memEl);
+				});
+			</script>
+			<? } ?>
+		</div>
+		<?
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- CreateGraphFromAnalysisID ---------- */
 	/* -------------------------------------------- */
