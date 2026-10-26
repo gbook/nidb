@@ -2221,31 +2221,33 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
     jobfile += "}\n";
     jobfile += "export -f nidbapi\n\n";
 
-    /* add CPU/memory profiling to the job - writes a log to usage_<id>.tsv */
-    jobfile += "INTERVAL=10\n";
-    jobfile += "LOG=\"usage_${SLURM_JOB_ID}.tsv\"\n";
-    jobfile += "CG=\"/sys/fs/cgroup$(cut -d: -f3 /proc/self/cgroup)\"\n";
-    jobfile += "monitor_usage() {\n";
-    jobfile += "    local prev_u=$(awk '/^usage_usec/{print $2}' \"$CG/cpu.stat\")\n";
+    /* add CPU/memory profiling to the job - writes a log to <analysispath>/pipeline/usage_<jobid>.tsv
+     * Requires cgroup v2; does nothing on cgroup v1 nodes. Names are prefixed with nidb_/NIDB_ so they don't collide with variables in the user's step commands.
+     * The monitor is started inside a command substitution so it is not a child of the job shell, otherwise a bare 'wait' in a step command would wait on it forever */
+    jobfile += "NIDB_MON_LOG=" + ShellQuote(analysispath + "/pipeline") + "/usage_${SLURM_JOB_ID:-$JOB_ID}.tsv\n";
+    jobfile += "nidb_monitor_usage() {\n";
+    jobfile += "    local interval=10\n";
+    jobfile += "    local cg=\"/sys/fs/cgroup$(grep '^0::' /proc/self/cgroup | cut -d: -f3)\"\n";
+    jobfile += "    [ -f \"$cg/cpu.stat\" ] && [ -f \"$cg/memory.current\" ] || return 0\n";
+    jobfile += "    local prev_u=$(awk '/^usage_usec/{print $2}' \"$cg/cpu.stat\")\n";
     jobfile += "    local prev_t=$(date +%s%N)\n";
-    jobfile += "    echo \"# memory.max: $(cat \"$CG/memory.max\")\" > \"$LOG\"\n";
-    jobfile += "    echo -e \"epoch\tcores_used\tmem_current_mib\tanon_mib\tfile_mib\tpeak_mib\" >> \"$LOG\"\n";
-    jobfile += "    while sleep \"$INTERVAL\"; do\n";
-    jobfile += "        local u=$(awk '/^usage_usec/{print $2}' \"$CG/cpu.stat\")\n";
+    jobfile += "    echo \"# memory.max: $(cat \"$cg/memory.max\" 2>/dev/null)\" > \"$NIDB_MON_LOG\"\n";
+    jobfile += "    echo -e \"epoch\tcores_used\tmem_current_mib\tanon_mib\tfile_mib\tpeak_mib\" >> \"$NIDB_MON_LOG\"\n";
+    jobfile += "    while sleep \"$interval\"; do\n";
+    jobfile += "        local u=$(awk '/^usage_usec/{print $2}' \"$cg/cpu.stat\")\n";
     jobfile += "        local t=$(date +%s%N)\n";
-    jobfile += "        local cur=$(cat \"$CG/memory.current\")\n";
-    jobfile += "        local peak=$(cat \"$CG/memory.peak\" 2>/dev/null || echo 0)\n";
+    jobfile += "        local cur=$(cat \"$cg/memory.current\")\n";
+    jobfile += "        local peak=$(cat \"$cg/memory.peak\" 2>/dev/null || echo 0)\n";
     jobfile += "        local anon file\n";
-    jobfile += "        read anon file < <(awk '$1==\"anon\"{a=$2} $1==\"file\"{f=$2} END{print a, f}' \"$CG/memory.stat\")\n";
+    jobfile += "        read anon file < <(awk '$1==\"anon\"{a=$2} $1==\"file\"{f=$2} END{print a, f}' \"$cg/memory.stat\")\n";
     jobfile += "        awk -v du=$((u - prev_u)) -v dt=$(( (t - prev_t) / 1000 )) -v now=$((t / 1000000000)) -v cur=\"$cur\" -v anon=\"$anon\" -v file=\"$file\" -v peak=\"$peak\" 'BEGIN { m = 1048576\n";
-    jobfile += "            printf \"%d\t%.3f\t%.1f\t%.1f\t%.1f\t%.1f\n\",\n";
-    jobfile += "                 now, du/dt, cur/m, anon/m, file/m, peak/m }' >> \"$LOG\"\n";
+    jobfile += "            printf \"%d\t%.3f\t%.1f\t%.1f\t%.1f\t%.1f\\n\",\n";
+    jobfile += "                 now, (dt > 0 ? du/dt : 0), cur/m, anon/m, file/m, peak/m }' >> \"$NIDB_MON_LOG\"\n";
     jobfile += "        prev_u=$u; prev_t=$t\n";
     jobfile += "    done\n";
     jobfile += "}\n";
-    jobfile += "monitor_usage &\n";
-    jobfile += "MON_PID=$!\n";
-    jobfile += "trap 'kill $MON_PID 2>/dev/null' EXIT\n";
+    jobfile += "NIDB_MON_PID=$(nidb_monitor_usage </dev/null >/dev/null 2>&1 & echo $!)\n";
+    jobfile += "trap 'kill $NIDB_MON_PID 2>/dev/null' EXIT\n\n";
 
     /* do the first checkin from the cluster */
     if ((p.resultScript != "") && (rerunresults)) {
