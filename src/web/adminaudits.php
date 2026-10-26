@@ -76,8 +76,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$auditid = GetVariable("auditid");
-		$projectid = GetVariable("projectid");
+		$auditid = (int)GetVariable("auditid");
+		$projectid = (int)GetVariable("projectid");
 		$audittype = GetVariable("audittype");
 		$fixerrors = GetVariable("fixerrors");
 		$issuetype = GetVariable("issuetype");

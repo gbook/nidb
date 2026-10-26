@@ -47,7 +47,7 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetSafeAction(array("addlink", "deletelink")); /* mutating actions require POST + CSRF token */
-		$linkid = GetVariable("linkid");
+		$linkid = (int)GetVariable("linkid");
 		$linkurl = GetVariable("linkurl");
 		$linktext = GetVariable("linktext");
 		$linkdesc = GetVariable("linkdesc");
@@ -150,7 +150,6 @@
 				<a href="adminusers.php" class="ui big basic fluid button"><i class="black users icon"></i> Users</a>
 				<a href="adminprojects.php" class="ui big basic fluid button"><i class="black clipboard list icon"></i> Projects</a>
 				<!--<a href="longqc.php" class="ui button"><i class="black check circle icon"></i> Longitudinal QC</a>-->
-				<a href="projects.php?action=editbidsmapping&id=null" class="ui basic fluid button"><i class="map signs icon"></i> Edit Global BIDS Protocol Mapping</a>
 
 				<? if (isSiteAdmin()) { ?>
 				<br>

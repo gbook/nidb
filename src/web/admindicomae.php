@@ -47,7 +47,7 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
+		$id = (int)GetVariable("id");
 		$aetitle = trim(GetVariable("aetitle") ?? '');
 		$aehostname = trim(GetVariable("aehostname") ?? '');
 		$aeip = trim(GetVariable("aeip") ?? '');

@@ -48,8 +48,8 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
-		$projectid = GetVariable("projectid");
+		$id = (int)GetVariable("id");
+		$projectid = (int)GetVariable("projectid");
 		$importname = GetVariable("importname");
 		$remote_type = GetVariable("remote_type");
 		$remote_url = GetVariable("remote_url");
@@ -202,7 +202,7 @@
 		}
 		else {
 			$importname = "";
-			$projectid = GetVariable("projectid");
+			$projectid = (int)GetVariable("projectid");
 			$remote_type = "";
 			$remote_url = "";
 			$remote_token = "";

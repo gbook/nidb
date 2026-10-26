@@ -193,7 +193,6 @@
 						<a class="item" href="templates.php?action=displaystudytemplatelist&projectid=<?=$projectid?>" style="color: #222"><i class="clone outline icon"></i> Study templates</a>
 						<a class="item" href="minipipeline.php?projectid=<?=$projectid?>" style="color: #222"><i class="cogs icon"></i> Mini-pipelines</a>
 						<a class="item" href="experiment.php?projectid=<?=$projectid?>" style="color: #222"><i class="clipboard icon"></i> Experiments</a>
-						<a class="item" href="projects.php?action=editbidsmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> BIDS protocol mapping</a>
 						<a class="item" href="projects.php?action=editexperimentmapping&id=<?=$projectid?>" style="color: #222"><i class="tasks icon"></i> Experiment &harr; protocol mapping</a>
 						<a class="item" href="nda.php?projectid=<?=$projectid?>" style="color: #222"><i class="upload icon"></i> NDA</a>
 					</div>

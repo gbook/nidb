@@ -43,14 +43,30 @@
 	$protocolnames = GetVariable("protocolname");
 	$experimentids = GetVariable("experimentid");
 
+	/* NDA information belongs to the project: View Data to see it (including CSVs and series lists),
+	   Edit Data to change it. An export id must be one of this project's NDA exports */
+	$canview = NDAProjectPerm($projectid, 'viewdata');
+	$canedit = NDAProjectPerm($projectid, 'modifydata');
+	$exportok = (($exportid > 0) && in_array($exportid, GetNDAExportIDs($projectid)));
+
 	/* the csv download must be sent before any HTML is output */
 	if ($action == "downloadcsv") {
+		if ((!$canview) || (!$exportok)) {
+			http_response_code(403);
+			echo "You do not have permission to view this file";
+			exit;
+		}
 		DownloadCSVFile($projectid, $exportid);
 		exit;
 	}
 
 	/* the series detail is fetched by AJAX and returns just an HTML fragment (no menu/header/footer) */
 	if ($action == "seriesdetail") {
+		if ((!$canview) || (!$exportok)) {
+			http_response_code(403);
+			echo '<div style="margin: 15px; color: #900">You do not have permission to view this export</div>';
+			exit;
+		}
 		DisplaySeriesDetail($projectid, $exportid);
 		exit;
 	}
@@ -58,7 +74,7 @@
 	/* in-place edit of the NDA project number / submission id - saves and returns a short status string */
 	if ($action == "updatendainfoajax") {
 		/* mutating: must be a POST carrying this session's CSRF token (sent by ndaSaveInfo() below) */
-		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || (!VerifyCSRFToken(false))) {
+		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || (!VerifyCSRFToken(false)) || (!$canedit) || (!$exportok)) {
 			echo "error";
 			exit;
 		}
@@ -82,9 +98,21 @@
 
 	$action = GetSafeAction(array("updatendainfo", "updatendamapping", "updatendaproject")); /* mutating actions require POST + CSRF token */
 
+	$needsedit = in_array($action, array("updatendainfo", "updatendamapping", "updatendaproject", "editndamapping", "editndaproject"));
+	if ((!$canview) || ($needsedit && !$canedit)) {
+		Error("You do not have permission to " . ($needsedit ? "change" : "view") . " NDA information for this project");
+		$action = ($canview) ? "" : "denied";
+	}
+	elseif (($action == "updatendainfo") && (!$exportok)) {
+		Error("That export is not one of this project's NDA exports");
+		$action = "";
+	}
+
 	/* ----- route the action ----- */
 	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
 	switch ($action) {
+		case 'denied':
+			break;
 		case 'updatendainfo':
 			ob_start();
 			if (UpdateNDASubmission($projectid, $exportid, $ndaprojectnumber, $ndasubmissionid, $csvfile))
@@ -113,7 +141,7 @@
 			EditNDAProjectForm($projectid);
 			break;
 		default:
-			DisplayNDA($projectid);
+			DisplayNDA($projectid, $canedit);
 	}
 
 
@@ -121,9 +149,22 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- NDAProjectPerm --------------------- */
+	/* -------------------------------------------- */
+	/* true if the current user has $perm ('viewdata' or 'modifydata') on the project */
+	function NDAProjectPerm($projectid, $perm) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1) return false;
+
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, $perm, $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayNDA ------------------------- */
 	/* -------------------------------------------- */
-	function DisplayNDA($projectid) {
+	function DisplayNDA($projectid, $canedit) {
 		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		$projectid = (int)$projectid;
 
@@ -134,14 +175,14 @@
 		?>
 		<div class="ui container" style="margin-top: 20px">
 		<?
-			DisplayNDAProjectInfo($projectid);
+			DisplayNDAProjectInfo($projectid, $canedit);
 			?>
 			<div class="ui two column grid">
 				<div class="column">
 					<h2 class="ui header">NDA Submissions</h2>
 				</div>
 				<div class="right aligned column">
-					<a href="nda.php?action=editndamapping&projectid=<?=$projectid?>" class="ui button"><i class="tasks icon"></i> Edit experiment mapping</a>
+					<? if ($canedit) { ?><a href="nda.php?action=editndamapping&projectid=<?=$projectid?>" class="ui button"><i class="tasks icon"></i> Edit experiment mapping</a><? } ?>
 				</div>
 			</div>
 			<br>
@@ -248,21 +289,23 @@
 					</form>
 					<?=date("D M j, Y h:ia", strtotime($submitdate))?>
 				</td>
-				<td class="collapsing"><?=$username?></td>
+				<td class="collapsing"><?=htmlspecialchars($username ?? '')?></td>
 				<td>
 					<div class="ui fluid input">
-						<input form="<?=$b_name?>form" id="ndaproj<?=$indx?>" type="text" name="ndaprojectnumber" value="<?=htmlspecialchars($ndaprojectnumber)?>" onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
+						<input form="<?=$b_name?>form" id="ndaproj<?=$indx?>" type="text" name="ndaprojectnumber" value="<?=htmlspecialchars($ndaprojectnumber)?>" <?=$canedit ? "" : "disabled"?> onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
 					</div>
 				</td>
 				<td>
 					<div class="ui fluid input">
-						<input form="<?=$b_name?>form" id="ndasub<?=$indx?>" type="text" name="ndasubmissionid" value="<?=htmlspecialchars($ndasubmissionid)?>" onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
+						<input form="<?=$b_name?>form" id="ndasub<?=$indx?>" type="text" name="ndasubmissionid" value="<?=htmlspecialchars($ndasubmissionid)?>" <?=$canedit ? "" : "disabled"?> onchange="ndaSaveInfo(<?=$indx?>, <?=$projectid?>, <?=$exportid?>, <?=$hascsv ? 'true' : 'false'?>)">
 					</div>
 					<span id="ndastatus<?=$indx?>" class="ui text" style="font-size: 0.85em"></span>
 				</td>
 				<td>
+					<? if ($canedit) { ?>
 					<input form="<?=$b_name?>form" type="file" name="csvfile" id="csvfile<?=$indx?>" accept=".csv" style="display: none" onchange="this.form.submit()">
 					<label for="csvfile<?=$indx?>" class="ui small button"><i class="upload icon"></i> <?=$hascsv ? "Overwrite" : "Upload"?></label>
+					<? } ?>
 					<? if ($hascsv): ?>
 						<a href="nda.php?action=downloadcsv&projectid=<?=$projectid?>&exportid=<?=$exportid?>" title="View existing CSV file"><i class="file alternate icon"></i> View csv</a>
 					<? endif; ?>
@@ -385,7 +428,7 @@
 	/* ------- DisplayNDAProjectInfo -------------- */
 	/* -------------------------------------------- */
 	/* Show the NDA project information (collection id, expected data, submission dates) with an edit button */
-	function DisplayNDAProjectInfo($projectid) {
+	function DisplayNDAProjectInfo($projectid, $canedit) {
 		$projectid = (int)$projectid;
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select nda_collectionid, expected_data, submission_dates from nda_project where project_id = ?");
@@ -400,7 +443,7 @@
 					<h3 class="ui header">NDA Project Information</h3>
 				</div>
 				<div class="right aligned column">
-					<a href="nda.php?action=editndaproject&projectid=<?=$projectid?>" class="ui small button"><i class="edit icon"></i> Edit</a>
+					<? if ($canedit) { ?><a href="nda.php?action=editndaproject&projectid=<?=$projectid?>" class="ui small button"><i class="edit icon"></i> Edit</a><? } ?>
 				</div>
 			</div>
 		<?
@@ -666,7 +709,7 @@
 		$filename = preg_replace('/[^\w]/', '', $projectname . $row['username'] . $row['submitdate'] . $exportid);
 
 		header("Content-Description: File Transfer");
-		header("Content-Disposition: attachment; filename=$filename.csv");
+		header("Content-Disposition: attachment; filename=\"$filename.csv\"");
 		header("Content-Type: text/csv");
 		header("Content-length: " . strlen($csvcontents));
 		header("Content-Transfer-Encoding: text");
@@ -750,16 +793,15 @@
 			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
 			foreach ($serieslist as $series => $count) {
 
-				$experiment_id = "";
-				$experiment_id = $mapping[$modality][$series];
+				$experiment_id = $mapping[$modality][$series] ?? "";
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
+					<td><?=htmlspecialchars(strtoupper($modality))?></td>
+					<td><tt><?=htmlspecialchars($series)?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=htmlspecialchars(strtolower($modality))?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=htmlspecialchars($series)?>">
 						<div class="ui input">
-							<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">
+							<input type="text" name="experimentid[<?=$i?>]" value="<?=htmlspecialchars($experiment_id)?>">
 						</div>
 					</td>
 				</tr>
@@ -786,34 +828,29 @@
 	/* ------- UpdateNDAMapping ------------------- */
 	/* -------------------------------------------- */
 	function UpdateNDAMapping($projectid, $modalities, $protocolnames, $experimentids) {
-		$projectid = trim(strtolower($projectid));
-
-		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
-		else {
-			Error("Invalid project ID [$projectid]");
+		/* mappings are per project (moduleExport.cpp reads them by project_id). There used to be a
+		   "global" mapping (project_id NULL) path here, but nothing reads it and it was unreachable */
+		$pid = (int)$projectid;
+		if ($pid < 1) {
+			Error("Invalid project ID");
 			return;
 		}
-
-		/* an empty/"null" project id means this is the global mapping, stored as project_id NULL */
-		$pid = ($projectid == "" || $projectid == "null") ? null : (int)$projectid;
+		if (!is_array($modalities)) $modalities = array();
+		if (!is_array($protocolnames)) $protocolnames = array();
+		if (!is_array($experimentids)) $experimentids = array();
 
 		/* the form submits the project's complete mapping set, so clear the existing rows first;
 		   nda_mapping has no unique key, so without this a re-save would append duplicate rows */
-		if ($pid === null) {
-			$del = mysqli_prepare($GLOBALS['linki'], "delete from nda_mapping where project_id is null");
-		}
-		else {
-			$del = mysqli_prepare($GLOBALS['linki'], "delete from nda_mapping where project_id = ?");
-			mysqli_stmt_bind_param($del, 'i', $pid);
-		}
+		$del = mysqli_prepare($GLOBALS['linki'], "delete from nda_mapping where project_id = ?");
+		mysqli_stmt_bind_param($del, 'i', $pid);
 		MySQLiBoundQuery($del, __FILE__, __LINE__);
 		mysqli_stmt_close($del);
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values (?, ?, ?, ?)");
 		foreach ($modalities as $i => $modality) {
 			$modality = strtolower($modality);
-			$protocolname = $protocolnames[$i];
-			$experimentid = $experimentids[$i];
+			$protocolname = $protocolnames[$i] ?? "";
+			$experimentid = $experimentids[$i] ?? "";
 			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
 				$experimentid = (int)$experimentid;
 				mysqli_stmt_bind_param($stmt, 'issi', $pid, $protocolname, $modality, $experimentid);

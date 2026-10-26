@@ -109,8 +109,8 @@
 	/* -------------------------------------------- */
 	/* ------- ValidConnectionFields -------------- */
 	/* -------------------------------------------- */
-	/* the server and username are later placed on a curl command line (ajaxapi.php RemoteExportStatus),
-	   so only allow plain http(s) URLs and simple usernames. Displays an error and returns false if invalid */
+	/* the server is called by ajaxapi.php RemoteNiDBAPI() (which re-checks the same URL rule), so only allow
+	   plain http(s) URLs and simple usernames. Displays an error and returns false if invalid */
 	function ValidConnectionFields($remoteserver, $remoteusername) {
 		if (!preg_match('#^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?$#', (string)$remoteserver)) {
 			Error("Server must be a plain http:// or https:// URL (letters, numbers, <tt>. - _ ~ /</tt> and an optional port). Connection was not saved.");

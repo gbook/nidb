@@ -49,7 +49,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	$id = GetVariable("id");
+	$id = (int)GetVariable("id");
 	$modulename = GetVariable("modulename");
 	
 	/* determine action */

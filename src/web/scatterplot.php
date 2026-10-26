@@ -21,12 +21,18 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-	$w = $_REQUEST['w']; /* width */
-	$h = $_REQUEST['h']; /* height */
-	$x = $_REQUEST['x']; /* list of x values */
-	$y = $_REQUEST['y']; /* list of y values */
-	$c = $_REQUEST['c']; /* list of colors */
-	$b = $_REQUEST['b']; /* if 'yes', draw a gray border around the image */
+	define("LEGIT_REQUEST", true);
+	session_start();
+	require "functions.php";
+	require "includes_php.php"; /* login required */
+
+	/* clamp the canvas size: an unbounded w/h lets one request exhaust the server's memory */
+	$w = max(10, min(2000, (int)($_REQUEST['w'] ?? 400))); /* width */
+	$h = max(10, min(2000, (int)($_REQUEST['h'] ?? 300))); /* height */
+	$x = (string)($_REQUEST['x'] ?? ''); /* list of x values */
+	$y = (string)($_REQUEST['y'] ?? ''); /* list of y values */
+	$c = (string)($_REQUEST['c'] ?? ''); /* list of colors */
+	$b = $_REQUEST['b'] ?? ''; /* if 'yes', draw a gray border around the image */
 
 	/* create the canvas */
 	$im = imagecreatetruecolor($w,$h);
@@ -37,21 +43,29 @@
 
 	
 	/* determine x and y scales based on data */
-	$x = explode(",", $x);
-	$y = explode(",", $y);
+	/* numbers only, and at most 10000 points */
+	$x = array_slice(array_map('floatval', array_filter(explode(",", $x), 'is_numeric')), 0, 10000);
+	$y = array_slice(array_map('floatval', array_filter(explode(",", $y), 'is_numeric')), 0, 10000);
 	$c = explode(",", $c);
-	$xrange = max($x);
-	$yrange = max($y);
-	$xscale = $w/$xrange;
-	$yscale = $h/$yrange;
+	$n = min(count($x), count($y));
+	$xrange = ($n > 0) ? max($x) : 0;
+	$yrange = ($n > 0) ? max($y) : 0;
+	$xscale = ($xrange > 0) ? $w/$xrange : 0; /* avoid division by zero (fatal on PHP 8) */
+	$yscale = ($yrange > 0) ? $h/$yrange : 0;
+	$min = ($n > 0) ? min($x) : 0;
+	$max = $xrange;
+	$mean = ($n > 0) ? array_sum($x)/count($x) : 0;
+	$meanx = (($max-$min) > 0) ? $w*(($mean-$min)/($max-$min)) : 0;
+	$ind = "";
 	
 	//echo "Scales: $xscale, $yscale";
 	/* draw the dots */
-	for ($i=0; $i<count($x); $i++) {
+	for ($i=0; $i<$n; $i++) {
 		$xp = $x[$i]*$xscale;
 		$yp = $y[$i]*$yscale;
 
-		$color = imagecolorallocate($im, hexdec(substr($c[$i],0,2)), hexdec(substr($c[$i],2,2)), hexdec(substr($c[$i],2,2)));
+		$hex = preg_match('/^[0-9A-Fa-f]{6}$/', $c[$i] ?? '') ? $c[$i] : "000000";
+		$color = imagecolorallocate($im, hexdec(substr($hex,0,2)), hexdec(substr($hex,2,2)), hexdec(substr($hex,4,2)));
 		//echo "Plotting $i: ($xp,$yp) $color<br>\n";
 		imagefilledellipse($im,$xp,$yp,2,2,$color);
 	}

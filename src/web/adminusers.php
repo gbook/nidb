@@ -56,7 +56,7 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
+		$id = (int)GetVariable("id");
 		$username = GetVariable("username");
 		$password = GetVariable("password");
 		$fullname = GetVariable("fullname");
@@ -723,7 +723,7 @@
 
 								/* defaults so the add form (no existing rows) doesn't hit undefined vars */
 								$project_admin = $view_data = $view_phi = $write_data = $write_phi = "";
-								if ($id != "") {
+								if ((int)$id > 0) {
 									$sqlstringB = "select * from user_project where user_id = ? and project_id = ?";
 									$stmtB = mysqli_prepare($GLOBALS['linki'], $sqlstringB);
 									mysqli_stmt_bind_param($stmtB, 'ii', $id, $project_id);

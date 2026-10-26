@@ -1326,24 +1326,36 @@
 	/* -------------------------------------------- */
 	function UpdateMostRecent($subjectid, $studyid, $projectid) {
 
-		if ((trim($subjectid) == '') || ($subjectid == 0)) { $subjectid = 'NULL'; }
-		if ((trim($studyid) == '') || ($studyid == 0)) { $studyid = 'NULL'; }
-		if ((trim($projectid) == '') || ($projectid == 0)) { $projectid = 'NULL'; }
+		/* a blank/0/non-numeric id is stored as NULL. Compare as int: on PHP 8 a non-numeric string is no
+		   longer == 0, and these values used to go into the SQL unquoted */
+		$subjectid = ((int)$subjectid > 0) ? (int)$subjectid : null;
+		$studyid = ((int)$studyid > 0) ? (int)$studyid : null;
+		$projectid = ((int)$projectid > 0) ? (int)$projectid : null;
 		
 		/* get userid */
-		$username = $_SESSION['username'];
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$username = (string)($_SESSION['username'] ?? '');
+		$sqlstring = "select user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($username));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
+		mysqli_stmt_close($stmt);
+		$userid = (int)($row['user_id'] ?? 0);
+		if ($userid < 1) return;
 		
 		/* insert the new most recent entry */
-		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, project_id, mostrecent_date) values ($userid, $subjectid, $studyid, $projectid, now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert ignore into mostrecent (user_id, subject_id, study_id, project_id, mostrecent_date) values (?, ?, ?, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iiii', $userid, $subjectid, $studyid, $projectid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($userid, $subjectid, $studyid, $projectid));
+		mysqli_stmt_close($stmt);
 		
 		/* delete rows other than the most recent 15 items */
-		$sqlstring = "DELETE FROM `mostrecent` WHERE mostrecent_id NOT IN ( SELECT mostrecent_id FROM ( SELECT mostrecent_id FROM `mostrecent` where user_id = $userid ORDER BY mostrecent_date DESC LIMIT 15) foo) and user_id = $userid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "DELETE FROM `mostrecent` WHERE mostrecent_id NOT IN ( SELECT mostrecent_id FROM ( SELECT mostrecent_id FROM `mostrecent` where user_id = ? ORDER BY mostrecent_date DESC LIMIT 15) foo) and user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $userid, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($userid, $userid));
+		mysqli_stmt_close($stmt);
 
 	}
 
@@ -2672,12 +2684,15 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			$colarr[$col] = array();
 			foreach ($array as $k => $row) { $colarr[$col]['_'.$k] = strtolower($row[$col]); }
 		}
-		$eval = 'array_multisort(';
+		/* array_multisort(col1, order1, col2, order2, ...): build the argument list directly (the column
+		   arrays by reference) rather than eval()ing a string built from $cols */
+		$args = array();
 		foreach ($cols as $col => $order) {
-			$eval .= '$colarr[\''.$col.'\'],'.$order.',';
+			$args[] = &$colarr[$col];
+			$args[] = (int)$order;
 		}
-		$eval = substr($eval,0,-1).');';
-		eval($eval);
+		if (count($args) > 0)
+			call_user_func_array('array_multisort', $args);
 		$ret = array();
 		foreach ($colarr as $col => $arr) {
 			foreach ($arr as $k => $v) {

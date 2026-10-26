@@ -48,11 +48,11 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
-		$defaultinstanceid = GetVariable("defaultinstanceid");
+		$id = (int)GetVariable("id");
+		$defaultinstanceid = (int)GetVariable("defaultinstanceid");
 		$instancename = GetVariable("instancename");
 		$users = GetVariable("users");
-		$userinstanceid = GetVariable("userinstanceid");
+		$userinstanceid = (int)GetVariable("userinstanceid");
 		
 		//print_r($_POST);
 		

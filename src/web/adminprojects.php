@@ -49,9 +49,9 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
-		$projectid = GetVariable("projectid");
-		$copyfromprojectid = GetVariable("copyfromprojectid");
+		$id = (int)GetVariable("id");
+		$projectid = (int)GetVariable("projectid");
+		$copyfromprojectid = (int)GetVariable("copyfromprojectid");
 		$projectname = GetVariable("projectname");
 		$admin = GetVariable("admin");
 		$pi = GetVariable("pi");

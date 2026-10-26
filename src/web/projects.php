@@ -106,13 +106,6 @@
 			DismissNewStudies($id);
 			DisplayProject($id);
 			break;
-		case 'updatebidsmapping':
-			UpdateBIDSMapping($id, $modalities, $oldnames, $newnames);
-			EditBIDSMapping($id);
-			break;
-		case 'editbidsmapping':
-			EditBIDSMapping($id);
-			break;
 		case 'updateexperimentmapping':
 			UpdateExperimentMapping($id, $modalities, $protocolnames, $experimentids);
 			EditExperimentMapping($id);
@@ -2793,141 +2786,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- EditBIDSMapping -------------------- */
-	/* -------------------------------------------- */
-	function EditBIDSMapping($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
-		
-		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
-			$projectid = 'null';
-		}
-			
-		/* get all studies, and all series, associated with this project */
-		if ($projectid == "null")
-			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
-		else
-			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$modality = strtolower($row['study_modality']);
-			
-			if (IsNiDBModality($modality)) {
-				if (($modality != "") && ($studyid != "")) {
-					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						if ($rowA['series_desc'] != "") {
-							$seriesdesc = $rowA['series_desc'];
-						}
-						elseif ($rowA['series_protocol'] != "") {
-							$seriesdesc = $rowA['series_protocol'];
-						}
-						if ($seriesdesc != "") {
-							$seriesdescs[$modality][$seriesdesc]++;
-						}
-					}
-				}
-			}
-		}
-
-		/* get list of BIDS protocol mappings for this project */
-		if ($projectid == "null")
-			$sqlstring = "select * from bids_mapping where project_id is null";
-		else
-			$sqlstring = "select * from bids_mapping where project_id = $projectid";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$mapping[$row['modality']][$row['protocolname']] = $row['shortname'];
-		}
-		?>
-		<div class="ui text container grid">
-		<form action="projects.php" method="post">
-		<input type="hidden" name="action" value="updatebidsmapping">
-		<input type="hidden" name="id" value="<?=$projectid?>">
-		<b>BIDS mapping</b>
-		<br>
-		This mapping is used in exporting of BIDS format. This can also be used to group protocol names together: for example, protocols named <tt>AXMPRAGE</tt> and <tt>T1w</tt> are both <tt>anat</tt>.
-		<br><br>
-		<table class="ui small celled selectable grey compact table">
-			<thead>
-				<th>Modality</th>
-				<th>Protocol name</th>
-				<th>
-					BIDS name<br>
-					<span class="tiny" style="font-weight: normal">Possible BIDS names are <tt><b>anat</b></tt>, <tt><b>func</b></tt>, <tt><b>dwi</b></tt>, <tt><b>fmap</b></tt></span>
-				</th>
-			</thead>
-		<?
-		$i=0;
-		foreach ($seriesdescs as $modality => $serieslist) {
-			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
-			foreach ($serieslist as $series => $count) {
-
-				$shortname = "";
-				$shortname = $mapping[$modality][$series];
-				?>
-				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
-					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>">
-						<input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>">
-						<div class="ui fluid input">
-							<input type="text" name="newname[<?=$i?>]" value="<?=$shortname?>">
-						</div>
-					</td>
-				</tr>
-				<?
-				$i++;
-			}
-		}
-		?>
-			<tr>
-				<td colspan="3" align="right">
-					<div class="column" align="right">
-						<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
-						<input class="ui primary button" type="submit" id="submit" value="Update">
-					</div>
-				</td>
-			</tr>
-		</table>
-		</div>
-		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- UpdateBIDSMapping ------------------ */
-	/* -------------------------------------------- */
-	function UpdateBIDSMapping($projectid, $modalities, $experimentids) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
-		
-		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
-		else {
-			Error("Invalid project ID [$projectid]");
-			return;
-		}
-		//PrintVariable($modalities);
-		//PrintVariable($oldnames);
-		//PrintVariable($newnames);
-		
-		foreach ($modalities as $i => $modality) {
-			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
-			if (($modality != "") && ($oldname != "") && ($newname != "")) {
-				
-				$sqlstring = "insert ignore into nda_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$oldname', '$newname', '$modality')";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-		}
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- EditExperimentMapping -------------- */
 	/* -------------------------------------------- */
 	function EditExperimentMapping($projectid) {
@@ -3307,7 +3165,6 @@
 						<div class="description">Manage data mappings</div>
 					</div>
 					<div class="extra content">
-						<a href="projects.php?action=editbidsmapping&id=<?=$id?>" style="color: #4183c4">BIDS protocol mapping</a><br>
 						<a href="projects.php?action=editexperimentmapping&id=<?=$id?>" style="color: #4183c4">Experiment/protocol mapping</a><br>
 						<a href="remoteimportmapping.php?projectid=<?=$id?>" style="color: #4183c4">Remote import mapping</a>
 					</div>

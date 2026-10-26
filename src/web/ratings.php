@@ -45,13 +45,21 @@
 	$id = (int)GetVariable("id");
 	$ratingid = (int)GetVariable("ratingid");
 	$type = GetVariable("type");
-	$modality = GetVariable("modality");
+	$modality = strtolower(trim((string)GetVariable("modality")));
 	$value = GetVariable("rating_value");
 	$notes = GetVariable("rating_notes");
 
+	/* ratings are only ever made on series ('series' is the only rating_type in use). Viewing or adding them
+	   needs View Data on the series' project; the project is looked up from the series, not the request */
+	if ($type != "series") $type = "series";
+	$canview = ((GetSeriesTableName($modality) != '') && (IsNiDBModality($modality)) && (UserCanViewSeries($id, $modality)));
+
 	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-submit */
-	$thispage = "ratings.php?id=$id&type=" . urlencode($type ?? '') . "&modality=" . urlencode($modality ?? '');
-	if ($action == "addrating") {
+	$thispage = "ratings.php?id=$id&type=" . urlencode($type) . "&modality=" . urlencode($modality);
+	if (!$canview) {
+		Error("You do not have permission to view ratings for this series");
+	}
+	elseif ($action == "addrating") {
 		AddRating($username, $modality, $type, $id, $value, $notes);
 		RedirectTo($thispage);
 	}
@@ -65,16 +73,50 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- UserCanViewSeries ------------------ */
+	/* -------------------------------------------- */
+	/* true if the current user has View Data on the project the series belongs to.
+	   $modality must already be validated (it is used in a table name) */
+	function UserCanViewSeries($seriesid, $modality) {
+		$tablename = GetSeriesTableName($modality);
+		$seriesid = (int)$seriesid;
+		if (($tablename == '') || ($seriesid < 1))
+			return false;
+
+		$sqlstring = "select c.project_id from $tablename a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where a.$modality" . "series_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($seriesid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row)
+			return false;
+
+		$projectid = (int)$row['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, 'viewdata', $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetCurrentUserIDForRatings --------- */
+	/* -------------------------------------------- */
+	function GetCurrentUserIDForRatings() {
+		$sqlstring = "select user_id from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $GLOBALS['username']);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($GLOBALS['username']));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return (int)($row['user_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddRating -------------------------- */
 	/* -------------------------------------------- */
 	function AddRating($username, $modality, $type, $id, $value, $notes) {
-		$sqlstring = "select user_id from users where username = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 's', $username);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($username));
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$userid = (int)($row['user_id'] ?? 0);
+		$userid = GetCurrentUserIDForRatings();
 		if ($userid < 1) { return; }
 
 		$id = (int)$id;
@@ -90,12 +132,22 @@
 	/* -------------------------------------------- */
 	/* ------- DeleteRating ----------------------- */
 	/* -------------------------------------------- */
+	/* a rating can be deleted by the user who made it, or by an admin */
 	function DeleteRating($ratingid) {
 		$ratingid = (int)$ratingid;
-		$sqlstring = "delete from ratings where rating_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $ratingid);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($ratingid));
+		if (IsAdminUser()) {
+			$sqlstring = "delete from ratings where rating_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $ratingid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($ratingid));
+		}
+		else {
+			$userid = GetCurrentUserIDForRatings();
+			$sqlstring = "delete from ratings where rating_id = ? and rater_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $ratingid, $userid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($ratingid, $userid));
+		}
 		mysqli_stmt_close($stmt);
 	}
 
@@ -126,7 +178,7 @@
 			<div class="ui top attached secondary inverted segment">
 				<h2 class="ui header">
 					Ratings
-					<div class="sub header">Series <?=htmlspecialchars($id)?></div>
+					<div class="sub header">Series <?=(int)$id?></div>
 				</h2>
 			</div>
 
@@ -135,7 +187,7 @@
 				<h4 class="ui header">Add Rating</h4>
 				<form class="ui form" action="ratings.php" method="post">
 					<input type="hidden" name="action" value="addrating">
-					<input type="hidden" name="id" value="<?=htmlspecialchars($id)?>">
+					<input type="hidden" name="id" value="<?=(int)$id?>">
 					<input type="hidden" name="type" value="<?=htmlspecialchars($type ?? '')?>">
 					<input type="hidden" name="modality" value="<?=htmlspecialchars($modality ?? '')?>">
 					<?=CSRFTokenField()?>
@@ -171,10 +223,13 @@
 			<div class="ui bottom attached segment">
 				<? if ($type == "series") {
 					$id = (int)$id;
-					$sqlstring = "select * from ratings a left join users b on a.rater_id = b.user_id where a.data_id = ? order by a.rating_date desc";
+					$myuserid = GetCurrentUserIDForRatings();
+					$isadmin = IsAdminUser();
+					/* data_id is only unique within a modality, so filter on modality and type too */
+					$sqlstring = "select * from ratings a left join users b on a.rater_id = b.user_id where a.data_id = ? and a.data_modality = ? and a.rating_type = ? order by a.rating_date desc";
 					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-					mysqli_stmt_bind_param($stmt, 'i', $id);
-					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+					mysqli_stmt_bind_param($stmt, 'iss', $id, $modality, $type);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id, $modality, $type));
 					mysqli_stmt_close($stmt);
 					if (mysqli_num_rows($result) < 1) { ?>
 						<div class="ui message">No ratings have been added yet.</div>
@@ -195,18 +250,20 @@
 								$rater        = $row['username'];
 								$rating_id    = $row['rating_id'];
 								$rating_value = $row['rating_value'];
-								$rating_notes = htmlspecialchars($row['rating_notes']);
+								$rating_notes = htmlspecialchars($row['rating_notes'] ?? '');
 								$rating_date  = $row['rating_date'];
+								$candelete    = ($isadmin || ((int)$row['rater_id'] == $myuserid));
 
 								list($label_color, $label_text) = RatingLabel($rating_value);
 								$label_class = $label_color ? "ui $label_color label" : "ui label";
 								?>
 								<tr>
-									<td><?=htmlspecialchars($rater)?></td>
-									<td><?=htmlspecialchars($rating_date)?></td>
+									<td><?=htmlspecialchars($rater ?? '')?></td>
+									<td><?=htmlspecialchars($rating_date ?? '')?></td>
 									<td><div class="<?=$label_class?>"><?=$label_text?></div></td>
 									<td><?=$rating_notes?></td>
 									<td style="text-align:center">
+										<? if ($candelete) { ?>
 										<form method="post" action="ratings.php" style="display: inline" onsubmit="return confirm('Delete this rating?')">
 											<input type="hidden" name="action" value="delete">
 											<input type="hidden" name="ratingid" value="<?=(int)$rating_id?>">
@@ -216,6 +273,7 @@
 											<?=CSRFTokenField()?>
 											<button type="submit" class="ui mini red basic icon button" title="Delete rating"><i class="trash icon"></i></button>
 										</form>
+										<? } ?>
 									</td>
 								</tr>
 								<?

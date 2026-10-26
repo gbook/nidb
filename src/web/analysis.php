@@ -1564,11 +1564,15 @@
 	/* ------- DisplayJob ------------------------- */
 	/* -------------------------------------------- */
 	function DisplayJob($id) {
-		if (($id == 0) || ($id == '')) {
+		/* $id goes on a shell command line, so it must be a plain positive integer (a loose "== 0" check let
+		   values like "1;<command>" through on both PHP 7 and 8) */
+		$id = trim((string)$id);
+		if (!ctype_digit($id) || ((int)$id < 1)) {
 			echo "Invalid cluster job ID";
 		}
 		else {
-			$systemstring = "ssh " . $GLOBALS['cfg']['clustersubmithost'] . " qstat -j $id";
+			$id = (int)$id;
+			$systemstring = "ssh " . escapeshellarg($GLOBALS['cfg']['clustersubmithost']) . " qstat -j $id";
 			$out = shell_exec($systemstring);
 			PrintVariable($out,'output');
 		}

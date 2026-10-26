@@ -116,13 +116,13 @@
 	}
 	elseif ($action == "cancel") {
 		ob_start();
-		Cancel($id, $currentcal, $cancelreason, $notifyusers, 0);
+		Cancel($id, 0, $currentcal, $cancelreason, $notifyusers, 0);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("calendar.php");
 	}
 	elseif ($action == "cancelall") {
 		ob_start();
-		Cancel($groupid, $currentcal, $cancelreason, $notifyusers, 1);
+		Cancel($id, $groupid, $currentcal, $cancelreason, $notifyusers, 1);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("calendar.php");
 	}
@@ -136,6 +136,28 @@
 	/* --------- Add --------------------------------- */
 	/* ----------------------------------------------- */
 	function Add($method, $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $editall) {
+		
+		/* an update changes one existing appointment (or, for editall, the shared fields of its series).
+		   Members of a series are edited with their date fields disabled, so nothing is posted for them:
+		   keep the stored dates, and take the group id from the database rather than the request */
+		$isseriesmember = false;
+		if ($method != "add") {
+			$id = (int)$id;
+			$sqlstring = "select appt_startdate, appt_enddate, appt_groupid, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a where appt_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+			$existing = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$existing) { Error("Appointment not found"); return; }
+			$groupid = (int)$existing['appt_groupid'];
+			if ((int)$existing['groupsize'] > 1) {
+				$isseriesmember = true;
+				$startdatetime = $existing['appt_startdate'];
+				$enddatetime = $existing['appt_enddate'];
+			}
+			$repeats = false; /* "Repeats" only creates a series when adding */
+		}
 		
 		/* check if any form elements are bad, if so redisplay the addform */
 		if ($title == "") { DisplayForm("", "'Title' is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
@@ -153,7 +175,7 @@
 		$enddatetimes = array();
 		$appts = array();
 
-		/* check if this appointment repeats */
+		/* check if this appointment repeats (adding only - see above) */
 		if (!$repeats) {
 			$numappts = 1;
 			$startdatetimes[0] = date('Y-m-d H:i:s',strtotime($startdatetime));
@@ -336,7 +358,7 @@
 						$ttitle = $row['appt_title'];
 					}
 				
-					DisplayForm("","<b>This appointment overlaps with an existing appointment</b><br>[$ttitle: $tstart - $tend]","",$username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, "");
+					DisplayForm("","<b>This appointment overlaps with an existing appointment</b><br>[" . htmlspecialchars("$ttitle: $tstart - $tend") . "]","",$username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, "");
 					return;
 				}
 			}
@@ -350,46 +372,37 @@
 				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 				$newid = mysqli_insert_id($GLOBALS['linki']);
 				mysqli_stmt_close($stmt);
-				/* CALULATE&POPULATE GROUP ID (see security-issues.md N26: this condition never groups a series) */
-				if ($groupid != 0) {
-					$groupid = $newid;
+				/* a repeating appointment's occurrences form a series: they all get the first occurrence's id
+				   as their group id. A single appointment keeps group 0 ("not in a series") */
+				if (count($startdatetimes) > 1) {
+					if ($i == 0) $groupid = $newid;
 					$sqlstring = "update calendar_appointments set appt_groupid = ? where appt_id = ?";
 					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-					mysqli_stmt_bind_param($stmt, 'ii', $groupid, $groupid);
-					MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($groupid, $groupid));
+					mysqli_stmt_bind_param($stmt, 'ii', $groupid, $newid);
+					MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($groupid, $newid));
 					mysqli_stmt_close($stmt);
 				}
 				
 			}
 			else {
-				if ($groupid != 0) {
-					$sqlstring = "select count(*) 'num' from calendar_appointments where appt_groupid = ?";
-					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-					mysqli_stmt_bind_param($stmt, 'i', $groupid);
-					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($groupid));
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					mysqli_stmt_close($stmt);
-					if ((int)($row['num'] ?? 0) > 1) {
-						$repeats = true;
-					}
-				}
-				
+				/* appt_username (who created the appointment) is never changed by an edit */
 				if ($editall) {
 					/* group 0 means "not in a series", so never act on all of those at once */
 					if ($groupid < 1) { DisplayForm($id, "This appointment is not part of a series", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
-					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_groupid = ?";
-					$types = 'siissiii';
-					$params = array($username, $calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $groupid);
+					$sqlstring = "update calendar_appointments set appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_groupid = ?";
+					$types = 'iissiii';
+					$params = array($calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $groupid);
 				}
-				elseif ($repeats) {
-					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
-					$types = 'siissiii';
-					$params = array($username, $calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $id);
+				elseif ($isseriesmember) {
+					/* one occurrence of a series: its dates aren't editable here */
+					$sqlstring = "update calendar_appointments set appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
+					$types = 'iissiii';
+					$params = array($calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $id);
 				}
 				else {
-					$sqlstring = "update calendar_appointments set appt_username = ?, appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_startdate = ?, appt_enddate = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
-					$types = 'siissssiii';
-					$params = array($username, $calendarid, $projectid, $title, $details, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $id);
+					$sqlstring = "update calendar_appointments set appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_startdate = ?, appt_enddate = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_id = ?";
+					$types = 'iissssiii';
+					$params = array($calendarid, $projectid, $title, $details, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $id);
 				}
 				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 				mysqli_stmt_bind_param($stmt, $types, ...$params);
@@ -429,7 +442,7 @@
 	/* ----------------------------------------------- */
 	/* --------- Cancel ------------------------------ */
 	/* ----------------------------------------------- */
-	function Cancel($id, $currentcal, $cancelreason, $notifyusers, $cancelall) {
+	function Cancel($id, $groupid, $currentcal, $cancelreason, $notifyusers, $cancelall) {
 		/* get appointment info before changing it */
 		$id = (int)$id;
 		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = ?";
@@ -438,6 +451,7 @@
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
+		if (!$row) { Error("Appointment not found"); return; }
 		$calid = $row['appt_calendarid'];
 		$prjid = $row['appt_projectid'];
 		$startdate = date('M j, Y', strtotime($row['appt_startdate']));
@@ -448,21 +462,25 @@
 		$endtime   = date('g:i a', strtotime($row['appt_enddate']));
 
 		if ($cancelall) {
-			/* $id is the group id here. Group 0 means "not in a series", so never act on all of those at once */
-			if ($id < 1) { Error("This appointment is not part of a series"); return; }
+			/* cancel the series the appointment belongs to (its stored group id, not the request's).
+			   Group 0 means "not in a series", so never act on all of those at once */
+			$target = (int)$row['appt_groupid'];
+			if ($target < 1) { Error("This appointment is not part of a series"); return; }
 			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_groupid = ?";
 		}
 		else {
+			$target = $id;
 			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_id = ?";
 		}
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		mysqli_stmt_bind_param($stmt, 'i', $target);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($target));
 		mysqli_stmt_close($stmt);
 		
 		/* send an email if necessary */
 		if ($notifyusers != "") {
-			$body = "The appointment titled '$appttitle' scheduled from $starttime-$endtime on $startdate has been cancelled from the $calendar calendar because $cancelreason";
+			/* SendEmail() sends HTML, so escape the user-entered parts */
+			$body = "The appointment titled '" . htmlspecialchars($appttitle ?? '') . "' scheduled from $starttime-$endtime on $startdate has been cancelled from the " . htmlspecialchars($calendar ?? '') . " calendar because " . htmlspecialchars($cancelreason ?? '');
 			$subject = "$calendar cancellation $startdate";
 			
 			/* get a list of users who care about this calendar and send an email */
@@ -610,7 +628,7 @@
 			<h3 class="ui dividing header">Appointment</h3>
 			<div class="required field">
 				<label>Title</label>
-				<input type="text" name="title" value="<?=$title?>" required>
+				<input type="text" name="title" value="<?=htmlspecialchars($title ?? '')?>" required>
 			</div>
 
 			<div class="two fields">
@@ -654,7 +672,7 @@
 							$name = $row['calendar_name'];
 							if ($calid == $calendarid) { $selected = "selected"; } else { $selected = ""; }
 					?>
-						<option value="<?=$calid?>" <?=$selected?>><?=$name?></option>
+						<option value="<?=(int)$calid?>" <?=$selected?>><?=htmlspecialchars($name ?? '')?></option>
 					<?
 						}
 					?>
@@ -671,7 +689,7 @@
 							$name = $row['project_name'];
 							if ($prjid == $projectid) { $selected = "selected"; } else { $selected = ""; }
 					?>
-						<option value="<?=$prjid?>" <?=$selected?>><?=$name?></option>
+						<option value="<?=(int)$prjid?>" <?=$selected?>><?=htmlspecialchars($name ?? '')?></option>
 					<?
 						}
 					?>
@@ -697,7 +715,7 @@
 
 			<div class="field">
 				<label>Details</label>
-				<textarea name="details" rows="4"><?=$details?></textarea>
+				<textarea name="details" rows="4"><?=htmlspecialchars($details ?? '')?></textarea>
 			</div>
 
 			<? if ($type == "add") { ?>

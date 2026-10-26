@@ -27,29 +27,19 @@
 	require "functions.php";
 	require "includes_php.php";
 
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpscriptname = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpscriptname))
-		$selfcall = true;
-	else
-		$selfcall = false;
-	
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
+	$seriesids = array();
+	$seriesid = 0;
 	if (is_array(GetVariable("seriesid")))
 		$seriesids = GetVariable("seriesid");
 	else
 		$seriesid = (int)GetVariable("seriesid");
-	$modality = GetVariable("modality");
-	
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
-	//PrintVariable($_FILES);
+	$modality = strtolower(trim((string)GetVariable("modality")));
 
 	
 	/* determine action */
-	if (($selfcall && $action == "upload")) {
+	if ($action == "upload") {
 		/* mutating: must be a POST carrying this session's CSRF token (Dropzone posts the form's hidden inputs,
 		   including the token). Answer with an HTTP error, not the page, so Dropzone shows the upload as failed */
 		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || (!VerifyCSRFToken(false))) {
@@ -85,19 +75,15 @@
 	/* ------- DisplaySeriesList ------------------ */
 	/* -------------------------------------------- */
 	function DisplaySeriesList($seriesids, $modality) {
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-
-		if (!IsNiDBModality($modality)) {
-			echo "Invalid modality [$modality]<br>";
+		if ((GetSeriesTableName($modality) == '') || (!IsNiDBModality($modality))) {
+			echo "Invalid modality [" . htmlspecialchars($modality) . "]<br>";
 			return;
 		}
 
 		?>
-		<script src="https://unpkg.com/dropzone@5/dist/min/dropzone.min.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" type="text/css" />
-		<!--<link rel="stylesheet" href="scripts/dropzone.css">
-		<script src="scripts/dropzone.js"></script>-->
+		<!-- self-hosted copy (5.5.0, also used by importremote.php) rather than an unpinned CDN -->
+		<link rel="stylesheet" href="scripts/dropzone.css">
+		<script src="scripts/dropzone.js"></script>
 		<style>
 			table .batchupload { border: 2px solid #444; border-radius: 8px; border-spacing: 0px; width: 90%; }
 			table .batchupload thead:last-of-type th { border-bottom: 2px solid #444; }
@@ -140,7 +126,7 @@
 				<?
 				}
 			?>
-			<input name="modality" type="hidden" value="<?=$modality?>">
+			<input name="modality" type="hidden" value="<?=htmlspecialchars($modality)?>">
 			<input type="submit" value="Refresh Page" title="Refresh to view uploaded files" style="font-size: 14pt" class="ui primary button">
 		</form>
 		<br>
@@ -169,11 +155,28 @@
 			<?
 				$seriesidlist = implode(",", array_map('intval', (array)$seriesids));
 				if ($seriesidlist != "") {
-					$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
+					$sqlstring = "select a.*, b.study_id, b.study_datetime, b.study_num, b.study_ageatscan, c.project_id, d.uid, d.birthdate from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id in ($seriesidlist) order by d.uid, b.study_num, a.series_num";
 					//PrintSQL($sqlstring);
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					$lastuid = "";
+					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__); /* ids are intval'd, modality validated above */
+
+					/* only list series the user has View Data on; the upload box needs Edit Data (also checked in UploadFile) */
+					$rows = array();
+					$projectids = array();
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						$rows[] = $row;
+						$projectids[] = (int)$row['project_id'];
+					}
+					$perms = GetCurrentUserProjectPermissions($projectids);
+					$numhidden = 0;
+
+					$lastuid = "";
+					foreach ($rows as $row) {
+						$rowprojectid = (int)$row['project_id'];
+						if (GetPerm($perms, 'viewdata', $rowprojectid) != 1) {
+							$numhidden++;
+							continue;
+						}
+						$canupload = (GetPerm($perms, 'modifydata', $rowprojectid) == 1);
 						$uid = $row['uid'];
 						$dob = $row['birthdate'];
 						$age = $row['study_ageatscan'];
@@ -184,7 +187,7 @@
 						$seriesnum = $row['series_num'];
 						$seriesdate = date('M j, Y g:ia',strtotime($row['series_datetime']));
 						$seriesdesc = $row['series_desc'];
-						$seriesid = $row[$modality."series_id"];
+						$seriesid = (int)$row[$modality."series_id"];
 						if ($seriesdesc == "")
 							$seriesdesc = $row['series_protocol'];
 						
@@ -209,6 +212,7 @@
 						?>
 						<tr class="<?=$tdclass?>">
 							<td>
+								<? if ($canupload) { ?>
 								<script>
 								// Note that the name "myDropzone" is the camelized
 								// id of the form.
@@ -243,35 +247,39 @@
 									<input name="action" type="hidden" value="upload">
 									<?=CSRFTokenField()?>
 									<input name="seriesid" type="hidden" value="<?=$seriesid?>">
-									<input name="modality" type="hidden" value="<?=$modality?>">
+									<input name="modality" type="hidden" value="<?=htmlspecialchars($modality)?>">
 									<div class="fallback">
 										<input name="file[]" type="file" multiple />
 									</div>
 								</form>
+								<? } else { ?>
+								<span class="tiny" style="color: gray">No upload permission</span>
+								<? } ?>
 							</td>
-							<td><?=$uid?></td>
-							<td><?=$studyAge?></td>
-							<td><?=$calcStudyAge?></td>
-							<td><a href="studies.php?studyid=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-							<td><?=strtoupper($modality)?></td>
+							<td><?=htmlspecialchars($uid ?? '')?></td>
+							<td><?=htmlspecialchars($studyAge)?></td>
+							<td><?=htmlspecialchars($calcStudyAge)?></td>
+							<td><a href="studies.php?studyid=<?=(int)$studyid?>"><?=htmlspecialchars($uid . $studynum)?></a></td>
+							<td><?=htmlspecialchars(strtoupper($modality))?></td>
 							<td><?=$studydate?></td>
-							<td><?=$seriesnum?></td>
+							<td><?=htmlspecialchars($seriesnum ?? '')?></td>
 							<td><?=$seriesdate?></td>
-							<td><?=$seriesdesc?></td>
+							<td><?=htmlspecialchars($seriesdesc ?? '')?></td>
 							<td>
 								<span class="tiny">
 								<?
 									list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 									if (strtolower($modality) == "mr")
 										$datapath = "$seriespath/beh";
-									echo "$datapath<br>";
-									$filelist = array_diff(scandir($datapath), array('..', '.'));
+									echo htmlspecialchars($datapath) . "<br>";
+									/* scandir() returns false for a missing dir (e.g. no beh/ yet), which array_diff() can't take on PHP 8 */
+									$filelist = is_dir($datapath) ? array_diff(scandir($datapath), array('..', '.')) : array();
 
 									$numfiles = count($filelist);
 									$numremain = $numfiles;
 									$i = 0;
 									foreach ($filelist as $file) {
-										echo "$file<br>";
+										echo htmlspecialchars($file) . "<br>";
 										$i++;
 										$numremain--;
 										if ($i >= 5)
@@ -285,6 +293,13 @@
 						</tr>
 						<?
 						$lastuid = $uid;
+					}
+					if ($numhidden > 0) {
+						?>
+						<tr>
+							<td colspan="11" style="color: gray">[<?=$numhidden?>] selected series not shown (no View Data permission on their project)</td>
+						</tr>
+						<?
 					}
 				}
 				else {
@@ -350,8 +365,12 @@
 		else {
 			list($datapath, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
 			
+			/* MRI series get uploads as behavioral data; other modalities store files in the series' data dir
+			   (the same dirs DisplaySeriesList lists) */
 			if ($modality == "mr")
 				$outpath = "$seriespath/beh";
+			else
+				$outpath = $datapath;
 
 			//echo $outpath;
 			
@@ -375,10 +394,10 @@
 					$filesize = filesize("$outpath/$name");
 					chmod("$outpath/$name", 0777);
 					$success = true;
-					echo "SUCCESS: File [$name] written to [$outpath]";
+					echo "SUCCESS: File [" . htmlspecialchars($name) . "] written to [" . htmlspecialchars($outpath) . "]";
 				}
 				else {
-					echo "ERROR moving [" . $_FILES['file']['tmp_name'][$i] . "] to [$outpath/$name]";
+					echo "ERROR moving [" . htmlspecialchars($name) . "] to [" . htmlspecialchars($outpath) . "]";
 					$success = false;
 				}
 			}

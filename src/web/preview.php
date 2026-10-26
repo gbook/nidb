@@ -5,52 +5,56 @@
 	session_start();
 
 	require "functions.php";
+	require "includes_php.php"; /* login required; also connects to the database for IsViewablePath() */
 
 	$image = GetVariable("image");
 	$movement = GetVariable("movement");
 
-//if ($_POST["image"] == "") { $image = $_GET["image"]; } else { $image = $_POST["image"]; }
-//if ($_POST["movement"] == "") { $movement = $_GET["movement"]; } else { $movement = $_POST["movement"]; }
-
-if ($image != "") {
-	if (file_exists($image)) {
-		$pathparts = pathinfo($image);
-		$ext = strtolower($pathparts['extension']);
-		
-		switch ($ext) {
-			case "png":
-				$im = imagecreatefrompng($image);
-				header('Content-type: image/png');
-				imagepng($im);
-				break;
-			case "gif":
-				$im = imagecreatefromgif($image);
-				header('Content-type: image/gif');
-				//imagegif($im);
-				echo file_get_contents($image);
-				break;
-			case "jpg":
-				$im = imagecreatefromjpg($image);
-				header('Content-type: image/jpg');
-				imagejpg($im);
-				break;
-		}
-		
-		imagedestroy($im);
+	/* both parameters are file paths: only serve files inside the NiDB data directories (same rule as
+	   getfile.php?file=), after resolving any ../ or symlinks */
+	function PreviewPath($path) {
+		$real = realpath((string)$path);
+		if (($real === false) || (!is_file($real)) || (!IsViewablePath($real)))
+			return false;
+		return $real;
 	}
-}
 
-if ($movement != "") {
-	if (file_exists($movement)) {
-		$filecontents = file($movement);
-		
+	if ($image != "") {
+		$real = PreviewPath($image);
+		/* serve only real PNG/GIF/JPEG files, with the type detected from the file itself */
+		$info = ($real !== false) ? @getimagesize($real) : false;
+		if (($info === false) || (!in_array($info[2], array(IMAGETYPE_PNG, IMAGETYPE_GIF, IMAGETYPE_JPEG), true))) {
+			http_response_code(404);
+			exit;
+		}
+		while (ob_get_level() > 0) ob_end_clean();
+		header('Content-Type: ' . $info['mime']);
+		header('X-Content-Type-Options: nosniff');
+		header('Content-Length: ' . filesize($real));
+		readfile($real);
+		exit;
+	}
+
+	if ($movement != "") {
+		$real = PreviewPath($movement);
+		if ($real === false) {
+			http_response_code(404);
+			echo "File not found";
+			exit;
+		}
+		$movementname = basename($real);
+		$filecontents = file($real);
+
 		$i = 0;
-		$maxx = $maxy = $maxz = $maxpitch = $maxroll = $maxyaw = 0.0;
-		
+		$fmovex = $fmovey = $fmovez = $fmovepi = $fmovero = $fmoveya = array();
+		$movex = $movey = $movez = $movepi = $movero = $moveya = array();
 		foreach ($filecontents as $line) {
-			$line = trim($line);
-			list($pi,$ro,$ya,$x,$y,$z) = preg_split('/\s+/', $line);
-			
+			/* realignment parameter files have 6 numeric columns: pitch roll yaw x y z. Skip anything else */
+			$cols = preg_split('/\s+/', trim($line));
+			if ((count($cols) < 6) || (count(array_filter(array_slice($cols, 0, 6), 'is_numeric')) < 6))
+				continue;
+			list($pi,$ro,$ya,$x,$y,$z) = array_map('floatval', array_slice($cols, 0, 6));
+
 			$fmovex[] = "[$i, " . number_format($x,6) . "]";
 			$fmovey[] = "[$i, " . number_format($y,6) . "]";
 			$fmovez[] = "[$i, " . number_format($z,6) . "]";
@@ -64,22 +68,11 @@ if ($movement != "") {
 			$movepi[] = $pi;
 			$movero[] = $ro;
 			$moveya[] = $ya;
-			
-			/*if ($x > $maxx) { $maxx = $x; }
-			if ($y > $maxy) { $maxy = $y; }
-			if ($z > $maxz) { $maxz = $z; }
-			if ($pi > $maxpitch) { $maxpitch = $pi; }
-			if ($ro > $maxroll) { $maxroll = $ro; }
-			if ($ya > $maxyaw) { $maxyaw = $ya; }
-			
-			if ($x < $minx) { $minx = $x; }
-			if ($y < $miny) { $miny = $y; }
-			if ($z < $minz) { $minz = $z; }
-			if ($pi < $minpitch) { $minpitch = $pi; }
-			if ($ro < $minroll) { $minroll = $ro; }
-			if ($ya < $minyaw) { $minyaw = $ya; }*/
-			
 			$i++;
+		}
+		if ($i == 0) {
+			echo "No realignment values found in " . htmlspecialchars($movementname);
+			exit;
 		}
 		$minx = min($movex);
 		$miny = min($movey);
@@ -108,12 +101,11 @@ if ($movement != "") {
 		$rangepitch = abs($minpitch) + abs($maxpitch);
 		$rangeroll = abs($minroll) + abs($maxroll);
 		$rangeyaw = abs($minyaw) + abs($maxyaw);
-	}
 	?>
 	<html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>Realignment chart for <?=$movement?></title>
+		<title>Realignment chart for <?=htmlspecialchars($movementname)?></title>
 		<script type="text/javascript" src="scripts/jquery-3.7.1.min.js"></script>
 		<script type="text/javascript" src="scripts/jquery.flot.js"></script>
 	</head>

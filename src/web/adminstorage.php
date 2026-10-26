@@ -51,7 +51,7 @@
 	else {
 		/* ----- setup variables ----- */
 		$action = GetVariable("action");
-		$id = GetVariable("id");
+		$id = (int)GetVariable("id");
 		$storagetype = GetVariable("storagetype");
 		$storageusername = GetVariable("storageusername");
 		$storagepassword = GetVariable("storagepassword");

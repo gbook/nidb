@@ -21,23 +21,31 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
+	define("LEGIT_REQUEST", true);
+	session_start();
+	require "functions.php";
+	require "includes_php.php"; /* login required */
+
 	require_once ('scripts/jpgraph/jpgraph.php');
 	require_once ('scripts/jpgraph/jpgraph_line.php');
 	require_once ('scripts/jpgraph/jpgraph_date.php');
 	require_once ('scripts/jpgraph/jpgraph_utils.inc.php');
 
-	$t = $_REQUEST['t']; /* title */
-	$w = $_REQUEST['w']; /* width */
-	$h = $_REQUEST['h']; /* height */
-	$x = $_REQUEST['x']; /* x-axis data (probably time) comma separated */
-	$y = $_REQUEST['y']; /* y-axis data (the values) comma separated */
-	$xlabel = $_REQUEST['xlabel']; /* x-axis label */
-	$ylabel = $_REQUEST['ylabel']; /* y-axis label */
-	$xtype = $_REQUEST['xtype']; /* x-axis datatype: int, lin, dat */
-	$ytype = $_REQUEST['ytype']; /* y-axis datatype: int, lin, dat */
+	$t = (string)($_REQUEST['t'] ?? ''); /* title */
+	/* clamp the canvas size: an unbounded w/h lets one request exhaust the server's memory */
+	$w = max(50, min(2000, (int)($_REQUEST['w'] ?? 420))); /* width */
+	$h = max(50, min(2000, (int)($_REQUEST['h'] ?? 200))); /* height */
+	$x = (string)($_REQUEST['x'] ?? ''); /* x-axis data (probably time) comma separated */
+	$y = (string)($_REQUEST['y'] ?? ''); /* y-axis data (the values) comma separated */
+	$xlabel = (string)($_REQUEST['xlabel'] ?? ''); /* x-axis label */
+	$ylabel = (string)($_REQUEST['ylabel'] ?? ''); /* y-axis label */
+	/* axis types are passed to jpgraph's SetScale(): only allow its known scale types */
+	$xtype = in_array($_REQUEST['xtype'] ?? '', array('int', 'lin', 'dat', 'text', 'log'), true) ? $_REQUEST['xtype'] : 'lin'; /* x-axis datatype */
+	$ytype = in_array($_REQUEST['ytype'] ?? '', array('int', 'lin', 'dat', 'text', 'log'), true) ? $_REQUEST['ytype'] : 'lin'; /* y-axis datatype */
 
-	$xdata = explode(',',$x);
-	$ydata = explode(',',$y);
+	/* at most 10000 points; y values must be numeric */
+	$xdata = array_slice(explode(',',$x), 0, 10000);
+	$ydata = array_slice(array_map('floatval', explode(',',$y)), 0, 10000);
 	
 	// Create a graph instance
 	$graph = new Graph($w,$h);

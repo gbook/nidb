@@ -658,20 +658,39 @@
 
 		if (($connectionid == "") || (!IsInteger($connectionid))) { return; }
 		if (($transactionid == "") || (!IsInteger($transactionid))) { return; }
-		
-		$sqlstring = "select * from remote_connections where remoteconn_id = $connectionid";
-		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
+		$connectionid = (int)$connectionid;
+		$transactionid = (int)$transactionid;
+		$total = (int)$total;
+
+		/* a remote connection holds the credentials of the user who created it, so only that user
+		   (or an admin) may use it */
+		if (IsAdminUser()) {
+			$sqlstring = "select * from remote_connections where remoteconn_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $connectionid);
+			$params = array($connectionid);
+		}
+		else {
+			$sqlstring = "select a.* from remote_connections a join users b on a.user_id = b.user_id where a.remoteconn_id = ? and b.username = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'is', $connectionid, $GLOBALS['username']);
+			$params = array($connectionid, $GLOBALS['username']);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			echo "Remote connection not found";
+			return;
+		}
 		$remotenidbserver = $row['remote_server'];
-		$remotenidbusername = $row['remote_username'];
-		$remotenidbpassword = $row['remote_password'];
+		$auth = array('u' => (string)$row['remote_username'], 'p' => (string)$row['remote_password']);
 		$remoteinstanceid = $row['remote_instanceid'];
 		$remoteprojectid = $row['remote_projectid'];
 		$remotesiteid = $row['remote_siteid'];
 
 		if ($detail) {
-			$systemstring = "curl -gs -F 'action=getTransactionStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' -F 'instanceid=$remoteinstanceid' -F 'projectid=$remoteprojectid' -F 'siteid=$remotesiteid' $remotenidbserver/api.php";
-			$report1 = json_decode(shell_exec($systemstring), true);
+			$report1 = RemoteNiDBAPI($remotenidbserver, $auth + array('action' => 'getTransactionStatus', 'transactionid' => $transactionid, 'instanceid' => $remoteinstanceid, 'projectid' => $remoteprojectid, 'siteid' => $remotesiteid));
 
 			?>
 			<style>
@@ -694,11 +713,11 @@
 			foreach ($report1 as $block => $info) {
 				?>
 				<tr>
-					<td><?=$block?></td>
-					<td><?=$info['import_startdate']?></td>
-					<td><?=$info['import_enddate']?></td>
-					<td><?=$info['import_status']?></td>
-					<td><?=$info['import_message']?></td>
+					<td><?=htmlspecialchars((string)$block)?></td>
+					<td><?=htmlspecialchars((string)($info['import_startdate'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['import_enddate'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['import_status'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['import_message'] ?? ''))?></td>
 				</tr>
 				<?
 			}
@@ -706,8 +725,7 @@
 			</table>
 			<?
 
-			$systemstring = "curl -gs -F 'action=getArchiveStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' $remotenidbserver/api.php";
-			$report2 = json_decode(shell_exec($systemstring), true);
+			$report2 = RemoteNiDBAPI($remotenidbserver, $auth + array('action' => 'getArchiveStatus', 'transactionid' => $transactionid));
 			?>
 			<br>
 			<div align="center">Archiving status</div>
@@ -723,24 +741,15 @@
 				</thead>
 			<?
 			foreach ($report2 as $block => $info) {
-				$status = $info['result'];
-				$patientid_orig = $info['patientid_orig'];
-				$studydatetime_orig = $info['studydatetime_orig'];
-				$modality_orig = $info['modality_orig'];
-				$stationname_orig = $info['stationname_orig'];
-				$seriesdesc_orig = $info['seriesdesc_orig'];
-				$subject_uid = $info['subject_uid'];
-				$study_num = $info['study_num'];
-				$numfiles = $info['numfiles'];
 				?>
 				<tr>
-					<td><?=$patientid_orig?></td>
-					<td><?="$subject_uid/$study_num"?></td>
-					<td><?=$studydatetime_orig?></td>
-					<td><?=$modality_orig?></td>
-					<td><?=$stationname_orig?></td>
-					<td><?=$seriesdesc_orig?></td>
-					<td><?=$numfiles?></td>
+					<td><?=htmlspecialchars((string)($info['patientid_orig'] ?? ''))?></td>
+					<td><?=htmlspecialchars(($info['subject_uid'] ?? '') . "/" . ($info['study_num'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['studydatetime_orig'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['modality_orig'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['stationname_orig'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['seriesdesc_orig'] ?? ''))?></td>
+					<td><?=htmlspecialchars((string)($info['numfiles'] ?? ''))?></td>
 				</tr>
 				<?
 			}
@@ -749,8 +758,7 @@
 			<?
 		}
 		else {
-			$systemstring = "curl -gs -F 'action=getTransactionStatus' -F 'u=$remotenidbusername' -F 'p=$remotenidbpassword' -F 'transactionid=$transactionid' $remotenidbserver/api.php";
-			$report = json_decode(shell_exec($systemstring), true);
+			$report = RemoteNiDBAPI($remotenidbserver, $auth + array('action' => 'getTransactionStatus', 'transactionid' => $transactionid));
 
 			$numtotal = 0;
 			$numsuccess = 0;
@@ -759,29 +767,61 @@
 			$archivesuccess = 0;
 			$archiveerror = 0;
 			foreach ($report as $block => $info) {
-				$numtotal += $info['numfilestotal'];
-				$numsuccess += $info['numfilessuccess'];
-				$numfail += $info['numfilesfail'];
+				$numtotal += (int)($info['numfilestotal'] ?? 0);
+				$numsuccess += (int)($info['numfilessuccess'] ?? 0);
+				$numfail += (int)($info['numfilesfail'] ?? 0);
 				$numprocessing += $numtotal - $numsuccess - $numfail;
-				
-				if ($info['import_status'] == 'archived')
+				if (($info['import_status'] ?? '') == 'archived')
 					$archivesuccess++;
-				elseif ($info['import_status'] == 'error')
+				elseif (($info['import_status'] ?? '') == 'error')
 					$archiveerror++;
 			}
 			$completecolor = "66AAFF";
 			$processingcolor = "AAAAFF";
 			$errorcolor = "FF6666";
 			$othercolor = "EFEFFF";
+			$pctdivisor = ($total > 0) ? $total : 1; /* avoid division by zero (fatal on PHP 8) */
 
 			?>
 			<span style="font-size: 11pt">
-			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$total)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$numsuccess?>,<?=$numprocessing?>,<?=$numfail?>,<?=($total-$numtotal)?>&c=<?=$completecolor?>,<?=$processingcolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($numsuccess/$pctdivisor)*100,1)?>% received <span style="font-size:8pt;color:gray">(<?=number_format($numsuccess)?> of <?=number_format($total)?> blocks)</span>
 			<br>
-			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$total)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
+			<img src="ajaxapi.php?action=horizontalchart&b=yes&w=400&h=15&v=<?=$archivesuccess?>,<?=$archiveerror?>,<?=($total-$archivesuccess-$archiveerror)?>&c=<?=$completecolor?>,<?=$errorcolor?>,<?=$othercolor?>"> <?=number_format(($archivesuccess/$pctdivisor)*100,1)?>% archived <span style="font-size:8pt;color:gray">(<?=number_format($archivesuccess)?> of <?=number_format($total)?> blocks)</span>
 			</span>
 			<?
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoteNiDBAPI ---------------------- */
+	/* -------------------------------------------- */
+	/* POST $fields to <server>/api.php on a remote NiDB and return the decoded JSON response as an
+	   array (empty on any error). Uses PHP's curl extension, so no value - server, username, password -
+	   ever reaches a shell. Only plain http(s) servers are accepted, the same rule remoteconnections.php
+	   applies when a connection is saved (older rows may predate that check). */
+	function RemoteNiDBAPI($server, $fields) {
+		$server = rtrim((string)$server, "/");
+		if (!preg_match('#^https?://[A-Za-z0-9.-]+(:[0-9]+)?(/[A-Za-z0-9._~/-]*)?$#', $server))
+			return array();
+
+		$ch = curl_init("$server/api.php");
+		curl_setopt_array($ch, array(
+			CURLOPT_POST => true,
+			CURLOPT_POSTFIELDS => $fields,        /* sent as multipart/form-data, like curl -F; values are data only */
+			CURLOPT_RETURNTRANSFER => true,
+			CURLOPT_FOLLOWLOCATION => false,
+			CURLOPT_CONNECTTIMEOUT => 5,
+			CURLOPT_TIMEOUT => 20,
+			CURLOPT_PROTOCOLS => CURLPROTO_HTTP | CURLPROTO_HTTPS,
+		));
+		$response = curl_exec($ch);
+		curl_close($ch);
+
+		if (!is_string($response))
+			return array();
+		$decoded = json_decode($response, true);
+		return is_array($decoded) ? $decoded : array();
 	}
 	
 	
