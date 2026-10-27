@@ -134,7 +134,7 @@
 	function DisplayLogs($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID - DisplayLogs()')) { return; }
 
-		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
+		$sqlstring = "select *, a.pipeline_version 'analysis_pipelineversion' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		//echo $sqlstring;
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -142,7 +142,8 @@
 		$studynum = $row['study_num'];
 		$pipelinename = $row['pipeline_name'];
 		$pipelineid = (int)$row['pipeline_id'];
-		$pipelineversion = (int)$row['pipeline_version'];
+		/* the version this analysis ran with. pipelines.pipeline_version (the current version) has the same column name, so it would overwrite it in select * */
+		$pipelineversion = (int)$row['analysis_pipelineversion'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
 		$pipelinedirstructure = $row['pipeline_dirstructure'];
@@ -204,15 +205,19 @@
 				$size = filesize("$path/$log");
 				$filedate = date ("F d Y H:i:s", filemtime("$path/$log"));
 				
-				if (substr($log, 0, 4) == "Step") {
-					$stepnum = str_replace("Step", "", $log) - 1;
-					$command = $commands['reg'][$stepnum];
-					$desc = $descriptions['reg'][$stepnum];
+				/* StepN and SupplementStepN log files are named with the 1-based ps_order; the arrays are keyed by ps_order - 1 */
+				$command = '';
+				$desc = '';
+				if (preg_match('/^(Supplement)?Step(\d+)$/', $log, $matches)) {
+					$steptype = ($matches[1] == 'Supplement') ? 'supp' : 'reg';
+					$stepnum = (int)$matches[2] - 1;
+					$command = $commands[$steptype][$stepnum] ?? '';
+					$desc = $descriptions[$steptype][$stepnum] ?? '';
 				}
-				
+
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=$command?></tt></div> <div class="ui green label"><?=$desc?></div></summary>
+					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=htmlspecialchars($command)?></tt></div> <div class="ui green label"><?=htmlspecialchars($desc)?></div></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE; padding: 6px">
 <?=$file?>
 					</pre>
@@ -812,7 +817,7 @@
 
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
 		//$sqlstring = "select * from analysis where analysis_id = $analysisid";
-		$sqlstring = "select * from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
+		$sqlstring = "select *, a.pipeline_version 'analysis_pipelineversion' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pipelineid = (int)$row['pipeline_id'];
@@ -820,7 +825,8 @@
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$pipelinename = $row['pipeline_name'];
-		$pipelineversion = (int)$row['pipeline_version'];
+		/* the version this analysis ran with. pipelines.pipeline_version (the current version) has the same column name, so it would overwrite it in select * */
+		$pipelineversion = (int)$row['analysis_pipelineversion'];
 		$pipelinedependency = $row['pipeline_dependency'];
 		$pipeline_level = $row['pipeline_level'];
 		$pipelinedirectory = $row['pipeline_directory'];
@@ -1433,7 +1439,7 @@
 				</tr>
 			</table>
 			<?=$clusterModals?>
-			<? DisplayUsageChart($path); ?>
+			<? DisplayUsageChart($path, $analysisid, $pipelineid, $pipelineversion); ?>
 		</div>
 		<script>
 			/* one delegated handler for all Details/View log buttons. Each button's data-modal holds the (unique) modal ID */
@@ -1805,9 +1811,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayUsageChart ------------------ */
 	/* -------------------------------------------- */
-	/* plots the CPU/memory log (usage_<jobid>.tsv) that the cluster job writes every 10 seconds.
+	/* plots the CPU/memory log (usage_<jobid>.tsv) that the cluster job writes every 30 seconds, with a marker at the start of each script step.
 	   Older analyses don't have the file, so nothing is displayed for them */
-	function DisplayUsageChart($path) {
+	function DisplayUsageChart($path, $analysisid, $pipelineid, $pipelineversion) {
 		/* the job writes the log to the pipeline directory, but also check the analysis root */
 		$usageFiles = array();
 		foreach (array($path, dirname($path)) as $dir) {
@@ -1853,6 +1859,45 @@
 
 		$numSamples = count($t);
 
+		/* script steps to mark on the chart. Steps that don't run anything aren't marked:
+		   disabled steps, and steps that are only a comment or an 'export' */
+		$steps = array();
+		$sqlstring = "select ps_order, ps_command, ps_description from pipeline_steps where pipeline_id = ? and pipeline_version = ? and ps_supplement = 0 and ps_enabled = 1";
+		$params = [(int)$pipelineid, (int)$pipelineversion];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$cmd = trim($row['ps_command'] ?? '');
+			if (($cmd == '') || ($cmd[0] == '#') || preg_match('/^export\s/i', $cmd)) { continue; }
+			$steps[(int)$row['ps_order']] = array('command' => $cmd, 'desc' => trim($row['ps_description'] ?? ''));
+		}
+		mysqli_stmt_close($stmt);
+
+		/* step start times come from the step checkins. Checkins from earlier runs of this analysis are older than
+		   this usage log; the first sample is taken one interval after the job starts, so allow a few minutes before it.
+		   If a step checked in more than once, the latest checkin is used */
+		$stepTimes = array();
+		if (($numSamples > 0) && (count($steps) > 0)) {
+			$sqlstring = "select step_number, unix_timestamp(analysislog_datetime) 'eventtime' from analysis_log where analysis_id = ? and analysislog_event = 'status_analysisStepCheckin' and analysislog_datetime >= from_unixtime(?) order by analysislog_datetime asc, analysislog_id asc";
+			$params = [(int)$analysisid, $t[0] - 300];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', ...$params);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$stepnum = (int)$row['step_number'];
+				if (isset($steps[$stepnum])) { $stepTimes[$stepnum] = (int)$row['eventtime']; }
+			}
+			mysqli_stmt_close($stmt);
+		}
+		$stepMarkers = array();
+		foreach ($stepTimes as $stepnum => $eventtime) {
+			$stepMarkers[] = array('t' => $eventtime, 'step' => $stepnum, 'desc' => $steps[$stepnum]['desc'], 'command' => $steps[$stepnum]['command']);
+		}
+		/* analysislog_datetime has 1-second resolution, so quick steps often have the same time. Steps check in in order,
+		   so ties are sorted by step number. Otherwise the order within a tie is arbitrary (and usort isn't stable in PHP 7) */
+		usort($stepMarkers, function($a, $b) { return ($a['t'] != $b['t']) ? ($a['t'] - $b['t']) : ($a['step'] - $b['step']); });
+
 		$chartData = array(
 			't' => $t,
 			'cores' => $cores,
@@ -1860,7 +1905,8 @@
 			'memAnon' => $memAnon,
 			'memFile' => $memFile,
 			'memPeak' => $memPeak,
-			'memLimit' => $memLimit
+			'memLimit' => $memLimit,
+			'steps' => $stepMarkers
 		);
 		?>
 		<link rel="stylesheet" href="scripts/uplot/uPlot.min.css">
@@ -1876,8 +1922,13 @@
 			<? if ($numSamples == 0) { ?>
 			<span class="ui grey text">No usage samples recorded yet</span>
 			<? } else { ?>
+			<? if (count($stepMarkers) > 0) { ?>
+			<!-- details of the step running at the cursor's time. Fixed height, so the charts don't move while hovering -->
+			<div id="usageStepDetails" style="height: 4.8em; line-height: 1.6em; margin-bottom: 10px; padding: 0 8px; border-left: 3px solid #000; overflow: hidden"></div>
+			<? } ?>
 			<div id="usageCpuChart"></div>
 			<div id="usageMemChart" style="margin-top: 15px"></div>
+			<div class="ui small grey text" style="margin-top: 8px">Drag across a chart to zoom in, double-click to zoom out</div>
 			<script>
 				$(document).ready(function(){
 					const d = <?=json_encode($chartData)?>;
@@ -1890,13 +1941,144 @@
 					const axisColor = '#52514e';
 					const grid = { stroke: '#e5e4e0', width: 1 };
 
+					/* black vertical line at the start of each script step, labeled with the step number. Drawn on both charts.
+					   Labels are placed right to left, and a label is skipped if it would overlap the one to its right. So in a cluster
+					   of quick steps, the label is the cluster's last step - the one still running after it, which the hover shows */
+					const pxr = uPlot.pxRatio || 1;
+					const stepMarkers = {
+						hooks: {
+							draw: function(u) {
+								const ctx = u.ctx;
+								const top = u.bbox.top, bottom = u.bbox.top + u.bbox.height;
+								const left = u.bbox.left, right = u.bbox.left + u.bbox.width;
+								let nextLabelX = Infinity;
+								ctx.save();
+								ctx.strokeStyle = '#000';
+								ctx.fillStyle = '#000';
+								ctx.lineWidth = pxr;
+								ctx.font = (11 * pxr) + 'px sans-serif';
+								ctx.textBaseline = 'top';
+								for (let i = d.steps.length - 1; i >= 0; i--) {
+									const s = d.steps[i];
+									const x = Math.round(u.valToPos(s.t, 'x', true));
+									if ((x < left) || (x > right)) { continue; }
+									ctx.beginPath();
+									ctx.moveTo(x, top);
+									ctx.lineTo(x, bottom);
+									ctx.stroke();
+									if (nextLabelX - x >= 18 * pxr) {
+										ctx.fillText(String(s.step), x + 3 * pxr, top + 2 * pxr);
+										nextLabelX = x;
+									}
+								}
+								ctx.restore();
+							}
+						}
+					};
+
+					/* hovering shows the step that was running at the cursor's time. Its time span is shaded on both charts,
+					   and its description, command, and run time are shown above the charts, where they stay after the mouse leaves the chart.
+					   A step runs until the next step starts; the last step runs until the last sample */
+					const lastT = d.t[d.t.length - 1];
+					const fmtTime = function(t) { return new Date(t * 1000).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit' }); };
+					const fmtDuration = function(sec) {
+						sec = Math.max(0, Math.round(sec));
+						const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60);
+						return (h ? h + 'h ' : '') + ((h || m) ? m + 'm ' : '') + (sec % 60) + 's';
+					};
+					const details = document.getElementById('usageStepDetails');
+					let detailsIdx = null;
+					/* idx -1 shows the hint. Each line is cut off with an ellipsis, with the full text in its title */
+					const showStepDetails = function(idx, end) {
+						if ((details === null) || (idx === detailsIdx)) { return; }
+						detailsIdx = idx;
+						details.textContent = '';
+						const line = function(text, css) {
+							const el = document.createElement('div');
+							el.style.cssText = 'white-space: nowrap; overflow: hidden; text-overflow: ellipsis;' + (css || '');
+							el.textContent = text;
+							el.title = text;
+							details.appendChild(el);
+						};
+						if (idx < 0) {
+							line('Hover over a chart to see the step that was running', 'color: #888; font-style: italic');
+							return;
+						}
+						const step = d.steps[idx];
+						const isLast = (idx == d.steps.length - 1);
+						line('Step ' + step.step + (step.desc ? ' - ' + step.desc : ''), 'font-weight: bold');
+						line(step.command, 'font-family: monospace');
+						line(fmtTime(step.t) + ' - ' + fmtTime(end) + '  (' + fmtDuration(end - step.t) + (isLast ? ', to the last sample' : '') + ')', 'color: #666');
+					};
+					showStepDetails(-1);
+
+					const stepHover = {
+						hooks: {
+							init: function(u) {
+								u.stepBand = document.createElement('div');
+								u.stepBand.style.cssText = 'position: absolute; top: 0; height: 100%; background: rgba(0,0,0,0.07); pointer-events: none; display: none';
+								u.over.appendChild(u.stepBand);
+							},
+							setCursor: function(u) {
+								const hide = function() { u.stepBand.style.display = 'none'; showStepDetails(-1); };
+								/* the mouse left the chart. Keep the details, so a long command can be read (title) or copied */
+								if ((u.cursor.left == null) || (u.cursor.left < 0)) { u.stepBand.style.display = 'none'; return; }
+
+								/* find the step running at the cursor's time */
+								const t = u.posToVal(u.cursor.left, 'x');
+								let idx = -1;
+								for (let i = 0; i < d.steps.length; i++) { if (d.steps[i].t <= t) { idx = i; } }
+								if (idx < 0) { hide(); return; }
+								const step = d.steps[idx];
+								const end = (idx == d.steps.length - 1) ? Math.max(lastT, step.t) : d.steps[idx + 1].t;
+								if (t > end) { hide(); return; }
+
+								/* shade the step's span, clipped to the plot area */
+								const x0 = Math.max(0, u.valToPos(step.t, 'x'));
+								const x1 = Math.min(u.over.clientWidth, u.valToPos(end, 'x'));
+								u.stepBand.style.left = x0 + 'px';
+								u.stepBand.style.width = Math.max(1, x1 - x0) + 'px';
+								u.stepBand.style.display = 'block';
+
+								showStepDetails(idx, end);
+							}
+						}
+					};
+
+					/* drag to zoom. Zooming either chart sets the same time range on the other one */
+					const charts = [];
+					const syncZoom = {
+						hooks: {
+							setScale: function(u, key) {
+								if (key !== 'x') { return; }
+								const min = u.scales.x.min, max = u.scales.x.max;
+								charts.forEach(function(c) {
+									if ((c !== u) && ((c.scales.x.min !== min) || (c.scales.x.max !== max))) { c.setScale('x', { min: min, max: max }); }
+								});
+							}
+						}
+					};
+
+					/* when showing the full time range, widen it if a step starts before the first sample (or after the last) so
+					   its marker is visible. A zoomed-in range is left as-is */
+					let fullMin = d.t[0], fullMax = lastT;
+					if (d.steps.length) {
+						fullMin = Math.min(fullMin, d.steps[0].t);
+						fullMax = Math.max(fullMax, d.steps[d.steps.length - 1].t);
+					}
+					const xRange = function(u, min, max) {
+						if ((min <= d.t[0]) && (max >= lastT)) { return [Math.min(min, fullMin), Math.max(max, fullMax)]; }
+						return [min, max];
+					};
+
 					/* CPU and memory have different units, so they get separate charts with a synced cursor */
 					const cpuOpts = {
 						title: 'CPU',
 						width: width,
 						height: 220,
-						cursor: { sync: { key: 'nidbusage' } },
-						scales: { x: { time: true }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
+						cursor: { sync: { key: 'nidbusage' }, drag: { x: true, y: false } },
+						plugins: [stepMarkers, stepHover, syncZoom],
+						scales: { x: { time: true, range: xRange }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
 						series: [
 							{},
 							{ label: 'Cores used', stroke: '#2a78d6', fill: 'rgba(42,120,214,0.12)', width: 2, points: { show: false }, value: function(u, v) { return (v == null) ? '-' : v.toFixed(2); } }
@@ -1906,7 +2088,7 @@
 							{ stroke: axisColor, grid: grid, label: 'Cores' }
 						]
 					};
-					new uPlot(cpuOpts, [d.t, d.cores], cpuEl);
+					charts.push(new uPlot(cpuOpts, [d.t, d.cores], cpuEl));
 
 					const memSeries = [
 						{},
@@ -1924,15 +2106,16 @@
 						title: 'Memory',
 						width: width,
 						height: 260,
-						cursor: { sync: { key: 'nidbusage' } },
-						scales: { x: { time: true }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
+						cursor: { sync: { key: 'nidbusage' }, drag: { x: true, y: false } },
+						plugins: [stepMarkers, stepHover, syncZoom],
+						scales: { x: { time: true, range: xRange }, y: { range: function(u, min, max) { return [0, Math.max(1, max * 1.1)]; } } },
 						series: memSeries,
 						axes: [
 							{ stroke: axisColor, grid: grid },
 							{ stroke: axisColor, grid: grid, size: 70, values: function(u, vals) { return vals.map(fmtMem); } }
 						]
 					};
-					new uPlot(memOpts, memData, memEl);
+					charts.push(new uPlot(memOpts, memData, memEl));
 				});
 			</script>
 			<? } ?>

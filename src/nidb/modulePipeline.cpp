@@ -2226,7 +2226,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
      * The monitor is started inside a command substitution so it is not a child of the job shell, otherwise a bare 'wait' in a step command would wait on it forever */
     jobfile += "NIDB_MON_LOG=" + ShellQuote(analysispath + "/pipeline") + "/usage_${SLURM_JOB_ID:-$JOB_ID}.tsv\n";
     jobfile += "nidb_monitor_usage() {\n";
-    jobfile += "    local interval=10\n";
+    jobfile += "    local interval=30\n";
     jobfile += "    local cg=\"/sys/fs/cgroup$(grep '^0::' /proc/self/cgroup | cut -d: -f3)\"\n";
     jobfile += "    [ -f \"$cg/cpu.stat\" ] && [ -f \"$cg/memory.current\" ] || return 0\n";
     jobfile += "    local prev_u=$(awk '/^usage_usec/{print $2}' \"$cg/cpu.stat\")\n";
