@@ -2289,11 +2289,16 @@
 			echo "$sqlstring<br>";
 		}
 
+		$pstats = array();
 		if ($modality == "mr") {
-			/* get the movement & SNR stats by sequence name */
-			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
-			//echo "$sqlstring2<br>";
-			$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+			/* get the movement & SNR stats by sequence name, compared within this study's project, and
+			   only for the sequences in this study (the whole-database version was too slow) */
+			$statsprojectid = (int)($projectid ?? 0);
+			$statsstudyid = (int)$studyid;
+			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a join mr_series b on a.mrseries_id = b.mrseries_id join studies c on b.study_id = c.study_id join enrollment d on c.enrollment_id = d.enrollment_id where a.io_snr > 0 and d.project_id = ? and b.series_sequencename in (select series_sequencename from mr_series where study_id = ?) group by b.series_sequencename";
+			$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
+			mysqli_stmt_bind_param($stmt2, 'ii', $statsprojectid, $statsstudyid);
+			$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring2, [$statsprojectid, $statsstudyid]);
 			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 				$sequence = $row2['series_sequencename'];
 				$pstats[$sequence]['rangex'] = abs($row2['minx']) + abs($row2['maxx']);
@@ -2324,6 +2329,7 @@
 					$pstats[$sequence]['maxstdmotion'] = ($row2['avgmotion'] - $row2['minmotion'])/$row2['stdmotion'];
 				} else { $pstats[$sequence]['maxstdmotion'] = 0; }
 			}
+			mysqli_stmt_close($stmt2);
 		}
 			?>
 		
@@ -2356,8 +2362,8 @@
 					<th title="Total displacement in X direction">X</th>
 					<th title="Total displacement in Y direction">Y</th>
 					<th title="Total displacement in Z direction">Z</th>
-					<th title="Per Voxel SNR (timeseries) - Calculated from the fslstats command">PV<br>SNR</th>
-					<th title="Inside-Outside SNR - This calculates the brain signal (center of brain-extracted volume) compared to the average of the volume corners">IO<br>SNR</th>
+					<th title="Per Voxel SNR (timeseries) - Calculated from the fslstats command. Colored relative to the same sequence within this project">PV<br>SNR</th>
+					<th title="Inside-Outside SNR - This calculates the brain signal (center of brain-extracted volume) compared to the average of the volume corners. Colored relative to the same sequence within this project">IO<br>SNR</th>
 					<th>Sequence</th>
 					<th>Length<br><span class="tiny">approx.</span></th>
 					<th>TR<br><span class="tiny">ms</span></th>
