@@ -2795,24 +2795,13 @@
 	/* -------------------------------------------- */
 	/* ------- GetDicomReceiverCounts ------------- */
 	/* -------------------------------------------- */
-	/* counts of files in the dicom_monitor table by status, and the import module/dcmrcv status,
-	   for the DICOM receiver monitor page */
+	/* counts of files waiting/parsed/errored (see DicomReceiverCounts), and the import module/dcmrcv
+	   status, for the DICOM receiver monitor page */
 	function GetDicomReceiverCounts() {
 		JsonHeader();
-		$counts = array('Received' => 0, 'Parsed' => 0, 'Error' => 0);
-		$sqlstring = "select file_status, count(*) 'count' from dicom_monitor where file_status in ('Received', 'Parsed', 'Error') group by file_status";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			if (isset($counts[$row['file_status']]))
-				$counts[$row['file_status']] = (int)$row['count'];
-		}
-		echo json_encode(array(
-			'received' => $counts['Received'],
-			'parsed'   => $counts['Parsed'],
-			'error'    => $counts['Error'],
-			'total'    => $counts['Received'] + $counts['Parsed'] + $counts['Error'],
-			'services' => DicomReceiverServiceStatus()
-		));
+		$counts = DicomReceiverCounts();
+		$counts['services'] = DicomReceiverServiceStatus();
+		echo json_encode($counts);
 	}
 
 

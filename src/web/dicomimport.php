@@ -55,20 +55,11 @@
 	function DisplayDicomImport() {
 
 		/* ----- counts of files waiting to be parsed/imported ----- */
-		$received = 0;
-		$parsed = 0;
-		$error = 0;
-		$sqlstring = "select file_status, count(*) 'count' from dicom_monitor where file_status in ('Received', 'Parsed', 'Error') group by file_status";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			if ($row['file_status'] == 'Received')
-				$received = (int)$row['count'];
-			elseif ($row['file_status'] == 'Parsed')
-				$parsed = (int)$row['count'];
-			elseif ($row['file_status'] == 'Error')
-				$error = (int)$row['count'];
-		}
-		$total = $received + $parsed + $error;
+		$counts = DicomReceiverCounts();
+		$received = $counts['received'];
+		$parsed = $counts['parsed'];
+		$error = $counts['error'];
+		$total = $counts['total'];
 		?>
 
 		<div class="ui container">
@@ -85,7 +76,7 @@
 				<div class="six wide right aligned column" style="color:#888">
 					Last refreshed <span id="lastrefresh"></span>
 					<div style="margin-top: 0.5em">
-						<div id="svc_import" class="ui label" style="cursor: help">Import module <div class="detail"></div></div> <div id="svc_dcmrcv" class="ui label" style="cursor: help">Dicom receiver <div class="detail"></div></div>
+						<div id="svc_import" class="ui label" style="cursor: help" data-position="top center">Import module <div class="detail"></div></div> <div id="svc_dcmrcv" class="ui label" style="cursor: help" data-position="top center">Dicom receiver <div class="detail"></div></div>
 					</div>
 				</div>
 			</div>
@@ -131,18 +122,23 @@
 					document.getElementById('lastrefresh').textContent = new Date().toLocaleTimeString();
 
 					/* import module and dcmrcv status. stopped is normal for the import module (it
-					   runs periodically), but means dcmrcv is not receiving anything */
+					   runs periodically), but means dcmrcv is not receiving anything. locked means
+					   the import module is idle but a lock file is keeping it from starting */
 					var svcColors = {
-						import: { running: 'green', idle: 'blue', disabled: 'grey' },
+						import: { running: 'green', idle: 'blue', locked: 'red', disabled: 'grey' },
 						dcmrcv: { running: 'green', stopped: 'red',  disabled: 'grey' }
 					};
 					function showServices(s) {
 						['import', 'dcmrcv'].forEach(function(name) {
 							if (!s || !s[name]) return;
 							var label = document.getElementById('svc_' + name);
-							label.querySelector('.detail').textContent = s[name].status;
+							var detail = label.querySelector('.detail');
+							if (s[name].status == 'locked')
+								detail.innerHTML = '<i class="exclamation circle icon"></i>idle';
+							else
+								detail.textContent = s[name].status;
 							label.className = 'ui ' + (svcColors[name][s[name].status] || '') + ' label';
-							label.title = s[name].desc;
+							label.setAttribute('data-tooltip', s[name].desc);
 						});
 					}
 					showServices(<?=json_encode(DicomReceiverServiceStatus())?>);
@@ -210,8 +206,7 @@
 	/* -------------------------------------------- */
 	function DisplayStatusFiles($status) {
 
-		/* only these statuses are listable; anything else falls back to Received. This whitelist
-		   also keeps the (validated) value safe to interpolate into the query below */
+		/* only these statuses are listable; anything else falls back to Received */
 		$labels = array(
 			'Received' => 'waiting to be parsed',
 			'Parsed'   => 'parsed',
@@ -221,38 +216,46 @@
 			$status = 'Received';
 		$iserror = ($status == 'Error');
 
-		/* For 'Received' files, a name ending in '.part' is a partial transfer still being written
-		   (or one that was abandoned). If the '.part' file is no longer on disk, the transfer either
-		   completed (renamed) or was dropped, so the monitor row is stale — remove it before counting
-		   and listing, so the page never shows phantom partial files. */
-		if ($status == 'Received') {
-			$sqlstring = "select dicommonitor_id, file_path from dicom_monitor where file_status = 'Received' and file_path like '%.part'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$staleids = array();
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				if (($row['file_path'] !== null) && !file_exists($row['file_path']))
-					$staleids[] = (int)$row['dicommonitor_id'];
-			}
-			foreach ($staleids as $id) {
-				$sql = "delete from dicom_monitor where dicommonitor_id = ?";
-				$stmt = mysqli_prepare($GLOBALS['linki'], $sql);
-				mysqli_stmt_bind_param($stmt, "i", $id);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sql, array($id));
-			}
-		}
-
 		/* the DICOM files currently in this state. The list can be large (e.g. when parsing is
 		   backed up), so it is capped; the count is always the true total */
 		$displaylimit = 5000;
+		$rows = array();
 
-		$sqlstring = "select count(*) 'count' from dicom_monitor where file_status = '$status'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$numfiles = (int)$row['count'];
+		if ($status == 'Received') {
+			/* files waiting to be parsed are only on disk (the import module does not log them to
+			   dicom_monitor), so list the incoming directory, newest first */
+			$files = GetDicomIncomingFiles();
+			$numfiles = count($files);
+			$mtimes = array();
+			foreach ($files as $path => $fileinfo)
+				$mtimes[$path] = @$fileinfo->getMTime(); /* @: the file may be moved by the import module mid-listing */
+			arsort($mtimes);
+			foreach (array_slice($mtimes, 0, $displaylimit, true) as $path => $mtime) {
+				$rows[] = array(
+					'file_path' => $path,
+					'file_datetime' => $mtime ? date("Y-m-d H:i:s", $mtime) : '',
+					'file_size' => @$files[$path]->getSize()
+				);
+			}
+		}
+		else {
+			$sqlstring = "select count(*) 'count' from dicom_monitor where file_status = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $status);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($status));
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$numfiles = (int)$row['count'];
+			mysqli_stmt_close($stmt);
 
-		$sqlstring = "select * from dicom_monitor where file_status = '$status' order by file_datetime desc, dicommonitor_id desc limit $displaylimit";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numlisted = mysqli_num_rows($result);
+			$sqlstring = "select * from dicom_monitor where file_status = ? order by file_datetime desc, dicommonitor_id desc limit ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $status, $displaylimit);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($status, $displaylimit));
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+				$rows[] = $row;
+			mysqli_stmt_close($stmt);
+		}
+		$numlisted = count($rows);
 		?>
 
 		<div class="ui container">
@@ -295,16 +298,16 @@
 				</thead>
 				<tbody>
 				<?
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					foreach ($rows as $row) {
 						$filepath = $row['file_path'];
 						$filedatetime = $row['file_datetime'];
 						$filesize = $row['file_size'];
-						$modality = $row['Modality'];
-						$patientid = $row['PatientID'];
-						$studydesc = $row['StudyDescription'];
-						$seriesdesc = $row['SeriesDescription'];
-						$seriesnum = $row['SeriesNumber'];
-						$statusmessage = $row['file_statusmessage'];
+						$modality = $row['Modality'] ?? '';
+						$patientid = $row['PatientID'] ?? '';
+						$studydesc = $row['StudyDescription'] ?? '';
+						$seriesdesc = $row['SeriesDescription'] ?? '';
+						$seriesnum = $row['SeriesNumber'] ?? null;
+						$statusmessage = $row['file_statusmessage'] ?? '';
 						$series = trim((($seriesnum !== null && $seriesnum !== '') ? $seriesnum . ' - ' : '') . ($seriesdesc ?? ''));
 						?>
 						<tr>

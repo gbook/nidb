@@ -316,16 +316,9 @@
 		$scriptname = $row['module_name'];
 
 		/* delete all lock files */
-		$path = $GLOBALS['cfg']['lockdir'] . "/$scriptname*";
-		//echo "$path<br>";
-		$files = glob($path);
-		if (!is_array($files)) { $files = array(); }
-		//print_r($files);
-		foreach ($files as $file) {
-			if (stripos($file, $scriptname) !== false) {
-				Notice("Deleting lock file [$file]");
-				unlink($file);
-			}
+		foreach (GetModuleLockFiles($scriptname) as $file) {
+			Notice("Deleting lock file [$file]");
+			unlink($file);
 		}
 
 		/* update DB to have 0 instances, status=stopped and lastfinish=now() */
@@ -388,6 +381,7 @@
 						$module_isactive = $row['module_isactive'];
 						$module_debug = $row['module_debug'];
 						$module_keeplog = $row['module_keeplog'];
+						$numlockfiles = count(GetModuleLockFiles($module_name));
 
 						/* calculate the status color */
 						if (!$module_isactive) { $color = "gray"; }
@@ -422,7 +416,7 @@
 					<td class="<?=$rowclass?>"><h3 class="header"><?=$module_name?></h3></td>
 					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
 					<td style="color: <?=$color?>">
-						<?=$module_status?> <? if (($module_status == "running") || ($module_numrunning != 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
+						<?=$module_status?> <? if (($module_status != "stopped") || ($module_numrunning != 0) || ($numlockfiles > 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
 					</td>
 					<td><?=$module_numrunning?></td>
 					<td><?=$module_laststop?></td>

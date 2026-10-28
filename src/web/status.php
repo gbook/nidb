@@ -265,18 +265,34 @@
 						<table class="ui basic table">
 							<tr>
 								<td><b>Application Entity (AE):port</b></td>
-								<td><?=$aeport?></td>
+								<td><?=htmlspecialchars($aeport)?></td>
 							</tr>
 							<tr>
 								<td><b>Destination Directory</b></td>
-								<td><?=$dest?>
+								<td><?=htmlspecialchars($dest)?>
 								<?
 									/* only validate the destination when dcmrcv is actually running */
 									if ($dcmrcvline != "") {
+										$incomingdir = $GLOBALS['cfg']['incomingdir'];
 										if (!is_dir($dest))
-											Error("dcmrcv points to direcory [$dest] which does not exist", false);
-										if ($dest != $GLOBALS['cfg']['incomingdir'])
-											Error("dcmrcv is NOT writing images to the incoming directory. Images will be not be archived. dcmrcv destination path [$dest] must match the config variable 'incomingdir' which is currently [" . $GLOBALS['cfg']['incomingdir'] . "]", false);
+											Error("dcmrcv points to directory [" . htmlspecialchars($dest) . "] which does not exist", false);
+										else {
+											/* dcmrcv may write to a symlink (or a path with symlinks in it) that points to
+											   the incoming directory, so compare the resolved paths. Fall back to the
+											   literal paths if either can't be resolved */
+											$realdest = realpath($dest);
+											$realincoming = realpath($incomingdir);
+											if (($realdest === false) || ($realincoming === false)) {
+												$realdest = rtrim($dest, '/');
+												$realincoming = rtrim($incomingdir, '/');
+											}
+
+											if ($realdest != $realincoming)
+												Error("dcmrcv is NOT writing images to the incoming directory. Images will not be archived. dcmrcv destination path [" . htmlspecialchars($dest) . "] must match (or be a symlink to) the config variable 'incomingdir' which is currently [" . htmlspecialchars($incomingdir) . "]", false);
+											elseif (rtrim($dest, '/') != rtrim($incomingdir, '/')) {
+												?><div class="ui small info message"><i class="linkify icon"></i> Resolves to <tt><?=htmlspecialchars($realdest)?></tt>, which is the incoming directory</div><?
+											}
+										}
 									}
 								?>
 								</td>
@@ -284,10 +300,10 @@
 							<tr>
 								<td><tt>ps -ef</tt> output</td>
 								<td>
-									<?=$dcmrcvline?>
+									<?=htmlspecialchars($dcmrcvline)?>
 									<?
 										if ($dcmrcvline == "")
-											Error("dcmrcv is not running. Images will be archived");
+											Error("dcmrcv is not running. DICOM files sent to NiDB will not be received");
 									?>
 								</td>
 							</tr>

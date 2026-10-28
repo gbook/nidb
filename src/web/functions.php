@@ -4515,11 +4515,78 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 
 	/* -------------------------------------------- */
+	/* ------- GetModuleLockFiles ----------------- */
+	/* -------------------------------------------- */
+	/* lock files are named <modulename>.<pid> (see nidb::ModuleCreateLockFile) */
+	function GetModuleLockFiles($modulename) {
+		$files = glob($GLOBALS['cfg']['lockdir'] . "/" . $modulename . ".*");
+		if (!is_array($files)) { $files = array(); }
+		return $files;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDicomIncomingFiles -------------- */
+	/* -------------------------------------------- */
+	/* Returns the files in the incoming directory (and its import sub-directories) that are waiting
+	   to be parsed by the import module, as array(path => SplFileInfo). The import module does not
+	   log these to dicom_monitor, so the directory is the source of truth. Skips partial transfers
+	   (.part) and files that are already Parsed (still on disk while their series is archived). */
+	function GetDicomIncomingFiles() {
+		$files = array();
+		$dir = rtrim($GLOBALS['cfg']['incomingdir'] ?? '', '/'); /* no trailing slash, so paths match the import module's */
+		if (($dir == '') || !is_dir($dir))
+			return $files;
+
+		try {
+			$it = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($dir, FilesystemIterator::SKIP_DOTS));
+			foreach ($it as $path => $fileinfo) {
+				if ($fileinfo->isFile() && (strtolower(substr($path, -5)) != '.part'))
+					$files[$path] = $fileinfo;
+			}
+		}
+		catch (Exception $e) {
+			/* a sub-directory removed by the import module mid-scan; count what was found */
+		}
+
+		$sqlstring = "select file_path from dicom_monitor where file_status = 'Parsed'";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			unset($files[$row['file_path']]);
+
+		return $files;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DicomReceiverCounts ---------------- */
+	/* -------------------------------------------- */
+	/* Counts for the DICOM receiver monitor (dicomimport.php), used by both the initial page render
+	   and the ajax refresh. Received is counted from disk (see GetDicomIncomingFiles); Parsed and
+	   Error come from dicom_monitor. */
+	function DicomReceiverCounts() {
+		$counts = array('Received' => count(GetDicomIncomingFiles()), 'Parsed' => 0, 'Error' => 0);
+		$sqlstring = "select file_status, count(*) 'count' from dicom_monitor where file_status in ('Parsed', 'Error') group by file_status";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if (isset($counts[$row['file_status']]))
+				$counts[$row['file_status']] = (int)$row['count'];
+		}
+		return array(
+			'received' => $counts['Received'],
+			'parsed'   => $counts['Parsed'],
+			'error'    => $counts['Error'],
+			'total'    => $counts['Received'] + $counts['Parsed'] + $counts['Error']
+		);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DicomReceiverServiceStatus --------- */
 	/* -------------------------------------------- */
 	/* Returns the status of the import module and the dcmrcv service for the DICOM receiver
 	   monitor (dicomimport.php), used by both the initial page render and the ajax refresh.
-	   Each entry is array('status' => running|stopped/idle|disabled, 'desc' => mouseover text). */
+	   Each entry is array('status' => running|stopped/idle/locked|disabled, 'desc' => mouseover text). */
 	function DicomReceiverServiceStatus() {
 
 		/* ----- import module (same fields as adminmodules.php) ----- */
@@ -4531,12 +4598,15 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 				$importstatus = "disabled";
 			elseif ($row['module_status'] == "running")
 				$importstatus = "running";
+			elseif (count(GetModuleLockFiles("import")) > 0)
+				$importstatus = "locked"; /* idle, but a leftover lock file will stop it from starting */
 			else
 				$importstatus = "idle";
 		}
 		$importdesc = array(
 			'running'  => "The import module is currently archiving received DICOM files",
 			'idle'  => "The import module is idle. This is normal; it starts periodically to archive received DICOM files",
+			'locked'   => "The import module is idle, but a lock file exists. The import module will not run until the lock file is deleted (Admin > Modules > reset)",
 			'disabled' => "The import module is disabled (Admin > Modules). Received DICOM files will not be archived"
 		);
 

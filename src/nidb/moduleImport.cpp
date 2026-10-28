@@ -509,6 +509,11 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
     n->Log(QString("Found %1 total files in path [%2]").arg(numfiles).arg(dir));
     int processedFileCount(0);
     int numFilesTooYoung(0);
+
+    int chunksize(5000);
+    if (n->cfg["importchunksize"].toInt() > 0)
+        chunksize = n->cfg["importchunksize"].toInt();
+
     foreach (QString file, files) {
 
         /* ignore .part files - they're partially uploaded files */
@@ -516,9 +521,16 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             continue;
         }
 
-        /* insert the dicom_monitor log */
+        /* stop reading once a full chunk has been checked, and archive what we have. Checked before
+         * touching the file, so the remaining files are left for the next run */
+        if (processedFileCount >= chunksize) {
+            n->Log(QString("Checked [%1] files, going to archive them now").arg(processedFileCount));
+            break;
+        }
+
+        /* files waiting to be parsed are not logged to dicom_monitor; the DICOM receiver monitor
+         * (dicomimport.php) counts them directly from the incoming directory */
         QHash<QString, QString> t;
-        UpdateDicomMonitor(file, t, "Received",  "");
 
         perf.numFilesRead++;
         /* check if the file exists. par/rec files may be moved from previous steps, so check if they still exist */
@@ -530,6 +542,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 n->Log(QString("File [%1] - size [%2] is 0 bytes!").arg(file).arg(fsize));
                 SetImportStatus(importid, "error", "File has size of 0 bytes", QString("File [" + file + "] is empty"), true);
                 perf.numFilesError++;
+                UpdateDicomMonitor(file, t, "Error", "File is 0 bytes. Moved to the problem directory");
                 QString m;
                 if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                     n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
@@ -550,7 +563,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
             numFilesTooYoung++;
             perf.numFilesIgnored++;
             okToDeleteDir = false;
-            UpdateDicomMonitor(file, t, "Received", QString("File is %1sec old").arg(abs(fileAgeInSec)));
             continue;
         }
 
@@ -565,15 +577,6 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                 n->Log(perf.End());
                 return true;
             }
-        }
-
-		int chunksize(5000);
-        if (n->cfg["importchunksize"].toInt() > 0)
-            chunksize = n->cfg["importchunksize"].toInt();
-
-        if (processedFileCount >= chunksize) {
-            n->Log(QString("Checked [%1] files, going to archive them now").arg(processedFileCount));
-            break;
         }
 
         /* make sure this file still exists... another instance of the program may have altered it */
@@ -595,6 +598,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":msg",m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+                    UpdateDicomMonitor(file, t, "Error", "Problem inserting PAR/REC. Moved to the problem directory");
                     m="";
                     if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2]").arg(file).arg(n->cfg["problemdir"]).arg(m));
@@ -634,6 +638,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m + " - moving to problem directory");
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    UpdateDicomMonitor(file, t, "Error", "Problem inserting " + importDatatype.toUpper() + " file. Moved to the problem directory");
                     if (!NiDBMoveFile(file, n->cfg["problemdir"], m))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m));
 
@@ -680,6 +685,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
                     q.bindValue(":id", importid);
                     q.bindValue(":msg", m);
                     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                    UpdateDicomMonitor(file, t, "Error", "Not a DICOM file. Moved to the problem directory");
                     QString m2;
                     if (!NiDBMoveFile(file, n->cfg["problemdir"], m2))
                         n->Log(QString("Unable to move [%1] to [%2], with error [%3]").arg(file).arg(n->cfg["problemdir"]).arg(m2));
@@ -707,7 +713,7 @@ bool moduleImport::ParseDirectory(QString dir, int importid) {
         QStringList files2 = dcmseries[uniqueSeriesStr];
 
         n->Debug(QString("Going to archive a list of files belonging to uniqueSeriesString [%1] List [%2]").arg(uniqueSeriesStr).arg(files2.join(", ")));
-        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importSeriesNotes, importAltUIDs, files2)) {
+        if (io->ArchiveDICOMSeries(importid, -1, -1, -1, subjectMatchCriteria, studyMatchCriteria, seriesMatchCriteria, importProjectID, "", importSiteID, importAltUIDs, importSeriesNotes, files2)) {
             iscomplete = true;
             QHash<QString, QString> t;
             foreach (const QString &f, files2) {
