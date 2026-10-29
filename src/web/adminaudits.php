@@ -525,7 +525,7 @@
 	function DisplayAudit($auditid, $issuetype, $page) {
 		$auditid = (int)$auditid;
 		$page = max(1, (int)$page);
-		$perpage = 500;
+		$perpage = 5000;
 
 		$sqlstring = "select * from audits where audit_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -605,41 +605,84 @@
 		</div>
 		<? } ?>
 
-		<table class="ui celled selectable compact table">
-			<thead>
-				<tr>
-					<th>Issue</th>
-					<th>Object</th>
-					<th>Description</th>
-					<th>Fixed</th>
-					<th>Fix description</th>
-				</tr>
-			</thead>
-			<tbody>
-			<?
-			if (mysqli_num_rows($result) < 1) {
-				?><tr><td colspan="5" style="text-align: center; color: #888">No issues logged</td></tr><?
-			}
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$objectid = (int)$row['object_id'];
-				switch ($row['object_type']) {
-					case 'subject': $object = "<a href='subjects.php?id=$objectid'>subject $objectid</a>"; break;
-					case 'study': $object = "<a href='studies.php?id=$objectid'>study $objectid</a>"; break;
-					default: $object = htmlspecialchars($row['object_type']) . " $objectid";
-				}
-				?>
-				<tr>
-					<td><?=htmlspecialchars($row['issue_type'])?></td>
-					<td style="white-space: nowrap"><?=$object?></td>
-					<td><?=htmlspecialchars($row['issue_message'] ?? '')?></td>
-					<td><? if ($row['issue_fixed'] === null) { ?>-<? } elseif ($row['issue_fixed']) { ?><i class="green check icon"></i>Yes<? } else { ?><i class="red times icon"></i>No<? } ?></td>
-					<td><?=htmlspecialchars($row['issue_fixedmessage'] ?? '')?></td>
-				</tr>
-				<?
-			}
-			?>
-			</tbody>
-		</table>
+		<?
+		/* the grid sorts/filters/exports the current page client-side. Paging and the issue type
+		   menu stay server-side because a large audit can log one row per object per issue type */
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = array(
+				'issue' => $row['issue_type'],
+				'objecttype' => $row['object_type'] ?? '',
+				'objectid' => (int)$row['object_id'],
+				'message' => $row['issue_message'] ?? '',
+				'fixed' => ($row['issue_fixed'] === null) ? '-' : ($row['issue_fixed'] ? 'Yes' : 'No'),
+				'fixmessage' => $row['issue_fixedmessage'] ?? ''
+			);
+		}
+		$rowsJson = json_encode($rows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
+		?>
+		<div style="display:flex; align-items:center; gap:10px; margin-bottom:8px">
+			<input type="text" placeholder="Search..." oninput="auditGridApi.setGridOption('quickFilterText', this.value)" style="padding:5px 8px; width:250px; border:1px solid #ccc; border-radius:4px">
+			<span style="color:#888">Displaying <span id="auditCount"><?=count($rows)?></span> issues</span>
+			<button class="ui small basic button" style="margin-left:auto" onclick="auditGridApi.exportDataAsCsv({fileName: 'audit<?=$auditid?>.csv'})"><i class="download icon"></i>Export CSV</button>
+		</div>
+		<div id="auditGrid" style="height:65vh; width:100%"></div>
+
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
+		<script>
+		let auditGridApi;
+		(function() {
+			const rowData = <?=$rowsJson?>;
+			const objectPages = { subject: 'subjects.php', study: 'studies.php' };
+
+			const columnDefs = [
+				{ field: 'issue', headerName: 'Issue', width: 180 },
+				{ field: 'objecttype', headerName: 'Object', width: 150,
+					valueGetter: function(params) { return params.data.objecttype + ' ' + params.data.objectid; },
+					/* sort by type, then numerically by id (a plain string sort puts 'series 10' before 'series 9') */
+					comparator: function(a, b, nodeA, nodeB) {
+						return (nodeA.data.objecttype || '').localeCompare(nodeB.data.objecttype || '') || (nodeA.data.objectid - nodeB.data.objectid);
+					},
+					cellRenderer: function(params) {
+						const page = objectPages[params.data.objecttype];
+						if (!page) return document.createTextNode(params.value);
+						const a = document.createElement('a');
+						a.href = page + '?id=' + encodeURIComponent(params.data.objectid);
+						a.textContent = params.value;
+						return a;
+					}
+				},
+				{ field: 'message', headerName: 'Description', flex: 3, tooltipField: 'message' },
+				{ field: 'fixed', headerName: 'Fixed', width: 100,
+					cellRenderer: function(params) {
+						if (params.value === '-') return document.createTextNode('-');
+						const span = document.createElement('span');
+						const icon = document.createElement('i');
+						icon.className = (params.value === 'Yes') ? 'green check icon' : 'red times icon';
+						span.appendChild(icon);
+						span.appendChild(document.createTextNode(params.value));
+						return span;
+					}
+				},
+				{ field: 'fixmessage', headerName: 'Fix description', flex: 2, tooltipField: 'fixmessage' },
+			];
+
+			const gridOptions = {
+				columnDefs: columnDefs,
+				rowData: rowData,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				overlayNoRowsTemplate: '<span style="color: #888">No issues logged</span>',
+				/* keep the "Displaying X issues" count in sync with the quick filter / column filters */
+				onModelUpdated: function(params) {
+					const el = document.getElementById('auditCount');
+					if (el) el.textContent = params.api.getDisplayedRowCount().toLocaleString();
+				},
+			};
+
+			auditGridApi = agGrid.createGrid(document.getElementById('auditGrid'), gridOptions);
+		})();
+		</script>
 
 		<? if ($numpages > 1) {
 			$typeparam = ($issuetype == "") ? "" : "&issuetype=" . urlencode($issuetype);
