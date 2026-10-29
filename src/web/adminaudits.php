@@ -289,7 +289,9 @@
 			default: $color = 'blue';
 		}
 
-		return '<div class="ui small ' . $color . ' progress" style="margin: 0; min-width: 200px"><div class="bar" style="width: ' . $percent . '%; min-width: 2em"><div class="progress">' . $percent . '%</div></div><div class="label" style="font-weight: normal; font-size: 0.85em">' . number_format($progress) . ' of ' . number_format($total) . '</div></div>';
+		/* data-percent is required: Fomantic makes the bar transparent without it. The count is rendered
+		   below the bar in normal flow, because a .label is absolutely positioned and overflows the cell */
+		return '<div style="min-width: 200px"><div class="ui ' . $color . ' progress" data-percent="' . $percent . '" style="margin: 0"><div class="bar" style="width: ' . $percent . '%; min-width: 2.5em"><div class="progress" style="color: #fff">' . $percent . '%</div></div></div><div style="font-size: 0.85em; color: #666; text-align: center; margin-top: 0.2em">' . number_format($progress) . ' of ' . number_format($total) . '</div></div>';
 	}
 
 
