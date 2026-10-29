@@ -111,6 +111,15 @@
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("enrollment.php?enrollmentid=$enrollmentid");
 			break;
+		case 'deleteenrollment':
+			ob_start();
+			$subjectid = DeleteEnrollment($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			if ($subjectid > 0)
+				RedirectTo("subjects.php?id=$subjectid");
+			else
+				RedirectTo("enrollment.php?enrollmentid=$enrollmentid");
+			break;
 		case 'displayenrollment':
 			DisplayEnrollment($enrollmentid);
 			break;
@@ -263,6 +272,90 @@
 	
 	
 	/* -------------------------------------------- */
+	/* ------- GetEnrollmentDependents ------------ */
+	/* -------------------------------------------- */
+	/* returns [description => count] of the data attached to an enrollment that would be orphaned if
+	   the enrollment were deleted. An empty array means the enrollment is safe to delete */
+	function GetEnrollmentDependents($enrollmentRowID) {
+		$enrollmentRowID = (int)$enrollmentRowID;
+		$tables = array('studies' => 'studies', 'observations' => 'observations', 'interventions' => 'interventions', 'diagnosis' => 'diagnoses', 'vitals' => 'vitals', 'snp_alleles' => 'SNP alleles', 'package_enrollments' => 'packages');
+
+		$dependents = array();
+		foreach ($tables as $table => $desc) {
+			$sqlstring = "select count(*) 'count' from $table where enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $enrollmentRowID);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ((int)$row['count'] > 0)
+				$dependents[$desc] = (int)$row['count'];
+		}
+		return $dependents;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteEnrollment ------------------- */
+	/* -------------------------------------------- */
+	/* deletes an enrollment. Requires project admin (or site admin) on the enrollment's project, a POST
+	   with this session's CSRF token, and that the enrollment has no attached data (studies,
+	   observations, etc). Returns the subject ID on success, 0 otherwise */
+	function DeleteEnrollment($id) {
+		if ((int)$id < 1) { Error("Enrollment ID blank"); return 0; }
+		$id = (int)$id;
+
+		if ($_SERVER['REQUEST_METHOD'] != 'POST') { Error("Invalid request"); return 0; }
+		if (!VerifyCSRFToken()) { return 0; }
+
+		$enrollment = GetEnrollment($id);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return 0;
+		}
+		$perms = GetCurrentUserProjectPermissions(array($enrollment['project_id']));
+		if (!GetPerm($perms, 'projectadmin', $enrollment['project_id'])) {
+			Error("Only project admins and site admins can delete an enrollment");
+			return 0;
+		}
+
+		$dependents = GetEnrollmentDependents($id);
+		if (count($dependents) > 0) {
+			$list = array();
+			foreach ($dependents as $desc => $count)
+				$list[] = "$count $desc";
+			Error("Enrollment not deleted. It still contains " . htmlspecialchars(implode(', ', $list)) . ", which must be moved or deleted first");
+			return 0;
+		}
+
+		/* get the subject and project for the message and redirect */
+		$sqlstring = "select a.subject_id, b.uid, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$subjectid = (int)($row['subject_id'] ?? 0);
+		$uid = $row['uid'] ?? '';
+		$projectname = $row['project_name'] ?? '';
+
+		/* delete the enrollment and its own metadata */
+		MySQLiQuery("start transaction", __FILE__, __LINE__);
+		foreach (array('enrollment_checklist', 'enrollment_missingdata', 'tags', 'subject_altuid', 'enrollment') as $table) {
+			$sqlstring = "delete from $table where enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+			mysqli_stmt_close($stmt);
+		}
+		MySQLiQuery("commit", __FILE__, __LINE__);
+
+		Notice("Deleted enrollment of " . htmlspecialchars($uid) . " in " . htmlspecialchars($projectname));
+		return $subjectid;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetAdjacentEnrollmentInProject ----- */
 	/* -------------------------------------------- */
 	function GetAdjacentEnrollmentInProject($enrollmentRowID, $projectRowID, $direction) {
@@ -365,6 +458,15 @@
 		$modifyphi = GetPerm($perms, 'modifyphi', $projectid);
 		$canedit = ($modifydata || $modifyphi);
 		DisplayPermissions($perms);
+
+		/* project admins and site admins may delete the enrollment, but only once it has no attached data */
+		if ($projectadmin) {
+			$dependents = GetEnrollmentDependents($enrollmentid);
+			$deletelist = array();
+			foreach ($dependents as $desc => $count)
+				$deletelist[] = "$count $desc";
+			$deleteconfirm = json_encode("Delete the enrollment of " . ($row['uid'] ?? '') . " in " . ($row['project_name'] ?? '') . "? This cannot be undone.");
+		}
 
 		$previousenrollment = GetAdjacentEnrollmentInProject($enrollmentid, $projectid, "previous");
 		$nextenrollment = GetAdjacentEnrollmentInProject($enrollmentid, $projectid, "next");
@@ -492,10 +594,24 @@
 				</tr>
 			</table>
 			<? if ($canedit) { ?>
-			<div class="ui bottom attached right aligned segment">
+			<div class="ui bottom attached right aligned clearing segment">
+				<? if ($projectadmin) {
+					if (count($deletelist) > 0) { ?>
+					<span style="float: left" title="Enrollment contains <?=htmlspecialchars(implode(', ', $deletelist))?>. Move or delete them before deleting the enrollment"><button class="ui red disabled button" type="button">Delete Enrollment</button></span>
+					<? } else { ?>
+					<button class="ui red left floated button" type="submit" form="deleteenrollmentform" onclick="return confirm(<?=htmlspecialchars($deleteconfirm, ENT_QUOTES)?>);">Delete Enrollment</button>
+					<? }
+				} ?>
 				<input class="ui primary button" type="submit" value="Save">
 			</div>
 			</form>
+			<? if ($projectadmin && (count($deletelist) == 0)) { ?>
+			<form method="post" action="enrollment.php" id="deleteenrollmentform">
+				<input type="hidden" name="action" value="deleteenrollment">
+				<input type="hidden" name="id" value="<?=$enrollmentid?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 			<? } ?>
 		</div>
 		
