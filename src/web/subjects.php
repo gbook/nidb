@@ -2945,6 +2945,7 @@
 		<div class="ui bottom attached menu">
 			<div class="item" style="background-color: lightyellow">
 				<div class="ui action input">
+					<?=CSRFTokenField()?> <!-- groups.php requires the token for addsubjectstogroup -->
 					<div class="ui selection dropdown">
 						<input type="hidden" name="subjectgroupid">
 						<i class="dropdown icon"></i>

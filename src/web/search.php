@@ -4619,6 +4619,7 @@
 				<div class="ui bottom attached segment">
 					<h4 class="ui header">With Selected Studies:</h4>
 					<div class="ui left aligned horizontal divider">Add to group</div>
+					<?=CSRFTokenField()?> <!-- groups.php requires the token for its add-to-group actions -->
 					<div class="ui labeled action input">
 						<label for="subjectgroupid" class="ui label" style="width: 150px">Subject Group</label>
 						<select name="subjectgroupid" id="subjectgroupid" class="ui selection dropdown">
@@ -4629,7 +4630,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
 								<?
 							}
 						?>
@@ -4647,7 +4648,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
 								<?
 							}
 						?>
@@ -4665,7 +4666,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
 								<?
 							}
 						?>

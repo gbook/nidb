@@ -158,6 +158,7 @@
 					<th class="subheader">Date</th>
 					<th class="subheader">Modality</th>
 					<th class="subheader">Site</th>
+					<th class="subheader">Study Desc</th>
 					<th class="subheader"># of Series</th>
 					<th class="subheader">Project</th>
 				</thead>
@@ -172,6 +173,7 @@
 					$ts = strtotime($row['study_datetime']);
 					$study_datetime = $ts !== false ? date('M j g:ia', $ts) : '';
 					$study_site = $row['study_site'];
+					$study_desc = $row['study_desc'];
 					$study_num = $row['study_num'];
 					$uid = $row['uid'];
 					$project_name = $row['project_name'];
@@ -200,6 +202,7 @@
 							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
 							<td style="font-size:8pt"><?=$modality?></td>
 							<td style="font-size:8pt"><?=$study_site?></td>
+							<td style="font-size:8pt"><?=htmlspecialchars($study_desc ?? '')?></td>
 							<td style="font-size:8pt"><?=$seriescount?></td>
 							<td style="font-size:8pt"><?=$project_name?> (<?=$project_costcenter?>)</td>
 						</tr>
@@ -213,7 +216,7 @@
 							<td style="font-size:8pt; white-space: nowrap"><?=$study_datetime?></td>
 							<td style="font-size:8pt"><?=$modality?></td>
 							<td style="font-size:8pt"><?=$study_site?></td>
-							<td style="font-size:8pt" colspan="2">No permissions for <?=$project_name?> (<?=$project_costcenter?>)</td>
+							<td style="font-size:8pt" colspan="3">No permissions for <?=$project_name?> (<?=$project_costcenter?>)</td>
 						</tr>
 						<?
 					}

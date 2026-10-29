@@ -42,7 +42,7 @@ for the reference implementation.
 | `enrollment.php` | 2 | ✅ |
 | `experiment.php` | 2 | ✅ |
 | `functions.php` | 3 | ⬜ |
-| `groups.php` | 5 | ✅ |
+| `groups.php` | 8 | ✅ |
 | `import.php` | 6 | ⬜ |
 | `importimaging.php` | 5 | ✅ |
 | `importnonimaging.php` | 2 | ⬜ |

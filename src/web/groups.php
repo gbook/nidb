@@ -41,7 +41,7 @@
 	//PrintVariable($_POST);
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("add", "delete", "addsubjectstogroup", "addstudiestogroup", "addseriestogroup", "removegroupitem", "renamegroup", "updatestudygroup")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$groupid = (int)GetVariable("groupid");
 	$subjectgroupid = (int)GetVariable("subjectgroupid");
@@ -55,7 +55,7 @@
 	$seriesids = GetVariable("seriesid");
 	$studyids = GetVariable("studyid");
 	$modality = GetVariable("modality");
-	$itemid = GetVariable("itemid"); /* single id (trash link) or array of ids (itemid[] checkboxes); sanitized in RemoveGroupItem */
+	$itemid = GetVariable("itemid"); /* single id (trash button) or array of ids (itemid[] checkboxes); sanitized in RemoveGroupItem */
 	$observations = GetVariable("observations");
 	$columns = GetVariable("columns");
 	$groupobservations = GetVariable("groupobservations");
@@ -98,7 +98,7 @@
 			break;
 		case 'removegroupitem':
 			ob_start();
-			RemoveGroupItem($itemid);
+			RemoveGroupItem($id, $itemid);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("groups.php?action=viewgroup&id=$id");
 			break;
@@ -130,36 +130,87 @@
 
 
 	/* ------------------------------------ functions ------------------------------------ */
-	
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetGroup --------------------------- */
+	/* -------------------------------------------- */
+	/* returns the groups row for $id, or null if there is no such group */
+	function GetGroup($id) {
+		$id = (int)$id;
+		$sqlstring = "select * from groups where group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return $row ? $row : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CanEditGroup ----------------------- */
+	/* -------------------------------------------- */
+	/* true if the current user may delete, rename, or remove members from the group ($group is a groups row):
+	   its owner, or an admin. Adding members is open to everyone, since search.php, analysis.php, and
+	   studies.php list every group */
+	function CanEditGroup($group) {
+		if (!$group) { return false; }
+		return (((int)($group['group_owner'] ?? 0) == (int)($GLOBALS['userid'] ?? 0)) || IsAdminUser());
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckGroupType --------------------- */
+	/* -------------------------------------------- */
+	/* true if group $id exists and is of type $type; displays an error otherwise */
+	function CheckGroupType($id, $type) {
+		$group = GetGroup($id);
+		if (!$group) { Error("Group not found"); return false; }
+		if ($group['group_type'] != $type) { Error("This is not a $type group"); return false; }
+		return true;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- AddGroup --------------------------- */
 	/* -------------------------------------------- */
 	function AddGroup($groupname, $grouptype, $owner) {
 		/* perform data checks */
+		$groupname = trim($groupname ?? '');
+		$hgroupname = htmlspecialchars($groupname);
+		if ($groupname == "") { Error("Group name cannot be blank"); return; }
+		if (mb_strlen($groupname) > 255) { Error("Group name must be 255 characters or less"); return; }
+		if (!in_array($grouptype, array('nda', 'series', 'study', 'subject'), true)) { Error("Invalid group type"); return; }
+
 		/* get userid */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from users where username = ?");
 		mysqli_stmt_bind_param($stmt, 's', $owner);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
 		mysqli_stmt_close($stmt);
+		if (!$row) { Error("User not found"); return; }
+		$userid = (int)$row['user_id'];
 
-		/* insert the new group */
+		/* insert the new group. insert ignore skips a duplicate name for this owner (unique key group_name, group_owner) */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into groups (group_name, group_type, group_owner) values (?, ?, ?)");
 		mysqli_stmt_bind_param($stmt, 'ssi', $groupname, $grouptype, $userid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$numinserted = mysqli_affected_rows($GLOBALS['linki']);
 		mysqli_stmt_close($stmt);
-		Notice(htmlspecialchars($groupname ?? '') . " added");
+		if ($numinserted > 0) { Notice("<b>$hgroupname</b> added"); } else { Error("A group named <b>$hgroupname</b> already exists for this owner"); }
 	}
 
 	/* -------------------------------------------- */
 	/* ------- AddSubjectsToGroup ----------------- */
 	/* -------------------------------------------- */
 	function AddSubjectsToGroup($groupid, $uids, $seriesids, $modality) {
+		if (!CheckGroupType($groupid, 'subject')) { return; }
 
 		$numadded = 0;
 		$numexisting = 0;
+		$numnotfound = 0;
+		/* subject rows are stored with modality '' (older rows may have NULL), so the duplicate check matches both */
 		/* if the request came from the subjects.php page */
 		if (is_array($uids) && !empty($uids)) {
 			foreach ($uids as $uid) {
@@ -167,11 +218,12 @@
 				mysqli_stmt_bind_param($stmt, 's', $uid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$uidid = $row['subject_id'];
+				$uidid = (int)($row['subject_id'] ?? 0);
 				mysqli_stmt_close($stmt);
+				if ($uidid <= 0) { $numnotfound++; continue; }
 
 				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ''");
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and (modality = '' or modality is null)");
 				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -179,7 +231,7 @@
 				}
 				else {
 					/* insert the uidids */
-					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, '', now())");
 					mysqli_stmt_bind_param($stmtInsert, 'ii', $groupid, $uidid);
 					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
 					mysqli_stmt_close($stmtInsert);
@@ -202,11 +254,12 @@
 				mysqli_stmt_bind_param($stmt, 'i', $seriesid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$uidid = $row['subject_id'];
+				$uidid = (int)($row['subject_id'] ?? 0);
 				mysqli_stmt_close($stmt);
+				if ($uidid <= 0) { $numnotfound++; continue; }
 
 				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ''");
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and (modality = '' or modality is null)");
 				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -214,7 +267,7 @@
 				}
 				else {
 					/* insert the uidids */
-					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id) values (?, ?)");
+					$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, '', now())");
 					mysqli_stmt_bind_param($stmtInsert, 'ii', $groupid, $uidid);
 					MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
 					mysqli_stmt_close($stmtInsert);
@@ -223,7 +276,9 @@
 				mysqli_stmt_close($stmt);
 			}
 		}
-		Notice("<b>$numadded</b> subjects added<br><b>$numexisting</b> subjects already in group");
+		$msg = "<b>$numadded</b> subjects added<br><b>$numexisting</b> subjects already in group";
+		if ($numnotfound > 0) { $msg .= "<br><b>$numnotfound</b> subjects not found"; }
+		Notice($msg);
 	}
 
 	
@@ -231,12 +286,14 @@
 	/* ------- AddStudiesToGroup ------------------ */
 	/* -------------------------------------------- */
 	function AddStudiesToGroup($groupid, $seriesids, $studyids, $modality) {
+		if (!CheckGroupType($groupid, 'study')) { return; }
 		$modality = strtolower($modality);
 		$seriesTable = GetSeriesTableName($modality);
 		$seriesIdColumn = $modality . "series_id";
 
 		$numadded = 0;
 		$numexisting = 0;
+		$numnotfound = 0;
 		if (is_array($seriesids)) {
 			if ($seriesTable == '') {
 				Notice("Invalid modality");
@@ -248,8 +305,9 @@
 				mysqli_stmt_bind_param($stmt, 'i', $seriesid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$studyid = $row['study_id'];
+				$studyid = (int)($row['study_id'] ?? 0);
 				mysqli_stmt_close($stmt);
+				if ($studyid <= 0) { $numnotfound++; continue; }
 
 				/* check if its already in the db */
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
@@ -277,8 +335,9 @@
 				mysqli_stmt_bind_param($stmt, 'i', $studyid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$studyModality = strtolower($row['study_modality']);
 				mysqli_stmt_close($stmt);
+				if (!$row) { $numnotfound++; continue; }
+				$studyModality = strtolower($row['study_modality'] ?? '');
 
 				/* check if its already in the db */
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
@@ -298,7 +357,9 @@
 				mysqli_stmt_close($stmt);
 			}
 		}
-		Notice("<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group");
+		$msg = "<b>$numadded</b> studies added<br><b>$numexisting</b> studies already in group";
+		if ($numnotfound > 0) { $msg .= "<br><b>$numnotfound</b> studies not found"; }
+		Notice($msg);
 	}
 
 
@@ -306,6 +367,10 @@
 	/* ------- AddSeriesToGroup ------------------- */
 	/* -------------------------------------------- */
 	function AddSeriesToGroup($groupid, $seriesids, $modality) {
+		if (!CheckGroupType($groupid, 'series')) { return; }
+		/* the modality becomes part of a table name when the group is viewed */
+		$modality = strtolower($modality ?? '');
+		if (GetSeriesTableName($modality) == '') { Error("Invalid modality"); return; }
 
 		$numadded = 0;
 		$numexisting = 0;
@@ -337,26 +402,24 @@
 	/* -------------------------------------------- */
 	function UpdateStudyGroup($id, $studylist) {
 
-		if (trim($id) == "") {
+		$id = (int)$id;
+		if ($id <= 0) {
 			Error("ID blank");
 			return;
 		}
 
-		/* start transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* only study groups are edited by study list (the delete below would empty any group type) */
+		$group = GetGroup($id);
+		if (!$group) { Error("Group not found"); return; }
+		if (!CanEditGroup($group)) { Error("Only the group's owner or an admin can edit its members"); return; }
+		if ($group['group_type'] != 'study') { Error("Only study groups can be updated from a study list"); return; }
 
-		$studies = preg_split('/\s+/', $studylist);
+		$studies = preg_split('/\s+/', $studylist ?? '');
 		$studies = array_unique($studies);
 
-		/* delete all old group entries */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where group_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-
-		/* loop through all the studies and insert them */
-		$numadded = 0;
+		/* look up all the studies first, so a failure part way through can't leave the group half emptied.
+		   group_data is an Aria table, so the transaction below doesn't make the delete + inserts atomic */
+		$found = array();
 		$notfound = array();
 		foreach ($studies as $study) {
 			if (trim($study) == "") { continue; }
@@ -367,23 +430,35 @@
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select b.study_id, b.study_modality from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where d.uid = ? AND b.study_num = ?");
 			mysqli_stmt_bind_param($stmt, 'ss', $uid, $studynum);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$studyid = (int)$row['study_id'];
-				$studymodality = strtolower($row['study_modality'] ?? '');
-				mysqli_stmt_close($stmt);
-
-				/* insert the studyids (with the study's modality, same as AddStudiesToGroup, so membership checks match) */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality) values (?, ?, ?)");
-				mysqli_stmt_bind_param($stmt, 'iis', $id, $studyid, $studymodality);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				mysqli_stmt_close($stmt);
-				$numadded++;
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row) {
+				/* stored with the study's modality, same as AddStudiesToGroup, so membership checks match */
+				$found[(int)$row['study_id']] = strtolower($row['study_modality'] ?? '');
 			}
 			else {
-				mysqli_stmt_close($stmt);
 				$notfound[] = htmlspecialchars($study);
 			}
+		}
+
+		/* start transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* delete all old group entries */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		/* insert the studyids */
+		$numadded = 0;
+		foreach ($found as $studyid => $studymodality) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'iis', $id, $studyid, $studymodality);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$numadded++;
 		}
 
 		/* commit the transaction */
@@ -401,16 +476,21 @@
 	/* -------------------------------------------- */
 	/* ------- RemoveGroupItem -------------------- */
 	/* -------------------------------------------- */
-	function RemoveGroupItem($itemid) {
+	function RemoveGroupItem($id, $itemid) {
 		//PrintVariable($itemid,'ItemID');
+		$id = (int)$id;
+		$group = GetGroup($id);
+		if (!$group) { Error("Group not found"); return; }
+		if (!CanEditGroup($group)) { Error("Only the group's owner or an admin can remove members"); return; }
 
 		$numremoved = 0;
 		$items = is_array($itemid) ? $itemid : array($itemid);
 		foreach ($items as $item) {
 			$item = (int)$item;
 			if ($item <= 0) { continue; }
-			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where subjectgroup_id = ?");
-			mysqli_stmt_bind_param($stmt, 'i', $item);
+			/* only items that belong to this group */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where subjectgroup_id = ? and group_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $item, $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$numremoved += mysqli_affected_rows($GLOBALS['linki']);
 			mysqli_stmt_close($stmt);
@@ -424,12 +504,41 @@
 	/* ------- DeleteGroup ------------------------ */
 	/* -------------------------------------------- */
 	function DeleteGroup($id) {
+		$id = (int)$id;
+		$group = GetGroup($id);
+		if (!$group) { Error("Group not found"); return; }
+		if (!CanEditGroup($group)) { Error("Only the group's owner or an admin can delete it"); return; }
+
 		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from groups where group_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$numdeleted = mysqli_affected_rows($GLOBALS['linki']);
 		mysqli_stmt_close($stmt);
-		if ($numdeleted > 0) { Notice("Group deleted"); } else { Error("Group not found"); }
+		if ($numdeleted <= 0) { Error("Group not found"); return; }
+
+		/* remove the group's members too, so they aren't left orphaned */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		Notice("Group deleted");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteGroupButton ------------------ */
+	/* -------------------------------------------- */
+	/* "Delete Group" button shown on the group views, to those who can edit the group ($group is a groups row) */
+	function DeleteGroupButton($id, $group) {
+		if (!CanEditGroup($group)) { return; }
+		?>
+		<form action="groups.php" method="post" style="display: inline" onsubmit="return confirm('Delete this group?')">
+			<?=CSRFTokenField()?>
+			<input type="hidden" name="action" value="delete">
+			<input type="hidden" name="id" value="<?=(int)$id?>">
+			<button type="submit" class="ui tiny red button">Delete Group</button>
+		</form>
+		<?
 	}
 
 
@@ -452,6 +561,7 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 		if (!$row) { Error("Group not found"); return; }
+		if (!CanEditGroup($row)) { Error("Only the group's owner or an admin can rename it"); return; }
 		$oldname = $row['group_name'];
 		$owner = $row['group_owner'];
 
@@ -486,6 +596,7 @@
 			<div class="header">Rename group</div>
 			<div class="content">
 				<form action="groups.php" method="post" id="renameGroupForm" class="ui form">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="action" value="renamegroup">
 					<input type="hidden" name="id" value="<?=(int)$id?>">
 					<div class="field">
@@ -506,7 +617,8 @@
 	/* -------------------------------------------- */
 	/* ------- RenameGroupIcon -------------------- */
 	/* -------------------------------------------- */
-	function RenameGroupIcon() {
+	function RenameGroupIcon($group) {
+		if (!CanEditGroup($group)) { return; }
 		?><a href="#" onclick="$('#renameGroupModal').modal('show'); return false;" title="Rename group"><i class="grey edit outline icon" style="font-size: 0.6em"></i></a><?
 	}
 
@@ -517,18 +629,15 @@
 	function ViewGroup($id, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from groups where group_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$row = GetGroup($id);
+		if (!$row) { Error("Group not found"); return; }
 		$groupname = $row['group_name'] ?? '';
 		$grouptype = $row['group_type'] ?? '';
-		mysqli_stmt_close($stmt);
 
 		//PrintVariable($groupname);
 		//PrintVariable($grouptype);
 
-		if ($row) {
+		if (CanEditGroup($row)) {
 			DisplayRenameGroupModal($id, $groupname);
 		}
 
@@ -569,14 +678,11 @@
 
 		/* get the general group information */
 		$id = (int)$id;
-		$sqlstring = "select * from groups where group_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$groupname = $row['group_name'] ?? '';
-		$grouptype = $row['group_type'] ?? '';
+		$group = GetGroup($id);
+		$groupname = $group['group_name'] ?? '';
+		$grouptype = $group['group_type'] ?? '';
+		$canedit = CanEditGroup($group);
+		$h = function($v) { return htmlspecialchars((string)$v); };
 
 		?>
 		<script>
@@ -602,8 +708,11 @@
 		$id = (int)$id;
 
 		/* get a distinct list of modalities... then get a list of series for each modality */
-		$sqlstring = "select distinct(modality) from group_data where group_id = $id order by modality";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select distinct(modality) from group_data where group_id = ? order by modality";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			/* modality becomes a table name below; GetSeriesTableName() rejects anything that isn't a simple identifier */
 			if (GetSeriesTableName($row['modality'] ?? '') != '') {
@@ -672,10 +781,10 @@
 		<div class="ui top attached grey segment">
 			<div class="ui two column grid">
 				<div class="ui column">
-					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon(); ?></h2>
+					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?></h2>
 				</div>
 				<div class="ui right aligned column">
-					<button class="ui tiny red button">Delete Group</button>
+					<? DeleteGroupButton($id, $group); ?>
 				</div>
 			</div>
 			<div class="ui grid">
@@ -702,13 +811,10 @@
 				<div class="ui eight wide column">
 					<h3 class="ui header">Group members</h3>
 					
-					<form class="ui form" action="groups.php" method="get">
-						<textarea><?=htmlspecialchars(implode("\n", $serieslist))?></textarea>
-						<br><br>
-						<div align="right">
-							<button class="ui primary button">Save</button>
-						</div>
-					</form>
+					<!-- read-only list; series are added from search.php and removed with the trash icons below -->
+					<div class="ui form">
+						<textarea readonly><?=htmlspecialchars(implode("\n", $serieslist))?></textarea>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -783,23 +889,33 @@
 					$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
 					?>
 					<tr>
-						<td><?=$name?></td>
-						<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-						<td><?=$birthdate?></td>
+						<td><?=$h($name)?></td>
+						<td><a href="subjects.php?id=<?=(int)$subjectid?>"><?=$h($uid)?></a></td>
+						<td><?=$h($birthdate)?></td>
 						<td><?=$studyAge?></td>
 						<td><?=$calcStudyAge?></td>
-						<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-						<td style="color:<?=$color?>"><?=$gender?></td>
-						<td style="font-size:8pt"><?=$subgroup?></td>
+						<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
+						<td style="color:<?=$color?>"><?=$h($gender)?></td>
+						<td style="font-size:8pt"><?=$h($subgroup)?></td>
 						<? if ($weight <= 0) { $color = "red"; } else { $color="black"; } ?>
 						<td style="color:<?=$color?>"><?=number_format((float)$weight,1)?>kg</td>
-						<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
-						<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-						<td style="font-size:8pt"><?=$seriesdesc?> <?=$seriesprotocol?></td>
-						<td><?=$seriesmodality?></td>
-						<td style="font-size:8pt"><?=$seriesdatetime?></td>
-						<td><?=$seriesnum?></td>
-						<td align="center"><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>
+						<td style="font-size:8pt"><?=$h(implode2(', ',$altuids))?></td>
+						<td><a href="studies.php?id=<?=(int)$studyid?>"><?=$h($uid)?><?=$h($studynum)?></a></td>
+						<td style="font-size:8pt"><?=$h($seriesdesc)?> <?=$h($seriesprotocol)?></td>
+						<td><?=$h($seriesmodality)?></td>
+						<td style="font-size:8pt"><?=$h($seriesdatetime)?></td>
+						<td><?=$h($seriesnum)?></td>
+						<td align="center">
+							<? if ($canedit) { ?>
+							<form action="groups.php" method="post" style="display: inline" onsubmit="return confirm('Remove this series from the group?')">
+								<?=CSRFTokenField()?>
+								<input type="hidden" name="action" value="removegroupitem">
+								<input type="hidden" name="id" value="<?=$id?>">
+								<input type="hidden" name="itemid" value="<?=(int)$itemid?>">
+								<button type="submit" class="ui basic icon button" style="box-shadow: none; padding: 0; color: red" title="Remove from group"><i class="trash icon"></i></button>
+							</form>
+							<? } ?>
+						</td>
 					</tr>
 					<?
 				}
@@ -818,14 +934,11 @@
 
 		/* get the general group information */
 		$id = (int)$id;
-		$sqlstring = "select * from groups where group_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$groupname = $row['group_name'] ?? '';
-		$grouptype = $row['group_type'] ?? '';
+		$group = GetGroup($id);
+		$groupname = $group['group_name'] ?? '';
+		$grouptype = $group['group_type'] ?? '';
+		$canedit = CanEditGroup($group);
+		$h = function($v) { return htmlspecialchars((string)$v); };
 
 		?>
 		<script>
@@ -852,125 +965,14 @@
 		$observationdata = array();
 		$id = (int)$id;
 
-		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjectid = $row['subject_id'];
-			$name = $row['name'];
-			$birthdate = $row['birthdate'];
-			$age = $row['age'];
-			$gender = $row['gender'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$weight = $row['weight'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$uid = $row['uid'];
-
-			/* do some demographics calculations */
-			$n++;
-			if ($age > 0) {
-				$totalage += $age;
-				$numage++;
-				$ages[] = $age;
-			}
-			if ($weight > 0) {
-				$totalweight += $weight;
-				$numweight++;
-				$weights[] = $weight;
-			}
-			$genders[$gender ?? ''] = ($genders[$gender ?? ''] ?? 0) + 1;
-			$educations[$education ?? ''] = ($educations[$education ?? ''] ?? 0) + 1;
-			$ethnicity1s[$ethnicity1 ?? ''] = ($ethnicity1s[$ethnicity1 ?? ''] ?? 0) + 1;
-			$ethnicity2s[$ethnicity2 ?? ''] = ($ethnicity2s[$ethnicity2 ?? ''] ?? 0) + 1;
-			$handednesses[$handedness ?? ''] = ($handednesses[$handedness ?? ''] ?? 0) + 1;
-		}
-		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
-		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
-		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
-		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
-		
-		?>
-		<div class="ui top attached grey segment">
-			<div class="ui two column grid">
-				<div class="ui column">
-					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon(); ?></h2>
-				</div>
-				<div class="ui right aligned column">
-					<button class="ui tiny red button">Delete Group</button>
-				</div>
-			</div>
-			<div class="ui grid">
-				<div class="ui five wide column">
-					<h3 class="ui header">Summary</h3>
-					<div class="ui styled accordion">
-						<div class="active title">
-							<i class="dropdown icon"></i>
-							Group contains <b><?=$n?></b> studies
-						</div>
-						<div class="active content">
-							<?DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);?>
-						</div>
-						<div class="title">
-							<i class="dropdown icon"></i>
-							SQL
-						</div>
-						<div class="content">
-							<tt><?=PrintSQL($sqlstring)?></tt>
-						</div>
-						<div class="title">
-							<i class="dropdown icon"></i>
-							MR summary
-						</div>
-						<div class="content">
-						<?
-							DisplayMRProtocolSummary($studylist);
-						?>
-						</div>
-					</div>
-				</div>
-				<div class="ui five wide column">
-					<h3 class="ui header">Options</h3>
-					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
-					<br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all">Include observations</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min">Include observations and only UID</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min&groupobservations=byvalue">Include observations and only UID and group observations by value</a>
-				</div>
-				<div class="ui six wide column">
-					<h3 class="ui header">Edit group members</h3>
-					<form action="groups.php" method="post" class="ui form">
-					<input type="hidden" name="action" value="updatestudygroup">
-					<input type="hidden" name="id" value="<?=$id?>">
-					<?
-						$studies = "";
-						$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$studynum = $row['study_num'];
-							$uid = $row['uid'];
-							$studies .=  $uid . $studynum . "\n";
-						}
-						?>
-						<textarea name='studylist' style="font-family: monospace; font-size: larger;"><?=$studies?></textarea>
-						<br><br>
-						<div align="right">
-							<button class="ui primary button" type="submit">Update</button>
-						</div>
-					</form>
-				</div>
-			</div>
-		</div>
-		<div class="ui bottom attached segment">
-		<?
-
-		/* ------------------ study group type ------------------- */
-		if ($grouptype == "study") {
-		$csv = "";
-
-		/* get the demographics (study level) */
-		$sqlstring = "select c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id group by d.uid order by d.uid,b.study_num";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* get the demographics (study level, one row per study), before the summary below displays them.
+		   Not grouped by subject: "group by d.uid" with b.* fails under ONLY_FULL_GROUP_BY, and $studylist
+		   needs every study for the MR summary */
+		$sqlstring = "select c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$studyid = $row['study_id'];
 			$studynum = $row['study_num'];
@@ -1026,6 +1028,90 @@
 		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
 		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
 		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
+
+		?>
+		<div class="ui top attached grey segment">
+			<div class="ui two column grid">
+				<div class="ui column">
+					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?></h2>
+				</div>
+				<div class="ui right aligned column">
+					<? DeleteGroupButton($id, $group); ?>
+				</div>
+			</div>
+			<div class="ui grid">
+				<div class="ui five wide column">
+					<h3 class="ui header">Summary</h3>
+					<div class="ui styled accordion">
+						<div class="active title">
+							<i class="dropdown icon"></i>
+							Group contains <b><?=$n?></b> studies
+						</div>
+						<div class="active content">
+							<?DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);?>
+						</div>
+						<div class="title">
+							<i class="dropdown icon"></i>
+							SQL
+						</div>
+						<div class="content">
+							<tt><?=PrintSQL($sqlstring)?></tt>
+						</div>
+						<div class="title">
+							<i class="dropdown icon"></i>
+							MR summary
+						</div>
+						<div class="content">
+						<?
+							DisplayMRProtocolSummary($studylist);
+						?>
+						</div>
+					</div>
+				</div>
+				<div class="ui five wide column">
+					<h3 class="ui header">Options</h3>
+					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
+					<br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all">Include observations</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min">Include observations and only UID</a><br>
+					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min&groupobservations=byvalue">Include observations and only UID and group observations by value</a>
+				</div>
+				<div class="ui six wide column">
+					<h3 class="ui header"><?=($canedit ? "Edit group members" : "Group members")?></h3>
+					<form action="groups.php" method="post" class="ui form">
+					<?=CSRFTokenField()?>
+					<input type="hidden" name="action" value="updatestudygroup">
+					<input type="hidden" name="id" value="<?=$id?>">
+					<?
+						$studies = "";
+						$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $id);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+						mysqli_stmt_close($stmt);
+						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							$studynum = $row['study_num'];
+							$uid = $row['uid'];
+							$studies .=  $uid . $studynum . "\n";
+						}
+						?>
+						<textarea name='studylist' style="font-family: monospace; font-size: larger;" <?=($canedit ? "" : "readonly")?>><?=$h($studies)?></textarea>
+						<? if ($canedit) { ?>
+						<br><br>
+						<div align="right">
+							<button class="ui primary button" type="submit">Update</button>
+						</div>
+						<? } ?>
+					</form>
+				</div>
+			</div>
+		</div>
+		<div class="ui bottom attached segment">
+		<?
+
+		/* ------------------ study group type ------------------- */
+		if ($grouptype == "study") {
+
 
 		if ($observations == "all") {
 			/* an empty group would produce "in ()", a SQL syntax error; "in (NULL)" matches nothing */
@@ -1090,13 +1176,14 @@
 			}
 		}
 
-		/* setup the CSV header */
+		/* setup the CSV header. Rows are collected as arrays and quoted by CsvLine() when the file is written */
 		if ($columns == "min") {
-			$csv = "UID";
+			$csvheader = array("UID");
 		}
 		else {
-			$csv = "Initials,UID,StudyAge,CalcStudyAge,Sex,SubGroup,Weight,Handedness,Education,AltUIDs,StudyID,Description,AltStudyID,Modality,StudyDate,Operator,Physician,Site";
+			$csvheader = array("Initials","UID","StudyAge","CalcStudyAge","Sex","SubGroup","Weight","Handedness","Education","AltUIDs","StudyID","Description","AltStudyID","Modality","StudyDate","Operator","Physician","Site");
 		}
+		$csvrows = array();
 
 		?>
 			<table>
@@ -1109,6 +1196,7 @@
 						<span class="tiny">Click columns to sort. May be slow for large tables</span>
 
 						<form action="groups.php" method="post">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="action" value="removegroupitem">
 
@@ -1143,19 +1231,22 @@
 									<?
 									if (count($observationnames) > 0) {
 										foreach ($observationnames as $observationname) {
-											echo "<th>$observationname</th>";
-											$csv .= ",\"$observationname\"";
+											echo "<th>" . $h($observationname) . "</th>";
+											$csvheader[] = $observationname;
 										}
 									}
 									?>
-									<th>Remove</th>
+									<? if ($canedit) { ?><th>Remove</th><? } ?>
 								</tr>
 								</thead>
 								<tbody>
 								<?
 								/* reset the result pointer to 0 to iterate through the results again */
-								$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id order by d.uid,b.study_num";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'i', $id);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+								mysqli_stmt_close($stmt);
 								//mysqli_data_seek($result,0);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$studyid = $row['study_id'];
@@ -1209,50 +1300,50 @@
 									$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
 
 									if ($columns == "min") {
-										$csv .= "\n\"$uid\"";
+										$csvrow = array($uid);
 									}
 									else {
-										$csv .= "\n\"$name\",\"$uid\",\"$studyAge\",\"$calcStudyAge\",\"$gender\",\"$subgroup\",\"$weight\",\"$handedness\",\"$education\",\"" . implode2(', ',$altuids) . "\",\"$uid$studynum\",\"$studydesc\",\"$studyalternateid\",\"$studymodality\",\"$studydatetime\",\"$studyoperator\",\"$studyperformingphysician\",\"$studysite\"";
+										$csvrow = array($name, $uid, $studyAge, $calcStudyAge, $gender, $subgroup, $weight, $handedness, $education, implode2(', ',$altuids), "$uid$studynum", $studydesc, $studyalternateid, $studymodality, $studydatetime, $studyoperator, $studyperformingphysician, $studysite);
 									}
 									?>
 									<tr>
 										<? if ($columns != "min") { ?>
-											<td><?=$name?></td>
+											<td><?=$h($name)?></td>
 										<? } ?>
-										<td class="tt"><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
+										<td class="tt"><a href="subjects.php?id=<?=(int)$subjectid?>"><?=$h($uid)?></a></td>
 										<? if ($columns != "min") { ?>
-											<td><?=$birthdate?></td>
-											<td><?=$studydatetime?></td>
-											<td><?=$studyAge?></td>
-											<td><?=$calcStudyAge?></td>
-											<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-											<td style="color:<?=$color?>"><?=$gender?></td>
-											<td style="font-size:8pt"><?=$ethnicity1?> <?=$ethnicity2?></td>
-											<td style="font-size:8pt"><?=$subgroup?></td>
-											<td style="font-size:8pt"><?=$studyvisittype?></td>
+											<td><?=$h($birthdate)?></td>
+											<td><?=$h($studydatetime)?></td>
+											<td><?=$h($studyAge)?></td>
+											<td><?=$h($calcStudyAge)?></td>
+											<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
+											<td style="color:<?=$color?>"><?=$h($gender)?></td>
+											<td style="font-size:8pt"><?=$h($ethnicity1)?> <?=$h($ethnicity2)?></td>
+											<td style="font-size:8pt"><?=$h($subgroup)?></td>
+											<td style="font-size:8pt"><?=$h($studyvisittype)?></td>
 											<? if ($studyweight <= 0) { $color = "red"; } else { $color="black"; } ?>
 											<td style="color:<?=$color?>"><?=number_format((float)$studyweight,1)?>kg</td>
-											<td><?=$handedness?></td>
-											<td><?=$education?></td>
-											<td style="font-size:8pt"><?=implode2(', ',$altuids)?></td>
-											<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-											<td style="font-size:8pt"><?=$studydesc?></td>
-											<td><?=$studyalternateid?></td>
-											<td><?=$studymodality?></td>
-											<td><?=$studyoperator?></td>
-											<td><?=$studyperformingphysician?></td>
-											<td style="font-size:8pt"><?=$studysite?></td>
+											<td><?=$h($handedness)?></td>
+											<td><?=$h($education)?></td>
+											<td style="font-size:8pt"><?=$h(implode2(', ',$altuids))?></td>
+											<td><a href="studies.php?id=<?=(int)$studyid?>"><?=$h($uid)?><?=$h($studynum)?></a></td>
+											<td style="font-size:8pt"><?=$h($studydesc)?></td>
+											<td><?=$h($studyalternateid)?></td>
+											<td><?=$h($studymodality)?></td>
+											<td><?=$h($studyoperator)?></td>
+											<td><?=$h($studyperformingphysician)?></td>
+											<td style="font-size:8pt"><?=$h($studysite)?></td>
 										<? } ?>
 										<?
 										if (count($observationnames) > 0) {
 											if ($groupobservations == "byvalue") {
 												foreach ($observationnames as $observationname) {
-													$csv .= ",\"" . ($observationdata[$subjectid][$observationname] ?? '') . "\"";
+													$csvrow[] = $observationdata[$subjectid][$observationname] ?? '';
 													?>
 													<td class="seriesrow">
 														<?
 														if (isset($observationdata[$subjectid][$observationname])) {
-															echo $observationdata[$subjectid][$observationname];
+															echo $h($observationdata[$subjectid][$observationname]);
 														}
 														?>
 													</td>
@@ -1261,13 +1352,13 @@
 											}
 											else {
 												foreach ($observationnames as $observation) {
-													$csv .= ",\"" . implode("; ", (array)($observationdata[$subjectid][$observation]['value'] ?? array())) . "\"";
+													$csvrow[] = implode("; ", (array)($observationdata[$subjectid][$observation]['value'] ?? array()));
 													?>
 													<td class="seriesrow">
 														<?
 														if (isset($observationdata[$subjectid][$observation]['value'])) {
 															foreach ($observationdata[$subjectid][$observation]['value'] as $value) {
-																echo "$value<br>";
+																echo $h($value) . "<br>";
 															}
 														}
 														?>
@@ -1277,28 +1368,32 @@
 											}
 										}
 										?>
-										<!--<td><a href="groups.php?action=removegroupitem&itemid=<?=$itemid?>&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a></td>-->
-										<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
+										<? if ($canedit) { ?><td><input type="checkbox" name="itemid[]" value="<?=(int)$itemid?>"></td><? } ?>
 									</tr>
 									<?
+									$csvrows[] = $csvrow;
 								}
 								?>
+								<? if ($canedit) { ?>
 								<tr>
 									<td colspan="100" align="right">
 										<input type="submit" value="Remove">
+									</td>
+								</tr>
+								<? } ?>
+								</tbody>
+							</table>
 						</form>
 					</td>
 				</tr>
-				</tbody>
-			</table>
-			</td>
-			</tr>
 			</table>
 			<?
 
 			/* ---------- generate csv file ---------- */
 			/* group names are free text; strip anything that could form a path (e.g. "../") from the temp filename */
 			$filename = preg_replace('/[^A-Za-z0-9_-]/', '_', $groupname ?? '') . "_" . GenerateRandomString(10) . ".csv";
+			$csv = CsvLine($csvheader);
+			foreach ($csvrows as $csvrow) { $csv .= "\n" . CsvLine($csvrow); }
 			file_put_contents("/tmp/" . $filename, $csv);
 			?>
 			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
@@ -1311,20 +1406,30 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CsvLine ---------------------------- */
+	/* -------------------------------------------- */
+	/* one CSV line from an array of values: every field quoted, embedded quotes doubled */
+	function CsvLine($fields) {
+		$quoted = array();
+		foreach ($fields as $field) {
+			$quoted[] = '"' . str_replace('"', '""', (string)$field) . '"';
+		}
+		return implode(",", $quoted);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- ViewSubjectGroup ------------------- */
 	/* -------------------------------------------- */
 	function ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations) {
 
 		/* get the general group information */
 		$id = (int)$id;
-		$sqlstring = "select * from groups where group_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$groupname = $row['group_name'] ?? '';
-		$grouptype = $row['group_type'] ?? '';
+		$group = GetGroup($id);
+		$groupname = $group['group_name'] ?? '';
+		$grouptype = $group['group_type'] ?? '';
+		$canedit = CanEditGroup($group);
+		$h = function($v) { return htmlspecialchars((string)$v); };
 
 		?>
 		<script>
@@ -1348,8 +1453,11 @@
 		$id = (int)$id;
 
 		/* get the actual group data (subject level) */
-		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectid = $row['subject_id'];
 			$name = $row['name'];
@@ -1392,19 +1500,20 @@
 				<h1 class="ui header">
 					<i class="user friends icon"></i>
 					<div class="content">
-						<?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon(); ?>
+						<?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?>
 						<div class="sub header">Subject group</div>
 					</div>
 				</h1>
 				<?
 					DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
 				?>
-				<button class="ui tiny red button">Delete Group</button>
+				<? DeleteGroupButton($id, $group); ?>
 			</div>
 		</div>
 		
 		<div class="ui segment">
 			<form action="groups.php" method="post">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="action" value="removegroupitem">
 				<table class="ui celled selectable grey very compact table">
@@ -1419,7 +1528,7 @@
 						<th>Handedness</th>
 						<th>Education</th>
 						<th>Alt UIDs</th>
-						<th>Remove<br>from group</th>
+						<? if ($canedit) { ?><th>Remove<br>from group</th><? } ?>
 					</thead>
 					<?
 					/* reset the result pointer to 0 to iterate through the results again */
@@ -1445,30 +1554,32 @@
 						$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
 						?>
 						<tr>
-							<td><?=$name?></td>
+							<td><?=$h($name)?></td>
 							<td>
-								<a href="subjects.php?id=<?=$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$uid?></a>
+								<a href="subjects.php?id=<?=(int)$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$h($uid)?></a>
 							</td>
 							<? if ($age <= 0) { $color = "red"; } else { $color="black"; } ?>
 							<td style="color:<?=$color?>"><?=number_format((float)$age,1)?>Y</td>
-							<? if (!in_array(strtoupper($gender),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-							<td style="color:<?=$color?>"><?=$gender?></td>
-							<td><?=$ethnicity1?></td>
-							<td><?=$ethnicity2?></td>
+							<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
+							<td style="color:<?=$color?>"><?=$h($gender)?></td>
+							<td><?=$h($ethnicity1)?></td>
+							<td><?=$h($ethnicity2)?></td>
 							<td><?=number_format((float)$weight,1)?>kg</td>
-							<td><?=$handedness?></td>
-							<td><?=$education?></td>
-							<td><span style="font-family: monospace; font-size: larger;"><?=implode2(', ',$altuids)?></span></td>
-							<td><input type="checkbox" name="itemid[]" value="<?=$itemid?>"></td>
+							<td><?=$h($handedness)?></td>
+							<td><?=$h($education)?></td>
+							<td><span style="font-family: monospace; font-size: larger;"><?=$h(implode2(', ',$altuids))?></span></td>
+							<? if ($canedit) { ?><td><input type="checkbox" name="itemid[]" value="<?=(int)$itemid?>"></td><? } ?>
 						</tr>
 						<?
 					}
 					?>
+					<? if ($canedit) { ?>
 					<tr>
 						<td colspan="11" class="ui right aligned">
 							<input type="submit" class="ui red button" value="Remove">
 						</td>
 					</tr>
+					<? } ?>
 				</table>
 			</form>
 		</div>
@@ -1526,19 +1637,19 @@
 					$count = $row['count'];
 					?>
 					<tr>
-						<td><?=$seriesdesc?></td>
-						<td><?=$series_tr?></td>
-						<td><?=$series_te?></td>
-						<td><?=$series_flip?></td>
-						<td><?=$phaseencodedir?></td>
-						<td><?=$PhaseEncodingDirectionPositive?></td>
-						<td><?=$series_spacingx?></td>
-						<td><?=$series_spacingy?></td>
-						<td><?=$series_spacingz?></td>
-						<td><?=$img_rows?></td>
-						<td><?=$img_cols?></td>
-						<td><?=$img_slices?></td>
-						<td><?=$count?></td>
+						<td><?=htmlspecialchars((string)$seriesdesc)?></td>
+						<td><?=htmlspecialchars((string)$series_tr)?></td>
+						<td><?=htmlspecialchars((string)$series_te)?></td>
+						<td><?=htmlspecialchars((string)$series_flip)?></td>
+						<td><?=htmlspecialchars((string)$phaseencodedir)?></td>
+						<td><?=htmlspecialchars((string)$PhaseEncodingDirectionPositive)?></td>
+						<td><?=htmlspecialchars((string)$series_spacingx)?></td>
+						<td><?=htmlspecialchars((string)$series_spacingy)?></td>
+						<td><?=htmlspecialchars((string)$series_spacingz)?></td>
+						<td><?=htmlspecialchars((string)$img_rows)?></td>
+						<td><?=htmlspecialchars((string)$img_cols)?></td>
+						<td><?=htmlspecialchars((string)$img_slices)?></td>
+						<td><?=htmlspecialchars((string)$count)?></td>
 					</tr>
 					<?
 				}
@@ -1568,7 +1679,7 @@
 					<?
 					foreach ($genders as $key => $value) {
 						$pct = number_format(($value/$n)*100, 1);
-						echo "$key: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
+						echo htmlspecialchars((string)$key) . ": <b>$value</b> <span class=\"small\">($pct%)</span><br>";
 					}
 					?>
 				</td>
@@ -1683,6 +1794,7 @@
 				</div>
 				<div class="ten wide column" align="right">
 					<form action="groups.php" method="post" name="theform" id="theform">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="action" value="add">
 					<div class="ui labeled action input">
 						<input type="text" name="groupname" placeholder="Group name" required>
@@ -1734,6 +1846,7 @@
 					$name = $row['group_name'];
 					$ownerusername = $row['ownerusername'];
 					$grouptype = $row['group_type'];
+					$canedit = CanEditGroup($row);
 
 					$id = (int)$id;
 					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id"; /* int from db, safe to inline */
@@ -1742,13 +1855,18 @@
 					$count = $row2['count'];
 					?>
 					<tr>
-						<td><a href="groups.php?action=viewgroup&id=<?=$id?>"><?=$name?></a></td>
-						<td><?=$grouptype?></td>
-						<td><?=$ownerusername?></td>
-						<td><?=$count?></td>
+						<td><a href="groups.php?action=viewgroup&id=<?=$id?>"><?=htmlspecialchars($name ?? '')?></a></td>
+						<td><?=htmlspecialchars($grouptype ?? '')?></td>
+						<td><?=htmlspecialchars($ownerusername ?? '')?></td>
+						<td><?=(int)$count?></td>
 						<td align="right">
-							<? if ($ownerusername == $GLOBALS['username']) { ?>
-								<a href="groups.php?action=delete&id=<?=$id?>" style="color:red"><i class="trash icon"></i></a>
+							<? if ($canedit) { ?>
+								<form action="groups.php" method="post" style="display: inline" onsubmit="return confirm('Delete this group?')">
+									<?=CSRFTokenField()?>
+									<input type="hidden" name="action" value="delete">
+									<input type="hidden" name="id" value="<?=$id?>">
+									<button type="submit" class="ui basic icon button" style="box-shadow: none; padding: 0; color: red" title="Delete group"><i class="trash icon"></i></button>
+								</form>
 							<? } ?>
 						</td>
 					</tr>
@@ -1770,8 +1888,11 @@
 		$studies = array();
 		$protocols = array();
 
-		$sqlstring = "select a.subjectgroup_id, d.uid, d.birthdate, d.gender, b.study_datetime, b.study_ageatscan, b.study_num, b.study_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.subjectgroup_id, d.uid, d.birthdate, d.gender, b.study_datetime, b.study_ageatscan, b.study_num, b.study_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$studyid = $row['study_id'];
 			if (($studyid != "") && (strtolower($studyid) != "null")) {
@@ -1807,7 +1928,7 @@
 				<th>CalcAge</th>
 				<?
 				foreach ($protocols as $prot => $val) {
-					?><th><?=$prot?></th><?
+					?><th><?=htmlspecialchars((string)$prot)?></th><?
 				}
 				?>
 			</thead>
@@ -1815,8 +1936,8 @@
 		foreach ($studies as $studyid => $study) {
 			?>
 			<tr>
-				<td><?=$study['uid']?></td>
-				<td><?=$study['sex']?></td>
+				<td><?=htmlspecialchars($study['uid'] ?? '')?></td>
+				<td><?=htmlspecialchars($study['sex'] ?? '')?></td>
 				<td><?=number_format((float)$study["studyage"], 1)?></td>
 				<td><?=number_format((float)$study["calcstudyage"], 1)?></td>
 				<?

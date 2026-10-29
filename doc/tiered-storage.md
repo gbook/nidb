@@ -215,7 +215,8 @@ New worker following the established module contract (`ModuleRunningCheckIn()`,
 
 **Per job (one `storage_tier_migration` row), state machine (resumable via `next_state`):**
 1. `pending` → claim row, re-check study is idle (not being archived/QC'd/pipelined — see §2.6).
-   Acquire a per-study lock (`lockdir`).
+   Acquire an exclusive lock on the study in `object_locks` (owner_type `tiermigration`; see
+   `doc/data-transfer.md` §9.1).
 2. `copying` → copy `{fromroot}/{UID}/{studynum}` → `{toroot}/{UID}/{studynum}` with `rsync -a`
    (cross-filesystem safe; tiers may be different mounts, so **no `rename()`**). Update
    `bytes_done`/`file_count` for progress.
@@ -247,8 +248,9 @@ runs to completion.
 - A study is **migratable only when idle.** Define idle = not currently referenced by an active
   job in the archive/QC/MRIQA/pipeline/export queues. The module checks these before claiming and
   holds the per-study lock for the duration.
-- Conversely, those modules must **refuse/defer** work on a study whose migration row is in a
-  non-terminal state (add a cheap guard: check `storage_tier_migration` before operating).
+- Conversely, those modules must **refuse/defer** work on a study that has an exclusive lock.
+  The lock lives in the shared `object_locks` table, also used by NiDB → NiDB transfers
+  (`doc/data-transfer.md` §9.1), so one `GetLock()` check covers both features.
 - `moduleManager` already reaps stale modules via `module_procs`; `datatier` joins that mechanism
   (with a long/without-checkin allowance like backup/export, since big copies are slow).
 

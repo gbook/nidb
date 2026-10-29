@@ -1199,6 +1199,7 @@
 		<div class="ui bottom attached menu analysisactions">
 			<div class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles">
 				<div class="ui action input">
+					<?=CSRFTokenField()?> <!-- groups.php requires the token for addstudiestogroup -->
 					<select name="studygroupid" class="ui selection dropdown">
 						<option value="">Add to study group...
 						<?
@@ -1208,7 +1209,7 @@
 								$groupid = $row['group_id'];
 								$groupname = $row['group_name'];
 								?>
-								<option value="<?=$groupid?>"><?=$groupname?>
+								<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
 								<?
 							}
 						?>
@@ -1432,6 +1433,7 @@
 								Studies group
 							</td>
 							<td valign="top" style="border-top:none">
+								<?=CSRFTokenField()?> <!-- groups.php requires the token for addstudiestogroup -->
 								<select name="studygroupid" style="width:150px">
 									<?
 										$sqlstring = "select * from groups where group_type = 'study'";
@@ -1440,7 +1442,7 @@
 											$groupid = $row['group_id'];
 											$groupname = $row['group_name'];
 											?>
-											<option value="<?=$groupid?>"><?=$groupname?>
+											<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
 											<?
 										}
 									?>
