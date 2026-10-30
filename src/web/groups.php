@@ -41,12 +41,11 @@
 	//PrintVariable($_POST);
 
 	/* ----- setup variables ----- */
-	$action = GetSafeAction(array("add", "delete", "addsubjectstogroup", "addstudiestogroup", "addseriestogroup", "removegroupitem", "renamegroup", "updatestudygroup")); /* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("add", "delete", "addsubjectstogroup", "addstudiestogroup", "removegroupitem", "renamegroup", "updatestudygroup", "updatesubjectgroup")); /* mutating actions require POST + CSRF token */
 	$id = (int)GetVariable("id");
 	$groupid = (int)GetVariable("groupid");
 	$subjectgroupid = (int)GetVariable("subjectgroupid");
 	$studygroupid = (int)GetVariable("studygroupid");
-	$seriesgroupid = (int)GetVariable("seriesgroupid");
 	$groupname = GetVariable("groupname");
 	$grouptype = GetVariable("grouptype");
 	$owner = GetVariable("owner");
@@ -55,11 +54,9 @@
 	$seriesids = GetVariable("seriesid");
 	$studyids = GetVariable("studyid");
 	$modality = GetVariable("modality");
-	$itemid = GetVariable("itemid"); /* single id (trash button) or array of ids (itemid[] checkboxes); sanitized in RemoveGroupItem */
-	$observations = GetVariable("observations");
-	$columns = GetVariable("columns");
-	$groupobservations = GetVariable("groupobservations");
+	$itemid = GetVariable("itemid"); /* array of ids (itemid[] from the member grid); sanitized in RemoveGroupItem */
 	$studylist = GetVariable("studylist");
+	$uidlist = GetVariable("uidlist");
 	$displaytype = GetVariable("displaytype");
 
 	/* determine action */
@@ -90,12 +87,6 @@
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("groups.php?action=viewgroup&id=$studygroupid");
 			break;
-		case 'addseriestogroup':
-			ob_start();
-			AddSeriesToGroup($seriesgroupid, $seriesids, $modality);
-			$_SESSION['flash'] = ob_get_clean();
-			RedirectTo("groups.php?action=viewgroup&id=$seriesgroupid");
-			break;
 		case 'removegroupitem':
 			ob_start();
 			RemoveGroupItem($id, $itemid);
@@ -114,12 +105,15 @@
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("groups.php?action=viewgroup&id=$id");
 			break;
-		case 'viewimagingsummary':
-			ViewImagingSummary($id);
+		case 'updatesubjectgroup':
+			ob_start();
+			UpdateSubjectGroup($id, $uidlist);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("groups.php?action=viewgroup&id=$id");
 			break;
 		case 'viewgroup':
 			ShowFlashMessage();
-			ViewGroup($id, $observations, $columns, $groupobservations);
+			ViewGroup($id);
 			break;
 		case 'viewgrouplist':
 		default:
@@ -181,7 +175,7 @@
 		$hgroupname = htmlspecialchars($groupname);
 		if ($groupname == "") { Error("Group name cannot be blank"); return; }
 		if (mb_strlen($groupname) > 255) { Error("Group name must be 255 characters or less"); return; }
-		if (!in_array($grouptype, array('nda', 'series', 'study', 'subject'), true)) { Error("Invalid group type"); return; }
+		if (!in_array($grouptype, array('nda', 'study', 'subject'), true)) { Error("Invalid group type"); return; }
 
 		/* get userid */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from users where username = ?");
@@ -210,7 +204,7 @@
 		$numadded = 0;
 		$numexisting = 0;
 		$numnotfound = 0;
-		/* subject rows are stored with modality '' (older rows may have NULL), so the duplicate check matches both */
+		/* subject rows are stored with modality ''. The duplicate check ignores modality, since older rows may have NULL */
 		/* if the request came from the subjects.php page */
 		if (is_array($uids) && !empty($uids)) {
 			foreach ($uids as $uid) {
@@ -222,8 +216,8 @@
 				mysqli_stmt_close($stmt);
 				if ($uidid <= 0) { $numnotfound++; continue; }
 
-				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and (modality = '' or modality is null)");
+				/* check if its already in the group */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ?");
 				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -258,8 +252,8 @@
 				mysqli_stmt_close($stmt);
 				if ($uidid <= 0) { $numnotfound++; continue; }
 
-				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and (modality = '' or modality is null)");
+				/* check if its already in the group */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ?");
 				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $uidid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
@@ -309,9 +303,9 @@
 				mysqli_stmt_close($stmt);
 				if ($studyid <= 0) { $numnotfound++; continue; }
 
-				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
-				mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $modality);
+				/* check if its already in the group. Not by modality: the same study can arrive with a different modality string from different pages */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ?");
+				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $studyid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
@@ -339,9 +333,9 @@
 				if (!$row) { $numnotfound++; continue; }
 				$studyModality = strtolower($row['study_modality'] ?? '');
 
-				/* check if its already in the db */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
-				mysqli_stmt_bind_param($stmt, 'iis', $groupid, $studyid, $studyModality);
+				/* check if its already in the group (any modality) */
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ?");
+				mysqli_stmt_bind_param($stmt, 'ii', $groupid, $studyid);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 0) {
 					$numexisting++;
@@ -364,40 +358,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- AddSeriesToGroup ------------------- */
-	/* -------------------------------------------- */
-	function AddSeriesToGroup($groupid, $seriesids, $modality) {
-		if (!CheckGroupType($groupid, 'series')) { return; }
-		/* the modality becomes part of a table name when the group is viewed */
-		$modality = strtolower($modality ?? '');
-		if (GetSeriesTableName($modality) == '') { Error("Invalid modality"); return; }
-
-		$numadded = 0;
-		$numexisting = 0;
-		if (!is_array($seriesids)) { $seriesids = array(); }
-		foreach ($seriesids as $seriesid) {
-			/* check if its already in the db */
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from group_data where group_id = ? and data_id = ? and modality = ?");
-			mysqli_stmt_bind_param($stmt, 'iis', $groupid, $seriesid, $modality);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$numexisting++;
-			}
-			else {
-				/* insert the seriesids */
-				$stmtInsert = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality) values (?, ?, ?)");
-				mysqli_stmt_bind_param($stmtInsert, 'iis', $groupid, $seriesid, $modality);
-				MySQLiBoundQuery($stmtInsert, __FILE__, __LINE__);
-				mysqli_stmt_close($stmtInsert);
-				$numadded++;
-			}
-			mysqli_stmt_close($stmt);
-		}
-		Notice("<b>$numadded</b> series added<br><b>$numexisting</b> series already in group");
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- UpdateStudyGroup ------------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyGroup($id, $studylist) {
@@ -414,7 +374,7 @@
 		if (!CanEditGroup($group)) { Error("Only the group's owner or an admin can edit its members"); return; }
 		if ($group['group_type'] != 'study') { Error("Only study groups can be updated from a study list"); return; }
 
-		$studies = preg_split('/\s+/', $studylist ?? '');
+		$studies = preg_split('/[\s,]+/', $studylist ?? '', -1, PREG_SPLIT_NO_EMPTY); /* one per line; commas also accepted */
 		$studies = array_unique($studies);
 
 		/* look up all the studies first, so a failure part way through can't leave the group half emptied.
@@ -471,7 +431,77 @@
 		}
 
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- UpdateSubjectGroup ----------------- */
+	/* -------------------------------------------- */
+	/* replace a subject group's members with the subjects in $uidlist (UIDs, one per line) */
+	function UpdateSubjectGroup($id, $uidlist) {
+
+		$id = (int)$id;
+		if ($id <= 0) {
+			Error("ID blank");
+			return;
+		}
+
+		/* only subject groups are edited by UID list (the delete below would empty any group type) */
+		$group = GetGroup($id);
+		if (!$group) { Error("Group not found"); return; }
+		if (!CanEditGroup($group)) { Error("Only the group's owner or an admin can edit its members"); return; }
+		if ($group['group_type'] != 'subject') { Error("Only subject groups can be updated from a UID list"); return; }
+
+		$uids = preg_split('/[\s,]+/', $uidlist ?? '', -1, PREG_SPLIT_NO_EMPTY); /* one per line; commas also accepted */
+		$uids = array_unique($uids);
+
+		/* look up all the subjects first, so a failure part way through can't leave the group half emptied.
+		   group_data is an Aria table, so the transaction below doesn't make the delete + inserts atomic */
+		$found = array();
+		$notfound = array();
+		foreach ($uids as $uid) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select subject_id from subjects where uid = ?");
+			mysqli_stmt_bind_param($stmt, 's', $uid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row) {
+				$found[(int)$row['subject_id']] = 1;
+			}
+			else {
+				$notfound[] = htmlspecialchars($uid);
+			}
+		}
+
+		/* start transaction */
+		$sqlstring = "start transaction";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* delete all old group entries */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from group_data where group_id = ?");
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+
+		/* insert the subjectids. Stored with modality '', same as AddSubjectsToGroup */
+		$numadded = 0;
+		foreach ($found as $subjectid => $unused) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into group_data (group_id, data_id, modality, date_added) values (?, ?, '', now())");
+			mysqli_stmt_bind_param($stmt, 'ii', $id, $subjectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$numadded++;
+		}
+
+		/* commit the transaction */
+		$sqlstring = "commit";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		Notice("Group updated: <b>$numadded</b> subjects in group");
+		if (count($notfound) > 0) {
+			Warning("Subjects not found (possibly invalid UID?): <tt>" . implode(", ", $notfound) . "</tt>");
+		}
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- RemoveGroupItem -------------------- */
@@ -497,6 +527,24 @@
 		}
 		Notice("<b>$numremoved</b> item(s) removed from group");
 		return;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoveGroupDuplicates -------------- */
+	/* -------------------------------------------- */
+	/* removes repeated members (same data_id) from a subject or study group, keeping the earliest row.
+	   Not for series groups, where the same data_id can be different series in different modalities.
+	   Returns the number of rows removed */
+	function RemoveGroupDuplicates($id) {
+		$id = (int)$id;
+		$sqlstring = "delete a from group_data a join group_data b on a.group_id = b.group_id and a.data_id = b.data_id and a.subjectgroup_id > b.subjectgroup_id where a.group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$numremoved = mysqli_affected_rows($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
+		return max(0, $numremoved);
 	}
 
 
@@ -626,7 +674,7 @@
 	/* -------------------------------------------- */
 	/* ------- ViewGroup -------------------------- */
 	/* -------------------------------------------- */
-	function ViewGroup($id, $observations, $columns, $groupobservations) {
+	function ViewGroup($id) {
 
 		/* get the general group information */
 		$row = GetGroup($id);
@@ -634,955 +682,471 @@
 		$groupname = $row['group_name'] ?? '';
 		$grouptype = $row['group_type'] ?? '';
 
-		//PrintVariable($groupname);
-		//PrintVariable($grouptype);
-
 		if (CanEditGroup($row)) {
 			DisplayRenameGroupModal($id, $groupname);
 		}
 
-		if ($grouptype == 'series')
-			ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations);
-		if ($grouptype == 'study')
-			ViewStudyGroup($id, $groupname, $observations, $columns, $groupobservations);
-		if ($grouptype == 'subject')
-			ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations);
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- GetSeriesGroupMembers -------------- */
-	/* -------------------------------------------- */
-	/* returns array(buffered result or null, sql) of the series (with study/subject info) of one modality in a series group */
-	function GetSeriesGroupMembers($id, $modality) {
-		$id = (int)$id;
-		$modality = strtolower($modality);
-		$seriesTable = GetSeriesTableName($modality);
-		if ($seriesTable == '') { return array(null, ''); }
-		$seriesIdColumn = $modality . "series_id";
-
-		$sqlstring = "select a.subjectgroup_id, b.*, c.study_num, c.study_datetime, c.study_ageatscan, e.*, (datediff(b.series_datetime, e.birthdate)/365.25) 'age' from group_data a left join $seriesTable b on a.data_id = b.$seriesIdColumn left join studies c on b.study_id = c.study_id left join enrollment d on c.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.group_id = ? and a.modality = ? and e.subject_id is not null";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'is', $id, $modality);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $modality]);
-		mysqli_stmt_close($stmt);
-
-		return array($result, $sqlstring);
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- ViewSeriesGroup -------------------- */
-	/* -------------------------------------------- */
-	function ViewSeriesGroup($id, $groupname, $observations, $columns, $groupobservations) {
-
-		/* get the general group information */
-		$id = (int)$id;
-		$group = GetGroup($id);
-		$groupname = $group['group_name'] ?? '';
-		$grouptype = $group['group_type'] ?? '';
-		$canedit = CanEditGroup($group);
-		$h = function($v) { return htmlspecialchars((string)$v); };
-
-		?>
-		<script>
-			$(document).ready(function() { $("#studytable").tablesorter(); } );
-		</script>
-
-		<?
-		/* (subject level) group statistics */
-		$totalage = 0;
-		$numage = 0;
-		$totalweight = 0;
-		$numweight = 0;
-		$n = 0;
-		$ages = array();
-		$weights = array();
-		$genders = array();
-		$educations = array();
-		$ethnicity1s = array();
-		$ethnicity2s = array();
-		$handednesses = array();
-		$modalities = array();
-		$serieslist = array();
-		$id = (int)$id;
-
-		/* get a distinct list of modalities... then get a list of series for each modality */
-		$sqlstring = "select distinct(modality) from group_data where group_id = ? order by modality";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			/* modality becomes a table name below; GetSeriesTableName() rejects anything that isn't a simple identifier */
-			if (GetSeriesTableName($row['modality'] ?? '') != '') {
-				$modalities[] = strtolower($row['modality']);
+		/* clean up duplicate members (added before the duplicate checks matched on data_id alone) */
+		if (($grouptype == 'study') || ($grouptype == 'subject')) {
+			$numremoved = RemoveGroupDuplicates($id);
+			if ($numremoved > 0) {
+				Notice("Removed <b>$numremoved</b> duplicate " . (($grouptype == 'study') ? "studies" : "subjects") . " from this group");
 			}
 		}
 
-		foreach ($modalities as $modality) {
-			/* get the demographics (series level) */
-			list($result, $sqlstring) = GetSeriesGroupMembers($id, $modality);
-			if (!$result) { continue; }
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				$studynum = $row['study_num'];
-				$studydesc = $row['study_desc'];
-				$studyalternateid = $row['study_alternateid'];
-				$studymodality = $row['study_modality'];
-				$studydatetime = $row['study_datetime'];
-				$studyoperator = $row['study_operator'];
-				$studyperformingphysician = $row['study_performingphysician'];
-				$studysite = $row['study_site'];
-				$studyinstitution = $row['study_institution'];
-				$studynotes = $row['study_notes'];
-				$subgroup = $row['enroll_subgroup'];
-				$seriesnum = $row['series_num'];
-
-				$subjectid = $row['subject_id'];
-				$name = $row['name'];
-				$birthdate = $row['birthdate'];
-				$age = $row['age'];
-				$gender = $row['gender'];
-				$ethnicity1 = $row['ethnicity1'];
-				$ethnicity2 = $row['ethnicity2'];
-				$weight = $row['weight'];
-				$handedness = $row['handedness'];
-				$education = $row['education'];
-				$uid = $row['uid'];
-
-				$serieslist[] = "$uid$studynum" . "_$seriesnum";
-				/* do some demographics calculations */
-				$n++;
-				if ($age > 0) {
-					$totalage += $age;
-					$numage++;
-					$ages[] = $age;
-				}
-				if ($weight > 0) {
-					$totalweight += $weight;
-					$numweight++;
-					$weights[] = $weight;
-				}
-				$genders[$gender ?? ''] = ($genders[$gender ?? ''] ?? 0) + 1;
-				$educations[$education ?? ''] = ($educations[$education ?? ''] ?? 0) + 1;
-				$ethnicity1s[$ethnicity1 ?? ''] = ($ethnicity1s[$ethnicity1 ?? ''] ?? 0) + 1;
-				$ethnicity2s[$ethnicity2 ?? ''] = ($ethnicity2s[$ethnicity2 ?? ''] ?? 0) + 1;
-				$handednesses[$handedness ?? ''] = ($handednesses[$handedness ?? ''] ?? 0) + 1;
-			}
+		if ($grouptype == 'study') {
+			ViewStudyGroup($id);
 		}
-		/* calculate some stats */
-		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
-		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
-		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
-		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
-			
-		?>
-		<div class="ui top attached grey segment">
-			<div class="ui two column grid">
-				<div class="ui column">
-					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?></h2>
-				</div>
-				<div class="ui right aligned column">
-					<? DeleteGroupButton($id, $group); ?>
-				</div>
-			</div>
-			<div class="ui grid">
-				<div class="ui four wide column">
-					<h3 class="ui header">Summary</h3>
-					<?
-						DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
-					?>
-						<br>
-					<div class="ui styled accordion">
-						<div class="title">
-							<i class="dropdown icon"></i>
-							SQL
-						</div>
-						<div class="content">
-							<tt><?=PrintSQL($sqlstring)?></tt>
-						</div>
-					</div>
-				</div>
-				<div class="ui four wide column">
-					<h3 class="ui header">Options</h3>
-					<p>No options available</p>
-				</div>
-				<div class="ui eight wide column">
-					<h3 class="ui header">Group members</h3>
-					
-					<!-- read-only list; series are added from search.php and removed with the trash icons below -->
-					<div class="ui form">
-						<textarea readonly><?=htmlspecialchars(implode("\n", $serieslist))?></textarea>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="ui bottom attached segment">
-
-		<table class="ui celled selectable grey very compact table">
-			<thead>
-				<th>Initials</th>
-				<th>UID</th>
-				<th>DOB</th>
-				<th>Age<br><span class="tiny" style="font-weight: normal;">from DICOM header</span></th>
-				<th>Age<br><span class="tiny" style="font-weight: normal;">calculated</span></th>
-				<th>Sex</th>
-				<th>Sub-group</th>
-				<th>Weight</th>
-				<th>Alt UIDs</th>
-				<th>Study ID</th>
-				<th>Description/Protocol</th>
-				<th>Modality</th>
-				<th>Date/time</th>
-				<th>Series #</th>
-				<th>Remove<br>from group</th>
-			</thead>
-			<?
-			/* get a distinct list of modalities... then get a list of series for each modality */
-
-			/* reset the result pointer to 0 to iterate through the results again */
-			foreach ($modalities as $modality) {
-				/* get the demographics (series level) */
-				list($result) = GetSeriesGroupMembers($id, $modality);
-				if (!$result) { continue; }
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$seriesdesc = $row['series_desc'];
-					$seriesprotocol = $row['series_protocol'];
-					$seriesdatetime = $row['series_datetime'];
-					$seriesnum = $row['series_num'];
-					$studynum = $row['study_num'];
-					$studydatetime = $row['study_datetime'];
-					$studyage = $row['study_ageatscan'];
-					$seriesmodality = strtoupper($modality);
-					$studyid = $row['study_id'];
-					$subgroup = $row['enroll_subgroup'] ?? '';
-
-					$itemid = $row['subjectgroup_id'];
-					$subjectid = $row['subject_id'];
-					$name = $row['name'];
-					$birthdate = $row['birthdate'];
-					//$age = $row['age'];
-					$gender = $row['gender'];
-					$ethnicity1 = $row['ethnicity1'];
-					$ethnicity2 = $row['ethnicity2'];
-					$weight = $row['weight'];
-					$handedness = $row['handedness'];
-					$education = $row['education'];
-					$uid = $row['uid'];
-					/* get list of alternate subject UIDs */
-					$altuids = GetAlternateUIDs($subjectid,'');
-
-					list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $studyage, $studydatetime);
-					
-					if ($studyAge == null)
-						$studyAge = "<span class='tiny'>null</span>";
-					else
-						$studyAge = number_format($studyAge,1);
-
-					if ($calcStudyAge == null)
-						$calcStudyAge = "<span class='tiny'>null</span>";
-					else
-						$calcStudyAge = number_format($calcStudyAge,1);
-					
-					$parts = explode("^", $name ?? "");
-					$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
-					?>
-					<tr>
-						<td><?=$h($name)?></td>
-						<td><a href="subjects.php?id=<?=(int)$subjectid?>"><?=$h($uid)?></a></td>
-						<td><?=$h($birthdate)?></td>
-						<td><?=$studyAge?></td>
-						<td><?=$calcStudyAge?></td>
-						<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-						<td style="color:<?=$color?>"><?=$h($gender)?></td>
-						<td style="font-size:8pt"><?=$h($subgroup)?></td>
-						<? if ($weight <= 0) { $color = "red"; } else { $color="black"; } ?>
-						<td style="color:<?=$color?>"><?=number_format((float)$weight,1)?>kg</td>
-						<td style="font-size:8pt"><?=$h(implode2(', ',$altuids))?></td>
-						<td><a href="studies.php?id=<?=(int)$studyid?>"><?=$h($uid)?><?=$h($studynum)?></a></td>
-						<td style="font-size:8pt"><?=$h($seriesdesc)?> <?=$h($seriesprotocol)?></td>
-						<td><?=$h($seriesmodality)?></td>
-						<td style="font-size:8pt"><?=$h($seriesdatetime)?></td>
-						<td><?=$h($seriesnum)?></td>
-						<td align="center">
-							<? if ($canedit) { ?>
-							<form action="groups.php" method="post" style="display: inline" onsubmit="return confirm('Remove this series from the group?')">
-								<?=CSRFTokenField()?>
-								<input type="hidden" name="action" value="removegroupitem">
-								<input type="hidden" name="id" value="<?=$id?>">
-								<input type="hidden" name="itemid" value="<?=(int)$itemid?>">
-								<button type="submit" class="ui basic icon button" style="box-shadow: none; padding: 0; color: red" title="Remove from group"><i class="trash icon"></i></button>
-							</form>
-							<? } ?>
-						</td>
-					</tr>
-					<?
-				}
-			}
+		elseif ($grouptype == 'subject') {
+			ViewSubjectGroup($id);
+		}
+		else {
+			/* no member view for other types (nda, and series groups, which are no longer supported) */
 			?>
-		</table>
-		</div>
-		<?
+			<div class="ui text container">
+				<? DisplayGroupTitle($row, ucfirst($grouptype) . " group", "users"); ?>
+				<div class="ui message">Viewing members of <b><?=htmlspecialchars($grouptype)?></b> groups is not supported</div>
+			</div>
+			<?
+		}
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- ViewStudyGroup --------------------- */
 	/* -------------------------------------------- */
-	function ViewStudyGroup($id, $groupname, $observations, $columns, $groupobservations) {
-
-		/* get the general group information */
+	function ViewStudyGroup($id) {
 		$id = (int)$id;
 		$group = GetGroup($id);
-		$groupname = $group['group_name'] ?? '';
-		$grouptype = $group['group_type'] ?? '';
 		$canedit = CanEditGroup($group);
-		$h = function($v) { return htmlspecialchars((string)$v); };
 
-		?>
-		<script>
-			$(document).ready(function() { $("#studytable").tablesorter(); } );
-		</script>
-
-		<?
-		/* (subject level) group statistics */
-		$totalage = 0;
-		$numage = 0;
-		$totalweight = 0;
-		$numweight = 0;
-		$n = 0;
-		$ages = array();
-		$weights = array();
-		$genders = array();
-		$educations = array();
-		$ethnicity1s = array();
-		$ethnicity2s = array();
-		$handednesses = array();
-		$studylist = array();
-		$subjectids = array();
-		$observationnames = array();
-		$observationdata = array();
-		$id = (int)$id;
-
-		/* get the demographics (study level, one row per study), before the summary below displays them.
-		   Not grouped by subject: "group by d.uid" with b.* fails under ONLY_FULL_GROUP_BY, and $studylist
-		   needs every study for the MR summary */
-		$sqlstring = "select c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
+		/* one row per study in the group */
+		$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.* from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid, b.study_num";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		mysqli_stmt_close($stmt);
+
+		$rows = array();     /* grid rows */
+		$ids = array();      /* UIDStudyNum list for the edit box */
+		$studylist = array();
+		$subjects = array(); /* subject_id => subjects row, for the subject stats */
+		$ages = array();     /* age at each study */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
+			$subjectid = (int)($row['subject_id'] ?? 0);
+			$studyid = (int)($row['study_id'] ?? 0);
+			/* the study (or its subject) was deleted; still listed so it can be removed from the group */
+			if (($studyid <= 0) || ($subjectid <= 0)) {
+				$rows[] = array('itemid' => (int)$row['subjectgroup_id'], 'uid' => '(deleted)');
+				continue;
+			}
+			$uid = $row['uid'];
 			$studynum = $row['study_num'];
-			$studydesc = $row['study_desc'];
-			$studyalternateid = $row['study_alternateid'];
-			$studymodality = $row['study_modality'];
-			$studyageatscan = $row['study_ageatscan'];
-			$studydatetime = $row['study_datetime'];
-			$studyoperator = $row['study_operator'];
-			$studyperformingphysician = $row['study_performingphysician'];
-			$studysite = $row['study_site'];
-			$studyinstitution = $row['study_institution'];
-			$studynotes = $row['study_notes'];
-			$subgroup = $row['enroll_subgroup'];
+
+			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
+			$age = $studyAge ?? $calcStudyAge;
+			if ($age !== null) { $ages[] = (float)$age; }
+
+			$subjects[$subjectid] = $row;
+			$ids[] = $uid . $studynum;
 			$studylist[] = $studyid;
 
-			$subjectid = $row['subject_id'];
-			$name = $row['name'];
-			$birthdate = $row['birthdate'];
-			$age = $row['age'];
-			$gender = $row['gender'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$weight = $row['weight'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$uid = $row['uid'];
-			$subjectids[] = $subjectid;
-			/* do some demographics calculations */
-			$n++;
-
-			if ($studyageatscan > 0) {
-				$age = $studyageatscan;
-			}
-
-			if ($age > 0) {
-				$totalage += $age;
-				$numage++;
-				$ages[] = $age;
-			}
-			if ($weight > 0) {
-				$totalweight += $weight;
-				$numweight++;
-				$weights[] = $weight;
-			}
-			$genders[$gender ?? ''] = ($genders[$gender ?? ''] ?? 0) + 1;
-			$educations[$education ?? ''] = ($educations[$education ?? ''] ?? 0) + 1;
-			$ethnicity1s[$ethnicity1 ?? ''] = ($ethnicity1s[$ethnicity1 ?? ''] ?? 0) + 1;
-			$ethnicity2s[$ethnicity2 ?? ''] = ($ethnicity2s[$ethnicity2 ?? ''] ?? 0) + 1;
-			$handednesses[$handedness ?? ''] = ($handednesses[$handedness ?? ''] ?? 0) + 1;
+			$rows[] = array(
+				'itemid' => (int)$row['subjectgroup_id'],
+				'subjectid' => $subjectid,
+				'studyid' => $studyid,
+				'initials' => NameInitials($row['name']),
+				'uid' => $uid,
+				'dob' => $row['birthdate'],
+				'studydate' => $row['study_datetime'],
+				'studyage' => ($studyAge === null) ? null : round((float)$studyAge, 1),
+				'calcstudyage' => ($calcStudyAge === null) ? null : round((float)$calcStudyAge, 1),
+				'sex' => $row['gender'],
+				'ethnicity' => trim(($row['ethnicity1'] ?? '') . ' ' . ($row['ethnicity2'] ?? '')),
+				'subgroup' => $row['enroll_subgroup'],
+				'visittype' => $row['study_type'],
+				'weight' => ((float)($row['study_weight'] ?? 0) > 0) ? (float)$row['study_weight'] : null,
+				'handedness' => $row['handedness'],
+				'education' => $row['education'],
+				'altuids' => implode2(', ', GetAlternateUIDs($subjectid, '')),
+				'studyuid' => $uid . $studynum,
+				'description' => $row['study_desc'],
+				'altstudyid' => $row['study_alternateid'],
+				'modality' => $row['study_modality'],
+				'operator' => $row['study_operator'],
+				'physician' => $row['study_performingphysician'],
+				'site' => $row['study_site'],
+			);
 		}
-		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
-		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
-		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
-		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
+
+		$columns = array(
+			array('field' => 'initials', 'headerName' => 'Initials', 'width' => 90),
+			array('field' => 'uid', 'headerName' => 'UID', 'kind' => 'subject', 'width' => 120),
+			array('field' => 'dob', 'headerName' => 'DOB', 'width' => 110),
+			array('field' => 'studydate', 'headerName' => 'Study date', 'width' => 160),
+			array('field' => 'studyage', 'headerName' => 'Age (header)', 'kind' => 'number', 'width' => 110),
+			array('field' => 'calcstudyage', 'headerName' => 'Age (computed)', 'kind' => 'number', 'width' => 120),
+			array('field' => 'sex', 'headerName' => 'Sex', 'kind' => 'sex', 'width' => 80),
+			array('field' => 'ethnicity', 'headerName' => 'Ethnicities', 'width' => 130),
+			array('field' => 'subgroup', 'headerName' => 'Sub-group', 'width' => 110),
+			array('field' => 'visittype', 'headerName' => 'Visit type', 'width' => 110),
+			array('field' => 'weight', 'headerName' => 'Weight (kg)', 'kind' => 'number', 'width' => 110),
+			array('field' => 'handedness', 'headerName' => 'Handedness', 'width' => 110),
+			array('field' => 'education', 'headerName' => 'Education', 'width' => 110),
+			array('field' => 'altuids', 'headerName' => 'Alt UIDs', 'width' => 150, 'tooltipField' => 'altuids'),
+			array('field' => 'studyuid', 'headerName' => 'Study ID', 'kind' => 'study', 'width' => 130),
+			array('field' => 'description', 'headerName' => 'Description', 'width' => 180, 'tooltipField' => 'description'),
+			array('field' => 'altstudyid', 'headerName' => 'Alt study ID', 'width' => 120),
+			array('field' => 'modality', 'headerName' => 'Modality', 'width' => 100),
+			array('field' => 'operator', 'headerName' => 'Operator', 'width' => 110),
+			array('field' => 'physician', 'headerName' => 'Physician', 'width' => 110),
+			array('field' => 'site', 'headerName' => 'Site', 'width' => 120),
+		);
 
 		?>
-		<div class="ui top attached grey segment">
-			<div class="ui two column grid">
-				<div class="ui column">
-					<h2 class="ui header"><?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?></h2>
+		<div class="ui stackable two column grid">
+			<div class="column">
+				<? DisplayGroupTitle($group, "Study group", "clipboard list"); ?>
+				<? DisplaySubjectStats($subjects, $ages, "at study", count($studylist)); ?>
+				<? if (count($studylist) > 0) { ?>
+				<div class="ui segment">
+					<? DisplayMRProtocolSummary($studylist); ?>
 				</div>
-				<div class="ui right aligned column">
-					<? DeleteGroupButton($id, $group); ?>
-				</div>
+				<? } ?>
 			</div>
-			<div class="ui grid">
-				<div class="ui five wide column">
-					<h3 class="ui header">Summary</h3>
-					<div class="ui styled accordion">
-						<div class="active title">
-							<i class="dropdown icon"></i>
-							Group contains <b><?=$n?></b> studies
-						</div>
-						<div class="active content">
-							<?DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);?>
-						</div>
-						<div class="title">
-							<i class="dropdown icon"></i>
-							SQL
-						</div>
-						<div class="content">
-							<tt><?=PrintSQL($sqlstring)?></tt>
-						</div>
-						<div class="title">
-							<i class="dropdown icon"></i>
-							MR summary
-						</div>
-						<div class="content">
-						<?
-							DisplayMRProtocolSummary($studylist);
-						?>
-						</div>
-					</div>
-				</div>
-				<div class="ui five wide column">
-					<h3 class="ui header">Options</h3>
-					<a href="groups.php?action=viewimagingsummary&id=<?=$id?>">Imaging Summary</a><br>
-					<br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all">Include observations</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min">Include observations and only UID</a><br>
-					<a href="groups.php?action=viewgroup&id=<?=$id?>&observations=all&columns=min&groupobservations=byvalue">Include observations and only UID and group observations by value</a>
-				</div>
-				<div class="ui six wide column">
-					<h3 class="ui header"><?=($canedit ? "Edit group members" : "Group members")?></h3>
-					<form action="groups.php" method="post" class="ui form">
-					<?=CSRFTokenField()?>
-					<input type="hidden" name="action" value="updatestudygroup">
-					<input type="hidden" name="id" value="<?=$id?>">
-					<?
-						$studies = "";
-						$sqlstring = "select a.subjectgroup_id, d.uid, b.study_num from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
-						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-						mysqli_stmt_bind_param($stmt, 'i', $id);
-						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-						mysqli_stmt_close($stmt);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$studynum = $row['study_num'];
-							$uid = $row['uid'];
-							$studies .=  $uid . $studynum . "\n";
-						}
-						?>
-						<textarea name='studylist' style="font-family: monospace; font-size: larger;" <?=($canedit ? "" : "readonly")?>><?=$h($studies)?></textarea>
-						<? if ($canedit) { ?>
-						<br><br>
-						<div align="right">
-							<button class="ui primary button" type="submit">Update</button>
-						</div>
-						<? } ?>
-					</form>
-				</div>
-			</div>
-		</div>
-		<div class="ui bottom attached segment">
-		<?
-
-		/* ------------------ study group type ------------------- */
-		if ($grouptype == "study") {
-
-
-		if ($observations == "all") {
-			/* an empty group would produce "in ()", a SQL syntax error; "in (NULL)" matches nothing */
-			$subjectidlist = implode(",", array_map('intval', array_filter((array)$subjectids)));
-			if ($subjectidlist == "") { $subjectidlist = "NULL"; }
-			$sqlstringD = "select a.subject_id, b.enrollment_id, c.* from observations c left join enrollment b on c.enrollment_id = b.enrollment_id join subjects a on a.subject_id = b.subject_id where a.subject_id in ($subjectidlist)";
-			$resultD = MySQLiQuery($sqlstringD,__FILE__,__LINE__);
-
-			if ($groupobservations == "byvalue") {
-				$mnames = array('ANTDX','AVDDX','AX1Com1_Code','AX1Com2_Code','AX1Com3_Code','AX1Com4_Code','AX1Com5_Code','AX1Com6_Code','AX1Com7_Code','AX1Pri_Code','AXIIDX','BRDDX','DPNDX','DSM-Axis','DSM-Axis1','DSM-Axis2','DSM-Axis295.3','DSM-Axis304.3','DSM-AxisV71.09','DSM_IV_TR','DXGROUP_1','DX_GROUP','MiniDxn','MiniDxnFollowUp','NARDX','OBCDX','PARDX','ProbandGroup','Psychosis','relnm1','SAsubtype','SCZDX','status','SubjectType','SZTDX');
-				while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
-					$subjectid = $rowD['subject_id'];
-					$observationname = $rowD['observation_name'];
-					if (in_array($observationname,$mnames)) {
-						//if ($rowD['observation_type'] == 's') {
-						//	$value = strtolower(trim($rowD['observation_valuestring']));
-						//}
-						//else {
-						//	$value = strtolower(trim($rowD['observation_valuenum']));
-						//}
-						$value = strtolower(trim($rowD['observation_value']));
-
-						if (is_numeric(substr($value,0,6))) {
-							$value = substr($value,0,6);
-						}
-						elseif (is_numeric(substr($value,0,5))) {
-							$value = substr($value,0,5);
-						}
-						elseif (is_numeric(substr($value,0,4))) {
-							$value = substr($value,0,4);
-						}
-						elseif (is_numeric(substr($value,0,3))) {
-							$value = substr($value,0,3);
-						}
-						elseif (is_numeric(substr($value,1,5))) {
-							$value = substr($value,1,5);
-						}
-						elseif (substr($value,0,3) == "xxx") {
-							$value = "xxx";
-						}
-
-						$observationdata[$subjectid][$value] = 1;
-						$observationnames[] = $value;
-					}
-				}
-				$observationnames = array_unique($observationnames);
-				natsort($observationnames);
-			}
-			else {
-				while ($rowD = mysqli_fetch_array($resultD, MYSQLI_ASSOC)) {
-					if ($rowD['observation_type'] == 's') {
-						$observationdata[$rowD['subject_id']][$rowD['observation_name']]['value'][] = $rowD['observation_valuestring'];
-					}
-					else {
-						$observationdata[$rowD['subject_id']][$rowD['observation_name']]['value'][] = $rowD['observation_valuenum'];
-					}
-					$observationdata[$rowD['subject_id']][$rowD['observation_name']]['notes'][] = $rowD['observation_notes'];
-					$observationnames[] = $rowD['observation_name'];
-				}
-				$observationnames = array_unique($observationnames);
-				natcasesort($observationnames);
-			}
-		}
-
-		/* setup the CSV header. Rows are collected as arrays and quoted by CsvLine() when the file is written */
-		if ($columns == "min") {
-			$csvheader = array("UID");
-		}
-		else {
-			$csvheader = array("Initials","UID","StudyAge","CalcStudyAge","Sex","SubGroup","Weight","Handedness","Education","AltUIDs","StudyID","Description","AltStudyID","Modality","StudyDate","Operator","Physician","Site");
-		}
-		$csvrows = array();
-
-		?>
-			<table>
-				<tr>
-					<td valign="top" style="padding-right:20px">
-					</td>
-				</tr>
-				<tr>
-					<td valign="top">
-						<span class="tiny">Click columns to sort. May be slow for large tables</span>
-
-						<form action="groups.php" method="post">
-							<?=CSRFTokenField()?>
-							<input type="hidden" name="id" value="<?=$id?>">
-							<input type="hidden" name="action" value="removegroupitem">
-
-							<table id="studytable" class="ui small celled selectable grey very compact table">
-								<thead>
-								<tr>
-									<? if ($columns != "min") { ?>
-										<th>Initials</th>
-									<? } ?>
-									<th>UID</th>
-									<? if ($columns != "min") { ?>
-										<th>DOB</th>
-										<th>StudyDate</th>
-										<th>Age<br><span class="tiny">header</span></th>
-										<th>Age<br><span class="tiny">computed</span></th>
-										<th>Sex</th>
-										<th>Ethnicities</th>
-										<th>SubGroup</th>
-										<th>VisitType</th>
-										<th>Weight</th>
-										<th>Handedness</th>
-										<th>Education</th>
-										<th>Alt UIDs</th>
-										<th>Study ID</th>
-										<th>Description</th>
-										<th>Alternate Study ID</th>
-										<th>Modality</th>
-										<th>Operator</th>
-										<th>Physician</th>
-										<th>Site</th>
-									<? } ?>
-									<?
-									if (count($observationnames) > 0) {
-										foreach ($observationnames as $observationname) {
-											echo "<th>" . $h($observationname) . "</th>";
-											$csvheader[] = $observationname;
-										}
-									}
-									?>
-									<? if ($canedit) { ?><th>Remove</th><? } ?>
-								</tr>
-								</thead>
-								<tbody>
-								<?
-								/* reset the result pointer to 0 to iterate through the results again */
-								$sqlstring = "select a.subjectgroup_id, c.enroll_subgroup, b.*, d.*, (datediff(b.study_datetime, d.birthdate)/365.25) 'age' from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ? order by d.uid,b.study_num";
-								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-								mysqli_stmt_bind_param($stmt, 'i', $id);
-								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-								mysqli_stmt_close($stmt);
-								//mysqli_data_seek($result,0);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$studyid = $row['study_id'];
-									$studynum = $row['study_num'];
-									$studydesc = $row['study_desc'];
-									$studyalternateid = $row['study_alternateid'];
-									$studymodality = $row['study_modality'];
-									$studyageatscan = $row['study_ageatscan'];
-									$studydatetime = $row['study_datetime'];
-									$studyoperator = $row['study_operator'];
-									$studyperformingphysician = $row['study_performingphysician'];
-									$studysite = $row['study_site'];
-									$studyinstitution = $row['study_institution'];
-									$studynotes = $row['study_notes'];
-									$studyvisittype = $row['study_type'];
-									$studyweight = $row['study_weight'];
-									$subgroup = $row['enroll_subgroup'];
-
-									$itemid = $row['subjectgroup_id'];
-									$subjectid = $row['subject_id'];
-									$name = $row['name'];
-									$birthdate = $row['birthdate'];
-									$age = $row['age'];
-									$gender = $row['gender'];
-									$ethnicity1 = $row['ethnicity1'];
-									$ethnicity2 = $row['ethnicity2'];
-									$weight = $row['weight'];
-									$handedness = $row['handedness'];
-									$education = $row['education'];
-									$uid = $row['uid'];
-									if ($age <= 0) {
-										$age = $studyageatscan;
-									}
-									
-									list($studyAge, $calcStudyAge) = GetStudyAge($birthdate, $studyageatscan, $studydatetime);
-									
-									if ($studyAge == null)
-										$studyAge = "-";
-									else
-										$studyAge = number_format($studyAge,1);
-
-									if ($calcStudyAge == null)
-										$calcStudyAge = "-";
-									else
-										$calcStudyAge = number_format($calcStudyAge,1);
-									
-									/* get list of alternate subject UIDs */
-									$altuids = GetAlternateUIDs($subjectid,'');
-
-									$parts = explode("^", $name ?? "");
-									$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
-
-									if ($columns == "min") {
-										$csvrow = array($uid);
-									}
-									else {
-										$csvrow = array($name, $uid, $studyAge, $calcStudyAge, $gender, $subgroup, $weight, $handedness, $education, implode2(', ',$altuids), "$uid$studynum", $studydesc, $studyalternateid, $studymodality, $studydatetime, $studyoperator, $studyperformingphysician, $studysite);
-									}
-									?>
-									<tr>
-										<? if ($columns != "min") { ?>
-											<td><?=$h($name)?></td>
-										<? } ?>
-										<td class="tt"><a href="subjects.php?id=<?=(int)$subjectid?>"><?=$h($uid)?></a></td>
-										<? if ($columns != "min") { ?>
-											<td><?=$h($birthdate)?></td>
-											<td><?=$h($studydatetime)?></td>
-											<td><?=$h($studyAge)?></td>
-											<td><?=$h($calcStudyAge)?></td>
-											<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-											<td style="color:<?=$color?>"><?=$h($gender)?></td>
-											<td style="font-size:8pt"><?=$h($ethnicity1)?> <?=$h($ethnicity2)?></td>
-											<td style="font-size:8pt"><?=$h($subgroup)?></td>
-											<td style="font-size:8pt"><?=$h($studyvisittype)?></td>
-											<? if ($studyweight <= 0) { $color = "red"; } else { $color="black"; } ?>
-											<td style="color:<?=$color?>"><?=number_format((float)$studyweight,1)?>kg</td>
-											<td><?=$h($handedness)?></td>
-											<td><?=$h($education)?></td>
-											<td style="font-size:8pt"><?=$h(implode2(', ',$altuids))?></td>
-											<td><a href="studies.php?id=<?=(int)$studyid?>"><?=$h($uid)?><?=$h($studynum)?></a></td>
-											<td style="font-size:8pt"><?=$h($studydesc)?></td>
-											<td><?=$h($studyalternateid)?></td>
-											<td><?=$h($studymodality)?></td>
-											<td><?=$h($studyoperator)?></td>
-											<td><?=$h($studyperformingphysician)?></td>
-											<td style="font-size:8pt"><?=$h($studysite)?></td>
-										<? } ?>
-										<?
-										if (count($observationnames) > 0) {
-											if ($groupobservations == "byvalue") {
-												foreach ($observationnames as $observationname) {
-													$csvrow[] = $observationdata[$subjectid][$observationname] ?? '';
-													?>
-													<td class="seriesrow">
-														<?
-														if (isset($observationdata[$subjectid][$observationname])) {
-															echo $h($observationdata[$subjectid][$observationname]);
-														}
-														?>
-													</td>
-													<?
-												}
-											}
-											else {
-												foreach ($observationnames as $observation) {
-													$csvrow[] = implode("; ", (array)($observationdata[$subjectid][$observation]['value'] ?? array()));
-													?>
-													<td class="seriesrow">
-														<?
-														if (isset($observationdata[$subjectid][$observation]['value'])) {
-															foreach ($observationdata[$subjectid][$observation]['value'] as $value) {
-																echo $h($value) . "<br>";
-															}
-														}
-														?>
-													</td>
-													<?
-												}
-											}
-										}
-										?>
-										<? if ($canedit) { ?><td><input type="checkbox" name="itemid[]" value="<?=(int)$itemid?>"></td><? } ?>
-									</tr>
-									<?
-									$csvrows[] = $csvrow;
-								}
-								?>
-								<? if ($canedit) { ?>
-								<tr>
-									<td colspan="100" align="right">
-										<input type="submit" value="Remove">
-									</td>
-								</tr>
-								<? } ?>
-								</tbody>
-							</table>
-						</form>
-					</td>
-				</tr>
-			</table>
-			<?
-
-			/* ---------- generate csv file ---------- */
-			/* group names are free text; strip anything that could form a path (e.g. "../") from the temp filename */
-			$filename = preg_replace('/[^A-Za-z0-9_-]/', '_', $groupname ?? '') . "_" . GenerateRandomString(10) . ".csv";
-			$csv = CsvLine($csvheader);
-			foreach ($csvrows as $csvrow) { $csv .= "\n" . CsvLine($csvrow); }
-			file_put_contents("/tmp/" . $filename, $csv);
-			?>
-			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
-				Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
+			<div class="column">
+				<? DisplayGroupIDList($id, "updatestudygroup", "studylist", "Studies", "One UID + study number per line (e.g. S1234ABC1)", $ids, $canedit); ?>
 			</div>
 		</div>
 		<?
-		}
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- CsvLine ---------------------------- */
-	/* -------------------------------------------- */
-	/* one CSV line from an array of values: every field quoted, embedded quotes doubled */
-	function CsvLine($fields) {
-		$quoted = array();
-		foreach ($fields as $field) {
-			$quoted[] = '"' . str_replace('"', '""', (string)$field) . '"';
-		}
-		return implode(",", $quoted);
+		DisplayGroupMemberGrid($columns, $rows, $id, $canedit, $group['group_name'] ?? '', "studies");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- ViewSubjectGroup ------------------- */
 	/* -------------------------------------------- */
-	function ViewSubjectGroup($id, $groupname, $observations, $columns, $groupobservations) {
-
-		/* get the general group information */
+	function ViewSubjectGroup($id) {
 		$id = (int)$id;
 		$group = GetGroup($id);
-		$groupname = $group['group_name'] ?? '';
-		$grouptype = $group['group_type'] ?? '';
 		$canedit = CanEditGroup($group);
-		$h = function($v) { return htmlspecialchars((string)$v); };
 
-		?>
-		<script>
-			$(document).ready(function() { $("#studytable").tablesorter(); } );
-		</script>
-
-		<?
-		/* (subject level) group statistics */
-		$totalage = 0;
-		$numage = 0;
-		$totalweight = 0;
-		$numweight = 0;
-		$n = 0;
-		$ages = array();
-		$weights = array();
-		$genders = array();
-		$educations = array();
-		$ethnicity1s = array();
-		$ethnicity2s = array();
-		$handednesses = array();
-		$id = (int)$id;
-
-		/* get the actual group data (subject level) */
-		$sqlstring = "select a.subjectgroup_id, b.*, (datediff(now(), birthdate)/365.25) 'age' from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = ?";
+		/* one row per subject in the group */
+		$sqlstring = "select a.subjectgroup_id, b.* from group_data a left join subjects b on a.data_id = b.subject_id where a.group_id = ? order by b.uid";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjectid = $row['subject_id'];
-			$name = $row['name'];
-			$birthdate = $row['birthdate'];
-			$age = $row['age'];
-			$gender = $row['gender'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$weight = $row['weight'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$uid = $row['uid'];
 
-			/* do some demographics calculations */
-			$n++;
-			if ($age > 0) {
-				$totalage += $age;
-				$numage++;
-				$ages[] = $age;
+		$rows = array();     /* grid rows */
+		$ids = array();      /* UID list for the edit box */
+		$subjects = array(); /* subject_id => subjects row, for the subject stats */
+		$ages = array();     /* current age of each subject */
+		$today = date('Y-m-d');
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjectid = (int)($row['subject_id'] ?? 0);
+			/* the subject was deleted; still listed so it can be removed from the group */
+			if ($subjectid <= 0) {
+				$rows[] = array('itemid' => (int)$row['subjectgroup_id'], 'uid' => '(deleted)');
+				continue;
 			}
-			if ($weight > 0) {
-				$totalweight += $weight;
-				$numweight++;
-				$weights[] = $weight;
-			}
-			$genders[$gender ?? ''] = ($genders[$gender ?? ''] ?? 0) + 1;
-			$educations[$education ?? ''] = ($educations[$education ?? ''] ?? 0) + 1;
-			$ethnicity1s[$ethnicity1 ?? ''] = ($ethnicity1s[$ethnicity1 ?? ''] ?? 0) + 1;
-			$ethnicity2s[$ethnicity2 ?? ''] = ($ethnicity2s[$ethnicity2 ?? ''] ?? 0) + 1;
-			$handednesses[$handedness ?? ''] = ($handednesses[$handedness ?? ''] ?? 0) + 1;
+
+			list($unused, $age) = GetStudyAge($row['birthdate'], 0, $today);
+			if (($age !== null) && !isset($subjects[$subjectid])) { $ages[] = (float)$age; }
+
+			$subjects[$subjectid] = $row;
+			$ids[] = $row['uid'];
+
+			$rows[] = array(
+				'itemid' => (int)$row['subjectgroup_id'],
+				'subjectid' => $subjectid,
+				'initials' => NameInitials($row['name']),
+				'uid' => $row['uid'],
+				'age' => ($age === null) ? null : round((float)$age, 1),
+				'sex' => $row['gender'],
+				'ethnicity1' => $row['ethnicity1'],
+				'ethnicity2' => $row['ethnicity2'],
+				'weight' => ((float)($row['weight'] ?? 0) > 0) ? (float)$row['weight'] : null,
+				'handedness' => $row['handedness'],
+				'education' => $row['education'],
+				'altuids' => implode2(', ', GetAlternateUIDs($subjectid, '')),
+			);
 		}
-		if ($numage > 0) { $avgage = $totalage/$numage; } else { $avgage = 0; }
-		if (count($ages) > 0) { $varage = sd($ages); } else { $varage = 0; }
-		if ($numweight > 0) { $avgweight = $totalweight/$numweight; } else { $avgweight = 0; }
-		if (count($weights) > 0) { $varweight = sd($weights); } else { $varweight = 0; }
+
+		$columns = array(
+			array('field' => 'initials', 'headerName' => 'Initials', 'width' => 90),
+			array('field' => 'uid', 'headerName' => 'UID', 'kind' => 'subject', 'width' => 120),
+			array('field' => 'age', 'headerName' => 'Age (current)', 'kind' => 'number', 'width' => 120),
+			array('field' => 'sex', 'headerName' => 'Sex', 'kind' => 'sex', 'width' => 80),
+			array('field' => 'ethnicity1', 'headerName' => 'Ethnicity 1', 'width' => 120),
+			array('field' => 'ethnicity2', 'headerName' => 'Ethnicity 2', 'width' => 120),
+			array('field' => 'weight', 'headerName' => 'Weight (kg)', 'kind' => 'number', 'width' => 110),
+			array('field' => 'handedness', 'headerName' => 'Handedness', 'width' => 110),
+			array('field' => 'education', 'headerName' => 'Education', 'width' => 110),
+			array('field' => 'altuids', 'headerName' => 'Alt UIDs', 'flex' => 1, 'minWidth' => 150, 'tooltipField' => 'altuids'),
+		);
 
 		?>
-		<div class="ui text container">
-			<div class="ui grey raised segment">
-				<h1 class="ui header">
-					<i class="user friends icon"></i>
-					<div class="content">
-						<?=htmlspecialchars($groupname ?? '')?> <? RenameGroupIcon($group); ?>
-						<div class="sub header">Subject group</div>
-					</div>
-				</h1>
-				<?
-					DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight);
-				?>
-				<? DeleteGroupButton($id, $group); ?>
+		<div class="ui stackable two column grid">
+			<div class="column">
+				<? DisplayGroupTitle($group, "Subject group", "user friends"); ?>
+				<? DisplaySubjectStats($subjects, $ages, "current"); ?>
+			</div>
+			<div class="column">
+				<? DisplayGroupIDList($id, "updatesubjectgroup", "uidlist", "Subjects", "One UID per line (e.g. S1234ABC)", $ids, $canedit); ?>
 			</div>
 		</div>
-		
+		<?
+		DisplayGroupMemberGrid($columns, $rows, $id, $canedit, $group['group_name'] ?? '', "subjects");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NameInitials ----------------------- */
+	/* -------------------------------------------- */
+	/* initials from a "Last^First" name */
+	function NameInitials($name) {
+		$parts = explode("^", $name ?? "");
+		return substr($parts[1] ?? "", 0, 1) . substr($parts[0] ?? "", 0, 1);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayGroupTitle ------------------ */
+	/* -------------------------------------------- */
+	/* title segment shown on the group views: name (with rename icon), group type, and the delete button */
+	function DisplayGroupTitle($group, $subheader, $icon) {
+		?>
+		<div class="ui grey segment">
+			<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 1em">
+				<h2 class="ui header" style="margin: 0">
+					<i class="<?=htmlspecialchars($icon)?> icon"></i>
+					<div class="content">
+						<?=htmlspecialchars($group['group_name'] ?? '')?> <? RenameGroupIcon($group); ?>
+						<div class="sub header"><?=htmlspecialchars($subheader)?></div>
+					</div>
+				</h2>
+				<? DeleteGroupButton((int)$group['group_id'], $group); ?>
+			</div>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySubjectStats ---------------- */
+	/* -------------------------------------------- */
+	/* subject-level summary: $subjects is subject_id => subjects row, $ages the ages to average.
+	   $numstudies is shown for study groups */
+	function DisplaySubjectStats($subjects, $ages, $agelabel, $numstudies = null) {
+		$n = count($subjects);
+		$sexes = array();
+		foreach ($subjects as $subject) {
+			$sex = strtoupper(trim($subject['gender'] ?? ''));
+			if ($sex == '') { $sex = 'Not specified'; }
+			$sexes[$sex] = ($sexes[$sex] ?? 0) + 1;
+		}
+		ksort($sexes);
+		$numage = count($ages);
+		$avgage = ($numage > 0) ? array_sum($ages)/$numage : 0;
+		?>
 		<div class="ui segment">
-			<form action="groups.php" method="post">
-				<?=CSRFTokenField()?>
-				<input type="hidden" name="id" value="<?=$id?>">
-				<input type="hidden" name="action" value="removegroupitem">
-				<table class="ui celled selectable grey very compact table">
-					<thead>
-						<th>Initials</th>
-						<th>UID</th>
-						<th>Age<br><span class="tiny">current</span></th>
-						<th>Sex</th>
-						<th>Ethnicity 1</th>
-						<th>Ethnicity 2</th>
-						<th>Weight</th>
-						<th>Handedness</th>
-						<th>Education</th>
-						<th>Alt UIDs</th>
-						<? if ($canedit) { ?><th>Remove<br>from group</th><? } ?>
-					</thead>
-					<?
-					/* reset the result pointer to 0 to iterate through the results again */
-					mysqli_data_seek($result,0);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$itemid = $row['subjectgroup_id'];
-						$subjectid = $row['subject_id'];
-						$name = $row['name'];
-						$birthdate = $row['birthdate'];
-						$age = $row['age'];
-						$gender = $row['gender'];
-						$ethnicity1 = $row['ethnicity1'];
-						$ethnicity2 = $row['ethnicity2'];
-						$weight = $row['weight'];
-						$handedness = $row['handedness'];
-						$education = $row['education'];
-						$uid = $row['uid'];
-
-						/* get list of alternate subject UIDs */
-						$altuids = GetAlternateUIDs($subjectid,'');
-
-						$parts = explode("^", $name ?? "");
-						$name = substr($parts[1] ?? "",0,1) . substr($parts[0] ?? "",0,1);
-						?>
-						<tr>
-							<td><?=$h($name)?></td>
-							<td>
-								<a href="subjects.php?id=<?=(int)$subjectid?>" style="font-family: monospace; font-size: larger;"><?=$h($uid)?></a>
-							</td>
-							<? if ($age <= 0) { $color = "red"; } else { $color="black"; } ?>
-							<td style="color:<?=$color?>"><?=number_format((float)$age,1)?>Y</td>
-							<? if (!in_array(strtoupper($gender ?? ''),array('M','F','O'))) { $color = "red"; } else { $color="black"; } ?>
-							<td style="color:<?=$color?>"><?=$h($gender)?></td>
-							<td><?=$h($ethnicity1)?></td>
-							<td><?=$h($ethnicity2)?></td>
-							<td><?=number_format((float)$weight,1)?>kg</td>
-							<td><?=$h($handedness)?></td>
-							<td><?=$h($education)?></td>
-							<td><span style="font-family: monospace; font-size: larger;"><?=$h(implode2(', ',$altuids))?></span></td>
-							<? if ($canedit) { ?><td><input type="checkbox" name="itemid[]" value="<?=(int)$itemid?>"></td><? } ?>
-						</tr>
+			<h3 class="ui header">Subjects</h3>
+			<table class="ui very basic very compact collapsing table">
+				<tr>
+					<td class="right aligned">Subjects</td>
+					<td><b><?=$n?></b></td>
+				</tr>
+				<? if ($numstudies !== null) { ?>
+				<tr>
+					<td class="right aligned">Studies</td>
+					<td><b><?=(int)$numstudies?></b></td>
+				</tr>
+				<? } ?>
+				<tr>
+					<td class="right aligned">Age <?=htmlspecialchars($agelabel)?><br><span class="tiny">from <?=$numage?> valid ages</span></td>
+					<td><? if ($numage > 0) { ?><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format(sd($ages),1)?>Y</span><? } else { echo "-"; } ?></td>
+				</tr>
+				<tr>
+					<td class="right aligned">Sex</td>
+					<td>
 						<?
-					}
-					?>
-					<? if ($canedit) { ?>
-					<tr>
-						<td colspan="11" class="ui right aligned">
-							<input type="submit" class="ui red button" value="Remove">
-						</td>
-					</tr>
-					<? } ?>
-				</table>
+						foreach ($sexes as $sex => $count) {
+							$pct = number_format(($count/$n)*100, 1);
+							echo htmlspecialchars((string)$sex) . ": <b>$count</b> <span class=\"small\">($pct%)</span><br>";
+						}
+						?>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayGroupIDList ----------------- */
+	/* -------------------------------------------- */
+	/* editable list of the group's member IDs; submitting replaces the group's members with the list */
+	function DisplayGroupIDList($id, $action, $fieldname, $title, $help, $ids, $canedit) {
+		?>
+		<div class="ui segment">
+			<h3 class="ui header">
+				<?=htmlspecialchars($title)?>
+				<div class="sub header"><?=htmlspecialchars($help)?><? if ($canedit) { ?>. Edit or paste the list, then click Update; IDs removed from the list are removed from the group<? } ?></div>
+			</h3>
+			<form action="groups.php" method="post" class="ui form">
+				<?=CSRFTokenField()?>
+				<input type="hidden" name="action" value="<?=htmlspecialchars($action)?>">
+				<input type="hidden" name="id" value="<?=(int)$id?>">
+				<textarea name="<?=htmlspecialchars($fieldname)?>" rows="14" style="font-family: monospace; font-size: larger;" <?=($canedit ? "" : "readonly")?>><?=htmlspecialchars(implode("\n", $ids))?></textarea>
+				<? if ($canedit) { ?>
+				<div style="margin-top: 1em; text-align: right">
+					<button class="ui primary button" type="submit">Update</button>
+				</div>
+				<? } ?>
 			</form>
 		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayGroupMemberGrid ------------- */
+	/* -------------------------------------------- */
+	/* ag-grid listing of the group members. $columns are ag-grid column defs, plus an optional 'kind'
+	   (subject/study link, sex, number). Each row needs 'itemid' (the group_data row), which the
+	   "Remove selected" button posts to removegroupitem */
+	function DisplayGroupMemberGrid($columns, $rows, $id, $canedit, $groupname, $noun) {
+		$jsonflags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE;
+		$csvname = preg_replace('/[^A-Za-z0-9_-]/', '_', $groupname) . ".csv";
+		$autoheight = (count($rows) <= 30); /* small groups size the grid to fit, large ones scroll */
+		?>
+		<div class="ui segment">
+			<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap">
+				<input type="text" placeholder="Search..." oninput="memberGridApi.setGridOption('quickFilterText', this.value)" style="padding: 5px 8px; width: 250px; border: 1px solid #ccc; border-radius: 4px">
+				<span style="color: #888">Displaying <span id="memberCount"><?=count($rows)?></span> <?=htmlspecialchars($noun)?></span>
+				<? if ($canedit) { ?>
+				<span style="color: #888">&middot; Select rows with the checkboxes: shift-click selects a range, or drag across rows</span>
+				<? } ?>
+				<div style="margin-left: auto">
+					<? if ($canedit) { ?>
+					<form action="groups.php" method="post" style="display: inline" onsubmit="return SubmitRemoveMembers(this)">
+						<?=CSRFTokenField()?>
+						<input type="hidden" name="action" value="removegroupitem">
+						<input type="hidden" name="id" value="<?=(int)$id?>">
+						<button type="submit" id="removeMembersButton" class="ui small red button" disabled><i class="trash icon"></i>Remove selected (<span id="selectedCount">0</span>)</button>
+					</form>
+					<? } ?>
+					<button class="ui small basic button" onclick="ExportMembers()"><i class="download icon"></i>Export CSV</button>
+				</div>
+			</div>
+			<div id="memberGrid" style="width: 100%;<?=($autoheight ? "" : " height: 65vh;")?>"></div>
+		</div>
+
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
+		<script>
+		let memberGridApi;
+		const memberCsvName = <?=json_encode($csvname, $jsonflags)?>;
+
+		/* post the selected rows' itemids to removegroupitem */
+		function SubmitRemoveMembers(form) {
+			const rows = memberGridApi.getSelectedRows();
+			if (rows.length == 0) { return false; }
+			if (!confirm('Remove ' + rows.length + ' item(s) from the group?')) { return false; }
+			form.querySelectorAll('input[name="itemid[]"]').forEach(function(el) { el.remove(); });
+			rows.forEach(function(row) {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = 'itemid[]';
+				input.value = row.itemid;
+				form.appendChild(input);
+			});
+			return true;
+		}
+
+		function ExportMembers() {
+			memberGridApi.exportDataAsCsv({ fileName: memberCsvName });
+		}
+
+		(function() {
+			const rowData = <?=json_encode($rows, $jsonflags)?>;
+			const canEdit = <?=($canedit ? "true" : "false")?>;
+
+			function Link(href, text) {
+				const a = document.createElement('a');
+				a.href = href;
+				a.textContent = text;
+				return a;
+			}
+
+			/* extra column options by 'kind'. Renderers return DOM nodes, never HTML strings */
+			const kinds = {
+				subject: { cellRenderer: function(p) { return p.data.subjectid ? Link('subjects.php?id=' + encodeURIComponent(p.data.subjectid), p.value) : document.createTextNode(p.value || ''); } },
+				study: { cellRenderer: function(p) { return p.data.studyid ? Link('studies.php?id=' + encodeURIComponent(p.data.studyid), p.value) : document.createTextNode(p.value || ''); } },
+				sex: { cellStyle: function(p) { return (p.data.subjectid && ['M', 'F', 'O'].indexOf(String(p.value || '').toUpperCase()) < 0) ? { color: 'red' } : null; } },
+				number: { filter: 'agNumberColumnFilter', valueFormatter: function(p) { return (p.value === null || p.value === undefined) ? '-' : Number(p.value).toFixed(1); } },
+			};
+			const columnDefs = <?=json_encode($columns, $jsonflags)?>.map(function(c) {
+				const def = Object.assign({}, c, kinds[c.kind] || {});
+				delete def.kind;
+				return def;
+			});
+
+			const gridOptions = {
+				columnDefs: columnDefs,
+				rowData: rowData,
+				defaultColDef: { sortable: true, filter: true, resizable: true },
+				domLayout: <?=($autoheight ? "'autoHeight'" : "'normal'")?>,
+				getRowId: function(p) { return String(p.data.itemid); },
+				tooltipShowDelay: 500,
+				overlayNoRowsTemplate: '<span style="color: #888">This group has no members</span>',
+				/* keep the "Displaying X" count in sync with the quick filter / column filters */
+				onModelUpdated: function(p) {
+					const el = document.getElementById('memberCount');
+					if (el) { el.textContent = p.api.getDisplayedRowCount().toLocaleString(); }
+				},
+			};
+
+			if (canEdit) {
+				/* checkbox selection: click toggles a row, shift-click selects a range, the header checkbox selects all (filtered) rows */
+				gridOptions.rowSelection = { mode: 'multiRow', checkboxes: true, headerCheckbox: true, selectAll: 'filtered', enableClickSelection: false };
+				gridOptions.onSelectionChanged = function(p) {
+					const n = p.api.getSelectedRows().length;
+					document.getElementById('selectedCount').textContent = n;
+					document.getElementById('removeMembersButton').disabled = (n == 0);
+				};
+
+				/* drag-select: press on a row and drag across others to select the rows in between
+				   (or deselect them, if the first row was already selected). A plain click is unaffected */
+				let dragStart = null;
+				let dragValue = true;
+				gridOptions.onCellMouseDown = function(p) {
+					const e = p.event;
+					if (!e || e.button !== 0 || e.shiftKey || e.ctrlKey || e.metaKey) { dragStart = null; return; }
+					dragStart = p.node.rowIndex;
+					dragValue = !p.node.isSelected();
+				};
+				gridOptions.onCellMouseOver = function(p) {
+					if (dragStart === null) { return; }
+					if (!p.event || !(p.event.buttons & 1)) { dragStart = null; return; }
+					if (p.node.rowIndex === dragStart) { return; }
+					const lo = Math.min(dragStart, p.node.rowIndex);
+					const hi = Math.max(dragStart, p.node.rowIndex);
+					const nodes = [];
+					for (let i = lo; i <= hi; i++) {
+						const node = p.api.getDisplayedRowAtIndex(i);
+						if (node) { nodes.push(node); }
+					}
+					p.api.setNodesSelected({ nodes: nodes, newValue: dragValue });
+				};
+				document.addEventListener('mouseup', function() { dragStart = null; });
+			}
+
+			memberGridApi = agGrid.createGrid(document.getElementById('memberGrid'), gridOptions);
+		})();
+		</script>
 		<?
 	}
 
@@ -1659,126 +1223,7 @@
 		</details>
 		<?
 	}
-	/* -------------------------------------------- */
-	/* ------- DisplayDemographicsTable ----------- */
-	/* -------------------------------------------- */
-	function DisplayDemographicsTable($n,$numage,$avgage,$varage,$genders,$ethnicity1s,$ethnicity2s,$educations,$handednesses,$avgweight,$varweight) {
-		?>
-		<table class="ui very basic very compact collapsing table">
-			<tr>
-				<td class="right aligned">N</td>
-				<td><?=$n?></td>
-			</tr>
-			<tr>
-				<td class="right aligned">Age<br><span class="tiny">computed from<br><?=$numage?> non-zero ages</span></td>
-				<td><?=number_format($avgage,1)?>Y <span class="small">&plusmn;<?=number_format($varage,1)?>Y</span></td>
-			</tr>
-			<tr>
-				<td class="right aligned">Sex</td>
-				<td>
-					<?
-					foreach ($genders as $key => $value) {
-						$pct = number_format(($value/$n)*100, 1);
-						echo htmlspecialchars((string)$key) . ": <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-					}
-					?>
-				</td>
-			</tr>
-			<!--<tr>
-				<td>Ethnicity 1</td>
-				<td>
-					<?
-					//print_r($educations);
-					foreach ($ethnicity1s as $key => $value) {
-						$key = "$key";
-						switch ($key) {
-							case "": $ethnicity1 = "Not specified"; break;
-							case "hispanic": $ethnicity1 = "Hispanic/Latino"; break;
-							case "nothispanic": $ethnicity1 = "Not hispanic/Latino"; break;
-						}
-						$pct = number_format(($value/$n)*100, 1);
-						echo "$ethnicity1: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-					}
-					?>
-				</td>
-			</tr>
-			<tr>
-				<td>Ethnicity 2</td>
-				<td>
-					<?
-					//print_r($educations);
-					foreach ($ethnicity2s as $key => $value) {
-						$key = "$key";
-						switch ($key) {
-							case "": $ethnicity2 = "Not specified"; break;
-							case "indian": $ethnicity2 = "American Indian/Alaska Native"; break;
-							case "asian": $ethnicity2 = "Asian"; break;
-							case "black": $ethnicity2 = "Black/African American"; break;
-							case "islander": $ethnicity2 = "Hawaiian/Pacific Islander"; break;
-							case "white": $ethnicity2 = "White"; break;
-							case "mixed": $ethnicity2 = "Mixed"; break;
-						}
-						$pct = number_format(($value/$n)*100, 1);
-						echo "$ethnicity2: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-					}
-					?>
-				</td>
-			</tr>
-			<tr>
-				<td>Education</td>
-				<td>
-					<?
-					//print_r($educations);
-					foreach ($educations as $key => $value) {
-						$key = "$key";
-						if (trim($key == "")) { $education = "Not specified"; }
-						else {
-							switch ($key) {
-								case "0": $education = "Unknown"; break;
-								case "1": $education = "Grade School"; break;
-								case "2": $education = "Middle School"; break;
-								case "3": $education = "High School/GED"; break;
-								case "4": $education = "Trade School"; break;
-								case "5": $education = "Associates Degree"; break;
-								case "6": $education = "Bachelors Degree"; break;
-								case "7": $education = "Masters Degree"; break;
-								case "8": $education = "Doctoral Degree"; break;
-							}
-						}
 
-						$pct = number_format(($value/$n)*100, 1);
-						echo "$education: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-					}
-					?>
-				</td>
-			</tr>
-			<tr>
-				<td>Handedness</td>
-				<td>
-					<?
-					//print_r($educations);
-					foreach ($handednesses as $key => $value) {
-						$key = "$key";
-						switch ($key) {
-							case "": $handedness = "Not specified"; break;
-							case "U": $handedness = "Unknown"; break;
-							case "R": $handedness = "Right"; break;
-							case "L": $handedness = "Left"; break;
-							case "A": $handedness = "Ambidextrous"; break;
-						}
-						$pct = number_format(($value/$n)*100, 1);
-						echo "$handedness: <b>$value</b> <span class=\"small\">($pct%)</span><br>";
-					}
-					?>
-				</td>
-			</tr>
-			<tr>
-				<td>Weight<br><span class="tiny">computed from<br>non-zero weights</span></td>
-				<td><?=number_format($avgweight,1)?>kg <span class="small">&plusmn;<?=number_format($varweight,1)?>kg</span></td>
-			</tr>-->
-		</table>
-		<?
-	}
 
 	/* -------------------------------------------- */
 	/* ------- DisplayGroupList ------------------- */
@@ -1801,7 +1246,6 @@
 						<select name="grouptype" class="ui selection dropdown" required>
 							<option value="">(select group type)
 							<option value="nda">NDA
-							<option value="series">Series
 							<option value="study">Study
 							<option value="subject">Subject
 						</select>
@@ -1815,7 +1259,6 @@
 			<a class="ui <? if ($type == "all" || $type == "") { echo "green"; } ?> button" href="groups.php">All</a>
 			<a class="ui <? if ($type == "subject") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=subject">Subject</a>
 			<a class="ui <? if ($type == "study") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=study">Study</a>
-			<a class="ui <? if ($type == "series") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=series">Series</a>
 			<a class="ui <? if ($type == "nda") { echo "green"; } ?> button" href="groups.php?action=viewgrouplist&displaytype=nda">NDA</a>
 			
 			<table class="ui small celled selectable grey very compact table">
@@ -1835,7 +1278,6 @@
 				switch ($type) {
 					case 'subject': $sqlstring .= " where a.group_type = 'subject'"; break;
 					case 'study': $sqlstring .= " where a.group_type = 'study'"; break;
-					case 'series': $sqlstring .= " where a.group_type = 'series'"; break;
 					case 'nda': $sqlstring .= " where a.group_type = 'nda'"; break;
 				}
 				$sqlstring .= " order by a.group_name";
@@ -1879,78 +1321,6 @@
 		<?
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- ViewImagingSummary ----------------- */
-	/* -------------------------------------------- */
-	function ViewImagingSummary($id) {
-		$id = (int)$id;
-		$studies = array();
-		$protocols = array();
-
-		$sqlstring = "select a.subjectgroup_id, d.uid, d.birthdate, d.gender, b.study_datetime, b.study_ageatscan, b.study_num, b.study_id from group_data a left join studies b on a.data_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.group_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		mysqli_stmt_close($stmt);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			if (($studyid != "") && (strtolower($studyid) != "null")) {
-				/* get list of series for this study */
-				$studies[$studyid]['uid'] = $row['uid'];
-				$studies[$studyid]['sex'] = $row['gender'];
-				$studies[$studyid]['studynum'] = $row['study_num'];
-
-				list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
-				$studies[$studyid]['studyage'] = $studyAge;
-				$studies[$studyid]['calcstudyage'] = $calcStudyAge;
-				
-
-				$studyid = (int)$studyid;
-				$sqlstringA = "select b.* from mr_series a left join bids_mapping b on a.series_desc = b.protocolname where a.study_id = $studyid and a.series_desc <> ''"; /* int from db, safe to inline */
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$protocol = $rowA['shortname'];
-					//$studies[$studyid]['protocols'][$protocol] = "&#10004;";
-					$studies[$studyid]['protocols'][$protocol] = 1;
-					$protocols[$protocol] = 1;
-				}
-			}
-		}
-		echo "Loaded data<br>";
-
-		?>
-		<table border=1>
-			<thead>
-				<th>UID</th>
-				<th>Sex</th>
-				<th>Age</th>
-				<th>CalcAge</th>
-				<?
-				foreach ($protocols as $prot => $val) {
-					?><th><?=htmlspecialchars((string)$prot)?></th><?
-				}
-				?>
-			</thead>
-		<?
-		foreach ($studies as $studyid => $study) {
-			?>
-			<tr>
-				<td><?=htmlspecialchars($study['uid'] ?? '')?></td>
-				<td><?=htmlspecialchars($study['sex'] ?? '')?></td>
-				<td><?=number_format((float)$study["studyage"], 1)?></td>
-				<td><?=number_format((float)$study["calcstudyage"], 1)?></td>
-				<?
-				foreach ($protocols as $prot => $val) {
-					?><td><?=$study["protocols"][$prot] ?? ""?></td><?
-				}
-				?>
-			</tr>
-			<?
-		}
-		?></table><?
-		
-	}
 	
 ?>
 <? include("footer.php") ?>

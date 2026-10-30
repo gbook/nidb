@@ -15,8 +15,8 @@ for the reference implementation.
 
 | File | POST forms | PRG |
 |------|-----------:|:---:|
-| `admin.php` | 1 | ✅ |
-| `adminaudits.php` | 2 | ✅ |
+| `admin.php` | 2 | ✅ |
+| `adminaudits.php` | 3 | ✅ |
 | `admindicomae.php` | 2 | ✅ |
 | `adminemail.php` | 1 | ✅ |
 | `admininstances.php` | 2 | ✅ |
@@ -27,22 +27,22 @@ for the reference implementation.
 | `adminsites.php` | 1 | ✅ |
 | `adminstorage.php` | 1 | ✅ |
 | `adminusers.php` | 1 | ✅ |
-| `analysis.php` | 4 | ✅ |
+| `analysis.php` | 3 | ✅ |
 | `analysisbuilder.php` | 2 | ✅ |
 | `batchupload.php` | 1 | ✅ |
-| `calendar.php` | 1 | ⬜ |
+| `calendar.php` | 2 | ⬜ |
 | `calendar_appointments.php` | 3 | ✅ |
-| `calendar_calendars.php` | 2 | ✅ |
+| `calendar_calendars.php` | 3 | ✅ |
 | `checklist.php` | 1 | ⬜ |
 | `cleanup.php` | 4 | ✅ |
 | `clustersettings.php` | 2 | ✅ |
 | `datadictionary.php` | 4 | ⬜ |
 | `datasetrequests.php` | 2 | ✅ |
 | `diagnosis.php` | 1 | ✅ |
-| `enrollment.php` | 2 | ✅ |
+| `enrollment.php` | 3 | ✅ |
 | `experiment.php` | 2 | ✅ |
 | `functions.php` | 3 | ⬜ |
-| `groups.php` | 8 | ✅ |
+| `groups.php` | 6 | ✅ |
 | `import.php` | 6 | ⬜ |
 | `importimaging.php` | 5 | ✅ |
 | `importnonimaging.php` | 2 | ⬜ |
@@ -66,7 +66,7 @@ for the reference implementation.
 | `pipelinecontainers.php` | 2 | ✅ |
 | `pipelines.php` | 4 | ✅ |
 | `projectchecklist.php` | 1 | ⬜ |
-| `projects.php` | 9 | ⬜ |
+| `projects.php` | 8 | ⬜ |
 | `ratings.php` | 2 | ✅ |
 | `register.php` | 2 | ⬜ |
 | `remoteconnections.php` | 2 | ✅ |
@@ -84,4 +84,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-10-21 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-10-30 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

@@ -4655,24 +4655,6 @@
 						</select>
 						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addstudiestogroup';document.subjectlist.submit();">Add</div>
 					</div>
-					<br><br>
-					<div class="ui labeled action input">
-						<label for="seriesgroupid" class="ui label" style="width: 150px">Series Group</label>
-						<select name="seriesgroupid" id="seriesgroupid" class="ui selection dropdown">
-						<?
-							$sqlstring = "select * from groups where group_type = 'series' order by group_name";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$groupid = $row['group_id'];
-								$groupname = $row['group_name'];
-								?>
-								<option value="<?=(int)$groupid?>"><?=htmlspecialchars($groupname ?? '')?>
-								<?
-							}
-						?>
-						</select>
-						<div class="ui primary button" name="addtogroup" onclick="document.subjectlist.action='groups.php';document.subjectlist.action.value='addseriestogroup';document.subjectlist.submit();">Add</div>
-					</div>
 					<div class="ui horizontal left aligned divider">Mini-pipelines</div>
 					<div class="ui action input">
 						<?
