@@ -106,13 +106,13 @@
 					$location = $row['calendar_location'];
 					?>
 					<tr>
-						<td><a href="calendar_calendars.php?action=editform&id=<?=$id?>" class="ui button"><i class="edit icon"></i><?=$name?></a></td>
-						<td><?=$description?></td>
-						<td><?=$location?></td>
+						<td><a href="calendar_calendars.php?action=editform&id=<?=(int)$id?>" class="ui button"><i class="edit icon"></i><?=htmlspecialchars($name ?? '')?></a></td>
+						<td><?=htmlspecialchars($description ?? '')?></td>
+						<td><?=htmlspecialchars($location ?? '')?></td>
 						<td class="center aligned">
 							<form method="post" action="calendar_calendars.php" style="display: inline" onsubmit="return confirm('Are you sure?')">
 								<input type="hidden" name="action" value="delete">
-								<input type="hidden" name="id" value="<?=$id?>">
+								<input type="hidden" name="id" value="<?=(int)$id?>">
 								<?=CSRFTokenField()?>
 								<button type="submit" class="ui mini basic icon button" title="Delete calendar"><i class="red alternate trash icon"></i></button>
 							</form>
@@ -219,17 +219,17 @@
 
 				<div class="required field">
 					<label>Calendar Name</label>
-					<input type="text" name="name" class="required" value="<?=$name?>" placeholder="Short calendar name" required autofocus="autofocus">
+					<input type="text" name="name" class="required" value="<?=htmlspecialchars($name ?? '')?>" placeholder="Short calendar name" required autofocus="autofocus">
 				</div>
 
 				<div class="field">
 					<label>Description</label>
-					<input type="text" name="description" class="required" value="<?=$description?>" placeholder="Calendar description" required>
+					<input type="text" name="description" class="required" value="<?=htmlspecialchars($description ?? '')?>" placeholder="Calendar description" required>
 				</div>
 
 				<div class="field">
 					<label>Location</label>
-					<input type="text" name="location" class="required" value="<?=$location?>" placeholder="Calendar location" required>
+					<input type="text" name="location" class="required" value="<?=htmlspecialchars($location ?? '')?>" placeholder="Calendar location" required>
 				</div>
 
 				<input type="submit" value="Add" name="submit" class="ui primary button">
@@ -251,6 +251,7 @@
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
+		if (!$row) { Error("Calendar not found"); return; }
 		$name = $row['calendar_name'];
 		$description = $row['calendar_description'];
 		$location = $row['calendar_location'];
@@ -277,17 +278,17 @@
 
 				<div class="required field">
 					<label>Calendar Name</label>
-					<input type="text" name="name" class="required" value="<?=$name?>" placeholder="Short calendar name" required autofocus="autofocus">
+					<input type="text" name="name" class="required" value="<?=htmlspecialchars($name ?? '')?>" placeholder="Short calendar name" required autofocus="autofocus">
 				</div>
 
 				<div class="field">
 					<label>Description</label>
-					<input type="text" name="description" class="required" value="<?=$description?>" placeholder="Calendar description" required>
+					<input type="text" name="description" class="required" value="<?=htmlspecialchars($description ?? '')?>" placeholder="Calendar description" required>
 				</div>
 
 				<div class="field">
 					<label>Location</label>
-					<input type="text" name="location" class="required" value="<?=$location?>" placeholder="Calendar location" required>
+					<input type="text" name="location" class="required" value="<?=htmlspecialchars($location ?? '')?>" placeholder="Calendar location" required>
 				</div>
 
 				<input type="submit" value="Save" name="submit" class="ui primary button">

@@ -71,6 +71,7 @@
 	$repeatfri = GetVariable("repeatfri");
 	$repeatsat = GetVariable("repeatsat");
 	$repeatenddate = GetVariable("repeatenddate");
+	$repeatdayofmonth = (int)GetVariable("repeatdayofmonth");
 	$groupid = (int)GetVariable("groupid");
 	
 	$startdatetime = "$startdate $starttime";
@@ -87,23 +88,23 @@
 	
 	/* check the action */
 	if ($action == "addform") {
-		DisplayForm("", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate);
+		DisplayForm("", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth);
 	}
 	/* mutating actions use POST/Redirect/GET (to calendar.php) so a refresh/Back doesn't re-submit */
 	elseif ($action == "add") {
-		Add("add", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 0);
+		Add("add", "", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth, 0);
 	}
 	elseif ($action == "editform") {
-		DisplayForm($id, "", "", "", "", "", "", "", "", "", "", "", $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate);
+		DisplayForm($id, "", "", "", "", "", "", "", "", "", "", "", $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth);
 	}
 	elseif ($action == "edit") {
-		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 0);
+		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth, 0);
 	}
 	elseif ($action == "editall") {
-		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, 1);
+		Add("update", $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth, 1);
 	}
 	elseif ($action == "resize") {
-		Resize($id, GetVariable("enddate"), GetVariable("endminutes"));
+		Resize($id, GetVariable("edge"), GetVariable("date"), GetVariable("minutes"));
 	}
 	elseif ($action == "delete") {
 		ob_start();
@@ -113,7 +114,7 @@
 	}
 	elseif ($action == "deleteall") {
 		ob_start();
-		Delete($groupid, $currentcal, 1);
+		Delete($id, $currentcal, 1);
 		$_SESSION['flash'] = ob_get_clean();
 		RedirectTo("calendar.php");
 	}
@@ -138,7 +139,7 @@
 	/* ----------------------------------------------- */
 	/* --------- Add --------------------------------- */
 	/* ----------------------------------------------- */
-	function Add($method, $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $editall) {
+	function Add($method, $id, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth, $editall) {
 		
 		/* an update changes one existing appointment (or, for editall, the shared fields of its series).
 		   Members of a series are edited with their date fields disabled, so nothing is posted for them:
@@ -146,7 +147,7 @@
 		$isseriesmember = false;
 		if ($method != "add") {
 			$id = (int)$id;
-			$sqlstring = "select appt_startdate, appt_enddate, appt_groupid, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a where appt_id = ?";
+			$sqlstring = "select appt_startdate, appt_enddate, appt_groupid, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0 and g.appt_deletedate > now() and g.appt_canceldate > now()) 'groupsize' from calendar_appointments a where appt_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $id);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
@@ -162,11 +163,22 @@
 			$repeats = false; /* "Repeats" only creates a series when adding */
 		}
 		
-		/* check if any form elements are bad, if so redisplay the addform */
-		if ($title == "") { DisplayForm("", "'Title' is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
-		if ($calendarid == 0) { DisplayForm("", "Calendar ID is blank", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
-		if (!strtotime($startdatetime)) { DisplayForm("", "'Start date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
-		if (!strtotime($enddatetime)) { DisplayForm("", "'End date/time' is invalid", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
+		/* a validation failure redisplays the form with what was entered: still as an edit form when editing, so a
+		   resubmit updates the appointment instead of adding a copy. Nothing is written until every check passes */
+		$redisplay = function($message) use ($method, $id, $username, $calendarid, $projectid, $details, $title, &$startdatetime, &$enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth) {
+			DisplayForm(($method == "add") ? "" : $id, $message, "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth);
+		};
+
+		if ($title == "") { $redisplay("'Title' is blank"); return; }
+		if ($calendarid == 0) { $redisplay("Calendar ID is blank"); return; }
+		if (!strtotime($startdatetime)) { $redisplay("'Start date/time' is invalid"); return; }
+		if (!strtotime($enddatetime)) { $redisplay("'End date/time' is invalid"); return; }
+		if ($repeats) {
+			if (!in_array($repeattype, array("daily", "weekly", "monthly"), true)) { $redisplay("Choose how often the appointment repeats"); return; }
+			if (($repeattype == "monthly") && (($repeatdayofmonth < 1) || ($repeatdayofmonth > 31))) { $redisplay("Choose the day of the month for a monthly appointment"); return; }
+			if (($repeattype == "weekly") && !($repeatsun || $repeatmon || $repeattue || $repeatwed || $repeatthu || $repeatfri || $repeatsat)) { $redisplay("Choose at least one day of the week for a weekly appointment"); return; }
+			if (!strtotime($repeatenddate ?? '') || (date('Y-m-d', strtotime($repeatenddate)) < date('Y-m-d', strtotime($startdatetime)))) { $redisplay("'Until' must be a date on or after the start date"); return; }
+		}
 		
 		$calendarid = (int)$calendarid;
 		$projectid = (int)$projectid;
@@ -180,27 +192,36 @@
 
 		/* check if this appointment repeats (adding only - see above) */
 		if (!$repeats) {
-			$numappts = 1;
 			$startdatetimes[0] = date('Y-m-d H:i:s',strtotime($startdatetime));
 			$enddatetimes[0] = date('Y-m-d H:i:s',strtotime($enddatetime));
 		}
 		else {
-			if ($method == "add") {
-				/* get all dates on which the repeating appt falls */
-				
-				/* determine # of days between starting and ending date */
-				$totaltimediff = strtotime($repeatenddate) - strtotime($startdatetime) + 86400;
+			/* get all dates on which the repeating appt falls */
+			
+			/* determine # of days between starting and ending date */
+			$totaltimediff = strtotime($repeatenddate) - strtotime($startdatetime) + 86400;
 
-				/* for daily and monthly, add the current date first. all dates are added inside the weekly case below */
-				if (($repeattype == "daily") || ($repeattype == "monthly")) {
-					$newappt = date('Y-m-d H:i:s',strtotime($startdatetime));
-					$appts[] = $newappt;
+			if ($repeattype == "monthly") {
+				/* the chosen day of each month from the start month through the until date. Months without that day
+				   (the 31st in a 30-day month, the 29th-31st in February) are skipped rather than moved to another date */
+				$firstofmonth = date('Y-m-01', strtotime($startdatetime));
+				$until = date('Y-m-d', strtotime($repeatenddate));
+				for ($n = 0; count($appts) < 100; $n++) {
+					$monthts = strtotime("$firstofmonth +$n months");
+					if (date('Y-m-01', $monthts) > $until) { break; }
+					if ($repeatdayofmonth <= (int)date('t', $monthts)) {
+						$appts[] = date('Y-m-', $monthts) . sprintf('%02d', $repeatdayofmonth);
+					}
+				}
+			}
+			else {
+				/* for daily, add the current date first. all dates are added inside the weekly case below */
+				if ($repeattype == "daily") {
+					$appts[] = date('Y-m-d H:i:s',strtotime($startdatetime));
 				}
 				/* add interval until date difference between starting and new appt is greater than ending date */
 				$numappts = 1;
 				$lastappt = $startdatetime;
-				//print "Lastappt: $lastappt<br>";
-				//$appts[] = $startdatetime;
 				$done = false;
 				while (!$done) {
 					switch ($repeattype) {
@@ -209,54 +230,20 @@
 							$appts[] = $newappt;
 							break;
 						case "weekly":
-							//print "----- Lastappt: $lastappt<br>";
-							if ($repeatsun) {
-								$appt = date('Y-m-d H:i:s', strtotime("Sunday", strtotime($lastappt)));
-								//print "Sun appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeatmon) {
-								$appt = date('Y-m-d H:i:s', strtotime("Monday", strtotime($lastappt)));
-								//print "Mon appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeattue) {
-								$appt = date('Y-m-d H:i:s', strtotime("Tuesday", strtotime($lastappt)));
-								//print "Tue appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeatwed) {
-								$appt = date('Y-m-d H:i:s', strtotime("Wednesday", strtotime($lastappt)));
-								//print "Wed appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeatthu) {
-								$appt = date('Y-m-d H:i:s', strtotime("Thursday", strtotime($lastappt)));
-								//print "Thu appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeatfri) {
-								$appt = date('Y-m-d H:i:s', strtotime("Friday", strtotime($lastappt)));
-								//print "Fri appt: $appt<br>";
-								$appts[] = $appt;
-							}
-							if ($repeatsat) {
-								$appt = date('Y-m-d H:i:s', strtotime("Saturday", strtotime($lastappt)));
-								//print "Sat appt: $appt<br>";
-								$appts[] = $appt;
-							}
+							if ($repeatsun) { $appts[] = date('Y-m-d H:i:s', strtotime("Sunday", strtotime($lastappt))); }
+							if ($repeatmon) { $appts[] = date('Y-m-d H:i:s', strtotime("Monday", strtotime($lastappt))); }
+							if ($repeattue) { $appts[] = date('Y-m-d H:i:s', strtotime("Tuesday", strtotime($lastappt))); }
+							if ($repeatwed) { $appts[] = date('Y-m-d H:i:s', strtotime("Wednesday", strtotime($lastappt))); }
+							if ($repeatthu) { $appts[] = date('Y-m-d H:i:s', strtotime("Thursday", strtotime($lastappt))); }
+							if ($repeatfri) { $appts[] = date('Y-m-d H:i:s', strtotime("Friday", strtotime($lastappt))); }
+							if ($repeatsat) { $appts[] = date('Y-m-d H:i:s', strtotime("Saturday", strtotime($lastappt))); }
 							$newappt = date('Y-m-d H:i:s', strtotime($lastappt . " +1 weeks"));
 							break;
-						case "monthly";
-							$newappt = date('Y-m-d H:i:s', strtotime(date('Y-m-d H:i:s',strtotime($lastappt)) . " +1 month"));
-							$appts[] = $newappt;
-							break;
 					}
-					
+				
 					$newtimediff = strtotime($newappt) - strtotime($startdatetime);
-					
+				
 					if ($newtimediff > $totaltimediff) {
-						$done = true;
 						break;
 					}
 					$numappts++;
@@ -265,108 +252,64 @@
 					}
 					$lastappt = $newappt;
 				}
-				
-				/* sort the appointment list and remove any appointments that fall outside the startdate/enddate range */
-				sort($appts);
-				/* make sure the remaining appointments retain the time */
-				$k=0;
-				for ($i=0;$i<count($appts);$i++) {
-					//print date('Y-m-d', strtotime($appts[$i]));
-					//print date('H:i:s', strtotime($startdatetime));
-					$appts[$i] = date('Y-m-d', strtotime($appts[$i])) . " " . date('H:i:s', strtotime($startdatetime));
-					$newtimediff = strtotime($appts[$i]) - strtotime($startdatetime);
-					//print "NewTimeDiff: $newtimediff, Totaltimediff $totaltimediff<br>";
-					//echo "<pre>";
-					//print_r(get_defined_vars());
-					//echo "</pre>";
-					if ($newtimediff < $totaltimediff) {
-						$startdatetimes[$k] = date('Y-m-d H:i:s', strtotime($appts[$i])); // . date('H:i:s', strtotime($startdatetime));
-						//$appts[$i] =        date('Y-m-d', strtotime($appts[$i])) . " " . date('H:i:s', strtotime($startdatetime));
-						$enddatetimes[$k] = date('Y-m-d ', strtotime($appts[$i])) . date('H:i:s', strtotime($enddatetime));
-						$k++;
-					}
+			}
+			
+			/* sort the appointment list, give each the original times, and drop any outside the start..until range */
+			sort($appts);
+			$k=0;
+			for ($i=0;$i<count($appts);$i++) {
+				$appts[$i] = date('Y-m-d', strtotime($appts[$i])) . " " . date('H:i:s', strtotime($startdatetime));
+				$newtimediff = strtotime($appts[$i]) - strtotime($startdatetime);
+				if (($newtimediff >= 0) && ($newtimediff < $totaltimediff)) {
+					$startdatetimes[$k] = date('Y-m-d H:i:s', strtotime($appts[$i]));
+					$enddatetimes[$k] = date('Y-m-d ', strtotime($appts[$i])) . date('H:i:s', strtotime($enddatetime));
+					$k++;
 				}
 			}
+			if (count($startdatetimes) == 0) { $redisplay("No occurrences fall between the start date and the 'Until' date"); return; }
 		}
-		//echo "<pre>";
-		//print_r($appts);
-		//print_r($startdatetimes);
-		//print_r($enddatetimes);
-		//echo "</pre>";
 		
-		//$groupid = "";
-		/* add all the appointments, one by one */
+		/* check every occurrence before writing any of them, so a failure part way through a series doesn't leave half of it added */
 		for ($i=0;$i<count($startdatetimes);$i++) {
 		
 			/* if this is an all day appointment, ignore any times that were entered */
 			if ($isalldayevent) {
-				$startdatetime = date('Y-m-d 00:00:00',strtotime($startdatetimes[$i]));
-				$enddatetime = date('Y-m-d 00:00:00',strtotime($enddatetimes[$i]));
+				$startdatetimes[$i] = date('Y-m-d 00:00:00',strtotime($startdatetimes[$i]));
+				$enddatetimes[$i] = date('Y-m-d 00:00:00',strtotime($enddatetimes[$i]));
+				if ($enddatetimes[$i] < $startdatetimes[$i]) { $redisplay("The end date must be on or after the start date"); return; }
+				continue;
 			}
-			elseif ($istimerequest) {
-				$startdatetime = date('Y-m-d H:i:s',strtotime($startdatetimes[$i]));
-				$enddatetime = date('Y-m-d H:i:s',strtotime($enddatetimes[$i]));
-			}
-			else {
-				$startdatetime = date('Y-m-d H:i:s',strtotime($startdatetimes[$i]));
-				$enddatetime = date('Y-m-d H:i:s',strtotime($enddatetimes[$i]));
+			$startdatetimes[$i] = date('Y-m-d H:i:s',strtotime($startdatetimes[$i]));
+			$enddatetimes[$i] = date('Y-m-d H:i:s',strtotime($enddatetimes[$i]));
+			if (strtotime($enddatetimes[$i]) <= strtotime($startdatetimes[$i])) { $redisplay("The end time must be after the start time"); return; }
+			if ($istimerequest) { continue; }
 
-				// /* ignore allocations (for now) */
-				// /* check if there are any allocations for this calendar/project */
-				// $sqlstring = "select * from allocations where alloc_calendarid = $calendarid and alloc_projectid = $projectid";
-				// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				// if (mysqli_num_rows($result) > 0) {
-					// $row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					// $alloc_days = $row['alloc_timeperiod'];
-					// $alloc_hours = $row['alloc_amount'];
-					
-					// $allocdays = $alloc_days/2;
-					
-					// /* check the number of hours allocated vs the number of appointments on either side of this appointment */
-					// if ($method == "add") {
-						// $sqlstring = "SELECT unix_timestamp(appt_startdate)/3600 'appt_startdate', unix_timestamp(appt_enddate)/3600 'appt_enddate' FROM `calendar_appointments` WHERE appt_startdate between (date_add('$startdatetime', interval -$allocdays day)) and (date_add('$startdatetime', interval $allocdays day)) and appt_calendarid = $calendarid and appt_projectid = $projectid and appt_isalldayevent = 0 and appt_istimerequest = 0 and appt_deletedate > now() and appt_canceldate > now()";
-					// }
-					// else {
-						// $sqlstring = "SELECT unix_timestamp(appt_startdate)/3600 'appt_startdate', unix_timestamp(appt_enddate)/3600 'appt_enddate' FROM `calendar_appointments` WHERE appt_startdate between (date_add('$startdatetime', interval -$allocdays day)) and (date_add('$startdatetime', interval $allocdays day)) and appt_calendarid = $calendarid and appt_projectid = $projectid and appt_isalldayevent = 0 and appt_istimerequest = 0 and appt_deletedate > now() and appt_canceldate > now() and appt_id != $id";
-					// }
-					// $result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					// $total = 0;
-					// while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						// $start = $row['appt_startdate'];
-						// $end = $row['appt_enddate'];
-						// $apptlength = $end - $start;
-						// $total += $apptlength;
-					// }
-					// if ($total > $alloc_hours) {
-						// ?>
-						<!-- <div align="center" style="border:orange 1px solid; background: lightyellow">
-						// This appointment exceeds the allocation of <?=$alloc_hours?> hours per <?=$alloc_days?> for this project. Before adding this appointment, the project is using <?=$total?> hours within a <?=$alloc_days?> day span of time centered at <?=$startdatetime?>
-						</div> -->
-						<?
-					// }
-				// }
-				
-				/* check to see if this appointment overlaps an existing appt on the same calendar */
-				$sqlstring = "select * from calendar_appointments where ( (appt_startdate > ? and appt_startdate < ?) or (appt_enddate > ? and appt_enddate < ?) or (appt_startdate = ? and appt_enddate = ?) or (appt_startdate < ? and appt_enddate > ?) or (appt_startdate < ? and appt_enddate > ?) ) and appt_calendarid = ? and appt_deletedate > now() and appt_canceldate > now() and appt_id != ? and appt_istimerequest <> 1";
-				$excludeid = ($method == "add") ? 0 : $id; /* when updating, don't count the appointment itself */
-				$params = array($startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $enddatetime, $startdatetime, $startdatetime, $enddatetime, $enddatetime, $calendarid, $excludeid);
-				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-				mysqli_stmt_bind_param($stmt, 'ssssssssssii', ...$params);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
-				mysqli_stmt_close($stmt);
-				if (mysqli_num_rows($result) > 0) {
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$tstart = $row['appt_startdate'];
-						$tend = $row['appt_enddate'];
-						$ttitle = $row['appt_title'];
-					}
-				
-					DisplayForm("","<b>This appointment overlaps with an existing appointment</b><br>[" . htmlspecialchars("$ttitle: $tstart - $tend") . "]","",$username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, "");
-					return;
-				}
+			/* check to see if this appointment overlaps an existing appt on the same calendar */
+			$sqlstring = "select * from calendar_appointments where ( (appt_startdate > ? and appt_startdate < ?) or (appt_enddate > ? and appt_enddate < ?) or (appt_startdate = ? and appt_enddate = ?) or (appt_startdate < ? and appt_enddate > ?) or (appt_startdate < ? and appt_enddate > ?) ) and appt_calendarid = ? and appt_deletedate > now() and appt_canceldate > now() and appt_id != ? and appt_istimerequest <> 1";
+			$excludeid = ($method == "add") ? 0 : $id; /* when updating, don't count the appointment itself */
+			$s = $startdatetimes[$i];
+			$e = $enddatetimes[$i];
+			$params = array($s, $e, $s, $e, $s, $e, $s, $s, $e, $e, $calendarid, $excludeid);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ssssssssssii', ...$params);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			$overlap = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($overlap) {
+				$which = (count($startdatetimes) > 1) ? "The occurrence on " . date('D M j, Y', strtotime($s)) : "This appointment";
+				$redisplay("<b>$which overlaps with an existing appointment</b><br>[" . htmlspecialchars($overlap['appt_title'] . ": " . $overlap['appt_startdate'] . " - " . $overlap['appt_enddate']) . "]");
+				return;
 			}
+		}
 
-			/* if we get to this point, its safe to add to the database */
+		/* everything checked out: write to the database */
+		if (($method != "add") && $editall && ($groupid < 1)) {
+			/* group 0 means "not in a series", so never act on all of those at once */
+			$redisplay("This appointment is not part of a series"); return;
+		}
+		for ($i=0;$i<count($startdatetimes);$i++) {
+			$startdatetime = $startdatetimes[$i];
+			$enddatetime = $enddatetimes[$i];
 			if ($method == "add") {
 				$sqlstring = "insert into calendar_appointments (appt_username, appt_calendarid, appt_projectid, appt_title, appt_details, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest) values (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 				$params = array($username, $calendarid, $projectid, $title, $details, $startdatetime, $enddatetime, $isalldayevent, $istimerequest);
@@ -390,8 +333,6 @@
 			else {
 				/* appt_username (who created the appointment) is never changed by an edit */
 				if ($editall) {
-					/* group 0 means "not in a series", so never act on all of those at once */
-					if ($groupid < 1) { DisplayForm($id, "This appointment is not part of a series", "", $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate); return; }
 					$sqlstring = "update calendar_appointments set appt_calendarid = ?, appt_projectid = ?, appt_title = ?, appt_details = ?, appt_isalldayevent = ?, appt_istimerequest = ? where appt_groupid = ?";
 					$types = 'iissiii';
 					$params = array($calendarid, $projectid, $title, $details, $isalldayevent, $istimerequest, $groupid);
@@ -424,16 +365,21 @@
 	/* ----------------------------------------------- */
 	/* --------- Resize ------------------------------ */
 	/* ----------------------------------------------- */
-	/* change only the end time of one appointment (dragging its bottom edge in calendar.php's day/week grid).
-	   $enddate is the grid day the drag ended on, $endminutes the minutes past its midnight (15-min steps, up to
-	   1440 = midnight). Same rules as the edit form: no all-day appointments or series members, no overlaps */
-	function Resize($id, $enddate, $endminutes) {
+	/* change the start or end time of one appointment (dragging its top or bottom edge in calendar.php's day/week grid), or move it
+	   keeping its length (dragging its body). $edge is "start", "end" or "move", $date the grid day the drag ended on, $minutes the
+	   minutes past its midnight (15-min steps, 0..1425 for a start or move, up to 1440 = midnight for an end). For a move, $minutes is
+	   the new start. Same rules as the edit form: no all-day appointments or series members, no overlaps */
+	function Resize($id, $edge, $date, $minutes) {
 		$id = (int)$id;
-		$endminutes = (int)$endminutes;
+		$minutes = (int)$minutes;
 
 		ob_start();
+		/* back to the day that was being viewed, whether or not the change works */
 		$redirect = "calendar.php";
-		$sqlstring = "select appt_calendarid, appt_title, appt_startdate, appt_isalldayevent, appt_istimerequest, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a where appt_id = ? and appt_deletedate > now() and appt_canceldate > now()";
+		if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $date ?? '') && strtotime($date)) {
+			$redirect = "calendar.php?year=" . date('Y', strtotime($date)) . "&month=" . date('m', strtotime($date)) . "&day=" . date('d', strtotime($date));
+		}
+		$sqlstring = "select appt_calendarid, appt_title, appt_startdate, appt_enddate, appt_isalldayevent, appt_istimerequest, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0 and g.appt_deletedate > now() and g.appt_canceldate > now()) 'groupsize' from calendar_appointments a where appt_id = ? and appt_deletedate > now() and appt_canceldate > now()";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
@@ -443,20 +389,28 @@
 		if (!$appt) {
 			Error("Appointment not found");
 		}
-		elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $enddate ?? '') || !strtotime($enddate) || ($endminutes < 0) || ($endminutes > 1440) || ($endminutes % 15 != 0)) {
-			Error("Invalid end time");
+		elseif (!in_array($edge, array("start", "end", "move"), true) || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date ?? '') || !strtotime($date) || ($minutes < 0) || ($minutes > (($edge == "end") ? 1440 : 1425)) || ($minutes % 15 != 0)) {
+			Error("Invalid " . (($edge == "end") ? "end" : "start") . " time");
 		}
 		elseif ($appt['appt_isalldayevent']) {
-			Error("All-day appointments can't be resized");
+			Error("All-day appointments can't be " . (($edge == "move") ? "moved" : "resized"));
 		}
 		elseif ((int)$appt['groupsize'] > 1) {
-			Error("Appointments in a series can't be resized. Edit the series instead");
+			Error("Appointments in a series can't be " . (($edge == "move") ? "moved" : "resized") . ". Edit the series instead");
 		}
 		else {
-			$startdatetime = $appt['appt_startdate'];
-			$enddatetime = date('Y-m-d H:i:s', strtotime($enddate) + $endminutes * 60);
+			/* build the wall-clock time from the minutes (not midnight + seconds, which is an hour off on daylight saving days) */
+			if ($minutes == 1440) { $newdatetime = date('Y-m-d 00:00:00', strtotime("$date +1 day")); }
+			else { $newdatetime = sprintf("%s %02d:%02d:00", $date, intdiv($minutes, 60), $minutes % 60); }
+			if ($edge == "move") {
+				$startdatetime = $newdatetime;
+				$enddatetime = date('Y-m-d H:i:s', strtotime($newdatetime) + (strtotime($appt['appt_enddate']) - strtotime($appt['appt_startdate'])));
+			}
+			else {
+				$startdatetime = ($edge == "start") ? $newdatetime : $appt['appt_startdate'];
+				$enddatetime = ($edge == "end") ? $newdatetime : $appt['appt_enddate'];
+			}
 			$calendarid = (int)$appt['appt_calendarid'];
-			$redirect = "calendar.php?year=" . date('Y', strtotime($enddate)) . "&month=" . date('m', strtotime($enddate)) . "&day=" . date('d', strtotime($enddate)); /* back to the day that was being viewed */
 
 			$overlap = null;
 			if (!$appt['appt_istimerequest']) {
@@ -474,16 +428,21 @@
 				Error("The end time must be after the start time");
 			}
 			elseif ($overlap) {
-				Error("<b>The new end time overlaps with an existing appointment</b><br>[" . htmlspecialchars($overlap['appt_title'] . ": " . $overlap['appt_startdate'] . " - " . $overlap['appt_enddate']) . "]");
+				Error("<b>The new " . (($edge == "move") ? "time" : "$edge time") . " overlaps with an existing appointment</b><br>[" . htmlspecialchars($overlap['appt_title'] . ": " . $overlap['appt_startdate'] . " - " . $overlap['appt_enddate']) . "]");
 			}
 			else {
 				/* appt_username (who created the appointment) is never changed by an edit */
-				$sqlstring = "update calendar_appointments set appt_enddate = ? where appt_id = ?";
+				$sqlstring = "update calendar_appointments set appt_startdate = ?, appt_enddate = ? where appt_id = ?";
 				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-				mysqli_stmt_bind_param($stmt, 'si', $enddatetime, $id);
-				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($enddatetime, $id));
+				mysqli_stmt_bind_param($stmt, 'ssi', $startdatetime, $enddatetime, $id);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($startdatetime, $enddatetime, $id));
 				mysqli_stmt_close($stmt);
-				Notice("'" . htmlspecialchars($appt['appt_title'] ?? '') . "' now ends at " . date('g:ia', strtotime($enddatetime)));
+				if ($edge == "move") {
+					Notice("'" . htmlspecialchars($appt['appt_title'] ?? '') . "' moved to " . date('D M j, g:ia', strtotime($startdatetime)) . " - " . date('g:ia', strtotime($enddatetime)));
+				}
+				else {
+					Notice("'" . htmlspecialchars($appt['appt_title'] ?? '') . "' now " . (($edge == "start") ? "starts" : "ends") . " at " . date('g:ia', strtotime($newdatetime)));
+				}
 			}
 		}
 		$_SESSION['flash'] = ob_get_clean();
@@ -496,19 +455,29 @@
 	/* ----------------------------------------------- */
 	function Delete($id, $currentcal, $deleteall) {
 		$id = (int)$id;
+		$sqlstring = "select appt_groupid from calendar_appointments where appt_id = ? and appt_deletedate > now()";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) { Error("Appointment not found, or already deleted"); return; }
 		if ($deleteall) {
-			/* $id is the group id here. Group 0 means "not in a series", so never act on all of those at once */
-			if ($id < 1) { Error("This appointment is not part of a series"); return; }
-			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid = ?";
+			/* delete the series the appointment belongs to (its stored group id, not the request's, like Cancel()).
+			   Group 0 means "not in a series", so never act on all of those at once. Members deleted earlier keep their date */
+			$target = (int)$row['appt_groupid'];
+			if ($target < 1) { Error("This appointment is not part of a series"); return; }
+			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_groupid = ? and appt_deletedate > now()";
 		}
 		else {
+			$target = $id;
 			$sqlstring = "update calendar_appointments set appt_deletedate = now() where appt_id = ?";
 		}
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		mysqli_stmt_bind_param($stmt, 'i', $target);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($target));
 		mysqli_stmt_close($stmt);
-		Notice("Appointment deleted");
+		Notice($deleteall ? "Series deleted" : "Appointment deleted");
 	}	
 
 
@@ -518,13 +487,14 @@
 	function Cancel($id, $groupid, $currentcal, $cancelreason, $notifyusers, $cancelall) {
 		/* get appointment info before changing it */
 		$id = (int)$id;
-		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = ?";
+		$sqlstring = "select a.*, b.calendar_name, c.project_name from calendar_appointments a left join calendars b on a.appt_calendarid = b.calendar_id left join calendar_projects c on a.appt_projectid = c.project_id where a.appt_id = ? and a.appt_deletedate > now()";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 		if (!$row) { Error("Appointment not found"); return; }
+		if (!$cancelall && (strtotime($row['appt_canceldate']) <= time())) { Error("This appointment was already cancelled"); return; }
 		$calid = $row['appt_calendarid'];
 		$prjid = $row['appt_projectid'];
 		$startdate = date('M j, Y', strtotime($row['appt_startdate']));
@@ -539,7 +509,7 @@
 			   Group 0 means "not in a series", so never act on all of those at once */
 			$target = (int)$row['appt_groupid'];
 			if ($target < 1) { Error("This appointment is not part of a series"); return; }
-			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_groupid = ?";
+			$sqlstring = "update calendar_appointments set appt_canceldate = now() where appt_groupid = ? and appt_canceldate > now() and appt_deletedate > now()"; /* earlier cancellations keep their date */
 		}
 		else {
 			$target = $id;
@@ -571,7 +541,7 @@
 			
 			/* get a list of users who care about this project and send an email */
 		}
-		Notice("Appointment cancelled");
+		Notice($cancelall ? "Series cancelled" : "Appointment cancelled");
 	}	
 	
 	
@@ -622,12 +592,15 @@
 	/* ----------------------------------------------- */
 	/* --------- DisplayForm ------------------------- */
 	/* ----------------------------------------------- */
-	function DisplayForm($id, $message, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate) {
+	function DisplayForm($id, $message, $groupid, $username, $calendarid, $projectid, $details, $title, $startdatetime, $enddatetime, $isalldayevent, $istimerequest, $currentcal, $repeats, $repeattype, $repeatsun, $repeatmon, $repeattue, $repeatwed, $repeatthu, $repeatfri, $repeatsat, $repeatenddate, $repeatdayofmonth = 0) {
 
 		//echo "[$id]";
 		
-		$repeats = false;
-		$apptrepeatscheck = "";
+		/* repeat choices from a redisplayed add form */
+		$apptrepeatscheck = ($repeats == "yes") ? "checked" : "";
+		$repeatdays = array("sun" => $repeatsun, "mon" => $repeatmon, "tue" => $repeattue, "wed" => $repeatwed, "thu" => $repeatthu, "fri" => $repeatfri, "sat" => $repeatsat);
+		$repeats = false; /* from here on: is the appointment being edited part of a series */
+		$passed = array('calendarid' => $calendarid, 'projectid' => $projectid, 'title' => $title, 'details' => $details, 'isalldayevent' => $isalldayevent, 'istimerequest' => $istimerequest);
 		/* compare as int: the add form passes $id = "", and on PHP 8 "" != 0 is true, which sent new appointments down the edit path */
 		if ((int)$id > 0) {
 			$type = "edit";
@@ -635,15 +608,14 @@
 			$submitbutton = "Update";
 			
 			$id = (int)$id;
-			$sqlstring = "select * from calendar_appointments where appt_id = $id"; /* $id is cast to int above */
-			//echo $sqlstring;
+			$sqlstring = "select * from calendar_appointments where appt_id = $id and appt_deletedate > now()"; /* $id is cast to int above */
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			if (!$row) { Error("Appointment not found"); return; }
 			$groupid = $row['appt_groupid'];
 			$username = $row['appt_username'];
 			$calendarid = $row['appt_calendarid'];
 			$projectid = $row['appt_projectid'];
-			$projectname = $row['project_name'];
 			$title = $row['appt_title'];
 			$startdate = date('Y-m-d', strtotime($row['appt_startdate']));
 			$enddate = date('Y-m-d', strtotime($row['appt_enddate']));
@@ -655,11 +627,27 @@
 
 			if ($groupid != 0) {
 				$groupid = (int)$groupid;
-				$sqlstring = "select * from calendar_appointments where appt_groupid = $groupid"; /* database integer */
+				$sqlstring = "select appt_id from calendar_appointments where appt_groupid = $groupid and appt_deletedate > now() and appt_canceldate > now()"; /* database integer; live members only */
 				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 				if (mysqli_num_rows($result) > 1) {
 					$pagetitle = "Edit Recurring Appointment";
 					$repeats = true;
+				}
+			}
+
+			/* redisplayed after a failed update: show what was entered rather than what's stored (a series member's dates aren't editable) */
+			if ($message != "") {
+				$calendarid = $passed['calendarid'];
+				$projectid = $passed['projectid'];
+				$title = $passed['title'];
+				$details = $passed['details'];
+				$isallday = $passed['isalldayevent'];
+				$isrequest = $passed['istimerequest'];
+				if (!$repeats && strtotime($startdatetime ?? '') && strtotime($enddatetime ?? '')) {
+					$startdate = date('Y-m-d', strtotime($startdatetime));
+					$starttime = date('g:ia', strtotime($startdatetime));
+					$enddate = date('Y-m-d', strtotime($enddatetime));
+					$endtime = date('g:ia', strtotime($enddatetime));
 				}
 			}
 			
@@ -674,13 +662,13 @@
 			$enddate = date('Y-m-d',strtotime($startdatetime));
 			$starttime = "12:00pm";
 			$endtime = "1:00pm";
-			/* a start time was passed in (clicked time slot in calendar.php, or form redisplay), snapped to the 15-min options; end defaults to +1 hour */
-			if (preg_match('/\d{1,2}:\d{2}\s*[ap]m/i', $startdatetime ?? '') && strtotime($startdatetime)) {
+			/* a start time was passed in (clicked time slot in calendar.php as "g:ia", or a form redisplay as either "g:ia" or "H:i:s"), snapped to the 15-min options; end defaults to +1 hour if none was passed */
+			if (preg_match('/\d{1,2}:\d{2}/', $startdatetime ?? '') && strtotime($startdatetime)) {
 				$startts = strtotime($startdatetime);
 				$startts = $startts - ($startts % 900);
 				$startdate = date('Y-m-d', $startts);
 				$starttime = date('g:ia', $startts);
-				if (preg_match('/\d{1,2}:\d{2}\s*[ap]m/i', $enddatetime ?? '') && strtotime($enddatetime) && (strtotime($enddatetime) > $startts)) {
+				if (preg_match('/\d{1,2}:\d{2}/', $enddatetime ?? '') && strtotime($enddatetime)) { /* kept as entered, even if before the start, so a "must be after" error shows the values that caused it */
 					$endts = strtotime($enddatetime);
 				}
 				else {
@@ -819,51 +807,52 @@
 				<label>Frequency</label>
 				<div class="field">
 					<div class="ui radio checkbox">
-						<input type="radio" name="repeattype" value="daily">
+						<input type="radio" name="repeattype" value="daily" <?=($repeattype == "daily") ? "checked" : ""?>>
 						<label>Daily</label>
 					</div>
 				</div>
 				<div class="field">
 					<div class="ui radio checkbox">
-						<input type="radio" name="repeattype" value="weekly">
+						<input type="radio" name="repeattype" value="weekly" <?=($repeattype == "weekly") ? "checked" : ""?>>
 						<label>Weekly on</label>
 					</div>
 				</div>
 				<div class="inline fields">
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatsun" value="1"><label>S</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatsun" value="1" <?=$repeatdays['sun'] ? "checked" : ""?>><label>S</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatmon" value="1"><label>M</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatmon" value="1" <?=$repeatdays['mon'] ? "checked" : ""?>><label>M</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeattue" value="1"><label>T</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeattue" value="1" <?=$repeatdays['tue'] ? "checked" : ""?>><label>T</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatwed" value="1"><label>W</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatwed" value="1" <?=$repeatdays['wed'] ? "checked" : ""?>><label>W</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatthu" value="1"><label>T</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatthu" value="1" <?=$repeatdays['thu'] ? "checked" : ""?>><label>T</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatfri" value="1"><label>F</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatfri" value="1" <?=$repeatdays['fri'] ? "checked" : ""?>><label>F</label></div>
 					</div>
 					<div class="field">
-						<div class="ui checkbox"><input type="checkbox" name="repeatsat" value="1"><label>S</label></div>
+						<div class="ui checkbox"><input type="checkbox" name="repeatsat" value="1" <?=$repeatdays['sat'] ? "checked" : ""?>><label>S</label></div>
 					</div>
 				</div>
 				<div class="inline fields">
 					<div class="field">
 						<div class="ui radio checkbox">
-							<input type="radio" name="repeattype" value="monthly">
+							<input type="radio" name="repeattype" value="monthly" <?=($repeattype == "monthly") ? "checked" : ""?>>
 							<label>Monthly on day</label>
 						</div>
 					</div>
 					<div class="field">
 						<select name="repeatdayofmonth" class="ui dropdown">
 						<?
+							$selecteddom = ((int)$repeatdayofmonth > 0) ? (int)$repeatdayofmonth : (int)date('j', strtotime($startdate));
 							for ($i=1;$i<=31;$i++) {
-								?><option value="<?=$i?>"><?=$i?></option><?
+								?><option value="<?=$i?>" <?=($i == $selecteddom) ? "selected" : ""?>><?=$i?></option><?
 							}
 						?>
 						</select>
@@ -873,7 +862,7 @@
 			</div>
 			<div class="field">
 				<label>Until</label>
-				<input type="text" name="repeatenddate" value="<?=$enddate?>" placeholder="YYYY-MM-DD">
+				<input type="text" name="repeatenddate" value="<?=htmlspecialchars(($repeatenddate ?? '') != '' ? $repeatenddate : $enddate)?>" placeholder="YYYY-MM-DD">
 			</div>
 			<? } ?>
 

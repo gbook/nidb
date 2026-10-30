@@ -52,6 +52,13 @@
 	$currentcal = (int)$_COOKIE['currentcal'];
 	$currentview = $_COOKIE['currentview'] ?? '';
 
+	/* day/week grid zoom: 1 = normal, 2 = double height (easier to see/drag 15-min appointments). Remembered in a cookie */
+	$zoom = GetVariable("zoom");
+	if (($zoom === "1") || ($zoom === "2")) {
+		setcookie("calzoom", $zoom, time() + 365*24*60*60);
+		$_COOKIE['calzoom'] = $zoom;
+	}
+
 	if ($action == "") {
 		$action = $currentview;
 	}
@@ -65,13 +72,21 @@
 	if ($day < 1) { $day = (int)date("d"); }
 	$day = min($day, cal_days_in_month(CAL_GREGORIAN, $month, $year));
 
-	$holidays = CalculateHolidays($year);
+	/* the surrounding years too, so a week (or the month view's edges) spanning New Year's shows both years' holidays */
+	$holidays = array();
+	foreach (array($year - 1, $year, $year + 1) as $hyear) {
+		foreach (CalculateHolidays($hyear) as $hdate => $hnames) {
+			foreach ($hnames as $hname) {
+				if (!in_array($hname, $holidays[$hdate] ?? array(), true)) { $holidays[$hdate][] = $hname; }
+			}
+		}
+	}
 	
 	/* check the action */
 	if ($action == "year") {
 		setcookie("currentview", "year");
 		DisplayMenu($year, $month, $day, "year");
-		DisplayYear($year, $currentcal);
+		DisplayYear($year, $holidays, $currentcal);
 	}
 	elseif ($action == "month") {
 		setcookie("currentview", "month");
@@ -90,6 +105,15 @@
 	}
 	
 	
+	/* ----------------------------------------------- */
+	/* --------- CalendarZoom ------------------------ */
+	/* ----------------------------------------------- */
+	/* the day/week grid zoom factor (1 or 2) from the calzoom cookie */
+	function CalendarZoom() {
+		return (($_COOKIE['calzoom'] ?? '') === "2") ? 2 : 1;
+	}
+
+
 	/* ----------------------------------------------- */
 	/* --------- DisplayMenu ------------------------- */
 	/* ----------------------------------------------- */
@@ -154,6 +178,15 @@
 					<a class="ui big <?=$class?> label" href="calendar.php?action=week&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar outline icon"></i>Week</a>
 					<? if ($menuitem == "month") { $class="yellow"; } else { $class=""; } ?>
 					<a class="ui big <?=$class?> label" href="calendar.php?action=month&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>"><i class="calendar alternate outline icon"></i>Month</a>
+					<? if (($menuitem == "day") || ($menuitem == "week")) { ?>
+					<div style="margin-top: 8px">
+						<? if (CalendarZoom() == 2) { ?>
+						<a class="ui basic label" href="calendar.php?action=<?=$menuitem?>&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>&zoom=1" title="Return the time grid to normal size"><i class="search minus icon"></i>Zoom out</a>
+						<? } else { ?>
+						<a class="ui basic label" href="calendar.php?action=<?=$menuitem?>&year=<?=$year?>&month=<?=$month?>&day=<?=$day?>&zoom=2" title="Double the height of the time grid"><i class="search plus icon"></i>Zoom in</a>
+						<? } ?>
+					</div>
+					<? } ?>
 				</div>
 			</div>
 		</div>
@@ -166,16 +199,19 @@
 	/* ----------------------------------------------- */
 	/* appointments overlapping $startdatetime..$enddatetime on the current calendar (0 = all calendars), as an
 	   array of rows. $type: "timed" (day/week grids), "allday" (day/week headers) or "all" (month, all-day first).
-	   'groupsize' > 1 means the appointment is in a series (whose times aren't editable on their own) */
+	   'groupsize' > 1 means the appointment is in a series (whose times aren't editable on their own); only live (not deleted or
+	   cancelled) members count. Appointments on a deleted calendar aren't shown.
+	   A timed appointment ending exactly at the range start (e.g. at midnight) isn't in the range; an all-day one is, since it's
+	   stored with its last day's 00:00 as the end */
 	function CalendarAppointments($startdatetime, $enddatetime, $currentcal, $type) {
 		$currentcal = (int)$currentcal;
 		if ($type == "timed") { $typewhere = "and a.appt_isalldayevent = 0"; $order = "a.appt_startdate"; }
 		elseif ($type == "allday") { $typewhere = "and a.appt_isalldayevent = 1"; $order = "a.appt_startdate"; }
 		else { $typewhere = ""; $order = "a.appt_isalldayevent, a.appt_startdate"; }
-		$sqlstring = "select a.*, b.project_name, c.calendar_name, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0) 'groupsize' from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where (? = 0 or a.appt_calendarid = ?) $typewhere and a.appt_deletedate > now() and a.appt_canceldate > now() and a.appt_startdate <= ? and a.appt_enddate >= ? order by $order";
-		$params = array($currentcal, $currentcal, $enddatetime, $startdatetime);
+		$sqlstring = "select a.*, b.project_name, c.calendar_name, (select count(*) from calendar_appointments g where g.appt_groupid = a.appt_groupid and a.appt_groupid > 0 and g.appt_deletedate > now() and g.appt_canceldate > now()) 'groupsize' from calendar_appointments a left join calendar_projects b on a.appt_projectid = b.project_id left join calendars c on a.appt_calendarid = c.calendar_id where (? = 0 or a.appt_calendarid = ?) $typewhere and (c.calendar_id is null or c.calendar_deletedate > now()) and a.appt_deletedate > now() and a.appt_canceldate > now() and a.appt_startdate <= ? and (a.appt_enddate > ? or (a.appt_isalldayevent = 1 and a.appt_enddate = ?)) order by $order";
+		$params = array($currentcal, $currentcal, $enddatetime, $startdatetime, $startdatetime);
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'iiss', ...$params);
+		mysqli_stmt_bind_param($stmt, 'iisss', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		$rows = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) $rows[] = $row;
@@ -185,12 +221,24 @@
 
 
 	/* ----------------------------------------------- */
+	/* --------- CalendarDayMinutes ------------------ */
+	/* ----------------------------------------------- */
+	/* wall-clock minutes past midnight of $ts on the day starting at $daystartdatetime: 0 at or before the day, 1440 after it.
+	   Not ($ts - midnight)/60, which is an hour off on daylight saving days (23 or 25 hours long) */
+	function CalendarDayMinutes($ts, $daystartdatetime) {
+		if ($ts <= strtotime($daystartdatetime)) { return 0; }
+		if (date('Y-m-d', $ts) != date('Y-m-d', strtotime($daystartdatetime))) { return 1440; }
+		return (int)date('G', $ts) * 60 + (int)date('i', $ts);
+	}
+
+
+	/* ----------------------------------------------- */
 	/* --------- CalendarAppointmentTimeLabel --------- */
 	/* ----------------------------------------------- */
 	function CalendarAppointmentTimeLabel($displaydatetime, $apptstartdate, $apptenddate, $isallday) {
 		$displaydate = date('Y-m-d', strtotime($displaydatetime));
 		$startdate = date('Y-m-d', strtotime($apptstartdate));
-		$enddate = date('Y-m-d', strtotime($apptenddate));
+		$enddate = date('Y-m-d', strtotime($apptenddate) - ($isallday ? 0 : 1)); /* a timed appointment ending at midnight ends on the day before */
 
 		if ($startdate == $enddate) {
 			if ($isallday) {
@@ -216,7 +264,9 @@
 	/* --------- CalendarSlotPicker ------------------ */
 	/* ----------------------------------------------- */
 	/* hovering a day column highlights the 15-min slot under the cursor (with its start time); clicking opens the add form at that date/time.
-	   Dragging the bottom edge (.calresize) of an appointment changes its end time, in 15-min steps, posted to calendar_appointments.php?action=resize */
+	   Dragging the bottom edge (.calresize) of an appointment changes its end time, the top edge (.calresize.calresizetop) its start time,
+	   and dragging the body of a .calmovable appointment moves it (keeping its length) to another time and, in the week view, another day.
+	   All in 15-min steps, posted to calendar_appointments.php?action=resize */
 	function CalendarSlotPicker($colselector, $apptselector, $slotheight, $currentcal) {
 		$pxperminute = $slotheight / 30;
 		?>
@@ -225,21 +275,26 @@
 			<?=$apptselector?> { cursor: default; }
 			.calslothover { position: absolute; left: 0; right: 0; height: <?=15 * $pxperminute?>px; z-index: 1; box-sizing: border-box; padding-left: 4px; background: rgba(56,110,175,0.18); border: 1px solid #386eaf; border-radius: 3px; color: #1b3f6b; font-size: 7.5pt; font-weight: bold; line-height: <?=15 * $pxperminute - 2?>px; pointer-events: none; display: none; }
 			.calresize { position: absolute; left: 0; right: 0; bottom: 0; height: 6px; z-index: 1; cursor: ns-resize; }
+			.calresize.calresizetop { top: 0; bottom: auto; }
 			.calresize:hover, .calresizing .calresize { background: rgba(255,255,255,0.45); }
 			.calresizing { z-index: 4 !important; opacity: 0.85; }
+			<?=$apptselector?>.calmovable { cursor: move; }
+			.calmoving, .calmoving a { cursor: move !important; }
 			.calsloptip { position: fixed; z-index: 1000; padding: 4px 8px; border-radius: 4px; background: rgba(32,33,36,0.92); color: white; font-size: 8.5pt; white-space: nowrap; pointer-events: none; display: none; }
 		</style>
 		<form id="calresizeform" method="post" action="calendar_appointments.php" style="display:none">
 			<?=CSRFTokenField()?>
 			<input type="hidden" name="action" value="resize">
 			<input type="hidden" name="id" value="">
-			<input type="hidden" name="enddate" value="">
-			<input type="hidden" name="endminutes" value="">
+			<input type="hidden" name="edge" value="">
+			<input type="hidden" name="date" value="">
+			<input type="hidden" name="minutes" value="">
 		</form>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				var pxperminute = <?=$pxperminute?>;
-				var drag = null;            /* the appointment being resized */
+				var drag = null;            /* the appointment being resized or moved */
+				var pending = null;         /* mousedown on a movable appointment that hasn't moved far enough yet to be a drag (so a click still works) */
 				var suppressclick = false;  /* the click that ends a drag mustn't open the add form */
 				function SlotMinutes(col, e) {
 					var minutes = Math.floor((e.pageY - $(col).offset().top) / pxperminute / 15) * 15;
@@ -284,46 +339,105 @@
 					window.location.href = "calendar_appointments.php?action=addform&currentcal=<?=(int)$currentcal?>&startdate=" + encodeURIComponent($(this).attr("data-date")) + "&starttime=" + encodeURIComponent(SlotLabel(minutes));
 				});
 
-				/* drag-to-resize: the new end snaps to 15 min, at least one step after the start, at most midnight */
+				/* drag-to-resize: the dragged edge snaps to 15 min. A new end is at least one step after the start and at most midnight,
+				   a new start at least one step before the end and no earlier than midnight */
 				$("<?=$colselector?>").on("mousedown", ".calresize", function(e) {
 					if (e.which != 1) { return; }
 					e.preventDefault();
 					e.stopPropagation();
 					var appt = $(this).closest("<?=$apptselector?>");
-					drag = { appt: appt, col: appt.parent(), startmin: parseFloat(appt.css("top")) / pxperminute, origheight: appt.css("height"), endmin: null };
+					/* data-endmin is the real end; the drawn height can be padded to a minimum for short appointments */
+					drag = { appt: appt, col: appt.parent(), edge: $(this).hasClass("calresizetop") ? "start" : "end", startmin: parseFloat(appt.css("top")) / pxperminute, endmin: parseFloat(appt.attr("data-endmin")), origtop: appt.css("top"), origheight: appt.css("height"), newmin: null };
 					drag.col.children(".calslothover").hide();
 					appt.addClass("calresizing");
 					$("body").css("cursor", "ns-resize");
 				});
+				/* drag-to-move: mousedown anywhere on a movable appointment (including its link) except the edge handles.
+				   It only becomes a move once the mouse travels a few px, otherwise it's an ordinary click */
+				$("<?=$colselector?>").on("mousedown", "<?=$apptselector?>.calmovable", function(e) {
+					if ((e.which != 1) || $(e.target).closest(".calresize").length) { return; }
+					e.preventDefault(); /* no text selection or native link drag */
+					var appt = $(this), col = appt.parent();
+					var startmin = parseFloat(appt.css("top")) / pxperminute;
+					pending = { appt: appt, x: e.pageX, y: e.pageY, col: col, startmin: startmin, length: parseFloat(appt.attr("data-endmin")) - startmin, grabmin: (e.pageY - col.offset().top) / pxperminute - startmin };
+				});
+				/* the day column under the cursor (week view: any of the 7), or null */
+				function ColumnAt(e) {
+					var found = null;
+					$("<?=$colselector?>").each(function() {
+						var left = $(this).offset().left;
+						if ((e.pageX >= left) && (e.pageX < left + $(this).outerWidth())) { found = $(this); return false; }
+					});
+					return found;
+				}
+				function CancelDrag() {
+					var d = EndDrag();
+					if (d.edge == "move") { d.appt.appendTo(d.col); }
+					d.appt.css({ top: d.origtop, height: d.origheight });
+				}
 				function EndDrag() {
 					var d = drag;
 					drag = null;
 					tip.hide();
 					$("body").css("cursor", "");
-					d.appt.removeClass("calresizing");
+					d.appt.removeClass("calresizing calmoving");
 					suppressclick = true;
 					setTimeout(function() { suppressclick = false; }, 0);
 					return d;
 				}
 				$(document).on("mousemove", function(e) {
+					if (pending && !drag) {
+						if (Math.abs(e.pageX - pending.x) + Math.abs(e.pageY - pending.y) < 5) { return; }
+						var p = pending;
+						pending = null;
+						drag = { appt: p.appt, col: p.col, edge: "move", startmin: p.startmin, length: p.length, grabmin: p.grabmin, origtop: p.appt.css("top"), origheight: p.appt.css("height"), newcol: p.col, newmin: null };
+						p.col.children(".calslothover").hide();
+						p.appt.addClass("calresizing calmoving");
+						$("body").css("cursor", "move");
+					}
 					if (!drag) { return; }
+					if (drag.edge == "move") {
+						var col = ColumnAt(e) || drag.newcol;
+						if (col[0] !== drag.appt.parent()[0]) { drag.appt.appendTo(col); }
+						drag.newcol = col;
+						/* keep the spot that was grabbed under the cursor; the appointment has to stay within the day */
+						var start = Math.round(((e.pageY - col.offset().top) / pxperminute - drag.grabmin) / 15) * 15;
+						start = Math.max(Math.min(start, Math.floor((1440 - drag.length) / 15) * 15), 0);
+						drag.newmin = start;
+						drag.appt.css("top", (start * pxperminute) + "px");
+						ShowTip(e, "Release to move to " + SlotLabel(start) + " - " + SlotLabel(start + drag.length) + " on " + SlotDateLabel(col.attr("data-date")));
+						return;
+					}
 					var minutes = Math.round((e.pageY - drag.col.offset().top) / pxperminute / 15) * 15;
-					minutes = Math.min(Math.max(minutes, Math.ceil((drag.startmin + 1) / 15) * 15), 1440);
-					drag.endmin = minutes;
-					drag.appt.css("height", ((minutes - drag.startmin) * pxperminute) + "px");
-					ShowTip(e, "Release to change the end time to " + SlotLabel(minutes));
+					if (drag.edge == "start") {
+						minutes = Math.max(Math.min(minutes, Math.floor((drag.endmin - 1) / 15) * 15), 0);
+						drag.appt.css({ top: (minutes * pxperminute) + "px", height: ((drag.endmin - minutes) * pxperminute) + "px" });
+						ShowTip(e, "Release to change the start time to " + SlotLabel(minutes));
+					}
+					else {
+						minutes = Math.min(Math.max(minutes, Math.ceil((drag.startmin + 1) / 15) * 15), 1440);
+						drag.appt.css("height", ((minutes - drag.startmin) * pxperminute) + "px");
+						ShowTip(e, "Release to change the end time to " + SlotLabel(minutes));
+					}
+					drag.newmin = minutes;
 				}).on("mouseup", function() {
+					pending = null;
 					if (!drag) { return; }
+					if ((drag.newmin === null) || ((drag.edge == "move") && (drag.newcol[0] === drag.col[0]) && (drag.newmin == drag.startmin))) { CancelDrag(); return; } /* nothing changed */
 					var d = EndDrag();
-					if (d.endmin === null) { d.appt.css("height", d.origheight); return; }
 					var form = $("#calresizeform");
 					form.find("input[name=id]").val(d.appt.attr("data-id"));
-					form.find("input[name=enddate]").val(d.col.attr("data-date"));
-					form.find("input[name=endminutes]").val(d.endmin);
+					form.find("input[name=edge]").val(d.edge);
+					form.find("input[name=date]").val(((d.edge == "move") ? d.newcol : d.col).attr("data-date"));
+					form.find("input[name=minutes]").val(d.newmin);
 					form.submit();
 				}).on("keydown", function(e) {
 					/* Esc cancels a drag */
-					if (drag && (e.key == "Escape")) { var d = EndDrag(); d.appt.css("height", d.origheight); }
+					if (drag && (e.key == "Escape")) { CancelDrag(); }
+				});
+				/* releasing a move over the appointment's link mustn't open it */
+				$("<?=$colselector?>").on("click", "<?=$apptselector?> a", function(e) {
+					if (suppressclick) { e.preventDefault(); }
 				});
 			});
 		</script>
@@ -334,26 +448,26 @@
 	/* ----------------------------------------------- */
 	/* --------- DisplayYear ------------------------- */
 	/* ----------------------------------------------- */
-	function DisplayYear($year, $currentcal) {
+	function DisplayYear($year, $holidays, $currentcal) {
 		?>
 		<table width="100%" cellpadding="10">
 			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(1, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(2, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(3, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(4, $year); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 1, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 2, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 3, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 4, $holidays, $currentcal); ?></td>
 			</tr>
 			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(5, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(6, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(7, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(8, $year); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 5, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 6, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 7, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 8, $holidays, $currentcal); ?></td>
 			</tr>
 			<tr>
-				<td width="25%" valign="top"><? DisplayMonth(9, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(10, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(11, $year); ?></td>
-				<td width="25%" valign="top"><? DisplayMonth(12, $year); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 9, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 10, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 11, $holidays, $currentcal); ?></td>
+				<td width="25%" valign="top"><? DisplayMonth($year, 12, $holidays, $currentcal); ?></td>
 			</tr>
 		</table>
 		<?
@@ -379,7 +493,8 @@
 		<?
 		$startdatetime = date('Y-m-d 00:00:00', mktime(0,0,0,$month, $day, $year));
 		$enddatetime   = date('Y-m-d 23:59:59',  mktime(0,0,0,$month, $day, $year));
-		$slotheight  = 30;
+		$slotheight  = 30 * CalendarZoom();
+		$pxperminute = $slotheight / 30;
 		$dayheight   = $slotheight * 48;
 		$scrolltop   = $slotheight * 16;
 		$nowlinetop  = ((date('G')*60) + date('i')) * ($slotheight/30);
@@ -448,8 +563,10 @@
 					foreach (CalendarAppointments($startdatetime, $enddatetime, $currentcal, "timed") as $row) {
 						$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
 						$visibleEnd   = min(strtotime($row['appt_enddate']),   strtotime($enddatetime) + 1);
-						$top    = floor(($visibleStart - strtotime($startdatetime)) / 60);
-						$height = max(20, floor(($visibleEnd - $visibleStart) / 60));
+						$startmin = CalendarDayMinutes($visibleStart, $startdatetime);
+						$endmin   = CalendarDayMinutes($visibleEnd, $startdatetime);
+						$top    = $startmin * $pxperminute;
+						$height = max(20, ($endmin - $startmin) * $pxperminute);
 						$apptclass = $row['appt_istimerequest'] ? ' daycaprequest' : '';
 						$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], 0);
 						$appts[] = array(
@@ -460,12 +577,14 @@
 							'timelabel'    => $timelabel,
 							'top'          => $top,
 							'height'       => $height,
-							'start'        => $top,
-							'end'          => $top + $height,
+							'start'        => $startmin,
+							'end'          => $startmin + $height / $pxperminute,
 							'class'        => $apptclass,
 							'column'       => 0,
 							'columns'      => 1,
-							'resizable'    => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1), /* drag-to-resize only if not in a series and it ends on this day */
+							'endmin'       => $endmin,
+							'resizable'    => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1), /* drag the end only if not in a series and it ends on this day */
+							'resizablestart' => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_startdate']) >= strtotime($startdatetime)), /* drag the start only if not in a series and it starts on this day */
 						);
 					}
 
@@ -504,7 +623,8 @@
 						$left  = $appt['column'] * $width;
 						$width = $width - 1;
 						?>
-						<div class="daycalappt<?=$appt['class']?>" data-id="<?=(int)$appt['id']?>" style="top:<?=$appt['top']?>px;height:<?=$appt['height']?>px;left:<?=$left?>%;width:<?=$width?>%">
+						<div class="daycalappt<?=$appt['class']?><?=($appt['resizable'] && $appt['resizablestart']) ? ' calmovable' : ''?>" data-id="<?=(int)$appt['id']?>" data-endmin="<?=(int)$appt['endmin']?>" style="top:<?=$appt['top']?>px;height:<?=$appt['height']?>px;left:<?=$left?>%;width:<?=$width?>%">
+							<? if ($appt['resizablestart']) { ?><div class="calresize calresizetop" title="Drag to change the start time"></div><? } ?>
 							<? if ($appt['resizable']) { ?><div class="calresize" title="Drag to change the end time"></div><? } ?>
 							<a href="calendar_appointments.php?action=editform&id=<?=(int)$appt['id']?>"><b><?=htmlspecialchars($appt['title'] ?? '')?></b></a>
 							<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>
@@ -599,7 +719,8 @@
 			array('name' => 'Friday', 'date' => $fri_hol_date, 'label' => $fri_date, 'parts' => $fri, 'holidays' => $fri_holidays),
 			array('name' => 'Saturday', 'date' => $sat_hol_date, 'label' => $sat_date, 'parts' => $sat, 'holidays' => $sat_holidays)
 		);
-		$slotheight = 30;
+		$slotheight = 30 * CalendarZoom();
+		$pxperminute = $slotheight / 30;
 		$dayheight = $slotheight * 48;
 		$weekscrolltop = $slotheight * 16;
 		$nowlinetop = ((date('G')*60) + date('i')) * ($slotheight/30);
@@ -623,7 +744,6 @@
 				.weekcalappt a, .weekcalappt a:visited { color: white; text-decoration: none; }
 				.weekcalappt .meta { opacity: 0.9; font-size: 7pt; }
 				.weekcalrequest { background: #bf4a4a; border: 1px dashed #fff; }
-				.weekcalallday { background: #f2711c; }
 				.weekcalheadallday { display: block; margin-top: 3px; padding: 2px 5px; border-radius: 3px; background: #f2711c; color: white; font-size: 7.5pt; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 				.weekcalheadallday a, .weekcalheadallday a:visited { color: white; text-decoration: none; }
 				.weekcalbodyspacer { height: <?=$dayheight?>px; border-left: 1px solid #dadce0; background: #fff; }
@@ -694,25 +814,19 @@
 						foreach (CalendarAppointments($startdatetime, $enddatetime, $currentcal, "timed") as $row) {
 							$id = $row['appt_id'];
 							$username = $row['appt_username'];
-							$projectname = $row['project_name'];
 							$calendarname = $row['calendar_name'];
 							$title = $row['appt_title'];
-							$isallday = $row['appt_isalldayevent'];
 							$isrequest = $row['appt_istimerequest'];
-							$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], $isallday);
-							if ($isallday) {
-								$visibleStart = strtotime($startdatetime);
-								$visibleEnd = strtotime($enddatetime) + 1;
-							}
-							else {
-								$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
-								$visibleEnd = min(strtotime($row['appt_enddate']), strtotime($enddatetime) + 1);
-							}
-							$top = floor(($visibleStart - strtotime($startdatetime))/60);
-							$height = max(20, floor(($visibleEnd - $visibleStart)/60));
+							$timelabel = CalendarAppointmentTimeLabel($startdatetime, $row['appt_startdate'], $row['appt_enddate'], 0);
+							/* timed appointments only; all-day ones are listed in the day headers above */
+							$visibleStart = max(strtotime($row['appt_startdate']), strtotime($startdatetime));
+							$visibleEnd = min(strtotime($row['appt_enddate']), strtotime($enddatetime) + 1);
+							$startmin = CalendarDayMinutes($visibleStart, $startdatetime);
+							$endmin = CalendarDayMinutes($visibleEnd, $startdatetime);
+							$top = $startmin * $pxperminute;
+							$height = max(20, ($endmin - $startmin) * $pxperminute);
 							$apptclass = "";
 							if ($isrequest) { $apptclass .= " weekcalrequest"; }
-							if ($isallday) { $apptclass .= " weekcalallday"; }
 							$appts[] = array(
 								'id' => $id,
 								'username' => $username,
@@ -721,12 +835,14 @@
 								'timelabel' => $timelabel,
 								'top' => $top,
 								'height' => $height,
-								'start' => $top,
-								'end' => $top + $height,
+								'start' => $startmin,
+								'end' => $startmin + $height / $pxperminute,
 								'class' => $apptclass,
 								'column' => 0,
 								'columns' => 1,
-								'resizable' => (!$isallday) && ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1) /* drag-to-resize only if not in a series and it ends on this day */
+								'endmin' => $endmin,
+								'resizable' => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_enddate']) <= strtotime($enddatetime) + 1), /* drag the end only if not in a series and it ends on this day */
+								'resizablestart' => ((int)$row['groupsize'] <= 1) && (strtotime($row['appt_startdate']) >= strtotime($startdatetime)) /* drag the start only if not in a series and it starts on this day */
 							);
 						}
 
@@ -776,7 +892,8 @@
 							$left = $appt['column']*$width;
 							$width = $width - 1;
 							?>
-							<div class="weekcalappt<?=$appt['class']?>" data-id="<?=(int)$appt['id']?>" style="top: <?=$appt['top']?>px; height: <?=$appt['height']?>px; left: <?=$left?>%; width: <?=$width?>%">
+							<div class="weekcalappt<?=$appt['class']?><?=($appt['resizable'] && $appt['resizablestart']) ? ' calmovable' : ''?>" data-id="<?=(int)$appt['id']?>" data-endmin="<?=(int)$appt['endmin']?>" style="top: <?=$appt['top']?>px; height: <?=$appt['height']?>px; left: <?=$left?>%; width: <?=$width?>%">
+								<? if ($appt['resizablestart']) { ?><div class="calresize calresizetop" title="Drag to change the start time"></div><? } ?>
 								<? if ($appt['resizable']) { ?><div class="calresize" title="Drag to change the end time"></div><? } ?>
 								<a href="calendar_appointments.php?action=editform&id=<?=(int)$appt['id']?>"><b><?=htmlspecialchars($appt['title'] ?? '')?></b></a>
 								<?if ($appt['timelabel'] != "") { ?><div><?=$appt['timelabel']?></div><? } ?>

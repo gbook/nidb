@@ -46,9 +46,7 @@
 
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
-	
-	if ($_POST["action"] == "") { $action = $_GET["action"]; } else { $action = $_POST["action"]; }
-	if ($_POST["currentcal"] == "") { $currentcal = $_GET["currentcal"]; } else { $currentcal = $_POST["currentcal"]; }
+	$currentcal = (int)GetVariable("currentcal"); /* 0 = all calendars */
 
 	/* check the action */
 	if ($action == "set") {
@@ -71,7 +69,7 @@
 			$description = $row['calendar_description'];
 			$location = $row['calendar_location'];
 			?>
-			<a href="calendar_select.php?action=set&currentcal=<?=$id?>"><b><?=$name?></b></a> - <?=$location?><br>
+			<a href="calendar_select.php?action=set&currentcal=<?=(int)$id?>"><b><?=htmlspecialchars($name ?? '')?></b></a> - <?=htmlspecialchars($location ?? '')?><br>
 			<?
 		}
 		?>
@@ -84,15 +82,23 @@
 	/* --------- SetCalendar ------------------------- */
 	/* ----------------------------------------------- */
 	function SetCalendar($calid) {
-		$sqlstring = "select * from calendars where calendar_id = $calid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$calname = $row['calendar_name'];
-	
-		if ($calid == 0) { $calname = "All Calendars"; }
+		$calid = (int)$calid;
+		if ($calid == 0) {
+			$calname = "All Calendars";
+		}
+		else {
+			$sqlstring = "select calendar_name from calendars where calendar_id = ? and calendar_deletedate > now()";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $calid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($calid));
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) { Error("Calendar not found"); DisplayMenu(); return; }
+			$calname = $row['calendar_name'];
+		}
 		setcookie("currentcal", $calid);
 		setcookie("currentcalname", $calname);
-		header("Location: calendar.php");
+		RedirectTo("calendar.php");
 	}
 ?>
 	
