@@ -231,44 +231,52 @@
 		$smtp = Mail::factory('smtp', $params);
 		$mail = $smtp->send($to, $headers, $body);
 
+		$sent = !PEAR::isError($mail);
+
 		if ($debug) {
+			/* show the message as an email preview. The body is rendered in a sandboxed iframe
+			   because it is a complete HTML document (and so its styles don't leak into the page) */
 			?>
-			<table border="1">
-				<tr>
-					<td>To</td>
-					<td><?=htmlspecialchars($to)?></td>
-				</tr>
-				<tr>
-					<td>From</td>
-					<td><?=htmlspecialchars($from)?></td>
-				</tr>
-				<tr>
-					<td>Server</td>
-					<td><?=htmlspecialchars("$host:$port")?></td>
-				</tr>
-				<tr>
-					<td>Subject</td>
-					<td><?=htmlspecialchars($subject)?></td>
-				</tr>
-				<tr>
-					<td>Body</td>
-					<td><?=$htmlbody?></td>
-				</tr>
-			</table>
+			<div class="ui segment" style="max-width: 800px; margin: 1em auto; text-align: left">
+				<h4 class="ui header">
+					<i class="envelope outline icon"></i>
+					<div class="content">
+						Test email
+						<? if ($sent) { ?>
+						<span class="ui small green label"><i class="check icon"></i> Sent</span>
+						<? } else { ?>
+						<span class="ui small red label"><i class="times icon"></i> Failed</span>
+						<? } ?>
+					</div>
+				</h4>
+				<? if (!$sent) { ?>
+				<div class="ui small red message"><code><?=htmlspecialchars($mail->getMessage() . ' | ' . $mail->getUserInfo())?></code></div>
+				<? } ?>
+				<table class="ui very basic compact table" style="margin-bottom: 0">
+					<tr>
+						<td class="collapsing right aligned" style="color: #888">From</td>
+						<td><?=htmlspecialchars($from)?></td>
+					</tr>
+					<tr>
+						<td class="collapsing right aligned" style="color: #888">To</td>
+						<td><?=htmlspecialchars($to)?></td>
+					</tr>
+					<tr>
+						<td class="collapsing right aligned" style="color: #888">Server</td>
+						<td><code><?=htmlspecialchars("$host:$port")?></code></td>
+					</tr>
+					<tr>
+						<td class="collapsing right aligned" style="color: #888">Subject</td>
+						<td><b><?=htmlspecialchars($subject)?></b></td>
+					</tr>
+				</table>
+				<div class="ui divider"></div>
+				<iframe sandbox="" srcdoc="<?=htmlspecialchars($htmlbody)?>" style="width: 100%; height: 220px; border: 1px solid #ddd; border-radius: 4px; background: #fff"></iframe>
+			</div>
 			<?
 		}
-		
-		if (PEAR::isError($mail)) {
-			if ($debug) {
-				echo('<p>' . htmlspecialchars($mail->getMessage() . ' | ' . $mail->getUserInfo()) . '</p>');
-			}
-			return 0;
-		} else {
-			if ($debug) {
-				echo('<p>Message successfully sent!</p>');
-			}
-			return 1;
-		}	
+
+		return $sent ? 1 : 0;
 	}
 	
 
