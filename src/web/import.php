@@ -117,148 +117,104 @@
 				</div>
 			</div>
 
+			<style>
+				.importtiles .ui.card.tile { width: 260px; height: 175px; margin: 0.6em; color: inherit; transition: box-shadow 0.15s ease; }
+				.importtiles .ui.card.tile > .content { overflow: hidden; }
+				.importtiles .ui.card.tile:hover { box-shadow: 0 0 0 3px var(--tilecolor), 0 2px 8px rgba(0,0,0,0.15); transform: none; }
+				.importtiles.imports { --tilecolor: #2185d0; }
+				.importtiles.exports { --tilecolor: #21ba45; }
+			</style>
+
 			<div class="ui two column stackable grid">
 			<div class="column">
 
-			<h2 class="ui header">
-				<i class="grey file import icon"></i>
+			<h2 class="ui center aligned header">
 				<div class="content">Imports
 					<div class="sub header">Tools to bring data into NiDB</div>
 				</div>
 			</h2>
-			
-			<div class="ui cards">
-				<div class="ui card">
+
+			<div class="ui centered cards importtiles imports">
+				<a class="ui card tile" href="import.php?action=idmapper">
 					<div class="content">
 						<div class="header">ID Mapping</div>
+						<div class="description">Subjects and studies can having multiple IDs. This tool will match a list of IDs to existing objects.</div>
 					</div>
-					<div class="content">
-						Subjects and studies can having multiple IDs. This tool will match a list of IDs to existing objects.
-					</div>
-					<div class="center aligned extra content">
-						<a href="import.php?action=idmapper" class="ui button">ID mapper</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="importimaging.php">
 					<div class="content">
 						<div class="header">Import Imaging</div>
+						<div class="description">Upload imaging data and track existing uploads.</div>
 					</div>
-					<div class="content">
-						Upload imaging data and track existing uploads.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="importimaging.php" class="ui button">Import imaging</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="importnonimaging.php">
 					<div class="content">
 						<div class="header">Import non-imaging</div>
+						<div class="description">Import observations and interventions.</div>
 					</div>
-					<div class="content">
-						Import observations and interventions.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="importnonimaging.php" class="ui button">Import non-imaging</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="importremote.php">
 					<div class="content">
 						<div class="header">Import remote</div>
+						<div class="description">Import data from remote server.</div>
 					</div>
-					<div class="content">
-						Import data from remote server.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="importremote.php" class="ui button">Import remote</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="importimaging.php?action=viewdcmrcvlogs">
 					<div class="content">
 						<div class="header">Import Logs</div>
+						<div class="description">View <tt>dcmrcv</tt> DICOM receiver import logs.</div>
 					</div>
-					<div class="content">
-						View <tt>dcmrcv</tt> import logs.<br><br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="importimaging.php?action=viewdcmrcvlogs" class="ui button">DICOM receiver logs</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="https://github.com/gbook/nidbuploader/releases" target="_blank">
 					<div class="content">
-						<div class="header">Uploader</div>
+						<div class="header">Uploader <i class="small grey external alternate icon"></i></div>
+						<div class="description">Download the <b>NiDB Uploader</b> from github.</div>
 					</div>
-					<div class="content">
-						Download the <b>NiDB Uploader</b> from github.
-					</div>
-					<div class="center aligned extra content">
-						<a href="https://github.com/gbook/nidbuploader/releases" class="ui button" target="_blank">Download the uploader</a>
-					</div>
-				</div>
+				</a>
 			</div>
 
 			</div>
 			<div class="column">
 
-			<h2 class="ui header">
-				<i class="grey file export icon"></i>
+			<h2 class="ui center aligned header">
 				<div class="content">Exports
 					<div class="sub header">Tools to get data out of NiDB</div>
 				</div>
 			</h2>
-			
-			<div class="ui cards">
-				<div class="ui card">
-					<div class="content">
-						<div class="header"><img src="images/squirrel-icon-64.png" height="50%"></img> Squirrel Packages</div>
-					</div>
-					<div class="content">
-						Share data packages containing any data elements stored in NiDB. Exported in <a href="https://github.com/gbook/squirrel">squirrel</a> format.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="packages.php" class="ui button">Create & Manage Packages</a>
-					</div>
-				</div>
 
-				<div class="ui card">
+			<div class="ui centered cards importtiles exports">
+				<a class="ui card tile" href="packages.php">
+					<div class="content">
+						<div class="header"><img src="images/squirrel-icon-64.png" style="height: 1.2em; vertical-align: middle"> Squirrel Packages</div>
+						<div class="description">Share data packages containing any data elements stored in NiDB. Exported in <b>squirrel</b> format.</div>
+					</div>
+				</a>
+
+				<a class="ui card tile" href="publicdownloads.php">
 					<div class="content">
 						<div class="header">Public Downloads</div>
+						<div class="description">Single public downloads. Available <b>temporarily</b> up to 90 days before being removed.</div>
 					</div>
-					<div class="content">
-						Single public downloads. Available <b>temporarily</b> up to 90 days before being removed.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="publicdownloads.php" class="ui button">Manage Downloads</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="publicdatasets.php">
 					<div class="content">
 						<div class="header">Public Datasets</div>
+						<div class="description">Groups of downloads, available <b>permanently</b>. Example: a multi-site project, where data from each site is available as a separate download.</div>
 					</div>
-					<div class="content">
-						Groups of downloads, available <b>permamently</b>. Example: a multi-site project, where data from each site is available as a separate download
-					</div>
-					<div class="center aligned extra content">
-						<a href="publicdatasets.php" class="ui button">Manage Datasets</a>
-					</div>
-				</div>
+				</a>
 
-				<div class="ui card">
+				<a class="ui card tile" href="datasetrequests.php">
 					<div class="content">
 						<div class="header">Request a Dataset</div>
+						<div class="description">Your NiDB admin may allow you to submit a description of a requested dataset and destination. Check with your admin.</div>
 					</div>
-					<div class="content">
-						Your NiDB admin may allow you to submit a description of a requested dataset and destination. Check with your admin.<br><br>
-					</div>
-					<div class="center aligned extra content">
-						<a href="datasetrequests.php" class="ui button">Manage Requests</a>
-					</div>
-				</div>
+				</a>
 			</div>
 
 			</div>

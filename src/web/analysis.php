@@ -967,6 +967,20 @@
 			<input type="hidden" name="analysisnotes" value="">
 			<input type="hidden" name="analysisid" id="analysisid" value="">
 			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="objecttype" value="analysis"> <!-- only read by packages.php (Add to Package) -->
+			<script>
+				/* post the checked analyses to the packages.php add form. The form has an input named
+				   "action", which shadows form.action, so the target must be set with setAttribute.
+				   Restore it right after submit() so a Back navigation leaves the form posting to
+				   analysis.php again */
+				function AddAnalysesToPackage() {
+					var form = document.getElementById('studieslist');
+					form.setAttribute('action', 'packages.php');
+					document.getElementById('studieslistaction').value = 'addobject';
+					form.submit();
+					form.setAttribute('action', 'analysis.php');
+				}
+			</script>
 			<tbody>
 				<?
 					$types = ''; $params = array();
@@ -1253,7 +1267,7 @@
 
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div>
 						
-						<div class="ui item" onclick="document.studieslist.action='packages.php';document.studieslist.action.value='addobject';document.studieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
+						<div class="ui item" onclick="AddAnalysesToPackage()"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 					</div>
 				</div>
 			</div>

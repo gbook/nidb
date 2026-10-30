@@ -29,6 +29,7 @@
 	define("OBSERVATION_DISPLAY_LIMIT", 5000);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 
 ?>
 <html>
@@ -49,20 +50,18 @@
 	//PrintVariable($_POST);
 	//PrintVariable($_GET);
 
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpfilename = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpfilename))
-		$selfcall = true;
-	else
-		$selfcall = false;
-
-	//$username = $_SESSION['username'];
-	//$instanceid = $_SESSION['instanceid'];
-	//session_write_close();
-	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+
+	/* Every action that changes state must arrive by POST and carry this session's CSRF token, so
+	   a third-party page cannot make a logged-in browser perform them. All of these are posted from
+	   a form that emits CSRFTokenField(). GetSafeAction() returns "" (and shows an error) for a
+	   mutating action that fails either check, which falls through to the package list below.
+
+	   "displaypackage" is deliberately NOT in this list. It is a read view reached by a normal
+	   link, and requiring a token would break navigation. It does perform an idempotent alternate-
+	   UID backfill, which is a write on a read path, but not one worth forging. */
+	$mutatingactions = array("addpackage", "updatepackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export");
+	$action = GetSafeAction($mutatingactions);
 	$packageid = (int)GetVariable("packageid");
 	$packagename = GetVariable("packagename");
 	$packagedesc = GetVariable("packagedesc");
@@ -84,6 +83,7 @@
 	$includeinterventions = GetVariable("includeinterventions");
 	$includeobservations = GetVariable("includeobservations");
 	$includepipelines = GetVariable("includepipelines");
+	$includeseries = GetVariable("includeseries");
 	$interventionids = GetVariable("interventionids");
 	$modality = GetVariable("modality");
 	$objectids = GetVariable("objectids");
@@ -172,70 +172,75 @@
 	   reference an existing package (addform, addpackage, addobject) are not in this list */
 	$packageactions = array("editform", "updatepackage", "displaypackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export");
 
-	/* Every action that changes state must carry this session's CSRF token, so a third-party page
-	   cannot make a logged-in browser perform them. All of these arrive by POST from a form that
-	   emits CSRFTokenField(). Checked before the ownership query below - an unverified request is
-	   not worth a database round trip.
-
-	   "displaypackage" is deliberately NOT in this list. It is a read view reached by a normal
-	   link, and requiring a token would break navigation. It does perform an idempotent alternate-
-	   UID backfill, which is a write on a read path, but not one worth forging. */
-	$mutatingactions = array("addpackage", "updatepackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export");
-	if ((in_array($action, $mutatingactions)) && (!VerifyCSRFToken())) {
-		DisplayPackageList();
-	}
-	elseif ((in_array($action, $packageactions)) && (!UserOwnsPackage($packageid))) {
+	/* the CSRF/POST check already happened in GetSafeAction() above, so an unverified request
+	   never reaches the ownership query */
+	if ((in_array($action, $packageactions)) && (!UserOwnsPackage($packageid))) {
 		Error("Package [$packageid] does not exist, or you do not have permission to access it");
 		DisplayPackageList();
 	}
-	elseif ($selfcall) {
-		if ($action == "editform")  {
-			DisplayPackageForm($packageid, "edit");
-		}
-		elseif ($action == "addform") {
-			DisplayPackageForm($packageid, "add");
-		}
-		elseif ($action == "updatepackage") {
-			UpdatePackage($packageid,$packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes);
-			DisplayPackageList();
-		}
-		elseif ($action == "addpackage") {
-			AddPackage($packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes);
-			DisplayPackageList();
-		}
-		elseif ($action == "displaypackage") {
-			DisplayPackage($packageid);
-		}
-		elseif ($action == "addobjectstopackage") {
-			AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $interventionids, $observationids, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
-			DisplayPackage($packageid);
-		}
-		elseif ($action == "removeobject") {
-			RemoveObject($packageid, $objecttype, $objectids);
-			DisplayPackage($packageid);
-		}
-		elseif ($action == "splitmodality") {
-			SplitPackageByModality($packageid);
-			DisplayPackageList();
-		}
-		elseif ($action == "deletepackage") {
-			DeletePackage($packageid);
-			DisplayPackageList();
-		}
-		elseif ($action == "export") {
-			ExportPackage($packageid);
-			DisplayPackage($packageid);
-		}
-		else {
-			DisplayPackageList();
-		}
-	}
 	else {
-		if ($action == "addobject") {
-			AddObjectForm($objecttype, $objectids, $modality);
-		}
-		else {
-			DisplayPackageList();
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then
+		   redirect to a GET so a refresh/Back doesn't re-submit the form */
+		switch ($action) {
+			case 'editform':
+				DisplayPackageForm($packageid, "edit");
+				break;
+			case 'addform':
+				DisplayPackageForm($packageid, "add");
+				break;
+			case 'displaypackage':
+				DisplayPackage($packageid);
+				break;
+			case 'addobject':
+				/* analysis.php posts its checked analyses as analysisids[] rather than objectids[] */
+				if (($objecttype == "analysis") && (count(CleanIDs($objectids)) < 1))
+					$objectids = $analysisids;
+				AddObjectForm($objecttype, $objectids, $modality);
+				break;
+			case 'updatepackage':
+				ob_start();
+				UpdatePackage($packageid,$packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php");
+				break;
+			case 'addpackage':
+				ob_start();
+				AddPackage($packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php");
+				break;
+			case 'addobjectstopackage':
+				ob_start();
+				AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php?action=displaypackage&packageid=$packageid");
+				break;
+			case 'removeobject':
+				ob_start();
+				RemoveObject($packageid, $objecttype, $objectids);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php?action=displaypackage&packageid=$packageid");
+				break;
+			case 'splitmodality':
+				ob_start();
+				SplitPackageByModality($packageid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php");
+				break;
+			case 'deletepackage':
+				ob_start();
+				DeletePackage($packageid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php");
+				break;
+			case 'export':
+				ob_start();
+				ExportPackage($packageid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php?action=displaypackage&packageid=$packageid");
+				break;
+			default:
+				DisplayPackageList();
 		}
 	}
 
@@ -270,6 +275,148 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CleanIDs --------------------------- */
+	/* -------------------------------------------- */
+	/* reduce an array, comma-separated string, or single value of IDs to a de-duplicated list of
+	   positive integers. Anything that is not a positive integer is dropped */
+	function CleanIDs($ids) {
+		if (!is_array($ids))
+			$ids = explode(",", (string)$ids);
+
+		$clean = array();
+		foreach ($ids as $id) {
+			if (is_array($id))
+				continue;
+			$id = (int)trim((string)$id);
+			if ($id > 0)
+				$clean[$id] = $id;
+		}
+		return array_values($clean);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- InPlaceholders --------------------- */
+	/* -------------------------------------------- */
+	/* "?,?,?" for an "in (...)" clause with one bound parameter per item */
+	function InPlaceholders($items) {
+		return implode(",", array_fill(0, count($items), "?"));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PkgQuery --------------------------- */
+	/* -------------------------------------------- */
+	/* prepare, bind, and run a query. Parameter types are taken from the PHP type of each value
+	   (int -> 'i', anything else -> 's'), so cast IDs to int before passing them. Returns the
+	   result set for a select (null/false otherwise). $affected receives the number of rows
+	   changed by an insert/update/delete, and $insertid the auto-increment ID of an insert */
+	function PkgQuery($sqlstring, $params, $line, &$affected = null, &$insertid = null) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if (($stmt) && (count($params) > 0)) {
+			$types = "";
+			foreach ($params as $param)
+				$types .= is_int($param) ? 'i' : 's';
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, $line, $sqlstring, $params);
+		$affected = 0;
+		$insertid = 0;
+		if ($stmt) {
+			$affected = mysqli_stmt_affected_rows($stmt);
+			$insertid = mysqli_stmt_insert_id($stmt);
+			mysqli_stmt_close($stmt);
+		}
+		return $result;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsSeriesModality ------------------- */
+	/* -------------------------------------------- */
+	/* true if $modality names an existing <modality>_series table. A modality becomes part of a
+	   table name in several queries here, and table names cannot be bound, so it must pass this
+	   check (against the actual table list) before it is interpolated */
+	function IsSeriesModality($modality) {
+		static $validmodalities = null;
+
+		if (is_null($validmodalities)) {
+			$validmodalities = array();
+			$result = PkgQuery("select table_name 'tablename' from information_schema.tables where table_schema = database() and table_name like '%\_series'", array(), __LINE__);
+			while (($result) && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+				$tablename = strtolower($row['tablename']);
+				$validmodalities[substr($tablename, 0, strlen($tablename) - strlen("_series"))] = true;
+			}
+		}
+
+		return ((is_string($modality)) && (preg_match('/^[a-z]+$/', $modality)) && (isset($validmodalities[$modality])));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FilterViewableData ----------------- */
+	/* -------------------------------------------- */
+	/* Keep only the IDs of raw data in projects where the current user has View Data. Putting data
+	   in a package copies it out of NiDB on export, so it needs the same permission as viewing it.
+	   Raw data is enrollments, studies, series, observations, and interventions. Analyses, pipelines,
+	   and experiments are not restricted (see doc/permissions.md), so other types pass through.
+	   $numskipped receives the number of IDs dropped, including IDs that don't exist */
+	function FilterViewableData($objecttype, $ids, $modality, &$numskipped) {
+		$ids = CleanIDs($ids);
+		$numskipped = 0;
+		if (count($ids) < 1)
+			return array();
+
+		/* each query returns the object's ID and the project it belongs to */
+		switch ($objecttype) {
+			case "enrollment":
+				$sqlstring = "select enrollment_id 'id', project_id from enrollment where enrollment_id in (" . InPlaceholders($ids) . ")";
+				break;
+			case "study":
+				$sqlstring = "select a.study_id 'id', b.project_id from studies a inner join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id in (" . InPlaceholders($ids) . ")";
+				break;
+			case "series":
+				/* the modality names the <modality>_series table, and table names cannot be bound */
+				$modality = strtolower(trim((string)$modality));
+				if ($modality == "mrseries") { $modality = "mr"; }
+				if (!IsSeriesModality($modality)) {
+					$numskipped = count($ids);
+					return array();
+				}
+				$sqlstring = "select a.$modality" . "series_id 'id', c.project_id from $modality" . "_series a inner join studies b on a.study_id = b.study_id inner join enrollment c on b.enrollment_id = c.enrollment_id where a.$modality" . "series_id in (" . InPlaceholders($ids) . ")";
+				break;
+			case "observation":
+				$sqlstring = "select a.observation_id 'id', b.project_id from observations a inner join enrollment b on a.enrollment_id = b.enrollment_id where a.observation_id in (" . InPlaceholders($ids) . ")";
+				break;
+			case "intervention":
+				$sqlstring = "select a.intervention_id 'id', b.project_id from interventions a inner join enrollment b on a.enrollment_id = b.enrollment_id where a.intervention_id in (" . InPlaceholders($ids) . ")";
+				break;
+			default:
+				return $ids;
+		}
+
+		$projectbyid = array();
+		$result = PkgQuery($sqlstring, $ids, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$projectbyid[(int)$row['id']] = (int)$row['project_id'];
+		}
+
+		/* GetPerm() with a project ID of 0 means "any project", so an object without a project
+		   is never viewable */
+		$perms = GetCurrentUserProjectPermissions(array_values(array_unique($projectbyid)));
+		$viewable = array();
+		foreach ($ids as $id) {
+			$projectid = $projectbyid[$id] ?? 0;
+			if (($projectid > 0) && (GetPerm($perms, 'viewdata', $projectid)))
+				$viewable[] = $id;
+		}
+
+		$numskipped = count($ids) - count($viewable);
+		return $viewable;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- MarkTime --------------------------- */
 	/* -------------------------------------------- */
 	function MarkTime($msg) {
@@ -283,27 +430,23 @@
 	/* -------------------------------------------- */
 	function AddObjectForm($objecttype, $objectids, $modality) {
 
-		/* check for oddities */
-		$good = true;
-		if (count($objectids) < 1) $good = false;
-		if ((count($objectids) == 1) && ($objectids[0] == "")) $good = false;
-		
-		if (!$good) {
+		/* every object type is identified by integer IDs; drop anything else */
+		$objectids = CleanIDs($objectids);
+		if (count($objectids) < 1) {
 			Error("List of objectids was blank");
 			return;
 		}
-		//PrintVariable($objecttype);
-		//PrintVariable($objectids);
-		//PrintVariable($modality);
 
-		/* perform data checks */
-		$objecttype = mysqli_real_escape_string($GLOBALS['linki'], $objecttype);
-		$objectids = mysqli_real_escape_array($GLOBALS['linki'], $objectids);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-
-		//PrintVariable($objecttype);
-		//PrintVariable($objectids);
-		//PrintVariable($modality);
+		/* raw data can only be packaged from projects where the user has View Data. Everything the
+		   add forms list (studies, series, observations, interventions) is found through these
+		   starting objects and belongs to the same enrollment, so filtering here covers the form */
+		$objectids = FilterViewableData($objecttype, $objectids, $modality, $numskipped);
+		if ($numskipped > 0)
+			Warning("$numskipped " . htmlspecialchars((string)$objecttype) . " object(s) not shown. They don't exist, or you don't have View Data permission on their project.");
+		if (count($objectids) < 1) {
+			Error("None of the selected objects can be added to a package");
+			return;
+		}
 
 		switch ($objecttype) {
 			case "enrollment":
@@ -334,52 +477,84 @@
 	}
 
 	/* -------------------------------------------- */
+	/* ------- GetStudyAnalyses ------------------- */
+	/* -------------------------------------------- */
+	/* returns array(analysisids, pipelineids) for the finished analyses of these studies */
+	function GetStudyAnalyses($studyids) {
+		$analysisids = array();
+		$pipelineids = array();
+
+		/* an empty "in ()" is a SQL syntax error */
+		$studyids = CleanIDs($studyids);
+		if (count($studyids) > 0) {
+			$sqlstring = "select analysis_id, pipeline_id from analysis where study_id in (" . InPlaceholders($studyids) . ") and analysis_status in ('complete', 'error','rerunresults')";
+			$result = PkgQuery($sqlstring, $studyids, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$analysisids[] = (int)$row['analysis_id'];
+				$pipelineids[] = (int)$row['pipeline_id'];
+			}
+		}
+
+		return array(array_values(array_unique($analysisids)), array_values(array_unique($pipelineids)));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetMappedExperiments --------------- */
+	/* -------------------------------------------- */
+	/* map each [modality][protocol]['projectid'] to the experiments attached to it */
+	function GetMappedExperiments($experimentmapping) {
+		$experimentids = array();
+
+		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
+			foreach ($modalityvalue as $seriesdesc => $value) {
+				$sqlstring = "select experiment_id from experiment_mapping where project_id = ? and protocolname = ? and modality = ?";
+				$result = PkgQuery($sqlstring, array((int)$value['projectid'], (string)$seriesdesc, (string)$modalitykey), __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$experimentids[] = (int)$row['experiment_id'];
+				}
+			}
+		}
+
+		return array_values(array_unique($experimentids));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayAddEnrollmentForm ----------- */
 	/* -------------------------------------------- */
 	function DisplayAddEnrollmentForm($enrollmentids) {
-		//PrintVariable($enrollmentids);
-		
-		if (count((array)$enrollmentids) < 1) {
+
+		$enrollmentids = CleanIDs($enrollmentids);
+		if (count($enrollmentids) < 1) {
 			Error("0 subjectids passed into function");
 			return;
 		}
-		$uids = array();
-		$enrollmentids = (array)$enrollmentids;
-		$subjectids = array();
 		$studyids = array();
-		$projectids = array();
 		$seriesids = array();
-		$analysisids = array();
-		$pipelineids = array();
-		$experimentids = array();
 		$experimentmapping = array();
-		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
 
 		/* get all series from this enrollment */
-		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numstudies = mysqli_num_rows($result);
+		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
+		$result = PkgQuery($sqlstring, $enrollmentids, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentids[] = $row['enrollment_id'];
-			$subjectids[] = $row['subject_id'];
-			$studyids[] = $row['study_id'];
-			$studyid = $row['study_id'];
-			$projectids[] = $row['project_id'];
-			$projectid = $row['project_id'];
-			
+			$studyids[] = (int)$row['study_id'];
+			$studyid = (int)$row['study_id'];
+			$projectid = (int)$row['project_id'];
+
 			$modality = strtolower(trim($row['study_modality'] ?? ''));
+			if ($modality == "mrseries") { $modality = "mr"; }
 
 			/* a study with a blank/invalid modality has no <modality>_series table -- building the
 			   query anyway yields "_series" and a "Table doesn't exist" error, so skip it. The
-			   modality also names a table, so require plain letters before interpolating it. */
-			if (preg_match('/^[a-z]+$/', $modality)) {
-				if ($modality == "mrseries") { $modality = "mr"; }
-				$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			   modality also names a table, so it must be a real series table before interpolating it */
+			if (IsSeriesModality($modality)) {
+				$sqlstringA = "select * from $modality" . "_series where study_id = ?";
+				$resultA = PkgQuery($sqlstringA, array($studyid), __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesids[$modality][] = $rowA[$modality . 'series_id'];
 
-					if (trim($rowA['series_desc']) == "")
+					if (trim($rowA['series_desc'] ?? '') == "")
 						$seriesdesc = $rowA['series_protocol'];
 					else
 						$seriesdesc = $rowA['series_desc'];
@@ -388,47 +563,10 @@
 				}
 			}
 		}
-		//PrintVariable($seriesids);
-		$enrollmentids = array_unique($enrollmentids);
-		$subjectids = array_unique($subjectids);
 		$studyids = array_unique($studyids);
-		//$seriesids = array_unique($seriesids);
-		$projectids = array_unique($projectids);
 
-		$numenrollments = count((array)$enrollmentids);
-		$numsubjects = count((array)$subjectids);
-		$numstudies = count((array)$studyids);
-		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
-
-		/* get list of analysisids */
-		if (count((array)$studyids) > 0) {
-			$studyidstr = implode2(",", $studyids);
-			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($result);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$analysisids[] = $row['analysis_id'];
-				$pipelineids[] = $row['pipeline_id'];
-			}
-		}
-		$analysisids = array_unique($analysisids);
-		$pipelineids = array_unique($pipelineids);
-		
-		/* get list of experiments - need to map the experiment to the protocol/modality and project */
-		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
-			foreach ($modalityvalue as $seriesdesc => $value) {
-				$projectid = $value['projectid'];
-				$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
-				
-				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numseries = mysqli_num_rows($result);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$experimentids[] = $row['experiment_id'];
-				}
-			}
-		}
-		$experimentids = array_unique($experimentids);
+		list($analysisids, $pipelineids) = GetStudyAnalyses($studyids);
+		$experimentids = GetMappedExperiments($experimentmapping);
 		
 		?>
 		
@@ -442,7 +580,7 @@
 					<h2>The following objects will be added to the package</h2>
 					<? DisplayFormSubjects($enrollmentids, true); ?>
 					
-					<h2>Optional related objects</h3>
+					<h2>Optional related objects</h2>
 					<br>
 					<? DisplayFormSeries($seriesids, false, "Associated studies will be automatically added"); ?>
 					<br>
@@ -474,47 +612,37 @@
 	/* ------- DisplayAddStudyForm ---------------- */
 	/* -------------------------------------------- */
 	function DisplayAddStudyForm($studyids) {
-		
-		if (count((array)$studyids) < 1) {
+
+		$studyids = CleanIDs($studyids);
+		if (count($studyids) < 1) {
 			Error("No studyids passed into function");
 			return;
 		}
-		$uids = array();
-		$studyids = (array)$studyids;
 		$enrollmentids = array();
-		$subjectids = array();
-		$projectids = array();
 		$seriesids = array();
-		$analysisids = array();
-		$pipelineids = array();
-		$experimentids = array();
 		$experimentmapping = array();
-		$studyidstr = implode2(",", $studyids);
 
 		/* get all series from this study */
-		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . $studyidstr . ")";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numstudies = mysqli_num_rows($result);
+		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . InPlaceholders($studyids) . ")";
+		$result = PkgQuery($sqlstring, $studyids, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentids[] = $row['enrollment_id'];
-			$subjectids[] = $row['subject_id'];
-			$studyids[] = $row['study_id'];
-			$studyid = $row['study_id'];
-			$projectids[] = $row['project_id'];
-			$projectid = $row['project_id'];
-			
+			$enrollmentids[] = (int)$row['enrollment_id'];
+			$studyid = (int)$row['study_id'];
+			$projectid = (int)$row['project_id'];
+
 			$modality = strtolower(trim($row['study_modality'] ?? ''));
+			if ($modality == "mrseries") { $modality = "mr"; }
 
 			/* a study with a blank/invalid modality has no <modality>_series table -- building the
 			   query anyway yields "_series" and a "Table doesn't exist" error, so skip it. The
-			   modality also names a table, so require plain letters before interpolating it. */
-			if (preg_match('/^[a-z]+$/', $modality)) {
-				$sqlstringA = "select * from $modality" . "_series where study_id = $studyid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			   modality also names a table, so it must be a real series table before interpolating it */
+			if (IsSeriesModality($modality)) {
+				$sqlstringA = "select * from $modality" . "_series where study_id = ?";
+				$resultA = PkgQuery($sqlstringA, array($studyid), __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesids[$modality][] = $rowA[$modality . 'series_id'];
 
-					if (trim($rowA['series_desc']) == "")
+					if (trim($rowA['series_desc'] ?? '') == "")
 						$seriesdesc = $rowA['series_protocol'];
 					else
 						$seriesdesc = $rowA['series_desc'];
@@ -523,46 +651,10 @@
 				}
 			}
 		}
-		//PrintVariable($seriesids);
 		$enrollmentids = array_unique($enrollmentids);
-		$subjectids = array_unique($subjectids);
-		$studyids = array_unique($studyids);
-		//$seriesids = array_unique($seriesids);
-		$projectids = array_unique($projectids);
 
-		$numenrollments = count((array)$enrollmentids);
-		$numsubjects = count((array)$subjectids);
-		$numstudies = count((array)$studyids);
-		$numseries = count((array)$seriesids, COUNT_RECURSIVE);
-
-		/* get list of analysisids */
-		$studyidstr = implode2(",", $studyids);
-		if (strlen(trim($studyidstr)) > 0) {
-			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$analysisids[] = $row['analysis_id'];
-				$pipelineids[] = $row['pipeline_id'];
-			}
-		}
-		$analysisids = array_unique($analysisids);
-		$pipelineids = array_unique($pipelineids);
-
-		/* get list of experiments - need to map the experiment to the protocol/modality and project */
-		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
-			foreach ($modalityvalue as $seriesdesc => $value) {
-				$projectid = $value['projectid'];
-				$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
-
-				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numseries = mysqli_num_rows($result);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$experimentids[] = $row['experiment_id'];
-				}
-			}
-		}
-		$experimentids = array_unique($experimentids);
+		list($analysisids, $pipelineids) = GetStudyAnalyses($studyids);
+		$experimentids = GetMappedExperiments($experimentmapping);
 		
 		?>
 		
@@ -580,7 +672,7 @@
 					<br>
 					<? DisplayFormSeries($seriesids, true); ?>
 					
-					<h2>Optional related objects</h3>
+					<h2>Optional related objects</h2>
 					<? DisplayFormExperiments($experimentids, false); ?>
 					<br>
 					<? DisplayFormAnalyses($analysisids, false); ?>
@@ -609,90 +701,47 @@
 	/* ------- DisplayAddSeriesForm --------------- */
 	/* -------------------------------------------- */
 	function DisplayAddSeriesForm($seriesids, $modality) {
-		
-		//PrintVariable($seriesids);
-		//PrintVariable($modality);
-		
-		if (count((array)$seriesids) < 1) {
+
+		$seriesids = CleanIDs($seriesids);
+		if (count($seriesids) < 1) {
 			Error("0 seriesids passed into function");
 			return;
 		}
-		$uids = array();
-		$seriesids = (array)$seriesids;
+
+		/* the modality names the <modality>_series table, and table names cannot be bound */
+		$modality = strtolower(trim((string)$modality));
+		if ($modality == "mrseries") { $modality = "mr"; }
+		if (!IsSeriesModality($modality)) {
+			Error("Invalid modality [" . htmlspecialchars($modality) . "]");
+			return;
+		}
+
 		$seriesids2 = array();
 		$enrollmentids = array();
-		$subjectids = array();
 		$studyids = array();
-		$projectids = array();
-		$analysisids = array();
-		$pipelineids = array();
-		$experimentids = array();
 		$experimentmapping = array();
-		$seriesidstr = implode2(",", $seriesids);
 
 		/* get subject info. there may be series from multiple subjects in this list */
-		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numseries = mysqli_num_rows($result);
+		$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . InPlaceholders($seriesids) . ")";
+		$result = PkgQuery($sqlstring, $seriesids, __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			//echo "Hello";
-			$enrollmentids[] = $row['enrollment_id'];
-			$subjectids[] = $row['subject_id'];
-			$studyids[] = $row['study_id'];
-			$projectids[] = $row['project_id'];
-			//echo $modality . "series_id";
-			//echo $row[$modality . "series_id"];
+			$enrollmentids[] = (int)$row['enrollment_id'];
+			$studyids[] = (int)$row['study_id'];
 			if ($row[$modality . "series_id"] != "")
 				$seriesids2[$modality][] = $row[$modality . 'series_id'];
 
-			if (trim($row['series_desc']) == "")
+			if (trim($row['series_desc'] ?? '') == "")
 				$seriesdesc = $row['series_protocol'];
 			else
 				$seriesdesc = $row['series_desc'];
-			
-			$experimentmapping[$modality][$seriesdesc]['projectid'] = $row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
+
+			$experimentmapping[$modality][$seriesdesc]['projectid'] = (int)$row['project_id']; /* don't make this array unique because multiple mappings could exist for each protocol */
 		}
 		$enrollmentids = array_unique($enrollmentids);
-		$subjectids = array_unique($subjectids);
 		$studyids = array_unique($studyids);
-		//$seriesids = array_unique($seriesids);
-		$projectids = array_unique($projectids);
 
-		$numenrollments = count((array)$enrollmentids);
-		$numsubjects = count((array)$subjectids);
-		$numstudies = count((array)$studyids);
-		$numseries = count((array)$seriesids2, COUNT_RECURSIVE);
-
-		/* get list of analysisids. $studyids is built entirely from the query above, so it can
-		   legitimately be empty here, and an empty "in ()" is a SQL syntax error */
-		$studyidstr = implode2(",", $studyids);
-		if (strlen(trim($studyidstr)) > 0) {
-			$sqlstring = "select * from analysis where study_id in (" . $studyidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$analysisids[] = $row['analysis_id'];
-				$pipelineids[] = $row['pipeline_id'];
-			}
-		}
-		$analysisids = array_unique($analysisids);
-		$pipelineids = array_unique($pipelineids);
-
-		/* get list of experiments - need to map the experiment to the protocol/modality and project */
-		foreach ($experimentmapping as $modalitykey => $modalityvalue) {
-			foreach ($modalityvalue as $seriesdesc => $value) {
-				$projectid = $value['projectid'];
-				$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], $seriesdesc);
-
-				$sqlstring = "select experiment_id from experiment_mapping where project_id = $projectid and protocolname = '$seriesdesc' and modality = '$modalitykey'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numseries = mysqli_num_rows($result);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$experimentids[] = $row['experiment_id'];
-				}
-			}
-		}
-		$experimentids = array_unique($experimentids);
+		list($analysisids, $pipelineids) = GetStudyAnalyses($studyids);
+		$experimentids = GetMappedExperiments($experimentmapping);
 		
 		//PrintVariable($seriesids2);
 		
@@ -712,7 +761,7 @@
 					<br>
 					<? DisplayFormSeries($seriesids2, true); ?>
 					
-					<h2>Optional related objects</h3>
+					<h2>Optional related objects</h2>
 					<? DisplayFormExperiments($experimentids, false); ?>
 					<br>
 					<? DisplayFormAnalyses($analysisids, false); ?>
@@ -866,15 +915,15 @@
 		<select class="ui selection dropdown" name="packageid" required>
 			<option value="">Select package...</option>
 		<?				
-			$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'];
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select * from packages where user_id = ?";
+			$result = PkgQuery($sqlstring, array((int)$_SESSION['userid']), __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$packageid = $row['package_id'];
 				$name = $row['package_name'];
 				$desc = $row['package_desc'];
 				$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
 				?>
-				<option value="<?=$packageid?>"><?=$name?></option>
+				<option value="<?=$packageid?>"><?=htmlspecialchars($name ?? '')?></option>
 				<?
 			}
 		?>
@@ -894,7 +943,7 @@
 	/* -------------------------------------------- */
 	/* this function expects a list of enrollment IDs */
 	function DisplayFormSubjects($enrollmentids, $required) {
-		//PrintVariable($enrollmentids);
+		$enrollmentids = CleanIDs($enrollmentids);
 		$numsubjects = count((array)$enrollmentids);
 		
 		if ($required) {
@@ -938,7 +987,7 @@
 					var n = document.querySelectorAll('input[type="checkbox"].subjectcheck:checked').length;
 					document.getElementById('numsubjectsselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includesubjects').checked = true;
 				}
 			</script>
@@ -974,12 +1023,9 @@
 							
 							if (count($enrollmentids) > 0) {
 								//PrintVariable($enrollmentids);
-								$enrollmentidstr = implode2(", ", $enrollmentids);
-								
 								/* get subject info - there may be series from multiple subjects in this list */
-								$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . $enrollmentidstr . ")";
-								//PrintSQL($sqlstring);
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
+								$result = PkgQuery($sqlstring, $enrollmentids, __LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$enrollmentid = $row['enrollment_id'];
 									$uid = $row['uid'];
@@ -990,9 +1036,9 @@
 									?>
 										<tr>
 											<td class="allsubjects"><input type="checkbox" name="enrollmentids[]" value="<?=$enrollmentid?>" <?=$checkboxstr?> class="subjectcheck" onClick="CheckSelectedSubjectCount(this);"></td>
-											<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-											<td><?=$sex?></td>
-											<td><?=$projectname?></td>
+											<td><a href="subjects.php?id=<?=$subjectid?>"><?=htmlspecialchars($uid ?? '')?></a></td>
+											<td><?=htmlspecialchars($sex ?? '')?></td>
+											<td><?=htmlspecialchars($projectname ?? '')?></td>
 										</tr>
 									<?
 								}
@@ -1027,7 +1073,8 @@
 	/* ------- DisplayFormStudies ----------------- */
 	/* -------------------------------------------- */
 	function DisplayFormStudies($studyids, $required) {
-		
+
+		$studyids = CleanIDs($studyids);
 		$numstudies = count((array)$studyids);
 		
 		if ($required) {
@@ -1071,7 +1118,7 @@
 					var n = document.querySelectorAll('input[type="checkbox"].studycheck:checked').length;
 					document.getElementById('numstudiesselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includestudies').checked = true;
 				}
 			</script>
@@ -1103,11 +1150,9 @@
 						</thead>
 						<tbody>
 						<?
-							$studyidstr = implode2(",", $studyids);
-							
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . $studyidstr . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id in (" . InPlaceholders($studyids) . ")";
+							$result = PkgQuery($sqlstring, $studyids, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$uid = $row['uid'];
 								$studynum = $row['study_num'];
@@ -1118,9 +1163,9 @@
 								?>
 									<tr>
 										<td class="allstudies"><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?> class="studycheck" onClick="CheckSelectedStudyCount(this)"></td>
-										<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-										<td><?=$studydate?></td>
-										<td><?=$visit?></td>
+										<td><a href="studies.php?id=<?=$studyid?>"><?=htmlspecialchars($uid ?? '')?><?=htmlspecialchars($studynum ?? '')?></a></td>
+										<td><?=htmlspecialchars($studydate ?? '')?></td>
+										<td><?=htmlspecialchars($visit ?? '')?></td>
 									</tr>
 								<?
 							}
@@ -1163,7 +1208,11 @@
 		   that isn't a non-empty list of IDs so a malformed/flat array can't fatal here */
 		$cleanseriesids = array();
 		foreach ((array)$seriesids as $modality => $serieslist) {
-			if (is_array($serieslist) && (count($serieslist) > 0))
+			/* the modality key names a table, so it must be a real <modality>_series table */
+			if ((!is_array($serieslist)) || (!IsSeriesModality((string)$modality)))
+				continue;
+			$serieslist = CleanIDs($serieslist);
+			if (count($serieslist) > 0)
 				$cleanseriesids[$modality] = $serieslist;
 		}
 		$seriesids = $cleanseriesids;
@@ -1191,33 +1240,12 @@
 		if (count((array)$seriesids) > 0) {
 			?>
 			<script type="text/javascript">
-				$(function() {
-					$("#selectallseries").click(function() {
-						var checked_status = this.checked;
-						$(".allseries").find("input[type='checkbox']").each(function() {
-							this.checked = checked_status;
-						});
-						if (this.checked)
-							document.getElementById('includeseries').checked = true;
-					});
-				});
-					
+				/* series are added all-or-nothing: the toggle decides whether the whole list (posted
+				   in the hidden seriesidstr field below) is added */
 				function SelectAllSeries() {
 					var checked_status = document.getElementById('includeseries').checked;
-					$(".allseries").find("input[type='checkbox']").each(function() {
-						this.checked = checked_status;
-					});
-					CheckSelectedSeriesCount();
+					document.getElementById('numseriesselected').innerHTML = (checked_status ? <?=(int)$numseries?> : 0);
 				}
-
-				function CheckSelectedSeriesCount(e) {
-					var n = document.querySelectorAll('input[type="checkbox"].seriescheck:checked').length;
-					document.getElementById('numseriesselected').innerHTML = n;
-
-					if (e.checked)
-						document.getElementById('includeseries').checked = true;
-				}
-				
 			</script>
 
 			<div class="ui grid">
@@ -1240,7 +1268,6 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectallseries"></th>
 							<th>UID</th>
 							<th>Study</th>
 							<th>Series</th>
@@ -1253,12 +1280,10 @@
 						<?
 							$seriesIDarray = array();
 							foreach ($seriesids as $modality => $serieslist) {
-								$seriesidstr = implode2(",", $serieslist);
-							
-								$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . $seriesidstr . ")";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								$sqlstring = "select * from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id in (" . InPlaceholders($serieslist) . ")";
+								$result = PkgQuery($sqlstring, $serieslist, __LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$seriesid = $row[$modality . 'series_id'];
+									$seriesid = (int)$row[$modality . 'series_id'];
 									$uid = $row['uid'];
 									$studynum = $row['study_num'];
 									$studydesc = $row['study_desc'];
@@ -1266,29 +1291,27 @@
 									$seriesdesc = $row['series_desc'];
 									$seriessize = $row['series_size'];
 									$seriesnumfiles = $row['numfiles'];
-									
+
 									$seriesIDarray[] = "$modality-$seriesid";
 									?>
-									<!--	<tr>
-											<td class="allseries"><input type="checkbox" name="seriesids[]" value="<?=$modality?>-<?=$seriesid?>" <?=$checkboxstr?> class="seriescheck" onClick="CheckSelectedSeriesCount(this);"></td>
-											<td><?=$uid?></td>
-											<td><?=$studynum?></td>
-											<td><?=$seriesnum?></td>
-											<td><?=$studydesc?></td>
-											<td><?=$seriesdesc?></td>
-											<td><?=$seriessize?></td>
-											<td><?=$seriesnumfiles?></td>
-										</tr> -->
+									<tr>
+										<td><?=htmlspecialchars($uid ?? '')?></td>
+										<td><?=htmlspecialchars($studynum ?? '')?></td>
+										<td><?=htmlspecialchars($seriesnum ?? '')?></td>
+										<td><?=htmlspecialchars($studydesc ?? '')?></td>
+										<td><?=htmlspecialchars($seriesdesc ?? '')?></td>
+										<td><?=HumanReadableFilesize((float)($seriessize ?? 0))?></td>
+										<td><?=htmlspecialchars($seriesnumfiles ?? '')?></td>
+									</tr>
 									<?
 								}
 							}
 						?>
-							<input type="hidden" name="seriesidstr" value="<?=implode(",", $seriesIDarray);?>">
 						</tbody>
 					</table>
 				</div>
 			</div>
-			<!--<input type="hidden" name="modality" value="<?=$modality?>">-->
+			<input type="hidden" name="seriesidstr" value="<?=implode(",", $seriesIDarray);?>">
 			<?
 		}
 		else {
@@ -1308,8 +1331,8 @@
 	/* -------------------------------------------- */
 	function DisplayFormExperiments($experimentids, $required) {
 		
-		$experimentidstr = implode2(",", $experimentids);
-		$numexperiments = count((array)$experimentids);
+		$experimentids = CleanIDs($experimentids);
+		$numexperiments = count($experimentids);
 		
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1352,7 +1375,7 @@
 					var n = document.querySelectorAll('input[type="checkbox"].experimentcheck:checked').length;
 					document.getElementById('numexperimentsselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includeexperiments').checked = true;
 				}
 			</script>
@@ -1384,8 +1407,8 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from experiments where experiment_id in (" . $experimentidstr . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select * from experiments where experiment_id in (" . InPlaceholders($experimentids) . ")";
+							$result = PkgQuery($sqlstring, $experimentids, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$experimentid = $row['experiment_id'];
 								$expname = $row['exp_name'];
@@ -1394,8 +1417,8 @@
 								?>
 									<tr>
 										<td class="allexperiments"><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?> class="experimentcheck" onClick="CheckSelectedExperimentCount(this);"></td>
-										<td><a href="experiments.php?id=<?=$experimentid?>"><?=$expname?></a></td>
-										<td><?=$expdate?></td>
+										<td><a href="experiments.php?id=<?=$experimentid?>"><?=htmlspecialchars($expname ?? '')?></a></td>
+										<td><?=htmlspecialchars($expdate ?? '')?></td>
 									</tr>
 								<?
 							}
@@ -1423,8 +1446,8 @@
 	/* -------------------------------------------- */
 	function DisplayFormAnalyses($analysisids, $required) {
 
-		$analysisidstr = implode2(",", $analysisids);
-		$numanalysis = count((array)$analysisids);
+		$analysisids = CleanIDs($analysisids);
+		$numanalysis = count($analysisids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1467,7 +1490,7 @@
 					var n = document.querySelectorAll('input[type="checkbox"].analysischeck:checked').length;
 					document.getElementById('numanalysisselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includeanalysis').checked = true;
 				}
 			</script>
@@ -1501,8 +1524,8 @@
 						<?
 						//'complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started'
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from analysis where analysis_id in (" . $analysisidstr . ") and analysis_status in ('complete', 'error','rerunresults')";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select * from analysis where analysis_id in (" . InPlaceholders($analysisids) . ") and analysis_status in ('complete', 'error','rerunresults')";
+							$result = PkgQuery($sqlstring, $analysisids, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$analysisid = $row['analysis_id'];
 								$analysisdate = $row['analysis_startdate'];
@@ -1511,8 +1534,8 @@
 									<tr>
 										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" class="analysischeck" <?=$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
 										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
-										<td><?=$analysisdate?></td>
-										<td><?=$analysisstatus?></td>
+										<td><?=htmlspecialchars($analysisdate ?? '')?></td>
+										<td><?=htmlspecialchars($analysisstatus ?? '')?></td>
 									</tr>
 								<?
 							}
@@ -1540,8 +1563,8 @@
 	/* -------------------------------------------- */
 	function DisplayFormPipelines($pipelineids, $required) {
 
-		$pipelineidstr = implode2(",", $pipelineids);
-		$numpipelines = count((array)$pipelineids);
+		$pipelineids = CleanIDs($pipelineids);
+		$numpipelines = count($pipelineids);
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1584,7 +1607,7 @@
 					var n = document.querySelectorAll('input[type="checkbox"].pipelinecheck:checked').length;
 					document.getElementById('numpipelinesselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includepipelines').checked = true;
 				}
 			</script>
@@ -1615,8 +1638,8 @@
 						<tbody>
 						<?
 							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from pipelines where pipeline_id in (" . $pipelineidstr . ")";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select * from pipelines where pipeline_id in (" . InPlaceholders($pipelineids) . ")";
+							$result = PkgQuery($sqlstring, $pipelineids, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$pipelineid = $row['pipeline_id'];
 								$pipelinename = $row['pipeline_name'];
@@ -1624,7 +1647,7 @@
 								?>
 									<tr>
 										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" class="pipelinecheck" <?=$checkboxstr?> onClick="CheckSelectedPipelineCount(this);"></td>
-										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=$pipelinename?></a></td>
+										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=htmlspecialchars($pipelinename ?? '')?></a></td>
 									</tr>
 								<?
 							}
@@ -1652,7 +1675,7 @@
 	/* -------------------------------------------- */
 	function DisplayFormObservations($enrollmentids, $required) {
 
-		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
+		$enrollmentids = CleanIDs($enrollmentids);
 
 		/* the true total is counted separately from the rows that are listed. A set of enrollments
 		   can have 100k+ observations, and every listed row is shipped to the browser as JSON for
@@ -1661,15 +1684,14 @@
 		   not just the listed ones -- because the server re-queries them (see AddObjectsToPackage) */
 		$numobservations = 0;
 		$observationRowData = array();
-		if (strlen(trim($enrollmentidstr)) > 0) {
-			$sqlstring = "select count(*) 'count' from observations where enrollment_id in ($enrollmentidstr)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (count($enrollmentids) > 0) {
+			$sqlstring = "select count(*) 'count' from observations where enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
+			$result = PkgQuery($sqlstring, $enrollmentids, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numobservations = (int)$row['count'];
 
-			$observationlimit = OBSERVATION_DISPLAY_LIMIT;
-			$sqlstring = "select a.observation_id, a.observation_name, a.observation_value, a.observation_startdate, c.uid, c.subject_id from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in ($enrollmentidstr) order by a.observation_id limit $observationlimit";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select a.observation_id, a.observation_name, a.observation_value, a.observation_startdate, c.uid, c.subject_id from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . InPlaceholders($enrollmentids) . ") order by a.observation_id limit ?";
+			$result = PkgQuery($sqlstring, array_merge($enrollmentids, array(OBSERVATION_DISPLAY_LIMIT)), __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$observationRowData[] = array(
 					"id"    => (int)$row['observation_id'],
@@ -1685,7 +1707,7 @@
 		if ($numobservations <= 0) {
 			?>
 			<div class="ui toggle read-only checkbox">
-				<input type="checkbox" name="includeneasures" value="0">
+				<input type="checkbox" name="includeobservations" value="0">
 				<label style="font-size:larger; font-weight: bold">No observations found</label>
 			</div>
 			<br>
@@ -1843,13 +1865,13 @@
 	/* -------------------------------------------- */
 	function DisplayFormInterventions($enrollmentids, $required) {
 
-		$enrollmentidstr = implode(",", array_map('intval', (array)$enrollmentids));
+		$enrollmentids = CleanIDs($enrollmentids);
 
 		$interventionrows = array();
 		$numinterventions = 0;
-		if (strlen(trim($enrollmentidstr)) > 0) {
-			$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . $enrollmentidstr . ")";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		if (count($enrollmentids) > 0) {
+			$sqlstring = "select * from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
+			$result = PkgQuery($sqlstring, $enrollmentids, __LINE__);
 			$numinterventions = mysqli_num_rows($result);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$interventionrows[] = $row;
@@ -1894,10 +1916,10 @@
 				}
 
 				function CheckSelectedInterventionCount(e) {
-					var n = document.querySelectorAll('input[type="checkbox"].interventionscheck:checked').length;
+					var n = document.querySelectorAll('input[type="checkbox"].interventioncheck:checked').length;
 					document.getElementById('numinterventionsselected').innerHTML = n;
 
-					if (e.checked)
+					if ((e) && (e.checked)) /* e is undefined when called from SelectAll*() */
 						document.getElementById('includeinterventions').checked = true;
 				}
 			</script>
@@ -1905,7 +1927,7 @@
 			<div class="ui grid">
 				<div class="ui four wide column">
 					<div class="ui toggle <?=$checkboxreadonly?> checkbox" onChange="SelectAllInterventions()">
-						<input type="checkbox" name="includeinterventions" id="includesubjects" value="1" <?=$checkboxstate?>>
+						<input type="checkbox" name="includeinterventions" id="includeinterventions" value="1" <?=$checkboxstate?>>
 						<label style="font-size:larger; font-weight: bold">Interventions</label>
 					</div>
 				</div>
@@ -1941,10 +1963,10 @@
 								?>
 									<tr>
 										<td class="allinterventions"><input type="checkbox" name="interventionids[]" value="<?=$interventionid?>" <?=$checkboxstr?> class="interventioncheck" onClick="CheckSelectedInterventionCount(this);"></td>
-										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=$uid?></a></td>
+										<td><a href="subjects.php?subjectid=<?=$subjectid?>"><?=htmlspecialchars($uid ?? '')?></a></td>
 										<td><?=htmlspecialchars($interventionname ?? '')?></td>
 										<td><?=htmlspecialchars($dosedesc ?? '')?></td>
-										<td><?=$interventiondate?></td>
+										<td><?=htmlspecialchars($interventiondate ?? '')?></td>
 									</tr>
 								<?
 							}
@@ -1981,19 +2003,6 @@
 			$objectid = (int)trim($objectid);
 			if ($objectid > 0)
 				$ids[] = $objectid;
-		}
-
-		/* these object types display a form instead of removing anything */
-		switch ($objecttype) {
-			case "enrollment":
-				DisplayAddEnrollmentForm($ids);
-				return;
-			case "subject":
-				DisplayAddSubjectForm($ids);
-				return;
-			case "study":
-				DisplayAddStudyForm($ids);
-				return;
 		}
 
 		/* objecttype -> table, row id column, label. Any type not in this list is rejected, so the
@@ -2038,188 +2047,166 @@
 	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
 	/* -------------------------------------------- */
-	function AddObjectsToPackage($packageid, $enrollmentids, $subjectids, $studyids, $seriesids, $modality, $experimentids, $analysisids, $pipelineids, $datadictionaryids, $interventionids, $observationids, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
+	function AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
 
-		/* perform data checks */
-		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
-		$enrollmentids = mysqli_real_escape_array($GLOBALS['linki'], $enrollmentids);
-		$subjectids = mysqli_real_escape_array($GLOBALS['linki'], $subjectids);
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$experimentids = mysqli_real_escape_array($GLOBALS['linki'], $experimentids);
-		$analysisids = mysqli_real_escape_array($GLOBALS['linki'], $analysisids);
-		$pipelineids = mysqli_real_escape_array($GLOBALS['linki'], $pipelineids);
-		$datadictionaryids = mysqli_real_escape_array($GLOBALS['linki'], $datadictionaryids);
-		$interventionids = mysqli_real_escape_array($GLOBALS['linki'], $interventionids);
-		$observationids = mysqli_real_escape_array($GLOBALS['linki'], $observationids);
-		$includeinterventions = mysqli_real_escape_string($GLOBALS['linki'], $includeinterventions);
-		$includeobservations = mysqli_real_escape_string($GLOBALS['linki'], $includeobservations);
-		$includeexperiments = mysqli_real_escape_string($GLOBALS['linki'], $includeexperiments);
-		$includeanalysis = mysqli_real_escape_string($GLOBALS['linki'], $includeanalysis);
-		$includepipelines = mysqli_real_escape_string($GLOBALS['linki'], $includepipelines);
-		
+		/* perform data checks. Every object is identified by an integer ID except series, which
+		   are "<modality>-<id>" and are validated below */
+		$packageid = (int)$packageid;
+		$enrollmentids = CleanIDs($enrollmentids);
+		$experimentids = CleanIDs($experimentids);
+		$analysisids = CleanIDs($analysisids);
+		$pipelineids = CleanIDs($pipelineids);
+		$interventionids = CleanIDs($interventionids);
+		$observationids = CleanIDs($observationids);
+
+		/* raw data can only be packaged from projects where the user has View Data. The add form
+		   only lists permitted objects, but the request can carry any IDs, so check them again here.
+		   "Add all observations" below re-queries by enrollment, so it is covered by the
+		   enrollment check */
+		$skipped = array();
+		$enrollmentids = FilterViewableData("enrollment", $enrollmentids, "", $numskipped);
+		if ($numskipped > 0) $skipped[] = "$numskipped enrollments";
+		$interventionids = FilterViewableData("intervention", $interventionids, "", $numskipped);
+		if ($numskipped > 0) $skipped[] = "$numskipped interventions";
+		$observationids = FilterViewableData("observation", $observationids, "", $numskipped);
+		if ($numskipped > 0) $skipped[] = "$numskipped observations";
+
+		/* series are "<modality>-<id>". Group them by modality so each group can be checked */
+		$seriesbymodality = array();
+		$numseriesskipped = 0;
+		if (($includeseries) && (is_array($seriesids))) {
+			foreach ($seriesids as $seriesid) {
+				/* each entry must be "<modality>-<id>", for a modality that has a series table.
+				   Re-validate here because this list can also arrive directly as seriesids[]
+				   without passing the check at the top of the page */
+				if (!preg_match('/^([a-z]+)-([0-9]+)$/', strtolower(trim((string)$seriesid)), $parts)) {
+					$numseriesskipped++;
+					continue;
+				}
+				$seriesbymodality[$parts[1]][] = (int)$parts[2];
+			}
+			foreach ($seriesbymodality as $mod => $sids) {
+				$seriesbymodality[$mod] = FilterViewableData("series", $sids, $mod, $numskipped);
+				$numseriesskipped += $numskipped;
+			}
+		}
+		if ($numseriesskipped > 0) $skipped[] = "$numseriesskipped series";
+
+		$numobjects = 0;
+		$msg = "";
+
 		/* add any enrollments */
-		if ((count((array)$enrollmentids) > 0) && (is_array($enrollmentids))) {
+		if (count($enrollmentids) > 0) {
 			foreach ($enrollmentids as $enrollmentid) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values ($packageid, $enrollmentid, '$altuid')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values (?, ?, ?)";
+				PkgQuery($sqlstring, array($packageid, $enrollmentid, (string)$altuid), __LINE__);
 			}
-			$numobjects += count((array)$enrollmentids);
-			$msg .= "Added " . count((array)$enrollmentids) . " enrollments<br>";
+			$numobjects += count($enrollmentids);
+			$msg .= "Added " . count($enrollmentids) . " enrollments<br>";
 		}
 
-		//PrintVariable($seriesids);
-		/* add any series */
-		if ((count((array)$seriesids) > 0) && (is_array($seriesids))) {
+		/* add any series, if the Series toggle was on. On the study and series add forms the toggle
+		   is forced on; on the enrollment form series are optional */
+		if (count($seriesbymodality) > 0) {
 			$numseriesadded = 0;
-			foreach ($seriesids as $seriesid) {
-				/* each entry must be "<modality>-<id>". Re-validate here because this list can
-				   also arrive directly as seriesids[] without passing the check at the top of
-				   the page, and $sid is used unquoted below */
-				if (!preg_match('/^([a-z]+)-([0-9]+)$/', strtolower(trim($seriesid)), $parts))
-					continue;
-				$mod = $parts[1];
-				$sid = (int)$parts[2];
-				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values ($packageid, '$mod', $sid)";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numseriesadded++;
+			foreach ($seriesbymodality as $mod => $sids) {
+				foreach ($sids as $sid) {
+					$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values (?, ?, ?)";
+					PkgQuery($sqlstring, array($packageid, (string)$mod, (int)$sid), __LINE__);
+					$numseriesadded++;
+				}
 			}
 			$numobjects += $numseriesadded;
 			$msg .= "Added " . $numseriesadded . " series<br>";
 		}
 
-		/* add any experiments */
-		if ((count((array)$experimentids) > 0) && ($includeexperiments) && (is_array($experimentids))) {
-			foreach ($experimentids as $experimentid) {
-				$sqlstring = "insert ignore into package_experiments (package_id, experiment_id) values ($packageid, $experimentid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* add any experiments, analyses, pipelines, and interventions. Each is only added if its
+		   section's "include" toggle was on. The table and column names come from this list, never
+		   from user input */
+		$objecttypes = array(
+			array($experimentids,   $includeexperiments,   "package_experiments",   "experiment_id",   "experiments"),
+			array($analysisids,     $includeanalysis,      "package_analyses",      "analysis_id",     "analyses"),
+			array($pipelineids,     $includepipelines,     "package_pipelines",     "pipeline_id",     "pipelines"),
+			array($interventionids, $includeinterventions, "package_interventions", "intervention_id", "interventions")
+		);
+		foreach ($objecttypes as list($ids, $include, $objecttable, $idcolumn, $label)) {
+			if ((count($ids) > 0) && ($include)) {
+				foreach ($ids as $id) {
+					$sqlstring = "insert ignore into $objecttable (package_id, $idcolumn) values (?, ?)";
+					PkgQuery($sqlstring, array($packageid, $id), __LINE__);
+				}
+				$numobjects += count($ids);
+				$msg .= "Added " . count($ids) . " $label<br>";
 			}
-			$numobjects += count((array)$experimentids);
-			$msg .= "Added " . count((array)$experimentids) . " experiments<br>";
 		}
 
-		/* add any analyses */
-		if ((count((array)$analysisids) > 0) && ($includeanalysis) && (is_array($analysisids))) {
-			foreach ($analysisids as $analysisid) {
-				$sqlstring = "insert ignore into package_analyses (package_id, analysis_id) values ($packageid, $analysisid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$numobjects += count((array)$analysisids);
-			$msg .= "Added " . count((array)$analysisids) . " analyses<br>";
-		}
-		
-		/* add any pipelines */
-		if ((count((array)$pipelineids) > 0) && ($includepipelines) && (is_array($pipelineids))) {
-			foreach ($pipelineids as $pipelineid) {
-				$sqlstring = "insert ignore into package_pipelines (package_id, pipeline_id) values ($packageid, $pipelineid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$numobjects += count((array)$pipelineids);
-			$msg .= "Added " . count((array)$pipelineids) . " pipelines<br>";
-		}
-
-		/* add any interventions */
-		if ((count((array)$interventionids) > 0) && ($includeinterventions) && (is_array($interventionids))) {
-			foreach ($interventionids as $interventionid) {
-				$sqlstring = "insert ignore into package_interventions (package_id, intervention_id) values ($packageid, $interventionid)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$numobjects += count((array)$interventionids);
-			$msg .= "Added " . count((array)$interventionids) . " interventions<br>";
-		}
-		
 		/* Observations. Two mutually exclusive paths:
 		     1. "Add all" (includeobservations) -- re-query and add EVERY observation for these
 		        enrollments. This is unbounded and deliberately ignores the incoming id list, so
 		        it adds all observations even when the add form only listed the first N.
 		     2. otherwise, add just the granular subset the user selected in the grid (arrives as
 		        observationidstr -> $observationids). */
-		if (($includeobservations) && (count((array)$enrollmentids) > 0)) {
-
+		if (($includeobservations) && (count($enrollmentids) > 0)) {
 			$observationids = array();
-			$inserts = array();
-
-			$sqlstring = "select * from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id in (" . implode(",", array_map('intval', (array)$enrollmentids)) . ")";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select observation_id from observations where enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
+			$result = PkgQuery($sqlstring, $enrollmentids, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$observationid = $row['observation_id'];
-				$observationids[] = $observationid;
-			
-				$inserts[] = "($packageid, $observationid)";
-			
-				if (count($inserts) >= 100) {
-					$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
-					//PrintSQL($sqlstringA);
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$inserts = array();
-				}
+				$observationids[] = (int)$row['observation_id'];
 			}
-			/* insert the remaining items */
-			if (count($inserts) > 0) {
-				$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$inserts = array();
-			}
-			$numobjects += count((array)$observationids);
-			$msg .= "Added " . count((array)$observationids) . " observations<br>";
+			$numobsadded = InsertPackageObservations($packageid, $observationids);
+			$numobjects += $numobsadded;
+			$msg .= "Added " . $numobsadded . " observations<br>";
 		}
-		elseif ((count((array)$observationids) > 0) && (is_array($observationids))) {
-			/* granular subset selected in the grid. Batch-insert in groups of 100 like the
-			   add-all path. Cast to int defensively even though the ids were already sanitized to
-			   digits/commas at the top of the page. */
-			$inserts = array();
-			$numobsadded = 0;
-			foreach ($observationids as $observationid) {
-				$oid = (int)$observationid;
-				if ($oid <= 0)
-					continue;
-				$inserts[] = "($packageid, $oid)";
-				$numobsadded++;
-				if (count($inserts) >= 100) {
-					$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$inserts = array();
-				}
-			}
-			if (count($inserts) > 0) {
-				$sqlstringA = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $inserts);
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			}
+		elseif (count($observationids) > 0) {
+			$numobsadded = InsertPackageObservations($packageid, $observationids);
 			$numobjects += $numobsadded;
 			$msg .= "Added " . $numobsadded . " observations<br>";
 		}
 
+		if (count($skipped) > 0)
+			$msg .= "<br>Not added (they don't exist, or you don't have View Data permission on their project): " . implode(", ", $skipped) . "<br>";
+
 		$title = "Added $numobjects objects to package";
 		Notice($msg, $title);
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- InsertPackageObservations ---------- */
+	/* -------------------------------------------- */
+	/* add observations to a package, 100 rows per insert. Returns the number of IDs submitted */
+	function InsertPackageObservations($packageid, $observationids) {
+		$packageid = (int)$packageid;
+		$observationids = CleanIDs($observationids);
+
+		foreach (array_chunk($observationids, 100) as $chunk) {
+			$rows = array();
+			$params = array();
+			foreach ($chunk as $observationid) {
+				$rows[] = "(?, ?)";
+				$params[] = $packageid;
+				$params[] = $observationid;
+			}
+			$sqlstring = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $rows);
+			PkgQuery($sqlstring, $params, __LINE__);
+		}
+
+		return count($observationids);
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- UpdatePackage ---------------------- */
 	/* -------------------------------------------- */
 	function UpdatePackage($packageid,$packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes) {
-		/* perform data checks */
-		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
-		$packagename = mysqli_real_escape_string($GLOBALS['linki'], $packagename);
-		$packagedesc = mysqli_real_escape_string($GLOBALS['linki'], $packagedesc);
-		$packageformat = mysqli_real_escape_string($GLOBALS['linki'], $packageformat);
-		$subjectdirformat = mysqli_real_escape_string($GLOBALS['linki'], $subjectdirformat);
-		$studydirformat = mysqli_real_escape_string($GLOBALS['linki'], $studydirformat);
-		$seriesdirformat = mysqli_real_escape_string($GLOBALS['linki'], $seriesdirformat);
-		$readme = mysqli_real_escape_string($GLOBALS['linki'], $readme);
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-		$license = mysqli_real_escape_string($GLOBALS['linki'], $license);
-		$changes = mysqli_real_escape_string($GLOBALS['linki'], $changes);
-		
+
 		/* update the package */
-		$sqlstring = "update packages set package_name = '$packagename', package_desc = '$packagedesc', package_subjectdirformat = '$subjectdirformat', package_studydirformat = '$studydirformat', package_seriesdirformat = '$seriesdirformat', package_dataformat = '$packageformat', package_license = '$license', package_readme = '$readme', package_changes = '$changes', package_notes = '$notes' where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("$packagename updated");
+		$sqlstring = "update packages set package_name = ?, package_desc = ?, package_subjectdirformat = ?, package_studydirformat = ?, package_seriesdirformat = ?, package_dataformat = ?, package_license = ?, package_readme = ?, package_changes = ?, package_notes = ? where package_id = ?";
+		$params = array((string)$packagename, (string)$packagedesc, (string)$subjectdirformat, (string)$studydirformat, (string)$seriesdirformat, (string)$packageformat, (string)$license, (string)$readme, (string)$changes, (string)$notes, (int)$packageid);
+		PkgQuery($sqlstring, $params, __LINE__);
+
+		Notice(htmlspecialchars((string)$packagename) . " updated");
 		return true;
 	}
 
@@ -2228,24 +2215,13 @@
 	/* ------- AddPackage ------------------------- */
 	/* -------------------------------------------- */
 	function AddPackage($packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes) {
-		/* perform data checks */
-		$packagename = mysqli_real_escape_string($GLOBALS['linki'], $packagename);
-		$packagedesc = mysqli_real_escape_string($GLOBALS['linki'], $packagedesc);
-		$packageformat = mysqli_real_escape_string($GLOBALS['linki'], $packageformat);
-		$subjectdirformat = mysqli_real_escape_string($GLOBALS['linki'], $subjectdirformat);
-		$studydirformat = mysqli_real_escape_string($GLOBALS['linki'], $studydirformat);
-		$seriesdirformat = mysqli_real_escape_string($GLOBALS['linki'], $seriesdirformat);
-		$readme = mysqli_real_escape_string($GLOBALS['linki'], $readme);
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-		$license = mysqli_real_escape_string($GLOBALS['linki'], $license);
-		$changes = mysqli_real_escape_string($GLOBALS['linki'], $changes);
 
 		/* insert the new package */
-		$sqlstring = "insert into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values (" . $_SESSION['userid'] . ", now(), '$packagename', '$packagedesc', '$subjectdirformat', '$studydirformat', '$seriesdirformat', '$packageformat', '$license', '$readme', '$changes', '$notes')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$packageid = mysqli_insert_id($GLOBALS['linki']);
+		$sqlstring = "insert into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values (?, now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = array((int)$_SESSION['userid'], (string)$packagename, (string)$packagedesc, (string)$subjectdirformat, (string)$studydirformat, (string)$seriesdirformat, (string)$packageformat, (string)$license, (string)$readme, (string)$changes, (string)$notes);
+		PkgQuery($sqlstring, $params, __LINE__);
 
-		Notice("$packagename created");
+		Notice(htmlspecialchars((string)$packagename) . " created");
 	}
 
 
@@ -2263,10 +2239,24 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- BackfillPackageAltUID -------------- */
+	/* -------------------------------------------- */
+	/* store the enrollment's primary alternate UID on this package's package_enrollments row. Scoped
+	   to this package, and only written when the stored value differs */
+	function BackfillPackageAltUID($packageid, $enrollmentid, $altuid) {
+		$sqlstring = "update package_enrollments set package_subjectid = ? where package_id = ? and enrollment_id = ? and (package_subjectid is null or package_subjectid <> ?)";
+		PkgQuery($sqlstring, array((string)$altuid, (int)$packageid, (int)$enrollmentid, (string)$altuid), __LINE__);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayPackage --------------------- */
 	/* -------------------------------------------- */
 	function DisplayPackage($packageid) {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+
 		if (!ValidID($packageid,'Package ID')) { return; }
+		$packageid = (int)$packageid;
 
 		/* declare variables */
 		$subjects = array();
@@ -2292,8 +2282,8 @@
 		$totalanalysisbytes = 0;
 
 		/* get package details */
-		$sqlstring = "select * from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from packages where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$pkg['createdate'] = date('M j, Y h:ia',strtotime($row['package_date']));
 		$pkg['name'] = $row['package_name'];
@@ -2312,8 +2302,8 @@
 		$altIDMapping = array();
 		
 		/* get enrollment data */
-		$sqlstring = "select * from package_enrollments where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from package_enrollments where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageenrollmentid = $row['packageenrollment_id'];
 			$enrollmentid = $row['enrollment_id'];
@@ -2321,13 +2311,17 @@
 			$packagesubjectid = $row['package_subjectid'];
 			
 			list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-			$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = -1;
-			
+
+			/* the subject is part of the package even if none of its series are. Its studies and
+			   series are filled in by the series loop below */
+			if (($uid != "") && (!isset($subjects[$uid])))
+				$subjects[$uid] = array();
+
 			/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
 			if ($altuid != "") {
 				$altIDMapping[$uid] = $altuid;
-				$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				if ($altuid != $packagesubjectid)
+					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
 			}
 		}
 		
@@ -2335,15 +2329,20 @@
 		/* get series data */
 		$totalbytes = 0;
 		$totalfiles = 0;
-		$sqlstring = "select * from package_series where package_id = $packageid";
-		//$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality"."series_id = '$id'";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from package_series where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageseriesid = $row['packageseries_id'];
-			$modality = $row['modality'];
-			$seriesid = $row['series_id'];
-			
+			$modality = strtolower(trim($row['modality'] ?? ''));
+			$seriesid = (int)$row['series_id'];
+
+			/* GetSeriesInfo() puts the modality into a table name, so skip anything that isn't a
+			   real <modality>_series table */
+			if (!IsSeriesModality($modality)) {
+				$msgs[] = "Series with series_id [$seriesid] has an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]";
+				continue;
+			}
+
 			list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 			
 			if ($uid != "") {
@@ -2359,8 +2358,7 @@
 					list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
 					if ($altuid != "") {
 						$altIDMapping[$uid] = $altuid;
-						$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+						BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
 					}
 				}
 			}
@@ -2371,14 +2369,13 @@
 		   a package can hold hundreds of thousands of observations and every listed row is written
 		   into the grid as javascript. Only the first OBSERVATION_DISPLAY_LIMIT are listed; the
 		   count above the grid always reflects the true total */
-		$sqlstring = "select count(*) 'count' from package_observations where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select count(*) 'count' from package_observations where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$numobservations = $row['count'];
 
-		$observationlimit = OBSERVATION_DISPLAY_LIMIT;
-		$sqlstring = "select a.packageobservation_id, b.observation_id, b.observation_name, b.observation_value, b.observation_startdate, e.uid from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid order by a.packageobservation_id limit $observationlimit";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.packageobservation_id, b.observation_id, b.observation_name, b.observation_value, b.observation_startdate, e.uid from package_observations a left join observations b on a.observation_id = b.observation_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = ? order by a.packageobservation_id limit ?";
+		$result = PkgQuery($sqlstring, array($packageid, OBSERVATION_DISPLAY_LIMIT), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$uid = $row['uid'];
 			$objectid = $row['packageobservation_id'];
@@ -2404,8 +2401,8 @@
 
 		MarkTime("Getting intervention data");
 		/* get interventions */
-		$sqlstring = "select * from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$enrollmentid = $row['enrollment_id'];
@@ -2416,21 +2413,20 @@
 			$interventions[$uid][$objectid]['name'] = $row['intervention_name'];
 			$interventions[$uid][$objectid]['startdate'] = $row['startdate'];
 
-			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+			if (((int)$enrollmentid > 0) && (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid)) {
 				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
 				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
 				if ($altuid != "") {
 					$altIDMapping[$uid] = $altuid;
-					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
 				}
 			}
 		}
 		
 		MarkTime("Getting experiment data");
 		/* get experiments */
-		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageexperimentid = $row['packageexperiment_id'];
 			$experimentid = $row['experiment_id'];
@@ -2445,8 +2441,8 @@
 		
 		MarkTime("Getting pipeline data");
 		/* get pipelines */
-		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packagepipelineid = $row['packagepipeline_id'];
 			$pipelineid = $row['pipeline_id'];
@@ -2462,15 +2458,19 @@
 		/* get analysis */
 		$totalanalysisfiles = 0;
 		$totalanalysisbytes = 0;
-		$sqlstring = "select a.*, b.analysis_startdate, b.analysis_status, b.analysis_disksize, b.analysis_numfiles, c.*, d.pipeline_name from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join pipelines d on b.pipeline_id = d.pipeline_id where a.package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.*, b.analysis_startdate, b.analysis_status, b.analysis_disksize, b.analysis_numfiles, c.*, d.pipeline_name from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join pipelines d on b.pipeline_id = d.pipeline_id where a.package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$numanalysis = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$studyid = $row['study_id'];
-			
+
+			/* an analysis (or its study) that no longer exists has no subject. Reset the per-row
+			   values so it isn't listed under the previous row's subject */
 			$exists = 1;
+			$uid = "(missing)";
+			$enrollmentid = 0;
 			if ($studyid == "")  {
-				$msgs[] = "Analysis with analysis_id [" . $row['analysis_id'] . "] no longer exists";
+				$msgs[] = "Analysis with analysis_id [" . (int)$row['analysis_id'] . "] no longer exists";
 				$exists = 0;
 			}
 			else {
@@ -2490,13 +2490,12 @@
 			$totalanalysisfiles += $row['analysis_numfiles'];
 			$totalanalysisbytes += $row['analysis_disksize'];
 			
-			if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
+			if (($exists) && (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid)) {
 				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
 				if ($altuid != "") {
 					$altIDMapping[$uid] = $altuid;
-					$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
 				}
 			}
 		}
@@ -2560,8 +2559,8 @@
 			<div class="ui top attached raised segment">
 				<div class="ui header">
 					<img src="images/squirrel-icon-64.png"></img>
-					<h2 class="content"><?=$pkg['name']?></h2>
-					<div class="sub header"><?=$pkg['desc']?></div>
+					<h2 class="content"><?=htmlspecialchars($pkg['name'] ?? '')?></h2>
+					<div class="sub header"><?=htmlspecialchars($pkg['desc'] ?? '')?></div>
 				</div>
 			</div>
 			
@@ -2611,47 +2610,47 @@
 						<table class="ui bottom attached table">
 							<tr>
 								<td class="a">Name</td>
-								<td><?=$pkg['name']?></td>
+								<td><?=htmlspecialchars($pkg['name'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Description</td>
-								<td><?=$pkg['desc']?></td>
+								<td><?=htmlspecialchars($pkg['desc'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Date</td>
-								<td><?=$pkg['createdate']?></td>
+								<td><?=htmlspecialchars($pkg['createdate'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Subject dir format</td>
-								<td><?=$pkg['subjectDirFormat']?></td>
+								<td><?=htmlspecialchars($pkg['subjectDirFormat'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Study dir format</td>
-								<td><?=$pkg['studyDirFormat']?></td>
+								<td><?=htmlspecialchars($pkg['studyDirFormat'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Series dir format</td>
-								<td><?=$pkg['seriesDirFormat']?></td>
+								<td><?=htmlspecialchars($pkg['seriesDirFormat'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Data format</td>
-								<td><?=$pkg['dataFormat']?></td>
+								<td><?=htmlspecialchars($pkg['dataFormat'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">License</td>
-								<td class="b"><?=$pkg['license']?></td>
+								<td class="b"><?=htmlspecialchars($pkg['license'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Readme</td>
-								<td class="b"><?=$pkg['readme']?></td>
+								<td class="b"><?=htmlspecialchars($pkg['readme'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Changes</td>
-								<td class="b"><?=$pkg['changes']?></td>
+								<td class="b"><?=htmlspecialchars($pkg['changes'] ?? '')?></td>
 							</tr>
 							<tr>
 								<td class="a">Notes</td>
-								<td class="b"><?=$pkg['notes']?></td>
+								<td class="b"><?=htmlspecialchars($pkg['notes'] ?? '')?></td>
 							</tr>
 						</table>
 					</div>
@@ -2726,11 +2725,7 @@
 						<ul>
 						<?
 							$sqlstring = "select distinct a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = ? order by a.submitdate desc";
-							$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-							$params = array((int)$packageid);
-							mysqli_stmt_bind_param($stmt, 'i', ...$params);
-							$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
-							$numexports = mysqli_num_rows($result);
+							$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$exportid = (int)$row['export_id'];
 								$startdate = $row['startdate'];
@@ -2756,7 +2751,6 @@
 								</li>
 								<?
 							}
-							mysqli_stmt_close($stmt);
 						?>
 						</ul>
 					</div>
@@ -2800,21 +2794,21 @@
 					if ($uid != "") {
 						?><li>
 							<details>
-								<summary><?=$uid?></summary>
+								<summary><?=htmlspecialchars($uid ?? '')?></summary>
 								<ul><?
 						
 						ksort($studies, SORT_NATURAL);
 						foreach ($studies as $studynum => $modalities) {
 							?><li>
 								<details>
-									<summary><?=$studynum?></summary>
+									<summary><?=htmlspecialchars($studynum ?? '')?></summary>
 									<ul><?
 
 							ksort($modalities, SORT_NATURAL);
 							foreach ($modalities as $modality => $series) {
 								?><li>
 									<details>
-										<summary><?=$modality?></summary>
+										<summary><?=htmlspecialchars($modality ?? '')?></summary>
 										<ul><?
 								
 								ksort($series, SORT_NATURAL);
@@ -2830,10 +2824,10 @@
 										foreach ($series as $seriesnum => $seriesid) {
 											?>
 											<tr>
-												<td><?=$uid?></td>
-												<td><?=$studynum?></td>
-												<td><?=$modality?></td>
-												<td><?=$seriesnum?></td>
+												<td><?=htmlspecialchars($uid ?? '')?></td>
+												<td><?=htmlspecialchars($studynum ?? '')?></td>
+												<td><?=htmlspecialchars($modality ?? '')?></td>
+												<td><?=htmlspecialchars($seriesnum ?? '')?></td>
 											</tr>
 											<?
 										}
@@ -2870,7 +2864,7 @@
 				foreach ($subjects as $uid =>$studies) {
 					if ($uid != "") {
 						
-						$altuid = $altIDMapping[$uid];
+						$altuid = $altIDMapping[$uid] ?? '';
 						
 						ksort($studies, SORT_NATURAL);
 						foreach ($studies as $studynum => $modalities) {
@@ -2885,7 +2879,16 @@
 									$studydatetime = $ser['studydatetime'];
 									$projectname = $ser['projectname'];
 									
-									$seriesRowData[] = "{ id: $objectid, uid: \"$uid\", altuid: \"$altuid\", studynum: \"$studynum\", studydatetime: \"$studydatetime\", projectname: \"$projectname\", modality: \"$modality\", seriesnum: \"$seriesnum\" }";
+									$seriesRowData[] = array(
+										"id" => (int)$objectid,
+										"uid" => (string)$uid,
+										"altuid" => (string)$altuid,
+										"studynum" => (string)$studynum,
+										"studydatetime" => (string)$studydatetime,
+										"projectname" => (string)$projectname,
+										"modality" => (string)$modality,
+										"seriesnum" => (string)$seriesnum
+									);
 								}
 							}
 						}
@@ -2898,7 +2901,9 @@
 				</form>
 				
 				<?
-					$seriesData = implode(",", $seriesRowData);
+					/* json_encode rather than hand-built javascript: project names and IDs are free
+					   text and may contain quotes, backslashes and markup */
+					$seriesData = json_encode($seriesRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 				?>
 
 				<script type="text/javascript">
@@ -2931,7 +2936,7 @@
 							{ headerName: "Project", field: "projectname", editable: false }
 						],
 
-						rowData: [ <?=$seriesData?> ],
+						rowData: <?=$seriesData?>,
 						
 						// default col def properties get applied to all columns
 						defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -3109,9 +3114,9 @@
 						?>
 						<tr>
 							<td class="allintervention"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-							<td><?=$uid?></td>
-							<td><?=$interventionname?></td>
-							<td><?=$interventiondate?></td>
+							<td><?=htmlspecialchars($uid ?? '')?></td>
+							<td><?=htmlspecialchars($interventionname ?? '')?></td>
+							<td><?=htmlspecialchars($interventiondate ?? '')?></td>
 						</tr>
 						<?
 					}
@@ -3174,11 +3179,11 @@
 						?>
 						<tr <?=$trclass?>>
 							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-							<td><?=$uid?></td>
-							<td><?=$analysis['studynum']?></td>
+							<td><?=htmlspecialchars($uid ?? '')?></td>
+							<td><?=htmlspecialchars($analysis['studynum'] ?? '')?></td>
 							<td><?=htmlspecialchars($analysis['name'] ?? '')?></td>
-							<td><?=$analysis['date']?></td>
-							<td><?=$analysis['status']?></td>
+							<td><?=htmlspecialchars($analysis['date'] ?? '')?></td>
+							<td><?=htmlspecialchars($analysis['status'] ?? '')?></td>
 						</tr>
 						<?
 					}
@@ -3234,12 +3239,12 @@
 				foreach ($experiments as $experimentid => $experiment) {
 					?>
 					<tr>
-						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=$experiment['objectid']?>"></td>
-						<td><?=$experiment['name']?></td>
-						<td><?=$experiment['version']?></td>
-						<td><?=$experiment['desc']?></td>
-						<td><?=$experiment['createdate']?></td>
-						<td><?=$experiment['creator']?></td>
+						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($experiment['objectid'] ?? '')?>"></td>
+						<td><?=htmlspecialchars($experiment['name'] ?? '')?></td>
+						<td><?=htmlspecialchars($experiment['version'] ?? '')?></td>
+						<td><?=htmlspecialchars($experiment['desc'] ?? '')?></td>
+						<td><?=htmlspecialchars($experiment['createdate'] ?? '')?></td>
+						<td><?=htmlspecialchars($experiment['creator'] ?? '')?></td>
 					</tr>
 					<?
 				}
@@ -3295,11 +3300,11 @@
 				foreach ($pipelines as $pipelineid => $pipeline) {
 					?>
 					<tr>
-						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=$pipeline['objectid']?>"></td>
-						<td><?=$pipeline['name']?></td>
-						<td><?=$pipeline['version']?></td>
-						<td><?=$pipeline['desc']?></td>
-						<td><?=$pipeline['createdate']?></td>
+						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($pipeline['objectid'] ?? '')?>"></td>
+						<td><?=htmlspecialchars($pipeline['name'] ?? '')?></td>
+						<td><?=htmlspecialchars($pipeline['version'] ?? '')?></td>
+						<td><?=htmlspecialchars($pipeline['desc'] ?? '')?></td>
+						<td><?=htmlspecialchars($pipeline['createdate'] ?? '')?></td>
 					</tr>
 					<?
 				}
@@ -3330,8 +3335,8 @@
 			if (!ValidID($packageid,'Package ID'))
 				return;
 			
-			$sqlstring = "select * from packages where package_id = $packageid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select * from packages where package_id = ?";
+			$result = PkgQuery($sqlstring, array((int)$packageid), __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
 			$name = $row['package_name'];
@@ -3358,7 +3363,7 @@
 	?>
 		<div class="ui container">
 			<div class="ui attached raised tertiary segment">
-				<h2 class="header" style="color: #000"><?=$formtitle?></h2>
+				<h2 class="header" style="color: #000"><?=htmlspecialchars($formtitle ?? '')?></h2>
 			</div>
 			<form method="post" action="packages.php" class="ui form attached fluid raised segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
@@ -3368,14 +3373,14 @@
 			<div class="field">
 				<label>Name</label>
 				<div class="field">
-					<input type="text" name="packagename" value="<?=$name?>" maxlength="255" required>
+					<input type="text" name="packagename" value="<?=htmlspecialchars($name ?? '')?>" maxlength="255" required>
 				</div>
 			</div>
 
 			<div class="field">
 				<label>Description</label>
 				<div class="field">
-					<textarea name="packagedesc" rows="4"><?=$desc?></textarea>
+					<textarea name="packagedesc" rows="4"><?=htmlspecialchars($desc ?? '')?></textarea>
 				</div>
 			</div>
 			<div class="ui grid">
@@ -3383,7 +3388,7 @@
 					<div class="field">
 						<label>Package data format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="packageformat" value="<?=$dataFormat?>">
+							<input type="hidden" name="packageformat" value="<?=htmlspecialchars($dataFormat ?? '')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Package Data Format</div>
 							<div class="scrollhint menu">
@@ -3402,7 +3407,7 @@
 					<div class="field">
 						<label>Subject directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="subjectdirformat" value="<?=$subjectDirFormat?>">
+							<input type="hidden" name="subjectdirformat" value="<?=htmlspecialchars($subjectDirFormat ?? '')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Subject directory name</div>
 							<div class="scrollhint menu">
@@ -3416,7 +3421,7 @@
 					<div class="field">
 						<label>Study directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="studydirformat" value="<?=$studyDirFormat?>">
+							<input type="hidden" name="studydirformat" value="<?=htmlspecialchars($studyDirFormat ?? '')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Study directory name</div>
 							<div class="scrollhint menu">
@@ -3430,7 +3435,7 @@
 					<div class="field">
 						<label>Series directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="seriesdirformat" value="<?=$seriesDirFormat?>">
+							<input type="hidden" name="seriesdirformat" value="<?=htmlspecialchars($seriesDirFormat ?? '')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Series directory name</div>
 							<div class="scrollhint menu">
@@ -3456,16 +3461,16 @@
 				<a class="item" data-tab="changes">Changes</a>
 			</div>
 			<div class="ui bottom attached active tab segment" data-tab="readme">
-				<textarea name="readme"><?=$readme?></textarea>
+				<textarea name="readme"><?=htmlspecialchars($readme ?? '')?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="notes">
-				<textarea name="notes"><?=$notes?></textarea>
+				<textarea name="notes"><?=htmlspecialchars($notes ?? '')?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="license">
-				<textarea name="license"><?=$license?></textarea>
+				<textarea name="license"><?=htmlspecialchars($license ?? '')?></textarea>
 			</div>
 			<div class="ui bottom attached tab segment" data-tab="changes">
-				<textarea name="changes"><?=$changes?></textarea>
+				<textarea name="changes"><?=htmlspecialchars($changes ?? '')?></textarea>
 			</div>
 			
 			<div class="ui two column grid">
@@ -3477,7 +3482,11 @@
 					<? } ?>
 				</div>
 				<div class="column" align="right">
-					<a class="ui button" href="packages.php?projectid=<?=$projectid?>">Cancel</a>
+					<? if ($type == "edit") { ?>
+					<a class="ui button" href="packages.php?action=displaypackage&packageid=<?=(int)$packageid?>">Cancel</a>
+					<? } else { ?>
+					<a class="ui button" href="packages.php">Cancel</a>
+					<? } ?>
 					<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 				</div>
 			</div>
@@ -3501,7 +3510,8 @@
 	/* ------- DisplayPackageList ----------------- */
 	/* -------------------------------------------- */
 	function DisplayPackageList() {
-		
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+
 		?>
 		<div class="ui container">
 		
@@ -3535,9 +3545,11 @@
 					<?
 						if ($_SESSION['isadmin']) {
 							$sqlstring = "select * from packages order by package_name";
+							$params = array();
 						}
 						else {
-							$sqlstring = "select * from packages where user_id = " . $_SESSION['userid'] . " order by package_name";
+							$sqlstring = "select * from packages where user_id = ? order by package_name";
+							$params = array((int)$_SESSION['userid']);
 						}
 						
 						/* pre-fetch the most recent export submit date for every package in ONE grouped
@@ -3549,9 +3561,9 @@
 							$lastexports[$rowE['package_id']] = $rowE['lastexport'];
 						}
 
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$result = PkgQuery($sqlstring, $params, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$packageid = $row['package_id'];
+							$packageid = (int)$row['package_id'];
 							$name = $row['package_name'];
 							$desc = $row['package_desc'];
 							$createdate = date('M j, Y h:ia',strtotime($row['package_date']));
@@ -3560,11 +3572,13 @@
 							   One query per package instead of one per table */
 							$objecttables = array("package_analyses", "package_enrollments", "package_experiments", "package_interventions", "package_observations", "package_pipelines", "package_series", "package_studies", "package_subjects");
 							$subselects = array();
+							$paramsA = array();
 							foreach ($objecttables as $objecttable) {
-								$subselects[] = "(select count(*) from $objecttable where package_id = $packageid)";
+								$subselects[] = "(select count(*) from $objecttable where package_id = ?)";
+								$paramsA[] = $packageid;
 							}
 							$sqlstringA = "select " . implode(" + ", $subselects) . " 'count'";
-							$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+							$resultA = PkgQuery($sqlstringA, $paramsA, __LINE__);
 							$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
 							$numobjects = $rowA['count'];
 
@@ -3578,10 +3592,10 @@
 							?>
 							<tr>
 								<td valign="top">
-									<a href="packages.php?action=displaypackage&packageid=<?=$packageid?>"><b><?=$name?></b></a>
+									<a href="packages.php?action=displaypackage&packageid=<?=$packageid?>"><b><?=htmlspecialchars($name ?? '')?></b></a>
 								</td>
-								<td valign="top"><?=$desc?></td>
-								<td valign="top"><?=$createdate?></td>
+								<td valign="top"><?=htmlspecialchars($desc ?? '')?></td>
+								<td valign="top"><?=htmlspecialchars($createdate ?? '')?></td>
 								<td valign="top" class="right aligned"><tt><?=number_format($numobjects)?></tt></td>
 								<td valign="top"><?=$lastexportstr?></td>
 								<td valign="top" class="right aligned">
@@ -3607,16 +3621,15 @@
 	/* ------- ExportPackage ---------------------- */
 	/* -------------------------------------------- */
 	function ExportPackage($packageid) {
-		$ip = getenv('REMOTE_ADDR');
-		$username = $_SESSION['username'];
-		
-		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, submitdate, status) values ('$username', '$ip', 'DOWNLOAD_PACKAGE', 'web', 'package', now(), 'submitted')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
+		$ip = (string)getenv('REMOTE_ADDR');
+		$username = (string)$_SESSION['username'];
 
-		$sqlstring = "insert into exportseries (export_id, package_id, status) values ($exportRowID, $packageid, 'submitted')";
-		$result = MySQLiQuery($sqlstring, __FILE__ , __LINE__);
-		
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, submitdate, status) values (?, ?, 'DOWNLOAD_PACKAGE', 'web', 'package', now(), 'submitted')";
+		PkgQuery($sqlstring, array($username, $ip), __LINE__, $affected, $exportRowID);
+
+		$sqlstring = "insert into exportseries (export_id, package_id, status) values (?, ?, 'submitted')";
+		PkgQuery($sqlstring, array((int)$exportRowID, (int)$packageid), __LINE__);
+
 		Notice("Package queued for export. Status can be checked, and package can be downloaded, from this page.");
 	}
 
@@ -3625,41 +3638,33 @@
 	/* ------- SplitPackageByModality ------------- */
 	/* -------------------------------------------- */
 	function SplitPackageByModality($packageid) {
-		
-		$sqlstring = "select * from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		$createdate = $row['package_date'];
-		$origname = mysqli_real_escape_string($GLOBALS['linki'], $row['package_name']);
-		$desc = mysqli_real_escape_string($GLOBALS['linki'], $row['package_desc']);
-		$subjectDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_subjectdirformat']);
-		$studyDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_studydirformat']);
-		$seriesDirFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_seriesdirformat']);
-		$dataFormat = mysqli_real_escape_string($GLOBALS['linki'], $row['package_dataformat']);
-		$license = mysqli_real_escape_string($GLOBALS['linki'], $row['package_license']);
-		$readme = mysqli_real_escape_string($GLOBALS['linki'], $row['package_readme']);
-		$changes = mysqli_real_escape_string($GLOBALS['linki'], $row['package_changes']);
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $row['package_notes']);
-		
-		/* the modality becomes part of a table name below, so build the set of modalities that
-		   actually have a <modality>_series table and accept nothing else */
-		$validmodalities = array();
-		$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name like '%\_series'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$tablename = strtolower($row['table_name']);
-			$validmodalities[substr($tablename, 0, strlen($tablename) - strlen("_series"))] = true;
-		}
+		$packageid = (int)$packageid;
 
-		/* get list of modalities in this package */
+		$sqlstring = "select * from packages where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$userid = (int)$row['user_id'];
+		$createdate = $row['package_date'];
+		$origname = (string)$row['package_name'];
+		$desc = (string)$row['package_desc'];
+		$subjectDirFormat = (string)$row['package_subjectdirformat'];
+		$studyDirFormat = (string)$row['package_studydirformat'];
+		$seriesDirFormat = (string)$row['package_seriesdirformat'];
+		$dataFormat = (string)$row['package_dataformat'];
+		$license = (string)$row['package_license'];
+		$readme = (string)$row['package_readme'];
+		$changes = (string)$row['package_changes'];
+		$notes = (string)$row['package_notes'];
+
+		/* get list of modalities in this package. The modality becomes part of a table name below,
+		   so accept only modalities that actually have a <modality>_series table */
 		$msgs = array();
 		$modalities = array();
-		$sqlstring = "select distinct(modality) 'modality' from package_series where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select distinct(modality) 'modality' from package_series where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$modality = strtolower(trim($row['modality']));
-			if ((preg_match('/^[a-z]+$/', $modality)) && (isset($validmodalities[$modality])))
+			$modality = strtolower(trim($row['modality'] ?? ''));
+			if (IsSeriesModality($modality))
 				$modalities[] = $modality;
 			else
 				$msgs[] = "Skipped series with an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]";
@@ -3672,40 +3677,35 @@
 			$newPackageName = $origname . " - " . strtoupper($modality);
 			$newPackageID = -1;
 			
-			$sqlstring = "select package_id from packages where user_id = $userid and package_name = '$newPackageName'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select package_id from packages where user_id = ? and package_name = ?";
+			$result = PkgQuery($sqlstring, array($userid, $newPackageName), __LINE__);
 			if (mysqli_num_rows($result) > 0) {
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 				$newPackageID = $row['package_id'];
 			}
 			else {
-				$sqlstring = "insert ignore into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values ($userid, '$createdate', '$newPackageName', '$desc', '$subjectDirFormat', '$studyDirFormat', '$seriesDirFormat', '$dataFormat', '$license', '$readme', '$changes', '$notes')";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$newPackageID = mysqli_insert_id($GLOBALS['linki']);
+				$sqlstring = "insert ignore into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+				$params = array($userid, $createdate, $newPackageName, $desc, $subjectDirFormat, $studyDirFormat, $seriesDirFormat, $dataFormat, $license, $readme, $changes, $notes);
+				PkgQuery($sqlstring, $params, __LINE__, $affected, $newPackageID);
 			}
 
 			/* never move series to an invalid package - that would orphan them permanently.
 			   insert ignore returns an insert_id of 0 if the row was not created */
 			if ((int)$newPackageID < 1) {
-				$msgs[] = "Could not create or find package <b>$newPackageName</b>. The $modality series were left in the original package.";
+				$msgs[] = "Could not create or find package <b>" . htmlspecialchars($newPackageName) . "</b>. The $modality series were left in the original package.";
 				continue;
 			}
 
 			/* carry over the enrollments that own the series being moved, so the new package
 			   still knows its subjects and their package-specific alternate IDs */
-			$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) select $newPackageID, pe.enrollment_id, pe.package_subjectid from package_enrollments pe where pe.package_id = $packageid and pe.enrollment_id in (select st.enrollment_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id inner join studies st on st.study_id = ms.study_id where ps.package_id = $packageid and ps.modality = '$modality')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numenrollmentscopied = mysqli_affected_rows($GLOBALS['linki']);
+			$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) select ?, pe.enrollment_id, pe.package_subjectid from package_enrollments pe where pe.package_id = ? and pe.enrollment_id in (select st.enrollment_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id inner join studies st on st.study_id = ms.study_id where ps.package_id = ? and ps.modality = ?)";
+			PkgQuery($sqlstring, array((int)$newPackageID, $packageid, $packageid, $modality), __LINE__, $numenrollmentscopied);
 
 			/* move the series for this modality into the new package */
-			$sqlstring = "update package_series set package_id = $newPackageID where package_id = $packageid and modality = '$modality'";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$numseriesmoved = mysqli_affected_rows($GLOBALS['linki']);
+			$sqlstring = "update package_series set package_id = ? where package_id = ? and modality = ?";
+			PkgQuery($sqlstring, array((int)$newPackageID, $packageid, $modality), __LINE__, $numseriesmoved);
 
-			$msgs[] = "<b>$newPackageName</b> - moved $numseriesmoved series, copied $numenrollmentscopied enrollments";
+			$msgs[] = "<b>" . htmlspecialchars($newPackageName) . "</b> - moved $numseriesmoved series, copied $numenrollmentscopied enrollments";
 
 			//CommitSQLTransaction();
 		}
@@ -3713,7 +3713,7 @@
 		if (count($modalities) < 1)
 			Notice("This package contains no series, so there was nothing to split.", "Nothing to split");
 		else
-			Notice(implode("<br>", $msgs), "Split " . $origname . " into " . count($modalities) . " packages by modality");
+			Notice(implode("<br>", $msgs), "Split " . htmlspecialchars($origname) . " into " . count($modalities) . " packages by modality");
 	}
 
 
@@ -3722,70 +3722,39 @@
 	/* -------------------------------------------- */
 	function DeletePackage($packageid) {
 		if (!ValidID($packageid,'Package ID')) { return; }
-		
-		$packageid = mysqli_real_escape_string($GLOBALS['linki'], $packageid);
-		
-		$sqlstring = "select * from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$packageid = (int)$packageid;
+
+		$sqlstring = "select * from packages where package_id = ?";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$packageName = $row['package_name'];
-		
+		$packageName = $row['package_name'] ?? '';
+
+		/* delete the package's objects, then the package. The table names come from this list,
+		   never from user input */
 		$msgs = array();
-		/* delete from package_analyses */
-		$sqlstring = "delete from package_analyses where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " analyses";
-
-		/* delete from package_enrollments */
-		$sqlstring = "delete from package_enrollments where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " enrollments";
-
-		/* delete from package_experiments */
-		$sqlstring = "delete from package_experiments where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " experiments";
-
-		/* delete from package_interventions */
-		$sqlstring = "delete from package_interventions where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " interventions";
-
-		/* delete from package_observations */
-		$sqlstring = "delete from package_observations where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " observations";
-
-		/* delete from package_pipelines */
-		$sqlstring = "delete from package_pipelines where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " pipelines";
-
-		/* delete from package_series */
-		$sqlstring = "delete from package_series where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " series";
-
-		/* delete from package_studies */
-		$sqlstring = "delete from package_studies where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " studies";
-
-		/* delete from package_subjects */
-		$sqlstring = "delete from package_subjects where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " subjects";
-
-		/* delete from packages */
-		$sqlstring = "delete from packages where package_id = $packageid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$msgs[] = "Deleted " . mysqli_affected_rows($GLOBALS['linki']) . " package";
+		$objecttables = array(
+			"package_analyses"      => "analyses",
+			"package_enrollments"   => "enrollments",
+			"package_experiments"   => "experiments",
+			"package_interventions" => "interventions",
+			"package_observations"  => "observations",
+			"package_pipelines"     => "pipelines",
+			"package_series"        => "series",
+			"package_studies"       => "studies",
+			"package_subjects"      => "subjects",
+			"packages"              => "package"
+		);
+		foreach ($objecttables as $objecttable => $label) {
+			$sqlstring = "delete from $objecttable where package_id = ?";
+			PkgQuery($sqlstring, array($packageid), __LINE__, $numdeleted);
+			$msgs[] = "Deleted $numdeleted $label";
+		}
 
 		?>
 		<div class="ui text container">
 			<div class="ui message">
 				<div class="header">
-					Deleted package <?=$packageName?>
+					Deleted package <?=htmlspecialchars($packageName)?>
 				</div>
 				<ul class="list">
 					<?
