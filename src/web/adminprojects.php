@@ -419,7 +419,7 @@
 				<div class="field">
 					<label>Project number</label>
 					<div class="field">
-						<input type="text" name="costcenter" value="<?=htmlspecialchars($costcenter ?? '')?>" maxlength="45" required placeholder="6 digit cost center">
+						<input type="text" name="costcenter" value="<?=htmlspecialchars($costcenter ?? '')?>" maxlength="45" required>
 					</div>
 				</div>
 			</div>
