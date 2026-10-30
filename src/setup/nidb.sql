@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 26, 2026 at 04:22 PM
+-- Generation Time: Oct 30, 2026 at 06:17 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -2605,7 +2605,6 @@ CREATE TABLE `projects` (
   `project_desc` text DEFAULT NULL,
   `project_admin` int(11) DEFAULT NULL,
   `project_pi` int(11) DEFAULT NULL,
-  `project_sharing` char(1) DEFAULT NULL COMMENT 'F = full sharing, access to data\nV = view subjects, experiments, studies only\nP = private, no data seen by others',
   `project_costcenter` varchar(45) DEFAULT NULL,
   `project_startdate` date DEFAULT NULL,
   `project_enddate` date DEFAULT NULL,
@@ -4808,7 +4807,8 @@ ALTER TABLE `qc_results`
 --
 ALTER TABLE `ratings`
   ADD PRIMARY KEY (`rating_id`),
-  ADD KEY `idx_ratings` (`rater_id`);
+  ADD KEY `idx_ratings` (`rater_id`),
+  ADD KEY `data_id` (`data_id`);
 
 --
 -- Indexes for table `remoteimport_batch`

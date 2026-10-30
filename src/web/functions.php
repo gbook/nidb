@@ -719,7 +719,6 @@
 		$p['projectName'] = $row['project_name'];
 		$p['projectAdmin'] = $row['project_admin'];
 		$p['projectPI'] = $row['project_pi'];
-		$p['projectSharing'] = $row['project_sharing'];
 		$p['projectCostCenter'] = $row['project_costcenter'];
 		$p['projectStartDate'] = $row['project_startdate'];
 		$p['projectEndDate'] = $row['project_enddate'];

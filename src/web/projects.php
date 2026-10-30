@@ -943,14 +943,16 @@
 	function AuditStudies($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 	
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$name = $row['project_name'];
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 		
@@ -1086,14 +1088,16 @@
 	function DisplayCompleteProjectTable($id) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 	
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$name = $row['project_name'];
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 
@@ -1147,14 +1151,16 @@
 	function DisplayCompareSeriesLists($id, $locallist, $foreignlist) {
 		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
 	
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$name = $row['project_name'];
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 
@@ -2940,14 +2946,16 @@
 		/* update the mostrecent table */
 		UpdateMostRecent('', '', $id);
 		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$name = $row['project_name'];
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 		$projectdesc = $row['project_desc'];

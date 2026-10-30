@@ -977,7 +977,6 @@
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 		
@@ -1286,7 +1285,6 @@
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 	
@@ -1662,7 +1660,6 @@
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 
@@ -1723,7 +1720,6 @@
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 
@@ -2737,7 +2733,6 @@
 		$admin = $row['project_admin'];
 		$pi = $row['project_pi'];
 		$costcenter = $row['project_costcenter'];
-		$sharing = $row['project_sharing'];
 		$startdate = $row['project_startdate'];
 		$enddate = $row['project_enddate'];
 

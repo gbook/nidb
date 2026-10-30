@@ -55,9 +55,9 @@ INSERT IGNORE INTO `notifications` (`notiftype_id`, `notiftype_name`, `notiftype
 (3, 'Pipeline summary', 'Summary of current or recently completed pipeline jobs', 0),
 (4, 'Missing data', 'Report on missing or potentially incomplete data', 1);
 
-INSERT IGNORE INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_sharing`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
-(1, 1, 'Generic Project', 1, 1, 'F', '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
-(2, 1, 'Clinical Scan', 1, 1, 'F', '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
+INSERT IGNORE INTO `projects` (`project_id`, `instance_id`, `project_name`, `project_admin`, `project_pi`, `project_costcenter`, `project_startdate`, `project_enddate`, `project_irbapprovaldate`, `project_status`, `lastupdate`) VALUES
+(1, 1, 'Generic Project', 1, 1, '999999', '0000-00-00', '3000-00-00', NULL, 'active', now()),
+(2, 1, 'Clinical Scan', 1, 1, '888888', '0000-00-00', '3000-00-00', NULL, 'active', now());
 
 INSERT IGNORE INTO `user_instance` (`userinstance_id`, `user_id`, `instance_id`, `isdefaultinstance`, `instance_joinrequest`) VALUES
 (1, 1, 1, 1, 0);
