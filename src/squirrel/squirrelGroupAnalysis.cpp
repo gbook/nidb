@@ -227,11 +227,15 @@ QList<QPair<QString,QString>> squirrelGroupAnalysis::GetStagedFileList() {
     QList<QPair<QString,QString>> stagedList;
     QString virtualPath = VirtualPath();
 
+    /* a staged path may have a subdirectory within the group-analysis (eg
+     * 'subjects/fsaverage' from a FreeSurfer derivative); see utils::SetStagedFileSubdir */
+    QHash<QString, QString> subdirs = utils::GetStagedFileSubdirs(databaseUUID, objectID, GroupAnalysis);
+
     QString path;
     foreach (path, stagedFiles) {
         QPair<QString, QString> pair;
         pair.first = path;
-        pair.second = virtualPath;
+        pair.second = subdirs.contains(path) ? QString("%1/%2").arg(virtualPath).arg(subdirs.value(path)) : virtualPath;
         stagedList.append(pair);
     }
 

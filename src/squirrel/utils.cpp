@@ -25,6 +25,7 @@
 #include "squirrel.h"
 #ifdef Q_OS_UNIX
 #include <sys/resource.h>
+#include <functional>
 #endif
 
 namespace utils {
@@ -719,6 +720,202 @@ namespace utils {
     }
 
 
+    /* ---------------------------------------------------------- */
+    /* --------- IsSkippedName ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Version-control/DataLad metadata (.git, .datalad, .gitattributes, .gitmodules)
+     * and operating-system clutter (.DS_Store, ._* AppleDouble files, Thumbs.db,
+     * desktop.ini) are never part of a dataset's content.
+     *
+     * @brief Should a file or directory with this name be left out of a package?
+     * @param name file or directory name (no path)
+     * @return true if it should be skipped
+     */
+    bool IsSkippedName(const QString &name) {
+        static const QStringList skip = {".git", ".datalad", ".gitattributes", ".gitmodules", ".DS_Store"};
+        if (skip.contains(name))
+            return true;
+        if (name.startsWith("._"))
+            return true;
+        if ((name.compare("Thumbs.db", Qt::CaseInsensitive) == 0) || (name.compare("desktop.ini", Qt::CaseInsensitive) == 0))
+            return true;
+        return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- IsMissingContent ------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * DataLad/git-annex datasets store file content in the annex. Until it is fetched
+     * ('datalad get'), a file is either a broken symlink (locked mode) or a small
+     * pointer file whose text is '/annex/objects/<key>' (unlocked/adjusted mode).
+     *
+     * @brief Is this a file whose content is not present?
+     * @param p path to a file
+     * @return true for a broken symlink or a git-annex pointer file
+     */
+    bool IsMissingContent(const QString &p) {
+        QFileInfo fi(p);
+        if (fi.isSymLink() && !fi.exists())
+            return true;
+        if (fi.isFile() && (fi.size() > 0) && (fi.size() < 1024)) {
+            QFile f(p);
+            if (f.open(QIODevice::ReadOnly)) {
+                QByteArray head = f.read(64);
+                f.close();
+                if (head.startsWith("/annex/objects/"))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- WalkTree --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Follows symlinks (to files and directories). A symlinked directory that points to
+     * the directory containing it or one of its ancestors (a cycle) is skipped, and the
+     * canonical paths of visited directories guard against any other repeats. Skipped names
+     * (IsSkippedName) and files with missing content (IsMissingContent) are left out.
+     *
+     * @brief Recursively visit the files and directories under a directory
+     * @param dir directory to walk
+     * @param rel path of dir relative to the walk root ("" for the root)
+     * @param visited canonical paths of directories already visited
+     * @param cb called for each entry with (absolute path, relative path, isDir)
+     */
+    static void WalkTree(const QString &dir, const QString &rel, QSet<QString> &visited, const std::function<void(const QString&, const QString&, bool)> &cb) {
+        QString canon = QFileInfo(dir).canonicalFilePath();
+        if (canon.isEmpty() || visited.contains(canon))
+            return;
+        visited.insert(canon);
+
+        QDir d(dir);
+        foreach (QFileInfo fi, d.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System)) {
+            QString name = fi.fileName();
+            if (IsSkippedName(name))
+                continue;
+            QString r = rel.isEmpty() ? name : (rel + "/" + name);
+            if (fi.isDir()) {
+                /* a symlink to this directory or one of its ancestors is a cycle */
+                if (fi.isSymLink()) {
+                    QString target = fi.canonicalFilePath();
+                    if ((target == canon) || canon.startsWith(target + "/"))
+                        continue;
+                }
+                cb(fi.absoluteFilePath(), r, true);
+                WalkTree(fi.absoluteFilePath(), r, visited, cb);
+            }
+            else if (fi.isFile() && !IsMissingContent(fi.absoluteFilePath()))
+                cb(fi.absoluteFilePath(), r, false);
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CopyPathToDir ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Staged files may be directories (eg a MEG .ds recording, a .zarr store, or a
+     * derivative sub-directory). A file is copied into dir; a directory is copied
+     * recursively to dir/<dirname>, preserving its internal structure. Symlinks are
+     * followed (their target content is copied); see WalkTree for what is skipped.
+     *
+     * @brief Copy a file or a directory tree into a directory
+     * @param p path to a file or directory
+     * @param dir destination directory (must exist)
+     * @return true if everything was copied
+     */
+    bool CopyPathToDir(QString p, QString dir) {
+        QFileInfo fi(p);
+        if (!fi.isDir())
+            return CopyFileToDir(p, dir);
+
+        QString destRoot = QString("%1/%2").arg(dir).arg(fi.fileName());
+        QString m;
+        if (!MakePath(destRoot, m))
+            return false;
+
+        bool ok = true;
+        QSet<QString> visited;
+        WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+            QString dest = QString("%1/%2").arg(destRoot).arg(rel);
+            QString msg;
+            if (isDir) {
+                if (!MakePath(dest, msg))
+                    ok = false;
+            }
+            else {
+                MakePath(QFileInfo(dest).absolutePath(), msg);
+                if (!QFile::copy(abs, dest))
+                    ok = false;
+            }
+        });
+        if (ok)
+            Print(QString("Copied directory [%1] to [%2]").arg(p).arg(destRoot));
+        return ok;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ExpandStagedPath ------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Expand a staged file or directory into (disk path, archive path) pairs
+     * @param p path to a file or directory on disk
+     * @param virtualDir directory inside the package that p is staged into
+     * @return list of pairs. A file maps to virtualDir/<name>; a directory maps each
+     *         contained file to virtualDir/<dirname>/<relative path>
+     */
+    QList<QPair<QString,QString>> ExpandStagedPath(QString p, QString virtualDir) {
+        QList<QPair<QString,QString>> list;
+        QFileInfo fi(p);
+        if (!fi.isDir()) {
+            list.append(qMakePair(p, QString("%1/%2").arg(virtualDir).arg(fi.fileName())));
+            return list;
+        }
+        QSet<QString> visited;
+        WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+            if (!isDir)
+                list.append(qMakePair(abs, QString("%1/%2/%3").arg(virtualDir).arg(fi.fileName()).arg(rel)));
+        });
+        return list;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetPathSizeAndFileCount ------------------------ */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Get the size and file count of a file, or of a directory tree
+     * @param p path to a file or directory
+     * @param c [out] number of files
+     * @param b [out] total size in bytes
+     */
+    void GetPathSizeAndFileCount(QString p, qint64 &c, qint64 &b) {
+        c = 0; b = 0;
+        QFileInfo fi(p);
+        if (fi.isDir()) {
+            QSet<QString> visited;
+            WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+                Q_UNUSED(rel);
+                if (!isDir) {
+                    c++;
+                    b += QFileInfo(abs).size();
+                }
+            });
+        }
+        else if (fi.exists() && !IsMissingContent(p)) {
+            c = 1;
+            b = fi.size();
+        }
+    }
+
+
 
 
     /* ---------------------------------------------------------- */
@@ -1018,20 +1215,75 @@ namespace utils {
 
         QSqlQuery q(QSqlDatabase::database(databaseUUID));
         if (objectID >= 0) {
+            /* keep each path's FinalDirectory (see SetStagedFileSubdir) across the
+             * delete/re-insert, since objects only hold the list of paths */
+            QHash<QString, QString> subdirs = GetStagedFileSubdirs(databaseUUID, objectID, object);
+
             /* delete previously staged files from the database */
             q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
             q.bindValue(":id", objectID);
             q.bindValue(":type", squirrel::ObjectTypeToString(object));
             utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath) values (:id, :type, :path)");
+            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath, FinalDirectory) values (:id, :type, :path, :finaldir)");
             q.bindValue(":id", objectID);
             q.bindValue(":type", squirrel::ObjectTypeToString(object));
             foreach (QString path, paths) {
                 q.bindValue(":path", path);
+                q.bindValue(":finaldir", subdirs.value(path));
                 utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
             }
         }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- SetStagedFileSubdir ---------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * A staged file or directory is normally placed directly in its object's virtual
+     * directory. Setting a subdirectory (stored in StagedFiles.FinalDirectory) places it
+     * in <virtual directory>/<subdir>/ instead, eg to keep 'subjects/fsaverage' from a
+     * FreeSurfer derivative rather than flattening it to 'fsaverage'.
+     *
+     * @brief Set the subdirectory (within its object's virtual path) for a staged path
+     * @param databaseUUID database connection
+     * @param objectID object row id
+     * @param object object type
+     * @param path the staged path
+     * @param subdir relative subdirectory, no leading or trailing slash ("" = none)
+     */
+    void SetStagedFileSubdir(QString databaseUUID, qint64 objectID, ObjectType object, QString path, QString subdir) {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("update StagedFiles set FinalDirectory = :finaldir where ObjectRowID = :id and ObjectType = :type and StagedPath = :path");
+        q.bindValue(":finaldir", subdir);
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        q.bindValue(":path", path);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetStagedFileSubdirs --------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Get the subdirectories set with SetStagedFileSubdir for an object's staged paths
+     * @param databaseUUID database connection
+     * @param objectID object row id
+     * @param object object type
+     * @return staged path -> subdirectory, for paths that have one
+     */
+    QHash<QString, QString> GetStagedFileSubdirs(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QHash<QString, QString> subdirs;
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select StagedPath, FinalDirectory from StagedFiles where ObjectRowID = :id and ObjectType = :type and FinalDirectory is not null and FinalDirectory != ''");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next())
+            subdirs.insert(q.value("StagedPath").toString(), q.value("FinalDirectory").toString());
+        return subdirs;
     }
 
 

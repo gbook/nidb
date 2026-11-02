@@ -70,12 +70,12 @@ public:
     QString StatusMessage;        /*!< if the analysis had a status message, the last would be stored here */
     QString PipelineName;       /*!< name of the pipeline */
     QString Status;             /*!< status of the analysis. eg running, complete, pending */
-    bool Successful;            /*!< true if the analysis completed successfully */
-    int PipelineVersion;        /*!< pipeline version */
-    int SeriesCount;            /*!< number of series downloaded into the analysis */
-    qint64 RunTime;             /*!< total run time in minutes (elapsed wall time) of the analysis after analysis was submitted to the cluster */
-    qint64 SetupTime;           /*!< total time in minutes (elapsed wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
-    qint64 Size;                /*!< disk size in bytes of the analysis */
+    bool Successful = false;    /*!< true if the analysis completed successfully */
+    int PipelineVersion = 0;    /*!< pipeline version */
+    int SeriesCount = 0;        /*!< number of series downloaded into the analysis */
+    qint64 RunTime = 0;         /*!< total run time in minutes (elapsed wall time) of the analysis after analysis was submitted to the cluster */
+    qint64 SetupTime = 0;       /*!< total time in minutes (elapsed wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
+    qint64 Size = 0;            /*!< disk size in bytes of the analysis */
 
     /* lib variables */
     QStringList stagedFiles;    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */

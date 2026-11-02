@@ -50,13 +50,15 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		$action = GetSafeAction(array("update")); /* mutating actions require POST + CSRF token */
 		$id = (int)GetVariable("id");
 		$storagetype = GetVariable("storagetype");
 		$storageusername = GetVariable("storageusername");
 		$storagepassword = GetVariable("storagepassword");
 		$storagetoken = GetVariable("storagetoken");
 		$storagecapacity = GetVariable("storagecapacity");
+		$clearpassword = (GetVariable("clearpassword") == "1");
+		$cleartoken = (GetVariable("cleartoken") == "1");
 
 		/* make sure the 4 tier rows exist before doing anything */
 		EnsureStorageTiers($tierconfignames);
@@ -68,7 +70,7 @@
 		/* the mutating action uses POST/Redirect/GET so a refresh/Back doesn't re-submit */
 		elseif ($action == "update") {
 			ob_start();
-			UpdateStorageTier($id, $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity);
+			UpdateStorageTier($id, $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $clearpassword, $cleartoken);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("adminstorage.php");
 		}
@@ -124,26 +126,62 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateStorageTier ------------------ */
 	/* -------------------------------------------- */
-	function UpdateStorageTier($id, $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity) {
+	function UpdateStorageTier($id, $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $clearpassword, $cleartoken) {
 		$id = (int)$id;
+
+		/* load the existing row: confirms the tier exists, and supplies the stored password/token
+		   when those fields are left blank (they are never sent to the browser) */
+		$sqlstring = "select storage_password, storage_token from storage_tiers where storagetier_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$existing = $result ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+
+		if (!$existing) {
+			Error("Storage tier not found. Nothing was updated.");
+			return;
+		}
 
 		/* only nfs/s3/gcs are valid types; anything else (incl. the blank "Not configured"
 		   option) is stored as NULL, which marks the tier as not configured */
-		if (!in_array($storagetype, array('nfs', 's3', 'gcs')))
+		if (!in_array($storagetype, array('nfs', 's3', 'gcs'), true))
 			$storagetype = null;
-		$storagecapacity = (int)$storagecapacity;
+
+		/* capacity in GB must fit the int(11) column and can't be negative (the form's min="0" is
+		   client-side only). Compare as a float so huge inputs don't wrap/saturate first. */
+		$capacityval = is_numeric($storagecapacity) ? (float)$storagecapacity : 0;
+		$storagecapacity = (int)max(0, min(2147483647, floor($capacityval)));
+
 		/* GetVariable() returns NULL for blank fields; store empty strings instead */
 		$storageusername = ($storageusername ?? '');
-		$storagepassword = ($storagepassword ?? '');
-		$storagetoken = ($storagetoken ?? '');
+
+		/* password/token: blank = keep the stored value; the "clear" checkbox removes it */
+		if ($clearpassword)
+			$storagepassword = '';
+		elseif (($storagepassword ?? '') == '')
+			$storagepassword = ($existing['storage_password'] ?? '');
+
+		if ($cleartoken)
+			$storagetoken = '';
+		elseif (($storagetoken ?? '') == '')
+			$storagetoken = ($existing['storage_token'] ?? '');
 
 		$sqlstring = "update storage_tiers set storage_type = ?, storage_username = ?, storage_password = ?, storage_token = ?, storage_capacity = ? where storagetier_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ssssii', $storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$storagetype, $storageusername, $storagepassword, $storagetoken, $storagecapacity, $id]);
+		/* params passed for the error display only; mask the secrets so they aren't echoed on failure */
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$storagetype, $storageusername, '********', '********', $storagecapacity, $id]);
+		/* an UPDATE has no result set, so check the statement's error state rather than $result */
+		$ok = (mysqli_stmt_errno($stmt) == 0);
 		mysqli_stmt_close($stmt);
 
-		?><div align="center"><span class="message">Storage tier updated</span></div><br><br><?
+		if ($ok) {
+			?><div align="center"><span class="message">Storage tier updated</span></div><br><br><?
+		}
+		else {
+			Error("Storage tier was not updated - a database error occurred.");
+		}
 	}
 
 
@@ -167,9 +205,13 @@
 
 		$configname = $row['storage_configname'];
 		$storagetype = $row['storage_type'];
+		/* a legacy '' (invalid enum value stored by non-strict MySQL) means not configured */
+		if ($storagetype === '')
+			$storagetype = null;
 		$storageusername = $row['storage_username'] ?? '';
-		$storagepassword = $row['storage_password'] ?? '';
-		$storagetoken = $row['storage_token'] ?? '';
+		/* the stored password/token are never sent to the browser; only whether one is set */
+		$haspassword = (($row['storage_password'] ?? '') != '');
+		$hastoken = (($row['storage_token'] ?? '') != '');
 		$storagecapacity = $row['storage_capacity'] ?? 0;
 		/* the on-disk path comes from nidb.cfg, edited on the Settings page */
 		$configpath = $GLOBALS['cfg'][$configname] ?? '';
@@ -181,6 +223,7 @@
 
 			<form method="post" action="adminstorage.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="update">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="id" value="<?=$id?>">
 
 				<div class="field">
@@ -211,13 +254,25 @@
 					</div>
 					<div class="field">
 						<label>Password</label>
-						<input type="password" name="storagepassword" value="<?=htmlspecialchars($storagepassword)?>" placeholder="Access password (if required)" autocomplete="new-password">
+						<input type="password" name="storagepassword" value="" placeholder="<?= $haspassword ? 'Saved - leave blank to keep' : 'Access password (if required)' ?>" autocomplete="new-password">
+						<? if ($haspassword) { ?>
+						<div class="ui checkbox" style="margin-top:5px">
+							<input type="checkbox" name="clearpassword" value="1">
+							<label>Clear saved password</label>
+						</div>
+						<? } ?>
 					</div>
 				</div>
 
 				<div class="field">
 					<label>Access Token</label>
-					<textarea name="storagetoken" rows="3" placeholder="Access token (if required)"><?=htmlspecialchars($storagetoken)?></textarea>
+					<textarea name="storagetoken" rows="3" placeholder="<?= $hastoken ? 'Saved - leave blank to keep' : 'Access token (if required)' ?>" autocomplete="off"></textarea>
+					<? if ($hastoken) { ?>
+					<div class="ui checkbox" style="margin-top:5px">
+						<input type="checkbox" name="cleartoken" value="1">
+						<label>Clear saved token</label>
+					</div>
+					<? } ?>
 				</div>
 
 				<div class="field">
@@ -334,7 +389,7 @@
 						$storagetype = $row['storage_type'];
 						$configpath = $GLOBALS['cfg'][$configname] ?? '';
 						/* a NULL storage_type means the tier has not been configured */
-						$isconfigured = ($storagetype !== null);
+						$isconfigured = (($storagetype !== null) && ($storagetype !== ''));
 				?>
 				<tr>
 					<td><a href="adminstorage.php?action=editform&id=<?=$id?>" class="tt"><?=htmlspecialchars($configname)?></a></td>

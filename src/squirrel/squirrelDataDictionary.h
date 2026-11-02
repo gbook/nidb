@@ -68,8 +68,8 @@ public:
     /* JSON elements */
     QList<dataDictionaryItem> dictItems;    /*!< List of data dictionary items */
     QString DataDictionaryName;
-    qint64 FileCount;                       /*!< total number of files */
-    qint64 Size;                            /*!< disk size in bytes of the data dictionary */
+    qint64 FileCount = 0;                   /*!< total number of files */
+    qint64 Size = 0;                        /*!< disk size in bytes of the data dictionary */
 
     /* lib variables */
     QStringList stagedFiles;                /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */

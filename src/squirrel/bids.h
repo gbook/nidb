@@ -36,10 +36,15 @@ public:
     bool LoadToSquirrel(QString dir, squirrel *sqrl);
 
     bool LoadRootFiles(QStringList rootfiles, squirrel *sqrl);
-    bool LoadSubjectFiles(QStringList subjfiles, QString ID, squirrel *sqrl);
-    bool LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, squirrel *sqrl);
+    QStringList InheritableFiles(QStringList files);
+    bool LoadSessionDir(QString sesdir, qint64 subjectRowID, int studyNum, QStringList inherited, QStringList subjectScans, squirrel *sqrl);
+    QStringList OrderSessionsByAcqTime(QStringList sesdirs, QString sessionsFile, squirrel *sqrl);
+    bool LoadScansFile(QString f, const QHash<QString, qint64> &seriesByPath, bool allowFallback, squirrel *sqrl);
 
     bool LoadParticipantsFile(QString f, squirrel *sqrl);
+    QJsonObject ReadColumnSidecars(QStringList jsonFiles, squirrel *sqrl);
+    void ApplyColumnMeta(squirrelObservation &obs, const QString &col, const QJsonObject &colMeta);
+    void AddToPackageNotes(QString section, QString key, QJsonValue value, squirrel *sqrl);
     bool LoadTaskFile(QString f, squirrel *sqrl);
     bool LoadDatasetDescription(QString f, squirrel *sqrl);
     bool LoadSessionsFile(QString f, qint64 subjectRowID, squirrel *sqrl);
@@ -47,13 +52,36 @@ public:
 
     /* derivatives -> pipelines + analyses */
     bool LoadDerivatives(QString derivativesDir, squirrel *sqrl);
+    qint64 LoadDerivativePipeline(QString pdir, QString pipelineName, bool subjectsOnly, squirrel *sqrl, QStringList excludeDirs = QStringList());
+    void ScanDerivativeDir(QString dir, int depth, QStringList &subjectDirs, QStringList &leftovers, squirrel *sqrl);
+    bool ContainsSubjectDir(QString dir, int depth, squirrel *sqrl);
     qint64 ResolveDerivativeStudy(qint64 subjectRowID, QString sesLabel, squirrel *sqrl);
-    qint64 AddAnalysisFromDir(QString dir, QString pipelineName, qint64 pipelineRowID, qint64 studyRowID, squirrel *sqrl);
+    qint64 StageAnalysisEntries(QStringList entries, QString pipelineName, qint64 pipelineRowID, qint64 studyRowID, squirrel *sqrl);
+
+    /* top-level directories without a squirrel object of their own */
+    bool LoadStimuliDir(QString stimuliDir, squirrel *sqrl);
+    bool LoadCodeDir(QString codeDir, squirrel *sqrl);
+    void StoreDatasetFilesInNotes(QStringList rootfiles, squirrel *sqrl);
+    bool StageFiles(ObjectType object, qint64 rowid, QStringList files, squirrel *sqrl);
+    void ReportMissingContent(squirrel *sqrl);
 
     /* BIDS filename/entity parsing helpers */
     void ParseBidsFilename(const QString &filename, QHash<QString, QString> &entities, QString &suffix, QString &ext);
     QString ModalityForDatatype(const QString &datatype);
-    qint64 AddSeriesFromBidsFile(QString primaryFile, QString datatype, qint64 studyRowID, squirrel *sqrl);
+    bool IsPrimaryDataFile(const QString &path);
+    bool EntitiesSubset(const QHash<QString, QString> &sub, const QHash<QString, QString> &super, const QStringList &ignore = QStringList());
+    QHash<QString, QString> ReadSidecarParams(QStringList jsonFiles);
+    qint64 AddSeriesFromBidsFile(QString primaryFile, QString datatype, qint64 studyRowID, QStringList companionFiles, QHash<QString, QString> params, squirrel *sqrl);
+
+private:
+    QStringList rootInheritable;     /*!< dataset-root sidecars (eg T1w.json, dwi.bval) applied by the BIDS inheritance principle */
+    QString rootDir;
+    QString datasetType;             /*!< DatasetType from dataset_description.json (raw, derivative) */
+    QString generatedByName;         /*!< GeneratedBy[0].Name from dataset_description.json */
+    bool derivativeRootMode = false; /*!< importing a dataset whose root is a derivative */                 /*!< the BIDS dataset root directory */
+    QSet<QString> usedRootFiles;
+    QSet<QString> missingContent;    /*!< dataset-relative paths of files whose content is not present (DataLad/git-annex) */
+    QHash<QPair<qint64, qint64>, qint64> derivAnalyses; /*!< (pipeline, study) -> analysis row id, for derivative imports */     /*!< root files that were applied to a series or staged in an experiment */
 };
 
 #endif // BIDS_H

@@ -51,8 +51,8 @@ public:
 
     /* JSON elements */
     QString ExperimentName;     /*!< experiment name (required) */
-    qint64 FileCount;           /*!< number of experiment files (required) */
-    qint64 Size;                /*!< total size in bytes of the experiment files (required) */
+    qint64 FileCount = 0;       /*!< number of experiment files (required) */
+    qint64 Size = 0;            /*!< total size in bytes of the experiment files (required) */
 
     QStringList stagedFiles;    /*!< staged file list - list of files in their own original paths which will be copied in before the package is zipped up */
 
