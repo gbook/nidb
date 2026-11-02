@@ -4,7 +4,7 @@ A walkthrough of the pipeline module: from the cron entry that starts it, throug
 
 Companion doc: `doc/modulePipeline-bugs.md` lists known bugs in this code path.
 
-Source: `src/nidb/modulePipeline.{h,cpp}`, `src/nidb/moduleCluster.cpp`, `src/nidb/main.cpp`, `src/nidb/mainCluster.cpp`. Web views: `pipelines.php` (definition), `viewanalysis.php` (per-analysis log).
+Source: `src/nidb/modulePipeline.{h,cpp}`, `src/nidb/moduleCluster.cpp`, `src/nidb/main.cpp`. Web views: `pipelines.php` (definition), `viewanalysis.php` (per-analysis log).
 
 ---
 
@@ -158,7 +158,7 @@ The file is written locally, `chmod 777`'d, and submitted by path *as the cluste
 
 ## 8. Cluster-side check-ins
 
-`nidb cluster -u <submodule>` (`mainCluster.cpp`, `moduleCluster.cpp`) runs on the node and talks straight to the database:
+`nidb cluster -u <submodule>` (`moduleCluster.cpp`) runs on the node and talks straight to the database:
 
 | Sub-module | Effect |
 |---|---|

@@ -24,10 +24,7 @@
 #define ANALYSIS_H
 #include <QString>
 #include "nidb.h"
-/* squirrel is only needed for GetSquirrelObject(), which the cluster build excludes */
-#ifndef NIDB_CLUSTER_BUILD
 #include "squirrelAnalysis.h"
-#endif
 
 /**
  * @brief The analysis class
@@ -40,9 +37,7 @@ public:
 	nidb *n;
 
 	void PrintAnalysisInfo();
-#ifndef NIDB_CLUSTER_BUILD
     squirrelAnalysis GetSquirrelObject(QString databaseUUID);
-#endif
 
     QDateTime clusterEndDate; /*!< datetime the analysis finished running on the cluster */
     QDateTime clusterStartDate; /*!< datetime the analysis started running on the cluster */
