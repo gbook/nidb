@@ -48,7 +48,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions must be a POST carrying this session's CSRF token */
+		$action = GetSafeAction(array('update', 'add', 'copysettings'));
 		$id = (int)GetVariable("id");
 		$projectid = (int)GetVariable("projectid");
 		$copyfromprojectid = (int)GetVariable("copyfromprojectid");
@@ -73,15 +74,28 @@
 			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'update':
 				ob_start();
-				UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate);
+				$ok = UpdateProject($id, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate);
 				$_SESSION['flash'] = ob_get_clean();
-				RedirectTo("adminprojects.php");
+				if ($ok) {
+					RedirectTo("adminprojects.php");
+				}
+				else {
+					/* send the user back to the form with what they typed */
+					$_SESSION['projectformvalues'] = GetSubmittedProjectValues();
+					RedirectTo("adminprojects.php?action=editform&id=" . urlencode($id));
+				}
 				break;
 			case 'add':
 				ob_start();
-				AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate);
+				$ok = AddProject($projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate);
 				$_SESSION['flash'] = ob_get_clean();
-				RedirectTo("adminprojects.php");
+				if ($ok) {
+					RedirectTo("adminprojects.php");
+				}
+				else {
+					$_SESSION['projectformvalues'] = GetSubmittedProjectValues();
+					RedirectTo("adminprojects.php?action=addform");
+				}
 				break;
 			case 'copysettings':
 				ob_start();
@@ -112,12 +126,14 @@
 		/* the project must be in one of this admin's instances, and so must the instance it's being moved to */
 		if (!CanAccessProject($id)) {
 			Error("Project not found or not accessible");
-			return;
+			return false;
 		}
 		if (!CanUseInstance($instanceid)) {
 			Error("Invalid instance");
-			return;
+			return false;
 		}
+		if (!ValidateProjectFields($projectname, $costcenter, $startdate, $enddate, $id))
+			return false;
 
 		/* update the project */
 		$sqlstring = "update projects set project_name = ?, project_desc = ?, project_usecustomid = ?, project_admin = ?, project_pi = ?, instance_id = ?, project_costcenter = ?, project_startdate = ?, project_enddate = ? where project_id = ?";
@@ -125,9 +141,15 @@
 		$params = [$projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate, $id];
 		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$ok = (mysqli_stmt_errno($stmt) == 0);
 		mysqli_stmt_close($stmt);
 
+		/* MySQLiBoundQuery has already displayed the error if the query failed */
+		if (!$ok)
+			return false;
+
 		Notice(htmlspecialchars($projectname) . " updated");
+		return true;
 	}
 
 
@@ -145,8 +167,10 @@
 
 		if (!CanUseInstance($instanceid)) {
 			Error("Invalid instance");
-			return;
+			return false;
 		}
+		if (!ValidateProjectFields($projectname, $costcenter, $startdate, $enddate, 0))
+			return false;
 
 		$projectuid = NIDB\CreateUID('P',4);
 
@@ -156,9 +180,82 @@
 		$params = [$projectuid, $projectname, $projectdesc, $usecustomid, $admin, $pi, $instanceid, $costcenter, $startdate, $enddate];
 		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$ok = (mysqli_stmt_errno($stmt) == 0);
 		mysqli_stmt_close($stmt);
 
+		/* MySQLiBoundQuery has already displayed the error if the query failed */
+		if (!$ok)
+			return false;
+
 		Notice(htmlspecialchars($projectname) . " added");
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidateProjectFields -------------- */
+	/* -------------------------------------------- */
+	/* server-side checks for add/update. Displays every problem found and returns false if there
+	   are any. $excludeid is the project being edited (0 when adding), so it doesn't conflict with
+	   its own project number */
+	function ValidateProjectFields($projectname, $costcenter, $startdate, $enddate, $excludeid) {
+		$errors = array();
+
+		if ($projectname == "")
+			$errors[] = "Name is required";
+		elseif (TextLength($projectname) > 60)
+			$errors[] = "Name must be 60 characters or fewer";
+
+		if ($costcenter == "")
+			$errors[] = "Project number is required";
+		elseif (TextLength($costcenter) > 45)
+			$errors[] = "Project number must be 45 characters or fewer";
+		else {
+			/* project_costcenter is a unique key */
+			$excludeid = (int)$excludeid;
+			$sqlstring = "select project_name from projects where project_costcenter = ? and project_id <> ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $costcenter, $excludeid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$costcenter, $excludeid]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row)
+				$errors[] = "Project number <b>" . htmlspecialchars($costcenter) . "</b> is already used by project <b>" . htmlspecialchars($row['project_name'] ?? '') . "</b>";
+		}
+
+		if (!IsValidProjectDate($startdate))
+			$errors[] = "Start date must be in YYYY-MM-DD format";
+		if (!IsValidProjectDate($enddate))
+			$errors[] = "End date must be in YYYY-MM-DD format";
+		if (($startdate !== null) && ($enddate !== null) && IsValidProjectDate($startdate) && IsValidProjectDate($enddate) && ($enddate < $startdate))
+			$errors[] = "End date is before the start date";
+
+		if (count($errors) > 0) {
+			Error(implode("<br>", $errors));
+			return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TextLength ------------------------- */
+	/* -------------------------------------------- */
+	/* length in characters (as MySQL varchar counts it), falling back to bytes without mbstring */
+	function TextLength($s) {
+		return function_exists('mb_strlen') ? mb_strlen($s, 'UTF-8') : strlen($s);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSubmittedProjectValues ---------- */
+	/* -------------------------------------------- */
+	/* the add/update form fields as submitted, so a failed save can re-display them */
+	function GetSubmittedProjectValues() {
+		$values = array();
+		foreach (array('projectname', 'projectdesc', 'usecustomid', 'admin', 'pi', 'instanceid', 'costcenter', 'startdate', 'enddate') as $field)
+			$values[$field] = (string)($_POST[$field] ?? '');
+		return $values;
 	}
 
 
@@ -171,6 +268,18 @@
 		if (($date == "") || (substr($date, 0, 10) == "0000-00-00"))
 			return null;
 		return $date;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsValidProjectDate ----------------- */
+	/* -------------------------------------------- */
+	/* true for null (no date) or a real calendar date in YYYY-MM-DD form */
+	function IsValidProjectDate($date) {
+		if ($date === null)
+			return true;
+		$d = DateTime::createFromFormat('!Y-m-d', $date);
+		return ($d !== false) && ($d->format('Y-m-d') === $date);
 	}
 
 
@@ -245,6 +354,34 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SelectProjectRows ------------------ */
+	/* -------------------------------------------- */
+	/* runs a select whose only parameter is a project_id */
+	function SelectProjectRows($sqlstring, $projectid) {
+		$projectid = (int)$projectid;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		mysqli_stmt_close($stmt);
+		return $result;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ProjectRowExists ------------------- */
+	/* -------------------------------------------- */
+	/* true if the bound select returns at least one row */
+	function ProjectRowExists($sqlstring, $types, $params) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$found = ($result && (mysqli_num_rows($result) > 0));
+		mysqli_stmt_close($stmt);
+		return $found;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- CopyProjectSettings ---------------- */
 	/* -------------------------------------------- */
 	function CopyProjectSettings($projectid, $copyfromprojectid) {
@@ -271,77 +408,74 @@
 		<div class="ui message">
 			<h2 class="ui header">Copying settings from <div class="ui big blue label"><?=htmlspecialchars($sourceprojectname)?></div> to <div class="ui big blue label"><?=htmlspecialchars($destprojectname)?></div></h2>
 
+			<?
+			/* Rows the destination already has are skipped rather than duplicated, so copying the same
+			   settings twice is harmless. The counts are of rows actually inserted. */
+			$newvals = array('project_id' => (int)$destprojectid);
+
+			/* checklist items: "already has" = same item name and type (the table has no unique key) */
+			$checklistcopied = $checklistskipped = 0;
+			$result = SelectProjectRows("select * from project_checklist where project_id = ? order by item_order", $sourceprojectid);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				if (ProjectRowExists("select projectchecklist_id from project_checklist where project_id = ? and item_name = ? and item_type = ?", 'iss', [$destprojectid, $row['item_name'], $row['item_type']])) {
+					$checklistskipped++;
+					continue;
+				}
+				if (DuplicateSQLRow('project_checklist', 'projectchecklist_id', (int)$row['projectchecklist_id'], $newvals) > 0)
+					$checklistcopied++;
+			}
+
+			/* BIDS mappings: unique key is (project_id, protocolname, imagetype, modality) */
+			$bidscopied = $bidsskipped = 0;
+			$result = SelectProjectRows("select * from bids_mapping where project_id = ?", $sourceprojectid);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				if (ProjectRowExists("select protocolmapping_id from bids_mapping where project_id = ? and protocolname = ? and imagetype = ? and modality = ?", 'isss', [$destprojectid, $row['protocolname'], $row['imagetype'], $row['modality']])) {
+					$bidsskipped++;
+					continue;
+				}
+				if (DuplicateSQLRow('bids_mapping', 'protocolmapping_id', (int)$row['protocolmapping_id'], $newvals) > 0)
+					$bidscopied++;
+			}
+
+			/* study templates: unique key is (project_id, template_name, template_modality, template_visitlabel).
+			   <=> so a NULL visit label matches a NULL one. A template that already exists is skipped along
+			   with its items, and items are only copied once the new template row exists */
+			$templatescopied = $templatesskipped = $itemscopied = 0;
+			$result = SelectProjectRows("select * from study_template where project_id = ?", $sourceprojectid);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				if (ProjectRowExists("select studytemplate_id from study_template where project_id = ? and template_name = ? and template_modality = ? and template_visitlabel <=> ?", 'isss', [$destprojectid, $row['template_name'], $row['template_modality'], $row['template_visitlabel']])) {
+					$templatesskipped++;
+					continue;
+				}
+				$sourcetemplateid = (int)$row['studytemplate_id'];
+				$newstudytemplateid = (int)DuplicateSQLRow('study_template', 'studytemplate_id', $sourcetemplateid, $newvals);
+				if ($newstudytemplateid <= 0)
+					continue;
+				$templatescopied++;
+
+				$sqlstringA = "select studytemplateitem_id from study_templateitems where studytemplate_id = ?";
+				$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+				mysqli_stmt_bind_param($stmtA, 'i', $sourcetemplateid);
+				$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$sourcetemplateid]);
+				mysqli_stmt_close($stmtA);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					if (DuplicateSQLRow('study_templateitems', 'studytemplateitem_id', (int)$rowA['studytemplateitem_id'], array('studytemplate_id' => $newstudytemplateid)) > 0)
+						$itemscopied++;
+				}
+			}
+			?>
 			<ul>
 				<li>
 					<h3 class="ui header">Project checklists
-						<?
-						$numrows = 0;
-						$newvals = array();
-						$sqlstring = "select * from project_checklist where project_id = ?";
-						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
-						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
-						mysqli_stmt_close($stmt);
-						$numrows = mysqli_num_rows($result);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$rowid = $row['projectchecklist_id'];
-							$newvals['project_id'] = $destprojectid;
-							DuplicateSQLRow('project_checklist', 'projectchecklist_id', $rowid, $newvals);
-						}
-						?>
-						<div class="sub header">copied <?=$numrows?> rows</div>
+						<div class="sub header">copied <?=$checklistcopied?> items<? if ($checklistskipped > 0) { ?>, skipped <?=$checklistskipped?> already in this project<? } ?></div>
 					</h3>
 				<li>
 					<h3 class="ui header">BIDS mapping
-						<?
-						$numrows = 0;
-						$newvals = array();
-						$sqlstring = "select * from bids_mapping where project_id = ?";
-						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
-						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
-						mysqli_stmt_close($stmt);
-						$numrows = mysqli_num_rows($result);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$rowid = $row['protocolmapping_id'];
-							$newvals['project_id'] = $destprojectid;
-							DuplicateSQLRow('bids_mapping', 'protocolmapping_id', $rowid, $newvals);
-						}
-						?>
-						<div class="sub header">copied <?=$numrows?> rows</div>
+						<div class="sub header">copied <?=$bidscopied?> mappings<? if ($bidsskipped > 0) { ?>, skipped <?=$bidsskipped?> already in this project<? } ?></div>
 					</h3>
 				<li>
 					<h3 class="ui header">Study templates
-						<?
-						$numrows = 0;
-						$newvals = array();
-						$sqlstring = "select * from study_template where project_id = ?";
-						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-						mysqli_stmt_bind_param($stmt, 'i', $sourceprojectid);
-						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sourceprojectid]);
-						mysqli_stmt_close($stmt);
-						$numrows = mysqli_num_rows($result);
-						$numitems = 0;
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$rowid = $row['studytemplate_id'];
-							$newvals['project_id'] = $destprojectid;
-							$newstudytemplateid = DuplicateSQLRow('study_template', 'studytemplate_id', $rowid, $newvals);
-
-							$newvals2 = array();
-							$sqlstringA = "select * from study_templateitems where studytemplate_id = ?";
-							$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
-							mysqli_stmt_bind_param($stmtA, 'i', $rowid);
-							$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$rowid]);
-							mysqli_stmt_close($stmtA);
-							$numitems += mysqli_num_rows($resultA);
-							while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-								$rowid2 = $rowA['studytemplateitem_id'];
-								$newvals2['studytemplate_id'] = $newstudytemplateid;
-								DuplicateSQLRow('study_templateitems', 'studytemplateitem_id', $rowid2, $newvals2);
-							}
-						}
-						?>
-						<div class="sub header">copied <?=$numrows?> templates (<?=$numitems?> template items)</div>
+						<div class="sub header">copied <?=$templatescopied?> templates (<?=$itemscopied?> template items)<? if ($templatesskipped > 0) { ?>, skipped <?=$templatesskipped?> already in this project<? } ?></div>
 					</h3>
 			</ul>
 		</div>
@@ -399,12 +533,32 @@
 			$instanceid = $_SESSION['instanceid'] ?? '';
 		}
 
+		/* hide unset/zero dates */
+		$startdate = HasProjectDate($startdate) ? $startdate : '';
+		$enddate = HasProjectDate($enddate) ? $enddate : '';
+
+		/* after a failed add/update, show what the user typed instead of the saved values (including an invalid date, so they can correct it) */
+		if (isset($_SESSION['projectformvalues'])) {
+			$v = $_SESSION['projectformvalues'];
+			unset($_SESSION['projectformvalues']);
+			$name = $v['projectname'];
+			$desc = $v['projectdesc'];
+			$usecustomid = GetMySQLTinyInt($v['usecustomid']);
+			$admin = $v['admin'];
+			$pi = $v['pi'];
+			$instanceid = $v['instanceid'];
+			$costcenter = $v['costcenter'];
+			$startdate = $v['startdate'];
+			$enddate = $v['enddate'];
+		}
+
 	?>
 		<div class="ui text container">
 			<div class="ui attached visible message">
 				<div class="header"><?=htmlspecialchars($formtitle ?? '')?></div>
 			</div>
 			<form method="post" action="adminprojects.php" class="ui form <?=($type == "edit") ? "attached" : "bottom attached"?> fluid segment">
+			<?=CSRFTokenField()?>
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=(int)$id?>">
 
@@ -510,13 +664,13 @@
 			<div class="field">
 				<label>Start Date</label>
 				<div class="field">
-					<input type="text" name="startdate" value="<?=HasProjectDate($startdate) ? htmlspecialchars($startdate) : ''?>" placeholder="YYYY-MM-DD">
+					<input type="text" name="startdate" value="<?=htmlspecialchars($startdate ?? '')?>" placeholder="YYYY-MM-DD">
 				</div>
 			</div>
 			<div class="field">
 				<label>End Date</label>
 				<div class="field">
-					<input type="text" name="enddate" value="<?=HasProjectDate($enddate) ? htmlspecialchars($enddate) : ''?>" placeholder="YYYY-MM-DD">
+					<input type="text" name="enddate" value="<?=htmlspecialchars($enddate ?? '')?>" placeholder="YYYY-MM-DD">
 				</div>
 			</div>
 			<div class="ui two column grid">
@@ -532,6 +686,7 @@
 			<? if ($type == "edit") { /* copying settings needs an existing destination project */ ?>
 			<div class="ui bottom attached grey segment">
 				<form method="post" action="adminprojects.php" class="ui form">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="action" value="copysettings">
 					<input type="hidden" name="projectid" value="<?=(int)$id?>">
 					Copy settings from existing project <i class="question circle icon" title="Copies the study templates, BIDS mapping, and checklists from the selected project into this project"></i><br>
