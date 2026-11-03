@@ -22,7 +22,11 @@
 
 #include <QSqlQuery>
 #include <QElapsedTimer>
+#include <algorithm>
+#include <QCryptographicHash>
+#include <QRegularExpression>
 #include "moduleAudit.h"
+#include "imageio.h"
 
 
 /* ---------------------------------------------------------- */
@@ -61,11 +65,12 @@ int moduleAudit::Run() {
         int projectid;
         QString type;
         bool fixErrors;
+        QStringList options;
     };
     QList<auditRequest> requests;
 
     QSqlQuery q;
-    q.prepare("select audit_id, project_id, audit_type, audit_fixerrors from audits where audit_status = 'started' order by audit_id");
+    q.prepare("select audit_id, project_id, audit_type, audit_fixerrors, audit_options from audits where audit_status = 'started' order by audit_id");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     while (q.next()) {
         auditRequest r;
@@ -73,6 +78,7 @@ int moduleAudit::Run() {
         r.projectid = q.value("project_id").toInt();
         r.type = q.value("audit_type").toString();
         r.fixErrors = q.value("audit_fixerrors").toBool();
+        r.options = q.value("audit_options").toString().split(",", Qt::SkipEmptyParts);
         requests.append(r);
     }
 
@@ -107,6 +113,9 @@ int moduleAudit::Run() {
         }
         else if (r.type == "analysisfiles") {
             ok = AuditAnalysisFiles(r.auditid, r.projectid, r.fixErrors, m);
+        }
+        else if (r.type == "qualitycontrol") {
+            ok = AuditQualityControl(r.auditid, r.projectid, r.options, m);
         }
         else {
             m = QString("Audit type [%1] is not implemented yet").arg(r.type);
@@ -419,6 +428,972 @@ bool moduleAudit::AuditAnalysisFiles(qint64 auditid, int projectid, bool fixErro
         m += QString(". Skipped %1 analyses with an invalid path (see the module log)").arg(numSkippedInvalid);
 
     return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- AuditQualityControl ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Run the selected quality control checks on one project. Issues are only reported, never
+ * fixed: the user fixes them manually. The criteria for each check are listed in doc/audits.md
+ * @param auditid The audit_id
+ * @param projectid The project to audit. Must be a single project (not 0)
+ * @param checks The checks to run (audits.audit_options): duplicatesubjects, duplicatestudies, empty, missingdemographics, invaliddob, dicommetadata
+ * @param m Summary message
+ * @return true if the audit ran to completion
+ */
+bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList checks, QString &m) {
+
+    /* the checks, in the order they are run */
+    QStringList validChecks = {"duplicatesubjects", "duplicatestudies", "empty", "missingdemographics", "invaliddob", "dicommetadata"};
+
+    if (projectid < 1) {
+        m = "Quality control audits can only be run on a single project";
+        return false;
+    }
+
+    QStringList toRun;
+    foreach (QString c, validChecks)
+        if (checks.contains(c))
+            toRun << c;
+    if (toRun.isEmpty()) {
+        m = "No quality control checks were selected";
+        return false;
+    }
+
+    /* the DICOM check's series are listed up front, so the progress bar covers the whole audit.
+       Each database check counts as one object, and each series in the DICOM check as one object */
+    bool doDicom = toRun.contains("dicommetadata");
+    QList<qcDicomSeries> seriesList;
+    if (doDicom) {
+        if (!QCLoadDicomSeries(projectid, seriesList)) {
+            m = "SQL error getting the list of series. See the module log";
+            return false;
+        }
+    }
+    qint64 total = (toRun.size() - (doDicom ? 1 : 0)) + seriesList.size();
+    qint64 progress = 0;
+    SetAuditProgress(auditid, 0, total);
+
+    QList<qcSubject> subjects;
+    if (toRun.contains("duplicatesubjects") || toRun.contains("missingdemographics") || toRun.contains("invaliddob")) {
+        if (!QCLoadSubjects(projectid, subjects)) {
+            m = "SQL error getting the list of subjects. See the module log";
+            return false;
+        }
+    }
+
+    QStringList summary;
+    qint64 numIssues = 0;
+    QString stopReason;
+    QSqlQuery q;
+
+    /* only update the message while the audit is running, so a 'stopped' status set by the website isn't overwritten */
+    auto setRunningMessage = [&](QString msg) {
+        q.prepare("update audits set audit_message = :msg where audit_id = :auditid and audit_status = 'auditing'");
+        q.bindValue(":msg", msg);
+        q.bindValue(":auditid", auditid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    };
+
+    /* ----- database checks ----- */
+    foreach (QString c, toRun) {
+        if (c == "dicommetadata")
+            continue;
+
+        if (!AuditCheckIn(auditid, progress, total, stopReason)) {
+            m = QString("%1Stopped before the [%2] check. Found %3 issues").arg(stopReason).arg(c).arg(numIssues);
+            if (!summary.isEmpty()) m += " (" + summary.join(", ") + ")";
+            return false;
+        }
+        setRunningMessage(QString("Running check [%1]").arg(c));
+        n->Log(QString("Running quality control check [%1] on project [%2]").arg(c).arg(projectid));
+
+        bool ok = true;
+        qint64 found = 0;
+        if (c == "duplicatesubjects") found = QCDuplicateSubjects(auditid, projectid, subjects, ok);
+        else if (c == "duplicatestudies") found = QCDuplicateStudies(auditid, projectid, ok);
+        else if (c == "empty") found = QCEmptyObjects(auditid, projectid, ok);
+        else if (c == "missingdemographics") found = QCMissingDemographics(auditid, subjects);
+        else if (c == "invaliddob") found = QCInvalidDOB(auditid, projectid, subjects, ok);
+
+        if (!ok) {
+            m = QString("SQL error during the [%1] check. See the module log. Found %2 issues before the error").arg(c).arg(numIssues + found);
+            return false;
+        }
+        numIssues += found;
+        summary << QString("%1: %2").arg(c).arg(found);
+        progress++;
+    }
+
+    /* ----- DICOM metadata check ----- */
+    if (doDicom) {
+        setRunningMessage("Running check [dicommetadata]");
+        n->Log(QString("Running quality control check [dicommetadata] on [%1] series in project [%2]").arg(seriesList.size()).arg(projectid));
+
+        /* the IDs a DICOM PatientID may match for each subject: the UID and all alternate IDs */
+        QHash<qint64, QSet<QString>> subjectIDs;
+        q.prepare("select distinct d.subject_id, d.uid from subjects d inner join enrollment c on d.subject_id = c.subject_id where c.project_id = :projectid and d.isactive = 1");
+        q.bindValue(":projectid", projectid);
+        bool success = false;
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+        if (!success) { m = "SQL error getting the subject UIDs. See the module log"; return false; }
+        while (q.next())
+            subjectIDs[q.value("subject_id").toLongLong()].insert(q.value("uid").toString().replace('\u0000', "").trimmed().toUpper());
+
+        q.prepare("select distinct a.subject_id, a.altuid from subject_altuid a inner join enrollment c on a.subject_id = c.subject_id inner join subjects d on a.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1");
+        q.bindValue(":projectid", projectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+        if (!success) { m = "SQL error getting the subject alternate IDs. See the module log"; return false; }
+        while (q.next()) {
+            QString altuid = q.value("altuid").toString().trimmed().toUpper();
+            if (altuid != "")
+                subjectIDs[q.value("subject_id").toLongLong()].insert(altuid);
+        }
+
+        qint64 numChecked = 0;
+        qint64 dicomIssues = 0;
+        QElapsedTimer timer;
+        timer.start();
+        for (int i = 0; i < seriesList.size(); i++) {
+            if (timer.elapsed() > 2000) {
+                if (!AuditCheckIn(auditid, progress + i, total, stopReason)) {
+                    summary << QString("dicommetadata: %1 (checked %2 of %3 series)").arg(dicomIssues).arg(numChecked).arg(seriesList.size());
+                    m = QString("%1Stopped during the [dicommetadata] check. Found %2 issues (%3)").arg(stopReason).arg(numIssues + dicomIssues).arg(summary.join(", "));
+                    return false;
+                }
+                timer.restart();
+            }
+
+            bool checked = false;
+            dicomIssues += QCDicomSeries(auditid, seriesList.at(i), subjectIDs.value(seriesList.at(i).subjectid), checked);
+            if (checked)
+                numChecked++;
+        }
+        progress += seriesList.size();
+        numIssues += dicomIssues;
+        summary << QString("dicommetadata: %1 (checked %2 of %3 series, the rest have no DICOM files)").arg(dicomIssues).arg(numChecked).arg(seriesList.size());
+    }
+
+    SetAuditProgress(auditid, total, total);
+    m = QString("Ran %1 quality control checks. Found %2 issues (%3)").arg(toRun.size()).arg(numIssues).arg(summary.join(", "));
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCLoadSubjects --------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Get the active subjects enrolled in a project. Sex is stored in subjects.gender. The DOB is
+ * read as a string, because a year-only or year-month DOB (YYYY-00-00, YYYY-MM-00) is not a valid date
+ * @param projectid The project
+ * @param subjects The subjects, ordered by subject_id
+ * @return false on SQL error
+ */
+bool moduleAudit::QCLoadSubjects(int projectid, QList<qcSubject> &subjects) {
+    QSqlQuery q;
+    q.prepare("select distinct d.subject_id, d.uid, d.name, d.gender, cast(d.birthdate as char) 'dob' from subjects d inner join enrollment c on d.subject_id = c.subject_id where c.project_id = :projectid and d.isactive = 1 order by d.subject_id");
+    q.bindValue(":projectid", projectid);
+    bool success = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success)
+        return false;
+
+    while (q.next()) {
+        qcSubject s;
+        s.subjectid = q.value("subject_id").toLongLong();
+        s.uid = q.value("uid").toString().replace('\u0000', "").trimmed();
+        s.name = q.value("name").toString().trimmed();
+        s.sex = q.value("gender").toString().trimmed().toUpper();
+        s.dob = q.value("dob").toString().trimmed();
+        subjects.append(s);
+    }
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCDuplicateSubjects ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find pairs of subjects within the project that may be the same person. Each pair is
+ * reported once, with the strongest reason, against the subject with the lower subject_id. Names
+ * and DOBs are not written to the log, only the UIDs and the reason
+ * @param auditid The audit_id
+ * @param projectid The project
+ * @param subjects The project's subjects, ordered by subject_id
+ * @param ok Set to false on SQL error
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok) {
+    ok = true;
+    qint64 numIssues = 0;
+
+    /* name groups larger than this are reported as one issue rather than as every pair */
+    const int maxGroupPairs = 25;
+
+    struct nameKeys {
+        QString ordered;  /* name tokens in their stored order */
+        QString sorted;   /* name tokens sorted, so a transposed first/last name has the same key */
+        bool dobUsable;   /* present and valid, so it can be compared */
+    };
+    QList<nameKeys> keys;
+    QHash<QString, QList<int>> bySortedName;
+    QMap<QString, QList<int>> byFullDOB;
+    QHash<qint64, int> indexOf;
+
+    for (int i = 0; i < subjects.size(); i++) {
+        const qcSubject &s = subjects.at(i);
+        QStringList tokens = NameTokens(s.name);
+        nameKeys k;
+        k.ordered = tokens.join(" ");
+        tokens.sort();
+        k.sorted = tokens.join(" ");
+        QString reason;
+        k.dobUsable = !DOBIsMissing(s.dob) && DOBIsValid(s.dob, QDate(), reason);
+        keys.append(k);
+        indexOf[s.subjectid] = i;
+
+        if (k.sorted != "")
+            bySortedName[k.sorted].append(i);
+        /* only a full DOB is specific enough to pair with a similar (not identical) name */
+        if (k.dobUsable && !s.dob.endsWith("-00"))
+            byFullDOB[s.dob].append(i);
+    }
+
+    QSet<QPair<int, int>> reported;
+    auto logPair = [&](int i, int j, QString reason) {
+        if (i > j) std::swap(i, j);
+        QPair<int, int> key(i, j);
+        if (reported.contains(key))
+            return;
+        reported.insert(key);
+        const qcSubject &a = subjects.at(i);
+        const qcSubject &b = subjects.at(j);
+        LogAuditIssue(auditid, "duplicateSubject", "subject", a.subjectid, QString("Subjects %1 and %2: %3").arg(a.uid).arg(b.uid).arg(reason), -1, "");
+        numIssues++;
+    };
+    auto sexMatches = [&](int i, int j) {
+        return (subjects.at(i).sex != "") && (subjects.at(i).sex == subjects.at(j).sex);
+    };
+
+    /* 1) same name (in either order) and same DOB. Pairs with the same name but a different or
+       missing DOB are weaker, and are reported last */
+    QList<QPair<int, int>> weakPairs;
+    for (auto it = bySortedName.cbegin(); it != bySortedName.cend(); ++it) {
+        const QList<int> &idx = it.value();
+        if (idx.size() < 2)
+            continue;
+
+        if (idx.size() > maxGroupPairs) {
+            QStringList uids;
+            for (int a = 0; a < idx.size() && a < 50; a++)
+                uids << subjects.at(idx[a]).uid;
+            if (idx.size() > 50)
+                uids << QString("and %1 more").arg(idx.size() - 50);
+            LogAuditIssue(auditid, "duplicateSubject", "subject", subjects.at(idx[0]).subjectid, QString("%1 subjects have the same name, which may be a placeholder name. Not compared pairwise: %2").arg(idx.size()).arg(uids.join(", ")), -1, "");
+            numIssues++;
+            continue;
+        }
+
+        for (int a = 0; a < idx.size(); a++) {
+            for (int b = a + 1; b < idx.size(); b++) {
+                int i = idx[a], j = idx[b];
+                bool sameOrder = (keys[i].ordered == keys[j].ordered);
+                bool dobMatch = keys[i].dobUsable && keys[j].dobUsable && (subjects.at(i).dob == subjects.at(j).dob);
+                if (!dobMatch) {
+                    weakPairs.append(qMakePair(i, j));
+                    continue;
+                }
+                if (sameOrder && sexMatches(i, j))
+                    logPair(i, j, "Likely duplicate: same name, DOB, and sex");
+                else if (sameOrder)
+                    logPair(i, j, "Likely duplicate: same name and DOB, sex differs or is missing");
+                else if (sexMatches(i, j))
+                    logPair(i, j, "Likely duplicate: same DOB and sex, first/last name transposed");
+                else
+                    logPair(i, j, "Likely duplicate: same DOB, first/last name transposed");
+            }
+        }
+    }
+
+    /* 2) the same alternate ID belongs to more than one subject */
+    QSqlQuery q;
+    q.prepare("select distinct a.altuid, a.subject_id from subject_altuid a inner join enrollment c on a.subject_id = c.subject_id inner join subjects d on a.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1 and trim(a.altuid) <> '' order by a.altuid, a.subject_id");
+    q.bindValue(":projectid", projectid);
+    bool success = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) {
+        ok = false;
+        return numIssues;
+    }
+    QMap<QString, QList<int>> byAltUID;
+    while (q.next()) {
+        qint64 subjectid = q.value("subject_id").toLongLong();
+        if (!indexOf.contains(subjectid))
+            continue;
+        QString altuid = q.value("altuid").toString().trimmed().toUpper();
+        if (!byAltUID[altuid].contains(indexOf[subjectid]))
+            byAltUID[altuid].append(indexOf[subjectid]);
+    }
+    for (auto it = byAltUID.cbegin(); it != byAltUID.cend(); ++it) {
+        const QList<int> &idx = it.value();
+        for (int a = 0; a < idx.size(); a++)
+            for (int b = a + 1; b < idx.size(); b++)
+                logPair(idx[a], idx[b], QString("Likely duplicate: both have the alternate ID [%1]").arg(it.key()));
+    }
+
+    /* 3) similar name (a typo, or a missing/extra letter) and the same full DOB */
+    for (auto it = byFullDOB.cbegin(); it != byFullDOB.cend(); ++it) {
+        const QList<int> &idx = it.value();
+        for (int a = 0; a < idx.size(); a++) {
+            for (int b = a + 1; b < idx.size(); b++) {
+                int i = idx[a], j = idx[b];
+                if ((keys[i].sorted == "") || (keys[j].sorted == "") || (keys[i].sorted == keys[j].sorted))
+                    continue;
+                int minLen = qMin(keys[i].sorted.size(), keys[j].sorted.size());
+                int threshold = (minLen >= 10) ? 2 : ((minLen >= 4) ? 1 : 0);
+                if (threshold == 0)
+                    continue;
+                int dist = qMin(Levenshtein(keys[i].sorted, keys[j].sorted), Levenshtein(keys[i].ordered, keys[j].ordered));
+                if (dist <= threshold)
+                    logPair(i, j, sexMatches(i, j) ? "Possible duplicate: similar name, same DOB and sex" : "Possible duplicate: similar name and same DOB");
+            }
+        }
+    }
+
+    /* 4) same name, but a different or missing DOB */
+    foreach (auto p, weakPairs) {
+        if (keys[p.first].ordered == keys[p.second].ordered)
+            logPair(p.first, p.second, "Possible duplicate: same name, different or missing DOB");
+        else
+            logPair(p.first, p.second, "Possible duplicate: same name with first/last transposed, different or missing DOB");
+    }
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCDuplicateStudies ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find studies in the project that also appear under a different subject, in this or any
+ * other project. A study matches by StudyInstanceUID, or by the same modality and study date/time
+ * (when the time is known). Each set of matching studies is reported once, against the first of
+ * its studies that is in the project
+ * @param auditid The audit_id
+ * @param projectid The project
+ * @param ok Set to false on SQL error
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCDuplicateStudies(qint64 auditid, int projectid, bool &ok) {
+    ok = true;
+    qint64 numIssues = 0;
+    QSet<QString> reportedSets;
+
+    struct studyRow {
+        qint64 studyid;
+        int studynum;
+        int projectid;
+        qint64 subjectid;
+        QString uid;
+    };
+
+    /* group the query's rows by 'groupkey', and log each group that spans more than one subject */
+    auto checkGroups = [&](QSqlQuery &q, QString basis) {
+        QMap<QString, QList<studyRow>> groups;
+        while (q.next()) {
+            studyRow r;
+            r.studyid = q.value("study_id").toLongLong();
+            r.studynum = q.value("study_num").toInt();
+            r.projectid = q.value("project_id").toInt();
+            r.subjectid = q.value("subject_id").toLongLong();
+            r.uid = q.value("uid").toString().replace('\u0000', "").trimmed();
+            groups[q.value("groupkey").toString().trimmed()].append(r);
+        }
+
+        for (auto it = groups.cbegin(); it != groups.cend(); ++it) {
+            const QList<studyRow> &rows = it.value();
+            QSet<qint64> subjectids;
+            QList<qint64> studyids;
+            foreach (studyRow r, rows) {
+                subjectids.insert(r.subjectid);
+                studyids.append(r.studyid);
+            }
+            if (subjectids.size() < 2)
+                continue;
+
+            /* the same set of studies may match by both UID and date/time */
+            std::sort(studyids.begin(), studyids.end());
+            QStringList idstrs;
+            foreach (qint64 id, studyids) idstrs << QString::number(id);
+            if (reportedSets.contains(idstrs.join(",")))
+                continue;
+            reportedSets.insert(idstrs.join(","));
+
+            qint64 objectid = -1;
+            QStringList descs;
+            foreach (studyRow r, rows) {
+                if ((objectid < 0) && (r.projectid == projectid))
+                    objectid = r.studyid;
+                descs << QString("%1/%2").arg(r.uid).arg(r.studynum) + ((r.projectid == projectid) ? "" : " (other project)");
+            }
+            if (objectid < 0)
+                continue;
+
+            LogAuditIssue(auditid, "duplicateStudy", "study", objectid, QString("Possible duplicate study: same %1 [%2] under %3 different subjects: %4").arg(basis).arg(it.key()).arg(subjectids.size()).arg(descs.join(", ")), -1, "");
+            numIssues++;
+        }
+    };
+
+    /* by StudyInstanceUID */
+    QSqlQuery q;
+    q.prepare("select b.study_id, b.study_num, b.study_uid 'groupkey', c.project_id, d.subject_id, d.uid from studies b inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1 and b.study_uid in (select b2.study_uid from studies b2 inner join enrollment c2 on b2.enrollment_id = c2.enrollment_id inner join subjects d2 on c2.subject_id = d2.subject_id where c2.project_id = :projectid and d2.isactive = 1 and trim(ifnull(b2.study_uid, '')) <> '') order by b.study_id");
+    q.bindValue(":projectid", projectid);
+    bool success = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) {
+        ok = false;
+        return numIssues;
+    }
+    checkGroups(q, "StudyInstanceUID");
+
+    /* by modality and study date/time. A time of 00:00:00 usually means only the date is known, which isn't specific enough */
+    q.prepare("select b.study_id, b.study_num, concat(b.study_modality, ' ', b.study_datetime) 'groupkey', c.project_id, d.subject_id, d.uid from studies b inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1 and (b.study_modality, b.study_datetime) in (select b2.study_modality, b2.study_datetime from studies b2 inner join enrollment c2 on b2.enrollment_id = c2.enrollment_id inner join subjects d2 on c2.subject_id = d2.subject_id where c2.project_id = :projectid and d2.isactive = 1 and b2.study_datetime > '1900-01-01' and time(b2.study_datetime) <> '00:00:00') order by b.study_id");
+    q.bindValue(":projectid", projectid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) {
+        ok = false;
+        return numIssues;
+    }
+    checkGroups(q, "modality and study date/time");
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCEmptyObjects --------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find empty studies (no series), enrollments (no studies, observations, or interventions),
+ * and subjects (every enrollment, in any project, is empty). An empty subject is reported instead
+ * of its empty enrollment
+ * @param auditid The audit_id
+ * @param projectid The project
+ * @param ok Set to false on SQL error
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCEmptyObjects(qint64 auditid, int projectid, bool &ok) {
+    ok = true;
+    qint64 numIssues = 0;
+    QSqlQuery q;
+    bool success = false;
+
+    /* ----- studies with at least one series, in any of the series tables ----- */
+    QSet<qint64> studiesWithSeries;
+    QMap<QString, QSet<QString>> tables = GetSeriesTables();
+    for (auto it = tables.cbegin(); it != tables.cend(); ++it) {
+        q.prepare(QString("select distinct a.study_id from `%1` a inner join studies b on a.study_id = b.study_id inner join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = :projectid").arg(it.key()));
+        q.bindValue(":projectid", projectid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+        if (!success) { ok = false; return numIssues; }
+        while (q.next())
+            studiesWithSeries.insert(q.value("study_id").toLongLong());
+    }
+
+    q.prepare("select b.study_id, b.study_num, b.study_modality, d.uid from studies b inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1 order by b.study_id");
+    q.bindValue(":projectid", projectid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) { ok = false; return numIssues; }
+    while (q.next()) {
+        qint64 studyid = q.value("study_id").toLongLong();
+        if (studiesWithSeries.contains(studyid))
+            continue;
+        LogAuditIssue(auditid, "emptyStudy", "study", studyid, QString("Study %1/%2 (%3) has no series").arg(q.value("uid").toString().replace('\u0000', "").trimmed()).arg(q.value("study_num").toInt()).arg(q.value("study_modality").toString()), -1, "");
+        numIssues++;
+    }
+
+    /* ----- enrollments and subjects. Every enrollment of the project's subjects is read, in any
+       project, to tell an empty enrollment from an empty subject ----- */
+    struct enrollmentRow {
+        qint64 enrollmentid;
+        int projectid;
+        bool empty;
+    };
+    QMap<qint64, QList<enrollmentRow>> bySubject;
+    QHash<qint64, QString> uids;
+
+    q.prepare("select c.enrollment_id, c.project_id, c.subject_id, d.uid, exists(select 1 from studies b where b.enrollment_id = c.enrollment_id) 'hasstudies', exists(select 1 from observations o where o.enrollment_id = c.enrollment_id) 'hasobservations', exists(select 1 from interventions i where i.enrollment_id = c.enrollment_id) 'hasinterventions' from enrollment c inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1 and c.subject_id in (select c2.subject_id from enrollment c2 where c2.project_id = :projectid) order by c.subject_id, c.enrollment_id");
+    q.bindValue(":projectid", projectid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) { ok = false; return numIssues; }
+    while (q.next()) {
+        qint64 subjectid = q.value("subject_id").toLongLong();
+        enrollmentRow e;
+        e.enrollmentid = q.value("enrollment_id").toLongLong();
+        e.projectid = q.value("project_id").toInt();
+        e.empty = !q.value("hasstudies").toBool() && !q.value("hasobservations").toBool() && !q.value("hasinterventions").toBool();
+        bySubject[subjectid].append(e);
+        uids[subjectid] = q.value("uid").toString().replace('\u0000', "").trimmed();
+    }
+
+    for (auto it = bySubject.cbegin(); it != bySubject.cend(); ++it) {
+        const QList<enrollmentRow> &enrollments = it.value();
+        bool allEmpty = true;
+        foreach (enrollmentRow e, enrollments)
+            if (!e.empty) allEmpty = false;
+
+        if (allEmpty) {
+            LogAuditIssue(auditid, "emptySubject", "subject", it.key(), QString("Subject %1 has no studies, observations, or interventions in any of its %2 enrollment(s)").arg(uids[it.key()]).arg(enrollments.size()), -1, "");
+            numIssues++;
+            continue;
+        }
+
+        foreach (enrollmentRow e, enrollments) {
+            if (e.empty && (e.projectid == projectid)) {
+                LogAuditIssue(auditid, "emptyEnrollment", "enrollment", e.enrollmentid, QString("Subject %1 is enrolled in this project, but the enrollment has no studies, observations, or interventions").arg(uids[it.key()]), -1, "");
+                numIssues++;
+            }
+        }
+    }
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCMissingDemographics -------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find subjects with a missing name, sex, or DOB. An unrecognized sex is also reported
+ * @param auditid The audit_id
+ * @param subjects The project's subjects
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCMissingDemographics(qint64 auditid, const QList<qcSubject> &subjects) {
+    qint64 numIssues = 0;
+    QStringList validSexes = {"M", "F", "O", "U"};
+
+    foreach (qcSubject s, subjects) {
+        QString name = s.name;
+        name.remove('^');
+        if (name.trimmed().isEmpty()) {
+            LogAuditIssue(auditid, "missingName", "subject", s.subjectid, QString("Subject %1 has no name").arg(s.uid), -1, "");
+            numIssues++;
+        }
+
+        if (s.sex.isEmpty()) {
+            LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, QString("Subject %1 has no sex").arg(s.uid), -1, "");
+            numIssues++;
+        }
+        else if (!validSexes.contains(s.sex)) {
+            LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, QString("Subject %1 has an unrecognized sex [%2]. Valid values are M, F, O, U").arg(s.uid).arg(s.sex), -1, "");
+            numIssues++;
+        }
+
+        if (DOBIsMissing(s.dob)) {
+            LogAuditIssue(auditid, "missingDOB", "subject", s.subjectid, QString("Subject %1 has no DOB").arg(s.uid), -1, "");
+            numIssues++;
+        }
+    }
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCInvalidDOB ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Find subjects whose DOB is present but invalid (see DOBIsValid). A missing DOB is
+ * reported by the missing demographics check instead
+ * @param auditid The audit_id
+ * @param projectid The project
+ * @param subjects The project's subjects
+ * @param ok Set to false on SQL error
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCInvalidDOB(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok) {
+    ok = true;
+    qint64 numIssues = 0;
+
+    /* each subject's first study in the project. Study dates before 1900 are themselves invalid, so aren't used */
+    QHash<qint64, QDate> firstStudy;
+    QSqlQuery q;
+    q.prepare("select c.subject_id, min(b.study_datetime) 'firststudy' from studies b inner join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = :projectid and b.study_datetime > '1900-01-01' group by c.subject_id");
+    q.bindValue(":projectid", projectid);
+    bool success = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success) {
+        ok = false;
+        return 0;
+    }
+    while (q.next())
+        firstStudy[q.value("subject_id").toLongLong()] = q.value("firststudy").toDateTime().date();
+
+    foreach (qcSubject s, subjects) {
+        if (DOBIsMissing(s.dob))
+            continue;
+        QString reason;
+        if (!DOBIsValid(s.dob, firstStudy.value(s.subjectid), reason)) {
+            LogAuditIssue(auditid, "invalidDOB", "subject", s.subjectid, QString("Subject %1 DOB [%2] is invalid: %3").arg(s.uid).arg(s.dob).arg(reason), -1, "");
+            numIssues++;
+        }
+    }
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCLoadDicomSeries ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Get every series in the project, from every series table, that could contain DICOM
+ * files. MR series with a data_type other than dicom (ie, parrec, nifti) are skipped
+ * @param projectid The project
+ * @param seriesList The series
+ * @return false on SQL error
+ */
+bool moduleAudit::QCLoadDicomSeries(int projectid, QList<qcDicomSeries> &seriesList) {
+    QMap<QString, QSet<QString>> tables = GetSeriesTables();
+
+    for (auto it = tables.cbegin(); it != tables.cend(); ++it) {
+        QString table = it.key();
+        if (!it.value().contains("series_num"))
+            continue;
+        QString modality = table.left(table.size() - QString("_series").size());
+        QString pk = modality + "series_id";
+        bool hasDataType = it.value().contains("data_type");
+
+        QSqlQuery q;
+        q.prepare(QString("select a.`%1` 'seriesid', a.series_num, %2 'datatype', b.study_num, b.study_datetime, b.storage_tier, d.subject_id, d.uid from `%3` a inner join studies b on a.study_id = b.study_id inner join enrollment c on b.enrollment_id = c.enrollment_id inner join subjects d on c.subject_id = d.subject_id where d.isactive = 1 and c.project_id = :projectid order by a.`%1`").arg(pk).arg(QString(hasDataType ? "a.data_type" : "''")).arg(table));
+        q.bindValue(":projectid", projectid);
+        bool success = false;
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+        if (!success)
+            return false;
+
+        while (q.next()) {
+            qcDicomSeries s;
+            s.table = table;
+            s.modality = modality;
+            s.seriesid = q.value("seriesid").toLongLong();
+            s.seriesnum = q.value("series_num").toInt();
+            s.datatype = q.value("datatype").toString().trimmed().toLower();
+            s.subjectid = q.value("subject_id").toLongLong();
+            s.uid = q.value("uid").toString().replace('\u0000', "").trimmed();
+            s.studynum = q.value("study_num").toInt();
+            s.studydatetime = q.value("study_datetime").toDateTime().toString("yyyy-MM-dd HH:mm:ss");
+            s.storagetier = q.value("storage_tier").toString().trimmed();
+
+            if ((s.datatype != "") && (s.datatype != "dicom"))
+                continue;
+            seriesList.append(s);
+        }
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- QCDicomSeries ---------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Read the header of every .dcm file in a series' dicom/ directory and compare its
+ * PatientID, StudyDate/StudyTime, and SeriesNumber against the series' subject, study, and series
+ * in the database. One issue is logged per series per mismatched field, with the number of files
+ * that don't match. File counts are not checked here (see the seriesfiles audit)
+ * @param auditid The audit_id
+ * @param s The series
+ * @param subjectIDs The subject's UID and alternate IDs, uppercase
+ * @param checked Set to true if the series had DICOM files to check
+ * @return The number of issues found
+ */
+qint64 moduleAudit::QCDicomSeries(qint64 auditid, const qcDicomSeries &s, const QSet<QString> &subjectIDs, bool &checked) {
+    checked = false;
+    if ((s.uid == "") || (s.studynum < 1) || (s.seriesnum < 1))
+        return 0;
+
+    QString studypath = GetStudyPath(s.storagetier, s.uid, s.studynum);
+    if (studypath == "")
+        return 0;
+    QString dicomdir = QString("%1/%2/dicom").arg(studypath).arg(s.seriesnum);
+    QStringList files = FindAllFiles(dicomdir, "*.dcm");
+    if (files.isEmpty())
+        return 0;
+    files.sort();
+    checked = true;
+
+    QString desc = QString("%1 series %2/%3/%4").arg(s.modality.toUpper()).arg(s.uid).arg(s.studynum).arg(s.seriesnum);
+
+    imageIO img(n);
+    QStringList unreadable;
+    int numRead = 0;
+    int numBlankPatientID = 0;
+    QMap<QString, int> patientIDs, studyDateTimes, seriesNums;
+    QStringList pidBad, dtBad, snBad; /* first few mismatched filenames, as examples */
+    int numPidBad = 0, numDtBad = 0, numSnBad = 0;
+
+    foreach (QString f, files) {
+        QHash<QString, QString> tags;
+        QString msg;
+        img.GetImageFileTags(f, tags, msg);
+        QString filename = QFileInfo(f).fileName();
+        if (tags["FileType"] != "DICOM") {
+            unreadable << filename;
+            continue;
+        }
+        numRead++;
+
+        QString pid = tags["PatientID"].trimmed().toUpper();
+        QString dt = tags["StudyDateTime"].trimmed();
+        QString sn = tags["SeriesNumber"].trimmed();
+        patientIDs[pid]++;
+        studyDateTimes[dt]++;
+        seriesNums[sn]++;
+
+        if (pid == "")
+            numBlankPatientID++;
+        /* an alternate ID may be stored as the SHA1 of the PatientID (see archiveIO) */
+        QString pidsha1 = QString(QCryptographicHash::hash(pid.toUtf8(), QCryptographicHash::Sha1).toHex()).toUpper();
+        if ((pid == "") || (!subjectIDs.contains(pid) && !subjectIDs.contains(pidsha1))) {
+            numPidBad++;
+            if (pidBad.size() < 3) pidBad << filename;
+        }
+        if (dt != s.studydatetime) {
+            numDtBad++;
+            if (dtBad.size() < 3) dtBad << filename;
+        }
+        bool snok = false;
+        int snint = sn.toInt(&snok);
+        if (!snok || (snint != s.seriesnum)) {
+            numSnBad++;
+            if (snBad.size() < 3) snBad << filename;
+        }
+    }
+
+    qint64 numIssues = 0;
+    int numFiles = files.size();
+
+    if (!unreadable.isEmpty()) {
+        LogAuditIssue(auditid, "dicomUnreadable", "series", s.seriesid, QString("%1: %2 of %3 .dcm files could not be read as DICOM. Example files: %4 [%5]").arg(desc).arg(unreadable.size()).arg(numFiles).arg(unreadable.mid(0, 3).join(", ")).arg(dicomdir), -1, "");
+        numIssues++;
+    }
+    if (numRead == 0)
+        return numIssues;
+
+    /* a series whose files all have a blank PatientID was anonymized, so there is nothing to compare */
+    if ((numPidBad > 0) && (numBlankPatientID < numRead)) {
+        QStringList expected = subjectIDs.values();
+        expected.sort();
+        if (expected.size() > 10) {
+            int more = expected.size() - 10;
+            expected = expected.mid(0, 10);
+            expected << QString("and %1 more").arg(more);
+        }
+        LogAuditIssue(auditid, "dicomPatientIDMismatch", "series", s.seriesid, QString("%1: %2 of %3 DICOM files have a PatientID that does not match the subject's UID or alternate IDs [%4]. Found %5. Example files: %6 [%7]").arg(desc).arg(numPidBad).arg(numRead).arg(expected.join(", ")).arg(FormatValueCounts(patientIDs)).arg(pidBad.join(", ")).arg(dicomdir), -1, "");
+        numIssues++;
+    }
+    if (numDtBad > 0) {
+        LogAuditIssue(auditid, "dicomStudyDateTimeMismatch", "series", s.seriesid, QString("%1: %2 of %3 DICOM files have a StudyDate/StudyTime that does not match the study date/time [%4]. Found %5. Example files: %6 [%7]").arg(desc).arg(numDtBad).arg(numRead).arg(s.studydatetime).arg(FormatValueCounts(studyDateTimes)).arg(dtBad.join(", ")).arg(dicomdir), -1, "");
+        numIssues++;
+    }
+    if (numSnBad > 0) {
+        LogAuditIssue(auditid, "dicomSeriesNumberMismatch", "series", s.seriesid, QString("%1: %2 of %3 DICOM files have a SeriesNumber that does not match the series number [%4]. Found %5. Example files: %6 [%7]").arg(desc).arg(numSnBad).arg(numRead).arg(s.seriesnum).arg(FormatValueCounts(seriesNums)).arg(snBad.join(", ")).arg(dicomdir), -1, "");
+        numIssues++;
+    }
+
+    return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetSeriesTables -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Get the series tables (<modality>_series) that are linked to a study, with their columns.
+ * Read from the database, so new modalities are included. Tables without a study_id column, or
+ * a <modality>series_id primary key, are not included
+ * @return table name => set of column names
+ */
+QMap<QString, QSet<QString>> moduleAudit::GetSeriesTables() {
+    QMap<QString, QSet<QString>> columns;
+    QSqlQuery q;
+    q.prepare("select table_name 'tablename', column_name 'columnname' from information_schema.columns where table_schema = database() and table_name like '%series'");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QRegularExpression re("^[a-z0-9]+_series$");
+    while (q.next()) {
+        QString table = q.value("tablename").toString().toLower();
+        if (re.match(table).hasMatch())
+            columns[table].insert(q.value("columnname").toString().toLower());
+    }
+
+    QMap<QString, QSet<QString>> tables;
+    for (auto it = columns.cbegin(); it != columns.cend(); ++it) {
+        QString modality = it.key().left(it.key().size() - QString("_series").size());
+        if (it.value().contains("study_id") && it.value().contains(modality + "series_id"))
+            tables[it.key()] = it.value();
+    }
+    return tables;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- GetStudyPath ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Path to a study in the archive, accounting for the study's storage tier. This must match study::LoadStudyInfo()
+ * @param storageTier studies.storage_tier: blank for the default archivedir, otherwise archivedir1...4
+ * @param uid Subject UID
+ * @param studynum Study number
+ * @return The path, or blank if the archive directory isn't configured
+ */
+QString moduleAudit::GetStudyPath(QString storageTier, QString uid, int studynum) {
+    QString archivedir;
+    if (QStringList({"archivedir1", "archivedir2", "archivedir3", "archivedir4"}).contains(storageTier))
+        archivedir = n->cfg[storageTier];
+    else
+        archivedir = n->cfg["archivedir"];
+
+    if ((archivedir == "") || (archivedir == "/"))
+        return "";
+    return QString("%1/%2/%3").arg(archivedir).arg(uid).arg(studynum);
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- NameTokens ------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Split a subject name (ie, Last^First^Middle) into lowercase words for comparison. Accents
+ * are removed, any non-letter is a separator, and single letters (initials) are dropped
+ * @param name The name
+ * @return The words, in their original order
+ */
+QStringList moduleAudit::NameTokens(QString name) {
+    QString decomposed = name.normalized(QString::NormalizationForm_KD);
+    QString cleaned;
+    foreach (QChar c, decomposed) {
+        if (c.isMark())
+            continue;
+        cleaned += c.isLetter() ? c.toLower() : QChar(' ');
+    }
+
+    QStringList tokens;
+    foreach (QString t, cleaned.split(' ', Qt::SkipEmptyParts))
+        if (t.size() > 1)
+            tokens << t;
+    return tokens;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- Levenshtein ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Edit distance between two strings (insertions, deletions, substitutions)
+ */
+int moduleAudit::Levenshtein(const QString &a, const QString &b) {
+    QVector<int> prev(b.size() + 1), cur(b.size() + 1);
+    for (int j = 0; j <= b.size(); j++)
+        prev[j] = j;
+    for (int i = 1; i <= a.size(); i++) {
+        cur[0] = i;
+        for (int j = 1; j <= b.size(); j++) {
+            int cost = (a[i - 1] == b[j - 1]) ? 0 : 1;
+            cur[j] = qMin(qMin(prev[j] + 1, cur[j - 1] + 1), prev[j - 1] + cost);
+        }
+        std::swap(prev, cur);
+    }
+    return prev[b.size()];
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DOBIsMissing ----------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief true if a DOB (read as a string) is blank, NULL, or 0000-00-00
+ */
+bool moduleAudit::DOBIsMissing(QString dob) {
+    dob = dob.trimmed();
+    return (dob == "") || dob.startsWith("0000-00-00");
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- DOBIsValid ------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check a DOB that is present. YYYY-MM-DD, YYYY-MM-00 (year and month), and YYYY-00-00 (year
+ * only) are valid formats. Partial dates are compared at the precision they have
+ * @param dob The DOB, YYYY-MM-DD as stored
+ * @param firstStudyDate The subject's first study date, or an invalid QDate to skip that check
+ * @param reason Set to why the DOB is invalid
+ * @return true if valid
+ */
+bool moduleAudit::DOBIsValid(QString dob, QDate firstStudyDate, QString &reason) {
+    QRegularExpression re("^(\\d{4})-(\\d{2})-(\\d{2})$");
+    QRegularExpressionMatch match = re.match(dob.trimmed().left(10));
+    if (!match.hasMatch()) {
+        reason = "not in YYYY-MM-DD format";
+        return false;
+    }
+    int y = match.captured(1).toInt();
+    int mo = match.captured(2).toInt();
+    int d = match.captured(3).toInt();
+
+    QStringList placeholders = {"0000-01-01", "0001-01-01", "1000-01-01", "1776-07-04", "1899-12-31", "1900-01-01"};
+    if (placeholders.contains(dob.left(10))) { reason = "a common placeholder date"; return false; }
+    if ((mo == 0) && (d != 0)) { reason = "has a day but no month"; return false; }
+    if (mo > 12) { reason = "month is greater than 12"; return false; }
+    if ((mo > 0) && (d > 0) && !QDate(y, mo, d).isValid()) { reason = "not a real calendar date"; return false; }
+    if (y < 1900) { reason = "year is before 1900"; return false; }
+
+    /* true if the DOB is after the reference date, at the precision of the DOB */
+    auto isAfter = [&](QDate ref) {
+        if (y != ref.year()) return y > ref.year();
+        if (mo == 0) return false;
+        if (mo != ref.month()) return mo > ref.month();
+        if (d == 0) return false;
+        return d > ref.day();
+    };
+
+    if (isAfter(QDate::currentDate())) { reason = "in the future"; return false; }
+    if (firstStudyDate.isValid() && isAfter(firstStudyDate)) {
+        reason = QString("after the subject's first study in this project (%1)").arg(firstStudyDate.toString("yyyy-MM-dd"));
+        return false;
+    }
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- FormatValueCounts ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Format the values found in a series' files, most common first, ie "[S1234ABC] (100 files), [S9999XYZ] (1 file)"
+ */
+QString moduleAudit::FormatValueCounts(const QMap<QString, int> &counts) {
+    QList<QPair<int, QString>> sorted;
+    for (auto it = counts.cbegin(); it != counts.cend(); ++it)
+        sorted.append(qMakePair(it.value(), it.key()));
+    std::sort(sorted.begin(), sorted.end(), [](const QPair<int, QString> &a, const QPair<int, QString> &b) { return a.first > b.first; });
+
+    QStringList parts;
+    for (int i = 0; (i < sorted.size()) && (i < 5); i++)
+        parts << QString("[%1] (%2 %3)").arg(sorted[i].second == "" ? QString("blank") : sorted[i].second).arg(sorted[i].first).arg(QString(sorted[i].first == 1 ? "file" : "files"));
+    if (sorted.size() > 5)
+        parts << QString("and %1 more values").arg(sorted.size() - 5);
+    return parts.join(", ");
 }
 
 

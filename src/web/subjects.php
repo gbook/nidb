@@ -1724,9 +1724,11 @@
 							<? if ($sp['canedit']) { ?>
 							<button class="ui primary button" onClick="window.location.href='subjects.php?action=editform&id=<?=$id?>'; return false;" style="width: 200px"> <i class="edit icon"></i>Edit subject</button>
 							<? } ?>
+							<? if ($isactive) { ?>
+							<!-- adds all of this subject's enrollments the user can view (packages.php converts the subject to its enrollments) -->
+							<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=(int)$id?>" class="ui basic brown button" style="width: 200px" title="Add this subject's data from every project you can view to a package"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>
+							<? } ?>
 						</div>
-					
-						<!--<a href="packages.php?action=addobject&objecttype=subject&objectids[]=<?=$id?>" class="ui basic brown button" style="width: 200px"><img src="images/squirrel-icon-64.png" height="15"></img> &nbsp; Add to Package</a>-->
 
 						<div class="title">
 							<h3 class="ui header"><i class="dropdown icon"></i>Family</h3>

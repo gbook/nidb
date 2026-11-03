@@ -1739,8 +1739,31 @@
 				for (let i=0; i < selectedRows.length; i++) {
 					objectIDs.push(selectedRows[i].enrollmentid);
 				}
-				let objectIDstr = "<input type='hidden' name='objectidstr' value='" + objectIDs.join(",") + "'>";
-				document.thesubjectform.insertAdjacentHTML('beforeend', objectIDstr);
+				/* reuse the field if it exists, so repeated submits don't stack duplicate inputs */
+				let field = document.thesubjectform.querySelector("input[name='objectidstr']");
+				if (!field) {
+					field = document.createElement('input');
+					field.type = 'hidden';
+					field.name = 'objectidstr';
+					document.thesubjectform.appendChild(field);
+				}
+				field.value = objectIDs.join(",");
+				return true;
+			}
+
+			/* send the selected enrollments to packages.php. form.submit() does not fire the onsubmit
+			   handler, so build the ID list explicitly first. setAttribute is used because the form
+			   has an input named 'action', which shadows form.action */
+			function AddSelectedToPackage() {
+				if (gridApi.getSelectedRows().length < 1) {
+					alert("Select one or more subjects to add to a package");
+					return;
+				}
+				const form = document.thesubjectform;
+				onSubmitForm();
+				form.setAttribute('action', 'packages.php');
+				form.querySelector("input[name='action']").value = 'addobject';
+				form.submit();
 			}
 
 		</script>
@@ -1752,7 +1775,7 @@
 			<input type="hidden" name="objecttype" value="enrollment">
 			
 			<!-- leaving the button code in case we add more functionality to this form that uses the same list of selected enrollmentRowIDs -->
-			<button class="ui basic brown button" title="Add the selected subjects to a squirrel package" onclick="document.thesubjectform.action='packages.php'; document.thesubjectform.action.value='addobject'; document.thesubjectform.submit()"><img src="images/squirrel-icon-64.png" height="15"></img> Add to squirrel package</button>
+			<button type="button" class="ui basic brown button" title="Add the selected subjects to a squirrel package" onclick="AddSelectedToPackage()"><img src="images/squirrel-icon-64.png" height="15"></img> Add to squirrel package</button>
 
 		</form>
 		

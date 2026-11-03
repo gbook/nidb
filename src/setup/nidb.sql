@@ -257,8 +257,9 @@ CREATE TABLE `audio_series` (
 CREATE TABLE `audits` (
   `audit_id` int(11) NOT NULL,
   `project_id` int(11) NOT NULL COMMENT '0 indicates systemwide audit',
-  `audit_type` enum('seriesfiles','analysisfiles') NOT NULL,
+  `audit_type` enum('seriesfiles','analysisfiles','qualitycontrol') NOT NULL,
   `audit_fixerrors` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'true to fix audit errors, such as file count/size discrepancy',
+  `audit_options` set('duplicatesubjects','duplicatestudies','empty','missingdemographics','invaliddob','dicommetadata') DEFAULT NULL COMMENT 'qualitycontrol audits: the checks to run',
   `audit_status` enum('started','auditing','finishing','complete','error','stopped','') NOT NULL,
   `audit_message` text DEFAULT NULL COMMENT 'Message associated with the status change',
   `audit_objectprogress` bigint(20) DEFAULT NULL COMMENT 'the number of objects checked so far',
@@ -277,8 +278,8 @@ CREATE TABLE `audits` (
 CREATE TABLE `audit_log` (
   `auditlog_id` bigint(20) NOT NULL,
   `audit_id` int(11) NOT NULL,
-  `issue_type` enum('fileSizeMismatch','fileCountMismatch') NOT NULL COMMENT 'The type of issue found',
-  `object_type` enum('subject','study','series','analysis') NOT NULL COMMENT 'The object that had the issue: subject, study, series, analysis, etc',
+  `issue_type` enum('fileSizeMismatch','fileCountMismatch','duplicateSubject','duplicateStudy','emptySubject','emptyEnrollment','emptyStudy','missingName','missingSex','missingDOB','invalidDOB','dicomUnreadable','dicomPatientIDMismatch','dicomStudyDateTimeMismatch','dicomSeriesNumberMismatch') NOT NULL COMMENT 'The type of issue found',
+  `object_type` enum('subject','enrollment','study','series','analysis') NOT NULL COMMENT 'The object that had the issue: subject, study, series, analysis, etc',
   `object_id` int(11) NOT NULL COMMENT 'The database rowID of the object',
   `issue_message` text NOT NULL COMMENT 'Description of the found issue',
   `issue_fixed` tinyint(1) DEFAULT NULL COMMENT 'true if something was fixed',

@@ -34,8 +34,51 @@ public:
     /* individual audits. Each returns true if the audit ran to completion, and sets m to a summary message */
     bool AuditSeriesFiles(qint64 auditid, int projectid, bool fixErrors, QString &m);
     bool AuditAnalysisFiles(qint64 auditid, int projectid, bool fixErrors, QString &m);
+    bool AuditQualityControl(qint64 auditid, int projectid, QStringList checks, QString &m);
 
 private:
+    /* a subject enrolled in the project being audited, used by the quality control checks */
+    struct qcSubject {
+        qint64 subjectid;
+        QString uid;
+        QString name;
+        QString sex;
+        QString dob; /* YYYY-MM-DD as stored, which may be YYYY-00-00 or YYYY-MM-00 */
+    };
+
+    /* a series to check by the quality control DICOM metadata check */
+    struct qcDicomSeries {
+        QString table;
+        QString modality;
+        qint64 seriesid;
+        int seriesnum;
+        QString datatype;
+        qint64 subjectid;
+        QString uid;
+        int studynum;
+        QString studydatetime;
+        QString storagetier;
+    };
+
+    /* quality control checks. Each returns the number of issues found, and sets ok to false on an SQL error */
+    bool QCLoadSubjects(int projectid, QList<qcSubject> &subjects);
+    qint64 QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok);
+    qint64 QCDuplicateStudies(qint64 auditid, int projectid, bool &ok);
+    qint64 QCEmptyObjects(qint64 auditid, int projectid, bool &ok);
+    qint64 QCMissingDemographics(qint64 auditid, const QList<qcSubject> &subjects);
+    qint64 QCInvalidDOB(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok);
+    bool QCLoadDicomSeries(int projectid, QList<qcDicomSeries> &seriesList);
+    qint64 QCDicomSeries(qint64 auditid, const qcDicomSeries &s, const QSet<QString> &subjectIDs, bool &checked);
+
+    /* quality control helpers */
+    QMap<QString, QSet<QString>> GetSeriesTables();
+    QString GetStudyPath(QString storageTier, QString uid, int studynum);
+    static QStringList NameTokens(QString name);
+    static int Levenshtein(const QString &a, const QString &b);
+    static bool DOBIsMissing(QString dob);
+    static bool DOBIsValid(QString dob, QDate firstStudyDate, QString &reason);
+    static QString FormatValueCounts(const QMap<QString, int> &counts);
+
     bool AuditCheckIn(qint64 auditid, qint64 progress, qint64 total, QString &stopReason);
     int CheckFileCountAndSize(qint64 auditid, bool fixErrors, QString objectType, qint64 objectid, QString objectDesc, QString path, QString table, QString idColumn, QString countColumn, QString sizeColumn, bool dbCountIsNull, qint64 dbCount, bool dbSizeIsNull, qint64 dbSize, qint64 diskCount, qint64 diskSize, qint64 &numFixed);
     QString GetAuditStatus(qint64 auditid);

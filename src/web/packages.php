@@ -211,7 +211,7 @@
 				break;
 			case 'addobjectstopackage':
 				ob_start();
-				AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines);
+				AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines, $studyids);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("packages.php?action=displaypackage&packageid=$packageid");
 				break;
@@ -437,6 +437,24 @@
 			return;
 		}
 
+		/* a package holds enrollments (a subject in a project), not subjects. So adding a subject
+		   means adding its enrollments: convert the subject IDs to the enrollments of active
+		   subjects, then continue as an enrollment add, which filters them by View Data below */
+		if ($objecttype == "subject") {
+			$subjectids = $objectids;
+			$objectids = array();
+			$sqlstring = "select a.enrollment_id from enrollment a inner join subjects b on a.subject_id = b.subject_id where a.subject_id in (" . InPlaceholders($subjectids) . ") and b.isactive = 1";
+			$result = PkgQuery($sqlstring, $subjectids, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$objectids[] = (int)$row['enrollment_id'];
+			}
+			$objecttype = "enrollment";
+			if (count($objectids) < 1) {
+				Error("The selected subjects don't exist, are deleted, or are not enrolled in any project");
+				return;
+			}
+		}
+
 		/* raw data can only be packaged from projects where the user has View Data. Everything the
 		   add forms list (studies, series, observations, interventions) is found through these
 		   starting objects and belongs to the same enrollment, so filtering here covers the form */
@@ -452,9 +470,7 @@
 			case "enrollment":
 				DisplayAddEnrollmentForm($objectids);
 				break;
-			case "subject":
-				DisplayAddSubjectForm($objectids);
-				break;
+			/* "subject" was converted to "enrollment" above */
 			case "study":
 				DisplayAddStudyForm($objectids);
 				break;
@@ -621,6 +637,7 @@
 		$enrollmentids = array();
 		$seriesids = array();
 		$experimentmapping = array();
+		$studieswithseries = array(); /* study_id => true for studies that have at least one series */
 
 		/* get all series from this study */
 		$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . InPlaceholders($studyids) . ")";
@@ -641,6 +658,7 @@
 				$resultA = PkgQuery($sqlstringA, array($studyid), __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesids[$modality][] = $rowA[$modality . 'series_id'];
+					$studieswithseries[$studyid] = true;
 
 					if (trim($rowA['series_desc'] ?? '') == "")
 						$seriesdesc = $rowA['series_protocol'];
@@ -652,6 +670,14 @@
 			}
 		}
 		$enrollmentids = array_unique($enrollmentids);
+
+		/* a package holds a study only through its series (the exporter builds studies from series),
+		   so a study with no series can't be added. Flag those on the form */
+		$emptystudyids = array();
+		foreach ($studyids as $studyid) {
+			if (!isset($studieswithseries[$studyid]))
+				$emptystudyids[] = $studyid;
+		}
 
 		list($analysisids, $pipelineids) = GetStudyAnalyses($studyids);
 		$experimentids = GetMappedExperiments($experimentmapping);
@@ -668,10 +694,16 @@
 					<h2>The following objects will be added to the package</h2>
 					<? DisplayFormSubjects($enrollmentids, true); ?>
 					<br>
-					<? DisplayFormStudies($studyids, true); ?>
+					<? if (count($emptystudyids) > 0) { ?>
+					<div class="ui warning message">
+						<i class="exclamation triangle icon"></i>
+						<?=count($emptystudyids)?> of <?=count($studyids)?> studies have no series and will not be added. A package includes a study through its series. They are marked below.
+					</div>
+					<? } ?>
+					<? DisplayFormStudies($studyids, true, $emptystudyids); ?>
 					<br>
 					<? DisplayFormSeries($seriesids, true); ?>
-					
+
 					<h2>Optional related objects</h2>
 					<? DisplayFormExperiments($experimentids, false); ?>
 					<br>
@@ -782,26 +814,6 @@
 				</form>
 			</div>
 		</div>
-		<?
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DisplayAddSubjectForm -------------- */
-	/* -------------------------------------------- */
-	function DisplayAddSubjectForm($subjectids) {
-		?>
-		The following information related to the subject(s) will be added to the package
-		
-		<pre>
-			[x] subject info
-			
-			[ ] study info
-				[ ] series list
-					[ ] experiments
-					[ ] analyses
-					[ ] pipelines
-		</pre>
 		<?
 	}
 
@@ -1072,17 +1084,20 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayFormStudies ----------------- */
 	/* -------------------------------------------- */
-	function DisplayFormStudies($studyids, $required) {
+	/* $emptystudyids are studies with no series. They are listed but marked as not being added,
+	   because a package includes a study only through its series */
+	function DisplayFormStudies($studyids, $required, $emptystudyids = array()) {
 
 		$studyids = CleanIDs($studyids);
 		$numstudies = count((array)$studyids);
-		
+		$emptystudies = array_flip(CleanIDs($emptystudyids));
+
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
 			$checkboxreadonly = "read-only";
 			$checkboxstate = "checked";
 			$labelstr = "will be added";
-			$numselected = $numstudies;
+			$numselected = $numstudies - count(array_intersect_key(array_flip($studyids), $emptystudies));
 		}
 		else {
 			$checkboxstr = "";
@@ -1163,7 +1178,9 @@
 								?>
 									<tr>
 										<td class="allstudies"><input type="checkbox" name="studyids[]" value="<?=$studyid?>" <?=$checkboxstr?> class="studycheck" onClick="CheckSelectedStudyCount(this)"></td>
-										<td><a href="studies.php?id=<?=$studyid?>"><?=htmlspecialchars($uid ?? '')?><?=htmlspecialchars($studynum ?? '')?></a></td>
+										<td><a href="studies.php?id=<?=$studyid?>"><?=htmlspecialchars($uid ?? '')?><?=htmlspecialchars($studynum ?? '')?></a>
+											<? if (isset($emptystudies[(int)$studyid])) { ?> <span class="ui small orange label">no series, will not be added</span><? } ?>
+										</td>
 										<td><?=htmlspecialchars($studydate ?? '')?></td>
 										<td><?=htmlspecialchars($visit ?? '')?></td>
 									</tr>
@@ -1417,7 +1434,7 @@
 								?>
 									<tr>
 										<td class="allexperiments"><input type="checkbox" name="experimentids[]" value="<?=$experimentid?>" <?=$checkboxstr?> class="experimentcheck" onClick="CheckSelectedExperimentCount(this);"></td>
-										<td><a href="experiments.php?id=<?=$experimentid?>"><?=htmlspecialchars($expname ?? '')?></a></td>
+										<td><a href="experiment.php?action=editform&expid=<?=(int)$experimentid?>"><?=htmlspecialchars($expname ?? '')?></a></td>
 										<td><?=htmlspecialchars($expdate ?? '')?></td>
 									</tr>
 								<?
@@ -1533,7 +1550,7 @@
 								?>
 									<tr>
 										<td class="allanalysis"><input type="checkbox" name="analysisids[]" value="<?=$analysisid?>" class="analysischeck" <?=$checkboxstr?> onClick="CheckSelectedAnalysisCount(this);"></td>
-										<td><a href="analysis.php?analysisid=<?=$analysisid?>"><?=$analysisid?></a></td>
+										<td><a href="analysis.php?action=viewfiles&analysisid=<?=(int)$analysisid?>"><?=$analysisid?></a></td>
 										<td><?=htmlspecialchars($analysisdate ?? '')?></td>
 										<td><?=htmlspecialchars($analysisstatus ?? '')?></td>
 									</tr>
@@ -1647,7 +1664,7 @@
 								?>
 									<tr>
 										<td class="allpipelines"><input type="checkbox" name="pipelineids[]" value="<?=$pipelineid?>" class="pipelinecheck" <?=$checkboxstr?> onClick="CheckSelectedPipelineCount(this);"></td>
-										<td><a href="pipelines.php?pipelineid=<?=$pipelineid?>"><?=htmlspecialchars($pipelinename ?? '')?></a></td>
+										<td><a href="pipelines.php?action=editpipeline&id=<?=(int)$pipelineid?>"><?=htmlspecialchars($pipelinename ?? '')?></a></td>
 									</tr>
 								<?
 							}
@@ -2005,6 +2022,12 @@
 				$ids[] = $objectid;
 		}
 
+		/* removing a subject also removes all of its data from the package, so it has its own handler */
+		if ($objecttype == "enrollment") {
+			RemovePackageEnrollments($packageid, $ids);
+			return;
+		}
+
 		/* objecttype -> table, row id column, label. Any type not in this list is rejected, so the
 		   table and column names used below are never derived from user input */
 		$objecttables = array(
@@ -2045,9 +2068,197 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetPackageSeriesModalities --------- */
+	/* -------------------------------------------- */
+	/* returns array(valid, invalid): the distinct modalities of this package's series, split into
+	   those with a <modality>_series table (safe to interpolate as a table name) and those without */
+	function GetPackageSeriesModalities($packageid) {
+		$valid = array();
+		$invalid = array();
+		$result = PkgQuery("select distinct modality from package_series where package_id = ?", array((int)$packageid), __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$modality = strtolower(trim($row['modality'] ?? ''));
+			if (IsSeriesModality($modality))
+				$valid[$modality] = $modality;
+			else
+				$invalid[] = (string)$row['modality'];
+		}
+		return array(array_values($valid), $invalid);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RemovePackageEnrollments ----------- */
+	/* -------------------------------------------- */
+	/* remove subjects (package_enrollments rows) from a package, along with everything of theirs in
+	   the package: series, observations, interventions, and analyses. Experiments and pipelines are
+	   not tied to a subject, so they stay. Only package rows are deleted, never NiDB data */
+	function RemovePackageEnrollments($packageid, $packageenrollmentids) {
+		$packageid = (int)$packageid;
+		$packageenrollmentids = CleanIDs($packageenrollmentids);
+		if (count($packageenrollmentids) < 1) {
+			Notice("No subjects were selected, nothing was removed");
+			return;
+		}
+
+		/* map the package row IDs to enrollment IDs, scoped to this package */
+		$enrollmentids = array();
+		$sqlstring = "select enrollment_id from package_enrollments where package_id = ? and packageenrollment_id in (" . InPlaceholders($packageenrollmentids) . ")";
+		$result = PkgQuery($sqlstring, array_merge(array($packageid), $packageenrollmentids), __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentids[] = (int)$row['enrollment_id'];
+		}
+		$enrollmentids = CleanIDs($enrollmentids);
+		if (count($enrollmentids) < 1) {
+			Notice("The selected subjects are not in this package, nothing was removed");
+			return;
+		}
+		$in = InPlaceholders($enrollmentids);
+
+		/* series: each modality has its own table, joined to the study to find the enrollment */
+		$numseries = 0;
+		list($modalities, $invalidmodalities) = GetPackageSeriesModalities($packageid);
+		foreach ($modalities as $modality) {
+			$sqlstring = "delete ps from package_series ps inner join $modality" . "_series x on ps.series_id = x.$modality" . "series_id inner join studies st on x.study_id = st.study_id where ps.package_id = ? and ps.modality = ? and st.enrollment_id in ($in)";
+			PkgQuery($sqlstring, array_merge(array($packageid, $modality), $enrollmentids), __LINE__, $affected);
+			$numseries += $affected;
+		}
+
+		$sqlstring = "delete po from package_observations po inner join observations o on po.observation_id = o.observation_id where po.package_id = ? and o.enrollment_id in ($in)";
+		PkgQuery($sqlstring, array_merge(array($packageid), $enrollmentids), __LINE__, $numobservations);
+
+		$sqlstring = "delete pi from package_interventions pi inner join interventions i on pi.intervention_id = i.intervention_id where pi.package_id = ? and i.enrollment_id in ($in)";
+		PkgQuery($sqlstring, array_merge(array($packageid), $enrollmentids), __LINE__, $numinterventions);
+
+		$sqlstring = "delete pa from package_analyses pa inner join analysis a on pa.analysis_id = a.analysis_id inner join studies st on a.study_id = st.study_id where pa.package_id = ? and st.enrollment_id in ($in)";
+		PkgQuery($sqlstring, array_merge(array($packageid), $enrollmentids), __LINE__, $numanalyses);
+
+		$sqlstring = "delete from package_enrollments where package_id = ? and enrollment_id in ($in)";
+		PkgQuery($sqlstring, array_merge(array($packageid), $enrollmentids), __LINE__, $numsubjects);
+
+		Notice("Removed $numsubjects subjects from the package, along with their $numseries series, $numobservations observations, $numinterventions interventions, and $numanalyses analyses", "Subjects removed");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetPackageSubjects ----------------- */
+	/* -------------------------------------------- */
+	/* the subjects (package_enrollments rows) in this package, with how many of each object type
+	   the package holds for each one, so the user can see what removing a subject also removes */
+	function GetPackageSubjects($packageid) {
+		$packageid = (int)$packageid;
+		$subjects = array();
+		$byenrollment = array();
+
+		$sqlstring = "select pe.packageenrollment_id, pe.enrollment_id, pe.package_subjectid, s.uid, s.subject_id, p.project_name from package_enrollments pe left join enrollment e on pe.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id left join projects p on e.project_id = p.project_id where pe.package_id = ? order by s.uid";
+		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentid = (int)$row['enrollment_id'];
+			$subjects[$enrollmentid] = array(
+				"objectid" => (int)$row['packageenrollment_id'],
+				"uid" => (string)($row['uid'] ?? ''),
+				"subjectid" => (int)($row['subject_id'] ?? 0),
+				"altuid" => (string)($row['package_subjectid'] ?? ''),
+				"projectname" => (string)($row['project_name'] ?? ''),
+				"series" => 0, "observations" => 0, "interventions" => 0, "analyses" => 0
+			);
+		}
+		if (count($subjects) < 1)
+			return $subjects;
+
+		/* per-enrollment counts. Each query returns (enrollment_id, count) */
+		$countqueries = array();
+		list($modalities, $invalidmodalities) = GetPackageSeriesModalities($packageid);
+		foreach ($modalities as $modality) {
+			$countqueries[] = array("series", "select st.enrollment_id, count(*) 'count' from package_series ps inner join $modality" . "_series x on ps.series_id = x.$modality" . "series_id inner join studies st on x.study_id = st.study_id where ps.package_id = ? and ps.modality = ? group by st.enrollment_id", array($packageid, $modality));
+		}
+		$countqueries[] = array("observations", "select o.enrollment_id, count(*) 'count' from package_observations po inner join observations o on po.observation_id = o.observation_id where po.package_id = ? group by o.enrollment_id", array($packageid));
+		$countqueries[] = array("interventions", "select i.enrollment_id, count(*) 'count' from package_interventions pi inner join interventions i on pi.intervention_id = i.intervention_id where pi.package_id = ? group by i.enrollment_id", array($packageid));
+		$countqueries[] = array("analyses", "select st.enrollment_id, count(*) 'count' from package_analyses pa inner join analysis a on pa.analysis_id = a.analysis_id inner join studies st on a.study_id = st.study_id where pa.package_id = ? group by st.enrollment_id", array($packageid));
+
+		foreach ($countqueries as list($label, $sqlstring, $params)) {
+			$result = PkgQuery($sqlstring, $params, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = (int)$row['enrollment_id'];
+				if (isset($subjects[$enrollmentid]))
+					$subjects[$enrollmentid][$label] += (int)$row['count'];
+			}
+		}
+
+		return $subjects;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PrunePackageMissingObjects --------- */
+	/* -------------------------------------------- */
+	/* A package is only a list of pointers to NiDB data until it is exported, and the rest of NiDB
+	   does not check packages before deleting or changing data. So when a package is opened (or
+	   exported), drop any pointer whose object no longer exists, and tell the user what was
+	   removed. An object is gone if its row was deleted, or if the subject it belongs to was
+	   deleted (subjects are soft-deleted with isactive = 0). Returns label => number removed */
+	function PrunePackageMissingObjects($packageid) {
+		$packageid = (int)$packageid;
+		$removed = array();
+
+		/* subject is gone: no enrollment, no subject, or an inactive subject */
+		$subjectgone = "(s.subject_id is null or s.isactive = 0)";
+
+		$sqlstring = "delete pe from package_enrollments pe left join enrollment e on pe.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where pe.package_id = ? and $subjectgone";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['subjects']);
+
+		/* series with a modality that has no series table can never be resolved */
+		$removed['series'] = 0;
+		list($modalities, $invalidmodalities) = GetPackageSeriesModalities($packageid);
+		foreach ($invalidmodalities as $modality) {
+			PkgQuery("delete from package_series where package_id = ? and modality = ?", array($packageid, (string)$modality), __LINE__, $affected);
+			$removed['series'] += $affected;
+		}
+		foreach ($modalities as $modality) {
+			$sqlstring = "delete ps from package_series ps left join $modality" . "_series x on ps.series_id = x.$modality" . "series_id left join studies st on x.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where ps.package_id = ? and ps.modality = ? and $subjectgone";
+			PkgQuery($sqlstring, array($packageid, $modality), __LINE__, $affected);
+			$removed['series'] += $affected;
+		}
+
+		$sqlstring = "delete po from package_observations po left join observations o on po.observation_id = o.observation_id left join enrollment e on o.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where po.package_id = ? and $subjectgone";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['observations']);
+
+		$sqlstring = "delete pi from package_interventions pi left join interventions i on pi.intervention_id = i.intervention_id left join enrollment e on i.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where pi.package_id = ? and $subjectgone";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['interventions']);
+
+		$sqlstring = "delete pa from package_analyses pa left join analysis a on pa.analysis_id = a.analysis_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where pa.package_id = ? and $subjectgone";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['analyses']);
+
+		$sqlstring = "delete px from package_experiments px left join experiments x on px.experiment_id = x.experiment_id where px.package_id = ? and x.experiment_id is null";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['experiments']);
+
+		$sqlstring = "delete pp from package_pipelines pp left join pipelines p on pp.pipeline_id = p.pipeline_id where pp.package_id = ? and p.pipeline_id is null";
+		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['pipelines']);
+
+		return array_filter($removed, function($n) { return ((int)$n > 0); });
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ShowPrunedObjects ------------------ */
+	/* -------------------------------------------- */
+	/* tell the user what PrunePackageMissingObjects() removed. Prints nothing if nothing was removed */
+	function ShowPrunedObjects($removed) {
+		if (count($removed) < 1)
+			return;
+
+		$parts = array();
+		foreach ($removed as $label => $num)
+			$parts[] = (int)$num . " $label";
+
+		Warning("This package contained " . implode(", ", $parts) . " that no longer exist in NiDB (the object was deleted, or the subject it belongs to was deleted). They have been removed from the package.");
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddObjectsToPackage ---------------- */
 	/* -------------------------------------------- */
-	function AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines) {
+	function AddObjectsToPackage($packageid, $enrollmentids, $seriesids, $experimentids, $analysisids, $pipelineids, $interventionids, $observationids, $includeseries, $includeinterventions, $includeobservations, $includeexperiments, $includeanalysis, $includepipelines, $studyids = array()) {
 
 		/* perform data checks. Every object is identified by an integer ID except series, which
 		   are "<modality>-<id>" and are validated below */
@@ -2141,6 +2352,33 @@
 			}
 		}
 
+		/* an analysis belongs to a study, and so to a subject. The analysis add form doesn't add
+		   that subject, so add the enrollment here. Otherwise the subject is missing from the
+		   package's Subjects list, and removing the subject wouldn't remove its analyses. The
+		   enrollments are raw data, so only ones the user can view are added */
+		if ((count($analysisids) > 0) && ($includeanalysis)) {
+			$analysisenrollmentids = array();
+			$sqlstring = "select distinct st.enrollment_id from analysis a inner join studies st on a.study_id = st.study_id where a.analysis_id in (" . InPlaceholders($analysisids) . ")";
+			$result = PkgQuery($sqlstring, $analysisids, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = (int)$row['enrollment_id'];
+				/* enrollments posted with the form were already added above */
+				if (!in_array($enrollmentid, $enrollmentids))
+					$analysisenrollmentids[] = $enrollmentid;
+			}
+
+			$analysisenrollmentids = FilterViewableData("enrollment", $analysisenrollmentids, "", $numskipped);
+			$numsubjectsadded = 0;
+			foreach ($analysisenrollmentids as $enrollmentid) {
+				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values (?, ?, ?)";
+				PkgQuery($sqlstring, array($packageid, $enrollmentid, (string)$altuid), __LINE__, $affected);
+				$numsubjectsadded += $affected;
+			}
+			if ($numsubjectsadded > 0)
+				$msg .= "Added $numsubjectsadded subjects that the analyses belong to<br>";
+		}
+
 		/* Observations. Two mutually exclusive paths:
 		     1. "Add all" (includeobservations) -- re-query and add EVERY observation for these
 		        enrollments. This is unbounded and deliberately ignores the incoming id list, so
@@ -2166,6 +2404,39 @@
 
 		if (count($skipped) > 0)
 			$msg .= "<br>Not added (they don't exist, or you don't have View Data permission on their project): " . implode(", ", $skipped) . "<br>";
+
+		/* a package holds a study only through its series, so name any submitted study that got
+		   no series added. Only studies the user can view are named */
+		$studyids = FilterViewableData("study", $studyids, "", $numskipped);
+		if (count($studyids) > 0) {
+			$studieswithseries = array();
+			foreach ($seriesbymodality as $mod => $sids) {
+				$sids = CleanIDs($sids);
+				if (count($sids) < 1)
+					continue;
+				$sqlstring = "select distinct study_id from $mod" . "_series where $mod" . "series_id in (" . InPlaceholders($sids) . ")";
+				$result = PkgQuery($sqlstring, $sids, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$studieswithseries[(int)$row['study_id']] = true;
+				}
+			}
+
+			$emptystudyids = array();
+			foreach ($studyids as $studyid) {
+				if (!isset($studieswithseries[$studyid]))
+					$emptystudyids[] = $studyid;
+			}
+
+			if (count($emptystudyids) > 0) {
+				$names = array();
+				$sqlstring = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id in (" . InPlaceholders($emptystudyids) . ") order by c.uid, a.study_num";
+				$result = PkgQuery($sqlstring, $emptystudyids, __LINE__);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$names[] = htmlspecialchars(($row['uid'] ?? '') . ($row['study_num'] ?? ''));
+				}
+				$msg .= "<br>" . count($emptystudyids) . " studies have no series and were not added: " . implode(", ", $names) . "<br>";
+			}
+		}
 
 		$title = "Added $numobjects objects to package";
 		Notice($msg, $title);
@@ -2201,13 +2472,63 @@
 	/* -------------------------------------------- */
 	function UpdatePackage($packageid,$packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes) {
 
+		$packageid = (int)$packageid;
+		$packagename = trim((string)$packagename);
+		list($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat) = CleanPackageFormats($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat);
+
+		if ($packagename == "") {
+			Error("Package name cannot be blank. The package was not updated.");
+			return false;
+		}
+
+		/* package names are unique per owner (unique key user_id + package_name). The owner may
+		   not be the current user if an admin is editing, so check against the package's owner */
+		$result = PkgQuery("select user_id from packages where package_id = ?", array($packageid), __LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$ownerid = (int)($row['user_id'] ?? 0);
+		if (PackageNameExists($ownerid, $packagename, $packageid)) {
+			Error("A package named <b>" . htmlspecialchars($packagename) . "</b> already exists. The package was not updated.");
+			return false;
+		}
+
 		/* update the package */
 		$sqlstring = "update packages set package_name = ?, package_desc = ?, package_subjectdirformat = ?, package_studydirformat = ?, package_seriesdirformat = ?, package_dataformat = ?, package_license = ?, package_readme = ?, package_changes = ?, package_notes = ? where package_id = ?";
 		$params = array((string)$packagename, (string)$packagedesc, (string)$subjectdirformat, (string)$studydirformat, (string)$seriesdirformat, (string)$packageformat, (string)$license, (string)$readme, (string)$changes, (string)$notes, (int)$packageid);
+		/* the duplicate-name case is caught above. Any other failure is reported by
+		   MySQLiBoundQuery() itself */
 		PkgQuery($sqlstring, $params, __LINE__);
 
-		Notice(htmlspecialchars((string)$packagename) . " updated");
+		Notice(htmlspecialchars($packagename) . " updated");
 		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PackageNameExists ------------------ */
+	/* -------------------------------------------- */
+	/* true if this user already has a package with this name, other than $excludepackageid */
+	function PackageNameExists($userid, $packagename, $excludepackageid = 0) {
+		$sqlstring = "select package_id from packages where user_id = ? and package_name = ? and package_id <> ?";
+		$result = PkgQuery($sqlstring, array((int)$userid, (string)$packagename, (int)$excludepackageid), __LINE__);
+		return (($result) && (mysqli_num_rows($result) > 0));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CleanPackageFormats ---------------- */
+	/* -------------------------------------------- */
+	/* the format columns are NOT NULL enums. Anything not in the enum (including a blank value from
+	   a dropdown that was never chosen) becomes the column default, 'orig' */
+	function CleanPackageFormats($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat) {
+		$dataformats = array('orig', 'anon', 'anonfull', 'nifti3d', 'nifti3dgz', 'nifti4d', 'nifti4dgz');
+		$dirformats = array('orig', 'seq');
+
+		$packageformat = in_array($packageformat, $dataformats, true) ? $packageformat : 'orig';
+		$subjectdirformat = in_array($subjectdirformat, $dirformats, true) ? $subjectdirformat : 'orig';
+		$studydirformat = in_array($studydirformat, $dirformats, true) ? $studydirformat : 'orig';
+		$seriesdirformat = in_array($seriesdirformat, $dirformats, true) ? $seriesdirformat : 'orig';
+
+		return array($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat);
 	}
 
 
@@ -2216,12 +2537,32 @@
 	/* -------------------------------------------- */
 	function AddPackage($packagename,$packagedesc,$packageformat,$subjectdirformat,$studydirformat,$seriesdirformat,$readme,$notes,$license,$changes) {
 
+		$packagename = trim((string)$packagename);
+		list($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat) = CleanPackageFormats($packageformat, $subjectdirformat, $studydirformat, $seriesdirformat);
+
+		if ($packagename == "") {
+			Error("Package name cannot be blank. The package was not created.");
+			return false;
+		}
+
+		/* package names are unique per user (unique key user_id + package_name) */
+		if (PackageNameExists((int)$_SESSION['userid'], $packagename)) {
+			Error("You already have a package named <b>" . htmlspecialchars($packagename) . "</b>. The package was not created.");
+			return false;
+		}
+
 		/* insert the new package */
 		$sqlstring = "insert into packages (user_id, package_date, package_name, package_desc, package_subjectdirformat, package_studydirformat, package_seriesdirformat, package_dataformat, package_license, package_readme, package_changes, package_notes) values (?, now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 		$params = array((int)$_SESSION['userid'], (string)$packagename, (string)$packagedesc, (string)$subjectdirformat, (string)$studydirformat, (string)$seriesdirformat, (string)$packageformat, (string)$license, (string)$readme, (string)$changes, (string)$notes);
-		PkgQuery($sqlstring, $params, __LINE__);
+		/* MySQLiBoundQuery() returns false for a successful insert, so check the new row's ID */
+		PkgQuery($sqlstring, $params, __LINE__, $affected, $newpackageid);
+		if ((int)$newpackageid < 1) {
+			Error("Unable to create package <b>" . htmlspecialchars($packagename) . "</b>");
+			return false;
+		}
 
-		Notice(htmlspecialchars((string)$packagename) . " created");
+		Notice(htmlspecialchars($packagename) . " created");
+		return true;
 	}
 
 
@@ -2258,6 +2599,10 @@
 		if (!ValidID($packageid,'Package ID')) { return; }
 		$packageid = (int)$packageid;
 
+		/* drop pointers to objects that were deleted from NiDB, and tell the user. This is a write
+		   on a read path, but it is idempotent and only removes references that can never resolve */
+		ShowPrunedObjects(PrunePackageMissingObjects($packageid));
+
 		/* declare variables */
 		$subjects = array();
 		$observations = array();
@@ -2269,6 +2614,7 @@
 		$groupanalyses = array();
 		$msgs = array();
 		$seriesRowData = array();
+		$missingSeries = array(); /* package_series rows whose series no longer exists, listed so they can be removed */
 		$observationRowData = array();
 		$numseries = 0;
 		$numobservations = 0;
@@ -2340,12 +2686,19 @@
 			   real <modality>_series table */
 			if (!IsSeriesModality($modality)) {
 				$msgs[] = "Series with series_id [$seriesid] has an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]";
+				$missingSeries[] = array("id" => (int)$packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => (string)($row['modality'] ?? ''), "seriesnum" => "series_id $seriesid");
 				continue;
 			}
 
 			list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
-			
-			if ($uid != "") {
+
+			/* GetSeriesInfo() returns a blank UID if the series (or its study/subject) was deleted */
+			if ($uid == "") {
+				$modality = strtolower(trim($row['modality'] ?? ''));
+				$msgs[] = "Series with series_id [$seriesid] (" . htmlspecialchars($modality) . ") no longer exists";
+				$missingSeries[] = array("id" => (int)$packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => $modality, "seriesnum" => "series_id $seriesid");
+			}
+			else {
 				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $packageseriesid;
 				$subjects[$uid][$studynum][$modality][$seriesnum]['seriesid'] = $seriesid;
 				$subjects[$uid][$studynum][$modality][$seriesnum]['studydatetime'] = $studydatetime;
@@ -2425,11 +2778,17 @@
 		
 		MarkTime("Getting experiment data");
 		/* get experiments */
-		$sqlstring = "select * from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = ?";
+		/* select the package row's experiment_id explicitly: with "select *" the left-joined
+		   b.experiment_id (null for a deleted experiment) overwrote it, so every deleted experiment
+		   collapsed into one blank-keyed row */
+		$sqlstring = "select a.packageexperiment_id, a.experiment_id, b.experiment_id 'existingid', b.exp_name, b.exp_version, b.exp_desc, b.exp_createdate, b.exp_creator from package_experiments a left join experiments b on a.experiment_id = b.experiment_id where a.package_id = ?";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packageexperimentid = $row['packageexperiment_id'];
-			$experimentid = $row['experiment_id'];
+			$experimentid = (int)$row['experiment_id'];
+			$experiments[$experimentid]['exists'] = (is_null($row['existingid']) ? 0 : 1);
+			if (is_null($row['existingid']))
+				$msgs[] = "Experiment with experiment_id [$experimentid] no longer exists";
 			$experiments[$experimentid]['objectid'] = $packageexperimentid;
 			$experiments[$experimentid]['name'] = $row['exp_name'];
 			$experiments[$experimentid]['version'] = $row['exp_version'];
@@ -2441,11 +2800,15 @@
 		
 		MarkTime("Getting pipeline data");
 		/* get pipelines */
-		$sqlstring = "select * from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = ?";
+		/* select the package row's pipeline_id explicitly, for the same reason as experiments above */
+		$sqlstring = "select a.packagepipeline_id, a.pipeline_id, b.pipeline_id 'existingid', b.pipeline_name, b.pipeline_version, b.pipeline_desc, b.pipeline_createdate from package_pipelines a left join pipelines b on a.pipeline_id = b.pipeline_id where a.package_id = ?";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$packagepipelineid = $row['packagepipeline_id'];
-			$pipelineid = $row['pipeline_id'];
+			$pipelineid = (int)$row['pipeline_id'];
+			$pipelines[$pipelineid]['exists'] = (is_null($row['existingid']) ? 0 : 1);
+			if (is_null($row['existingid']))
+				$msgs[] = "Pipeline with pipeline_id [$pipelineid] no longer exists";
 			$pipelines[$pipelineid]['objectid'] = $packagepipelineid;
 			$pipelines[$pipelineid]['name'] = $row['pipeline_name'];
 			$pipelines[$pipelineid]['version'] = $row['pipeline_version'];
@@ -2530,7 +2893,7 @@
 						<i class="exclamation circle icon"></i> Package Issues
 					</div>
 					<br>
-					<p><b>Missing objects detected in this package</b> The package manager creates pointers to existing data within NiDB until a squirrel package is exported. If data was added to this package and later deleted from NiDB, it can no longer be included in the package. These missing objects should be manually deleted from the package.
+					<p><b>Some objects in this package could not be displayed</b> The package manager creates pointers to existing data within NiDB until a squirrel package is exported. Objects deleted from NiDB are removed from the package automatically when it is opened; the objects below could not be resolved and can be removed manually.
 					<ul class="list">
 						<? foreach ($msgs as $msg) {
 							echo "<li>$msg\n";
@@ -2763,7 +3126,7 @@
 					<button type="submit" class="ui basic primary button"><i class="expand alternate icon"></i> Split by modality</button>
 				</form>
 
-				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it.')">
+				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
 					<input type="hidden" name="action" value="deletepackage">
 					<input type="hidden" name="packageid" value="<?=$packageid?>">
 					<?=CSRFTokenField()?>
@@ -2784,6 +3147,65 @@
 					</div>				
 				</div>
 				
+				<!-- subjects list. Removing a subject also removes all of its data from the package -->
+				<?
+					$packagesubjects = GetPackageSubjects($packageid);
+				?>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						<b>Subjects (<?=count($packagesubjects)?>)</b> &nbsp; <span class="ui grey text">view or remove subjects</span>
+					</div>
+					<div class="content">
+					<? if (count($packagesubjects) > 0) { ?>
+						<script type="text/javascript">
+							$(function() {
+								$("#selectallpackagesubjects").click(function() {
+									var checked_status = this.checked;
+									$(".allpackagesubjects").find("input[type='checkbox']").each(function() {
+										this.checked = checked_status;
+									});
+								});
+							});
+						</script>
+						<form method="post" action="packages.php" onsubmit="return confirm('Remove the selected subjects from this package?\n\nAll of their series, observations, interventions, and analyses will also be removed from the package. Nothing is deleted from NiDB.')">
+						<input type="hidden" name="action" value="removeobject">
+						<?=CSRFTokenField()?>
+						<input type="hidden" name="objecttype" value="enrollment">
+						<input type="hidden" name="packageid" value="<?=$packageid?>">
+						<table class="ui basic very compact table">
+							<thead>
+								<th><input type="checkbox" id="selectallpackagesubjects"></th>
+								<th>UID</th>
+								<th>ID</th>
+								<th>Project</th>
+								<th class="right aligned">Series</th>
+								<th class="right aligned">Observations</th>
+								<th class="right aligned">Interventions</th>
+								<th class="right aligned">Analyses</th>
+							</thead>
+							<? foreach ($packagesubjects as $enrollmentid => $subj) { ?>
+							<tr>
+								<td class="allpackagesubjects"><input type="checkbox" name="objectids[]" value="<?=(int)$subj['objectid']?>"></td>
+								<td><a href="subjects.php?id=<?=(int)$subj['subjectid']?>"><?=htmlspecialchars($subj['uid'])?></a></td>
+								<td><?=htmlspecialchars($subj['altuid'])?></td>
+								<td><?=htmlspecialchars($subj['projectname'])?></td>
+								<td class="right aligned"><?=number_format($subj['series'])?></td>
+								<td class="right aligned"><?=number_format($subj['observations'])?></td>
+								<td class="right aligned"><?=number_format($subj['interventions'])?></td>
+								<td class="right aligned"><?=number_format($subj['analyses'])?></td>
+							</tr>
+							<? } ?>
+						</table>
+						<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected subjects and their data</button>
+						</form>
+					<? } else { ?>
+						No subjects in this package
+					<? } ?>
+					</div>
+				</div>
+				<br>
+
 				<!-- This tree view is neat, but not very practical for quickly accessing the data -->
 				<!--
 				<ul class="tree">
@@ -2894,6 +3316,9 @@
 						}
 					}
 				}
+
+				/* list missing series last so they can be selected and removed */
+				$seriesRowData = array_merge($seriesRowData, $missingSeries);
 				?>
 				<div id="subjectsGrid" class="ag-theme-alpine" style="height: 50vh"></div>
 				<button type="submit" class="ui orange button" onClick=getSelectedSeries()><i class="trash icon"></i>Remove selected series</button>
@@ -3238,9 +3663,9 @@
 				<?
 				foreach ($experiments as $experimentid => $experiment) {
 					?>
-					<tr>
+					<tr <?=($experiment['exists'] ? '' : "class='error left red marked'")?>>
 						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($experiment['objectid'] ?? '')?>"></td>
-						<td><?=htmlspecialchars($experiment['name'] ?? '')?></td>
+						<td><?=($experiment['exists'] ? htmlspecialchars($experiment['name'] ?? '') : "(missing experiment " . (int)$experimentid . ")")?></td>
 						<td><?=htmlspecialchars($experiment['version'] ?? '')?></td>
 						<td><?=htmlspecialchars($experiment['desc'] ?? '')?></td>
 						<td><?=htmlspecialchars($experiment['createdate'] ?? '')?></td>
@@ -3299,9 +3724,9 @@
 				<?
 				foreach ($pipelines as $pipelineid => $pipeline) {
 					?>
-					<tr>
+					<tr <?=($pipeline['exists'] ? '' : "class='error left red marked'")?>>
 						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($pipeline['objectid'] ?? '')?>"></td>
-						<td><?=htmlspecialchars($pipeline['name'] ?? '')?></td>
+						<td><?=($pipeline['exists'] ? htmlspecialchars($pipeline['name'] ?? '') : "(missing pipeline " . (int)$pipelineid . ")")?></td>
 						<td><?=htmlspecialchars($pipeline['version'] ?? '')?></td>
 						<td><?=htmlspecialchars($pipeline['desc'] ?? '')?></td>
 						<td><?=htmlspecialchars($pipeline['createdate'] ?? '')?></td>
@@ -3388,7 +3813,7 @@
 					<div class="field">
 						<label>Package data format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="packageformat" value="<?=htmlspecialchars($dataFormat ?? '')?>">
+							<input type="hidden" name="packageformat" value="<?=htmlspecialchars($dataFormat ?? 'orig')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Package Data Format</div>
 							<div class="scrollhint menu">
@@ -3407,7 +3832,7 @@
 					<div class="field">
 						<label>Subject directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="subjectdirformat" value="<?=htmlspecialchars($subjectDirFormat ?? '')?>">
+							<input type="hidden" name="subjectdirformat" value="<?=htmlspecialchars($subjectDirFormat ?? 'orig')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Subject directory name</div>
 							<div class="scrollhint menu">
@@ -3421,7 +3846,7 @@
 					<div class="field">
 						<label>Study directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="studydirformat" value="<?=htmlspecialchars($studyDirFormat ?? '')?>">
+							<input type="hidden" name="studydirformat" value="<?=htmlspecialchars($studyDirFormat ?? 'orig')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Study directory name</div>
 							<div class="scrollhint menu">
@@ -3435,7 +3860,7 @@
 					<div class="field">
 						<label>Series directory format</label>
 						<div class="ui selection dropdown">
-							<input type="hidden" name="seriesdirformat" value="<?=htmlspecialchars($seriesDirFormat ?? '')?>">
+							<input type="hidden" name="seriesdirformat" value="<?=htmlspecialchars($seriesDirFormat ?? 'orig')?>">
 							<i class="dropdown icon"></i>
 							<div class="default text">Series directory name</div>
 							<div class="scrollhint menu">
@@ -3493,7 +3918,7 @@
 		</form>
 		<? if ($type == "edit") { ?>
 		<!-- target of the Delete button inside the form above -->
-		<form method="post" action="packages.php" id="deletepackageform" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it.')">
+		<form method="post" action="packages.php" id="deletepackageform" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
 			<input type="hidden" name="action" value="deletepackage">
 			<input type="hidden" name="packageid" value="<?=$packageid?>">
 			<?=CSRFTokenField()?>
@@ -3624,6 +4049,10 @@
 		$ip = (string)getenv('REMOTE_ADDR');
 		$username = (string)$_SESSION['username'];
 
+		/* the export list is shown from the package list too, so the package may not have been
+		   opened (and pruned) recently. Prune first so the user knows what will not be exported */
+		ShowPrunedObjects(PrunePackageMissingObjects($packageid));
+
 		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, submitdate, status) values (?, ?, 'DOWNLOAD_PACKAGE', 'web', 'package', now(), 'submitted')";
 		PkgQuery($sqlstring, array($username, $ip), __LINE__, $affected, $exportRowID);
 
@@ -3660,6 +4089,7 @@
 		   so accept only modalities that actually have a <modality>_series table */
 		$msgs = array();
 		$modalities = array();
+		$movedenrollmentids = array(); /* enrollment_id => true, for enrollments whose series were moved */
 		$sqlstring = "select distinct(modality) 'modality' from package_series where package_id = ?";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -3696,18 +4126,53 @@
 				continue;
 			}
 
+			/* remember which enrollments own the series being moved. After every modality has been
+			   moved, any of these with nothing left in the original package are removed from it */
+			$sqlstring = "select distinct st.enrollment_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id inner join studies st on st.study_id = ms.study_id where ps.package_id = ? and ps.modality = ?";
+			$result = PkgQuery($sqlstring, array($packageid, $modality), __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$movedenrollmentids[(int)$row['enrollment_id']] = true;
+			}
+
 			/* carry over the enrollments that own the series being moved, so the new package
 			   still knows its subjects and their package-specific alternate IDs */
 			$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) select ?, pe.enrollment_id, pe.package_subjectid from package_enrollments pe where pe.package_id = ? and pe.enrollment_id in (select st.enrollment_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id inner join studies st on st.study_id = ms.study_id where ps.package_id = ? and ps.modality = ?)";
 			PkgQuery($sqlstring, array((int)$newPackageID, $packageid, $packageid, $modality), __LINE__, $numenrollmentscopied);
 
-			/* move the series for this modality into the new package */
-			$sqlstring = "update package_series set package_id = ? where package_id = ? and modality = ?";
+			/* move the series for this modality into the new package. The target may already exist
+			   from an earlier split and hold some of the same series, which would violate the
+			   unique key (package_id, modality, series_id) and abort a plain UPDATE part-way. So
+			   UPDATE IGNORE skips those rows, and they are then deleted from the source: the target
+			   already has them, so the move is complete either way */
+			$sqlstring = "update ignore package_series set package_id = ? where package_id = ? and modality = ?";
 			PkgQuery($sqlstring, array((int)$newPackageID, $packageid, $modality), __LINE__, $numseriesmoved);
 
-			$msgs[] = "<b>" . htmlspecialchars($newPackageName) . "</b> - moved $numseriesmoved series, copied $numenrollmentscopied enrollments";
+			$sqlstring = "delete from package_series where package_id = ? and modality = ?";
+			PkgQuery($sqlstring, array($packageid, $modality), __LINE__, $numseriesduplicate);
+
+			$msg = "<b>" . htmlspecialchars($newPackageName) . "</b> - moved $numseriesmoved series, copied $numenrollmentscopied enrollments";
+			if ($numseriesduplicate > 0)
+				$msg .= " ($numseriesduplicate series were already in this package, and were removed from the original)";
+			$msgs[] = $msg;
 
 			//CommitSQLTransaction();
+		}
+
+		/* the enrollments were copied, not moved, so the original still lists subjects whose series
+		   all went to the new packages. Remove the ones with nothing left in the original (no
+		   series, observations, interventions, or analyses). Subjects that weren't part of the
+		   move are left alone, even if they hold no data, since they exist nowhere else */
+		if (count($movedenrollmentids) > 0) {
+			$emptyobjectids = array();
+			foreach (GetPackageSubjects($packageid) as $enrollmentid => $subj) {
+				if ((isset($movedenrollmentids[$enrollmentid])) && ($subj['series'] + $subj['observations'] + $subj['interventions'] + $subj['analyses'] == 0))
+					$emptyobjectids[] = (int)$subj['objectid'];
+			}
+			if (count($emptyobjectids) > 0) {
+				$sqlstring = "delete from package_enrollments where package_id = ? and packageenrollment_id in (" . InPlaceholders($emptyobjectids) . ")";
+				PkgQuery($sqlstring, array_merge(array($packageid), $emptyobjectids), __LINE__, $numenrollmentsremoved);
+				$msgs[] = "<b>" . htmlspecialchars($origname) . "</b> - removed $numenrollmentsremoved subjects that have no data left in this package";
+			}
 		}
 
 		if (count($modalities) < 1)
@@ -3718,8 +4183,57 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- DeleteExportPath ------------------- */
+	/* -------------------------------------------- */
+	/* delete a file, symlink, or directory tree that sits directly inside [exportdir]. Refuses
+	   anything whose parent doesn't resolve to exportdir itself. Symlinks are unlinked, never
+	   followed, so a directory tree can't lead the delete outside exportdir. Returns true if the
+	   path no longer exists */
+	function DeleteExportPath($path) {
+		$exportdir = realpath(rtrim((string)($GLOBALS['cfg']['exportdir'] ?? ''), "/"));
+		if (($exportdir === false) || ($exportdir == '/') || (!is_dir($exportdir)))
+			return false;
+		if (realpath(dirname($path)) !== $exportdir)
+			return false;
+
+		if ((is_link($path)) || (is_file($path)))
+			return @unlink($path);
+		if (is_dir($path))
+			return DeleteDirTree($path);
+
+		return (!file_exists($path));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DeleteDirTree ---------------------- */
+	/* -------------------------------------------- */
+	/* recursively delete a directory without following symlinks. Only called by DeleteExportPath() */
+	function DeleteDirTree($dir) {
+		$entries = @scandir($dir);
+		if ($entries === false)
+			return false;
+
+		$ok = true;
+		foreach ($entries as $entry) {
+			if (($entry == ".") || ($entry == ".."))
+				continue;
+			$full = "$dir/$entry";
+			if ((is_link($full)) || (!is_dir($full)))
+				$ok = (@unlink($full) && $ok);
+			else
+				$ok = (DeleteDirTree($full) && $ok);
+		}
+		return (@rmdir($dir) && $ok);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DeletePackage ---------------------- */
 	/* -------------------------------------------- */
+	/* deletes the package completely: its object pointers, the package row, and its exports
+	   (exports/exportseries rows and the .sqrl files and directories on disk). Data in NiDB is
+	   never touched */
 	function DeletePackage($packageid) {
 		if (!ValidID($packageid,'Package ID')) { return; }
 		$packageid = (int)$packageid;
@@ -3728,10 +4242,55 @@
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$packageName = $row['package_name'] ?? '';
+		$msgs = array();
+
+		/* find this package's exports. Only package exports whose every exportseries row belongs to
+		   this package are touched, so an export that also references something else is left alone */
+		$exportids = array();
+		$activeexports = 0;
+		$sqlstring = "select a.export_id, a.status, (select count(*) from exportseries c where c.export_id = a.export_id and (c.package_id is null or c.package_id <> ?)) 'numother' from exports a where a.filetype = 'package' and a.export_id in (select b.export_id from exportseries b where b.package_id = ?)";
+		$result = PkgQuery($sqlstring, array($packageid, $packageid), __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if ((int)$row['numother'] > 0)
+				continue;
+			if (in_array($row['status'], array('submitted', 'pending', 'processing')))
+				$activeexports++;
+			$exportids[] = (int)$row['export_id'];
+		}
+
+		/* the export module reads these rows while it works, so deleting them mid-export would break
+		   it. Refuse, and leave everything in place */
+		if ($activeexports > 0) {
+			Error("Package <b>" . htmlspecialchars($packageName) . "</b> has $activeexports export(s) still queued or running. Wait for them to finish, then delete the package. Nothing was deleted.");
+			return;
+		}
+
+		/* delete each export's files, then its rows. Paths are built from the export ID, never
+		   from the stored exported_path */
+		$numfiles = 0;
+		$failedpaths = array();
+		foreach ($exportids as $exportid) {
+			$base = rtrim((string)$GLOBALS['cfg']['exportdir'], "/") . "/NiDB-Squirrel-$exportid";
+			foreach (array("$base.sqrl", $base) as $path) {
+				if ((!file_exists($path)) && (!is_link($path)))
+					continue;
+				if (DeleteExportPath($path))
+					$numfiles++;
+				else
+					$failedpaths[] = htmlspecialchars($path);
+			}
+		}
+		if (count($exportids) > 0) {
+			$in = InPlaceholders($exportids);
+			PkgQuery("delete from exportseries where export_id in ($in)", $exportids, __LINE__, $numexportseries);
+			PkgQuery("delete from exports where export_id in ($in)", $exportids, __LINE__, $numexports);
+			$msgs[] = "Deleted $numexports exports and $numfiles export files/directories";
+		}
+		if (count($failedpaths) > 0)
+			$msgs[] = "<span class='ui red text'>Could not delete " . implode(", ", $failedpaths) . ". Remove them manually.</span>";
 
 		/* delete the package's objects, then the package. The table names come from this list,
 		   never from user input */
-		$msgs = array();
 		$objecttables = array(
 			"package_analyses"      => "analyses",
 			"package_enrollments"   => "enrollments",

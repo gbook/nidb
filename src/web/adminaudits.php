@@ -46,7 +46,18 @@
 	/* audit types, and their descriptions. Keys must match the audits.audit_type enum */
 	$audittypes = array(
 		'seriesfiles' => 'Series files (MR only) - compare the data, beh, and QC/QA file counts and sizes of each MR series in the database against the files in the archive',
-		'analysisfiles' => 'Analysis files - compare the file count and size of each analysis in the database against the files in the analysis directory'
+		'analysisfiles' => 'Analysis files - compare the file count and size of each analysis in the database against the files in the analysis directory',
+		'qualitycontrol' => 'Quality control (single project only) - find duplicate, empty, incomplete, or inconsistent subjects, studies, and series. Issues are reported only, never fixed'
+	);
+
+	/* quality control checks, and their descriptions. Keys must match the audits.audit_options set. The criteria are listed in doc/audits.md */
+	$qcchecklist = array(
+		'duplicatesubjects' => 'Duplicate subjects - same or similar name, DOB, sex (including transposed first/last name), or a shared alternate ID',
+		'duplicatestudies' => 'Duplicate studies - the same study under two or more subjects (same StudyInstanceUID, or same modality and date/time)',
+		'empty' => 'Empty subjects, enrollments, and studies - no series, studies, observations, or interventions',
+		'missingdemographics' => 'Missing demographics - no name, sex, or DOB',
+		'invaliddob' => 'Invalid DOB - placeholder dates (1900-01-01, 1776-07-04, ...), impossible dates, in the future, or after the first study. YYYY and YYYY-MM DOBs are valid',
+		'dicommetadata' => 'DICOM metadata - every DICOM file\'s PatientID, StudyDate/StudyTime, and SeriesNumber match its subject, study, and series (slow, reads every file)'
 	);
 
 	/* statuses where the audit module has not finished with the audit */
@@ -80,6 +91,7 @@
 		$projectid = (int)GetVariable("projectid");
 		$audittype = GetVariable("audittype");
 		$fixerrors = GetVariable("fixerrors");
+		$qcchecks = GetVariable("qcchecks");
 		$issuetype = GetVariable("issuetype");
 		$page = GetVariable("page");
 
@@ -89,7 +101,7 @@
 			   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 			case 'startaudit':
 				ob_start();
-				StartAudit($projectid, $audittype, $fixerrors);
+				StartAudit($projectid, $audittype, $fixerrors, $qcchecks);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("adminaudits.php");
 				break;
@@ -120,13 +132,31 @@
 	/* -------------------------------------------- */
 	/* ------- StartAudit ------------------------- */
 	/* -------------------------------------------- */
-	function StartAudit($projectid, $audittype, $fixerrors) {
+	function StartAudit($projectid, $audittype, $fixerrors, $qcchecks) {
 		$projectid = (int)$projectid;
 		$fixerrors = ($fixerrors == "1") ? 1 : 0;
+		$options = null;
 
 		if (!array_key_exists($audittype ?? '', $GLOBALS['audittypes'])) {
 			Error("Invalid audit type [" . htmlspecialchars($audittype ?? '') . "]");
 			return;
+		}
+
+		/* quality control audits only report issues, run on a single project, and need at least one check */
+		if ($audittype == "qualitycontrol") {
+			$fixerrors = 0;
+			if ($projectid == 0) {
+				Error("Quality control audits can only be run on a single project. Select a project");
+				return;
+			}
+			if (!is_array($qcchecks))
+				$qcchecks = array();
+			$checks = array_values(array_intersect(array_keys($GLOBALS['qcchecklist']), $qcchecks));
+			if (count($checks) < 1) {
+				Error("Select at least one quality control check");
+				return;
+			}
+			$options = implode(",", $checks);
 		}
 
 		/* project 0 is a systemwide audit, otherwise the project must exist */
@@ -153,10 +183,10 @@
 		}
 
 		$message = "Audit requested by " . $GLOBALS['username'];
-		$sqlstring = "insert into audits (project_id, audit_type, audit_fixerrors, audit_status, audit_message, audit_objectprogress, audit_totalobjects, audit_startdate) values (?, ?, ?, 'started', ?, 0, 0, now())";
+		$sqlstring = "insert into audits (project_id, audit_type, audit_fixerrors, audit_options, audit_status, audit_message, audit_objectprogress, audit_totalobjects, audit_startdate) values (?, ?, ?, ?, 'started', ?, 0, 0, now())";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'isis', $projectid, $audittype, $fixerrors, $message);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $audittype, $fixerrors, $message]);
+		mysqli_stmt_bind_param($stmt, 'isiss', $projectid, $audittype, $fixerrors, $options, $message);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $audittype, $fixerrors, $options, $message]);
 		$newid = mysqli_insert_id($GLOBALS['linki']);
 
 		Notice("Audit #$newid queued. It will begin the next time the audit module runs.", "Audit started");
@@ -296,6 +326,20 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- AuditTypeText ---------------------- */
+	/* -------------------------------------------- */
+	/* audit type for the audit list. Quality control audits also list their checks */
+	function AuditTypeText($type, $options) {
+		$html = htmlspecialchars($type ?? '');
+		if ($type == 'qualitycontrol') {
+			$checks = array_filter(explode(",", $options ?? ''));
+			$html .= '<div style="font-size: 0.85em; color: #666">' . htmlspecialchars(implode(", ", $checks)) . '</div>';
+		}
+		return $html;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetProjectNames -------------------- */
 	/* -------------------------------------------- */
 	/* project_id => display name for every project */
@@ -352,11 +396,11 @@
 					<div class="sub header">Audits are run in the background by the audit module. Progress is shown below</div>
 				</div>
 			</h3>
-			<form class="ui form" method="post" action="adminaudits.php">
+			<form class="ui form" method="post" action="adminaudits.php" onSubmit="return ValidateAuditForm()">
 				<input type="hidden" name="action" value="startaudit">
 				<div class="field">
 					<label>Audit type</label>
-					<select name="audittype" class="ui dropdown" required>
+					<select name="audittype" id="audittype" class="ui dropdown" required>
 						<? foreach ($GLOBALS['audittypes'] as $type => $desc) { ?>
 						<option value="<?=$type?>"><?=htmlspecialchars($desc)?></option>
 						<? } ?>
@@ -364,21 +408,33 @@
 				</div>
 				<div class="field">
 					<label>Project</label>
-					<select name="projectid" class="ui search dropdown" required>
+					<select name="projectid" id="projectid" class="ui search dropdown" required>
 						<option value="0">All projects (systemwide)</option>
 						<? foreach ($projects as $id => $name) { ?>
 						<option value="<?=$id?>"><?=htmlspecialchars($name)?></option>
 						<? } ?>
 					</select>
 				</div>
-				<div class="field">
+				<div class="field" id="qcchecksfield" style="display: none">
+					<label>Quality control checks &nbsp; <a href="#" onClick="SetQCChecks(true); return false;" style="font-weight: normal">Select all</a> | <a href="#" onClick="SetQCChecks(false); return false;" style="font-weight: normal">Select none</a></label>
+					<? foreach ($GLOBALS['qcchecklist'] as $check => $desc) { ?>
+					<div class="field" style="margin-bottom: 4px">
+						<div class="ui checkbox">
+							<input type="checkbox" name="qcchecks[]" value="<?=$check?>" checked>
+							<label><?=htmlspecialchars($desc)?></label>
+						</div>
+					</div>
+					<? } ?>
+					<div style="color: #888; font-size: 0.9em; margin-top: 5px">Quality control audits run on a single project, and only report issues. Nothing is changed: fix the issues manually</div>
+				</div>
+				<div class="field" id="fixerrorsfield">
 					<div class="ui checkbox">
 						<input type="checkbox" name="fixerrors" value="1" id="fixerrors">
 						<label>Fix errors</label>
 					</div>
 					<div style="color: #888; font-size: 0.9em; margin-top: 5px">Update the database to match what is found on disk (file count, size). If unchecked, issues are only reported</div>
 				</div>
-				<button class="ui primary button" type="submit" onClick="if (document.getElementById('fixerrors').checked) { return confirm('Fix errors is checked. The audit will modify the database to match the files on disk. Continue?'); }">Create audit</button>
+				<button class="ui primary button" type="submit">Create audit</button>
 			</form>
 		</div>
 		</div>
@@ -423,8 +479,8 @@
 				<tr data-auditid="<?=$id?>">
 					<td><a href="adminaudits.php?action=viewaudit&auditid=<?=$id?>"><?=$id?></a></td>
 					<td><?=AuditProjectName($row['project_id'], $projects)?></td>
-					<td><?=htmlspecialchars($row['audit_type'])?></td>
-					<td><? if ($row['audit_fixerrors']) { ?><i class="orange wrench icon" title="Errors will be fixed"></i>Yes<? } else { ?>No<? } ?></td>
+					<td><?=AuditTypeText($row['audit_type'], $row['audit_options'] ?? '')?></td>
+					<td><? if ($row['audit_type'] == 'qualitycontrol') { ?>-<? } elseif ($row['audit_fixerrors']) { ?><i class="orange wrench icon" title="Errors will be fixed"></i>Yes<? } else { ?>No<? } ?></td>
 					<td class="auditstatus"><?=AuditStatusLabel($status)?></td>
 					<td class="auditprogress"><?=AuditProgressBar($status, $row['audit_objectprogress'], $row['audit_totalobjects'])?></td>
 					<td class="auditmessage"><?=htmlspecialchars($row['audit_message'] ?? '')?></td>
@@ -456,7 +512,38 @@
 			$(document).ready(function() {
 				$('.ui.dropdown').dropdown({ fullTextSearch: true });
 				$('.ui.checkbox').checkbox();
+				$('#audittype').on('change', UpdateAuditForm);
+				UpdateAuditForm();
 			});
+
+			/* quality control audits choose their checks, and can't fix errors */
+			function UpdateAuditForm() {
+				const qc = ($('#audittype').val() == 'qualitycontrol');
+				$('#qcchecksfield').toggle(qc);
+				$('#fixerrorsfield').toggle(!qc);
+				if (qc) $('#fixerrors').closest('.checkbox').checkbox('uncheck');
+			}
+
+			function SetQCChecks(checked) {
+				$('input[name="qcchecks[]"]').closest('.checkbox').checkbox(checked ? 'check' : 'uncheck');
+			}
+
+			function ValidateAuditForm() {
+				if ($('#audittype').val() == 'qualitycontrol') {
+					if ($('#projectid').val() == '0') {
+						alert('Quality control audits can only be run on a single project. Select a project');
+						return false;
+					}
+					if ($('input[name="qcchecks[]"]:checked').length < 1) {
+						alert('Select at least one quality control check');
+						return false;
+					}
+					return true;
+				}
+				if (document.getElementById('fixerrors').checked)
+					return confirm('Fix errors is checked. The audit will modify the database to match the files on disk. Continue?');
+				return true;
+			}
 
 			const activeStatuses = <?=json_encode($GLOBALS['activestatuses'])?>;
 
@@ -583,7 +670,15 @@
 			<table class="ui very basic collapsing compact table">
 				<tr><td><b>Project</b></td><td><?=AuditProjectName($audit['project_id'], $projects)?></td></tr>
 				<tr><td><b>Type</b></td><td><?=htmlspecialchars($GLOBALS['audittypes'][$audit['audit_type']] ?? $audit['audit_type'])?></td></tr>
+				<? if ($audit['audit_type'] == 'qualitycontrol') { ?>
+				<tr><td><b>Checks</b></td><td>
+					<? foreach (explode(",", $audit['audit_options'] ?? '') as $check) { if ($check == '') continue; ?>
+					<div><i class="check icon"></i><?=htmlspecialchars($GLOBALS['qcchecklist'][$check] ?? $check)?></div>
+					<? } ?>
+				</td></tr>
+				<? } else { ?>
 				<tr><td><b>Fix errors</b></td><td><?=($audit['audit_fixerrors'] ? "Yes" : "No")?></td></tr>
+				<? } ?>
 				<tr><td><b>Progress</b></td><td><?=AuditProgressBar($audit['audit_status'], $audit['audit_objectprogress'], $audit['audit_totalobjects'])?></td></tr>
 				<tr><td><b>Message</b></td><td><?=htmlspecialchars($audit['audit_message'] ?? '')?></td></tr>
 				<tr><td><b>Started</b></td><td><?=htmlspecialchars($audit['audit_startdate'] ?? '')?></td></tr>
@@ -634,7 +729,7 @@
 		let auditGridApi;
 		(function() {
 			const rowData = <?=$rowsJson?>;
-			const objectPages = { subject: 'subjects.php', study: 'studies.php' };
+			const objectPages = { subject: 'subjects.php', enrollment: 'enrollment.php', study: 'studies.php' };
 
 			const columnDefs = [
 				{ field: 'issue', headerName: 'Issue', width: 180 },
