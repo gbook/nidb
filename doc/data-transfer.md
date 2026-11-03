@@ -744,7 +744,7 @@ When this server sends an object on, it looks up the object's `object_origins` r
 
 #### `object_locks` (both; shared with other features)
 
-Locks are not specific to transfers. Any feature that needs to keep an object from changing while it works on it uses this one table and one set of helpers. Transfers (outgoing and incoming) and tier migration (`doc/tiered-storage.md` §2.5–2.6) are the first users. Because every lock is in one place, a page that deletes or moves something checks one table, and the features see each other's locks. For example, a study can't start a tier move while it's being transferred, and the reverse.
+Locks are not specific to transfers. Any feature that needs to keep an object from changing while it works on it uses this one table and one set of helpers. Transfers (outgoing and incoming) and tier migration (`doc/tiered-storage.md` §5–6) are the first users. Because every lock is in one place, a page that deletes or moves something checks one table, and the features see each other's locks. For example, a study can't start a tier move while it's being transferred, and the reverse.
 
 ```sql
 CREATE TABLE `object_locks` (

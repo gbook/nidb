@@ -1,54 +1,170 @@
-# Tiered Storage — Planning
+# Tiered Storage — Implementation Plan
 
-Goal: allow NiDB to store **imaging** data in user-defined storage **tiers** (e.g. `active`,
-`intermediate`, `archive`) assigned at the **study** level, with methods to migrate a study's
-data between tiers.
+Store imaging data in up to five storage tiers, assigned per study, and move a study's data between tiers.
 
-> **Config reference moved.** The earlier config-key inventory and PHP/C++ usage-frequency tables
-> that lived in this document are now maintained in [`config-variables.md`](config-variables.md) —
-> the authoritative list of every `nidb.cfg` variable and its reference counts. This document is
-> the tiered-storage **design**, and tracks what has been implemented so far.
+Every `nidb.cfg` variable and its reference counts are listed in [`config-variables.md`](config-variables.md).
 
-Status at a glance:
-- **Implemented:** storage-tier config keys (`archivedir1`–`archivedir4`), the `storage_tiers` DB
-  table, and the `adminstorage.php` management page (§1, §3.2, §3.3).
-- **Planned:** the path resolver refactor, per-study tier assignment, and the migration engine
-  (§2, §3.4 onward).
+**Status**
+- **Done:** tier config keys (§2), the `storage_tiers` table (§3.1), and the `adminstorage.php` admin page.
+- **To do:** the `study_datatier` column, the path resolver (§4), the migration worker (§5), and the study/bulk UI (§7).
 
 ---
 
-## 1. Path construction is decentralized (the core refactor challenge)
+## 1. Design
 
-Imaging study data lives under the archive root in a fixed layout:
+- **Tiers** are the base archive root `archivedir` (the default tier) plus up to four alternate roots, `archivedir1`–`archivedir4`.
+- **Tier paths live only in `nidb.cfg`**, so they're known even when the database is down. They can't be edited through the web.
+- **Tier metadata** (type, credentials, capacity) lives in the database and is managed on `adminstorage.php`.
+- **Granularity is the imaging study.** Each study records its tier. Its layout inside the tier root is unchanged: `{tierroot}/{UID}/{studynum}/{seriesnum}/…`. Series inherit their study's tier.
+- **A migration** copies a study's directory to the new tier root, verifies it, switches the study's recorded tier, then deletes the source.
+- **Migrations run in a queued module worker**, never in a web request.
+- **Only `archivedir` is tiered.** All other directories (`analysisdir*`, `backupdir`, `exportdir`, `incomingdir`, `uploaddir*`, `downloaddir*`, `tmpdir`, `deleteddir`, …) are unchanged.
+
+**Out of scope**
+- Non-imaging data (observations, interventions).
+- Pipeline analysis outputs (`analysisdir`, `analysisdirb`, `groupanalysisdir`). Pipelines *read* study data from the archive, so those reads must use the resolver.
+- Backup and export destinations. Both read study paths, so they must use the resolver.
+
+## 2. Configuration — done
 
 ```
-{archiveroot}/{UID}/{studynum}/{seriesnum}/{datatype|beh|qa|qc|nifti|dicom|parrec}
+[archivedir]  = /nidb/data/archive    # default tier
+[archivedir1] = /mnt/tier1/archive    # optional
+[archivedir2] = /mnt/tier2/archive    # optional
+[archivedir3] =                       # optional
+[archivedir4] =                       # optional
 ```
 
-Centralized at the domain-object layer:
-- `subject.cpp` → `_subjectpath = {archivedir}/{uid}`
-- `study.cpp`   → `_studypath   = {archivedir}/{uid}/{studynum}`
-- `series.cpp`  → `seriespath   = {archivedir}/{uid}/{studynum}/{seriesnum}`
+- `archivedir1`–`archivedir4` are blank by default, written by `WriteConfig()`, and editable on the Settings page.
+- With them blank, only `archivedir` exists and NiDB behaves as it does today.
+- The C++ binary and PHP read the same `nidb.cfg`.
 
-**But** the path is *also* rebuilt inline from `cfg["archivedir"]` at many sites across several C++
-files (`archiveio.cpp`, `moduleExport.cpp`, `modulePipeline.cpp`, `subject/study/series.cpp`,
-`moduleMRIQA.cpp`, `moduleQC.cpp`) plus many PHP sites, rather than through a single accessor.
-(Current `archivedir` reference counts: see [`config-variables.md`](config-variables.md) — it is by
-far the most-referenced data path.) **Path construction is decentralized.**
+## 3. Data model
 
-Implication: tiering cannot be achieved by changing one config value. It requires a **single point
-of truth** for "where does study N physically live," which today does not exist. The
-`subject`/`study`/`series` classes are the natural seam (they already own path building), but the
-inline `cfg["archivedir"]` usages in the modules and all of PHP must be routed through the same
-resolver (§2.4).
+All new queries use bound statements (`MySQLiBoundQuery` in PHP, parameterized `QSqlQuery` in C++).
 
-### 1.1 Reference inventory (per file)
+### 3.1 `storage_tiers` — done
 
-Count of **`archivedir`** config reads per file (the base archive root only — `archivedir1`–`archivedir4` excluded). Top-level files only; no subdirectories. These are the sites the resolver refactor (§2.4) must convert. Counts are reference occurrences, so a line containing the reference twice counts as two.
+One row per alternate tier (`archivedir1`–`archivedir4`). The default `archivedir` tier has no row and is always configured.
 
-Re-verified 2026-09-09 against the current tree (live site `/var/www/html`, C++ `src/nidb`).
+```
+storagetier_id PK, storage_configname ('archivedir1'..'archivedir4'),
+storage_type ENUM('nfs','s3','gcs') NULL, storage_path TEXT,
+storage_username, storage_password, storage_token, storage_capacity (GB)
+```
 
-**C++ (`src/nidb`) — `cfg["archivedir"]`: 29 references across 26 lines in 8 files**
+- `storage_type = NULL` means the tier is not configured.
+- `storage_path` is copied from `nidb.cfg` on every page load and is read-only in the UI.
+- `adminstorage.php` creates the 4 rows if missing. It shows each tier's path, whether the path exists, and its disk usage. Type, credentials, and capacity are edited there.
+
+### 3.2 `studies.study_datatier` — to do
+
+`VARCHAR(32) NOT NULL DEFAULT 'archivedir'`: the config key of the tier holding the study. The default puts every existing study on `archivedir`. It stores the key name rather than a foreign key, because the default tier has no `storage_tiers` row.
+
+### 3.3 `storage_tier_migration` — to do
+
+Work queue and history, one row per migration.
+
+```
+migration_id PK, study_id FK, from_tier, to_tier,
+status ENUM('pending','copying','verifying','flipping','cleanup','completed','error','cancelled'),
+bytes_total, bytes_done, file_count, verify_ok, cancel_requested,
+requested_by, request_date, start_date, end_date, error_msg, next_state
+```
+
+Only one active migration is allowed per study. MariaDB has no partial indexes, so enforce this with a generated column: `active_study_id = IF(status IN ('completed','error','cancelled'), NULL, study_id)` with a `UNIQUE` index on it. Multiple NULLs are allowed.
+
+### 3.4 Module wiring — to do
+
+Add a `module_procs` entry and a `[moduledatatierthreads]` config key, matching the other `module*threads` workers.
+
+## 4. Path resolver
+
+Today the archive path is built from `cfg["archivedir"]` in many places, not through one function (Appendix A). Every one of these must go through a resolver that returns the study's tier root.
+
+- **C++:** add `Study::ArchiveRoot()`, returning the root for `study_datatier` (falling back to `cfg["archivedir"]`). Change `Study::StudyPath()`, `Series::SeriesPath()`, and `Subject::SubjectPath()` to use it.
+- **Subjects can span tiers**, because tiers are per study. Subject-level operations must resolve the path per study, not once per subject.
+- **PHP:** add `GetStudyArchiveRoot($studyid)` and `GetStudyPath($studyid)` to `functions.php`, and replace the inline `$GLOBALS['cfg']['archivedir']` reads.
+- **Review rule:** new code must not read `cfg["archivedir"]` directly.
+
+**Conversion order**
+1. `study.cpp`, `series.cpp`, `subject.cpp`.
+2. `archiveio.cpp`, which sets the initial tier (default) at archive time.
+3. `moduleExport.cpp`, `modulePipeline.cpp`, `moduleMRIQA.cpp`, `moduleQC.cpp`.
+4. All PHP sites.
+
+**Watch for**
+- `audit.php` walks the archive through a local `$archivedir` variable in 7 places (`scandir($archivedir)`, `glob("$archivedir/$subject/…")`). A grep for `cfg['archivedir']` won't find them.
+- These references are config management, not path building, and stay as they are:
+  - The `functions.php` Settings form field, `WriteConfig()` line, and default setter.
+  - The save handlers in `settings.php`, `setup.php`, and `system.php`.
+  - The `adminstorage.php` default-row display.
+  - Comments in `getfile.php`.
+  - Log messages in `moduleFileIO.cpp`.
+
+## 5. Migration worker (`moduleDataTier`)
+
+The worker follows the standard module contract: `ModuleRunningCheckIn()`, `ModuleCheckIfActive()`, `module_procs`, and a thread count from `cfg["moduledatatierthreads"]`.
+
+Each job is a state machine that can resume from `next_state` after a crash:
+
+1. **`pending`:** claim the row. Confirm the study is idle (§6) and take an exclusive lock in `object_locks` (owner type `tiermigration`; see [`data-transfer.md`](data-transfer.md) §9.1).
+2. **`copying`:** `rsync -a {fromroot}/{UID}/{studynum}/ {toroot}/{UID}/{studynum}/`. Never use `rename()`, because tiers may be on different filesystems. Update `bytes_done` and `file_count`.
+3. **`verifying`:** compare file count and total size between source and destination, and set `verify_ok`. rsync already checksums each file during transfer, so there's no separate checksum pass. On a mismatch, go to `error`, leaving the source untouched and the destination in place for inspection.
+4. **`flipping`:** in one transaction, set `studies.study_datatier = to_tier` and `status = 'cleanup'`. This is the commit point: the resolver now returns the new location.
+5. **`cleanup`:** delete the source directory (no symlink left behind), set `status = 'completed'`, and release the lock.
+6. **`error`** (from any step): stop, record `error_msg`, keep both copies, and release the lock.
+
+**Cancel** is allowed in `pending`, `copying`, and `verifying`. The worker stops, deletes the partial destination, leaves the source untouched, releases the lock, and sets `cancelled`. This is safe because `study_datatier` hasn't changed. Once `flipping` starts, the job runs to completion.
+
+**Crash safety.** A crash before the flip leaves the study pointing at the intact source, and the job can be re-run. A crash after the flip leaves the study pointing at the complete destination; re-running cleanup is safe.
+
+**Before copying**, check that the destination has enough free space for `bytes_total` plus a margin.
+
+## 6. Concurrency
+
+- A study can migrate only when it is **idle**: no active job in the archive, QC, MRIQA, pipeline, or export queues. The worker checks this before claiming the job and holds the study lock until it finishes.
+- Those modules must skip or defer a study that has an exclusive lock. `object_locks` is shared with NiDB-to-NiDB transfers, so one lock check covers both features.
+- `moduleManager` already clears stale modules through `module_procs`. The tier worker gets the same long check-in allowance as backup and export, because large copies are slow.
+
+## 7. Web UI
+
+- **Study page:** a tier badge and a "Move to tier…" action, which adds a `pending` migration. The action is disabled while a migration for that study is active.
+- **Bulk:** "Move selected studies to tier X" from project or search results.
+- **Migration status page:** queue and history with progress, bytes, and errors, plus a Cancel button before the flip.
+- **Target list:** only configured tiers (`storage_type` not NULL) can be migration targets. A study already on an unconfigured tier can still be read and moved off it. This lets an admin stop using a mount, drain it, then remove it.
+- **Admin:** `adminstorage.php` (done).
+
+## 8. Phases
+
+1. **Foundation (no behavior change):** add `study_datatier`, the C++ and PHP resolvers, and convert the domain classes. With one tier this behaves exactly as today. *(Config keys, `storage_tiers`, and `adminstorage.php` are done.)*
+2. **Convert read paths:** the remaining C++ modules and all PHP sites, then adopt the review rule.
+3. **Migration worker:** the `storage_tier_migration` table, `moduleDataTier`, locking and idle checks, and module wiring.
+4. **UI:** study and bulk enqueue, tier badges, and the status page.
+5. **Scheduled movement (optional):** rules such as "no access in N days → archive tier", feeding the same queue.
+
+Phases 1–2 must be finished before migration ships. A study whose source is deleted after a move becomes unreadable to any code that still builds paths from `archivedir`.
+
+## 9. Risks and constraints
+
+- The resolver refactor (phases 1–2) is the largest and riskiest part.
+- Code must run on both PHP 7.2 and PHP 8.
+- Every tier, including cold/archive tiers, must be encrypted at rest (see [`nist-800-171.md`](nist-800-171.md) 3.13.16).
+- Copies cross filesystems; the worker must handle a full disk.
+
+## 10. Open decisions
+
+1. **S3/GCS tiers.** `storage_type` allows `s3` and `gcs`, but the worker (rsync) and the resolver (filesystem paths) only work with `nfs`. Choose between restricting migration to `nfs` tiers for now and designing an object-storage path (mounted via s3fs/gcsfuse, or native API copies with reads staged locally).
+2. **How "idle" is detected (§6).** Decide whether to query each module's queue tables or rely on those modules taking `object_locks` themselves. `data-transfer.md` T20 defers lock checks in other modules.
+3. **Scheduled movement rules (phase 5):** which criteria, and where they are configured.
+
+---
+
+## Appendix A. `archivedir` references to convert
+
+Count of `archivedir` config reads per file (`archivedir1`–`archivedir4` excluded, top-level files only). A line with two references counts as two. Verified 2026-09-09.
+
+**C++ (`src/nidb`), `cfg["archivedir"]`: 29 references in 8 files**
 
 | File | References |
 |------|-----------:|
@@ -61,7 +177,7 @@ Re-verified 2026-09-09 against the current tree (live site `/var/www/html`, C++ 
 | `moduleMRIQA.cpp` | 2 |
 | `moduleQC.cpp` | 1 |
 
-**PHP (`/var/www/html`) — `$GLOBALS['cfg']['archivedir']`: 60 references across 57 lines in 19 files**
+**PHP (`/var/www/html`), `$GLOBALS['cfg']['archivedir']`: 60 references in 19 files**
 
 | File | References |
 |------|-----------:|
@@ -84,237 +200,3 @@ Re-verified 2026-09-09 against the current tree (live site `/var/www/html`, C++ 
 | `viewfile.php` | 1 |
 | `viewimage.php` | 1 |
 | `viewimagefile.php` | 1 |
-
-### 1.2 Ambiguous / non-path mentions (per file)
-
-Lines that mention `archivedir` but are **not** a clear config read. Called out so the resolver
-refactor neither misses a real usage nor needlessly touches config-management code.
-
-- **`audit.php` (PHP) — real usage via indirection.** Beyond its 1 clear read, it traverses the
-  archive at **7 sites** through a local `$archivedir` variable (`scandir($archivedir)`,
-  `glob("$archivedir/$subject/$study/$series/dicom/*.dcm")`, etc.). A plain `cfg['archivedir']`
-  grep misses these — the resolver work must catch the local-variable form here.
-- **`functions.php` (PHP) — config management, not path construction.** The Settings form field
-  (`name="archivedir"`), the `WriteConfig()` template line (`[archivedir] = $archivedir`), and the
-  default-setter (`if ($archivedir == "") …`) belong to config handling and stay as-is.
-- **`settings.php`, `setup.php`, `system.php` (PHP) — settings save handlers.** Each has one
-  `$c['archivedir'] = GetVariable("archivedir")` (writing config). Not archive reads; not
-  tiering-relevant.
-- **`adminstorage.php` (PHP) — display only.** Besides its 1 read, the remaining mentions are the
-  default-row label and a comment.
-- **`getfile.php` (PHP) — comment only** (a security note); the 1 read is counted above.
-- **`moduleFileIO.cpp` (C++) — log text only.** Two mentions are inside log-message strings
-  ("moving DICOM files from archivedir to incomingdir"); no path is built from the config here.
-
----
-
-## 2. Tiered storage design — DETAILED PLAN
-
-### 2.0 Decisions locked in
-- **Registry model: Hybrid.** Tier **roots** (filesystem paths) are defined in `nidb.cfg` — kept in
-  ops control, not editable through the web. Tier **metadata** (type, credentials, capacity,
-  enabled) lives in the database and is managed by `adminstorage.php`. Tier **assignment per study**
-  and **migration state** (planned) will also live in the database. *(Tier roots + metadata + admin
-  UI are implemented; per-study assignment + migration are still to build.)*
-- **Migration engine: Queued module worker.** A new `module*` worker (modeled on
-  `moduleExport`/`moduleBackup`) drains a migration queue table. No large copies run inside a web
-  request.
-- **Granularity:** imaging **study** level. Subjects/series inherit their study's tier (a study
-  owns `{UID}/{studynum}/…`). Non-imaging data and pipeline analysis outputs are out of scope
-  (see §2.9).
-- **Scope: `archivedir` only.** Tiering applies **solely** to the imaging archive root
-  (`archivedir` and its alternates `archivedir1`–`archivedir4`). Every other config directory
-  (`analysisdir*`, `backupdir`, `exportdir`, `incomingdir`, `uploaddir*`, `downloaddir*`, `tmpdir`,
-  `deleteddir`, etc.) is left exactly as it is today. "Tier root" is therefore synonymous with "an
-  `archivedir`-family path."
-
-### 2.1 Concept
-Generalize the single `archivedir` into a small fixed set of named tiers. Each study records which
-tier holds its data; its on-disk layout **within** a tier root is unchanged
-(`{tierroot}/{UID}/{studynum}/…`). Migration = copy a study subtree from one tier root to another,
-verify, flip the study's recorded tier, then remove the source.
-
-### 2.2 Config format (tier roots) — IMPLEMENTED
-Rather than the originally-planned arbitrary `datatier_*` prefix scheme, tiering uses **four fixed
-alternate archive roots** alongside the existing base archive, all flat `[key] = value` entries in
-`nidb.cfg`:
-
-```
-# ----- Directories -----
-[archivedir]  = /nidb/data/archive    # base / default ("active") tier
-[archivedir1] = /mnt/tier1/archive    # optional alternate tier
-[archivedir2] = /mnt/tier2/archive    # optional
-[archivedir3] =                       # optional
-[archivedir4] =                       # optional
-```
-
-- `archivedir1`–`archivedir4` are written by `WriteConfig()`, editable on the **Settings** page,
-  and **blank (opt-in) by default**. See [`config-variables.md`](config-variables.md).
-- **Back-compat:** with `archivedir1`–`archivedir4` blank, only the base `archivedir` tier exists
-  and installs behave exactly as today. `archivedir` remains the physical root of the default tier.
-- Both the C++ binary and PHP read the same `nidb.cfg`, so both get the tier roots for free.
-- **The path lives only in `nidb.cfg`** (not editable through the DB) so it is still known if the
-  database is unavailable. The DB mirror (§2.3) is kept in sync *from* config, never the reverse.
-
-### 2.3 Data model
-1. **`storage_tiers`** — **IMPLEMENTED.** One row per tier config key (`archivedir1`–`archivedir4`),
-   holding per-tier metadata:
-   ```
-   storagetier_id PK, storage_configname ('archivedir1'..'archivedir4'),
-   storage_type ENUM('nfs','s3','gcs') NULL, storage_path TEXT,
-   storage_username, storage_password, storage_token, storage_capacity (GB)
-   ```
-   - `storage_type = NULL` marks the tier as **not configured**.
-   - `storage_path` is **mirrored from `nidb.cfg`** (config-authoritative, read-only in the UI).
-   - Exactly 4 rows, auto-created and kept in sync by the admin page.
-   - Managed via **`adminstorage.php`** (Admin → Storage tiers): edit type / credentials / capacity;
-     view the config path, whether it exists on disk, and live `df` disk usage; mark a tier
-     configured or not. This is the "hybrid" split — roots in config, metadata in the DB.
-2. **`studies.study_datatier`** — **PLANNED.** `VARCHAR(32) NOT NULL DEFAULT 'archivedir'`. Holds
-   the tier config-key name a study's data lives in. The default makes every existing study resolve
-   to the base `archivedir`. (Name, not FK, keeps it decoupled from a DB tier table and robust to
-   config-defined roots.)
-3. **`storage_tier_migration`** — **PLANNED.** The queue + history table:
-   ```
-   migration_id PK, study_id FK, from_tier, to_tier,
-   status ENUM('pending','copying','verifying','flipping','cleanup','completed','error','cancelled'),
-   bytes_total, bytes_done, file_count, verify_ok,
-   requested_by, request_date, start_date, end_date, error_msg, next_state
-   ```
-   One in-flight row per study (unique partial index on `study_id` where status not terminal).
-   Serves as both work queue and audit log.
-4. **`module_procs`** integration + a new `[moduledatatierthreads]` config key, matching the other
-   `module*threads` workers — **PLANNED.**
-
-All new queries use prepared/bound statements (`MySQLiBoundQuery` in PHP; parameterized `QSqlQuery`
-in C++).
-
-### 2.4 Path resolution — the core refactor
-Introduce **one** resolver and route every archive-path construction through it.
-
-- **C++:** add `Study::ArchiveRoot()` returning `tierRoot(study_datatier)` (falls back to
-  `cfg["archivedir"]`). `Study::StudyPath()`, `Subject::SubjectPath()`, `Series::SeriesPath()`
-  already centralize layout — extend them to source the root from the study's tier instead of
-  `cfg["archivedir"]`. Subject path is tricky (a subject can span studies in different tiers);
-  since tiering is per-study, subject-level operations must resolve per-study, not once.
-- **PHP:** add `GetStudyArchiveRoot($studyid)` / `GetStudyPath($studyid)` helpers; replace the
-  inline `cfg['archivedir']` sites.
-- **Triage order** (from §1 — the decentralized C++ + PHP sites; see `config-variables.md` for
-  counts):
-  1. Domain classes `study.cpp` / `series.cpp` / `subject.cpp` (the seam).
-  2. `archiveio.cpp` — write path at archive time (sets initial tier = default).
-  3. `moduleExport.cpp`, `modulePipeline.cpp`, `moduleMRIQA.cpp`, `moduleQC.cpp` — read paths; must
-     resolve per-study.
-  4. All PHP read sites (downloads, views, exports).
-- **Guard:** a code-review rule that new code must not reference `cfg["archivedir"]` directly —
-  always go through the resolver.
-
-### 2.5 Migration module (`moduleDataTier`)
-New worker following the established module contract (`ModuleRunningCheckIn()`,
-`ModuleCheckIfActive()`, `module_procs`, thread count from `cfg["moduledatatierthreads"]`).
-
-**Per job (one `storage_tier_migration` row), state machine (resumable via `next_state`):**
-1. `pending` → claim row, re-check study is idle (not being archived/QC'd/pipelined — see §2.6).
-   Acquire an exclusive lock on the study in `object_locks` (owner_type `tiermigration`; see
-   `doc/data-transfer.md` §9.1).
-2. `copying` → copy `{fromroot}/{UID}/{studynum}` → `{toroot}/{UID}/{studynum}` with `rsync -a`
-   (cross-filesystem safe; tiers may be different mounts, so **no `rename()`**). Update
-   `bytes_done`/`file_count` for progress.
-3. `verifying` → **count + size** check, source vs. dest, and set `verify_ok`. No separate
-   checksum pass: rsync already verifies each file's content in-flight (block + whole-file
-   checksums during transfer, re-sending anything that mismatches), so bytes are confirmed correct
-   as they land; the count+size pass just confirms completeness. Abort to `error` on mismatch
-   (dest left for inspection, source untouched).
-4. `flipping` → **atomic commit point:** in one transaction, set `studies.study_datatier = to_tier`
-   and `status='cleanup'`. After this the resolver serves the new location.
-5. `cleanup` → delete source subtree `{fromroot}/{UID}/{studynum}` (clean removal — no symlink
-   left behind); `status='completed'`.
-6. `error` at any step → stop, record `error_msg`, keep both copies where safe, release lock.
-
-**Cancellation:** allowed while `pending`/`copying`/`verifying` (before the flip). The UI sets a
-cancel request; the worker (or the enqueue guard, if still pending) stops, deletes the **partial
-destination** subtree, leaves the source untouched, releases the lock, and sets `cancelled`. Safe
-because the DB tier pointer never moved — the study still resolves to the intact source, and a
-partial dest can never be read as live data. Once `flipping` starts, cancel is refused and the job
-runs to completion.
-
-**Safety properties:**
-- The flip is the single source-of-truth switch; a crash before it → resolver still points at
-  source (safe, re-runnable); after it → source deletion is idempotent (re-runnable).
-- Per-study lock + "study idle" precondition prevents racing the archive/QC/pipeline modules.
-- Cross-mount aware; verify-before-flip; source retained until after successful flip.
-
-### 2.6 Concurrency with other modules
-- A study is **migratable only when idle.** Define idle = not currently referenced by an active
-  job in the archive/QC/MRIQA/pipeline/export queues. The module checks these before claiming and
-  holds the per-study lock for the duration.
-- Conversely, those modules must **refuse/defer** work on a study that has an exclusive lock.
-  The lock lives in the shared `object_locks` table, also used by NiDB → NiDB transfers
-  (`doc/data-transfer.md` §9.1), so one `GetLock()` check covers both features.
-- `moduleManager` already reaps stale modules via `module_procs`; `datatier` joins that mechanism
-  (with a long/without-checkin allowance like backup/export, since big copies are slow).
-
-### 2.7 Web UI / API
-- **Study view:** show current tier (badge) and a "Move to tier…" action → enqueues a
-  `storage_tier_migration` row (`pending`). Disabled if a migration is already in-flight.
-- **Bulk:** project- or criteria-level "move selected studies to tier X" → bulk enqueue.
-- **Status view:** a queue/history page (like the remote-import batch list) showing progress,
-  bytes, and errors; allow cancel any time before the flip (`pending`/`copying`/`verifying`) —
-  worker deletes the partial dest, source stays intact (§2.5).
-- **Target list:** the "Move to tier…" picker offers only **configured** tiers (`storage_type` not
-  NULL); a study currently on a now-unconfigured tier still shows/reads normally and can be moved
-  off it.
-- **Admin:** `adminstorage.php` manages the tier metadata (type, credentials, capacity) —
-  implemented. A future "enabled/disabled as migration target" flag would live here too.
-- All server-side inserts/updates use bound statements.
-
-### 2.8 Scheduled tier movement (later phase)
-Optional rules engine (e.g. "studies with no access in N days → `archive`"), implemented as a
-periodic enqueue step feeding the same queue. Deferred to a later phase; not required for MVP.
-
-### 2.9 Out of scope (explicit)
-- Non-imaging data (observations, timeseries, instruments).
-- Pipeline **analysis outputs** (`analysisdir`/`analysisdirb`/`groupanalysisdir`): they stay put.
-  Note pipelines *read* study inputs from the archive — those reads must go through the resolver so
-  they still find data after a study moves tiers.
-- Backup (`backupdir`) / export (`exportdir`) destinations are unchanged, but both **read** study
-  paths and so must use the resolver (§2.4 triage item 3).
-
-### 2.10 Implementation phases
-1. **Foundation (no behavior change):**
-   - **Done:** tier config keys `archivedir1`–`archivedir4` (with `archivedir` as the default
-     tier), the `storage_tiers` table, and the `adminstorage.php` management UI.
-   - **To do:** `study_datatier` column (default `archivedir`); the C++ + PHP resolver; convert the
-     domain classes and highest-traffic sites. Ships invisibly — one default tier == today.
-2. **Read-path conversion:** convert remaining C++ modules + all PHP archive-path sites to the
-   resolver; add the "no direct `archivedir`" review rule.
-3. **Migration engine:** `storage_tier_migration` table, `moduleDataTier` worker, per-study
-   locking + idle checks, module_procs/threads wiring.
-4. **UI/API:** study + bulk enqueue, tier badges, status/history page.
-5. **Scheduling (optional):** rule-based auto-migration.
-
-### 2.11 Risks & constraints
-- Dual **PHP 7.2 / 8**; prepared statements throughout.
-- **Cross-filesystem** copies (no `rename()`); verify before flip; retain source until flip.
-- **Decentralized paths** (§1) — the refactor is the largest/riskiest part; phases 1–2 de-risk it
-  before any migration exists.
-- **Subject spanning tiers:** subject-level ops must resolve per study, not once.
-- Free-space checks on the destination tier before copy; disk-full handling.
-
-### 2.12 Resolved decisions
-1. **Verification depth:** count + size only, relying on rsync's in-transfer verification for
-   byte-level integrity. No separate/opt-in checksum pass (a second full read of a cold tier can
-   nearly double migration time on large small-file studies for narrow benefit).
-2. **Source cleanup:** **clean removal** — delete the source subtree after the flip. The resolver
-   points every reader at the new tier, so no symlink is needed; this frees the space (and inodes)
-   that tiering exists to reclaim. Depends on phases 1–2 having converted all path sites so nothing
-   bypasses the resolver.
-3. **Unconfigured tier (`storage_tiers.storage_type IS NULL`):** hidden from new-study assignment
-   and rejected as a migration **target**, but reads and migrating **out** stay allowed — supporting
-   the "stop using, then drain, then decommission a mount" workflow. Reads are never blocked (the
-   data physically lives there).
-4. **Cancel:** allowed **any time before the flip** (`pending`/`copying`/`verifying`). On cancel:
-   stop the worker, delete the partial destination subtree, leave the source untouched, mark
-   `cancelled`. Safe because the DB tier pointer never moved, so the study still resolves to the
-   intact source and a partial dest can never be mistaken for live data. Once `flipping` begins the
-   job runs to completion.
