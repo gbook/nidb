@@ -833,6 +833,45 @@ bool imageIO::AnonymizeDicomDir(QString indir, QString outdir, int anonlevel, QS
 
 
 /* ---------------------------------------------------------- */
+/* --------- NormalizeDicomTime ----------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Convert a DICOM time (TM) value to hh:mm:ss. TM is HH, HHMM, HHMMSS, or HHMMSS.F with 1 to 6
+ * fraction digits (ie, 152241.9993). Older (ACR-NEMA) files may use HH:MM:SS, with an optional
+ * fraction. The fraction is dropped
+ * @param t The DICOM time
+ * @param hms Set to hh:mm:ss if the time is valid
+ * @return true if the time was converted
+ */
+static bool NormalizeDicomTime(QString t, QString &hms) {
+    t = t.trimmed();
+
+    if (t.contains(':')) {
+        hms = t.left(8);
+        return true;
+    }
+
+    QString whole = t.section('.', 0, 0);
+    if (whole.isEmpty())
+        return false;
+    foreach (QChar c, whole)
+        if (!c.isDigit())
+            return false;
+
+    if (whole.size() == 6)
+        hms = whole.left(2) + ":" + whole.mid(2, 2) + ":" + whole.mid(4, 2);
+    else if (whole.size() == 4)
+        hms = whole.left(2) + ":" + whole.mid(2, 2) + ":00";
+    else if (whole.size() == 2)
+        hms = whole + ":00:00";
+    else
+        return false;
+
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetImageFileTags ------------------------------- */
 /* ---------------------------------------------------------- */
 /**
@@ -1046,22 +1085,11 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
         tags["StudyTime"] = "00:00:00";
     }
     else {
-        if (tags["StudyTime"].contains(":")) {
-            tags["StudyTime"] = tags["StudyTime"].left(8);
-        }
-        else if (((tags["StudyTime"].size() == 12) || (tags["StudyTime"].size() == 13)) && (tags["StudyTime"].contains("."))) {
-            //Print("StudyTime before [" + tags["StudyTime"] + "]");
-            tags["StudyTime"] = tags["StudyTime"].left(6);
-            //Print("StudyTime after [" + tags["StudyTime"] + "]");
-        }
-        else {
-            Print("StudyTime is not 12, 13 or 15 characters [" + tags["StudyTime"] + "]");
-        }
-
-        if (tags["StudyTime"].size() == 6) {
-            tags["StudyTime"].insert(4,':');
-            tags["StudyTime"].insert(2,':');
-        }
+        QString hms;
+        if (NormalizeDicomTime(tags["StudyTime"], hms))
+            tags["StudyTime"] = hms;
+        else
+            Print("StudyTime [" + tags["StudyTime"] + "] is not a valid DICOM time (HH, HHMM, HHMMSS, or HHMMSS.FFFFFF)");
     }
 
     /* some images may not have a series date/time, so substitute the studyDateTime for seriesDateTime */
@@ -1069,23 +1097,11 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
         tags["SeriesTime"] = tags["StudyTime"];
     else {
 
-        if (tags["SeriesTime"].contains(":")) {
-            tags["SeriesTime"] = tags["SeriesTime"].left(8);
-        }
-        else if (((tags["SeriesTime"].size() == 12) || (tags["SeriesTime"].size() == 13)) && (tags["SeriesTime"].contains("."))) {
-            tags["SeriesTime"] = tags["SeriesTime"].left(6);
-        }
-        else if (((tags["SeriesTime"].size() == 14) || (tags["SeriesTime"].size() == 15)) && (tags["SeriesTime"].contains(":"))) {
-            tags["SeriesTime"] = tags["SeriesTime"].left(8);
-        }
-        else {
-            Print("SeriesTime is not 12, 13 or 15 characters [" + tags["SeriesTime"] + "]");
-        }
-
-        if (tags["SeriesTime"].size() == 6) {
-            tags["SeriesTime"].insert(4,':');
-            tags["SeriesTime"].insert(2,':');
-        }
+        QString hms;
+        if (NormalizeDicomTime(tags["SeriesTime"], hms))
+            tags["SeriesTime"] = hms;
+        else
+            Print("SeriesTime [" + tags["SeriesTime"] + "] is not a valid DICOM time (HH, HHMM, HHMMSS, or HHMMSS.FFFFFF)");
     }
 
     tags["StudyDateTime"] = tags["StudyDate"] + " " + tags["StudyTime"];
