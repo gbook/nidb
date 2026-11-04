@@ -2,6 +2,7 @@
 
 # NiDB modules - run every minute
 * * * * * cd /nidb/bin; ./nidb modulemanager > /dev/null 2>&1
+* * * * * cd /nidb/bin; ./nidb audit > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb backup > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb export > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb exportnonimaging > /dev/null 2>&1

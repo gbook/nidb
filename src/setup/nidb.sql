@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Oct 30, 2026 at 06:17 PM
+-- Generation Time: Nov 04, 2026 at 07:32 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -259,7 +259,7 @@ CREATE TABLE `audits` (
   `project_id` int(11) NOT NULL COMMENT '0 indicates systemwide audit',
   `audit_type` enum('seriesfiles','analysisfiles','qualitycontrol') NOT NULL,
   `audit_fixerrors` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'true to fix audit errors, such as file count/size discrepancy',
-  `audit_options` set('duplicatesubjects','duplicatestudies','empty','missingdemographics','invaliddob','dicommetadata') DEFAULT NULL COMMENT 'qualitycontrol audits: the checks to run',
+  `audit_options` set('duplicatesubjects','duplicatestudies','empty','missingdemographics','invaliddob','dicommetadata','duplicatesubjectsproject') DEFAULT NULL COMMENT 'qualitycontrol audits: the checks to run',
   `audit_status` enum('started','auditing','finishing','complete','error','stopped','') NOT NULL,
   `audit_message` text DEFAULT NULL COMMENT 'Message associated with the status change',
   `audit_objectprogress` bigint(20) DEFAULT NULL COMMENT 'the number of objects checked so far',
@@ -285,6 +285,20 @@ CREATE TABLE `audit_log` (
   `issue_fixed` tinyint(1) DEFAULT NULL COMMENT 'true if something was fixed',
   `issue_fixedmessage` text DEFAULT NULL COMMENT 'description of what was fixed'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `audit_log_objects`
+--
+
+CREATE TABLE `audit_log_objects` (
+  `auditlogobject_id` bigint(20) NOT NULL,
+  `auditlog_id` bigint(20) NOT NULL COMMENT 'The issue this object belongs to',
+  `object_type` enum('subject','enrollment','study','series','analysis') NOT NULL COMMENT 'The type of object',
+  `object_id` int(11) NOT NULL COMMENT 'The database rowID of the object',
+  `object_note` text DEFAULT NULL COMMENT 'Why this object is part of the issue, ie which other objects it matched and how'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci COMMENT='Objects involved in an audit issue that has more than one, ie a group of suspected duplicate subjects';
 
 -- --------------------------------------------------------
 
@@ -3931,6 +3945,13 @@ ALTER TABLE `audit_log`
   ADD KEY `audit_id` (`audit_id`);
 
 --
+-- Indexes for table `audit_log_objects`
+--
+ALTER TABLE `audit_log_objects`
+  ADD PRIMARY KEY (`auditlogobject_id`),
+  ADD KEY `auditlog_id` (`auditlog_id`);
+
+--
 -- Indexes for table `audit_results`
 --
 ALTER TABLE `audit_results`
@@ -5194,6 +5215,12 @@ ALTER TABLE `audits`
 --
 ALTER TABLE `audit_log`
   MODIFY `auditlog_id` bigint(20) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `audit_log_objects`
+--
+ALTER TABLE `audit_log_objects`
+  MODIFY `auditlogobject_id` bigint(20) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `audit_results`

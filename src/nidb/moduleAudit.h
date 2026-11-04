@@ -62,7 +62,7 @@ private:
 
     /* quality control checks. Each returns the number of issues found, and sets ok to false on an SQL error */
     bool QCLoadSubjects(int projectid, QList<qcSubject> &subjects);
-    qint64 QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok);
+    qint64 QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool projectAltUIDsOnly, bool &ok);
     qint64 QCDuplicateStudies(qint64 auditid, int projectid, bool &ok);
     qint64 QCEmptyObjects(qint64 auditid, int projectid, bool &ok);
     qint64 QCMissingDemographics(qint64 auditid, const QList<qcSubject> &subjects);
@@ -84,7 +84,8 @@ private:
     QString GetAuditStatus(qint64 auditid);
     void SetAuditStatus(qint64 auditid, QString status, QString msg, bool ended=false);
     void SetAuditProgress(qint64 auditid, qint64 progress, qint64 total);
-    void LogAuditIssue(qint64 auditid, QString issueType, QString objectType, qint64 objectid, QString msg, int fixed, QString fixedMsg);
+    qint64 LogAuditIssue(qint64 auditid, QString issueType, QString objectType, qint64 objectid, QString msg, int fixed, QString fixedMsg);
+    void LogAuditIssueObject(qint64 auditlogid, QString objectType, qint64 objectid, QString note);
 
     nidb *n;
 };

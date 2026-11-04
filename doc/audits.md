@@ -30,22 +30,33 @@ Scope: one project only. Fix errors: never. Issues are only reported, and must b
 
 Any combination of the checks below can be selected (`audits.audit_options`).
 
-### Duplicate subjects (`duplicatesubjects`)
+### Duplicate subjects (`duplicatesubjectsproject`, `duplicatesubjects`)
 
-Compares every pair of subjects enrolled in the project. Each pair is reported once, under the strongest matching rule, as a `duplicateSubject` issue on the subject with the lower ID. The log records only the UIDs and the rule, not names or DOBs.
+Two versions of the same check, which differ only in which alternate IDs are compared:
+
+| Option | Alternate IDs compared | Selected by default |
+|---|---|---|
+| `duplicatesubjectsproject` | Only alternate IDs recorded for an enrollment in this project (`subject_altuid.enrollment_id`) | Yes |
+| `duplicatesubjects` | All of the subjects' alternate IDs, from any project | No |
+
+If both are selected, only `duplicatesubjects` runs.
+
+Every pair of subjects enrolled in the project is compared. Each pair is matched by its strongest rule. Pairs that share a subject are merged into one group (if A matches B, and B matches C, then A, B, and C are one group). Each group is one `duplicateSubject` issue, on the subject with the lowest ID. Every subject in the group is recorded in `audit_log_objects`, with the subjects it matched and the rule. The log records only UIDs and rules, not names or DOBs. Clicking the issue shows the group's subjects with their current name, DOB, sex, alternate IDs, enrollments, and studies.
+
+A group is reported as *Likely duplicates* if any of its pairs matched a likely rule, otherwise as *Possible duplicates*.
 
 Names (`subjects.name`) are compared as words: lowercase, accents removed, any non-letter (`^`, space, comma, hyphen) is a separator, and single letters (initials) are ignored. A DOB (`subjects.birthdate`) is only compared if it is present and valid (see *Invalid DOB*). Sex is `subjects.gender`.
 
-| Rule | Reported as |
+| Rule | Strength |
 |---|---|
-| Same name, same DOB, same sex | Likely duplicate |
-| Same name, same DOB, sex differs or missing | Likely duplicate |
-| First/last name transposed, same DOB (with or without the same sex) | Likely duplicate |
-| Same alternate ID (`subject_altuid.altuid`) | Likely duplicate |
-| Similar name (edit distance ≤ 1, or ≤ 2 for names of 10+ letters), same full DOB (YYYY-MM-DD) | Possible duplicate |
-| Same name (or transposed), DOB differs or missing | Possible duplicate |
+| Same name, same DOB, same sex | Likely |
+| Same name, same DOB, sex differs or missing | Likely |
+| First/last name transposed, same DOB (with or without the same sex) | Likely |
+| Same alternate ID (`subject_altuid.altuid`) | Likely |
+| Similar name (edit distance ≤ 1, or ≤ 2 for names of 10+ letters), same full DOB (YYYY-MM-DD) | Possible |
+| Same name (or transposed), DOB differs or missing | Possible |
 
-If more than 25 subjects share the same name (probably a placeholder name), one issue lists them instead of every pair.
+If more than 25 subjects share a name or an alternate ID (probably a placeholder), each is linked to the first of them rather than to every other one, so they still form one group.
 
 ### Duplicate studies (`duplicatestudies`)
 

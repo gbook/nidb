@@ -52,13 +52,17 @@
 
 	/* quality control checks, and their descriptions. Keys must match the audits.audit_options set. The criteria are listed in doc/audits.md */
 	$qcchecklist = array(
-		'duplicatesubjects' => 'Duplicate subjects - same or similar name, DOB, sex (including transposed first/last name), or a shared alternate ID',
+		'duplicatesubjectsproject' => 'Duplicate subjects - same or similar name, DOB, sex (including transposed first/last name), or an alternate ID shared within this project',
+		'duplicatesubjects' => 'Duplicate subjects, comparing alternate IDs from all projects - the same as above, but also compares the alternate IDs from the subjects\' enrollments in other projects. Projects that number their subjects 1, 2, 3... will cause many false positives',
 		'duplicatestudies' => 'Duplicate studies - the same study under two or more subjects (same StudyInstanceUID, or same modality and date/time)',
 		'empty' => 'Empty subjects, enrollments, and studies - no series, studies, observations, or interventions',
 		'missingdemographics' => 'Missing demographics - no name, sex, or DOB',
 		'invaliddob' => 'Invalid DOB - placeholder dates (1900-01-01, 1776-07-04, ...), impossible dates, in the future, or after the first study. YYYY and YYYY-MM DOBs are valid',
 		'dicommetadata' => 'DICOM metadata - every DICOM file\'s PatientID, StudyDate/StudyTime, and SeriesNumber match its subject, study, and series (slow, reads every file)'
 	);
+
+	/* quality control checks that are not selected by default */
+	$qcchecksoffbydefault = array('duplicatesubjects');
 
 	/* statuses where the audit module has not finished with the audit */
 	$activestatuses = array('started', 'auditing', 'finishing');
@@ -75,6 +79,21 @@
 		}
 		else {
 			echo json_encode(GetAuditStatus());
+		}
+		exit;
+	}
+
+	/* details of an issue that involves more than one object (ie, a group of suspected duplicate
+	   subjects), as an HTML fragment for the issue modal. Handled before any page chrome is rendered */
+	if ($action == "issuedetails") {
+		while (ob_get_level() > 0) ob_end_clean();
+		header('Content-Type: text/html; charset=utf-8');
+		if (!isSiteAdmin()) {
+			http_response_code(403);
+			echo "Not authorized";
+		}
+		else {
+			DisplayIssueDetails((int)GetVariable("auditlogid"));
 		}
 		exit;
 	}
@@ -240,6 +259,11 @@
 
 		MySQLiQuery("start transaction", __FILE__, __LINE__);
 
+		$sqlstring = "delete o from audit_log_objects o inner join audit_log l on o.auditlog_id = l.auditlog_id where l.audit_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $auditid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$auditid]);
+
 		$sqlstring = "delete from audit_log where audit_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $auditid);
@@ -322,6 +346,134 @@
 		/* data-percent is required: Fomantic makes the bar transparent without it. The count is rendered
 		   below the bar in normal flow, because a .label is absolutely positioned and overflows the cell */
 		return '<div style="min-width: 200px"><div class="ui ' . $color . ' progress" data-percent="' . $percent . '" style="margin: 0"><div class="bar" style="width: ' . $percent . '%; min-width: 2.5em"><div class="progress" style="color: #fff">' . $percent . '%</div></div></div><div style="font-size: 0.85em; color: #666; text-align: center; margin-top: 0.2em">' . number_format($progress) . ' of ' . number_format($total) . '</div></div>';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayIssueDetails ---------------- */
+	/* -------------------------------------------- */
+	/* the objects involved in one issue (audit_log_objects), as an HTML fragment for the issue modal.
+	   Subjects are shown with their current metadata, so the user can decide which to keep and fix */
+	function DisplayIssueDetails($auditlogid) {
+		$auditlogid = (int)$auditlogid;
+
+		$sqlstring = "select * from audit_log where auditlog_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $auditlogid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$auditlogid]);
+		if (mysqli_num_rows($result) < 1) {
+			?><div class="ui error message">Issue [<?=$auditlogid?>] not found</div><?
+			return;
+		}
+		$issue = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+		$members = array();
+		$sqlstring = "select object_type, object_id, object_note from audit_log_objects where auditlog_id = ? order by auditlogobject_id";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $auditlogid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$auditlogid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$members[] = $row;
+		?>
+		<p><b><?=htmlspecialchars($issue['issue_type'])?></b> &nbsp; <?=htmlspecialchars($issue['issue_message'] ?? '')?></p>
+		<?
+		if (count($members) < 1) {
+			?><div class="ui message">This issue has no objects listed</div><?
+			return;
+		}
+
+		/* only subjects have a detailed view. Other objects are listed with their note */
+		if ($members[0]['object_type'] != 'subject') {
+			?>
+			<table class="ui celled compact table">
+				<thead><tr><th>Object</th><th>Note</th></tr></thead>
+				<? foreach ($members as $m) { ?>
+				<tr><td><?=htmlspecialchars($m['object_type'] . ' ' . $m['object_id'])?></td><td><?=nl2br(htmlspecialchars($m['object_note'] ?? ''))?></td></tr>
+				<? } ?>
+			</table>
+			<?
+			return;
+		}
+		?>
+		<div style="overflow-x: auto">
+		<table class="ui celled compact small table">
+			<thead>
+				<tr>
+					<th>UID</th>
+					<th>Name</th>
+					<th>DOB</th>
+					<th>Sex</th>
+					<th>Alternate IDs (project)</th>
+					<th>Enrollments</th>
+					<th>Studies</th>
+					<th>Matched</th>
+				</tr>
+			</thead>
+			<tbody>
+			<?
+			foreach ($members as $m) {
+				$subjectid = (int)$m['object_id'];
+
+				$sqlstring = "select uid, name, birthdate, gender, isactive from subjects where subject_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
+				if (mysqli_num_rows($result) < 1) {
+					?><tr><td colspan="7"><i>Subject [<?=$subjectid?>] no longer exists</i></td><td><?=nl2br(htmlspecialchars($m['object_note'] ?? ''))?></td></tr><?
+					continue;
+				}
+				$subject = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+				$altuids = array();
+				$sqlstring = "select a.altuid, a.isprimary, p.project_name from subject_altuid a left join enrollment c on a.enrollment_id = c.enrollment_id left join projects p on c.project_id = p.project_id where a.subject_id = ? order by a.altuid";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+					$altuids[] = $row;
+
+				$enrollments = array();
+				$sqlstring = "select c.enrollment_id, c.enroll_subgroup, c.enroll_status, p.project_name, p.project_costcenter, (select count(*) from studies b where b.enrollment_id = c.enrollment_id) 'numstudies' from enrollment c left join projects p on c.project_id = p.project_id where c.subject_id = ? order by p.project_name";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
+				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+					$enrollments[] = $row;
+
+				$sqlstring = "select count(*) 'numstudies', group_concat(distinct b.study_modality order by b.study_modality separator ', ') 'modalities', min(b.study_datetime) 'firststudy', max(b.study_datetime) 'laststudy' from studies b inner join enrollment c on b.enrollment_id = c.enrollment_id where c.subject_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
+				$studies = mysqli_fetch_array($result, MYSQLI_ASSOC);
+				?>
+				<tr>
+					<td style="white-space: nowrap"><a href="subjects.php?id=<?=$subjectid?>" target="_blank"><?=htmlspecialchars($subject['uid'] ?? '')?></a><? if (!$subject['isactive']) { ?> <span class="ui mini red label">deleted</span><? } ?></td>
+					<td><?=htmlspecialchars($subject['name'] ?? '')?></td>
+					<td style="white-space: nowrap"><?=htmlspecialchars($subject['birthdate'] ?? '')?></td>
+					<td><?=htmlspecialchars($subject['gender'] ?? '')?></td>
+					<td>
+						<? foreach ($altuids as $a) { ?>
+						<div style="white-space: nowrap"><?=htmlspecialchars($a['altuid'])?><? if ($a['isprimary']) { ?>*<? } ?> <span style="color: #888">(<?=htmlspecialchars($a['project_name'] ?? 'no project')?>)</span></div>
+						<? } ?>
+					</td>
+					<td>
+						<? foreach ($enrollments as $e) { ?>
+						<div style="white-space: nowrap"><a href="enrollment.php?id=<?=(int)$e['enrollment_id']?>" target="_blank"><?=htmlspecialchars($e['project_name'] ?? '')?></a><?=(($e['project_costcenter'] ?? '') != '') ? ' (' . htmlspecialchars($e['project_costcenter']) . ')' : ''?> <span style="color: #888"><?=htmlspecialchars(trim(($e['enroll_subgroup'] ?? '') . ' ' . ($e['enroll_status'] ?? '')))?>, <?=(int)$e['numstudies']?> studies</span></div>
+						<? } ?>
+					</td>
+					<td style="white-space: nowrap">
+						<?=(int)$studies['numstudies']?> <? if ($studies['numstudies'] > 0) { ?>(<?=htmlspecialchars($studies['modalities'] ?? '')?>)<br><span style="color: #888"><?=htmlspecialchars(substr($studies['firststudy'] ?? '', 0, 10))?> to <?=htmlspecialchars(substr($studies['laststudy'] ?? '', 0, 10))?></span><? } ?>
+					</td>
+					<td style="font-size: 0.9em"><?=nl2br(htmlspecialchars($m['object_note'] ?? ''))?></td>
+				</tr>
+				<?
+			}
+			?>
+			</tbody>
+		</table>
+		</div>
+		<div style="color: #888; font-size: 0.9em">* primary alternate ID. Values are current, not as of the audit. Duplicates must be merged or fixed manually</div>
+		<?
 	}
 
 
@@ -420,7 +572,7 @@
 					<? foreach ($GLOBALS['qcchecklist'] as $check => $desc) { ?>
 					<div class="field" style="margin-bottom: 4px">
 						<div class="ui checkbox">
-							<input type="checkbox" name="qcchecks[]" value="<?=$check?>" checked>
+							<input type="checkbox" name="qcchecks[]" value="<?=$check?>" <? if (!in_array($check, $GLOBALS['qcchecksoffbydefault'])) echo "checked"; ?>>
 							<label><?=htmlspecialchars($desc)?></label>
 						</div>
 					</div>
@@ -648,13 +800,13 @@
 		$offset = ($page - 1) * $perpage;
 
 		if ($issuetype == "") {
-			$sqlstring = "select * from audit_log where audit_id = ? order by auditlog_id limit ? offset ?";
+			$sqlstring = "select l.*, (select count(*) from audit_log_objects o where o.auditlog_id = l.auditlog_id) 'nummembers' from audit_log l where l.audit_id = ? order by l.auditlog_id limit ? offset ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'iii', $auditid, $perpage, $offset);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$auditid, $perpage, $offset]);
 		}
 		else {
-			$sqlstring = "select * from audit_log where audit_id = ? and issue_type = ? order by auditlog_id limit ? offset ?";
+			$sqlstring = "select l.*, (select count(*) from audit_log_objects o where o.auditlog_id = l.auditlog_id) 'nummembers' from audit_log l where l.audit_id = ? and l.issue_type = ? order by l.auditlog_id limit ? offset ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'isii', $auditid, $issuetype, $perpage, $offset);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$auditid, $issuetype, $perpage, $offset]);
@@ -706,6 +858,8 @@
 		$rows = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$rows[] = array(
+				'auditlogid' => (int)$row['auditlog_id'],
+				'nummembers' => (int)$row['nummembers'],
 				'issue' => $row['issue_type'],
 				'objecttype' => $row['object_type'] ?? '',
 				'objectid' => (int)$row['object_id'],
@@ -748,6 +902,16 @@
 						return a;
 					}
 				},
+				{ field: 'nummembers', headerName: 'Group', width: 120,
+					cellRenderer: function(params) {
+						if (!params.value) return document.createTextNode('');
+						const a = document.createElement('a');
+						a.href = '#';
+						a.textContent = params.value + ' ' + (params.data.objecttype || 'object') + 's';
+						a.onclick = function(e) { e.preventDefault(); ShowIssueDetails(params.data.auditlogid); };
+						return a;
+					}
+				},
 				{ field: 'message', headerName: 'Description', flex: 3, tooltipField: 'message' },
 				{ field: 'fixed', headerName: 'Fixed', width: 100,
 					cellRenderer: function(params) {
@@ -767,6 +931,13 @@
 				columnDefs: columnDefs,
 				rowData: rowData,
 				defaultColDef: { sortable: true, filter: true, resizable: true },
+				/* an issue with more than one object (ie, a group of duplicate subjects) opens its details when clicked */
+				getRowStyle: function(params) { return (params.data && params.data.nummembers > 0) ? { cursor: 'pointer' } : null; },
+				onRowClicked: function(e) {
+					if (!e.data || !e.data.nummembers) return;
+					if (e.event && e.event.target && e.event.target.closest('a')) return;
+					ShowIssueDetails(e.data.auditlogid);
+				},
 				overlayNoRowsTemplate: '<span style="color: #888">No issues logged</span>',
 				/* keep the "Displaying X issues" count in sync with the quick filter / column filters */
 				onModelUpdated: function(params) {
@@ -777,7 +948,23 @@
 
 			auditGridApi = agGrid.createGrid(document.getElementById('auditGrid'), gridOptions);
 		})();
+
+		function ShowIssueDetails(auditlogid) {
+			$('#issuemodalcontent').html('<div class="ui active centered inline loader"></div>');
+			$('#issuemodal').modal('show');
+			fetch('adminaudits.php?action=issuedetails&auditlogid=' + encodeURIComponent(auditlogid), { cache: 'no-store' })
+				.then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.text(); })
+				.then(html => { $('#issuemodalcontent').html(html); $('#issuemodal').modal('refresh'); })
+				.catch(e => { $('#issuemodalcontent').text('Error loading the issue details: ' + e.message); });
+		}
 		</script>
+
+		<div class="ui fullscreen modal" id="issuemodal">
+			<i class="close icon"></i>
+			<div class="header">Issue details</div>
+			<div class="scrolling content" id="issuemodalcontent"></div>
+			<div class="actions"><div class="ui cancel button">Close</div></div>
+		</div>
 
 		<? if ($numpages > 1) {
 			$typeparam = ($issuetype == "") ? "" : "&issuetype=" . urlencode($issuetype);

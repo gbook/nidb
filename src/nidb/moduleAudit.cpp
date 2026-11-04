@@ -439,14 +439,14 @@ bool moduleAudit::AuditAnalysisFiles(qint64 auditid, int projectid, bool fixErro
  * fixed: the user fixes them manually. The criteria for each check are listed in doc/audits.md
  * @param auditid The audit_id
  * @param projectid The project to audit. Must be a single project (not 0)
- * @param checks The checks to run (audits.audit_options): duplicatesubjects, duplicatestudies, empty, missingdemographics, invaliddob, dicommetadata
+ * @param checks The checks to run (audits.audit_options): duplicatesubjectsproject, duplicatesubjects, duplicatestudies, empty, missingdemographics, invaliddob, dicommetadata
  * @param m Summary message
  * @return true if the audit ran to completion
  */
 bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList checks, QString &m) {
 
     /* the checks, in the order they are run */
-    QStringList validChecks = {"duplicatesubjects", "duplicatestudies", "empty", "missingdemographics", "invaliddob", "dicommetadata"};
+    QStringList validChecks = {"duplicatesubjectsproject", "duplicatesubjects", "duplicatestudies", "empty", "missingdemographics", "invaliddob", "dicommetadata"};
 
     if (projectid < 1) {
         m = "Quality control audits can only be run on a single project";
@@ -461,6 +461,11 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
         m = "No quality control checks were selected";
         return false;
     }
+
+    /* duplicatesubjects compares alternate IDs from every project, which includes the alternate IDs
+       duplicatesubjectsproject compares, so running both would only report the same groups twice */
+    if (toRun.contains("duplicatesubjects") && toRun.contains("duplicatesubjectsproject"))
+        toRun.removeAll("duplicatesubjectsproject");
 
     /* the DICOM check's series are listed up front, so the progress bar covers the whole audit.
        Each database check counts as one object, and each series in the DICOM check as one object */
@@ -477,7 +482,7 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
     SetAuditProgress(auditid, 0, total);
 
     QList<qcSubject> subjects;
-    if (toRun.contains("duplicatesubjects") || toRun.contains("missingdemographics") || toRun.contains("invaliddob")) {
+    if (toRun.contains("duplicatesubjects") || toRun.contains("duplicatesubjectsproject") || toRun.contains("missingdemographics") || toRun.contains("invaliddob")) {
         if (!QCLoadSubjects(projectid, subjects)) {
             m = "SQL error getting the list of subjects. See the module log";
             return false;
@@ -512,7 +517,8 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
 
         bool ok = true;
         qint64 found = 0;
-        if (c == "duplicatesubjects") found = QCDuplicateSubjects(auditid, projectid, subjects, ok);
+        if (c == "duplicatesubjectsproject") found = QCDuplicateSubjects(auditid, projectid, subjects, true, ok);
+        else if (c == "duplicatesubjects") found = QCDuplicateSubjects(auditid, projectid, subjects, false, ok);
         else if (c == "duplicatestudies") found = QCDuplicateStudies(auditid, projectid, ok);
         else if (c == "empty") found = QCEmptyObjects(auditid, projectid, ok);
         else if (c == "missingdemographics") found = QCMissingDemographics(auditid, subjects);
@@ -619,20 +625,26 @@ bool moduleAudit::QCLoadSubjects(int projectid, QList<qcSubject> &subjects) {
 /* --------- QCDuplicateSubjects ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Find pairs of subjects within the project that may be the same person. Each pair is
- * reported once, with the strongest reason, against the subject with the lower subject_id. Names
- * and DOBs are not written to the log, only the UIDs and the reason
+ * @brief Find groups of subjects within the project that may be the same person. Pairs of
+ * subjects are matched by the rules below, then pairs that share a subject are merged into one
+ * group (if A matches B, and B matches C, then A, B, and C are one group). Each group is one
+ * issue, logged against the subject with the lowest subject_id. Every subject in the group is
+ * recorded in audit_log_objects, with the subjects it matched and why. Names and DOBs are not
+ * written to the log, only the UIDs and the rules that matched
  * @param auditid The audit_id
  * @param projectid The project
  * @param subjects The project's subjects, ordered by subject_id
+ * @param projectAltUIDsOnly true to only compare alternate IDs from enrollments in this project.
+ *   false to compare all of the subjects' alternate IDs, from any project
  * @param ok Set to false on SQL error
- * @return The number of issues found
+ * @return The number of issues (groups) found
  */
-qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok) {
+qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool projectAltUIDsOnly, bool &ok) {
     ok = true;
     qint64 numIssues = 0;
 
-    /* name groups larger than this are reported as one issue rather than as every pair */
+    /* when more subjects than this share a name or alternate ID, they are linked to the first
+       subject only, rather than as every pair, which would be n^2 pairs */
     const int maxGroupPairs = 25;
 
     struct nameKeys {
@@ -664,24 +676,34 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
             byFullDOB[s.dob].append(i);
     }
 
-    QSet<QPair<int, int>> reported;
-    auto logPair = [&](int i, int j, QString reason) {
+    /* matched pairs. Each pair keeps only its first (strongest) rule, because the rules are checked strongest first */
+    struct pairMatch {
+        int i;
+        int j;
+        QString reason;
+        bool likely;
+    };
+    QList<pairMatch> pairs;
+    QSet<QPair<int, int>> paired;
+    auto addPair = [&](int i, int j, QString reason, bool likely) {
         if (i > j) std::swap(i, j);
         QPair<int, int> key(i, j);
-        if (reported.contains(key))
+        if (paired.contains(key))
             return;
-        reported.insert(key);
-        const qcSubject &a = subjects.at(i);
-        const qcSubject &b = subjects.at(j);
-        LogAuditIssue(auditid, "duplicateSubject", "subject", a.subjectid, QString("Subjects %1 and %2: %3").arg(a.uid).arg(b.uid).arg(reason), -1, "");
-        numIssues++;
+        paired.insert(key);
+        pairMatch pm;
+        pm.i = i;
+        pm.j = j;
+        pm.reason = reason;
+        pm.likely = likely;
+        pairs.append(pm);
     };
     auto sexMatches = [&](int i, int j) {
         return (subjects.at(i).sex != "") && (subjects.at(i).sex == subjects.at(j).sex);
     };
 
     /* 1) same name (in either order) and same DOB. Pairs with the same name but a different or
-       missing DOB are weaker, and are reported last */
+       missing DOB are weaker, and are added last */
     QList<QPair<int, int>> weakPairs;
     for (auto it = bySortedName.cbegin(); it != bySortedName.cend(); ++it) {
         const QList<int> &idx = it.value();
@@ -689,13 +711,8 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
             continue;
 
         if (idx.size() > maxGroupPairs) {
-            QStringList uids;
-            for (int a = 0; a < idx.size() && a < 50; a++)
-                uids << subjects.at(idx[a]).uid;
-            if (idx.size() > 50)
-                uids << QString("and %1 more").arg(idx.size() - 50);
-            LogAuditIssue(auditid, "duplicateSubject", "subject", subjects.at(idx[0]).subjectid, QString("%1 subjects have the same name, which may be a placeholder name. Not compared pairwise: %2").arg(idx.size()).arg(uids.join(", ")), -1, "");
-            numIssues++;
+            for (int a = 1; a < idx.size(); a++)
+                addPair(idx[0], idx[a], QString("same name as %1 other subjects, which may be a placeholder name").arg(idx.size() - 1), false);
             continue;
         }
 
@@ -709,20 +726,24 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
                     continue;
                 }
                 if (sameOrder && sexMatches(i, j))
-                    logPair(i, j, "Likely duplicate: same name, DOB, and sex");
+                    addPair(i, j, "same name, DOB, and sex", true);
                 else if (sameOrder)
-                    logPair(i, j, "Likely duplicate: same name and DOB, sex differs or is missing");
+                    addPair(i, j, "same name and DOB, sex differs or is missing", true);
                 else if (sexMatches(i, j))
-                    logPair(i, j, "Likely duplicate: same DOB and sex, first/last name transposed");
+                    addPair(i, j, "same DOB and sex, first/last name transposed", true);
                 else
-                    logPair(i, j, "Likely duplicate: same DOB, first/last name transposed");
+                    addPair(i, j, "same DOB, first/last name transposed", true);
             }
         }
     }
 
-    /* 2) the same alternate ID belongs to more than one subject */
+    /* 2) the same alternate ID belongs to more than one subject. Either only the alternate IDs
+       recorded for this project's enrollments, or all of the subjects' alternate IDs */
     QSqlQuery q;
-    q.prepare("select distinct a.altuid, a.subject_id from subject_altuid a inner join enrollment c on a.subject_id = c.subject_id inner join subjects d on a.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1 and trim(a.altuid) <> '' order by a.altuid, a.subject_id");
+    if (projectAltUIDsOnly)
+        q.prepare("select distinct a.altuid, a.subject_id from subject_altuid a inner join enrollment c on a.enrollment_id = c.enrollment_id inner join subjects d on a.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1 and trim(a.altuid) <> '' order by a.altuid, a.subject_id");
+    else
+        q.prepare("select distinct a.altuid, a.subject_id from subject_altuid a inner join enrollment c on a.subject_id = c.subject_id inner join subjects d on a.subject_id = d.subject_id where c.project_id = :projectid and d.isactive = 1 and trim(a.altuid) <> '' order by a.altuid, a.subject_id");
     q.bindValue(":projectid", projectid);
     bool success = false;
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
@@ -741,9 +762,15 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
     }
     for (auto it = byAltUID.cbegin(); it != byAltUID.cend(); ++it) {
         const QList<int> &idx = it.value();
+        QString reason = QString("both have the alternate ID [%1]").arg(it.key());
+        if (idx.size() > maxGroupPairs) {
+            for (int a = 1; a < idx.size(); a++)
+                addPair(idx[0], idx[a], QString("alternate ID [%1] is shared by %2 subjects").arg(it.key()).arg(idx.size()), true);
+            continue;
+        }
         for (int a = 0; a < idx.size(); a++)
             for (int b = a + 1; b < idx.size(); b++)
-                logPair(idx[a], idx[b], QString("Likely duplicate: both have the alternate ID [%1]").arg(it.key()));
+                addPair(idx[a], idx[b], reason, true);
     }
 
     /* 3) similar name (a typo, or a missing/extra letter) and the same full DOB */
@@ -760,7 +787,7 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
                     continue;
                 int dist = qMin(Levenshtein(keys[i].sorted, keys[j].sorted), Levenshtein(keys[i].ordered, keys[j].ordered));
                 if (dist <= threshold)
-                    logPair(i, j, sexMatches(i, j) ? "Possible duplicate: similar name, same DOB and sex" : "Possible duplicate: similar name and same DOB");
+                    addPair(i, j, sexMatches(i, j) ? "similar name, same DOB and sex" : "similar name and same DOB", false);
             }
         }
     }
@@ -768,9 +795,78 @@ qint64 moduleAudit::QCDuplicateSubjects(qint64 auditid, int projectid, const QLi
     /* 4) same name, but a different or missing DOB */
     foreach (auto p, weakPairs) {
         if (keys[p.first].ordered == keys[p.second].ordered)
-            logPair(p.first, p.second, "Possible duplicate: same name, different or missing DOB");
+            addPair(p.first, p.second, "same name, different or missing DOB", false);
         else
-            logPair(p.first, p.second, "Possible duplicate: same name with first/last transposed, different or missing DOB");
+            addPair(p.first, p.second, "same name with first/last transposed, different or missing DOB", false);
+    }
+
+    /* ----- merge the pairs into groups (union-find) ----- */
+    QVector<int> parent(subjects.size());
+    for (int i = 0; i < parent.size(); i++)
+        parent[i] = i;
+    auto findRoot = [&](int x) {
+        while (parent[x] != x) {
+            parent[x] = parent[parent[x]];
+            x = parent[x];
+        }
+        return x;
+    };
+    foreach (pairMatch p, pairs) {
+        int ri = findRoot(p.i), rj = findRoot(p.j);
+        if (ri != rj)
+            parent[qMax(ri, rj)] = qMin(ri, rj);
+    }
+
+    QMap<int, QList<int>> groups; /* root => member indexes. The root is the lowest index, so groups are in subject_id order */
+    QMap<int, QList<int>> pairsByGroup;
+    for (int p = 0; p < pairs.size(); p++) {
+        int root = findRoot(pairs[p].i);
+        pairsByGroup[root].append(p);
+        if (!groups[root].contains(pairs[p].i)) groups[root].append(pairs[p].i);
+        if (!groups[root].contains(pairs[p].j)) groups[root].append(pairs[p].j);
+    }
+
+    /* ----- log one issue per group ----- */
+    const int maxNoteMatches = 20;
+    for (auto it = groups.cbegin(); it != groups.cend(); ++it) {
+        QList<int> members = it.value();
+        std::sort(members.begin(), members.end());
+
+        bool likely = false;
+        QStringList reasons;
+        QMap<int, QStringList> notes; /* member index => what it matched */
+        foreach (int p, pairsByGroup[it.key()]) {
+            const pairMatch &pm = pairs.at(p);
+            if (pm.likely) likely = true;
+            if (!reasons.contains(pm.reason)) reasons << pm.reason;
+            notes[pm.i] << QString("%1: %2").arg(subjects.at(pm.j).uid).arg(pm.reason);
+            notes[pm.j] << QString("%1: %2").arg(subjects.at(pm.i).uid).arg(pm.reason);
+        }
+
+        QStringList uids;
+        for (int m = 0; (m < members.size()) && (m < maxNoteMatches); m++)
+            uids << subjects.at(members[m]).uid;
+        if (members.size() > maxNoteMatches)
+            uids << QString("and %1 more").arg(members.size() - maxNoteMatches);
+        if (reasons.size() > 5) {
+            int more = reasons.size() - 5;
+            reasons = reasons.mid(0, 5);
+            reasons << QString("and %1 more").arg(more);
+        }
+
+        QString msg = QString("%1 duplicates: %2 subjects (%3). Matched by: %4").arg(likely ? "Likely" : "Possible").arg(members.size()).arg(uids.join(", ")).arg(reasons.join("; "));
+        qint64 auditlogid = LogAuditIssue(auditid, "duplicateSubject", "subject", subjects.at(members[0]).subjectid, msg, -1, "");
+        numIssues++;
+
+        foreach (int m, members) {
+            QStringList note = notes[m];
+            if (note.size() > maxNoteMatches) {
+                int more = note.size() - maxNoteMatches;
+                note = note.mid(0, maxNoteMatches);
+                note << QString("and %1 more").arg(more);
+            }
+            LogAuditIssueObject(auditlogid, "subject", subjects.at(m).subjectid, note.join("\n"));
+        }
     }
 
     return numIssues;
@@ -1570,8 +1666,9 @@ void moduleAudit::SetAuditProgress(qint64 auditid, qint64 progress, qint64 total
  * @param msg Description of the issue
  * @param fixed -1 if no fix was attempted, 0 if the fix failed, 1 if fixed
  * @param fixedMsg Description of what was fixed
+ * @return The new auditlog_id, or -1 if the insert failed
  */
-void moduleAudit::LogAuditIssue(qint64 auditid, QString issueType, QString objectType, qint64 objectid, QString msg, int fixed, QString fixedMsg) {
+qint64 moduleAudit::LogAuditIssue(qint64 auditid, QString issueType, QString objectType, qint64 objectid, QString msg, int fixed, QString fixedMsg) {
     QSqlQuery q;
     if (fixed < 0) {
         q.prepare("insert into audit_log (audit_id, issue_type, object_type, object_id, issue_message, issue_fixed, issue_fixedmessage) values (:auditid, :issuetype, :objecttype, :objectid, :msg, null, null)");
@@ -1586,5 +1683,33 @@ void moduleAudit::LogAuditIssue(qint64 auditid, QString issueType, QString objec
     q.bindValue(":objecttype", objectType);
     q.bindValue(":objectid", objectid);
     q.bindValue(":msg", msg);
+    bool success = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+    if (!success)
+        return -1;
+    return q.lastInsertId().toLongLong();
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- LogAuditIssueObject ---------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Record one of the objects involved in an issue that has more than one object (ie, a
+ * group of suspected duplicate subjects) in `audit_log_objects`
+ * @param auditlogid The issue's auditlog_id. Nothing is recorded if this is less than 1
+ * @param objectType One of the audit_log_objects.object_type enum values
+ * @param objectid The database row ID of the object
+ * @param note Why this object is part of the issue
+ */
+void moduleAudit::LogAuditIssueObject(qint64 auditlogid, QString objectType, qint64 objectid, QString note) {
+    if (auditlogid < 1)
+        return;
+    QSqlQuery q;
+    q.prepare("insert into audit_log_objects (auditlog_id, object_type, object_id, object_note) values (:auditlogid, :objecttype, :objectid, :note)");
+    q.bindValue(":auditlogid", auditlogid);
+    q.bindValue(":objecttype", objectType);
+    q.bindValue(":objectid", objectid);
+    q.bindValue(":note", note);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 }
