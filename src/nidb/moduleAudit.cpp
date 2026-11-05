@@ -23,6 +23,7 @@
 #include <QSqlQuery>
 #include <QElapsedTimer>
 #include <algorithm>
+#include <cmath>
 #include <QCryptographicHash>
 #include <QRegularExpression>
 #include "moduleAudit.h"
@@ -435,11 +436,12 @@ bool moduleAudit::AuditAnalysisFiles(qint64 auditid, int projectid, bool fixErro
 /* --------- AuditQualityControl ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Run the selected quality control checks on one project. Issues are only reported, never
- * fixed: the user fixes them manually. The criteria for each check are listed in doc/audits.md
+ * @brief Run the selected quality control checks on one project. Issues are only reported, except
+ * for the missing demographics fixes (fixsex, fixname, fixdob), which are only applied when selected
+ * along with missingdemographics. The criteria for each check are listed in doc/audits.md
  * @param auditid The audit_id
  * @param projectid The project to audit. Must be a single project (not 0)
- * @param checks The checks to run (audits.audit_options): duplicatesubjectsproject, duplicatesubjects, duplicatestudies, empty, missingdemographics, invaliddob, dicommetadata
+ * @param checks The checks to run (audits.audit_options): duplicatesubjectsproject, duplicatesubjects, duplicatestudies, empty, missingdemographics, invaliddob, dicommetadata. Also the missingdemographics fixes: fixsex, fixname, fixdob
  * @param m Summary message
  * @return true if the audit ran to completion
  */
@@ -466,6 +468,11 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
        duplicatesubjectsproject compares, so running both would only report the same groups twice */
     if (toRun.contains("duplicatesubjects") && toRun.contains("duplicatesubjectsproject"))
         toRun.removeAll("duplicatesubjectsproject");
+
+    /* fixes for the missing demographics check. These are options of that check, not checks of their own */
+    bool fixSex = checks.contains("fixsex");
+    bool fixName = checks.contains("fixname");
+    bool fixDOB = checks.contains("fixdob");
 
     /* the DICOM check's series are listed up front, so the progress bar covers the whole audit.
        Each database check counts as one object, and each series in the DICOM check as one object */
@@ -521,7 +528,7 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
         else if (c == "duplicatesubjects") found = QCDuplicateSubjects(auditid, projectid, subjects, false, ok);
         else if (c == "duplicatestudies") found = QCDuplicateStudies(auditid, projectid, ok);
         else if (c == "empty") found = QCEmptyObjects(auditid, projectid, ok);
-        else if (c == "missingdemographics") found = QCMissingDemographics(auditid, subjects);
+        else if (c == "missingdemographics") found = QCMissingDemographics(auditid, projectid, subjects, fixSex, fixName, fixDOB, ok);
         else if (c == "invaliddob") found = QCInvalidDOB(auditid, projectid, subjects, ok);
 
         if (!ok) {
@@ -601,7 +608,7 @@ bool moduleAudit::AuditQualityControl(qint64 auditid, int projectid, QStringList
  */
 bool moduleAudit::QCLoadSubjects(int projectid, QList<qcSubject> &subjects) {
     QSqlQuery q;
-    q.prepare("select distinct d.subject_id, d.uid, d.name, d.gender, cast(d.birthdate as char) 'dob' from subjects d inner join enrollment c on d.subject_id = c.subject_id where c.project_id = :projectid and d.isactive = 1 order by d.subject_id");
+    q.prepare("select distinct d.subject_id, d.uid, d.name, d.gender, d.sex, cast(d.birthdate as char) 'dob' from subjects d inner join enrollment c on d.subject_id = c.subject_id where c.project_id = :projectid and d.isactive = 1 order by d.subject_id");
     q.bindValue(":projectid", projectid);
     bool success = false;
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
@@ -614,6 +621,7 @@ bool moduleAudit::QCLoadSubjects(int projectid, QList<qcSubject> &subjects) {
         s.uid = q.value("uid").toString().replace('\u0000', "").trimmed();
         s.name = q.value("name").toString().trimmed();
         s.sex = q.value("gender").toString().trimmed().toUpper();
+        s.sexcol = q.value("sex").toString().trimmed().toUpper();
         s.dob = q.value("dob").toString().trimmed();
         subjects.append(s);
     }
@@ -1066,39 +1074,187 @@ qint64 moduleAudit::QCEmptyObjects(qint64 auditid, int projectid, bool &ok) {
 /* --------- QCMissingDemographics -------------------------- */
 /* ---------------------------------------------------------- */
 /**
- * @brief Find subjects with a missing name, sex, or DOB. An unrecognized sex is also reported
+ * @brief Find subjects with a missing name, sex, or DOB. An unrecognized sex is also reported.
+ * Sex is checked in both subjects.sex and subjects.gender. Each missing item can optionally be fixed:
+ *   fixSex - a blank sex or gender is filled in from the other, if the other is valid (M, F, O, U)
+ *   fixName - a blank name is set to "<primary alternate ID for this project's enrollment>^", or "<UID>^"
+ *   fixDOB - a missing DOB is estimated as YYYY-MM-00 from the subject's earliest study with an age (see EstimateDOB)
+ * An issue that could be fixed but wasn't (ie, nothing to fill it in from) is logged with issue_fixed = 0
  * @param auditid The audit_id
+ * @param projectid The project being audited
  * @param subjects The project's subjects
+ * @param fixSex Fill in a blank sex/gender from the other
+ * @param fixName Fill in a blank name
+ * @param fixDOB Fill in a missing DOB with an estimate
+ * @param ok Set to false on an SQL error
  * @return The number of issues found
  */
-qint64 moduleAudit::QCMissingDemographics(qint64 auditid, const QList<qcSubject> &subjects) {
+qint64 moduleAudit::QCMissingDemographics(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool fixSex, bool fixName, bool fixDOB, bool &ok) {
     qint64 numIssues = 0;
     QStringList validSexes = {"M", "F", "O", "U"};
+    QSqlQuery q;
+    bool success = false;
 
     foreach (qcSubject s, subjects) {
+
+        /* ----- name ----- */
         QString name = s.name;
         name.remove('^');
         if (name.trimmed().isEmpty()) {
-            LogAuditIssue(auditid, "missingName", "subject", s.subjectid, QString("Subject %1 has no name").arg(s.uid), -1, "");
+            QString msg = QString("Subject %1 has no name").arg(s.uid);
+            if (!fixName) {
+                LogAuditIssue(auditid, "missingName", "subject", s.subjectid, msg, -1, "");
+            }
+            else {
+                /* the primary alternate ID of the subject's enrollment in this project, otherwise the UID */
+                q.prepare("select a.altuid from subject_altuid a inner join enrollment e on a.enrollment_id = e.enrollment_id where a.subject_id = :subjectid and e.project_id = :projectid and a.isprimary = 1 and trim(a.altuid) <> '' order by a.subjectaltuid_id limit 1");
+                q.bindValue(":subjectid", s.subjectid);
+                q.bindValue(":projectid", projectid);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+                if (!success) { ok = false; return numIssues; }
+
+                QString newName, source;
+                if (q.next()) {
+                    newName = q.value("altuid").toString().trimmed() + "^";
+                    source = "primary alternate ID";
+                }
+                else if (s.uid != "") {
+                    newName = s.uid + "^";
+                    source = "UID";
+                }
+
+                if (newName == "") {
+                    LogAuditIssue(auditid, "missingName", "subject", s.subjectid, msg, 0, "Not fixed: the subject has no primary alternate ID in this project and no UID");
+                }
+                else {
+                    q.prepare("update subjects set name = :name where subject_id = :subjectid");
+                    q.bindValue(":name", newName);
+                    q.bindValue(":subjectid", s.subjectid);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+                    if (!success) { ok = false; return numIssues; }
+                    LogAuditIssue(auditid, "missingName", "subject", s.subjectid, msg, 1, QString("Name changed from [%1] to [%2] (from the %3)").arg(s.name).arg(newName).arg(source));
+                }
+            }
             numIssues++;
         }
 
-        if (s.sex.isEmpty()) {
-            LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, QString("Subject %1 has no sex").arg(s.uid), -1, "");
-            numIssues++;
-        }
-        else if (!validSexes.contains(s.sex)) {
-            LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, QString("Subject %1 has an unrecognized sex [%2]. Valid values are M, F, O, U").arg(s.uid).arg(s.sex), -1, "");
+        /* ----- sex (subjects.sex) and gender (subjects.gender) ----- */
+        QStringList problems;
+        if (s.sexcol.isEmpty()) problems << "no sex";
+        else if (!validSexes.contains(s.sexcol)) problems << QString("an unrecognized sex [%1]").arg(s.sexcol);
+        if (s.sex.isEmpty()) problems << "no gender";
+        else if (!validSexes.contains(s.sex)) problems << QString("an unrecognized gender [%1]").arg(s.sex);
+
+        if (!problems.isEmpty()) {
+            QString msg = QString("Subject %1 has %2").arg(s.uid).arg(problems.join(" and "));
+            if (s.sexcol.isEmpty() != s.sex.isEmpty())
+                msg += QString(" (%1 is [%2])").arg(s.sexcol.isEmpty() ? "gender" : "sex").arg(s.sexcol.isEmpty() ? s.sex : s.sexcol);
+            if ((!validSexes.contains(s.sexcol) && !s.sexcol.isEmpty()) || (!validSexes.contains(s.sex) && !s.sex.isEmpty()))
+                msg += ". Valid values are M, F, O, U";
+
+            if (!fixSex) {
+                LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, msg, -1, "");
+            }
+            else {
+                /* only a blank column is filled in, and only from a valid value. An unrecognized value is left for the user to fix */
+                QString column, value;
+                if (s.sexcol.isEmpty() && validSexes.contains(s.sex)) { column = "sex"; value = s.sex; }
+                else if (s.sex.isEmpty() && validSexes.contains(s.sexcol)) { column = "gender"; value = s.sexcol; }
+
+                if (column == "") {
+                    QString reason;
+                    if (s.sexcol.isEmpty() && s.sex.isEmpty()) reason = "sex and gender are both blank";
+                    else if (s.sexcol.isEmpty() || s.sex.isEmpty()) reason = "the other value is not M, F, O, or U";
+                    else reason = "neither value is blank. Unrecognized values must be fixed manually";
+                    LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, msg, 0, "Not fixed: " + reason);
+                }
+                else {
+                    /* the column name is one of two fixed strings, not user input */
+                    q.prepare(QString("update subjects set %1 = :value where subject_id = :subjectid").arg(column));
+                    q.bindValue(":value", value);
+                    q.bindValue(":subjectid", s.subjectid);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+                    if (!success) { ok = false; return numIssues; }
+
+                    LogAuditIssue(auditid, "missingSex", "subject", s.subjectid, msg, 1, QString("Set %1 to [%2] (from %3)").arg(column).arg(value).arg(column == "sex" ? "gender" : "sex"));
+                }
+            }
             numIssues++;
         }
 
+        /* ----- DOB ----- */
         if (DOBIsMissing(s.dob)) {
-            LogAuditIssue(auditid, "missingDOB", "subject", s.subjectid, QString("Subject %1 has no DOB").arg(s.uid), -1, "");
+            QString msg = QString("Subject %1 has no DOB").arg(s.uid);
+            if (!fixDOB) {
+                LogAuditIssue(auditid, "missingDOB", "subject", s.subjectid, msg, -1, "");
+            }
+            else {
+                QString basis;
+                QString dob = EstimateDOB(s.subjectid, basis, success);
+                if (!success) { ok = false; return numIssues; }
+
+                if (dob == "") {
+                    LogAuditIssue(auditid, "missingDOB", "subject", s.subjectid, msg, 0, "Not fixed: " + basis);
+                }
+                else {
+                    q.prepare("update subjects set birthdate = :dob where subject_id = :subjectid");
+                    q.bindValue(":dob", dob);
+                    q.bindValue(":subjectid", s.subjectid);
+                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &success);
+                    if (!success) { ok = false; return numIssues; }
+                    LogAuditIssue(auditid, "missingDOB", "subject", s.subjectid, msg, 1, QString("DOB estimated as [%1] %2").arg(dob).arg(basis));
+                }
+            }
             numIssues++;
         }
     }
 
     return numIssues;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- EstimateDOB ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Estimate a subject's DOB (year and month) from the earliest of the subject's studies, in any
+ * project, that has both an age at scan (studies.study_ageatscan > 0) and a study date (after 1900).
+ * The DOB is the study date minus the age. A whole-number age (ie, 45 from a DICOM PatientAge of
+ * 045Y) means the subject was between 45 and 46, so the midpoint (45.5 years) is subtracted
+ * @param subjectid The subject_id
+ * @param basis Set to a description of how the DOB was estimated, or why it couldn't be
+ * @param ok Set to false on an SQL error
+ * @return The estimated DOB as YYYY-MM-00, or a blank string if it couldn't be estimated
+ */
+QString moduleAudit::EstimateDOB(qint64 subjectid, QString &basis, bool &ok) {
+    QSqlQuery q;
+    q.prepare("select a.study_id, cast(a.study_datetime as char) 'studydatetime', a.study_ageatscan from studies a inner join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = :subjectid and a.study_ageatscan > 0 and a.study_ageatscan < 150 and a.study_datetime >= '1900-01-01' order by a.study_datetime, a.study_id");
+    q.bindValue(":subjectid", subjectid);
+    ok = false;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &ok);
+    if (!ok)
+        return "";
+
+    /* the earliest study whose date parses. The query already excludes zero/placeholder dates, so this is normally the first row */
+    while (q.next()) {
+        QDate studyDate = QDate::fromString(q.value("studydatetime").toString().left(10), "yyyy-MM-dd");
+        if (!studyDate.isValid())
+            continue;
+
+        double age = q.value("study_ageatscan").toDouble();
+        double years = (age == std::floor(age)) ? age + 0.5 : age;
+        QDate dob = studyDate.addDays(-qRound64(years * 365.25));
+        if (dob.year() < 1900) {
+            basis = QString("the earliest study with an age (study_id %1, %2, age %3) gives a DOB before 1900").arg(q.value("study_id").toLongLong()).arg(studyDate.toString("yyyy-MM-dd")).arg(age);
+            return "";
+        }
+
+        basis = QString("from study_id %1 (study date %2, age at scan %3)").arg(q.value("study_id").toLongLong()).arg(studyDate.toString("yyyy-MM-dd")).arg(age);
+        return dob.toString("yyyy-MM") + "-00";
+    }
+
+    basis = "the subject has no study with both an age at scan and a study date";
+    return "";
 }
 
 

@@ -47,18 +47,23 @@ public:
     bool DeleteSeries(int seriesid, QString modality, QString &msg);
     bool CancelPipelineContainer(int containerid, QString username, QString &msg);
     bool RearchiveStudy(int studyid, bool matchidonly, QString &msg);
-    bool RearchiveSubject(int studyid, bool matchidonly, int projectid, QString &msg);
+    bool RearchiveSubject(int subjectid, bool matchidonly, int projectid, QString &msg);
     bool MoveStudyToSubject(int studyid, QString newuid, int newsubjectid, QString &msg);
     bool MergeSubjects(int subjectid, QString mergeIDs, QString mergeName, QString mergeDOB, QString mergeSex, QString mergeEthnicity1, QString mergeEthnicity2, QString mergeGUID, QString mergeAltUIDs, QString &msg);
     bool MergeStudies(int studyid, QString mergeIDs, QString mergeMethod, QString &msg);
     QString GetIORequestStatus(int requestid);
     bool SetIORequestStatus(int requestid, QString status, QString msg = "");
+    bool ClaimIORequest(int requestid);
 
 private:
     nidb *n;
     void GetAnalysisStoredSize(qint64 analysisid, qint64 &numfiles, qint64 &bytes);
     void GetSeriesStoredSize(QString modality, QString idcolumn, qint64 id, qint64 &numfiles, qint64 &bytes);
     QString StoredSizeString(qint64 numfiles, qint64 bytes);
+    QStringList GetSeriesTables();
+    bool DeleteSeriesRows(QList<int> studyIDs, QString &msg);
+    bool QueueRearchive(QString datapath, int projectid, bool matchidonly, QString deletedname, QString &msg);
+    bool MoveToDeleted(QString path, QString name, bool &moved, QString &newpath, QString &msg);
 };
 
 #endif // MODULEFILEIO_H

@@ -42,7 +42,8 @@ private:
         qint64 subjectid;
         QString uid;
         QString name;
-        QString sex;
+        QString sex; /* subjects.gender */
+        QString sexcol; /* subjects.sex */
         QString dob; /* YYYY-MM-DD as stored, which may be YYYY-00-00 or YYYY-MM-00 */
     };
 
@@ -65,7 +66,7 @@ private:
     qint64 QCDuplicateSubjects(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool projectAltUIDsOnly, bool &ok);
     qint64 QCDuplicateStudies(qint64 auditid, int projectid, bool &ok);
     qint64 QCEmptyObjects(qint64 auditid, int projectid, bool &ok);
-    qint64 QCMissingDemographics(qint64 auditid, const QList<qcSubject> &subjects);
+    qint64 QCMissingDemographics(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool fixSex, bool fixName, bool fixDOB, bool &ok);
     qint64 QCInvalidDOB(qint64 auditid, int projectid, const QList<qcSubject> &subjects, bool &ok);
     bool QCLoadDicomSeries(int projectid, QList<qcDicomSeries> &seriesList);
     qint64 QCDicomSeries(qint64 auditid, const qcDicomSeries &s, const QSet<QString> &subjectIDs, bool &checked);
@@ -76,6 +77,7 @@ private:
     static QStringList NameTokens(QString name);
     static int Levenshtein(const QString &a, const QString &b);
     static bool DOBIsMissing(QString dob);
+    QString EstimateDOB(qint64 subjectid, QString &basis, bool &ok);
     static bool DOBIsValid(QString dob, QDate firstStudyDate, QString &reason);
     static QString FormatValueCounts(const QMap<QString, int> &counts);
 

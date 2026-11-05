@@ -26,7 +26,7 @@ For each analysis, compares `analysis.analysis_numfiles` and `analysis.analysis_
 
 ## Quality control (`qualitycontrol`)
 
-Scope: one project only. Fix errors: never. Issues are only reported, and must be fixed manually.
+Scope: one project only. Fix errors: never, except for the optional fixes of the *Missing demographics* check. All other issues are only reported, and must be fixed manually.
 
 Any combination of the checks below can be selected (`audits.audit_options`).
 
@@ -80,8 +80,20 @@ Finds studies in the project that also exist under a different subject, in this 
 | Issue type | Field | Rule |
 |---|---|---|
 | `missingName` | `subjects.name` | Blank, or only `^` and spaces |
-| `missingSex` | `subjects.gender` | Blank, or not one of M, F, O, U |
+| `missingSex` | `subjects.sex`, `subjects.gender` | Either one is blank, or not one of M, F, O, U. One issue per subject covers both columns |
 | `missingDOB` | `subjects.birthdate` | NULL, blank, or `0000-00-00` |
+
+#### Fixes (`fixsex`, `fixname`, `fixdob`)
+
+Each missing item can optionally be fixed. The fixes are shown under the *Missing demographics* check, are never selected by default, and are only used when the check is selected. They are stored in `audits.audit_options` with the checks.
+
+| Option | Issue type | Fix |
+|---|---|---|
+| `fixsex` | `missingSex` | A blank `sex` or `gender` is set to the other, if the other is M, F, O, or U. An unrecognized value is never overwritten |
+| `fixname` | `missingName` | `name` is set to `<ID>^` (last name only), where the ID is the subject's primary alternate ID for its enrollment in this project (`subject_altuid.isprimary = 1`), otherwise the UID |
+| `fixdob` | `missingDOB` | `birthdate` is set to an estimated `YYYY-MM-00`, from the subject's earliest study, in any project, with both an age at scan (`studies.study_ageatscan`, more than 0 and less than 150) and a study date (`studies.study_datetime`, after 1900). The DOB is the study date minus the age. A whole-number age (ie, 45 from a DICOM PatientAge of `045Y`) means the subject was 45 to 46 years old, so 45.5 years is subtracted. If there is no such study, or the estimate is before 1900, the DOB is left blank |
+
+A fixed issue has `issue_fixed = 1`, and `issue_fixedmessage` records the old and new values (and for the DOB, the study it was estimated from). An issue that couldn't be fixed (ie, sex and gender both blank) has `issue_fixed = 0`, and the reason. When the fixes aren't selected, `issue_fixed` is NULL.
 
 ### Invalid DOB (`invaliddob`)
 

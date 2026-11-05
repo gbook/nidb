@@ -47,7 +47,7 @@
 	$audittypes = array(
 		'seriesfiles' => 'Series files (MR only) - compare the data, beh, and QC/QA file counts and sizes of each MR series in the database against the files in the archive',
 		'analysisfiles' => 'Analysis files - compare the file count and size of each analysis in the database against the files in the analysis directory',
-		'qualitycontrol' => 'Quality control (single project only) - find duplicate, empty, incomplete, or inconsistent subjects, studies, and series. Issues are reported only, never fixed'
+		'qualitycontrol' => 'Quality control (single project only) - find duplicate, empty, incomplete, or inconsistent subjects, studies, and series. Issues are reported only, except for the optional missing demographics fixes'
 	);
 
 	/* quality control checks, and their descriptions. Keys must match the audits.audit_options set. The criteria are listed in doc/audits.md */
@@ -59,6 +59,13 @@
 		'missingdemographics' => 'Missing demographics - no name, sex, or DOB',
 		'invaliddob' => 'Invalid DOB - placeholder dates (1900-01-01, 1776-07-04, ...), impossible dates, in the future, or after the first study. YYYY and YYYY-MM DOBs are valid',
 		'dicommetadata' => 'DICOM metadata - every DICOM file\'s PatientID, StudyDate/StudyTime, and SeriesNumber match its subject, study, and series (slow, reads every file)'
+	);
+
+	/* fixes for the missing demographics check, shown under it. Keys must match the audits.audit_options set. Never selected by default */
+	$qcfixlist = array(
+		'fixsex' => 'Fix missing sex/gender - fill in a blank sex or gender with the other, if it is M, F, O, or U',
+		'fixname' => 'Fix missing name - set the name to the primary alternate ID of the subject\'s enrollment in this project, otherwise the UID',
+		'fixdob' => 'Fix missing DOB - estimate the year and month (YYYY-MM-00) from the age at scan and date of the subject\'s earliest study that has both. Left blank if there is no such study'
 	);
 
 	/* quality control checks that are not selected by default */
@@ -111,6 +118,7 @@
 		$audittype = GetVariable("audittype");
 		$fixerrors = GetVariable("fixerrors");
 		$qcchecks = GetVariable("qcchecks");
+		$qcfixes = GetVariable("qcfixes");
 		$issuetype = GetVariable("issuetype");
 		$page = GetVariable("page");
 
@@ -120,7 +128,7 @@
 			   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 			case 'startaudit':
 				ob_start();
-				StartAudit($projectid, $audittype, $fixerrors, $qcchecks);
+				StartAudit($projectid, $audittype, $fixerrors, $qcchecks, $qcfixes);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("adminaudits.php");
 				break;
@@ -151,7 +159,7 @@
 	/* -------------------------------------------- */
 	/* ------- StartAudit ------------------------- */
 	/* -------------------------------------------- */
-	function StartAudit($projectid, $audittype, $fixerrors, $qcchecks) {
+	function StartAudit($projectid, $audittype, $fixerrors, $qcchecks, $qcfixes) {
 		$projectid = (int)$projectid;
 		$fixerrors = ($fixerrors == "1") ? 1 : 0;
 		$options = null;
@@ -161,7 +169,8 @@
 			return;
 		}
 
-		/* quality control audits only report issues, run on a single project, and need at least one check */
+		/* quality control audits run on a single project and need at least one check. They only report
+		   issues, except for the missing demographics fixes, which are stored in audit_options with the checks */
 		if ($audittype == "qualitycontrol") {
 			$fixerrors = 0;
 			if ($projectid == 0) {
@@ -174,6 +183,11 @@
 			if (count($checks) < 1) {
 				Error("Select at least one quality control check");
 				return;
+			}
+			if (in_array('missingdemographics', $checks)) {
+				if (!is_array($qcfixes))
+					$qcfixes = array();
+				$checks = array_merge($checks, array_values(array_intersect(array_keys($GLOBALS['qcfixlist']), $qcfixes)));
 			}
 			$options = implode(",", $checks);
 		}
@@ -576,8 +590,20 @@
 							<label><?=htmlspecialchars($desc)?></label>
 						</div>
 					</div>
+					<? if ($check == 'missingdemographics') { ?>
+					<div id="qcfixesfield" style="margin-left: 28px">
+						<? foreach ($GLOBALS['qcfixlist'] as $fix => $fixdesc) { ?>
+						<div class="field" style="margin-bottom: 4px">
+							<div class="ui checkbox">
+								<input type="checkbox" name="qcfixes[]" value="<?=$fix?>">
+								<label><i class="orange wrench icon"></i><?=htmlspecialchars($fixdesc)?></label>
+							</div>
+						</div>
+						<? } ?>
+					</div>
 					<? } ?>
-					<div style="color: #888; font-size: 0.9em; margin-top: 5px">Quality control audits run on a single project, and only report issues. Nothing is changed: fix the issues manually</div>
+					<? } ?>
+					<div style="color: #888; font-size: 0.9em; margin-top: 5px">Quality control audits run on a single project, and only report issues. Nothing is changed unless a missing demographics fix is selected: fix the other issues manually</div>
 				</div>
 				<div class="field" id="fixerrorsfield">
 					<div class="ui checkbox">
@@ -632,7 +658,7 @@
 					<td><a href="adminaudits.php?action=viewaudit&auditid=<?=$id?>"><?=$id?></a></td>
 					<td><?=AuditProjectName($row['project_id'], $projects)?></td>
 					<td><?=AuditTypeText($row['audit_type'], $row['audit_options'] ?? '')?></td>
-					<td><? if ($row['audit_type'] == 'qualitycontrol') { ?>-<? } elseif ($row['audit_fixerrors']) { ?><i class="orange wrench icon" title="Errors will be fixed"></i>Yes<? } else { ?>No<? } ?></td>
+					<td><? if ($row['audit_type'] == 'qualitycontrol') { if (count(array_intersect(explode(",", $row['audit_options'] ?? ''), array_keys($GLOBALS['qcfixlist']))) > 0) { ?><i class="orange wrench icon" title="Missing demographics will be fixed"></i>Demographics<? } else { ?>-<? } } elseif ($row['audit_fixerrors']) { ?><i class="orange wrench icon" title="Errors will be fixed"></i>Yes<? } else { ?>No<? } ?></td>
 					<td class="auditstatus"><?=AuditStatusLabel($status)?></td>
 					<td class="auditprogress"><?=AuditProgressBar($status, $row['audit_objectprogress'], $row['audit_totalobjects'])?></td>
 					<td class="auditmessage"><?=htmlspecialchars($row['audit_message'] ?? '')?></td>
@@ -665,7 +691,9 @@
 				$('.ui.dropdown').dropdown({ fullTextSearch: true });
 				$('.ui.checkbox').checkbox();
 				$('#audittype').on('change', UpdateAuditForm);
+				$('input[name="qcchecks[]"][value="missingdemographics"]').on('change', UpdateQCFixes);
 				UpdateAuditForm();
+				UpdateQCFixes();
 			});
 
 			/* quality control audits choose their checks, and can't fix errors */
@@ -678,6 +706,17 @@
 
 			function SetQCChecks(checked) {
 				$('input[name="qcchecks[]"]').closest('.checkbox').checkbox(checked ? 'check' : 'uncheck');
+				UpdateQCFixes();
+			}
+
+			/* the missing demographics fixes are only available when that check is selected */
+			function UpdateQCFixes() {
+				const on = $('input[name="qcchecks[]"][value="missingdemographics"]').is(':checked');
+				$('input[name="qcfixes[]"]').each(function() {
+					const cb = $(this).closest('.checkbox');
+					if (!on) cb.checkbox('uncheck');
+					cb.checkbox(on ? 'enable' : 'disable');
+				});
 			}
 
 			function ValidateAuditForm() {
@@ -690,6 +729,9 @@
 						alert('Select at least one quality control check');
 						return false;
 					}
+					const fixes = $('input[name="qcfixes[]"]:checked').map(function() { return $(this).closest('.checkbox').find('label').text().split(' - ')[0]; }).get();
+					if (fixes.length > 0)
+						return confirm('The following fixes are selected, and will modify subjects in the database:\n\n' + fixes.join('\n') + '\n\nContinue?');
 					return true;
 				}
 				if (document.getElementById('fixerrors').checked)
@@ -824,8 +866,16 @@
 				<tr><td><b>Type</b></td><td><?=htmlspecialchars($GLOBALS['audittypes'][$audit['audit_type']] ?? $audit['audit_type'])?></td></tr>
 				<? if ($audit['audit_type'] == 'qualitycontrol') { ?>
 				<tr><td><b>Checks</b></td><td>
-					<? foreach (explode(",", $audit['audit_options'] ?? '') as $check) { if ($check == '') continue; ?>
+					<?
+					/* the fixes are listed under the missing demographics check */
+					$options = array_filter(explode(",", $audit['audit_options'] ?? ''));
+					$fixes = array_intersect($options, array_keys($GLOBALS['qcfixlist']));
+					foreach (array_diff($options, $fixes) as $check) {
+					?>
 					<div><i class="check icon"></i><?=htmlspecialchars($GLOBALS['qcchecklist'][$check] ?? $check)?></div>
+					<? if ($check == 'missingdemographics') { foreach ($fixes as $fix) { ?>
+					<div style="margin-left: 20px"><i class="orange wrench icon"></i><?=htmlspecialchars($GLOBALS['qcfixlist'][$fix])?></div>
+					<? } } ?>
 					<? } ?>
 				</td></tr>
 				<? } else { ?>
