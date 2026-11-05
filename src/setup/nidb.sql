@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 04, 2026 at 07:32 PM
+-- Generation Time: Nov 05, 2026 at 05:18 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -1177,7 +1177,7 @@ CREATE TABLE `fileio_requests` (
   `rearchiveprojectid` int(11) DEFAULT NULL,
   `modality` varchar(50) DEFAULT NULL,
   `anonymize_fields` longtext DEFAULT NULL,
-  `request_status` enum('pending','processing','complete','error','cancelled') NOT NULL DEFAULT 'pending',
+  `request_status` enum('pending','complete','error','cancelled','processing') NOT NULL DEFAULT 'pending',
   `request_message` varchar(255) DEFAULT NULL,
   `username` varchar(50) DEFAULT NULL,
   `requestdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
