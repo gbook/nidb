@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  pipelinecontainer  cluster  minipipeline  backup  audit");
+    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  pipelinecontainer  cluster (node monitor)  minipipeline  backup  audit");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -101,31 +101,7 @@ int main(int argc, char *argv[])
     p.addOption(optKeepLog);
 
     /* command line options that take values */
-    QCommandLineOption optAnalysisID(QStringList() << "a" << "analysisid", "resultinsert -or- pipelinecheckin submodules only", "analysisid");
-    QCommandLineOption optCommand(QStringList() << "c" << "command", "pipelinecheckin submodule", "command");
-    QCommandLineOption optMessage(QStringList() << "m" << "message", "pipelinecheckin submodule", "message");
-    QCommandLineOption optResultDesc(QStringList() << "e" <<"desc", "Result description (resultinsert submodule)", "desc");
-    QCommandLineOption optResultFile(QStringList() << "f" << "file", "Insert file result (resultinsert submodule)", "filepath");
-    QCommandLineOption optResultImage(QStringList() << "i" << "image", "Insert image result (resultinsert submodule)", "imagepath");
-    QCommandLineOption optResultNumber(QStringList() << "n" << "number", "Insert numerical result (resultinsert submodule)", "number");
-    QCommandLineOption optResultText(QStringList() << "t" << "text", "Insert text result (resultinsert submodule)", "text");
-    QCommandLineOption optResultUnit(QStringList() << "unit", "Result unit (resultinsert submodule)", "unit");
-    QCommandLineOption optStep(QStringList() << "step", "Pipeline checkin step number", "step");
-    QCommandLineOption optStatus(QStringList() << "s" << "status", "pipelinecheckin submodule", "status");
-    QCommandLineOption optSubModule(QStringList() << "u" <<"submodule", "For running on cluster. Sub-modules [ resultinsert, pipelinecheckin, updateanalysis, checkcompleteanalysis ]", "submodule");
     QCommandLineOption optContainerID(QStringList() << "containerid", "Only process this pipeline_containers row (pipelinecontainer module)", "containerid");
-    p.addOption(optAnalysisID);
-    p.addOption(optCommand);
-    p.addOption(optMessage);
-    p.addOption(optResultDesc);
-    p.addOption(optResultFile);
-    p.addOption(optResultImage);
-    p.addOption(optResultNumber);
-    p.addOption(optResultText);
-    p.addOption(optResultUnit);
-    p.addOption(optStatus);
-    p.addOption(optStep);
-    p.addOption(optSubModule);
     p.addOption(optContainerID);
 
     /* Process the actual command line arguments given by the user */
@@ -142,18 +118,6 @@ int main(int argc, char *argv[])
     quiet = p.isSet(optQuiet);
     reset = p.isSet(optReset);
     cmdKeepLog = p.isSet(optKeepLog);
-    QString paramAnalysisID = p.value(optAnalysisID).trimmed();
-    QString paramCommand = p.value(optCommand).trimmed();
-    QString paramMessage = p.value(optMessage).trimmed();
-    QString paramResultDesc = p.value(optResultDesc).trimmed();
-    QString paramResultFile = p.value(optResultFile).trimmed();
-    QString paramResultImage = p.value(optResultImage).trimmed();
-    QString paramResultNumber = p.value(optResultNumber).trimmed();
-    QString paramResultText = p.value(optResultText).trimmed();
-    QString paramResultUnit = p.value(optResultUnit).trimmed();
-    QString paramStatus = p.value(optStatus).trimmed();
-    QString paramStep = p.value(optStep).trimmed();
-    QString paramSubModule = p.value(optSubModule).trimmed();
     int paramContainerID = p.value(optContainerID).trimmed().toInt();
 
     QStringList modules = {
@@ -173,12 +137,6 @@ int main(int argc, char *argv[])
         "qc",
         "upload",
     };
-    QStringList submodules = {
-        "checkcompleteanalysis",
-        "pipelinecheckin",
-        "resultinsert",
-        "updateanalysis",
-    };
 
     /* now check the command line parameters passed in, to see if they are calling a valid module */
     if (!modules.contains(module)) {
@@ -186,181 +144,151 @@ int main(int argc, char *argv[])
         std::cout << p.helpText().toStdString().c_str();
         return 0;
     }
-    if (module == "cluster") {
-        if (!submodules.contains(paramSubModule)) {
-            std::cout << QString("Error: unrecognized cluster module [%1]").arg(paramSubModule).toStdString().c_str();
-            std::cout << p.helpText().toStdString().c_str();
-            return 0;
-        }
-    }
 
     /* we've gotten this far, so let's create the nidb object */
     nidb *n;
 
-    /* check if this is being run from the cluster or locally */
-    if (module == "cluster") {
-        /* load the config file and connect to the database */
-        n = new nidb(module, true);
-        n->DatabaseConnect(true);
-        moduleCluster *m = new moduleCluster(n);
-
-        bool ret = false;
-        QString msg;
-        if (paramSubModule == "pipelinecheckin")
-            ret = m->PipelineCheckin(paramAnalysisID, paramStatus, paramStep, paramMessage, paramCommand, msg);
-        else if (paramSubModule == "resultinsert")
-            ret = m->ResultInsert(paramAnalysisID, paramResultText, paramResultNumber, paramResultFile, paramResultImage, paramResultDesc, paramResultUnit, msg);
-        else if (paramSubModule == "updateanalysis")
-            ret = m->UpdateAnalysis(paramAnalysisID, msg);
-        else if (paramSubModule == "checkcompleteanalysis")
-            ret = m->CheckCompleteAnalysis(paramAnalysisID, msg);
-
-        /* if the operation failed, let the user know */
-        Print(msg);
-        if (!ret)
-            std::cout << "Error: " << msg.toStdString().c_str() << std::endl;
-
-        delete m;
+    if (!quiet) {
+        printf("\n\n-------------------------------------------------------------\n");
+        printf("----- \033[1mStarting Neuroinformatics Database (NiDB) backend\033[0m -----\n");
+        printf("-------------------------------------------------------------\n");
     }
-    else {
-        /* a regular module is being called */
-        if (!quiet) {
-            printf("\n\n-------------------------------------------------------------\n");
-            printf("----- \033[1mStarting Neuroinformatics Database (NiDB) backend\033[0m -----\n");
-            printf("-------------------------------------------------------------\n");
+
+    /* load the config file and connect to the database */
+    n = new nidb(module);
+    if (n->DatabaseConnect()) {
+        bool keepLog = false;
+        if (debug) {
+            n->cfg["debug"] = "1";
+            n->debug = true;
         }
 
-        /* load the config file and connect to the database */
-        n = new nidb(module);
-        if (n->DatabaseConnect()) {
-            bool keepLog = false;
-            if (debug) {
-                n->cfg["debug"] = "1";
-                n->debug = true;
-            }
-
-            if (n->cfg["debug"].toInt())
-                if (!quiet)
-                    printf("------------------------- DEBUG MODE ------------------------\n");
-
+        if (n->cfg["debug"].toInt())
             if (!quiet)
-                Print(QString(n->GetBuildString()));
+                printf("------------------------- DEBUG MODE ------------------------\n");
 
-            if (reset)
-                n->ModuleClearLockFiles();
+        if (!quiet)
+            Print(QString(n->GetBuildString()));
 
-            /* check if this module should be running now or not */
-            if (n->ModuleCheckIfActive()) {
-                qint64 numlock = n->ModuleGetNumLockFiles();
-                if (numlock < n->ModuleGetNumThreads()) {
-                    if (n->ModuleCreateLockFile()) {
+        if (reset)
+            n->ModuleClearLockFiles();
 
-                        n->ModuleCreateLogFile();
+        /* check if this module should be running now or not */
+        if (n->ModuleCheckIfActive()) {
+            qint64 numlock = n->ModuleGetNumLockFiles();
+            if (numlock < n->ModuleGetNumThreads()) {
+                if (n->ModuleCreateLockFile()) {
 
-                        /* let the database know this module is running, and if the DB says it should be in debug mode */
-                        n->ModuleDBCheckIn();
+                    n->ModuleCreateLogFile();
 
-                        /* run the module */
-                        if (module == "fileio") {
-                            moduleFileIO *m = new moduleFileIO(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "export") {
-                            moduleExport *m = new moduleExport(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "exportnonimaging") {
-                            moduleExportNonImaging *m = new moduleExportNonImaging(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "modulemanager") {
-                            moduleManager *m = new moduleManager(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "import") {
-                            moduleImport *m = new moduleImport(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "remoteimport") {
-                            moduleRemoteImport *m = new moduleRemoteImport(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "upload") {
-                            moduleUpload *m = new moduleUpload(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "mriqa") {
-                            moduleMRIQA *m = new moduleMRIQA(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "qc") {
-                            moduleQC *m = new moduleQC(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "pipeline") {
-                            modulePipeline *m = new modulePipeline(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "pipelinecontainer") {
-                            modulePipelineContainer *m = new modulePipelineContainer(n);
-                            keepLog = m->Run(paramContainerID);
-                            delete m;
-                        }
-                        else if (module == "minipipeline") {
-                            moduleMiniPipeline *m = new moduleMiniPipeline(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "backup") {
-                            moduleBackup *m = new moduleBackup(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else if (module == "audit") {
-                            moduleAudit *m = new moduleAudit(n);
-                            keepLog = m->Run();
-                            delete m;
-                        }
-                        else
-                            Print("Unrecognized module [" + module + "]");
+                    /* let the database know this module is running, and if the DB says it should be in debug mode */
+                    n->ModuleDBCheckIn();
 
-                        /* always keep the logfile in debug mode, or if keepLog command line option is set */
-                        if ((n->cfg["keeplog"].toInt()) || (n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
-                            keepLog = true;
-
-                        n->ModuleRemoveLogFile(keepLog);
-
-                        /* let the database know this module has stopped running */
-                        n->ModuleDBCheckOut();
+                    /* run the module */
+                    if (module == "fileio") {
+                        moduleFileIO *m = new moduleFileIO(n);
+                        keepLog = m->Run();
+                        delete m;
                     }
+                    else if (module == "export") {
+                        moduleExport *m = new moduleExport(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "exportnonimaging") {
+                        moduleExportNonImaging *m = new moduleExportNonImaging(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "modulemanager") {
+                        moduleManager *m = new moduleManager(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "import") {
+                        moduleImport *m = new moduleImport(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "remoteimport") {
+                        moduleRemoteImport *m = new moduleRemoteImport(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "upload") {
+                        moduleUpload *m = new moduleUpload(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "mriqa") {
+                        moduleMRIQA *m = new moduleMRIQA(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "qc") {
+                        moduleQC *m = new moduleQC(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "pipeline") {
+                        modulePipeline *m = new modulePipeline(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "pipelinecontainer") {
+                        modulePipelineContainer *m = new modulePipelineContainer(n);
+                        keepLog = m->Run(paramContainerID);
+                        delete m;
+                    }
+                    else if (module == "minipipeline") {
+                        moduleMiniPipeline *m = new moduleMiniPipeline(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "backup") {
+                        moduleBackup *m = new moduleBackup(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "audit") {
+                        moduleAudit *m = new moduleAudit(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "cluster") {
+                        moduleCluster *m = new moduleCluster(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else
+                        Print("Unrecognized module [" + module + "]");
 
-                    /* delete the lock file */
-                    n->ModuleDeleteLockFile();
+                    /* always keep the logfile in debug mode, or if keepLog command line option is set */
+                    if ((n->cfg["keeplog"].toInt()) || (n->cfg["debug"].toInt()) || keepLog || cmdKeepLog)
+                        keepLog = true;
+
+                    n->ModuleRemoveLogFile(keepLog);
+
+                    /* let the database know this module has stopped running */
+                    n->ModuleDBCheckOut();
                 }
-                else
-                    Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
+
+                /* delete the lock file */
+                n->ModuleDeleteLockFile();
             }
             else
-                Print("This module [" + module + "] is disabled or does not exist");
+                Print(QString("Too many instances [%1] of this module [%2] running already").arg(numlock).arg(module));
         }
         else
-            Print("Unable to connect to database");
+            Print("This module [" + module + "] is disabled or does not exist");
+    }
+    else
+        Print("Unable to connect to database");
 
-        if (!quiet) {
-            printf("-------------------------------------------------------------\n");
-            printf("----- \033[1mTerminating (NiDB) backend\033[0m ----------------------------\n");
-            printf("-------------------------------------------------------------\n");
-        }
+    if (!quiet) {
+        printf("-------------------------------------------------------------\n");
+        printf("----- \033[1mTerminating (NiDB) backend\033[0m ----------------------------\n");
+        printf("-------------------------------------------------------------\n");
     }
 
     delete n;

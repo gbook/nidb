@@ -870,9 +870,17 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
     q.prepare("select pipeline_name from pipelines where pipeline_id = :pipelineid");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    QString pipelinename;
-    if (q.first())
-        pipelinename = q.value("pipeline_name").toString().trimmed();
+    if (!q.first()) {
+        msg = QString("Pipeline [%1] not found. It may have already been deleted").arg(pipelineid);
+        return false;
+    }
+    QString pipelinename = q.value("pipeline_name").toString().trimmed();
+
+    /* make sure the pipeline module doesn't start new analyses while they are being deleted. The website already
+       disables the pipeline when it queues the delete, but it may have been re-enabled (or put in testing) since */
+    q.prepare("update pipelines set pipeline_enabled = 0, pipeline_testing = 0, pipeline_statusmessage = 'Deleting' where pipeline_id = :pipelineid");
+    q.bindValue(":pipelineid", pipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
     /* get list of analyses associated with this pipeline */
     q.prepare("select analysis_id from analysis where pipeline_id = :pipelineid");
@@ -883,37 +891,88 @@ bool moduleFileIO::DeletePipeline(int pipelineid, QString &msg) {
     int numFailed = 0;
     qint64 totalFiles = 0;
     qint64 totalBytes = 0;
-    if (q.size() > 0) {
-        while (q.next()) {
-            QString m;
-            int analysisid = q.value("analysis_id").toInt();
-            qint64 numfiles, bytes;
-            GetAnalysisStoredSize(analysisid, numfiles, bytes);
-            if (DeleteAnalysis(analysisid, m)) {
-                numDeleted++;
-                totalFiles += numfiles;
-                totalBytes += bytes;
-            }
-            else {
-                numFailed++;
-                n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(m));
-            }
+    QStringList failures;
+    while (q.next()) {
+        QString m;
+        qint64 analysisid = q.value("analysis_id").toLongLong();
+        qint64 numfiles, bytes;
+        GetAnalysisStoredSize(analysisid, numfiles, bytes);
+        if (DeleteAnalysis(analysisid, m)) {
+            numDeleted++;
+            totalFiles += numfiles;
+            totalBytes += bytes;
+        }
+        else {
+            numFailed++;
+            n->Log(QString("Attempted to delete analysis [%1], but received error [%2]").arg(analysisid).arg(m));
+            if (failures.size() < 5)
+                failures.append(QString("analysis [%1]: %2").arg(analysisid).arg(m));
         }
     }
-    else {
-        n->Log("No analyses to delete for this pipeline");
+
+    /* only delete the pipeline row once no analyses refer to it. An analysis whose pipeline row is gone can't be loaded,
+       so it could never be deleted afterwards. This also catches analyses created by a pipeline run that was already
+       in progress when the delete started */
+    q.prepare("select count(*) 'count' from analysis where pipeline_id = :pipelineid");
+    q.bindValue(":pipelineid", pipelineid);
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    int numRemaining = 0;
+    if (q.first())
+        numRemaining = q.value("count").toInt();
+
+    QString deletedStr = QString("%1 analyses deleted").arg(numDeleted) + StoredSizeString(totalFiles, totalBytes);
+
+    if (numRemaining > 0) {
+        msg = QString("Pipeline [%1] was not deleted, because %2 analyses remain (%3 could not be deleted). %4. The pipeline has been disabled. Fix the problem and delete the pipeline again").arg(pipelinename).arg(numRemaining).arg(numFailed).arg(deletedStr);
+        if (failures.size() > 0)
+            msg += ". Errors: " + failures.join("; ");
+        if (numFailed > failures.size())
+            msg += QString("; and %1 more, see the log").arg(numFailed - failures.size());
+
+        q.prepare("update pipelines set pipeline_statusmessage = 'Delete failed, some analyses remain' where pipeline_id = :pipelineid");
+        q.bindValue(":pipelineid", pipelineid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        return false;
     }
 
-    msg = QString("Pipeline [%1] deleted, along with %2 analyses").arg(pipelinename).arg(numDeleted) + StoredSizeString(totalFiles, totalBytes);
-    if (numFailed > 0)
-        msg += QString(". %1 analyses could not be deleted, see the log for details").arg(numFailed);
+    /* delete the pipeline's definition rows (all versions), its status and history, and any tags or most-recent
+       entries that point to it. Not deleted: pipeline_containers (built images have their own directories and are
+       managed on the containers page), export and package records (historical, packages prune missing objects), and
+       pipeline_dependencies rows where *other* pipelines list this one as a parent */
+    QStringList childTables = { "pipeline_steps", "pipeline_data_def", "pipeline_options", "pipeline_version", "pipeline_dependencies", "pipeline_status", "pipeline_history", "tags", "mostrecent" };
+    QStringList childErrors;
+    for (const QString &table : childTables) {
+        bool ok = true;
+        QSqlQuery q2;
+        q2.prepare(QString("delete from %1 where pipeline_id = :pipelineid").arg(table));
+        q2.bindValue(":pipelineid", pipelineid);
+        n->SQLQuery(q2, __FUNCTION__, __FILE__, __LINE__, &ok);
+        if (ok)
+            n->Log(QString("Deleted [%1] rows from [%2]").arg(q2.numRowsAffected()).arg(table));
+        else
+            childErrors.append(table);
+    }
 
     /* delete the actual pipeline entry */
     q.prepare("delete from pipelines where pipeline_id = :pipelineid");
     q.bindValue(":pipelineid", pipelineid);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    return 1;
+    msg = QString("Pipeline [%1] deleted, along with %2").arg(pipelinename).arg(deletedStr);
+    if (childErrors.size() > 0)
+        msg += QString(". Rows for this pipeline could not be deleted from [%1], see the log").arg(childErrors.join(", "));
+
+    /* other pipelines that list this one as a dependency now point to a pipeline that doesn't exist */
+    q.prepare("select pipeline_name from pipelines where find_in_set(:pipelineid, replace(pipeline_dependency, ' ', '')) > 0");
+    q.bindValue(":pipelineid", QString::number(pipelineid));
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    QStringList dependents;
+    while (q.next())
+        dependents.append(q.value("pipeline_name").toString().trimmed());
+    if (dependents.size() > 0)
+        msg += QString(". These pipelines depend on it and need a new dependency: [%1]").arg(dependents.join(", "));
+
+    return true;
 }
 
 
@@ -1727,8 +1786,9 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
     q.bindValue(":targetsubjectid", targetSubjectID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
-    /* replace the subject-level alternate UIDs */
-    q.prepare("delete from subject_altuid where subject_id = :targetsubjectid");
+    /* replace the subject-level alternate UIDs (enrollment_id 0, as the website stores them; -1 from older merges).
+       Enrollment-level alternate UIDs are kept */
+    q.prepare("delete from subject_altuid where subject_id = :targetsubjectid and enrollment_id in (0, -1)");
     q.bindValue(":targetsubjectid", targetSubjectID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
@@ -1743,7 +1803,7 @@ bool moduleFileIO::MergeSubjects(int targetSubjectID, QString mergeIDs, QString 
         }
         if (altuid == "")
             continue;
-        q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:targetsubjectid, :altuid, :isprimary, -1)");
+        q.prepare("insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (:targetsubjectid, :altuid, :isprimary, 0)");
         q.bindValue(":targetsubjectid", targetSubjectID);
         q.bindValue(":altuid", altuid);
         q.bindValue(":isprimary", isprimary);

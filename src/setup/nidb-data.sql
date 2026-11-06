@@ -30,6 +30,7 @@ delete from modules;
 INSERT IGNORE INTO `modules` (`module_name`, `module_status`, `module_numrunning`, `module_laststart`, `module_laststop`, `module_isactive`) VALUES
 ('audit', 'stopped', 0, now(), now(), 0),
 ('backup', 'stopped', 0, now(), now(), 1),
+('cluster', 'stopped', 0, now(), now(), 1),
 ('dailybackup', 'stopped', 0, now(), now(), 0),
 ('export', 'stopped', 0, now(), now(), 1),
 ('exportnonimaging', 'stopped', 0, now(), now(), 1),

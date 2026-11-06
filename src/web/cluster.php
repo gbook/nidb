@@ -41,7 +41,7 @@
 
 	/* ----- setup variables ----- */
 	$clustertype = GetVariable("clustertype");
-	if (!in_array($clustertype, array('slurm', 'pipelines', 'diskusage'))) $clustertype = 'sge';
+	if (!in_array($clustertype, array('slurm', 'pipelines', 'diskusage', 'nodes'))) $clustertype = 'sge';
 
 	$action = GetVariable("action");
 
@@ -56,6 +56,7 @@
 		$slurmactive     = ($clustertype === 'slurm')     ? 'primary' : 'basic';
 		$pipelinesactive = ($clustertype === 'pipelines') ? 'primary' : 'basic';
 		$diskusageactive = ($clustertype === 'diskusage') ? 'primary' : 'basic';
+		$nodesactive     = ($clustertype === 'nodes')     ? 'primary' : 'basic';
 		?>
 		<div class="ui container">
 			<div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
@@ -67,6 +68,7 @@
 				<div class="ui buttons">
 					<a href="cluster.php?clustertype=pipelines" class="ui <?=$pipelinesactive?> button">Pipelines</a>
 					<a href="cluster.php?clustertype=diskusage" class="ui <?=$diskusageactive?> button">Disk usage</a>
+					<a href="cluster.php?clustertype=nodes" class="ui <?=$nodesactive?> button">Nodes</a>
 				</div>
 
 				<div style="margin-left:auto; display:flex; align-items:center; gap:10px">
@@ -81,6 +83,8 @@
 				<? DisplayPipelines(); ?>
 			<? } elseif ($clustertype === 'diskusage') { ?>
 				<? DisplayDiskUsage(); ?>
+			<? } elseif ($clustertype === 'nodes') { ?>
+				<? DisplayNodeMonitor(); ?>
 			<? } else { ?>
 				<? DisplaySGETabs($action); ?>
 			<? } ?>
@@ -89,6 +93,782 @@
 		<script>
 			$(document).ready(function() {
 				$('.tabular.menu .item').tab();
+			});
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNodeMonitor ----------------- */
+	/* -------------------------------------------- */
+	/* load, CPU, memory, network, and disk history of the monitored cluster nodes, recorded every minute by the
+	   'cluster' module (doc/cluster-monitor.md). Nodes are managed in clustersettings.php. Both views are grids of
+	   sparklines on a shared time axis: the overview has one row per node for a selected metric, and the node detail
+	   view has one row per metric */
+	function DisplayNodeMonitor() {
+		$ranges = NodeMonitorRanges();
+		$range = GetVariable("range");
+		if (!is_string($range) || !isset($ranges[$range])) $range = '24h';
+		$metrics = NodeOverviewMetrics();
+		$metric = GetVariable("metric");
+		if (!is_string($metric) || !isset($metrics[$metric])) $metric = 'load1';
+		$scale = (GetVariable("scale") === 'node') ? 'node' : 'shared';
+		$nodeid = (int)GetVariable("nodeid");
+
+		/* the overview's metric and scale are carried through the links, so going to a node and back keeps them */
+		$keep = "&metric=" . urlencode($metric) . "&scale=" . urlencode($scale);
+
+		?>
+		<link rel="stylesheet" href="scripts/uplot/uPlot.min.css">
+		<script src="scripts/uplot/uPlot.iife.min.js"></script>
+		<style>
+			.sparkgrid { margin-top: 4px; }
+			.sparkrow { display: flex; align-items: center; min-height: 44px; border-bottom: 1px solid #eeede9; }
+			.sparkrow:hover { background: #f7f7f5; }
+			.sparkrow.sparkhead, .sparkrow.sparkfoot { min-height: 0; border-bottom: 1px solid #d4d3cf; font-size: 0.85em; color: #52514e; }
+			.sparkrow.sparkfoot { border-bottom: none; border-top: 1px solid #d4d3cf; margin-top: -1px; }
+			.sparkrow.sparkhead:hover, .sparkrow.sparkfoot:hover { background: none; }
+			.sparkname { flex: 0 0 220px; padding: 3px 10px 3px 6px; overflow: hidden; line-height: 1.3; }
+			.sparkname .sparklabel { display: block; font-weight: bold; color: #1f1e1c; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+			.sparkname a.sparklabel { color: #2a78d6; }
+			.sparksub { font-size: 0.8em; color: #52514e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+			.sparksub i.icon { margin: 0 3px 0 0; }
+			.sparkval { flex: 0 0 130px; padding-right: 12px; text-align: right; line-height: 1.3; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; }
+			.sparkval b { color: #1f1e1c; }
+			.sparkvalsub { font-size: 0.8em; color: #52514e; }
+			.sparkplot { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+			.sparknodata { color: #888; font-size: 0.85em; font-style: italic; padding-left: 10px; }
+			.sparkgroup { padding: 14px 6px 4px 6px; font-weight: bold; color: #1f1e1c; border-bottom: 1px solid #d4d3cf; }
+			.nodestatuslabel { font-size: 0.8rem; font-weight: normal; color: #52514e; white-space: nowrap; }
+		</style>
+		<div style="display:flex; align-items:center; gap:10px; margin-bottom:14px">
+			<? if ($nodeid > 0) { ?>
+				<a href="cluster.php?clustertype=nodes&range=<?=urlencode($range)?><?=$keep?>" class="ui basic button noderangelink"><i class="arrow left icon"></i> All nodes</a>
+			<? } ?>
+			<div class="ui small buttons">
+				<? foreach ($ranges as $key => $r) { ?>
+					<a href="cluster.php?clustertype=nodes&range=<?=urlencode($key)?><?=($nodeid > 0) ? "&nodeid=$nodeid" : ""?><?=$keep?>" class="ui <?=($key == $range) ? 'primary' : 'basic'?> button noderangelink"><?=$r['label']?></a>
+				<? } ?>
+			</div>
+			<? if (isAdmin()) { ?>
+				<a href="clustersettings.php" style="margin-left:auto"><i class="cog icon"></i>Manage nodes</a>
+			<? } ?>
+		</div>
+		<? NodeSparkGridScript(); ?>
+		<?
+		if ($nodeid > 0)
+			DisplayNodeDetail($nodeid, $range);
+		else
+			DisplayNodeOverview($range, $metric, $scale);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NodeMonitorRanges ------------------ */
+	/* -------------------------------------------- */
+	function NodeMonitorRanges() {
+		return array(
+			'1h'  => array('label' => '1 hour',   'seconds' => 3600),
+			'6h'  => array('label' => '6 hours',  'seconds' => 21600),
+			'24h' => array('label' => '24 hours', 'seconds' => 86400),
+			'7d'  => array('label' => '7 days',   'seconds' => 604800),
+			'30d' => array('label' => '30 days',  'seconds' => 2592000)
+		);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NodeOverviewMetrics ---------------- */
+	/* -------------------------------------------- */
+	/* the metrics that can be selected in the node overview. 'sql' is the aggregate for GetNodeSamples, 'col' is the
+	   cluster_node_samples column for the latest value, and 'kind' picks the formatting and y scale (load, pct, rate) */
+	function NodeOverviewMetrics() {
+		return array(
+			'load1'     => array('button' => 'Load 1m',   'label' => 'Load (1 min)',     'sql' => 'avg(load1)',          'col' => 'load1',          'kind' => 'load'),
+			'load5'     => array('button' => 'Load 5m',   'label' => 'Load (5 min)',     'sql' => 'avg(load5)',          'col' => 'load5',          'kind' => 'load'),
+			'load15'    => array('button' => 'Load 15m',  'label' => 'Load (15 min)',    'sql' => 'avg(load15)',         'col' => 'load15',         'kind' => 'load'),
+			'mem'       => array('button' => 'Mem % used', 'label' => 'Memory used',     'sql' => 'avg(100 * mem_used_mb / nullif(mem_total_mb, 0))', 'col' => '', 'kind' => 'pct'),
+			'netrx'     => array('button' => 'Net RX',    'label' => 'Network received', 'sql' => 'avg(net_rx_bps)',     'col' => 'net_rx_bps',     'kind' => 'rate'),
+			'nettx'     => array('button' => 'Net TX',    'label' => 'Network sent',     'sql' => 'avg(net_tx_bps)',     'col' => 'net_tx_bps',     'kind' => 'rate'),
+			'diskread'  => array('button' => 'Disk read', 'label' => 'Disk read',        'sql' => 'avg(disk_read_bps)',  'col' => 'disk_read_bps',  'kind' => 'rate'),
+			'diskwrite' => array('button' => 'Disk write', 'label' => 'Disk write',      'sql' => 'avg(disk_write_bps)', 'col' => 'disk_write_bps', 'kind' => 'rate')
+		);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NodeJSON --------------------------- */
+	/* -------------------------------------------- */
+	/* json_encode for data written into a <script> block. Node names and errors are user-entered, so <, >, &, and
+	   quotes are escaped so they can't close the script tag */
+	function NodeJSON($data) {
+		return json_encode($data, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetNodeStatus ---------------------- */
+	/* -------------------------------------------- */
+	/* status of a cluster_nodes row (which includes a 'seenago' column, in seconds).
+	   Returns array(color, icon, label, details, failed). The color is from the status palette, and is always shown with
+	   its icon and label so it never carries meaning alone */
+	function GetNodeStatus($row) {
+		$status = $row['last_status'] ?? '';
+		$seenago = $row['seenago'];
+		if (!$row['enabled']) return array('#9e9d98', 'minus circle', 'Disabled', 'Not being checked', false);
+		if ($status == '') return array('#9e9d98', 'circle outline', 'Not checked yet', 'Waiting for the first check', false);
+		if ($status != 'ok') return array('#d03b3b', 'times circle', ucfirst($status), $row['last_error'] ?? '', true);
+		if (($seenago === null) || ((int)$seenago > 300)) return array('#9e9d98', 'clock outline', 'No recent data', 'Is the cluster module running?', false);
+		return array('#0ca30c', 'check circle', 'OK', 'Answered the last check', false);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetNodeSamples --------------------- */
+	/* -------------------------------------------- */
+	/* samples for one node (or all nodes if $nodeid is 0) since $start, averaged into buckets of $bucket seconds.
+	   Returns array(times, array(nodeid => array(column => values))). Every node gets the same time axis, with null where
+	   there's no sample, so the charts show gaps instead of drawing across outages */
+	function GetNodeSamples($nodeid, $start, $bucket, $columns) {
+		$bucket = max(60, (int)$bucket);
+		$first = (int)(floor($start / $bucket) * $bucket);
+		$last = (int)(floor(time() / $bucket) * $bucket);
+		$times = array();
+		for ($t = $first; $t <= $last; $t += $bucket) $times[] = $t;
+		$index = array_flip($times);
+
+		/* $columns are 'alias' => 'sql expression', from the callers (not user input) */
+		$select = array();
+		foreach ($columns as $alias => $expr) $select[] = "$expr '$alias'";
+		$sqlstring = "select clusternode_id, floor(unix_timestamp(sample_time) / ?) * ? 'bucket', " . implode(", ", $select) . " from cluster_node_samples where sample_time >= from_unixtime(?)";
+		$params = array($bucket, $bucket, $first);
+		$types = 'iii';
+		if ($nodeid > 0) {
+			$sqlstring .= " and clusternode_id = ?";
+			$params[] = (int)$nodeid;
+			$types .= 'i';
+		}
+		$sqlstring .= " group by clusternode_id, bucket";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+
+		$data = array();
+		$empty = array_fill(0, count($times), null);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$id = (int)$row['clusternode_id'];
+			$b = (int)$row['bucket'];
+			if (!isset($index[$b])) continue;
+			if (!isset($data[$id])) {
+				foreach ($columns as $alias => $expr) $data[$id][$alias] = $empty;
+			}
+			foreach ($columns as $alias => $expr)
+				$data[$id][$alias][$index[$b]] = ($row[$alias] === null) ? null : round((float)$row[$alias], 2);
+		}
+		mysqli_stmt_close($stmt);
+
+		return array($times, $data);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NodeSparkGridScript ---------------- */
+	/* -------------------------------------------- */
+	/* the javascript shared by the overview and detail views: formatters, and NodeSpark.build(), which draws a grid of
+	   sparklines with one row per node or metric. All rows share the time axis (shown above, and below long grids), a
+	   crosshair (hovering shows every row's value at that time, and the time in the header), and zoom (drag across any
+	   row, double-click to reset). Each row is a single series, so all use the same color; a dashed gray line is the
+	   row's reference (cores, total memory). Text is set with textContent.
+	   A row is { group: 'heading' }, or { label, href, title, status: {color, icon, label, details}, sub, values, ref,
+	   fmt, refFmt, current, currentRef, yTop } */
+	function NodeSparkGridScript() {
+		?>
+		<script>
+			const NodeSpark = (function() {
+				const color = '#2a78d6', fill = 'rgba(42,120,214,0.12)', refColor = '#9e9d98', axisColor = '#52514e';
+				const height = 40;
+				const pad = [4, 12, 4, 12];
+
+				const fmt = {
+					num: function(v) { return v.toFixed(2); },
+					int: function(v) { return Math.round(v).toLocaleString(); },
+					pct: function(v) { return v.toFixed(1) + '%'; },
+					mem: function(v) { return (Math.abs(v) >= 1048576) ? (v/1048576).toFixed(2) + ' TiB' : ((Math.abs(v) >= 1024) ? (v/1024).toFixed(1) + ' GiB' : v.toFixed(0) + ' MiB'); },
+					rate: function(v) {
+						const units = ['B/s', 'KiB/s', 'MiB/s', 'GiB/s'];
+						let i = 0;
+						while ((Math.abs(v) >= 1024) && (i < units.length - 1)) { v /= 1024; i++; }
+						return v.toFixed((i == 0) ? 0 : 1) + ' ' + units[i];
+					},
+					time: function(t) { return new Date(t * 1000).toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+				};
+
+				/* largest non-null value in any of the arrays (0 if none) */
+				function max() {
+					let m = 0;
+					for (let a = 0; a < arguments.length; a++) {
+						const arr = arguments[a];
+						if (!arr) continue;
+						for (let i = 0; i < arr.length; i++) if ((arr[i] != null) && (arr[i] > m)) m = arr[i];
+					}
+					return m;
+				}
+
+				function div(cls, text) {
+					const e = document.createElement('div');
+					e.className = cls;
+					if (text != null) e.textContent = text;
+					return e;
+				}
+
+				function plotWidth(el) { return Math.max(120, el.clientWidth); }
+
+				function build(el, t, rows, nameHeader) {
+					if (typeof uPlot === 'undefined') { el.innerHTML = '<span class="ui red text">Chart library (uPlot) failed to load</span>'; return; }
+
+					(el._charts || []).forEach(function(c) { c.destroy(); });
+					el.innerHTML = '';
+					const charts = [];
+					el._charts = charts;
+					const makers = [];
+					const syncKey = 'nodespark-' + (el.id || 'grid');
+
+					/* zooming any row sets the same time range on all of them */
+					let syncing = false;
+					const zoomSync = { hooks: { setScale: [function(u, key) {
+						if ((key !== 'x') || syncing) return;
+						syncing = true;
+						charts.forEach(function(c) { if (c !== u) c.setScale('x', { min: u.scales.x.min, max: u.scales.x.max }); });
+						syncing = false;
+					}] } };
+
+					/* a row with only the time axis. side 0 is the top, 2 the bottom */
+					function axisRow(cls, nameText, valEl, side) {
+						const row = div('sparkrow ' + cls);
+						row.appendChild(div('sparkname', nameText));
+						row.appendChild(valEl || div('sparkval'));
+						const plot = div('sparkplot');
+						row.appendChild(plot);
+						el.appendChild(row);
+						makers.push(function() {
+							const u = new uPlot({
+								width: plotWidth(plot), height: 26,
+								padding: [(side == 0) ? 0 : 2, pad[1], (side == 2) ? 0 : 2, pad[3]],
+								legend: { show: false },
+								cursor: { show: false, drag: { x: false, y: false } },
+								select: { show: false },
+								plugins: [zoomSync],
+								scales: { x: { time: true }, y: { range: function() { return [0, 1]; } } },
+								axes: [{ side: side, stroke: axisColor, grid: { show: false }, ticks: { size: 4, stroke: '#d4d3cf' }, size: 22, gap: 2 }, { show: false }],
+								series: [{}, { show: false }]
+							}, [t, t.map(function() { return null; })], plot);
+							u._h = 26;
+							charts.push(u);
+						});
+					}
+
+					const timeEl = div('sparkval', 'Latest');
+					axisRow('sparkhead', nameHeader, timeEl, 0);
+
+					let datarows = 0;
+					rows.forEach(function(r) {
+						if (r.group !== undefined) {
+							el.appendChild(div('sparkgroup', r.group));
+							return;
+						}
+						datarows++;
+						const row = div('sparkrow');
+
+						const name = div('sparkname');
+						const label = document.createElement(r.href ? 'a' : 'span');
+						label.className = 'sparklabel';
+						label.textContent = r.label;
+						if (r.href) label.href = r.href;
+						if (r.title) label.title = r.title;
+						name.appendChild(label);
+						if (r.status) {
+							const st = div('sparksub');
+							const icon = document.createElement('i');
+							icon.className = r.status.icon + ' icon';
+							icon.style.color = r.status.color;
+							st.appendChild(icon);
+							st.appendChild(document.createTextNode(r.status.label + ((r.status.failed && r.status.details) ? ': ' + r.status.details : '')));
+							if (r.status.details) st.title = r.status.details;
+							name.appendChild(st);
+						}
+						else if (r.sub) {
+							name.appendChild(div('sparksub', r.sub));
+						}
+						row.appendChild(name);
+
+						/* the value column shows the latest value, or the value under the crosshair */
+						const val = div('sparkval');
+						const vmain = document.createElement('b');
+						const vsub = div('sparkvalsub');
+						val.appendChild(vmain);
+						val.appendChild(vsub);
+						row.appendChild(val);
+						function show(i) {
+							const v = (i == null) ? r.current : r.values[i];
+							const ref = (i == null) ? r.currentRef : (r.ref ? r.ref[i] : null);
+							vmain.textContent = (v == null) ? ((i == null) ? '-' : 'no data') : r.fmt(v);
+							vsub.textContent = ((ref != null) && r.refFmt) ? r.refFmt(ref) : ' ';
+						}
+						show(null);
+
+						const plot = div('sparkplot');
+						row.appendChild(plot);
+						el.appendChild(row);
+
+						if (r.values.every(function(v) { return v == null; })) {
+							plot.appendChild(div('sparknodata', 'No samples in this time range'));
+							return;
+						}
+
+						makers.push(function() {
+							const series = [{}, { stroke: color, fill: fill, width: 1.5, points: { show: false } }];
+							const data = [t, r.values];
+							if (r.ref) {
+								series.push({ stroke: refColor, width: 1, dash: [3, 3], points: { show: false } });
+								data.push(r.ref);
+							}
+							const u = new uPlot({
+								width: plotWidth(plot), height: height,
+								padding: pad,
+								legend: { show: false },
+								cursor: { x: true, y: false, points: { show: false }, drag: { x: true, y: false }, sync: { key: syncKey } },
+								plugins: [zoomSync],
+								hooks: {
+									setCursor: [function(u) {
+										const i = u.cursor.idx;
+										const off = ((i == null) || (u.cursor.left == null) || (u.cursor.left < 0));
+										show(off ? null : i);
+										timeEl.textContent = off ? 'Latest' : fmt.time(t[i]);
+									}]
+								},
+								axes: [{ show: false }, { show: false }],
+								scales: { x: { time: true }, y: { range: function() { return [0, r.yTop]; } } },
+								series: series
+							}, data, plot);
+							u._h = height;
+							charts.push(u);
+						});
+					});
+
+					if (datarows > 12) axisRow('sparkfoot', '', null, 2);
+
+					/* charts are made after the rows are in the page, so they know their width */
+					makers.forEach(function(f) { f(); });
+
+					if (!el._resizeBound) {
+						el._resizeBound = true;
+						let timer = null;
+						window.addEventListener('resize', function() {
+							clearTimeout(timer);
+							timer = setTimeout(function() {
+								(el._charts || []).forEach(function(c) { c.setSize({ width: plotWidth(c.root.parentNode), height: c._h }); });
+							}, 150);
+						});
+					}
+				}
+
+				return { fmt: fmt, max: max, build: build };
+			})();
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNodeOverview ---------------- */
+	/* -------------------------------------------- */
+	/* one row per node, grouped by cluster, with a sparkline of the selected metric. The metric buttons switch the rows
+	   without reloading the page */
+	function DisplayNodeOverview($range, $metric, $scale) {
+		$ranges = NodeMonitorRanges();
+		$seconds = $ranges[$range]['seconds'];
+		$metrics = NodeOverviewMetrics();
+
+		$sqlstring = "select n.*, c.cluster_name, timestampdiff(second, n.last_seen, now()) 'seenago' from cluster_nodes n left join compute_cluster c on n.computecluster_id = c.computecluster_id order by c.cluster_name, n.hostname";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$clusters = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$clusters[(int)$row['computecluster_id']][] = $row;
+
+		if (count($clusters) == 0) {
+			?>
+			<div class="ui message">
+				No cluster nodes are being monitored.
+				<? if (isAdmin()) { ?>Add nodes in <a href="clustersettings.php">cluster settings</a>.<? } else { ?>An administrator can add nodes in the cluster settings.<? } ?>
+			</div>
+			<?
+			return;
+		}
+
+		/* the most recent sample for each node, from the last 10 minutes */
+		$latest = array();
+		$sqlstring = "select * from cluster_node_samples where sample_time >= now() - interval 10 minute order by sample_time";
+		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$latest[(int)$row['clusternode_id']] = $row;
+
+		/* about 300 points per row */
+		$bucket = max(60, (int)(ceil($seconds / 300 / 60) * 60));
+		$columns = array('cores' => 'max(num_cores)');
+		foreach ($metrics as $key => $m) $columns[$key] = $m['sql'];
+		list($times, $samples) = GetNodeSamples(0, time() - $seconds, $bucket, $columns);
+		$empty = array_fill(0, count($times), null);
+
+		/* grouped by cluster ID, so clusters with the same (or a blank) name stay separate */
+		$groups = array();
+		foreach ($clusters as $clusterid => $nodes) {
+			$clustername = trim($nodes[0]['cluster_name'] ?? '');
+			$group = array('label' => ($clustername == '') ? '(blank cluster name)' : $clustername, 'nodes' => array());
+			foreach ($nodes as $node) {
+				$id = (int)$node['clusternode_id'];
+				list($color, $icon, $statuslabel, $statusdetails, $failed) = GetNodeStatus($node);
+				$s = $latest[$id] ?? null;
+
+				$cur = array('cores' => ($s && ($s['num_cores'] !== null)) ? (int)$s['num_cores'] : null);
+				foreach ($metrics as $key => $m) {
+					if ($key == 'mem')
+						$cur[$key] = ($s && ($s['mem_used_mb'] !== null) && ((float)$s['mem_total_mb'] > 0)) ? round(100 * (float)$s['mem_used_mb'] / (float)$s['mem_total_mb'], 1) : null;
+					else
+						$cur[$key] = ($s && ($s[$m['col']] !== null)) ? (float)$s[$m['col']] : null;
+				}
+
+				$series = array();
+				foreach ($columns as $key => $expr) $series[$key] = $samples[$id][$key] ?? $empty;
+
+				$group['nodes'][] = array(
+					'id' => $id,
+					'name' => (($node['display_name'] ?? '') != '') ? $node['display_name'] : $node['hostname'],
+					'hostname' => $node['hostname'],
+					'status' => array('color' => $color, 'icon' => $icon, 'label' => $statuslabel, 'details' => $statusdetails, 'failed' => $failed),
+					'cur' => $cur,
+					'series' => $series
+				);
+			}
+			$groups[] = $group;
+		}
+
+		$metricinfo = array();
+		foreach ($metrics as $key => $m) $metricinfo[$key] = array('label' => $m['label'], 'kind' => $m['kind']);
+		?>
+		<div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap">
+			<div class="ui small buttons" id="nodeMetricButtons">
+				<? foreach ($metrics as $key => $m) { ?>
+					<button type="button" class="ui <?=($key == $metric) ? 'primary' : 'basic'?> button" data-metric="<?=htmlspecialchars($key)?>" title="<?=htmlspecialchars($m['label'])?>"><?=htmlspecialchars($m['button'])?></button>
+				<? } ?>
+			</div>
+			<div class="ui checkbox" id="nodeSharedScaleBox">
+				<input type="checkbox" id="nodeSharedScale" <?=($scale == 'shared') ? 'checked' : ''?>>
+				<label for="nodeSharedScale">Same scale for all nodes</label>
+			</div>
+		</div>
+		<div class="sparkgrid" id="nodeOverviewGrid"></div>
+		<div class="ui small grey text" style="margin-top: 10px">
+			Values are averaged over <?=($bucket >= 3600) ? round($bucket/3600, 1) . " hour" : round($bucket/60) . " minute"?> intervals. Hover to see past values; drag across a row to zoom in, double-click to zoom out. For load, the dashed line is the number of cores. Gaps are times the node didn't answer. Click a node to see all of its metrics.
+		</div>
+		<script>
+			$(document).ready(function(){
+				const d = <?=NodeJSON(array('t' => $times, 'range' => $range, 'metrics' => $metricinfo, 'groups' => $groups))?>;
+				let metric = <?=NodeJSON($metric)?>;
+				let shared = <?=($scale == 'shared') ? 'true' : 'false'?>;
+				const gridEl = document.getElementById('nodeOverviewGrid');
+				const scaleBox = document.getElementById('nodeSharedScale');
+				const F = NodeSpark.fmt;
+				const coresFmt = function(c) { return c.toFixed(0) + ' cores'; };
+
+				function render() {
+					const kind = d.metrics[metric].kind;
+					const fmtv = (kind == 'load') ? F.num : ((kind == 'pct') ? F.pct : F.rate);
+					/* top of each row's y scale: 100% for percents, otherwise the largest value (or the cores, for load), with
+					   a floor so a nearly idle node doesn't fill its row with noise */
+					const floor = (kind == 'load') ? 1 : 1024;
+					const topOf = function(n) {
+						if (kind == 'pct') return 100;
+						return Math.max(floor, NodeSpark.max(n.series[metric], (kind == 'load') ? n.series.cores : null) * 1.05);
+					};
+					let sharedTop = 0;
+					d.groups.forEach(function(g) { g.nodes.forEach(function(n) { sharedTop = Math.max(sharedTop, topOf(n)); }); });
+
+					const rows = [];
+					d.groups.forEach(function(g) {
+						rows.push({ group: g.label });
+						g.nodes.forEach(function(n) {
+							rows.push({
+								label: n.name,
+								title: n.hostname,
+								href: 'cluster.php?clustertype=nodes&nodeid=' + n.id + '&range=' + encodeURIComponent(d.range) + '&metric=' + encodeURIComponent(metric) + '&scale=' + (shared ? 'shared' : 'node'),
+								status: n.status,
+								values: n.series[metric],
+								ref: (kind == 'load') ? n.series.cores : null,
+								fmt: fmtv,
+								refFmt: (kind == 'load') ? coresFmt : null,
+								current: n.cur[metric],
+								currentRef: (kind == 'load') ? n.cur.cores : null,
+								yTop: shared ? sharedTop : topOf(n)
+							});
+						});
+					});
+					NodeSpark.build(gridEl, d.t, rows, 'Node · ' + d.metrics[metric].label);
+					scaleBox.disabled = (kind == 'pct');
+					document.getElementById('nodeSharedScaleBox').classList.toggle('disabled', kind == 'pct');
+				}
+
+				/* keep the selection in the page URL and the range links, so a reload or range change keeps it */
+				function remember() {
+					const set = function(href) {
+						const u = new URL(href, location.href);
+						u.searchParams.set('metric', metric);
+						u.searchParams.set('scale', shared ? 'shared' : 'node');
+						return u.toString();
+					};
+					history.replaceState(null, '', set(location.href));
+					document.querySelectorAll('a.noderangelink').forEach(function(a) { a.href = set(a.href); });
+				}
+
+				document.querySelectorAll('#nodeMetricButtons button').forEach(function(b) {
+					b.addEventListener('click', function() {
+						metric = b.getAttribute('data-metric');
+						document.querySelectorAll('#nodeMetricButtons button').forEach(function(o) {
+							o.classList.toggle('primary', o === b);
+							o.classList.toggle('basic', o !== b);
+						});
+						remember();
+						render();
+					});
+				});
+				scaleBox.addEventListener('change', function() {
+					shared = scaleBox.checked;
+					remember();
+					render();
+				});
+
+				render();
+			});
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FormatMB --------------------------- */
+	/* -------------------------------------------- */
+	function FormatMB($mb) {
+		if ($mb === null) return "-";
+		$mb = (float)$mb;
+		if ($mb >= 1048576) return round($mb / 1048576, 1) . " TiB";
+		if ($mb >= 1024) return round($mb / 1024, 1) . " GiB";
+		return round($mb) . " MiB";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayNodeDetail ------------------ */
+	/* -------------------------------------------- */
+	/* every metric for one node, one sparkline row per metric, grouped (load, CPU, memory, network, disk, processes) */
+	function DisplayNodeDetail($nodeid, $range) {
+		$ranges = NodeMonitorRanges();
+		$seconds = $ranges[$range]['seconds'];
+
+		$sqlstring = "select n.*, c.cluster_name, timestampdiff(second, n.last_seen, now()) 'seenago' from cluster_nodes n left join compute_cluster c on n.computecluster_id = c.computecluster_id where n.clusternode_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $nodeid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($nodeid));
+		$node = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$node) {
+			?><div class="ui message">Node not found</div><?
+			return;
+		}
+
+		/* the most recent sample, for the header and the 'latest' column */
+		$sqlstring = "select * from cluster_node_samples where clusternode_id = ? order by sample_time desc limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $nodeid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($nodeid));
+		$s = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		list($color, $icon, $statuslabel, $statusdetails, $failed) = GetNodeStatus($node);
+		$name = (($node['display_name'] ?? '') != '') ? $node['display_name'] : $node['hostname'];
+
+		$uptime = "-";
+		if ($s && ($s['uptime_sec'] !== null)) {
+			$u = (int)$s['uptime_sec'];
+			$uptime = ($u >= 86400) ? floor($u / 86400) . "d " . floor(($u % 86400) / 3600) . "h" : floor($u / 3600) . "h " . floor(($u % 3600) / 60) . "m";
+		}
+
+		/* about 1000 points per row. The 1 hour range shows every sample */
+		$bucket = max(60, (int)(ceil($seconds / 1000 / 60) * 60));
+		list($times, $samples) = GetNodeSamples($nodeid, time() - $seconds, $bucket, array(
+			'load1' => 'avg(load1)',
+			'load1max' => 'max(load1)',
+			'load5' => 'avg(load5)',
+			'load15' => 'avg(load15)',
+			'cores' => 'max(num_cores)',
+			'cpubusy' => 'avg(cpu_busy_pct)',
+			'cpuuser' => 'avg(cpu_user_pct)',
+			'cpusystem' => 'avg(cpu_system_pct)',
+			'cpuiowait' => 'avg(cpu_iowait_pct)',
+			'cpusteal' => 'avg(cpu_steal_pct)',
+			'mempct' => 'avg(100 * mem_used_mb / nullif(mem_total_mb, 0))',
+			'memused' => 'avg(mem_used_mb)',
+			'memcache' => 'avg(mem_cache_mb)',
+			'memtotal' => 'max(mem_total_mb)',
+			'swapused' => 'avg(swap_used_mb)',
+			'swaptotal' => 'max(swap_total_mb)',
+			'netrx' => 'avg(net_rx_bps)',
+			'nettx' => 'avg(net_tx_bps)',
+			'diskread' => 'avg(disk_read_bps)',
+			'diskwrite' => 'avg(disk_write_bps)',
+			'procsrun' => 'avg(procs_running)',
+			'procstotal' => 'avg(procs_total)'
+		));
+		$chartData = $samples[$nodeid] ?? null;
+
+		/* latest values, with the same keys as the chart data */
+		$cur = array();
+		$curcols = array('load1' => 'load1', 'load1max' => 'load1', 'load5' => 'load5', 'load15' => 'load15', 'cores' => 'num_cores',
+			'cpubusy' => 'cpu_busy_pct', 'cpuuser' => 'cpu_user_pct', 'cpusystem' => 'cpu_system_pct', 'cpuiowait' => 'cpu_iowait_pct', 'cpusteal' => 'cpu_steal_pct',
+			'memused' => 'mem_used_mb', 'memcache' => 'mem_cache_mb', 'memtotal' => 'mem_total_mb', 'swapused' => 'swap_used_mb', 'swaptotal' => 'swap_total_mb',
+			'netrx' => 'net_rx_bps', 'nettx' => 'net_tx_bps', 'diskread' => 'disk_read_bps', 'diskwrite' => 'disk_write_bps',
+			'procsrun' => 'procs_running', 'procstotal' => 'procs_total');
+		foreach ($curcols as $key => $col)
+			$cur[$key] = ($s && ($s[$col] !== null)) ? (float)$s[$col] : null;
+		$cur['mempct'] = ($s && ($s['mem_used_mb'] !== null) && ((float)$s['mem_total_mb'] > 0)) ? round(100 * (float)$s['mem_used_mb'] / (float)$s['mem_total_mb'], 1) : null;
+		?>
+		<div class="ui segment">
+			<h3 class="ui header" style="margin-bottom: 6px">
+				<?=htmlspecialchars($name)?>
+				<span class="nodestatuslabel" style="margin-left:10px" title="<?=htmlspecialchars($statusdetails)?>"><i class="<?=$icon?> icon" style="color:<?=$color?>; margin:0 3px 0 0; font-size:1em"></i><?=htmlspecialchars($statuslabel)?></span>
+				<div class="sub header"><tt><?=htmlspecialchars($node['hostname'])?></tt> &middot; <?=htmlspecialchars($node['cluster_name'] ?? '')?><?=(($node['node_desc'] ?? '') != '') ? ' &middot; ' . htmlspecialchars($node['node_desc']) : ''?></div>
+			</h3>
+			<? if ($failed && ($statusdetails != '')) { ?>
+				<div class="ui small negative message" style="white-space: pre-wrap"><?=htmlspecialchars($statusdetails)?></div>
+			<? } ?>
+			<div class="ui tiny horizontal statistics" style="margin: 10px 0 0 0; flex-wrap: wrap; gap: 0 18px">
+				<div class="statistic"><div class="value"><?=($s && $s['num_cores'] !== null) ? (int)$s['num_cores'] : '-'?></div><div class="label">cores</div></div>
+				<div class="statistic"><div class="value"><?=($s) ? FormatMB($s['mem_total_mb']) : '-'?></div><div class="label">memory</div></div>
+				<div class="statistic"><div class="value"><?=($s && $s['swap_total_mb'] !== null) ? FormatMB($s['swap_total_mb']) : '-'?></div><div class="label">swap</div></div>
+				<div class="statistic"><div class="value"><?=$uptime?></div><div class="label">uptime</div></div>
+				<div class="statistic"><div class="value"><?=($s && $s['procs_total'] !== null) ? number_format((int)$s['procs_total']) : '-'?></div><div class="label">processes</div></div>
+			</div>
+			<div class="ui small grey text" style="margin-top: 6px">Status: <?=htmlspecialchars($statuslabel)?> &middot; Last seen <?=htmlspecialchars($node['last_seen'] ?? 'never')?> &middot; Last checked <?=htmlspecialchars($node['last_checked'] ?? 'never')?><?=($s) ? ' &middot; Latest values from ' . htmlspecialchars($s['sample_time']) : ''?></div>
+		</div>
+
+		<? if ($chartData === null) { ?>
+			<div class="ui message">No samples recorded for this node in the last <?=$ranges[$range]['label']?></div>
+			<? return; ?>
+		<? } ?>
+
+		<div class="ui segment">
+			<div class="sparkgrid" id="nodeDetailGrid"></div>
+			<div class="ui small grey text" style="margin-top: 10px">
+				<?=($bucket > 60) ? "Each point is the average of " . round($bucket / 60) . " minutes of samples. " : "One sample per minute. "?>Rows in the same group share a scale. Dashed lines are the number of cores (load) and the total (memory, swap). Hover to see past values; drag across a row to zoom in, double-click to zoom out. Gaps are times the node didn't answer.
+			</div>
+			<button type="button" class="ui small basic button" id="nodeTableToggle" style="margin-top: 10px"><i class="table icon"></i> Show data table</button>
+			<div id="nodeTable" style="display: none; margin-top: 10px; max-height: 500px; overflow: auto"></div>
+		</div>
+		<script>
+			$(document).ready(function(){
+				const t = <?=NodeJSON($times)?>;
+				const d = <?=NodeJSON($chartData)?>;
+				const cur = <?=NodeJSON($cur)?>;
+				const bucket = <?=(int)$bucket?>;
+				const F = NodeSpark.fmt;
+				const max = NodeSpark.max;
+				const coresFmt = function(c) { return c.toFixed(0) + ' cores'; };
+				const totalFmt = function(c) { return 'of ' + F.mem(c); };
+
+				/* a metric row. Rows in a group are given the same y scale (top) so they can be compared */
+				const row = function(label, key, fmt, top, extra) {
+					return Object.assign({ label: label, values: d[key], fmt: fmt, current: cur[key], yTop: top }, extra || {});
+				};
+				const loadRef = { ref: d.cores, refFmt: coresFmt, currentRef: cur.cores };
+				const loadTop = Math.max(1, max(d.load1, d.load1max, d.load5, d.load15, d.cores) * 1.05);
+				const memTop = Math.max(1, max(d.memused, d.memcache, d.memtotal) * 1.05);
+				const swapTop = Math.max(1, max(d.swapused, d.swaptotal) * 1.05);
+				const netTop = Math.max(1024, max(d.netrx, d.nettx) * 1.05);
+				const diskTop = Math.max(1024, max(d.diskread, d.diskwrite) * 1.05);
+
+				const rows = [{ group: 'Load' }, row('Load 1 min', 'load1', F.num, loadTop, loadRef)];
+				if (bucket > 60) rows.push(row('Load 1 min (peak)', 'load1max', F.num, loadTop, Object.assign({ sub: 'highest in each interval' }, loadRef)));
+				rows.push(
+					row('Load 5 min', 'load5', F.num, loadTop, loadRef),
+					row('Load 15 min', 'load15', F.num, loadTop, loadRef),
+					{ group: 'CPU' },
+					row('Busy', 'cpubusy', F.pct, 100, { sub: '% of CPU time, all cores' }),
+					row('User', 'cpuuser', F.pct, 100),
+					row('System', 'cpusystem', F.pct, 100),
+					row('I/O wait', 'cpuiowait', F.pct, 100),
+					row('Steal', 'cpusteal', F.pct, 100),
+					{ group: 'Memory' },
+					row('Used %', 'mempct', F.pct, 100),
+					row('Used', 'memused', F.mem, memTop, { ref: d.memtotal, refFmt: totalFmt, currentRef: cur.memtotal }),
+					row('Cache', 'memcache', F.mem, memTop),
+					row('Swap used', 'swapused', F.mem, swapTop, { ref: d.swaptotal, refFmt: totalFmt, currentRef: cur.swaptotal }),
+					{ group: 'Network' },
+					row('Received (RX)', 'netrx', F.rate, netTop),
+					row('Sent (TX)', 'nettx', F.rate, netTop),
+					{ group: 'Disk' },
+					row('Read', 'diskread', F.rate, diskTop),
+					row('Write', 'diskwrite', F.rate, diskTop),
+					{ group: 'Processes' },
+					row('Running', 'procsrun', F.num, Math.max(1, max(d.procsrun) * 1.05)),
+					row('Total', 'procstotal', F.int, Math.max(1, max(d.procstotal) * 1.05))
+				);
+				NodeSpark.build(document.getElementById('nodeDetailGrid'), t, rows, 'Metric');
+
+				/* the same data as a table (newest first), so every value can be read without hovering. Built the first time
+				   it's opened. Text is set with textContent */
+				const fmtOr = function(f) { return function(v) { return (v == null) ? '-' : f(v); }; };
+				const tableCols = [
+					['Load 1', 'load1', F.num], ['Load 5', 'load5', F.num], ['Load 15', 'load15', F.num], ['Cores', 'cores', F.int],
+					['CPU busy', 'cpubusy', F.pct], ['User', 'cpuuser', F.pct], ['System', 'cpusystem', F.pct], ['I/O wait', 'cpuiowait', F.pct], ['Steal', 'cpusteal', F.pct],
+					['Mem used %', 'mempct', F.pct], ['Mem used', 'memused', F.mem], ['Cache', 'memcache', F.mem], ['Total', 'memtotal', F.mem], ['Swap used', 'swapused', F.mem],
+					['Net received', 'netrx', F.rate], ['Net sent', 'nettx', F.rate], ['Disk read', 'diskread', F.rate], ['Disk write', 'diskwrite', F.rate],
+					['Procs running', 'procsrun', F.num], ['Procs total', 'procstotal', F.int]
+				];
+				let tableBuilt = false;
+				const tableEl = document.getElementById('nodeTable');
+				const toggleEl = document.getElementById('nodeTableToggle');
+				toggleEl.addEventListener('click', function() {
+					const show = (tableEl.style.display === 'none');
+					if (show && !tableBuilt) {
+						const table = document.createElement('table');
+						table.className = 'ui very compact celled striped small table';
+						const thead = table.createTHead().insertRow();
+						['Time'].concat(tableCols.map(function(c) { return c[0]; })).forEach(function(h) {
+							const th = document.createElement('th');
+							th.textContent = h;
+							th.style.position = 'sticky';
+							th.style.top = '0';
+							thead.appendChild(th);
+						});
+						const tbody = table.createTBody();
+						for (let i = t.length - 1; i >= 0; i--) {
+							/* skip times with no samples */
+							if (tableCols.every(function(c) { return d[c[1]][i] == null; })) continue;
+							const tr = tbody.insertRow();
+							tr.insertCell().textContent = new Date(t[i] * 1000).toLocaleString();
+							tableCols.forEach(function(c) {
+								const cell = tr.insertCell();
+								cell.textContent = fmtOr(c[2])(d[c[1]][i]);
+								cell.style.textAlign = 'right';
+								cell.style.fontVariantNumeric = 'tabular-nums';
+								cell.style.whiteSpace = 'nowrap';
+							});
+						}
+						tableEl.appendChild(table);
+						tableBuilt = true;
+					}
+					tableEl.style.display = show ? 'block' : 'none';
+					toggleEl.innerHTML = show ? '<i class="table icon"></i> Hide data table' : '<i class="table icon"></i> Show data table';
+				});
 			});
 		</script>
 		<?

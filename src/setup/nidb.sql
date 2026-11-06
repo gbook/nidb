@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 05, 2026 at 05:18 PM
+-- Generation Time: Nov 06, 2026 at 05:33 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -526,6 +526,59 @@ CREATE TABLE `changelog_subject` (
   `newuid` varchar(10) NOT NULL,
   `log` longtext NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cluster_nodes`
+--
+
+CREATE TABLE `cluster_nodes` (
+  `clusternode_id` int(11) NOT NULL,
+  `computecluster_id` int(11) NOT NULL,
+  `hostname` varchar(255) NOT NULL,
+  `ssh_username` varchar(255) DEFAULT NULL COMMENT 'blank = use the cluster submithost_username',
+  `display_name` varchar(255) DEFAULT NULL,
+  `node_desc` text DEFAULT NULL,
+  `enabled` tinyint(1) NOT NULL DEFAULT 1,
+  `last_checked` datetime DEFAULT NULL,
+  `last_seen` datetime DEFAULT NULL,
+  `last_status` varchar(20) DEFAULT NULL COMMENT 'ok, unreachable, error',
+  `last_error` text DEFAULT NULL,
+  `last_counters` text DEFAULT NULL COMMENT 'JSON of the raw /proc values from the last successful check'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `cluster_node_samples`
+--
+
+CREATE TABLE `cluster_node_samples` (
+  `clusternode_id` int(11) NOT NULL,
+  `sample_time` datetime NOT NULL COMMENT 'NiDB server time, truncated to the minute',
+  `load1` float DEFAULT NULL,
+  `load5` float DEFAULT NULL,
+  `load15` float DEFAULT NULL,
+  `num_cores` smallint(6) DEFAULT NULL,
+  `procs_running` int(11) DEFAULT NULL,
+  `procs_total` int(11) DEFAULT NULL,
+  `cpu_busy_pct` float DEFAULT NULL,
+  `cpu_user_pct` float DEFAULT NULL,
+  `cpu_system_pct` float DEFAULT NULL,
+  `cpu_iowait_pct` float DEFAULT NULL,
+  `cpu_steal_pct` float DEFAULT NULL,
+  `mem_total_mb` int(11) DEFAULT NULL,
+  `mem_used_mb` int(11) DEFAULT NULL,
+  `mem_cache_mb` int(11) DEFAULT NULL,
+  `swap_total_mb` int(11) DEFAULT NULL,
+  `swap_used_mb` int(11) DEFAULT NULL,
+  `net_rx_bps` double DEFAULT NULL,
+  `net_tx_bps` double DEFAULT NULL,
+  `disk_read_bps` double DEFAULT NULL,
+  `disk_write_bps` double DEFAULT NULL,
+  `uptime_sec` int(11) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------
 
@@ -4021,6 +4074,20 @@ ALTER TABLE `changelog_subject`
   ADD PRIMARY KEY (`changelog_id`);
 
 --
+-- Indexes for table `cluster_nodes`
+--
+ALTER TABLE `cluster_nodes`
+  ADD PRIMARY KEY (`clusternode_id`),
+  ADD UNIQUE KEY `cluster_host` (`computecluster_id`,`hostname`);
+
+--
+-- Indexes for table `cluster_node_samples`
+--
+ALTER TABLE `cluster_node_samples`
+  ADD PRIMARY KEY (`clusternode_id`,`sample_time`),
+  ADD KEY `sample_time` (`sample_time`);
+
+--
 -- Indexes for table `common`
 --
 ALTER TABLE `common`
@@ -5287,6 +5354,12 @@ ALTER TABLE `changelog`
 --
 ALTER TABLE `changelog_subject`
   MODIFY `changelog_id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT for table `cluster_nodes`
+--
+ALTER TABLE `cluster_nodes`
+  MODIFY `clusternode_id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `common`

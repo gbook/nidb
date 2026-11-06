@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 
  /* Analysis check-in API, called by pipeline job scripts running on a compute host.
-	This is an HTTP alternative to the 'nidb cluster -u <submodule>' command.
+	It replaces the old 'nidb cluster -u <submodule>' commands, which have been removed.
 
 	Authentication is per-analysis: when the pipeline module writes a job script it
 	generates a random token, stores its SHA-256 hash in analysis.analysis_apitoken,
@@ -107,7 +107,7 @@
 	/* -------------------------------------------- */
 	/* ------- Checkin ---------------------------- */
 	/* -------------------------------------------- */
-	/* Equivalent to 'nidb cluster -u pipelinecheckin' */
+	/* Records a job's status (started, step check-ins, complete) */
 	function Checkin($analysisid) {
 		$status = AAPIParam("status");
 		$message = AAPIParam("message");
@@ -189,7 +189,7 @@
 	/* -------------------------------------------- */
 	/* ------- ResultInsert ----------------------- */
 	/* -------------------------------------------- */
-	/* Equivalent to 'nidb cluster -u resultinsert' */
+	/* Inserts a text, number, file, or image result */
 	function ResultInsert($analysisid) {
 		$text = AAPIParam("text");
 		$number = AAPIParam("number");
@@ -245,7 +245,7 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateAnalysis --------------------- */
 	/* -------------------------------------------- */
-	/* Equivalent to 'nidb cluster -u updateanalysis'. The file count and disk
+	/* Updates the analysis file count and disk size. The file count and disk
 	   size are calculated on the compute host and passed in. */
 	function UpdateAnalysis($analysisid) {
 		$numfiles = AAPIParam("numfiles");
@@ -269,7 +269,7 @@
 	/* -------------------------------------------- */
 	/* ------- SetComplete ------------------------ */
 	/* -------------------------------------------- */
-	/* Equivalent to 'nidb cluster -u checkcompleteanalysis'. The check for the
+	/* Marks whether the analysis is complete. The check for the
 	   pipeline's completion files is done on the compute host and the result passed in. */
 	function SetComplete($analysisid) {
 		$iscomplete = AAPIParam("iscomplete");

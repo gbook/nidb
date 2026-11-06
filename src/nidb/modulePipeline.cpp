@@ -2197,7 +2197,7 @@ bool modulePipeline::CreateClusterJobFile(QString jobfilename, const pipeline &p
     jobfile += "echo Hostname: `hostname`\n";
     jobfile += "echo Username: `whoami`\n\n";
 
-    /* create a new per-analysis token for analysisapi.php (the HTTP alternative to 'nidb cluster').
+    /* create a new per-analysis token for analysisapi.php (the HTTP check-in API used by job scripts).
      * Only the SHA-256 of the token is stored; the raw token is only in the job script */
     QByteArray tokenBytes(32, 0);
     QRandomGenerator::system()->fillRange(reinterpret_cast<quint32*>(tokenBytes.data()), tokenBytes.size()/sizeof(quint32));

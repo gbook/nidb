@@ -278,6 +278,10 @@ int nidb::ModuleGetNumThreads() {
     else if (module == "modulemanager") {
         numThreads = 1;
     }
+    else if (module == "cluster") {
+        /* the node monitor checks all nodes in parallel itself, and runs every minute */
+        numThreads = 1;
+    }
     else if (module == "audit") {
         if (cfg["moduleauditthreads"] == "") numThreads = 1;
         else numThreads = cfg["moduleauditthreads"].toInt();
