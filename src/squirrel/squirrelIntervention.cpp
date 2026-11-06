@@ -44,6 +44,9 @@ void squirrelIntervention::Populate(const QSqlQuery &q) {
     DoseKey             = q.value("DoseKey").toString();
     DoseString          = q.value("DoseString").toString();
     DoseUnit            = q.value("DoseUnit").toString();
+    FrequencyModifier   = q.value("FrequencyModifier").toString();
+    FrequencyUnit       = q.value("FrequencyUnit").toString();
+    FrequencyValue      = q.value("FrequencyValue").toDouble();
     InterventionClass   = q.value("InterventionClass").toString();
     InterventionName    = q.value("InterventionName").toString();
     Notes               = q.value("Notes").toString();
@@ -119,6 +122,9 @@ bool squirrelIntervention::Store() {
         q.bindValue(":InterventionClass", InterventionClass);
         q.bindValue(":DoseKey", DoseKey);
         q.bindValue(":DoseUnit", DoseUnit);
+        q.bindValue(":FrequencyModifier", FrequencyModifier);
+        q.bindValue(":FrequencyValue", FrequencyValue);
+        q.bindValue(":FrequencyUnit", FrequencyUnit);
         q.bindValue(":Description", Description);
         q.bindValue(":Rater", Rater);
         q.bindValue(":Notes", Notes);
@@ -144,6 +150,9 @@ bool squirrelIntervention::Store() {
         q.bindValue(":InterventionClass", InterventionClass);
         q.bindValue(":DoseKey", DoseKey);
         q.bindValue(":DoseUnit", DoseUnit);
+        q.bindValue(":FrequencyModifier", FrequencyModifier);
+        q.bindValue(":FrequencyValue", FrequencyValue);
+        q.bindValue(":FrequencyUnit", FrequencyUnit);
         q.bindValue(":Description", Description);
         q.bindValue(":Rater", Rater);
         q.bindValue(":Notes", Notes);
@@ -177,9 +186,9 @@ bool squirrelIntervention::Store(QSqlQuery &q) {
     q.bindValue(":InterventionClass", InterventionClass);
     q.bindValue(":DoseKey", DoseKey);
     q.bindValue(":DoseUnit", DoseUnit);
-    q.bindValue(":FrequencyModifier", QVariant());
-    q.bindValue(":FrequencyValue", QVariant());
-    q.bindValue(":FrequencyUnit", QVariant());
+    q.bindValue(":FrequencyModifier", FrequencyModifier);
+    q.bindValue(":FrequencyValue", FrequencyValue);
+    q.bindValue(":FrequencyUnit", FrequencyUnit);
     q.bindValue(":Description", Description);
     q.bindValue(":Rater", Rater);
     q.bindValue(":Notes", Notes);
@@ -210,6 +219,9 @@ QJsonObject squirrelIntervention::ToJSON() {
     json["DoseKey"] = DoseKey;
     json["DoseString"] = DoseString;
     json["DoseUnit"] = DoseUnit;
+    json["FrequencyModifier"] = FrequencyModifier;
+    json["FrequencyUnit"] = FrequencyUnit;
+    json["FrequencyValue"] = FrequencyValue;
     json["InterventionClass"] = InterventionClass;
     json["Description"] = Description;
     json["InterventionName"] = InterventionName;
@@ -241,6 +253,9 @@ QString squirrelIntervention::PrintIntervention() {
     str += utils::Print(QString("\t\t\tDoseFrequency: %1").arg(DoseFrequency));
     str += utils::Print(QString("\t\t\tDoseKey: %1").arg(DoseKey));
     str += utils::Print(QString("\t\t\tDoseUnit: %1").arg(DoseUnit));
+    str += utils::Print(QString("\t\t\tFrequencyModifier: %1").arg(FrequencyModifier));
+    str += utils::Print(QString("\t\t\tFrequencyUnit: %1").arg(FrequencyUnit));
+    str += utils::Print(QString("\t\t\tFrequencyValue: %1").arg(FrequencyValue));
     str += utils::Print(QString("\t\t\tInterventionClass: %1").arg(InterventionClass));
     str += utils::Print(QString("\t\t\tInterventionName: %1").arg(InterventionName));
     str += utils::Print(QString("\t\t\tNotes: %1").arg(Notes));
@@ -287,6 +302,9 @@ QHash<QString, QString> squirrelIntervention::GetData(DatasetType d) {
         data["Intervention.DoseKey"] = DoseKey;
         data["Intervention.DoseString"] = DoseString;
         data["Intervention.DoseUnit"] = DoseUnit;
+        data["Intervention.FrequencyModifier"] = FrequencyModifier;
+        data["Intervention.FrequencyUnit"] = FrequencyUnit;
+        data["Intervention.FrequencyValue"] = QString("%1").arg(FrequencyValue);
         data["Intervention.InterventionClass"] = InterventionClass;
         data["Intervention.Description"] = Description;
         data["Intervention.InterventionName"] = InterventionName;

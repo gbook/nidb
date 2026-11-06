@@ -649,7 +649,7 @@ bool squirrel::Read() {
     QSqlQuery qStudyInsert(dbconn);
     qStudyInsert.prepare("insert or ignore into Study (SubjectRowID, StudyNumber, Datetime, Age, Height, Weight, Modality, Description, StudyUID, VisitType, DayNumber, TimePoint, Equipment, Notes, SequenceNumber, VirtualPath) values (:SubjectRowID, :StudyNumber, :Datetime, :Age, :Height, :Weight, :Modality, :Description, :StudyUID, :VisitType, :DayNumber, :TimePoint, :Equipment, :Notes, :SequenceNumber, :VirtualPath)");
     QSqlQuery qSeriesInsert(dbconn);
-    qSeriesInsert.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :bidssuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
+    qSeriesInsert.prepare("insert or ignore into Series (StudyRowID, SeriesNumber, Datetime, SeriesUID, Description, Protocol, BidsEntity, BidsSuffix, BidsTask, BidsRun, BidsPhaseEncodingDirection, BidsExtension, Run, ExperimentRowID, Size, Files, FileCount, BehavioralSize, BehavioralFileCount, SequenceNumber, VirtualPath) values (:StudyRowID, :SeriesNumber, :Datetime, :SeriesUID, :Description, :Protocol, :BidsEntity, :BidsSuffix, :BidsTask, :BidsRun, :BidsPhaseEncodingDirection, :BidsExtension, :Run, :ExperimentRowID, :Size, :Files, :FileCount, :BehavioralSize, :BehavioralFileCount, :SequenceNumber, :VirtualPath)");
     QSqlQuery qObservationInsert(dbconn);
     qObservationInsert.prepare("insert into Observation (SubjectRowID, ObservationName, ObservationType, DateStart, DateEnd, InstrumentName, Rater, Notes, Value, Duration, DateRecordCreate, DateRecordEntry, DateRecordModify, Description) values (:SubjectRowID, :ObservationName, :ObservationType, :DateStart, :DateEnd, :InstrumentName, :Rater, :Notes, :Value, :Duration, :DateRecordCreate, :DateRecordEntry, :DateRecordModify, :Description)");
     QSqlQuery qInterventionInsert(dbconn);
@@ -728,7 +728,6 @@ bool squirrel::Read() {
         for (const auto &v : jsonDataSteps) {
             QJsonObject jsonDataStep = v.toObject();
             dataStep ds;
-            //ds.NumberImagesCriteria = jsonDataStep["NumberImagesCriteria"].toString();
             ds.ExportBehavioralDirectoryFormat = jsonDataStep["ExportBehavioralDirectoryFormat"].toString();
             ds.ExportBehavioralDirectoryName = jsonDataStep["ExportBehavioralDirectoryName"].toString();
             ds.ExportDataFormat = jsonDataStep["ExportDataFormat"].toString();
@@ -738,6 +737,7 @@ bool squirrel::Read() {
             ds.SearchImageType = jsonDataStep["SearchImageType"].toString();
             ds.SearchModality = jsonDataStep["SearchModality"].toString();
             ds.SearchNumberBOLDreps = jsonDataStep["SearchNumberBOLDreps"].toString();
+            ds.SearchNumberImagesCriteria = jsonDataStep["SearchNumberImagesCriteria"].toString();
             ds.SearchProtocol = jsonDataStep["SearchProtocol"].toString();
             ds.SearchSeriesCriteria = jsonDataStep["SearchSeriesCriteria"].toString();
             ds.StepNumber = jsonDataStep["StepNumber"].toInt();
@@ -813,6 +813,7 @@ bool squirrel::Read() {
                 squirrelSeries sqrlSeries(databaseUUID);
 
                 sqrlSeries.BidsEntity = jsonSeries["BidsEntity"].toString();
+                sqrlSeries.BidsExtension = jsonSeries["BidsExtension"].toString();
                 sqrlSeries.BidsPhaseEncodingDirection = jsonSeries["BidsPhaseEncodingDirection"].toString();
                 sqrlSeries.BidsRun = jsonSeries["BidsRun"].toString();
                 sqrlSeries.BidsSuffix = jsonSeries["BidsSuffix"].toString();
@@ -880,6 +881,7 @@ bool squirrel::Read() {
                 sqrlAnalysis.SeriesCount = jsonAnalysis["SeriesCount"].toInt();
                 sqrlAnalysis.SetupTime = jsonAnalysis["SetupTime"].toInteger();
                 sqrlAnalysis.Size = jsonAnalysis["Size"].toInteger();
+                sqrlAnalysis.FileCount = jsonAnalysis["FileCount"].toInteger();
                 sqrlAnalysis.Status = jsonAnalysis["Status"].toString();
                 sqrlAnalysis.Successful = jsonAnalysis["Successful"].toBool();
                 sqrlAnalysis.studyRowID = studyRowID;
@@ -929,6 +931,9 @@ bool squirrel::Read() {
             sqrlIntervention.DoseKey = jsonIntervention["DoseKey"].toString();
             sqrlIntervention.DoseString = jsonIntervention["DoseString"].toString();
             sqrlIntervention.DoseUnit = jsonIntervention["DoseUnit"].toString();
+            sqrlIntervention.FrequencyModifier = jsonIntervention["FrequencyModifier"].toString();
+            sqrlIntervention.FrequencyUnit = jsonIntervention["FrequencyUnit"].toString();
+            sqrlIntervention.FrequencyValue = jsonIntervention["FrequencyValue"].toDouble();
             sqrlIntervention.InterventionClass = jsonIntervention["InterventionClass"].toString();
             sqrlIntervention.InterventionName = jsonIntervention["InterventionName"].toString();
             sqrlIntervention.Notes = jsonIntervention["Notes"].toString();
@@ -1194,14 +1199,8 @@ bool squirrel::Write() {
                         analysisSize += b;
                     }
                     analysis.Size = analysisSize;
+                    analysis.FileCount = analysisFileCount;
                     analysis.Store();
-
-                    /* squirrelAnalysis has no FileCount member; set the column directly so GetFileCount() includes these files */
-                    QSqlQuery qfc(QSqlDatabase::database(databaseUUID));
-                    qfc.prepare("update Analysis set FileCount = :fc where AnalysisRowID = :id");
-                    qfc.bindValue(":fc", analysisFileCount);
-                    qfc.bindValue(":id", analysis.GetObjectID());
-                    utils::SQLQuery(qfc, __FUNCTION__, __FILE__, __LINE__);
 
                     stagedFiles += analysis.GetStagedFileList();
                     Debug(QString("Staged [%1] analysis files for [%2-%3-%4]").arg(analysis.stagedFiles.size()).arg(subject.ID).arg(study.StudyNumber).arg(analysis.AnalysisName), __FUNCTION__);

@@ -21,6 +21,7 @@
   ------------------------------------------------------------------------------ */
 
 #include "imageio.h"
+#include "parrec.h"
 #include <QRegularExpression>
 #include <QJsonObject>
 #include <QJsonDocument>
@@ -951,71 +952,8 @@ bool imageIO::GetImageFileTags(QString f, QHash<QString, QString> &tags, QString
             tags["FileType"] = "PARREC";
             tags["Modality"] = "PARREC";
 
-            /* if its a .rec file, there must be a corresponding .par file with the same name */
-
-            QFile inputFile(f);
-            if (inputFile.open(QIODevice::ReadOnly)) {
-                QTextStream in(&inputFile);
-                while ( !in.atEnd() ) {
-                    QString line = in.readLine();
-                    if (line.startsWith(".")) {
-                        QStringList parts = line.split(":",Qt::SkipEmptyParts);
-                        if (parts.size() >= 2) {
-                            QString label = parts[0].trimmed();
-                            QString value = parts[1].trimmed();
-
-                            if (label == "Patient name") tags["PatientID"] = value;
-                            if (label == "Protocol name") tags["SeriesDescription"] = tags["ProtocolName"] = value;
-                            if (label == "Examination name") tags["ExaminationName"] = value;
-                            if (label == "Technique") tags["Sequence"] = value;
-                            if (label == "Acquisition nr") tags["AcquisitionNR"] = value;
-                            if (label == "Reconstruction nr") tags["ReconstructionNR"] = value;
-                            if (label == "Scan Duration [sec]") tags["ScanDurationSeconds"] = value;
-                            if (label == "Max. number of cardiac phases") tags["MaxNumberCardiacPhases"] = value;
-                            if (label == "Max. number of echoes") tags["MaxNumberEchos"] = value;
-                            if (label == "Max. number of slices/locations") tags["MaxNumberSlices"] = value;
-                            if (label == "Max. number of dynamics") tags["MaxNumberDynamics"] = value;
-                            if (label == "Max. number of mixes") tags["MaxNumberMixes"] = value;
-                            if (label == "Patient position") tags["PatientPosition"] = value;
-                            if (label == "Preparation direction") tags["PreparationDirection"] = value;
-                            if (label == "Scan resolution (x, y)") {
-                                parts = line.split(" ",Qt::SkipEmptyParts);
-                                if (parts.size() >= 2) {
-                                    tags["Cols"] = parts[0].trimmed();
-                                    tags["Rows"] = parts[1].trimmed();
-                                }
-                            }
-                            if (label == "Repetition time [ms]") tags["RepetitionTime"] = value;
-                            if (label == "Scan mode") tags["ScanMode"] = value;
-                            if (label == "FOV (ap,fh,rl) [mm]") tags["FieldOfView"] = value;
-                            if (label == "Water Fat shift [pixels]") tags["WaterFatShift"] = value;
-                            if (label == "Angulation midslice(ap,fh,rl)[degr]") tags["AngulationMidslice"] = value;
-                            if (label == "Examination date/time") {
-                                parts = line.split("/",Qt::SkipEmptyParts);
-                                if (parts.size() >= 2) {
-                                    tags["ExaminationDate"] = parts[0].trimmed().replace(".", "-");
-                                    tags["ExaminationTime"] = parts[1].trimmed();
-                                }
-                            }
-                            if (label == "Off Centre midslice(ap,fh,rl) [mm]") tags["OffCenterMidslice"] = value;
-                            if (label == "Flow compensation <0=no 1=yes> ?") tags["FlowCompensation"] = value;
-                            if (label == "Presaturation     <0=no 1=yes> ?") tags["Presaturation"] = value;
-                            if (label == "Phase encoding velocity [cm/sec]") tags["PhaseEncodingVelocity"] = value;
-                            if (label == "MTC               <0=no 1=yes> ?") tags["MTC"] = value;
-                            if (label == "SPIR              <0=no 1=yes> ?") tags["SPIR"] = value;
-                            if (label == "EPI factor        <0,1=no EPI>") tags["EPIFactor"] = value;
-                            if (label == "Dynamic scan      <0=no 1=yes> ?") tags["DynamicScan"] = value;
-                            if (label == "Diffusion         <0=no 1=yes> ?") tags["Diffusion"] = value;
-                            if (label == "Diffusion echo time [ms]") tags["DiffusionEchoTime"] = value;
-                            if (label == "Max. number of diffusion values") tags["MaxNumberDiffusionValues"] = value;
-                            if (label == "Max. number of gradient orients") tags["MaxNumberGradientOrients"] = value;
-                            if (label == "Number of label types   <0=no ASL>") tags["NumberLabelTypes"] = value;
-                            if (line.contains("MRSERIES", Qt::CaseInsensitive)) tags["Modality"] = "MR";
-                        }
-                    }
-                }
-                inputFile.close();
-            }
+            /* read the header from the .par file (a .rec file's sibling .par is used) */
+            parrec::ReadParFileTags(f, tags, msg);
         }
         else {
             msg += "GetImageFileTags() checkpoint D\n";

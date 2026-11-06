@@ -293,6 +293,7 @@ static void ApplyStudy(objectData &d, squirrelStudy &s) {
 
 static void ApplySeries(objectData &d, squirrelSeries &s) {
     d.Set(s.BidsEntity, {"BidsEntity"});
+    d.Set(s.BidsExtension, {"BidsExtension"});
     d.Set(s.BidsPhaseEncodingDirection, {"BidsPhaseEncodingDirection"});
     d.Set(s.BidsRun, {"BidsRun"});
     d.Set(s.BidsSuffix, {"BidsSuffix"});
@@ -351,6 +352,9 @@ static void ApplyIntervention(objectData &d, squirrelIntervention &i) {
     d.Set(i.DoseKey, {"DoseKey"});
     d.Set(i.DoseString, {"DoseString"});
     d.Set(i.DoseUnit, {"DoseUnit"});
+    d.Set(i.FrequencyModifier, {"FrequencyModifier"});
+    d.Set(i.FrequencyUnit, {"FrequencyUnit"});
+    d.Set(i.FrequencyValue, {"FrequencyValue"});
     d.Set(i.InterventionClass, {"InterventionClass"});
     d.Set(i.InterventionName, {"InterventionName"});
     d.Set(i.Notes, {"Notes"});
@@ -426,6 +430,7 @@ static void ApplyDataStep(objectData &d, dataStep &ds) {
     d.Set(ds.SearchImageType, {"SearchImageType"});
     d.Set(ds.SearchModality, {"SearchModality"});
     d.Set(ds.SearchNumberBOLDreps, {"SearchNumberBOLDreps"});
+    d.Set(ds.SearchNumberImagesCriteria, {"SearchNumberImagesCriteria"});
     d.Set(ds.SearchProtocol, {"SearchProtocol"});
     d.Set(ds.SearchSeriesCriteria, {"SearchSeriesCriteria"});
     d.Set(ds.ExportBehavioralDirectoryFormat, {"ExportBehavioralDirectoryFormat"});
@@ -1730,6 +1735,7 @@ void modify::PrintVariables(ObjectType object) {
             {"BidsTask","string","","BIDS Task name"},
             {"BidsRun","number","","BIDS run number"},
             {"BidsPhaseEncodingDirection","string","","BIDS PE direction"},
+            {"BidsExtension","string","","BIDS file extension of the primary data file (.nii.gz, .edf, etc)"},
             {"Description","string","","Description of the series"},
             {"ExperimentName","string","","Experiment name associated with this series. Experiments link to the experiments section of the squirrel package"},
             {"Protocol","string","*","Protocol name"},
@@ -1794,6 +1800,9 @@ void modify::PrintVariables(ObjectType object) {
             {"DoseFrequency","string","","Description of the frequency of administration"},
             {"DoseKey","string","","For clinical trials, the dose key"},
             {"DoseUnit","string","","mg, g, ml, tablets, capsules, etc"},
+            {"FrequencyModifier","string","","Frequency modifier, eg every, as needed"},
+            {"FrequencyUnit","string","","Frequency unit, eg hour, day, week"},
+            {"FrequencyValue","number","","Frequency value, eg 6 for every 6 hours"},
             {"InterventionClass","string","","Drug class"},
             {"InterventionName","string","*","Name of the intervention"},
             {"Notes","string","","Notes about drug"},
@@ -1877,6 +1886,7 @@ void modify::PrintVariables(ObjectType object) {
             {"SearchImageType","string","","Comma separated list of image types"},
             {"SearchModality","string","*","Modality to search for"},
             {"SearchNumberBOLDreps","string","","If SearchSeriesCriteria is usecriteria, then search based on this option"},
+            {"SearchNumberImagesCriteria","string","","If SearchSeriesCriteria is usecriteria, the criteria on the number of images in a series, ie >100"},
             {"SearchProtocol","string","*","Comma separated list of protocol name(s)"},
             {"SearchSeriesCriteria","string","*","all, first, last, largest, smallest, usecriteria"},
             {"ExportBehavioralDirectoryFormat","string","","nobeh, behroot, behseries, behseriesdir"},

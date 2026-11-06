@@ -5,7 +5,7 @@
 #define SQUIRREL_VERSION_MIN "0"
 
 #define UTIL_VERSION_MAJ "2026"
-#define UTIL_VERSION_MIN "10"
-#define UTIL_BUILD_NUM "503"
+#define UTIL_VERSION_MIN "11"
+#define UTIL_BUILD_NUM "515"
 
 #endif // SQUIRRELVERSION_H

@@ -23,6 +23,7 @@ SOURCES += \
     $$PWD/extract.cpp \
     $$PWD/info.cpp \
     $$PWD/modify.cpp \
+    $$PWD/parrec.cpp \
     $$PWD/squirrel.cpp \
     $$PWD/squirrelAnalysis.cpp \
     $$PWD/squirrelDataDictionary.cpp \
@@ -44,6 +45,7 @@ HEADERS += \
     $$PWD/extract.h \
     $$PWD/info.h \
     $$PWD/modify.h \
+    $$PWD/parrec.h \
     $$PWD/squirrel.h \
     $$PWD/squirrel.sql.h \
     $$PWD/squirrelAnalysis.h \

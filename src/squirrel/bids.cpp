@@ -1019,6 +1019,7 @@ qint64 bids::AddSeriesFromBidsFile(QString primaryFile, QString datatype, qint64
     series.BidsTask = entities.value("task");
     series.BidsRun = entities.value("run");
     series.BidsPhaseEncodingDirection = entities.value("dir");
+    series.BidsExtension = ext;
     bool runOk = false;
     int runNum = entities.value("run").toInt(&runOk);
     if (runOk)

@@ -68,11 +68,14 @@ public:
     QString DoseKey;             /*!< for clinical trials, the dose key */
     QString DoseString;          /*!< full dose string (example "tylenol 325mg twice daily by mouth") */
     QString DoseUnit;            /*!< mg, g, ml, tablets, etc */
+    QString FrequencyModifier;   /*!< frequency modifier, eg 'every', 'as needed' */
+    QString FrequencyUnit;       /*!< frequency unit, eg 'hour', 'day', 'week' */
     QString InterventionClass;   /*!< Intervention class (drug class) */
     QString InterventionName;    /*!< Intervention name (required) */
     QString Notes;               /*!< freeform field for notes */
     QString Rater;               /*!< rater/experimenter/prescriber */
     double DoseAmount;           /*!< dose amount (required) */
+    double FrequencyValue = 0.0; /*!< frequency value, eg 6 for 'every 6 hours' */
 
 private:
     bool valid = false;

@@ -56,6 +56,7 @@ void squirrelAnalysis::Populate(const QSqlQuery &q) {
     SeriesCount      = q.value("NumSeries").toInt();
     SetupTime        = q.value("SetupTime").toLongLong();
     Size             = q.value("Size").toLongLong();
+    FileCount        = q.value("FileCount").toLongLong();
     Status           = q.value("Status").toString();
     Successful       = q.value("Successful").toBool();
     valid = true;
@@ -127,7 +128,7 @@ bool squirrelAnalysis::Store() {
 
     /* insert if the object doesn't exist ... */
     if (objectID < 0) {
-        q.prepare("insert or ignore into Analysis (StudyRowID, PipelineRowID, PipelineVersion, AnalysisName, ClusterStartDate, ClusterEndDate, StartDate, EndDate, SetupTime, RunTime, NumSeries, Status, Successful, Size, Hostname, StatusMessage, VirtualPath) values (:StudyRowID, :PipelineRowID, :PipelineVersion, :AnalysisName, :ClusterStartDate, :ClusterEndDate, :StartDate, :EndDate, :SetupTime, :RunTime, :NumSeries, :Status, :Successful, :Size, :Hostname, :StatusMessage, :VirtualPath)");
+        q.prepare("insert or ignore into Analysis (StudyRowID, PipelineRowID, PipelineVersion, AnalysisName, ClusterStartDate, ClusterEndDate, StartDate, EndDate, SetupTime, RunTime, NumSeries, Status, Successful, Size, FileCount, Hostname, StatusMessage, VirtualPath) values (:StudyRowID, :PipelineRowID, :PipelineVersion, :AnalysisName, :ClusterStartDate, :ClusterEndDate, :StartDate, :EndDate, :SetupTime, :RunTime, :NumSeries, :Status, :Successful, :Size, :FileCount, :Hostname, :StatusMessage, :VirtualPath)");
         q.bindValue(":StudyRowID", studyRowID);
         q.bindValue(":PipelineRowID", pipelineRowID);
         q.bindValue(":PipelineVersion", PipelineVersion);
@@ -141,6 +142,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Status", Status);
         q.bindValue(":Successful", Successful);
         q.bindValue(":Size", Size);
+        q.bindValue(":FileCount", FileCount);
         q.bindValue(":AnalysisName", AnalysisName);
         q.bindValue(":Hostname", Hostname);
         q.bindValue(":StatusMessage", StatusMessage);
@@ -151,7 +153,7 @@ bool squirrelAnalysis::Store() {
     }
     /* ... otherwise update */
     else {
-        q.prepare("update Analysis set StudyRowID = :StudyRowID, PipelineRowID = :PipelineRowID, PipelineVersion = :PipelineVersion, AnalysisName = :AnalysisName, ClusterStartDate = :ClusterStartDate, ClusterEndDate = :ClusterEndDate, StartDate = :StartDate, EndDate = :EndDate, SetupTime = :SetupTime, RunTime = :RunTime, NumSeries = :NumSeries, Status = :Status, Successful = :Successful, Size = :Size, Hostname = :Hostname, StatusMessage = :StatusMessage, VirtualPath = :VirtualPath where AnalysisRowID = :id");
+        q.prepare("update Analysis set StudyRowID = :StudyRowID, PipelineRowID = :PipelineRowID, PipelineVersion = :PipelineVersion, AnalysisName = :AnalysisName, ClusterStartDate = :ClusterStartDate, ClusterEndDate = :ClusterEndDate, StartDate = :StartDate, EndDate = :EndDate, SetupTime = :SetupTime, RunTime = :RunTime, NumSeries = :NumSeries, Status = :Status, Successful = :Successful, Size = :Size, FileCount = :FileCount, Hostname = :Hostname, StatusMessage = :StatusMessage, VirtualPath = :VirtualPath where AnalysisRowID = :id");
         q.bindValue(":id", objectID);
         q.bindValue(":StudyRowID", studyRowID);
         q.bindValue(":PipelineRowID", pipelineRowID);
@@ -166,6 +168,7 @@ bool squirrelAnalysis::Store() {
         q.bindValue(":Status", Status);
         q.bindValue(":Successful", Successful);
         q.bindValue(":Size", Size);
+        q.bindValue(":FileCount", FileCount);
         q.bindValue(":AnalysisName", AnalysisName);
         q.bindValue(":Hostname", Hostname);
         q.bindValue(":StatusMessage", StatusMessage);
@@ -203,6 +206,7 @@ QJsonObject squirrelAnalysis::ToJSON() {
     json["SeriesCount"] = SeriesCount;
     json["SetupTime"] = SetupTime;
     json["Size"] = Size;
+    json["FileCount"] = FileCount;
     json["Status"] = Status;
     json["Successful"] = Successful;
     json["VirtualPath"] = VirtualPath();
@@ -246,6 +250,7 @@ QHash<QString, QString> squirrelAnalysis::GetData(DatasetType d) {
             data["Analysis.SeriesCount"] = QString("%1").arg(SeriesCount);
             data["Analysis.SetupTime"] = QString("%1").arg(SetupTime);
             data["Analysis.Size"] = QString("%1").arg(Size);
+        data["Analysis.FileCount"] = QString("%1").arg(FileCount);
             data["Analysis.Status"] = Status;
             data["Analysis.StatusMessage"] = StatusMessage;
             data["Analysis.Successful"] = Successful ? "true" : "false";
@@ -281,6 +286,7 @@ QString squirrelAnalysis::PrintAnalysis() {
     str += utils::Print(QString("\t\t\t\tSeriesCount: %1").arg(SeriesCount));
     str += utils::Print(QString("\t\t\t\tSetupTime: %1").arg(SetupTime));
     str += utils::Print(QString("\t\t\t\tSize: %1").arg(Size));
+    str += utils::Print(QString("\t\t\t\tFileCount: %1").arg(FileCount));
     str += utils::Print(QString("\t\t\t\tStatus: %1").arg(Status));
     str += utils::Print(QString("\t\t\t\tStudyRowID: %1").arg(objectID));
     str += utils::Print(QString("\t\t\t\tSuccessful: %1").arg(Successful));

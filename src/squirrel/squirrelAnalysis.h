@@ -76,6 +76,7 @@ public:
     qint64 RunTime = 0;         /*!< total run time in minutes (elapsed wall time) of the analysis after analysis was submitted to the cluster */
     qint64 SetupTime = 0;       /*!< total time in minutes (elapsed wall time) to setup the analysis, most time will be spent copying data into the analysis directories */
     qint64 Size = 0;            /*!< disk size in bytes of the analysis */
+    qint64 FileCount = 0;       /*!< number of files in the analysis */
 
     /* lib variables */
     QStringList stagedFiles;    /*!< staged file list: list of files in their own original paths which will be copied in before the package is zipped up */

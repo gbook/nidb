@@ -82,6 +82,7 @@ public:
     QString BidsTask;               /*!< BIDS task */
     QString BidsRun;                /*!< BIDS run number */
     QString BidsPhaseEncodingDirection; /*!< BIDS phase encoding direction */
+    QString BidsExtension;          /*!< BIDS file extension of the primary data file (.nii.gz, .edf, etc) */
     QString Description;            /*!< Description of the series */
     QString Protocol;               /*!< Protocol (may differ from description) */
     QString SeriesUID;              /*!< SeriesInstanceUID */

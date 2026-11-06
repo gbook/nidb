@@ -47,7 +47,7 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetSafeAction(array("addpath", "updatepath", "deletepath", "addcluster", "updatecluster", "deletecluster", "addnode", "updatenode", "deletenode")); /* mutating actions require POST + CSRF token */
+		$action = GetSafeAction(array("addpath", "updatepath", "deletepath", "addcluster", "updatecluster", "deletecluster", "addnode", "updatenode", "deletenode", "setnodeenabled")); /* mutating actions require POST + CSRF token */
 		$analysisdirid = (int)GetVariable("analysisdirid");
 		$nidbpath = GetVariable("nidbpath");
 		$clusterpath = GetVariable("clusterpath");
@@ -131,7 +131,7 @@
 		}
 		elseif ($action == "updatenode") {
 			ob_start();
-			UpdateNode($nodeid, $nodehostname, $nodesshuser, $nodedisplayname, $nodedesc, $nodeenabled);
+			UpdateNode($nodeid, $nodehostname, $nodesshuser, $nodedisplayname, $nodedesc);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo(ManageNodesURL(GetNodeClusterID($nodeid)));
 		}
@@ -140,6 +140,12 @@
 			AddNode($clusterid, $nodehostname, $nodesshuser, $nodedisplayname, $nodedesc, $nodeenabled);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo(ManageNodesURL($clusterid));
+		}
+		elseif ($action == "setnodeenabled") {
+			ob_start();
+			SetNodeEnabled($nodeid, $nodeenabled);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo(ManageNodesURL(GetNodeClusterID($nodeid)));
 		}
 		elseif ($action == "deletenode") {
 			$nodeclusterid = GetNodeClusterID($nodeid); /* before the node is deleted */
@@ -369,7 +375,8 @@
 	/* -------------------------------------------- */
 	/* ------- UpdateNode ------------------------- */
 	/* -------------------------------------------- */
-	function UpdateNode($nodeid, $hostname, $sshuser, $displayname, $desc, $enabled) {
+	/* enabled/disabled is set separately, by SetNodeEnabled() */
+	function UpdateNode($nodeid, $hostname, $sshuser, $displayname, $desc) {
 		$nodeid = (int)$nodeid;
 
 		$err = ValidateNode($hostname, $sshuser);
@@ -390,16 +397,46 @@
 
 		/* a different host or user is a different machine (or login), so its counters can't be compared with the old ones */
 		if (($row['hostname'] != $hostname) || (($row['ssh_username'] ?? null) !== $sshuser))
-			$sqlstring = "update cluster_nodes set hostname = ?, ssh_username = ?, display_name = ?, node_desc = ?, enabled = ?, last_counters = null, last_status = null, last_error = null where clusternode_id = ?";
+			$sqlstring = "update cluster_nodes set hostname = ?, ssh_username = ?, display_name = ?, node_desc = ?, last_counters = null, last_status = null, last_error = null where clusternode_id = ?";
 		else
-			$sqlstring = "update cluster_nodes set hostname = ?, ssh_username = ?, display_name = ?, node_desc = ?, enabled = ? where clusternode_id = ?";
-		$params = array($hostname, $sshuser, $displayname, $desc, (int)$enabled, $nodeid);
+			$sqlstring = "update cluster_nodes set hostname = ?, ssh_username = ?, display_name = ?, node_desc = ? where clusternode_id = ?";
+		$params = array($hostname, $sshuser, $displayname, $desc, $nodeid);
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'ssssii', ...$params);
+		mysqli_stmt_bind_param($stmt, 'ssssi', ...$params);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
 		Notice("Node " . htmlspecialchars($hostname) . " updated");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetNodeEnabled --------------------- */
+	/* -------------------------------------------- */
+	/* a disabled node is skipped by the cluster module (no ssh checks). Its history is kept */
+	function SetNodeEnabled($nodeid, $enabled) {
+		$nodeid = (int)$nodeid;
+		$enabled = ($enabled) ? 1 : 0;
+
+		$sqlstring = "select hostname from cluster_nodes where clusternode_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $nodeid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($nodeid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) { Error("Node not found"); return; }
+
+		$sqlstring = "update cluster_nodes set enabled = ? where clusternode_id = ?";
+		$params = array($enabled, $nodeid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		if ($enabled)
+			Notice("Node " . htmlspecialchars($row['hostname']) . " enabled. It will be checked within a minute");
+		else
+			Notice("Node " . htmlspecialchars($row['hostname']) . " disabled. It will no longer be checked; its history is kept");
 	}
 
 
@@ -770,12 +807,23 @@
 				<input type="text" name="nodedesc" value="<?=htmlspecialchars($desc)?>">
 			</div>
 
+			<? if ($type == "add") { ?>
 			<div class="field">
 				<div class="ui checkbox">
 					<input type="checkbox" name="nodeenabled" value="1" <?=($enabled) ? "checked" : ""?>>
 					<label>Enabled (checked every minute)</label>
 				</div>
 			</div>
+			<? } else { ?>
+			<div class="field">
+				<label>Monitoring</label>
+				<? if ($enabled) { ?>
+					<i class="check circle icon" style="color:#0ca30c"></i>Enabled. This node is checked every minute
+				<? } else { ?>
+					<i class="minus circle icon" style="color:#9e9d98"></i>Disabled. This node is not being checked. Use the Enable button below to resume checking
+				<? } ?>
+			</div>
+			<? } ?>
 
 			<div class="ui info message">
 				<div class="header">Passwordless ssh is required</div>
@@ -797,7 +845,18 @@ ssh -o BatchMode=yes <?=htmlspecialchars($exampleuser)?>@<?=htmlspecialchars($ex
 
 			<? if ($type == "edit") { ?>
 			<div class="ui divider"></div>
-			<form method="post" action="clustersettings.php" onSubmit="return confirm('Delete node <?=htmlspecialchars(addslashes($hostname))?> and all of its monitoring history?')">
+			<form method="post" action="clustersettings.php" style="display:inline-block">
+				<input type="hidden" name="action" value="setnodeenabled">
+				<input type="hidden" name="nodeid" value="<?=$nodeid?>">
+				<input type="hidden" name="nodeenabled" value="<?=($enabled) ? "0" : "1"?>">
+				<?=CSRFTokenField()?>
+				<? if ($enabled) { ?>
+				<button type="submit" class="ui basic button" title="Stop checking this node. Its settings and monitoring history are kept"><i class="pause circle icon"></i> Disable node</button>
+				<? } else { ?>
+				<button type="submit" class="ui green basic button" title="Resume checking this node every minute"><i class="play circle icon"></i> Enable node</button>
+				<? } ?>
+			</form>
+			<form method="post" action="clustersettings.php" style="display:inline-block" onSubmit="return confirm('Delete node <?=htmlspecialchars(addslashes($hostname))?> and all of its monitoring history?')">
 				<input type="hidden" name="action" value="deletenode">
 				<input type="hidden" name="nodeid" value="<?=$nodeid?>">
 				<?=CSRFTokenField()?>

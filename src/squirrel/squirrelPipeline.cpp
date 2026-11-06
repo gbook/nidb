@@ -111,6 +111,7 @@ bool squirrelPipeline::Get() {
             ds.SearchImageType = qd.value("SearchImageType").toString();
             ds.SearchModality = qd.value("SearchModality").toString();
             ds.SearchNumberBOLDreps = qd.value("SearchNumberBOLDreps").toString();
+            ds.SearchNumberImagesCriteria = qd.value("NumImagesCriteria").toString();
             ds.SearchProtocol = qd.value("SearchProtocol").toString();
             ds.SearchSeriesCriteria = qd.value("SearchSeriesCriteria").toString();
             ds.StepNumber = qd.value("StepNumber").toInt();
@@ -338,7 +339,7 @@ bool squirrelPipeline::Store() {
     qd.bindValue(":id", objectID);
     utils::SQLQuery(qd, __FUNCTION__, __FILE__, __LINE__);
     foreach (dataStep ds, dataSteps) {
-        qd.prepare("insert into PipelineDataStep (PipelineRowID, ExportBehavioralDirectoryFormat, ExportBehavioralDirectoryName, ExportDataFormat, ExportSubDirectoryName, SearchAssociationType, SearchDataLevel, SearchImageType, SearchModality, SearchNumberBOLDreps, SearchProtocol, SearchSeriesCriteria, StepNumber, FlagIsEnabled, FlagIsOptional, FlagExportGzip, FlagExportPreserveSeriesNumber, FlagIsPrimaryProtocol, FlagExportWritePhaseDirectory, FlagExportWriteSeriesDirectory) values (:PipelineRowID, :ExportBehavioralDirectoryFormat, :ExportBehavioralDirectoryName, :ExportDataFormat, :ExportSubDirectoryName, :SearchAssociationType, :SearchDataLevel, :SearchImageType, :SearchModality, :SearchNumberBOLDreps, :SearchProtocol, :SearchSeriesCriteria, :StepNumber, :FlagIsEnabled, :FlagIsOptional, :FlagExportGzip, :FlagExportPreserveSeriesNumber, :FlagIsPrimaryProtocol, :FlagExportWritePhaseDirectory, :FlagExportWriteSeriesDirectory)");
+        qd.prepare("insert into PipelineDataStep (PipelineRowID, ExportBehavioralDirectoryFormat, ExportBehavioralDirectoryName, ExportDataFormat, ExportSubDirectoryName, SearchAssociationType, SearchDataLevel, SearchImageType, SearchModality, SearchNumberBOLDreps, NumImagesCriteria, SearchProtocol, SearchSeriesCriteria, StepNumber, FlagIsEnabled, FlagIsOptional, FlagExportGzip, FlagExportPreserveSeriesNumber, FlagIsPrimaryProtocol, FlagExportWritePhaseDirectory, FlagExportWriteSeriesDirectory) values (:PipelineRowID, :ExportBehavioralDirectoryFormat, :ExportBehavioralDirectoryName, :ExportDataFormat, :ExportSubDirectoryName, :SearchAssociationType, :SearchDataLevel, :SearchImageType, :SearchModality, :SearchNumberBOLDreps, :NumImagesCriteria, :SearchProtocol, :SearchSeriesCriteria, :StepNumber, :FlagIsEnabled, :FlagIsOptional, :FlagExportGzip, :FlagExportPreserveSeriesNumber, :FlagIsPrimaryProtocol, :FlagExportWritePhaseDirectory, :FlagExportWriteSeriesDirectory)");
         qd.bindValue(":PipelineRowID", objectID);
         qd.bindValue(":ExportBehavioralDirectoryFormat", ds.ExportBehavioralDirectoryFormat);
         qd.bindValue(":ExportBehavioralDirectoryName", ds.ExportBehavioralDirectoryName);
@@ -349,6 +350,7 @@ bool squirrelPipeline::Store() {
         qd.bindValue(":SearchImageType", ds.SearchImageType);
         qd.bindValue(":SearchModality", ds.SearchModality);
         qd.bindValue(":SearchNumberBOLDreps", ds.SearchNumberBOLDreps);
+        qd.bindValue(":NumImagesCriteria", ds.SearchNumberImagesCriteria);
         qd.bindValue(":SearchProtocol", ds.SearchProtocol);
         qd.bindValue(":SearchSeriesCriteria", ds.SearchSeriesCriteria);
         qd.bindValue(":StepNumber", ds.StepNumber);
@@ -421,7 +423,6 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
     QJsonArray JSONdataSteps;
     for (int i=0; i < dataSteps.size(); i++) {
         QJsonObject dataStep;
-        //dataStep["NumberImagesCriteria"] = dataSteps[i].SearchNumberImagesCriteria;
         dataStep["ExportBehavioralDirectoryFormat"] = dataSteps[i].ExportBehavioralDirectoryFormat;
         dataStep["ExportBehavioralDirectoryName"] = dataSteps[i].ExportBehavioralDirectoryName;
         dataStep["ExportDataFormat"] = dataSteps[i].ExportDataFormat;
@@ -438,6 +439,7 @@ QJsonObject squirrelPipeline::ToJSON(QString path) {
         dataStep["SearchImageType"] = dataSteps[i].SearchImageType;
         dataStep["SearchModality"] = dataSteps[i].SearchModality;
         dataStep["SearchNumberBOLDreps"] = dataSteps[i].SearchNumberBOLDreps;
+        dataStep["SearchNumberImagesCriteria"] = dataSteps[i].SearchNumberImagesCriteria;
         dataStep["SearchProtocol"] = dataSteps[i].SearchProtocol;
         dataStep["SearchSeriesCriteria"] = dataSteps[i].SearchSeriesCriteria;
         dataStep["StepNumber"] = dataSteps[i].StepNumber;

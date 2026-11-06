@@ -38,7 +38,6 @@
  * for other sharing contexts
  */
 struct dataStep {
-    //QString NumberImagesCriteria;   /*!< not sure */
     QString ExportBehavioralDirectoryFormat;    /*!< nobeh, behroot, behseries, behseriesdir */
     QString ExportBehavioralDirectoryName;      /*!< if behFormat writes data to a sub-directory, this is the name of that sub-doirectory */
     QString ExportDataFormat;                   /*!< native, dicom, nifti3d, nift4d, analyze3d, analyze4d, bids */
@@ -48,6 +47,7 @@ struct dataStep {
     QString SearchImageType;                    /*!< comma separated list of image types, often derived from the DICOM ImageType tag (0008:0008) */
     QString SearchModality;                     /*!< modality of the data to search for */
     QString SearchNumberBOLDreps;               /*!< if seriesCriteria is 'usecriteria', then this is the number of bold reps to search for, ie '<=450' */
+    QString SearchNumberImagesCriteria;         /*!< criteria on the number of images (files) in a series, ie '>100' */
     QString SearchProtocol;                     /*!< protocol name(s) to search for */
     QString SearchSeriesCriteria;               /*!< criteria for downloading data from a study, if more than one series matches the protocol: all, first, last, largest, smallest, usecriteria */
     int StepNumber;                             /*!< order of this step */
