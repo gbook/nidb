@@ -447,6 +447,8 @@ DEPRECATED_WEB_FILES=(
     "subjectlist.php"
     "validatepath.php"
     "visualization.php"
+    "ndarequests.php"
+    "system.php"
     "vitals.php"
     "register.php"
     "scripts/securimage/example_form.php"

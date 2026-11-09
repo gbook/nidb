@@ -56,7 +56,8 @@
 	}
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* every action changes state: POST + CSRF token required (GetSafeAction falls back to the read-only view otherwise) */
+	$action = GetSafeAction(array("updateconfig", "testemail", "setsystemmessage", "deletesystemmessage", "createdownloadlink"));
     $c['debug'] = GetVariable("debug");
     $c['hideerrors'] = GetVariable("hideerrors");
 	
@@ -373,7 +374,14 @@
 								$messageid = $row['message_id'];
 								$messagedate = $row['message_date'];
 								$message = $row['message'];
-								?><br><?=$messagedate?> - <b><?=$message?></b> <a class="ui red button" href="settings.php?action=deletesystemmessage&messageid=<?=$messageid?>" onclick="return confirm('Are you sure you want to delete the message?')">Delete</a><br><?
+								/* the message is rendered as HTML by design (site admins write it, menu.php shows it the same way) */
+								?><br><?=htmlspecialchars($messagedate ?? '')?> - <b><?=$message?></b>
+								<form method="post" action="settings.php" style="display: inline">
+									<?=CSRFTokenField()?>
+									<input type="hidden" name="action" value="deletesystemmessage">
+									<input type="hidden" name="messageid" value="<?=(int)$messageid?>">
+									<button type="submit" class="ui red button" onclick="return confirm('Are you sure you want to delete the message?')">Delete</button>
+								</form><br><?
 							}
 						}
 						else {
@@ -382,6 +390,7 @@
 					?>
 				<br><br>
 				<form method="post" action="settings.php">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="action" value="setsystemmessage">
 				<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
 				<input type="submit" value="Set message" class="ui primary button">
