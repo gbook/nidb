@@ -114,10 +114,12 @@
 		$metric = GetVariable("metric");
 		if (!is_string($metric) || !isset($metrics[$metric])) $metric = 'load1';
 		$scale = (GetVariable("scale") === 'node') ? 'node' : 'shared';
+		$style = GetVariable("style");
+		if (!in_array($style, array('line', 'area', 'heat'), true)) $style = 'line';
 		$nodeid = (int)GetVariable("nodeid");
 
 		/* the overview's metric and scale are carried through the links, so going to a node and back keeps them */
-		$keep = "&metric=" . urlencode($metric) . "&scale=" . urlencode($scale);
+		$keep = "&metric=" . urlencode($metric) . "&scale=" . urlencode($scale) . "&style=" . urlencode($style);
 
 		?>
 		<link rel="stylesheet" href="scripts/uplot/uPlot.min.css">
@@ -160,7 +162,7 @@
 		if ($nodeid > 0)
 			DisplayNodeDetail($nodeid, $range);
 		else
-			DisplayNodeOverview($range, $metric, $scale);
+			DisplayNodeOverview($range, $metric, $scale, $style);
 	}
 
 
@@ -281,7 +283,10 @@
 	   row, double-click to reset). Each row is a single series, so all use the same color; a dashed gray line is the
 	   row's reference (cores, total memory). Text is set with textContent.
 	   A row is { group: 'heading' }, or { label, href, title, status: {color, icon, label, details}, sub, values, ref,
-	   fmt, refFmt, current, currentRef, yTop } */
+	   fmt, refFmt, current, currentRef, yTop, levelTop }.
+	   opts.style picks how values are drawn: 'line' (default, one color), 'area' (line and area under it shaded
+	   green/yellow/red by height), or 'heat' (one cell per time point colored by its value, no line). For both color
+	   styles the scale runs from 0 (green) to the row's levelTop (red), defaulting to yTop */
 	function NodeSparkGridScript() {
 		?>
 		<script>
@@ -289,6 +294,17 @@
 				const color = '#2a78d6', fill = 'rgba(42,120,214,0.12)', refColor = '#9e9d98', axisColor = '#52514e';
 				const height = 40;
 				const pad = [4, 12, 4, 12];
+
+				/* low -> middle -> high color scale for the area and heat styles */
+				const heatStops = [[12, 163, 12], [237, 161, 0], [227, 73, 72]];
+				const heatCSS = 'linear-gradient(to right, rgb(12,163,12), rgb(237,161,0), rgb(227,73,72))';
+				function heatColor(f, a) {
+					f = Math.min(1, Math.max(0, f || 0));
+					const s = (f < 0.5) ? 0 : 1;
+					const k = (f < 0.5) ? f * 2 : (f - 0.5) * 2;
+					const c = heatStops[s].map(function(v, j) { return Math.round(v + (heatStops[s + 1][j] - v) * k); });
+					return 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + ((a == null) ? 1 : a) + ')';
+				}
 
 				const fmt = {
 					num: function(v) { return v.toFixed(2); },
@@ -324,7 +340,9 @@
 
 				function plotWidth(el) { return Math.max(120, el.clientWidth); }
 
-				function build(el, t, rows, nameHeader) {
+				function build(el, t, rows, nameHeader, opts) {
+					const style = (opts && opts.style) ? opts.style : 'line';
+					const step = (t.length > 1) ? (t[1] - t[0]) : 60; /* seconds per time point */
 					if (typeof uPlot === 'undefined') { el.innerHTML = '<span class="ui red text">Chart library (uPlot) failed to load</span>'; return; }
 
 					(el._charts || []).forEach(function(c) { c.destroy(); });
@@ -427,9 +445,48 @@
 						}
 
 						makers.push(function() {
-							const series = [{}, { stroke: color, fill: fill, width: 1.5, points: { show: false } }];
+							const levelTop = (r.levelTop > 0) ? r.levelTop : r.yTop;
+
+							/* vertical gradient from 0 (green) to levelTop (red), so the area's color follows its height */
+							function gradient(u, a) {
+								const y0 = u.valToPos(0, 'y', true);
+								let y1 = u.valToPos(levelTop, 'y', true);
+								if (!isFinite(y0) || !isFinite(y1)) return heatColor(0, a);
+								if (y1 == y0) y1 = y0 - 1;
+								const g = u.ctx.createLinearGradient(0, y0, 0, y1);
+								g.addColorStop(0, heatColor(0, a));
+								g.addColorStop(0.5, heatColor(0.5, a));
+								g.addColorStop(1, heatColor(1, a));
+								return g;
+							}
+
+							/* one full-height cell per time point, colored by its value */
+							function drawHeat(u) {
+								const ctx = u.ctx, b = u.bbox;
+								ctx.save();
+								ctx.beginPath();
+								ctx.rect(b.left, b.top, b.width, b.height);
+								ctx.clip();
+								for (let i = 0; i < t.length; i++) {
+									const v = r.values[i];
+									if (v == null) continue;
+									const x0 = Math.round(u.valToPos(t[i], 'x', true));
+									const x1 = Math.round(u.valToPos(t[i] + step, 'x', true));
+									if ((x1 < b.left) || (x0 > b.left + b.width)) continue;
+									ctx.fillStyle = heatColor(v / levelTop, 1);
+									ctx.fillRect(x0, b.top, Math.max(1, x1 - x0), b.height);
+								}
+								ctx.restore();
+							}
+
+							let main = { stroke: color, fill: fill, width: 1.5, points: { show: false } };
+							if (style == 'area')
+								main = { stroke: function(u) { return gradient(u, 1); }, fill: function(u) { return gradient(u, 0.35); }, width: 1.5, points: { show: false } };
+							else if (style == 'heat')
+								main = { stroke: 'transparent', width: 0, points: { show: false } };
+							const series = [{}, main];
 							const data = [t, r.values];
-							if (r.ref) {
+							if (r.ref && (style != 'heat')) {
 								series.push({ stroke: refColor, width: 1, dash: [3, 3], points: { show: false } });
 								data.push(r.ref);
 							}
@@ -445,7 +502,8 @@
 										const off = ((i == null) || (u.cursor.left == null) || (u.cursor.left < 0));
 										show(off ? null : i);
 										timeEl.textContent = off ? 'Latest' : fmt.time(t[i]);
-									}]
+									}],
+									draw: (style == 'heat') ? [drawHeat] : []
 								},
 								axes: [{ show: false }, { show: false }],
 								scales: { x: { time: true }, y: { range: function() { return [0, r.yTop]; } } },
@@ -473,7 +531,7 @@
 					}
 				}
 
-				return { fmt: fmt, max: max, build: build };
+				return { fmt: fmt, max: max, build: build, heatCSS: heatCSS };
 			})();
 		</script>
 		<?
@@ -485,7 +543,7 @@
 	/* -------------------------------------------- */
 	/* one row per node, grouped by cluster, with a sparkline of the selected metric. The metric buttons switch the rows
 	   without reloading the page */
-	function DisplayNodeOverview($range, $metric, $scale) {
+	function DisplayNodeOverview($range, $metric, $scale, $style) {
 		$ranges = NodeMonitorRanges();
 		$seconds = $ranges[$range]['seconds'];
 		$metrics = NodeOverviewMetrics();
@@ -562,10 +620,21 @@
 					<button type="button" class="ui <?=($key == $metric) ? 'primary' : 'basic'?> button" data-metric="<?=htmlspecialchars($key)?>" title="<?=htmlspecialchars($m['label'])?>"><?=htmlspecialchars($m['button'])?></button>
 				<? } ?>
 			</div>
+			<div class="ui small buttons" id="nodeStyleButtons">
+				<? foreach (array('line' => 'Line', 'area' => 'Area', 'heat' => 'Heat strip') as $key => $label) { ?>
+					<button type="button" class="ui <?=($key == $style) ? 'primary' : 'basic'?> button" data-style="<?=$key?>"><?=$label?></button>
+				<? } ?>
+			</div>
 			<div class="ui checkbox" id="nodeSharedScaleBox">
 				<input type="checkbox" id="nodeSharedScale" <?=($scale == 'shared') ? 'checked' : ''?>>
 				<label for="nodeSharedScale">Same scale for all nodes</label>
 			</div>
+		</div>
+		<div id="nodeHeatLegend" style="display:none; align-items:center; gap:8px; margin-top:10px; font-size:0.85em; color:#52514e">
+			<span>Low</span>
+			<span id="nodeHeatBar" style="display:inline-block; width:160px; height:10px; border-radius:2px"></span>
+			<span>High</span>
+			<span id="nodeHeatText"></span>
 		</div>
 		<div class="sparkgrid" id="nodeOverviewGrid"></div>
 		<div class="ui small grey text" style="margin-top: 10px">
@@ -576,6 +645,8 @@
 				const d = <?=NodeJSON(array('t' => $times, 'range' => $range, 'metrics' => $metricinfo, 'groups' => $groups))?>;
 				let metric = <?=NodeJSON($metric)?>;
 				let shared = <?=($scale == 'shared') ? 'true' : 'false'?>;
+				let style = <?=NodeJSON($style)?>;
+				document.getElementById('nodeHeatBar').style.background = NodeSpark.heatCSS;
 				const gridEl = document.getElementById('nodeOverviewGrid');
 				const scaleBox = document.getElementById('nodeSharedScale');
 				const F = NodeSpark.fmt;
@@ -591,6 +662,16 @@
 						if (kind == 'pct') return 100;
 						return Math.max(floor, NodeSpark.max(n.series[metric], (kind == 'load') ? n.series.cores : null) * 1.05);
 					};
+					/* the value shown as red in the area and heat styles: the core count for load (load >= cores is a
+					   saturated node), 100% for percents, and the top of the row's scale for rates */
+					const levelTopOf = function(n, yTop) {
+						if (kind == 'pct') return 100;
+						if (kind == 'load') {
+							const cores = NodeSpark.max(n.series.cores) || n.cur.cores;
+							if (cores > 0) return cores;
+						}
+						return yTop;
+					};
 					let sharedTop = 0;
 					d.groups.forEach(function(g) { g.nodes.forEach(function(n) { sharedTop = Math.max(sharedTop, topOf(n)); }); });
 
@@ -601,7 +682,7 @@
 							rows.push({
 								label: n.name,
 								title: n.hostname,
-								href: 'cluster.php?clustertype=nodes&nodeid=' + n.id + '&range=' + encodeURIComponent(d.range) + '&metric=' + encodeURIComponent(metric) + '&scale=' + (shared ? 'shared' : 'node'),
+								href: 'cluster.php?clustertype=nodes&nodeid=' + n.id + '&range=' + encodeURIComponent(d.range) + '&metric=' + encodeURIComponent(metric) + '&scale=' + (shared ? 'shared' : 'node') + '&style=' + style,
 								status: n.status,
 								values: n.series[metric],
 								ref: (kind == 'load') ? n.series.cores : null,
@@ -609,11 +690,14 @@
 								refFmt: (kind == 'load') ? coresFmt : null,
 								current: n.cur[metric],
 								currentRef: (kind == 'load') ? n.cur.cores : null,
-								yTop: shared ? sharedTop : topOf(n)
+								yTop: shared ? sharedTop : topOf(n),
+								levelTop: levelTopOf(n, shared ? sharedTop : topOf(n))
 							});
 						});
 					});
-					NodeSpark.build(gridEl, d.t, rows, 'Node · ' + d.metrics[metric].label);
+					NodeSpark.build(gridEl, d.t, rows, 'Node · ' + d.metrics[metric].label, { style: style });
+					document.getElementById('nodeHeatLegend').style.display = (style == 'line') ? 'none' : 'flex';
+					document.getElementById('nodeHeatText').textContent = (kind == 'load') ? '(0 to load = number of cores)' : ((kind == 'pct') ? '(0 to 100%)' : (shared ? '(0 to the largest value of all nodes)' : '(0 to the largest value of each node)'));
 					scaleBox.disabled = (kind == 'pct');
 					document.getElementById('nodeSharedScaleBox').classList.toggle('disabled', kind == 'pct');
 				}
@@ -624,6 +708,7 @@
 						const u = new URL(href, location.href);
 						u.searchParams.set('metric', metric);
 						u.searchParams.set('scale', shared ? 'shared' : 'node');
+						u.searchParams.set('style', style);
 						return u.toString();
 					};
 					history.replaceState(null, '', set(location.href));
@@ -634,6 +719,17 @@
 					b.addEventListener('click', function() {
 						metric = b.getAttribute('data-metric');
 						document.querySelectorAll('#nodeMetricButtons button').forEach(function(o) {
+							o.classList.toggle('primary', o === b);
+							o.classList.toggle('basic', o !== b);
+						});
+						remember();
+						render();
+					});
+				});
+				document.querySelectorAll('#nodeStyleButtons button').forEach(function(b) {
+					b.addEventListener('click', function() {
+						style = b.getAttribute('data-style');
+						document.querySelectorAll('#nodeStyleButtons button').forEach(function(o) {
 							o.classList.toggle('primary', o === b);
 							o.classList.toggle('basic', o !== b);
 						});

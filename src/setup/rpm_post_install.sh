@@ -346,12 +346,19 @@ DEPRECATED_WEB_FILES=(
     "subjectlist.php"
     "validatepath.php"
     "vitals.php"
+    "register.php"
+    "scripts/securimage/example_form.php"
+    "scripts/securimage/example_form.ajax.php"
 )
 for f in "${DEPRECATED_WEB_FILES[@]}"; do
     rm -f "/var/www/html/$f"
 done
 # also remove any files explicitly marked as deprecated
 rm -f /var/www/html/deprecated_*
+# old directories that are no longer shipped and must not stay reachable from the docroot
+for d in deprecated tools tus-php-2.4.0; do
+    rm -rf "/var/www/html/$d"
+done
 
 # back up the existing database (upgrades only; a new installation has no database to back up yet)
 if ! ((new_installation)); then
