@@ -69,7 +69,7 @@ for the reference implementation.
 | `projects.php` | 8 | ✅ |
 | `ratings.php` | 2 | ✅ |
 | `remoteconnections.php` | 2 | ✅ |
-| `remoteimportmapping.php` | 2 | ⬜ |
+| `remoteimportmapping.php` | 2 | ✅ |
 | `search.php` | 5 | ✅ |
 | `settings.php` | 1 | ✅ |
 | `setup.php` | 1 | ✅ |

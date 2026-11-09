@@ -212,20 +212,21 @@
 		case 'getinstrumentbyname':
 			GetInstrumentByName($instrumentname, (int)$projectid);
 			break;
+		/* remoteimportmapping.php: changes are POST + CSRF token, Edit Data on the project */
 		case 'createinstrumentitems':
-			CreateInstrumentItems($instrumentname, $instrumentnotes, (int)$projectid, $itemsJson, $redcap_form, $redcap_event, (int)$createmappings);
+			if (AjaxRequirePOSTTokenJSON()) CreateInstrumentItems($instrumentname, $instrumentnotes, (int)$projectid, $itemsJson, $redcap_form, $redcap_event, (int)$createmappings);
 			break;
 		case 'updatemappingflag':
-			UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
+			if (AjaxRequirePOSTTokenJSON()) UpdateMappingFlag((int)$mappingid, $flagname, (int)$value);
 			break;
 		case 'savemapping':
-			SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_event, $redcap_form, $redcap_field, $redcap_choice_code, $redcap_datatype, $redcap_validation, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
+			if (AjaxRequirePOSTTokenJSON()) SaveMapping((int)$mappingid, (int)$projectid, $source_type, (int)$avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_event, $redcap_form, $redcap_field, $redcap_choice_code, $redcap_datatype, $redcap_validation, $redcap_datefield, (int)$nidb_instrument, (int)$nidb_variable, (int)$flag_date_from_field, (int)$flag_can_repeat, (int)$flag_import_meta);
 			break;
 		case 'deletemapping':
-			DeleteMapping((int)$mappingid);
+			if (AjaxRequirePOSTTokenJSON()) DeleteMapping((int)$mappingid);
 			break;
 		case 'bulkdeletemappings':
-			BulkDeleteMappings(GetVariable('ids'));
+			if (AjaxRequirePOSTTokenJSON()) BulkDeleteMappings(GetVariable('ids'));
 			break;
 		/* instruments.php grid: POST + CSRF token, Edit Data on the items' project */
 		case 'bulkdeleteitems':
@@ -1543,6 +1544,38 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CheckMappingEditPerms -------------- */
+	/* -------------------------------------------- */
+	/* Remote import mappings are project definitions: Edit Data on the mapping's project to change them.
+	   Returns the de-duplicated int IDs if every mapping exists and is editable, otherwise false */
+	function CheckMappingEditPerms($ids) {
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$ids), function($id) { return $id > 0; })));
+		if (count($ids) == 0)
+			return false;
+
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select remoteimportmapping_id, project_id from remoteimport_mapping where remoteimportmapping_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$rows[] = $row;
+		mysqli_stmt_close($stmt);
+
+		if (count($rows) != count($ids))
+			return false;
+
+		$perms = GetCurrentUserProjectPermissions(array_column($rows, 'project_id'));
+		foreach ($rows as $row) {
+			if (!GetPerm($perms, 'modifydata', $row['project_id']))
+				return false;
+		}
+		return $ids;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- CheckInstrumentItemEditPerms ------- */
 	/* -------------------------------------------- */
 	/* Instrument items are project definitions: Edit Data on the instrument's project to change them.
@@ -2557,7 +2590,10 @@
 	/* -------------------------------------------- */
 	function GetInstrumentItems($instrumentid) {
 		JsonHeader();
+		$instrumentid = (int)$instrumentid;
 		if ($instrumentid < 1) { echo json_encode([]); return; }
+		$projectid = GetInstrumentProjectID($instrumentid);
+		if (($projectid < 1) || !IsProjectMember(GetCurrentUserProjectPermissions(array($projectid)), $projectid)) { echo json_encode([]); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "SELECT instrumentitem_id, item_name FROM instrument_items WHERE instrument_id = ? ORDER BY item_order, item_name");
 		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2581,7 +2617,8 @@
 	function GetInstrumentByName($name, $projectid) {
 		JsonHeader();
 		$name = trim($name);
-		if (($name == '') || ($projectid < 1)) {
+		$projectid = (int)$projectid;
+		if (($name == '') || ($projectid < 1) || !IsProjectMember(GetCurrentUserProjectPermissions(array($projectid)), $projectid)) {
 			echo json_encode(['instrument_id' => 0, 'items' => []]);
 			return;
 		}
@@ -2640,9 +2677,14 @@
 	   created for each item, wiring the REDCap field to the new NiDB item. */
 	function CreateInstrumentItems($name, $notes, $projectid, $itemsJson, $redcapForm = '', $redcapEvent = '', $createmappings = 0) {
 		JsonHeader();
-		$name = trim($name);
+		$name = trim((string)$name);
+		$projectid = (int)$projectid;
 		if (($name == '') || ($projectid < 1)) {
 			echo json_encode(['ok' => false, 'error' => 'An instrument name and project are required']);
+			return;
+		}
+		if (!CheckProjectDataPerm($projectid, 'modifydata')) {
+			echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit data in this project']);
 			return;
 		}
 
@@ -2797,7 +2839,9 @@
 			echo json_encode(['ok' => false, 'error' => 'invalid flag name']);
 			return;
 		}
+		if (CheckMappingEditPerms(array($mappingid)) === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit this mapping']); return; }
 		$v = $value ? 1 : 0;
+		/* $flagname is whitelisted above */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE remoteimport_mapping SET $flagname = ? WHERE remoteimportmapping_id = ?");
 		mysqli_stmt_bind_param($stmt, 'ii', $v, $mappingid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2812,6 +2856,18 @@
 	function SaveMapping($mappingid, $projectid, $source_type, $avicenna_question, $avicenna_variable, $avicenna_variablecount, $avicenna_survey, $avicenna_datasource, $avicenna_datatype, $redcap_event, $redcap_form, $redcap_field, $redcap_choice_code, $redcap_datatype, $redcap_validation, $redcap_datefield, $nidb_instrument, $nidb_variable, $flag_date_from_field, $flag_can_repeat, $flag_import_meta) {
 		JsonHeader();
 		if ($projectid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid projectid']); return; }
+		if (!CheckProjectDataPerm($projectid, 'modifydata')) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit data in this project']); return; }
+		/* the NiDB instrument must be one of this project's, and the variable one of its items */
+		if (($nidb_instrument > 0) && (GetInstrumentProjectID($nidb_instrument) != $projectid)) { echo json_encode(['ok' => false, 'error' => 'invalid NiDB instrument']); return; }
+		if ($nidb_variable > 0) {
+			$sqlstring = "select instrument_id from instrument_items where instrumentitem_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $nidb_variable);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$nidb_variable]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row || ((int)$row['instrument_id'] != (int)$nidb_instrument)) { echo json_encode(['ok' => false, 'error' => 'invalid NiDB variable']); return; }
+		}
 		$allowed_types = ['avicenna', 'redcap'];
 		if (!in_array($source_type, $allowed_types, true)) {
 			echo json_encode(['ok' => false, 'error' => 'invalid source_type']);
@@ -2890,6 +2946,7 @@
 	function DeleteMapping($mappingid) {
 		JsonHeader();
 		if ($mappingid < 1) { echo json_encode(['ok' => false, 'error' => 'invalid mappingid']); return; }
+		if (CheckMappingEditPerms(array($mappingid)) === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to delete this mapping']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $mappingid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2903,12 +2960,12 @@
 	/* -------------------------------------------- */
 	function BulkDeleteMappings($idsJson) {
 		JsonHeader();
-		$ids = json_decode($idsJson, true);
+		$ids = json_decode((string)$idsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$ids = CheckMappingEditPerms($ids);
+		if ($ids === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to delete one or more of the selected mappings']); return; }
 		$deleted = 0;
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM remoteimport_mapping WHERE remoteimportmapping_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);

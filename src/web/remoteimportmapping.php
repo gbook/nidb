@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -41,23 +42,42 @@
 	require "menu.php";
 	require "redcap_functions.php";
 
-	$action    = GetVariable("action");
-	$projectid = GetVariable("projectid");
-	$importid  = GetVariable("importid");
+	/* mutating actions require POST + CSRF token */
+	$action    = GetSafeAction(array("bulkaddavicenna"));
+	$projectid = (int)GetVariable("projectid");
+	$importid  = (int)GetVariable("importid");
 
-	if ($projectid == "") {
+	/* The mappings are project definitions: any member of the project (any permission on it) may view
+	   them; Edit Data is needed to change them, and to load a REDCap project's structure with the
+	   import's stored API token */
+	$ismember = false;
+	$canedit = false;
+	if ($projectid > 0) {
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		$ismember = IsProjectMember($perms, $projectid);
+		$canedit = (GetPerm($perms, 'modifydata', $projectid) == 1);
+	}
+
+	/* the bulk add uses POST/Redirect/GET: run it, stash its results table, then redirect to a GET so a
+	   refresh/Back doesn't re-submit it */
+	if ($action == 'bulkaddavicenna') {
+		ob_start();
+		if (!$canedit)
+			Error("You do not have permission to edit this project's remote import mappings");
+		else
+			BulkAddAvicenna($projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "", GetVariable("replaceexisting") != "");
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("remoteimportmapping.php?projectid=$projectid");
+	}
+
+	ShowFlashMessage();
+
+	if ($projectid < 1)
 		Error("No project specified");
-		require "footer.php";
-		exit;
-	}
-
-	switch ($action) {
-		case 'bulkaddavicenna':
-			BulkAddAvicenna((int)$projectid, GetVariable("csvtext"), GetVariable("createinstruments") != "", GetVariable("replaceexisting") != "");
-			break;
-		default:
-			DisplayMappingList((int)$projectid, (int)$importid);
-	}
+	elseif (!$ismember)
+		Error("You do not have permission to view this project's remote import mappings");
+	else
+		DisplayMappingList($projectid, $importid, $canedit);
 
 
 	/* --------------------------------------------------- */
@@ -83,10 +103,10 @@
 	/* ------- BulkAddAvicenna -------------------------- */
 	/* --------------------------------------------------- */
 	function BulkAddAvicenna($projectid, $csvtext, $createInstruments = false, $replaceExisting = false) {
-		$csvtext = trim($csvtext);
+		$projectid = (int)$projectid;
+		$csvtext = trim((string)$csvtext);
 		if ($csvtext === '') {
 			Error("No CSV data provided");
-			DisplayMappingList($projectid);
 			return;
 		}
 
@@ -95,7 +115,6 @@
 
 		if (count($lines) < 2) {
 			Error("CSV must have a header row and at least one data row");
-			DisplayMappingList($projectid);
 			return;
 		}
 
@@ -109,14 +128,12 @@
 		$missing  = array_diff($required, $header);
 		if (!empty($missing)) {
 			Error("Missing required columns: " . implode(', ', $missing));
-			DisplayMappingList($projectid);
 			return;
 		}
 
 		// A survey or a datasource column must be present (one of the two is required per row)
 		if (!in_array('avicennasurvey', $header) && !in_array('avicennadatasource', $header)) {
 			Error("Missing required column: avicennasurvey or avicennadatasource");
-			DisplayMappingList($projectid);
 			return;
 		}
 
@@ -391,6 +408,7 @@
 			<form method="POST" action="remoteimportmapping.php">
 				<input type="hidden" name="action" value="bulkaddavicenna">
 				<input type="hidden" name="projectid" value="<?= $projectid ?>">
+				<?=CSRFTokenField()?>
 				<?php if ($createInstruments) { ?><input type="hidden" name="createinstruments" value="1"><?php } ?>
 				<?php if ($replaceExisting) { ?><input type="hidden" name="replaceexisting" value="1"><?php } ?>
 				<textarea name="csvtext" rows="12"
@@ -402,16 +420,15 @@
 		</div>
 		<?php } ?>
 		<?php
-
-		DisplayMappingList($projectid);
 	}
 
 
 	/* --------------------------------------------------- */
 	/* ------- DisplayMappingList ------------------------ */
 	/* --------------------------------------------------- */
-	function DisplayMappingList($projectid, $importid = 0) {
+	function DisplayMappingList($projectid, $importid = 0, $canedit = false) {
 
+		$projectid = (int)$projectid;
 		$importid = (int)$importid;
 
 		// Load all instruments for this project — used in JS for the instrument dropdown
@@ -525,7 +542,10 @@
 		$structureError = '';
 		$structureImportName = '';
 		$structureSubjectField = '';
-		if ($importid > 0) {
+		if (($importid > 0) && !$canedit) {
+			$structureError = "You do not have permission to load the REDCap structure for this project";
+		}
+		elseif ($importid > 0) {
 			$cred = RedCapGetCredentials($importid, $projectid);
 			if (!$cred['success'])
 				$structureError = $cred['message'];
@@ -573,12 +593,14 @@
 					<input type="text" id="avicennaFilter" placeholder="Search..." oninput="avicennaGridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
 				</div>
 				<div class="ui right aligned column">
+					<? if ($canedit) { ?>
 					<button class="ui small button" onclick="$('#bulkAddModal').modal('show')">
 						<i class="list icon"></i> Bulk add
 					</button>
 					<button class="ui small primary button" onclick="openModal('avicenna')">
 						<i class="plus icon"></i> Add mapping
 					</button>
+					<? } ?>
 				</div>
 			</div>
 			<div id="avicennaGrid" class="ag-theme-balham" style="height:500px;width:100%"></div>
@@ -591,8 +613,10 @@
 		<!-- REDCap tab -->
 		<div class="ui bottom attached tab segment" data-tab="redcap">
 
-			<!-- ── Browse the live REDCap project structure ────────────────── -->
+			<!-- ── Browse the live REDCap project structure (Edit Data: it uses the import's API token) ── -->
+			<? if ($canedit || ($structureError != '')) { ?>
 			<div class="ui segment" style="background:#fafafa">
+				<? if ($canedit) { ?>
 				<form method="get" action="remoteimportmapping.php" style="margin:0">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">
 					<div style="display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap">
@@ -614,6 +638,7 @@
 						<? endif; ?>
 					</div>
 				</form>
+				<? } ?>
 
 				<? if ($structureError != ''): ?>
 					<div class="ui negative message" style="margin-top:10px">
@@ -678,11 +703,14 @@
 					</div>
 				<? endif; ?>
 			</div>
+			<? } ?>
 
 			<div style="margin-bottom:8px;display:flex;align-items:center;gap:10px">
+				<? if ($canedit) { ?>
 				<button class="ui small primary button" onclick="openModal('redcap')">
 					<i class="plus icon"></i> Add mapping
 				</button>
+				<? } ?>
 				<input type="text" id="redcapFilter" placeholder="Search..."
 				       oninput="redcapGridApi.setQuickFilter(this.value)"
 				       style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
@@ -910,6 +938,7 @@
 				<form id="bulkForm" method="POST" action="remoteimportmapping.php">
 					<input type="hidden" name="action" value="bulkaddavicenna">
 					<input type="hidden" name="projectid" value="<?= $projectid ?>">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="createinstruments" id="bulkCreateInstrumentsHidden" value="">
 					<input type="hidden" name="replaceexisting" id="bulkReplaceExistingHidden" value="">
 					<div class="ui form">
@@ -1011,8 +1040,17 @@
 		<script>
 		// Data injected at page render time
 		const projectId    = <?= $projectid ?>;
-		const avicennaData = <?= json_encode($avicennaRows) ?>;
-		const redcapData   = <?= json_encode($redcapRows) ?>;
+		const avicennaData = <?= json_encode($avicennaRows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
+		const redcapData   = <?= json_encode($redcapRows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
+		/* Edit Data on the project: shows the edit controls. ajaxapi.php checks again on every change */
+		const CAN_EDIT     = <?= ($canedit ? 'true' : 'false') ?>;
+		const CSRF_TOKEN   = <?= json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+		/* POSTs to ajaxapi.php with the CSRF token; resolves to the parsed JSON */
+		function postAjax(fields) {
+			const body = new URLSearchParams(Object.assign({ csrftoken: CSRF_TOKEN }, fields));
+			return fetch('ajaxapi.php', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: body.toString(), credentials: 'same-origin' }).then(r => r.json());
+		}
 
 		// Grid API references; assigned after createGrid() below
 		let avicennaGridApi = null;
@@ -1025,13 +1063,10 @@
 				const cb    = document.createElement('input');
 				cb.type     = 'checkbox';
 				cb.checked  = !!params.value;
-				cb.style.cursor = 'pointer';
+				cb.disabled = !CAN_EDIT;
+				cb.style.cursor = CAN_EDIT ? 'pointer' : 'default';
 				cb.addEventListener('change', () => {
-					fetch('ajaxapi.php?action=updatemappingflag'
-					    + '&mappingid=' + params.data.id
-					    + '&flagname='  + encodeURIComponent(flagName)
-					    + '&value='     + (cb.checked ? 1 : 0))
-						.then(r => r.json())
+					postAjax({ action: 'updatemappingflag', mappingid: params.data.id, flagname: flagName, value: (cb.checked ? 1 : 0) })
 						.then(resp => {
 							if (!resp.ok) {
 								alert('Error saving flag: ' + (resp.error || 'unknown'));
@@ -1068,8 +1103,7 @@
 				delBtn.title          = 'Delete';
 				delBtn.onclick        = () => {
 					if (!confirm('Delete this mapping?')) return;
-					fetch('ajaxapi.php?action=deletemapping&mappingid=' + params.data.id)
-						.then(r => r.json())
+					postAjax({ action: 'deletemapping', mappingid: params.data.id })
 						.then(resp => {
 							if (resp.ok) {
 								getGridApi().applyTransaction({ remove: [params.data] });
@@ -1104,7 +1138,7 @@
 			document.getElementById('avicennaGrid'),
 			{
 				columnDefs: [
-					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
+					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false, hide: !CAN_EDIT },
 					{ field: 'avicenna_survey',        headerName: 'Survey',           sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_datasource',    headerName: 'Datasource',       sortable: true, filter: true, flex: 1 },
 					{ field: 'avicenna_variable',      headerName: 'Variable',         sortable: true, filter: true, flex: 1 },
@@ -1113,7 +1147,7 @@
 					arrowCol,
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument', sortable: true, filter: true, flex: 1,
 						cellRenderer: params => {
-							if (!params.data.nidb_instrument_id) return params.value || '';
+							if (!params.data.nidb_instrument_id) { const sp = document.createElement('span'); sp.textContent = params.value || ''; return sp; }
 							const a = document.createElement('a');
 							a.href = 'instruments.php?projectid=<?= $projectid ?>&instrumentid=' + params.data.nidb_instrument_id;
 							a.textContent = params.value;
@@ -1133,6 +1167,7 @@
 						sortable: false,
 						filter: false,
 						width: 100,
+						hide: !CAN_EDIT,
 						cellRenderer: actionRenderer(() => avicennaGridApi, 'avicenna'),
 						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
 					},
@@ -1140,7 +1175,7 @@
 				rowData:           avicennaData,
 				defaultColDef:     { resizable: true },
 				getRowId:          params => String(params.data.id),
-				rowSelection:       'multiple',
+				rowSelection:       CAN_EDIT ? 'multiple' : undefined,
 				onSelectionChanged: () => updateSelectionToolbar('avicenna'),
 				//theme: themeBalham,				
 			}
@@ -1151,7 +1186,7 @@
 			document.getElementById('redcapGrid'),
 			{
 				columnDefs: [
-					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false },
+					{ headerName: '', checkboxSelection: true, headerCheckboxSelection: true, width: 40, minWidth: 40, maxWidth: 40, sortable: false, filter: false, resizable: false, hide: !CAN_EDIT },
 					{ field: 'redcap_event',      headerName: 'Event',             sortable: true, filter: true, width: 140 },
 					{ field: 'redcap_form',       headerName: 'Form',              sortable: true, filter: true, flex: 1 },
 					{ field: 'redcap_field',      headerName: 'Field',             sortable: true, filter: true, flex: 1 },
@@ -1161,7 +1196,7 @@
 					arrowCol,
 					{ field: 'nidb_instrument',   headerName: 'NiDB Instrument',   sortable: true, filter: true, flex: 1,
 						cellRenderer: params => {
-							if (!params.data.nidb_instrument_id) return params.value || '';
+							if (!params.data.nidb_instrument_id) { const sp = document.createElement('span'); sp.textContent = params.value || ''; return sp; }
 							const a = document.createElement('a');
 							a.href = 'instruments.php?projectid=<?= $projectid ?>&instrumentid=' + params.data.nidb_instrument_id;
 							a.textContent = params.value;
@@ -1188,6 +1223,7 @@
 						sortable: false,
 						filter: false,
 						width: 120,
+						hide: !CAN_EDIT,
 						cellRenderer: actionRenderer(() => redcapGridApi, 'redcap'),
 						cellStyle: { 'justify-content': 'center', 'display': 'flex', 'align-items': 'middle' }
 					},
@@ -1195,7 +1231,7 @@
 				rowData:            redcapData,
 				defaultColDef:      { resizable: true },
 				getRowId:           params => String(params.data.id),
-				rowSelection:       'multiple',
+				rowSelection:       CAN_EDIT ? 'multiple' : undefined,
 				onSelectionChanged: () => updateSelectionToolbar('redcap'),
 			}
 		);
@@ -1204,13 +1240,13 @@
 		   rcStructure is the live project shape fetched from REDCap; rcMapped is
 		   an index of already-saved mappings keyed "event|form|field|choicecode".
 		   Both are null/empty when no import has been loaded. */
-		const rcStructure = <?= json_encode($structure, JSON_UNESCAPED_SLASHES) ?>;
-		const rcMapped    = <?= json_encode($mappedIndex ?: new stdClass(), JSON_UNESCAPED_SLASHES) ?>;
+		const rcStructure = <?= json_encode($structure, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
+		const rcMapped    = <?= json_encode($mappedIndex ?: new stdClass(), JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 		/* The field configured on the import as the subject identifier. It is not
 		   mapped to an instrument item -- the importer reads it straight off each
 		   exported row -- so the browser marks it rather than offering to map it.
 		   Falls back to REDCap's record ID field when the import has none set. */
-		const rcSubjectField = <?= json_encode($structureSubjectField, JSON_UNESCAPED_SLASHES) ?>;
+		const rcSubjectField = <?= json_encode($structureSubjectField, JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 		function rcIsSubjectField(name) {
 			const configured = (rcSubjectField || '').toLowerCase();
@@ -1749,6 +1785,7 @@
 
 			const makeMappings = document.getElementById('ci_createmappings').checked ? 1 : 0;
 			const body = 'action=createinstrumentitems'
+				+ '&csrftoken=' + encodeURIComponent(CSRF_TOKEN)
 				+ '&projectid=<?= $projectid ?>'
 				+ '&instrumentname=' + encodeURIComponent(name)
 				+ '&instrumentnotes=' + encodeURIComponent(document.getElementById('ci_notes').value)
@@ -1938,7 +1975,8 @@
 				params.flag_can_repeat       = document.getElementById('modal_flag_can_repeat').checked      ? 1 : 0;
 			}
 
-			// POST as application/x-www-form-urlencoded
+			// POST as application/x-www-form-urlencoded, with the CSRF token
+			params.csrftoken = CSRF_TOKEN;
 			const body = Object.keys(params)
 				.map(k => encodeURIComponent(k) + '=' + encodeURIComponent(params[k]))
 				.join('&');
@@ -2204,8 +2242,7 @@
 			if (rows.length === 0) return;
 			if (!confirm('Are you sure you want to delete ' + rows.length + ' selected mapping' + (rows.length !== 1 ? 's' : '') + '? This cannot be undone.')) return;
 			const ids = rows.map(r => r.id);
-			fetch('ajaxapi.php?action=bulkdeletemappings&ids=' + encodeURIComponent(JSON.stringify(ids)))
-				.then(r => r.json())
+			postAjax({ action: 'bulkdeletemappings', ids: JSON.stringify(ids) })
 				.then(resp => {
 					if (!resp.ok) { alert('Error deleting: ' + (resp.error || 'unknown')); return; }
 					api.applyTransaction({ remove: rows });
