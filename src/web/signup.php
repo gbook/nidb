@@ -729,20 +729,7 @@
 			$to = trim($row['user_email'] ?? '');
 			if ($to == "") { continue; }
 
-			/* the token is random, and only its SHA-256 is stored */
-			$token = bin2hex(random_bytes(32));
-			$tokenhash = hash('sha256', $token);
-			$userid = (int)$row['user_id'];
-
-			$sqlstring = "update users set user_resettoken = ?, user_resetexpires = date_add(now(), interval 1 hour) where user_id = ?";
-			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-			mysqli_stmt_bind_param($stmt, 'si', $tokenhash, $userid);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[token]', $userid]);
-			mysqli_stmt_close($stmt);
-
-			$url = $GLOBALS['cfg']['siteurl'] . "/signup.php?a=reset&k=$token";
-			$body = "A password reset was requested for your NiDB account on " . $GLOBALS['cfg']['siteurl'] . "<br><br>To choose a new password, open the link below within 1 hour. It can only be used once.<br><br><a href=\"$url\">$url</a><br><br>If you did not request this, you can ignore this email. Your password has not been changed.";
-			SendEmail($to, 'NiDB password reset', $body, 0);
+			SendPasswordResetLink((int)$row['user_id'], $to);
 		}
 
 		return "";

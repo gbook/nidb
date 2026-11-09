@@ -1654,6 +1654,48 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- SendPasswordResetLink -------------- */
+	/* -------------------------------------------- */
+	/* emails a one-time link (signup.php?a=reset) that lets the user choose a new password. The token
+	   is random, only its SHA-256 is stored, and it expires in 1 hour. Issuing a new link replaces any
+	   earlier one. The current password keeps working until the link is used. $byadmin changes the
+	   wording of the email. The link is only accepted for enabled Standard accounts (see
+	   GetResetUserID() in signup.php). Returns true if the email was sent; if it wasn't, the token is
+	   cleared again */
+	function SendPasswordResetLink($userid, $to, $byadmin=false) {
+		$userid = (int)$userid;
+
+		$token = bin2hex(random_bytes(32));
+		$tokenhash = hash('sha256', $token);
+
+		$sqlstring = "update users set user_resettoken = ?, user_resetexpires = date_add(now(), interval 1 hour) where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $tokenhash, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[token]', $userid]);
+		mysqli_stmt_close($stmt);
+
+		$siteurl = $GLOBALS['cfg']['siteurl'];
+		$url = "$siteurl/signup.php?a=reset&k=$token";
+		if ($byadmin)
+			$body = "An administrator has sent you a link to set a new password for your NiDB account on " . htmlspecialchars($siteurl) . "<br><br>To choose a new password, open the link below within 1 hour. It can only be used once.<br><br><a href=\"" . htmlspecialchars($url) . "\">" . htmlspecialchars($url) . "</a><br><br>If the link expires, use the \"Forgot password\" option on the login page, or contact your administrator.";
+		else
+			$body = "A password reset was requested for your NiDB account on " . htmlspecialchars($siteurl) . "<br><br>To choose a new password, open the link below within 1 hour. It can only be used once.<br><br><a href=\"" . htmlspecialchars($url) . "\">" . htmlspecialchars($url) . "</a><br><br>If you did not request this, you can ignore this email. Your password has not been changed.";
+
+		if (SendEmail($to, 'NiDB password reset', $body, 0))
+			return true;
+
+		/* the link never reached the user, so don't leave a live token behind */
+		$sqlstring = "update users set user_resettoken = null, user_resetexpires = null where user_id = ? and user_resettoken = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $userid, $tokenhash);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, '[token]']);
+		mysqli_stmt_close($stmt);
+
+		return false;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GenerateRandomString --------------- */
 	/* -------------------------------------------- */
 	/* returns $length random characters from [A-Za-z0-9_]. Used for temp file and table names, so

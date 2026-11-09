@@ -111,6 +111,16 @@
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("adminusers.php");
 				break;
+			case 'resetpassword':
+				ob_start();
+				/* POST-only and CSRF-checked, since this changes the user's password */
+				if (($_SERVER['REQUEST_METHOD'] == 'POST') && VerifyCSRFToken())
+					ResetUserPassword($id);
+				elseif ($_SERVER['REQUEST_METHOD'] != 'POST')
+					Error("Invalid request");
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("adminusers.php");
+				break;
 			case 'delete':
 				ob_start();
 				DeleteUser($id);
@@ -356,6 +366,48 @@
 
 		$username = GetUsernameFromID($id);
 		Notice(htmlspecialchars($username) . " deleted");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetUserPassword ------------------ */
+	/* -------------------------------------------- */
+	/* emails the user a one-time link to choose a new password (see SendPasswordResetLink() in
+	   functions.php). The admin never sees or sets the password, and the current password keeps
+	   working until the link is used */
+	function ResetUserPassword($id) {
+		$id = (int)$id;
+
+		$sqlstring = "select username, user_email, login_type, user_enabled from users where user_id = ? and (user_deleted is null or user_deleted = 0)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if (!$row) { Error("User not found"); return; }
+
+		$username = $row['username'];
+		$email = trim($row['user_email'] ?? '');
+
+		if ($row['login_type'] != "Standard") {
+			Error("The password for " . htmlspecialchars($username) . " is not stored in NiDB (login type " . htmlspecialchars($row['login_type'] ?? '') . "), so it can't be reset here");
+			return;
+		}
+		/* the reset link is only accepted for enabled accounts */
+		if ($row['user_enabled'] != 1) {
+			Error(htmlspecialchars($username) . " is disabled. Enable the account before sending a password reset link.");
+			return;
+		}
+		if (($email == "") || (!filter_var($email, FILTER_VALIDATE_EMAIL))) {
+			Error(htmlspecialchars($username) . " does not have a valid email address, so no reset link was sent");
+			return;
+		}
+
+		if (SendPasswordResetLink($id, $email, true))
+			Notice("A password reset link for " . htmlspecialchars($username) . " was emailed to " . htmlspecialchars($email) . ". It can be used once, and expires in 1 hour.");
+		else
+			Error("The email to " . htmlspecialchars($email) . " could not be sent, so no reset link was issued");
 	}
 
 
@@ -791,6 +843,10 @@
 					<? if ($type == 'edit') { ?>
 						<input type="hidden" name="username" value="<?=htmlspecialchars($username)?>">
 						<a class="ui red button" href="adminusers.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
+						<? if ($login_type == "Standard") { ?>
+						<!-- submits the separate resetpasswordform below (forms can't be nested) -->
+						<button class="ui orange button" type="submit" form="resetpasswordform" title="Email <?=htmlspecialchars($email)?> a one-time link (valid 1 hour) to choose a new password" onclick="return confirm('Email <?=htmlspecialchars(addslashes($username), ENT_QUOTES)?> a password reset link at <?=htmlspecialchars(addslashes($email), ENT_QUOTES)?>? The link can be used once and expires in 1 hour. Their current password keeps working until it is used.')"><i class="key icon"></i>Email Password Reset Link</button>
+						<? } ?>
 					<? } ?>
 				</div>
 				<div class="column" align="right">
@@ -799,6 +855,13 @@
 				</div>
 			</div>
 			</form>
+			<? if (($type == 'edit') && ($login_type == "Standard")) { ?>
+			<form method="post" action="adminusers.php" id="resetpasswordform">
+				<input type="hidden" name="action" value="resetpassword">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 		</div>
 	<?
 	}
