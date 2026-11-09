@@ -25,6 +25,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -42,406 +43,306 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = (int)GetVariable("id");
-	$projectid = (int)GetVariable("projectid");
-	$itemid = (int)GetVariable("itemid");
-	$itemorder = GetVariable("itemorder");
-	$itemname = GetVariable("itemname");
-	$modality = GetVariable("modality");
-	$protocol = GetVariable("protocol");
-	$itemcount = GetVariable("itemcount");
-	$frequency = GetVariable("frequency");
-	$frequencyunit = GetVariable("frequencyunit");
-	$enrollmentid = (int)GetVariable("enrollmentid");
-	$projectchecklistid = (int)GetVariable("projectchecklistid");
-	$reason = GetVariable("reason");
-	$missingdataid = (int)GetVariable("missingdataid");
+	/* mutating actions require POST + CSRF token */
+	$mutating = array("updateqcparams", "updatemrparams", "loadmrparams");
+	$action = GetSafeAction($mutating);
+	$id = (int)GetVariable("id");   /* the project */
+	$protocolfilter = trim((string)GetVariable("protocolfilter"));
 
-	$protocolfilter = GetVariable("protocolfilter");
-	
 	$param_rowid = GetVariable("param_rowid");
 	$param_protocol = GetVariable("param_protocol");
 	$param_sequence = GetVariable("param_sequence");
-	$param_x_max = GetVariable("param_x_max");
-	$param_y_max = GetVariable("param_y_max");
-	$param_z_max = GetVariable("param_z_max");
-	$param_iosnr_min = GetVariable("param_iosnr_min");
-	$param_iosnr_max = GetVariable("param_iosnr_max");
-	$param_pvsnr_min = GetVariable("param_pvsnr_min");
-	$param_pvsnr_max = GetVariable("param_pvsnr_max");
-
-	$param_tr_min = GetVariable("param_tr_min");
-	$param_tr_max = GetVariable("param_tr_max");
-	$param_te_min = GetVariable("param_te_min");
-	$param_te_max = GetVariable("param_te_max");
-	$param_ti_min = GetVariable("param_ti_min");
-	$param_ti_max = GetVariable("param_ti_max");
-	$param_flip_min = GetVariable("param_flip_min");
-	$param_flip_max = GetVariable("param_flip_max");
-	$param_xdim_min = GetVariable("param_xdim_min");
-	$param_xdim_max = GetVariable("param_xdim_max");
-	$param_ydim_min = GetVariable("param_ydim_min");
-	$param_ydim_max = GetVariable("param_ydim_max");
-	$param_zdim_min = GetVariable("param_zdim_min");
-	$param_zdim_max = GetVariable("param_zdim_max");
-	$param_tdim_min = GetVariable("param_tdim_min");
-	$param_tdim_max = GetVariable("param_tdim_max");
-	$param_slicethickness_min = GetVariable("param_slicethickness_min");
-	$param_slicethickness_max = GetVariable("param_slicethickness_max");
-	$param_slicespacing_min = GetVariable("param_slicespacing_min");
-	$param_slicespacing_max = GetVariable("param_slicespacing_max");
-	$param_bandwidth_min = GetVariable("param_bandwidth_min");
-	$param_bandwidth_max = GetVariable("param_bandwidth_max");
 
 	$existingstudy = GetVariable("existingstudy");
 	$existingseries = GetVariable("existingseries");
 
-	/* determine action */
-	switch ($action) {
-		case 'editqcparams':
-			EditQCParams($id);
-			break;
-		case 'updateqcparams':
-			UpdateQCParams($id, $param_rowid, $param_protocol, $param_x_max, $param_y_max, $param_z_max, $param_iosnr_min, $param_iosnr_max, $param_pvsnr_min, $param_pvsnr_max);
-			EditQCParams($id);
-			break;
-		case 'loadqcparams':
-			LoadQCParams($id, $existingstudy, $existingseries);
-			EditQCParams($id);
-			break;
-		case 'viewqcparams':
-			ViewQCParams($id, $protocolfilter);
-			break;
-		case 'editmrparams':
-			EditMRScanParams($id);
-			break;
-		case 'updatemrparams':
-			UpdateMRScanParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr_min, $param_tr_max, $param_te_min, $param_te_max, $param_ti_min, $param_ti_max, $param_flip_min, $param_flip_max, $param_xdim_min, $param_xdim_max, $param_ydim_min, $param_ydim_max, $param_zdim_min, $param_zdim_max, $param_tdim_min, $param_tdim_max, $param_slicethickness_min, $param_slicethickness_max, $param_slicespacing_min, $param_slicespacing_max, $param_bandwidth_min, $param_bandwidth_max);
-			EditMRScanParams($id);
-			break;
-		case 'loadmrparams':
-			LoadMRParams($id, $existingstudy, $existingseries);
-			EditMRScanParams($id);
-			break;
-		case 'viewmrparams':
-			ViewMRParams($id);
-			break;
-			break;
-		default:
-			ViewQCParams($id, $protocolfilter);
+	/* The MR scan parameters and QC criteria are project definitions: any member of the project (any
+	   permission on it) may view the QC checklist; Edit Data is needed to view and change the criteria */
+	$ismember = false;
+	$canedit = false;
+	if ($id > 0) {
+		$perms = GetCurrentUserProjectPermissions(array($id));
+		$ismember = IsProjectMember($perms, $id);
+		$canedit = (GetPerm($perms, 'modifydata', $id) == 1);
 	}
-	
-	
-	/* ------------------------------------ functions ------------------------------------ */
 
-	/* -------------------------------------------- */
-	/* ------- LoadQCParams ----------------------- */
-	/* -------------------------------------------- */
-	function LoadQCParams($id, $study, $series) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$study = mysqli_real_escape_string($GLOBALS['linki'], trim($study));
-		$series = mysqli_real_escape_string($GLOBALS['linki'], trim($series));
-		
-		$uid = substr($study,0,8);
-		$studynum = substr($study,8);
-		
-		/* check if its a valid subject, valid study num, and is MR modality */
-		$sqlstring = "select c.study_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where a.uid = '$uid' and c.study_num = '$studynum' and c.study_modality = 'MR'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0){
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$studyid = $row['study_id'];
-			if ($studyid > 0) {
-				/* get the mr_series rows */
-				if ($series == "") {
-					$sqlstring = "select * from mr_series where study_id = $studyid";
-				}
-				else {
-					$sqlstring = "select * from mr_series where study_id = $studyid and series_num = '$series'";
-				}
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0){
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$series_desc = $row['series_desc'];
-						$series_protocol = $row['series_protocol'];
-						$sequence = $row['series_sequencename'];
-						$tr = $row['series_tr'];
-						$te = $row['series_te'];
-						$ti = $row['series_ti'];
-						$flip = $row['series_flip'];
-						$slicethickness = $row['slicethickness'];
-						$slicespacing = $row['slicespacing'];
-						$dimx = $row['dimX'];
-						$dimy = $row['dimY'];
-						$dimz = $row['dimZ'];
-						$dimt = $row['dimT'];
-						$bandwidth = $row['bandwidth'];
-						
-						if (strlen($series_desc) != "") {
-							$protocol = $series_desc;
-						}
-						else {
-							$protocol = $series_protocol;
-						}
-						$param_rowid[] = "";
-						$param_protocol[] = $protocol;
-						$param_sequence[] = $sequence;
-						$param_tr[] = (double)$tr;
-						$param_te[] = (double)$te;
-						$param_ti[] = (double)$ti;
-						$param_flip[] = (double)$flip;
-						$param_xdim[] = (double)$dimx;
-						$param_ydim[] = (double)$dimy;
-						$param_zdim[] = (double)$dimz;
-						$param_tdim[] = (double)$dimt;
-						$param_slicethickness[] = (double)$slicethickness;
-						$param_slicespacing[] = (double)$slicespacing;
-						$param_bandwidth[] = (double)$bandwidth;
-						echo "Adding row [$protocol]<br>";
-					}
-					
-					/* we have all the params, now do the inserts into the scan params table */
-					UpdateQCParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_tr, $param_te, $param_te, $param_ti, $param_ti, $param_flip, $param_flip, $param_xdim, $param_xdim, $param_ydim, $param_ydim, $param_zdim, $param_zdim, $param_tdim, $param_tdim, $param_slicethickness, $param_slicethickness, $param_slicespacing, $param_slicespacing, $param_bandwidth, $param_bandwidth);
-				}
-				else {
-					Error("No MR series found for [$study]");
-				}
-			}
+	/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then redirect to the
+	   edit page as a GET so a refresh/Back doesn't re-submit the form */
+	if (in_array($action, $mutating, true)) {
+		ob_start();
+		if (!$canedit) {
+			Error("You do not have permission to edit this project's MR QC criteria");
 		}
 		else {
-			Error("Invalid study ID [$study]. Incorrect UID, study number, or study does not contain MR series");
+			switch ($action) {
+				case 'updateqcparams':
+					UpdateQCParams($id, $param_rowid, $param_protocol, GetVariable("param_x_max"), GetVariable("param_y_max"), GetVariable("param_z_max"), GetVariable("param_iosnr_min"), GetVariable("param_iosnr_max"), GetVariable("param_pvsnr_min"), GetVariable("param_pvsnr_max"));
+					break;
+				case 'updatemrparams':
+					$ranges = array();
+					foreach (MRScanParamNames() as $name) {
+						$ranges[$name . '_min'] = GetVariable("param_" . $name . "_min");
+						$ranges[$name . '_max'] = GetVariable("param_" . $name . "_max");
+					}
+					UpdateMRScanParams($id, $param_rowid, $param_protocol, $param_sequence, $ranges);
+					break;
+				case 'loadmrparams':
+					LoadMRParams($id, $existingstudy, $existingseries);
+					break;
+			}
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("mrqcchecklist.php?action=" . (($action == "updateqcparams") ? "editqcparams" : "editmrparams") . "&id=$id");
+	}
+
+	ShowFlashMessage();
+
+	if ($id < 1) {
+		Error("Invalid project ID");
+	}
+	elseif (!$ismember) {
+		Error("You do not have permission to view this project's MR QC checklist");
+	}
+	else {
+		switch ($action) {
+			case 'editqcparams':
+				if ($canedit) EditQCParams($id);
+				else Error("You do not have permission to edit this project's MR QC criteria");
+				break;
+			case 'editmrparams':
+				if ($canedit) EditMRScanParams($id);
+				else Error("You do not have permission to edit this project's MR QC criteria");
+				break;
+			default:
+				ViewQCParams($id, $protocolfilter, $canedit);
 		}
 	}
 
-	
+
+	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- MRQCQuery -------------------------- */
+	/* -------------------------------------------- */
+	/* runs a bound query; $types/$params as for mysqli_stmt_bind_param. Returns all rows */
+	function MRQCQuery($sqlstring, $types = '', $params = array()) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if ($types != '')
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$rows = array();
+		if ($result && ($result !== true)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+				$rows[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- MRScanParamNames ------------------- */
+	/* -------------------------------------------- */
+	/* the min/max ranges in mr_scanparams, in column order (each is <name>_min and <name>_max) */
+	function MRScanParamNames() {
+		return array('tr', 'te', 'ti', 'flip', 'xdim', 'ydim', 'zdim', 'tdim', 'slicethickness', 'slicespacing', 'bandwidth');
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ParamNumber ------------------------ */
+	/* -------------------------------------------- */
+	/* a form value as a number. The parameter columns are NOT NULL, so blank/non-numeric values are 0 */
+	function ParamNumber($v) {
+		$v = trim((string)$v);
+		return is_numeric($v) ? round((float)$v, 3) : 0.0;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- LoadMRParams ----------------------- */
 	/* -------------------------------------------- */
-	function LoadMRParams($id, $study, $series) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$study = mysqli_real_escape_string($GLOBALS['linki'], trim($study));
-		$series = mysqli_real_escape_string($GLOBALS['linki'], trim($series));
-		
-		$uid = substr($study,0,8);
-		$studynum = substr($study,8);
-		
-		/* check if its a valid subject, valid study num, and is MR modality */
-		$sqlstring = "select c.study_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where a.uid = '$uid' and c.study_num = '$studynum' and c.study_modality = 'MR'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0){
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$studyid = $row['study_id'];
-			if ($studyid > 0) {
-				/* get the mr_series rows */
-				if ($series == "") {
-					$sqlstring = "select * from mr_series where study_id = $studyid";
-				}
-				else {
-					$sqlstring = "select * from mr_series where study_id = $studyid and series_num = '$series'";
-				}
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0){
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$series_desc = $row['series_desc'];
-						$series_protocol = $row['series_protocol'];
-						$sequence = $row['series_sequencename'];
-						$tr = $row['series_tr'];
-						$te = $row['series_te'];
-						$ti = $row['series_ti'];
-						$flip = $row['series_flip'];
-						$slicethickness = $row['slicethickness'];
-						$slicespacing = $row['slicespacing'];
-						$dimx = $row['dimX'];
-						$dimy = $row['dimY'];
-						$dimz = $row['dimZ'];
-						$dimt = $row['dimT'];
-						$bandwidth = $row['bandwidth'];
-						
-						if (strlen($series_desc) != "") {
-							$protocol = $series_desc;
-						}
-						else {
-							$protocol = $series_protocol;
-						}
-						$param_rowid[] = "";
-						$param_protocol[] = $protocol;
-						$param_sequence[] = $sequence;
-						$param_tr[] = (double)$tr;
-						$param_te[] = (double)$te;
-						$param_ti[] = (double)$ti;
-						$param_flip[] = (double)$flip;
-						$param_xdim[] = (double)$dimx;
-						$param_ydim[] = (double)$dimy;
-						$param_zdim[] = (double)$dimz;
-						$param_tdim[] = (double)$dimt;
-						$param_slicethickness[] = (double)$slicethickness;
-						$param_slicespacing[] = (double)$slicespacing;
-						$param_bandwidth[] = (double)$bandwidth;
-						echo "Adding row [$protocol]<br>";
-					}
-					
-					/* we have all the params, now do the inserts into the scan params table */
-					UpdateMRScanParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr, $param_tr, $param_te, $param_te, $param_ti, $param_ti, $param_flip, $param_flip, $param_xdim, $param_xdim, $param_ydim, $param_ydim, $param_zdim, $param_zdim, $param_tdim, $param_tdim, $param_slicethickness, $param_slicethickness, $param_slicespacing, $param_slicespacing, $param_bandwidth, $param_bandwidth);
-				}
-				else {
-					Error("No MR series found for [$study]");
-				}
+	/* adds the parameters of an MR study (UID + study number, e.g. S1234ABC5) in this project to the
+	   project's expected MR scan parameters. Optionally only one series */
+	function LoadMRParams($projectid, $study, $series) {
+		$projectid = (int)$projectid;
+		$study = trim((string)$study);
+		$series = trim((string)$series);
+
+		$uid = substr($study, 0, 8);
+		$studynum = substr($study, 8);
+
+		/* the study must be an MR study in this project */
+		$rows = MRQCQuery("select c.study_id from subjects a join enrollment b on a.subject_id = b.subject_id join studies c on b.enrollment_id = c.enrollment_id where a.uid = ? and c.study_num = ? and c.study_modality = 'MR' and b.project_id = ?", 'ssi', [$uid, $studynum, $projectid]);
+		if (count($rows) == 0) {
+			Error("Invalid study ID [" . htmlspecialchars($study) . "]. Incorrect UID or study number, the study is not in this project, or it is not an MR study");
+			return;
+		}
+		$studyid = (int)$rows[0]['study_id'];
+
+		if ($series == "")
+			$seriesrows = MRQCQuery("select * from mr_series where study_id = ?", 'i', [$studyid]);
+		else
+			$seriesrows = MRQCQuery("select * from mr_series where study_id = ? and series_num = ?", 'is', [$studyid, $series]);
+		if (count($seriesrows) == 0) {
+			Error("No MR series found for [" . htmlspecialchars($study) . "]");
+			return;
+		}
+
+		/* each series becomes a row with min = max = the series' value */
+		$columns = array('tr' => 'series_tr', 'te' => 'series_te', 'ti' => 'series_ti', 'flip' => 'series_flip', 'xdim' => 'dimX', 'ydim' => 'dimY', 'zdim' => 'dimZ', 'tdim' => 'dimT', 'slicethickness' => 'slicethickness', 'slicespacing' => 'slicespacing', 'bandwidth' => 'bandwidth');
+		$rowids = array();
+		$protocols = array();
+		$sequences = array();
+		$ranges = array();
+		$msgs = array();
+		foreach ($seriesrows as $row) {
+			$protocol = (($row['series_desc'] ?? '') != "") ? $row['series_desc'] : ($row['series_protocol'] ?? '');
+			$rowids[] = "";
+			$protocols[] = $protocol;
+			$sequences[] = $row['series_sequencename'] ?? '';
+			foreach ($columns as $name => $col) {
+				$ranges[$name . '_min'][] = (float)($row[$col] ?? 0);
+				$ranges[$name . '_max'][] = (float)($row[$col] ?? 0);
 			}
+			$msgs[] = "Adding row [" . htmlspecialchars($protocol) . "]";
 		}
-		else {
-			Error("Invalid study ID [$study]. Incorrect UID, study number, or study does not contain MR series");
-		}
+
+		UpdateMRScanParams($projectid, $rowids, $protocols, $sequences, $ranges);
+		Notice(implode("<br>", $msgs));
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateQCParams --------------------- */
 	/* -------------------------------------------- */
-	function UpdateQCParams($id, $param_rowid, $param_protocol, $param_x_max, $param_y_max, $param_z_max, $param_iosnr_min, $param_iosnr_max, $param_pvsnr_min, $param_pvsnr_max) {
-		
-		$i=0;
-		foreach ($param_rowid as $paramid) {
-			$paramid = (int)$paramid;
-			
-			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
-			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
-			$x_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_x_max[$i])),3,'.','');
-			$y_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_y_max[$i])),3,'.','');
-			$z_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_z_max[$i])),3,'.','');
-			$min_iosnr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_iosnr_min[$i])),3,'.','');
-			$max_iosnr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_iosnr_max[$i])),3,'.','');
-			$min_pvsnr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_pvsnr_min[$i])),3,'.','');
-			$max_pvsnr = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_pvsnr_max[$i])),3,'.','');
-			
-			if ($protocol != "") {
-				if ($paramid == 0) {
-					$sqlstring = "insert ignore into mr_qcparams (protocol_name, project_id, max_x, max_y, max_z, min_iosnr, max_iosnr, min_pvsnr, max_pvsnr) values ('$protocol', '$id', '$x_max', '$y_max', '$z_max', '$min_iosnr', '$max_iosnr', '$min_pvsnr', '$max_pvsnr')";
-				}
-				else {
-					$sqlstring = "update ignore mr_qcparams set protocol_name = '$protocol', max_x = '$x_max', max_y = '$y_max', max_z = '$z_max', min_iosnr = '$min_iosnr', max_iosnr = '$max_iosnr', min_pvsnr = '$min_pvsnr', max_pvsnr = '$max_pvsnr' where mrqcparam_id = $paramid";
-				}
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			if (($protocol == "") && ($paramid != 0)) {
-				$sqlstring = "delete from mr_qcparams where mrqcparam_id = $paramid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$i++;
+	/* saves the QC criteria rows. A row with a blank protocol is deleted. Only this project's rows change */
+	function UpdateQCParams($projectid, $param_rowid, $param_protocol, $param_x_max, $param_y_max, $param_z_max, $param_iosnr_min, $param_iosnr_max, $param_pvsnr_min, $param_pvsnr_max) {
+		$projectid = (int)$projectid;
+		foreach (array('param_rowid', 'param_protocol', 'param_x_max', 'param_y_max', 'param_z_max', 'param_iosnr_min', 'param_iosnr_max', 'param_pvsnr_min', 'param_pvsnr_max') as $var) {
+			if (!is_array($$var)) $$var = array();
 		}
+
+		foreach ($param_rowid as $i => $paramid) {
+			$paramid = (int)$paramid;
+			$protocol = trim((string)($param_protocol[$i] ?? ''));
+			$values = array(ParamNumber($param_x_max[$i] ?? ''), ParamNumber($param_y_max[$i] ?? ''), ParamNumber($param_z_max[$i] ?? ''), ParamNumber($param_iosnr_min[$i] ?? ''), ParamNumber($param_iosnr_max[$i] ?? ''), ParamNumber($param_pvsnr_min[$i] ?? ''), ParamNumber($param_pvsnr_max[$i] ?? ''));
+
+			if ($protocol != "") {
+				if ($paramid == 0)
+					MRQCQuery("insert ignore into mr_qcparams (protocol_name, project_id, max_x, max_y, max_z, min_iosnr, max_iosnr, min_pvsnr, max_pvsnr) values (?, ?, ?, ?, ?, ?, ?, ?, ?)", 'siddddddd', array_merge([$protocol, $projectid], $values));
+				else
+					MRQCQuery("update ignore mr_qcparams set protocol_name = ?, max_x = ?, max_y = ?, max_z = ?, min_iosnr = ?, max_iosnr = ?, min_pvsnr = ?, max_pvsnr = ? where mrqcparam_id = ? and project_id = ?", 'sdddddddii', array_merge([$protocol], $values, [$paramid, $projectid]));
+			}
+			elseif ($paramid != 0) {
+				MRQCQuery("delete from mr_qcparams where mrqcparam_id = ? and project_id = ?", 'ii', [$paramid, $projectid]);
+			}
+		}
+		Notice("QC criteria updated");
 	}
 
-	
+
+	/* -------------------------------------------- */
+	/* ------- UpdateMRScanParams ----------------- */
+	/* -------------------------------------------- */
+	/* saves the expected MR scan parameter rows. $ranges is [<name>_min|_max => [row => value]] for the
+	   names in MRScanParamNames(). A row with a blank protocol is deleted. Only this project's rows change */
+	function UpdateMRScanParams($projectid, $param_rowid, $param_protocol, $param_sequence, $ranges) {
+		$projectid = (int)$projectid;
+		$param_rowid = is_array($param_rowid) ? $param_rowid : array();
+		$param_protocol = is_array($param_protocol) ? $param_protocol : array();
+		$param_sequence = is_array($param_sequence) ? $param_sequence : array();
+
+		$cols = array();
+		foreach (MRScanParamNames() as $name) {
+			$cols[] = $name . '_min';
+			$cols[] = $name . '_max';
+		}
+		$numtypes = str_repeat('d', count($cols));
+
+		foreach ($param_rowid as $i => $paramid) {
+			$paramid = (int)$paramid;
+			$protocol = trim((string)($param_protocol[$i] ?? ''));
+			$sequence = trim((string)($param_sequence[$i] ?? ''));
+			$values = array();
+			foreach ($cols as $col)
+				$values[] = ParamNumber((is_array($ranges[$col] ?? null) ? ($ranges[$col][$i] ?? '') : ''));
+
+			if ($protocol != "") {
+				if ($paramid == 0) {
+					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, " . implode(", ", $cols) . ") values (?, ?, ?, " . implode(", ", array_fill(0, count($cols), "?")) . ")";
+					MRQCQuery($sqlstring, 'ssi' . $numtypes, array_merge([$protocol, $sequence, $projectid], $values));
+				}
+				else {
+					$sqlstring = "update ignore mr_scanparams set protocol_name = ?, sequence_name = ?, " . implode(" = ?, ", $cols) . " = ? where mrscanparam_id = ? and project_id = ?";
+					MRQCQuery($sqlstring, 'ss' . $numtypes . 'ii', array_merge([$protocol, $sequence], $values, [$paramid, $projectid]));
+				}
+			}
+			elseif ($paramid != 0) {
+				MRQCQuery("delete from mr_scanparams where mrscanparam_id = ? and project_id = ?", 'ii', [$paramid, $projectid]);
+			}
+		}
+		Notice("MR scan parameters updated");
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- ViewQCParams ----------------------- */
 	/* -------------------------------------------- */
-	function ViewQCParams($id, $protocolfilter) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+	function ViewQCParams($id, $protocolfilter, $canedit) {
+		$id = (int)$id;
+		$protocolfilter = trim((string)$protocolfilter);
 
-		$protocolfilter = mysqli_real_escape_string($GLOBALS['linki'], trim($protocolfilter));
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
 		/* get all of the MR params for this project */
 		$parms = array();
-		$sqlstring = "select * from mr_scanparams where project_id = $id order by protocol_name";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQLTable($result);
-		if (mysqli_num_rows($result) > 0) {
-			$i=0;
-			//$lastprotocol = "";
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$p = $row['protocol_name'];
-				$parms[$p][$i]['sequence'] = $row['sequence_name'];
-				$parms[$p][$i]['tr_min'] = number_format($row['tr_min'],3,'.','');
-				$parms[$p][$i]['tr_max'] = number_format($row['tr_max'],3,'.','');
-				$parms[$p][$i]['te_min'] = number_format($row['te_min'],3,'.','');
-				$parms[$p][$i]['te_max'] = number_format($row['te_max'],3,'.','');
-				$parms[$p][$i]['ti_min'] = number_format($row['ti_min'],3,'.','');
-				$parms[$p][$i]['ti_max'] = number_format($row['ti_max'],3,'.','');
-				$parms[$p][$i]['flip_min'] = number_format($row['flip_min'],3,'.','');
-				$parms[$p][$i]['flip_max'] = number_format($row['flip_max'],3,'.','');
-				$parms[$p][$i]['xdim_min'] = number_format($row['xdim_min'],3,'.','');
-				$parms[$p][$i]['xdim_max'] = number_format($row['xdim_max'],3,'.','');
-				$parms[$p][$i]['ydim_min'] = number_format($row['ydim_min'],3,'.','');
-				$parms[$p][$i]['ydim_max'] = number_format($row['ydim_max'],3,'.','');
-				$parms[$p][$i]['zdim_min'] = number_format($row['zdim_min'],3,'.','');
-				$parms[$p][$i]['zdim_max'] = number_format($row['zdim_max'],3,'.','');
-				$parms[$p][$i]['tdim_min'] = number_format($row['tdim_min'],3,'.','');
-				$parms[$p][$i]['tdim_max'] = number_format($row['tdim_max'],3,'.','');
-				$parms[$p][$i]['slicethickness_min'] = number_format($row['slicethickness_min'],3,'.','');
-				$parms[$p][$i]['slicethickness_max'] = number_format($row['slicethickness_max'],3,'.','');
-				$parms[$p][$i]['slicespacing_min'] = number_format($row['slicespacing_min'],3,'.','');
-				$parms[$p][$i]['slicespacing_max'] = number_format($row['slicespacing_max'],3,'.','');
-				$parms[$p][$i]['bandwidth_min'] = number_format($row['bandwidth_min'],3,'.','');
-				$parms[$p][$i]['bandwidth_max'] = number_format($row['bandwidth_max'],3,'.','');
-				//if ($p != $lastprotocol) {
-				//	$i=0;
-				//	$lastprotocol = $p;
-				//}
-				//else {
-					$i++;
-				//}
+		$i = 0;
+		foreach (MRQCQuery("select * from mr_scanparams where project_id = ? order by protocol_name", 'i', [$id]) as $row) {
+			$p = $row['protocol_name'];
+			$parms[$p][$i]['sequence'] = $row['sequence_name'];
+			foreach (MRScanParamNames() as $name) {
+				$parms[$p][$i][$name . '_min'] = number_format((float)$row[$name . '_min'], 3, '.', '');
+				$parms[$p][$i][$name . '_max'] = number_format((float)$row[$name . '_max'], 3, '.', '');
 			}
+			$i++;
 		}
-		//PrintVariable($parms);
-		
+
 		$qcparms = array();
-		$sqlstring = "select * from mr_qcparams where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$i=0;
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$qcparms[$row['protocol_name']]['max_x'] = number_format($row['max_x'],3,'.','');
-				$qcparms[$row['protocol_name']]['max_y'] = number_format($row['max_y'],3,'.','');
-				$qcparms[$row['protocol_name']]['max_z'] = number_format($row['max_z'],3,'.','');
-				$qcparms[$row['protocol_name']]['min_iosnr'] = number_format($row['min_iosnr'],3,'.','');
-				$qcparms[$row['protocol_name']]['max_iosnr'] = number_format($row['max_iosnr'],3,'.','');
-				$qcparms[$row['protocol_name']]['min_pvsnr'] = number_format($row['min_pvsnr'],3,'.','');
-				$qcparms[$row['protocol_name']]['max_pvsnr'] = number_format($row['max_pvsnr'],3,'.','');
-			}
+		foreach (MRQCQuery("select * from mr_qcparams where project_id = ?", 'i', [$id]) as $row) {
+			foreach (array('max_x', 'max_y', 'max_z', 'min_iosnr', 'max_iosnr', 'min_pvsnr', 'max_pvsnr') as $col)
+				$qcparms[$row['protocol_name']][$col] = number_format((float)$row[$col], 3, '.', '');
 		}
-		//PrintVariable($qcparms);
 
 		/* get list of studies, and then series, associated with this project */
-		$sqlstring = "select c.study_id, c.study_num, a.uid, a.subject_id, b.enrollment_id from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where b.project_id = '$id' and c.study_modality = 'MR' order by a.uid, c.study_num";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0){
-			
-			DisplayProtocolDataListForProject($id, "protocollist");
-			
-			?>
-			<div class="ui two column grid">
-				<div class="column">
-					<h2 class="ui header">MR scan quality control</h2>
-				</div>
-				<div class="right aligned column">
-					<a class="ui primary button" href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"><i class="edit icon"></i> Edit expected MR parameters</a>
-					<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
-				</div>
-			</div>
-			<div class="ui long scrolling fluid container"> 
-			<table class="ui head stuck celled selectable grey compact stuck table" >
-				<thead>
-					<th colspan="14">
-					<form action="mrqcchecklist.php" action="post">
-					<input type="hidden" name="action" value="viewqcparams">
-					<input type="hidden" name="id" value="<?=$id?>">
-					Filter by protocol name <input type="input" name="protocolfilter" value="<?=$protocolfilter?>" list="protocollist"> <input type="submit" value="Filter">
-					</form>
-					</th>
+		$studies = MRQCQuery("select c.study_id, c.study_num, a.uid, a.subject_id, b.enrollment_id from subjects a join enrollment b on a.subject_id = b.subject_id join studies c on b.enrollment_id = c.enrollment_id where b.project_id = ? and c.study_modality = 'MR' order by a.uid, c.study_num", 'i', [$id]);
+		if (count($studies) == 0) {
+			echo "Found no valid MR studies for this project<br>";
+			return;
+		}
 
-				<?$ray=array();	 	?>
+		DisplayProtocolDataListForProject($id, "protocollist");
+		?>
+		<div class="ui two column grid">
+			<div class="column">
+				<h2 class="ui header">MR scan quality control</h2>
+			</div>
+			<div class="right aligned column">
+				<? if ($canedit) { ?>
+				<a class="ui primary button" href="mrqcchecklist.php?action=editmrparams&id=<?=$id?>"><i class="edit icon"></i> Edit expected MR parameters</a>
+				<a class="ui primary button" href="mrqcchecklist.php?action=editqcparams&id=<?=$id?>"><i class="edit icon"></i> Edit QC criteria</a>
+				<? } ?>
+			</div>
+		</div>
+		<div class="ui long scrolling fluid container">
+		<table class="ui head stuck celled selectable grey compact stuck table" >
+			<thead>
+				<th colspan="14">
+				<form action="mrqcchecklist.php" method="get">
+				<input type="hidden" name="action" value="viewqcparams">
+				<input type="hidden" name="id" value="<?=$id?>">
+				Filter by protocol name <input type="input" name="protocolfilter" value="<?=htmlspecialchars($protocolfilter)?>" list="protocollist"> <input type="submit" value="Filter">
+				</form>
+				</th>
 				<tr>
 				   <th><b>UID</b></th>
 				   <th><b>Primary alt UID</b></th>
@@ -457,457 +358,231 @@
 				   <th><b>SNR</b></th>
 				   <th><b>FD</b></th>
 				   <th><b>DVARS</b></th>
-				   <!--<th style="border: 1px solid black">Advanced QC</th>-->
 				</tr>
+			</thead>
+			<tbody>
+		<?
+		$rangelabels = array('tr' => 'TR', 'te' => 'TE', 'ti' => 'TI', 'flip' => 'Flip angle', 'xdim' => 'dim X', 'ydim' => 'dim Y', 'zdim' => 'dim Z', 'tdim' => 'dim T', 'slicethickness' => 'Slice thickness', 'slicespacing' => 'Slice spacing', 'bandwidth' => 'Bandwidth');
+		$seriescolumns = array('tr' => 'series_tr', 'te' => 'series_te', 'ti' => 'series_ti', 'flip' => 'series_flip', 'xdim' => 'dimX', 'ydim' => 'dimY', 'zdim' => 'dimZ', 'tdim' => 'dimT', 'slicethickness' => 'slicethickness', 'slicespacing' => 'slicespacing', 'bandwidth' => 'bandwidth');
 
-				</thead>
-				<tbody>
-			
-			<?	
+		foreach ($studies as $row) {
+			$studyid = (int)$row['study_id'];
+			$subjectid = (int)$row['subject_id'];
+			$enrollmentid = (int)$row['enrollment_id'];
+			$uid = htmlspecialchars((string)$row['uid']);
+			$studynum = htmlspecialchars((string)$row['study_num']);
+			if ($studyid < 1) continue;
 
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				$subjectid = $row['subject_id'];
-				$enrollmentid = $row['enrollment_id'];
-				$uid = $row['uid'];
-				$studynum = $row['study_num'];
-				if ($studyid > 0) {
-					/* get the mr_series rows */
-					if ($protocolfilter == "") {
-						$sqlstringA = "select * from mr_series where study_id = $studyid order by series_num";
-					}
-					else {
-						$sqlstringA = "select * from mr_series where study_id = $studyid and (series_desc = '$protocolfilter' or series_protocol = '$protocolfilter') order by series_num";
-					}
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysqli_num_rows($resultA) > 0){
-						
-						/* get project specific altuid */
-						$sqlstringB = "select altuid from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid and isprimary = 1";
-						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-						$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-						$altuid = $rowB['altuid'];
-						
-						$count = 0; # Counter to display Alternative ID once
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$seriesid = $rowA['mrseries_id'];
-							$seriesnum = $rowA['series_num'];
-							$series_desc = $rowA['series_desc'];
-							$series_protocol = $rowA['series_protocol'];
-							$sequence = $rowA['series_sequencename'];
-							$tr = number_format($rowA['series_tr'],3,'.','');
-							$te = number_format($rowA['series_te'],3,'.','');
-							$ti = number_format($rowA['series_ti'],3,'.','');
-							$flip = number_format($rowA['series_flip'],3,'.','');
-							$slicethickness = number_format($rowA['slicethickness'],3,'.','');
-							$slicespacing = number_format($rowA['slicespacing'],3,'.','');
-							$dimx = number_format($rowA['dimX'],3,'.','');
-							$dimy = number_format($rowA['dimY'],3,'.','');
-							$dimz = number_format($rowA['dimZ'],3,'.','');
-							$dimt = number_format($rowA['dimT'],3,'.','');
-							$bandwidth = number_format($rowA['bandwidth'],3,'.','');
-							$numfiles = $rowA['numfiles'];
-							list($datapath, $seriespath, $junk0, $junk1, $junk2, $junk3, $junk4) = GetDataPathFromSeriesID($seriesid, 'mr');
-							
-							$p1 = $series_desc;
-							$protocol2 = $series_protocol;
+			/* get the mr_series rows */
+			if ($protocolfilter == "")
+				$seriesrows = MRQCQuery("select * from mr_series where study_id = ? order by series_num", 'i', [$studyid]);
+			else
+				$seriesrows = MRQCQuery("select * from mr_series where study_id = ? and (series_desc = ? or series_protocol = ?) order by series_num", 'iss', [$studyid, $protocolfilter, $protocolfilter]);
+			if (count($seriesrows) == 0) continue;
 
-							$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";
-							
-							$count = $count +1;
-							if ($count == 1) { $rowcolor = "positive"; }
-							else { $rowcolor = "";}
-							?>
-								<tr class="<?=$rowcolor?>">
-								<?
-                                                                if ($count == 1) {?>
-									<td><b> <?=$uid?></b></td>
-									<td><b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b> </td>
-									<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
-									<td> &nbsp;<b><?=$seriesnum?></b></td>
-                                                                	<td><b><?=$p1?></b>&nbsp;</td>
-								 <?} else {?>
-									<td><?=$uid?></td>
-									<td><?=$altuid?></td>
-									<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
-									<td> &nbsp; <?=$seriesnum?></td>
-                                                                	<td> <?=$p1?>&nbsp;</td>
-								<?}?>
-							<?
-							
-							
-							/* ----- check for MR pulse sequence parameter matching ----- */
-							$matched = 0;
-							$msgs = array();
-							/* check if the params in this study match with any of the rows in the QA params table */
-							if (array_key_exists($p1, $parms)) {
-								$numparms = count($parms[$p1]);
-								foreach ($parms[$p1] as $i => $pm) {
-									$bad = 0;
+			/* get project specific altuid */
+			$altrows = MRQCQuery("select altuid from subject_altuid where subject_id = ? and enrollment_id = ? and isprimary = 1", 'ii', [$subjectid, $enrollmentid]);
+			$altuid = htmlspecialchars((string)($altrows[0]['altuid'] ?? ''));
 
-									$min = $parms[$p1][$i]['tr_min'];
-									$max = $parms[$p1][$i]['tr_max'];
-									$b = between($tr, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] TR of $tr not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] TR param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] TR within range ($min - <b>$tr</b> - $max)"; }
-									
-									$min = $parms[$p1][$i]['te_min'];
-									$max = $parms[$p1][$i]['te_max'];
-									$b = between($te, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] TE of $te not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] TE param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] TE within range ($min - $te - $max)"; }
-									
-									$min = $parms[$p1][$i]['ti_min'];
-									$max = $parms[$p1][$i]['ti_max'];
-									$b = between($ti, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] TI of $ti not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] TI param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] TI within range ($min - $ti - $max)"; }
-									
-									$min = $parms[$p1][$i]['flip_min'];
-									$max = $parms[$p1][$i]['flip_max'];
-									$b = between($flip, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] Flip angle of $flip not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] Flip angle param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] Flip angle within range ($min - $flip - $max)"; }
-									
-									$min = $parms[$p1][$i]['xdim_min'];
-									$max = $parms[$p1][$i]['xdim_max'];
-									$b = between($dimx, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] dim X of $dimx not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] dim X param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] dim X within range ($min - $dimx - $max)"; }
-									
-									$min = $parms[$p1][$i]['ydim_min'];
-									$max = $parms[$p1][$i]['ydim_max'];
-									$b = between($dimy, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] dim Y of $dimy not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] dim Y param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] dim Y within range ($min - $dimy - $max)"; }
-									
-									$min = $parms[$p1][$i]['zdim_min'];
-									$max = $parms[$p1][$i]['zdim_max'];
-									$b = between($dimz, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] dim Z of $dimz not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] dim Z param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] dim Z within range ($min - $dimz - $max)"; }
-									
-									$min = $parms[$p1][$i]['tdim_min'];
-									$max = $parms[$p1][$i]['tdim_max'];
-									$b = between($dimt, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] dim T of $dimt not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] dim T param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] dim T within range ($min - $dimt - $max)"; }
-									
-									$min = $parms[$p1][$i]['slicethickness_min'];
-									$max = $parms[$p1][$i]['slicethickness_max'];
-									$b = between($slicethickness, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] Slice thickness of $slicethickness not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] Slice thickness param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] Slice thickness within range ($min - $slicethickness - $max)"; }
-									
-									$min = $parms[$p1][$i]['slicespacing_min'];
-									$max = $parms[$p1][$i]['slicespacing_max'];
-									$b = between($slicespacing, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] Slice spacing of $slicespacing not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] Slice Spacing param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] Slice spacing within range ($min - $slicespacing - $max)"; }
-									
-									$min = $parms[$p1][$i]['bandwidth_min'];
-									$max = $parms[$p1][$i]['bandwidth_max'];
-									$b = between($bandwidth, $min, $max);
-									if (!$b) { $bad = 1; $msgs[] = "[$i] Bandwidth of $bandwidth not within range ($min - $max)"; }
-									elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] Bandwidth param is blank ([$min], [$max])"; }
-									//else { $msgs[] = "[$i] Bandwidth within range ($min - $bandwidth - $max)"; }
-									
-									//$msgs[] = "<br>";
-									
-									if ($bad == -1) { $matched = -1; }
-									if (!$bad) { $matched = 1; break; }
-								}
-							}
-							else {
-								$matched = -2;
-							}
-							
-							if ($matched == 1) { /* passed the checks */
-								?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
-							}
-							elseif ($matched == -2) { /* missing parameter criteria */
-								?><td style="padding-left: 8px; background-color: lightyellow;" title="No MR parameter criteria specified for this protocol"> <i class="exclamation icon"></i> </td><?
-							}
-							elseif ($matched == -1) { /* ambiguous or missing parameter criteria */
-								?><td style="padding-left: 8px;" title="Parameter criteria is blank">?</td><?
-							}
-							else { /* failed the checks */
-								?>
-								<td style="padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666">
-								<details>
-								<summary>out of spec</summary>
-								<ul>
-								<li><?=implode2('<li>',$msgs)?>
-								</ul>
-								</details>
-								</td>
-								<?
-							}
-							
-						
-					
-							/* check for files on disk */
-							$fcount = 0;
-							$files = glob($datapath . "/*");
-							if ($files){ $fcount = count($files); }
-							if ($fcount == $numfiles) {
-								?><td style="padding-left: 8px; background-color: #cbf7be"> 
-									<i class="folder icon"></i>	
-								  </td><?
-							}
-							elseif ($fcount == 0) {
-								?><td style="padding-left: 8px; background-color: #ffddd1;" title="Disk location [<?=$datapath?>]"> 
-									<i class="exclamation icon"></i>No file found
-								</td><?
-							}
-							else {
-								?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapath?>]">;
-                                                                        <i class="folder minus icon"></i>File count mismatch
-								</td><?
-							}
+			$count = 0; /* counter to display the alternate ID once */
+			foreach ($seriesrows as $rowA) {
+				$seriesid = (int)$rowA['mrseries_id'];
+				$seriesnum = htmlspecialchars((string)$rowA['series_num']);
+				$p1 = (string)$rowA['series_desc'];
+				$numfiles = (int)$rowA['numfiles'];
+				$values = array();
+				foreach ($seriescolumns as $name => $col)
+					$values[$name] = number_format((float)$rowA[$col], 3, '.', '');
+				list($datapath, $seriespath, $junk0, $junk1, $junk2, $junk3, $junk4) = GetDataPathFromSeriesID($seriesid, 'mr');
 
-							?>
-	 						<td><?=$numfiles?></td>
-							<?
+				$count++;
+				$rowcolor = ($count == 1) ? "positive" : "";
+				?>
+				<tr class="<?=$rowcolor?>">
+				<? if ($count == 1) { ?>
+					<td><b> <?=$uid?></b></td>
+					<td><b style="background-color: darkred; color: white; padding: 2px 8px"><?=$altuid?></b> </td>
+					<td><a href="studies.php?id=<?=$studyid?>"><b><?=$uid?><?=$studynum?></b></a></td>
+					<td> &nbsp;<b><?=$seriesnum?></b></td>
+					<td><b><?=htmlspecialchars($p1)?></b>&nbsp;</td>
+				<? } else { ?>
+					<td><?=$uid?></td>
+					<td><?=$altuid?></td>
+					<td><a href="studies.php?id=<?=$studyid?>"><?=$uid?><?=$studynum?></a></td>
+					<td> &nbsp; <?=$seriesnum?></td>
+					<td> <?=htmlspecialchars($p1)?>&nbsp;</td>
+				<? }
 
-
-
-							/* check user ratings */
-							$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = 'MR' and data_id = '$seriesid'";
-							
-							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-							while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-								$ratingseriesid = $row3['data_id'];
-								$ratings[$ratingseriesid][] = $row3['rating_value'];
-							}
-							//print_r($ratings);
-							/* check if this is real data, or unusable data based on the ratings, and get rating counts */
-							$isbadseries = false;
-							$istestseries = false;
-							$ratingcount2 = '';
-							$hasratings = false;
-							$cellcolor = '';
-							$ratingavg = '';
-							
-							if (isset($ratings)) {
-								foreach ($ratings as $key => $ratingarray) {
-									if ($key == $seriesid) {
-										$hasratings = true;
-										if (in_array(5,$ratingarray)) {
-											$isbadseries = true;
-										}
-										if (in_array(6,$ratingarray)) {
-											$istestseries = true;
-										}
-										$ratingcount2 = count($ratingarray);
-										$ratingavg = array_sum($ratingarray) / count($ratingarray);
-										break;
-									}
-								}
-							}
-							
-							if ($isbadseries) { $cellcolor = "#ffddd1"; }
-							if ($istestseries) { $cellcolor = "lightyellow"; }
-							
-							?><td style="padding-left: 8px; background-color:<?=$cellcolor?>"><?=$ratingavg?> <? if ($ratingavg != "") { ?><span class="tiny">(<?=$ratingcount2?>)</span><? } ?></td>
-
-
-					
-							<?
-							/* check basic QC */
-							$sqlstringB = "select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', (acc_maxx-acc_minx) 'accx', (acc_maxy-acc_miny) 'accy',(acc_maxz-acc_minz) 'accz',(rot_maxp-rot_minp) 'rotp', (rot_maxr-rot_minr) 'rotr',(rot_maxy-rot_miny) 'roty', io_snr, pv_snr, fd_mean, dvars_mean from mr_qa where mrseries_id = '$seriesid'";
-							//PrintSQL($sqlstringB);
-							$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-							$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-							$movex =number_format($rowB['movex'] + 0.0,1);
-							$movey =number_format($rowB['movey'] + 0.0,1);
-							$movez =number_format($rowB['movez'] + 0.0,1);
-							$accx = number_format($rowB['accx'] + 0.0,1);
-                                                        $accy = number_format($rowB['accy'] + 0.0,1);
-							$accz = number_format($rowB['accz'] + 0.0,1);
-							$rotp = number_format($rowB['rotp'] + 0.0,1);
-                                                        $rotr = number_format($rowB['rotr'] + 0.0,1);
-                                                        $roty = number_format($rowB['roty'] + 0.0,1);
-							$iosnr =number_format($rowB['io_snr'] + 0.0,1);
-							$pvsnr = number_format($rowB['pv_snr'] + 0.0,1);
-							$fd_mean =number_format($rowB['fd_mean'] + 0.0,1);
-							$dvars_mean =number_format($rowB['dvars_mean'] + 0.0,1);
-							
-							$msgs = array();
-							if (array_key_exists($p1, $qcparms)) {
-								$bad = 0;
-								if ($movex > $qcparms[$p1]['max_x']) {
-									$msgs[] = "Motion x: $movex &gt; (" . $qcparms[$p1]['max_x'] . ")";
-									$bad = 1;
-								}
-								if ($movey > $qcparms[$p1]['max_y']) {
-									$msgs[] = "Motion y: $movey &gt; (" . $qcparms[$p1]['max_y'] . ")";
-									$bad = 1;
-								}
-								if ($movez > $qcparms[$p1]['max_z']) {
-									$msgs[] = "Motion z: $movez &gt; (" . $qcparms[$p1]['max_z'] . ")";
-									$bad = 1;
-								}
-								if (($iosnr > $qcparms[$p1]['max_iosnr']) || ($iosnr < $qcparms[$p1]['min_iosnr'])) {
-									$msgs[] = "IO SNR of $iosnr not in range (" . $qcparms[$p1]['min_iosnr'] . " - " . $qcparms[$p1]['max_iosnr'] . ")";
-									$bad = 1;
-								}
-								if (($pvsnr > $qcparms[$p1]['max_pvsnr']) || ($pvsnr < $qcparms[$p1]['min_pvsnr'])) {
-									$msgs[] = "PV SNR of $pvsnr not in range (" . $qcparms[$p1]['min_pvsnr'] . " - " . $qcparms[$p1]['max_pvsnr'] . ")";
-									$bad = 1;
-								}
-								
-								if ($bad) {
-									?>
-									<td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666" title="<li><?=implode2('<li>',$msgs)?>">
-									<i class="exclamation icon"></i>
-									Out of spec
-									</td>
-									<?
-								}
-								else {
-									?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: #cbf7be"> </td><?
-								}
-							}
-							else {
-								?><td style="border: 1px solid #aaa; background-color: lightyellow; padding-left: 8px;" title="QC crtieria not specified"> <i class="exclamation icon"></i> </td>
-						       <?}?>
-
-
-						       <td>(<?=$movex?>,<?=$movey?>,<?=$movez?>),&nbsp;(<?=$accx?>,<?=$accy?>,<?=$accz?>),&nbsp;(<?=$rotp?>,<?=$rotr?>,<?=$roty?>)</td>
-						       <td><?=$iosnr?></td>
-						       <td><?=$fd_mean?></td>
-						       <td><?=$dvars_mean?></td>
-							<?
-							/* check advanced QC */
-							?><!--<td>?</td>--><?
-							
-							?></tr><?
+				/* ----- check for MR pulse sequence parameter matching ----- */
+				$matched = 0;
+				$msgs = array();
+				/* check if the params in this series match any of the rows in the expected params table */
+				if (array_key_exists($p1, $parms)) {
+					foreach ($parms[$p1] as $i => $pm) {
+						$bad = 0;
+						foreach ($rangelabels as $name => $label) {
+							$min = $pm[$name . '_min'];
+							$max = $pm[$name . '_max'];
+							$val = $values[$name];
+							$b = between($val, $min, $max);
+							if (!$b) { $bad = 1; $msgs[] = "[$i] $label of $val not within range ($min - $max)"; }
+							elseif ($b == -1) { $bad = -1; $msgs[] = "[$i] $label param is blank ([$min], [$max])"; }
 						}
-					}
-					else {
-						//echo "Found no MR series for this study [$uid$studynum]";
+						if ($bad == -1) { $matched = -1; }
+						if (!$bad) { $matched = 1; break; }
 					}
 				}
 				else {
-					//echo "Invalid study ID [$study_id]<br>";
+					$matched = -2;
 				}
-				//break;
-			}
-			?>
-				</tbody>
-			</table>
-			
 
-			<div align="right"><input class="ui primary button" type="submit" value="Save As CSV" onMouseDown="tabletocsv();" style="font-size: 14pt; font-weight: bold"></div>
-			
-			
-			<script type="text/javascript">
-			   function tabletocsv() {
- 
-        		    // Variable to store the final csv data
-		            var csv_data = [];
- 
-		            // Get each row data
-		            var rows = document.getElementsByTagName('tr');
-		            for (var i = 1; i < rows.length; i++) {
- 
-			        // Get each column data
-				
-		                var cols = rows[i].querySelectorAll('td,th');
- 
-                		// Stores each csv row data
-		                var csvrow = [];
-				for (var j =0; j < cols.length; j++) {
- 
-		                    // Get the text data of each cell
-					// of a row and push it to csvrow
-				var txt;
-				txt = cols[j].innerText;
+				if ($matched == 1) { /* passed the checks */
+					?><td style="padding-left: 8px; background-color: #cbf7be"> </td><?
+				}
+				elseif ($matched == -2) { /* missing parameter criteria */
+					?><td style="padding-left: 8px; background-color: lightyellow;" title="No MR parameter criteria specified for this protocol"> <i class="exclamation icon"></i> </td><?
+				}
+				elseif ($matched == -1) { /* ambiguous or missing parameter criteria */
+					?><td style="padding-left: 8px;" title="Parameter criteria is blank">?</td><?
+				}
+				else { /* failed the checks */
+					?>
+					<td style="padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666">
+					<details>
+					<summary>out of spec</summary>
+					<ul>
+					<li><?=implode('<li>', array_map('htmlspecialchars', $msgs))?>
+					</ul>
+					</details>
+					</td>
+					<?
+				}
 
-				// The following code is to remove paranthesis () from Disp, Motion and Rotaion data
-				var newtxt = "";
+				/* check for files on disk */
+				$fcount = 0;
+				$files = glob($datapath . "/*");
+				if ($files) { $fcount = count($files); }
+				$datapathattr = htmlspecialchars((string)$datapath);
+				if ($fcount == $numfiles) {
+					?><td style="padding-left: 8px; background-color: #cbf7be"><i class="folder icon"></i></td><?
+				}
+				elseif ($fcount == 0) {
+					?><td style="padding-left: 8px; background-color: #ffddd1;" title="Disk location [<?=$datapathattr?>]"><i class="exclamation icon"></i>No file found</td><?
+				}
+				else {
+					?><td style="padding-left: 8px; background-color: lightyellow;" title="Filecount in database [<?=$numfiles?>] does not match that on disk [<?=$fcount?>] from [<?=$datapathattr?>]"><i class="folder minus icon"></i>File count mismatch</td><?
+				}
+				?>
+				<td><?=$numfiles?></td>
+				<?
 
-				for (var k=0; k<txt.length; k++){
-					if ((txt[k] == "(" || txt[k] == ")") && j > 9) {
-						newtxt += '';
+				/* check user ratings: 5 = bad, 6 = test series */
+				$ratingarray = array();
+				foreach (MRQCQuery("select rating_value from ratings where rating_type = 'series' and data_modality = 'MR' and data_id = ?", 'i', [$seriesid]) as $row3)
+					$ratingarray[] = $row3['rating_value'];
+				$cellcolor = '';
+				$ratingavg = '';
+				$ratingcount = count($ratingarray);
+				if ($ratingcount > 0) {
+					if (in_array(5, $ratingarray)) $cellcolor = "#ffddd1";
+					if (in_array(6, $ratingarray)) $cellcolor = "lightyellow";
+					$ratingavg = array_sum($ratingarray) / $ratingcount;
+				}
+				?><td style="padding-left: 8px; background-color:<?=$cellcolor?>"><?=$ratingavg?> <? if ($ratingavg !== "") { ?><span class="tiny">(<?=$ratingcount?>)</span><? } ?></td>
+				<?
+
+				/* check basic QC */
+				$qarows = MRQCQuery("select (move_maxx-move_minx) 'movex', (move_maxy-move_miny) 'movey', (move_maxz-move_minz) 'movez', (acc_maxx-acc_minx) 'accx', (acc_maxy-acc_miny) 'accy',(acc_maxz-acc_minz) 'accz',(rot_maxp-rot_minp) 'rotp', (rot_maxr-rot_minr) 'rotr',(rot_maxy-rot_miny) 'roty', io_snr, pv_snr, fd_mean, dvars_mean from mr_qa where mrseries_id = ?", 'i', [$seriesid]);
+				$rowB = $qarows[0] ?? array();
+				$qa = array();
+				foreach (array('movex', 'movey', 'movez', 'accx', 'accy', 'accz', 'rotp', 'rotr', 'roty', 'io_snr', 'pv_snr', 'fd_mean', 'dvars_mean') as $col)
+					$qa[$col] = number_format((float)($rowB[$col] ?? 0), 1);
+
+				$msgs = array();
+				if (array_key_exists($p1, $qcparms)) {
+					$qc = $qcparms[$p1];
+					if ($qa['movex'] > $qc['max_x']) $msgs[] = "Motion x: " . $qa['movex'] . " > (" . $qc['max_x'] . ")";
+					if ($qa['movey'] > $qc['max_y']) $msgs[] = "Motion y: " . $qa['movey'] . " > (" . $qc['max_y'] . ")";
+					if ($qa['movez'] > $qc['max_z']) $msgs[] = "Motion z: " . $qa['movez'] . " > (" . $qc['max_z'] . ")";
+					if (($qa['io_snr'] > $qc['max_iosnr']) || ($qa['io_snr'] < $qc['min_iosnr'])) $msgs[] = "IO SNR of " . $qa['io_snr'] . " not in range (" . $qc['min_iosnr'] . " - " . $qc['max_iosnr'] . ")";
+					if (($qa['pv_snr'] > $qc['max_pvsnr']) || ($qa['pv_snr'] < $qc['min_pvsnr'])) $msgs[] = "PV SNR of " . $qa['pv_snr'] . " not in range (" . $qc['min_pvsnr'] . " - " . $qc['max_pvsnr'] . ")";
+
+					if (count($msgs) > 0) {
+						?>
+						<td style="border: 1px solid #aaa; padding-left: 8px; background-color: #ffddd1; font-size:8pt; color: #666" title="<?=htmlspecialchars(implode("\n", $msgs))?>">
+						<i class="exclamation icon"></i>
+						Out of spec
+						</td>
+						<?
 					}
 					else {
-						newtxt += txt[k];
+						?><td style="border: 1px solid #aaa; padding-left: 8px; background-color: #cbf7be"> </td><?
 					}
 				}
-				// To handle The displacement, motion, and rotation column titles
-				if (i==1 && txt.slice(0,4)== "Disp") {
-					newtxt = 'DispX,DispY,DispZ,MotX,MotY,MotZ,RotP,RotR,RotY'; 
+				else {
+					?><td style="border: 1px solid #aaa; background-color: lightyellow; padding-left: 8px;" title="QC criteria not specified"> <i class="exclamation icon"></i> </td><?
+				}
+				?>
+				<td>(<?=$qa['movex']?>,<?=$qa['movey']?>,<?=$qa['movez']?>),&nbsp;(<?=$qa['accx']?>,<?=$qa['accy']?>,<?=$qa['accz']?>),&nbsp;(<?=$qa['rotp']?>,<?=$qa['rotr']?>,<?=$qa['roty']?>)</td>
+				<td><?=$qa['io_snr']?></td>
+				<td><?=$qa['fd_mean']?></td>
+				<td><?=$qa['dvars_mean']?></td>
+				</tr>
+				<?
+			}
+		}
+		?>
+			</tbody>
+		</table>
+
+		<div align="right"><input class="ui primary button" type="submit" value="Save As CSV" onMouseDown="tabletocsv();" style="font-size: 14pt; font-weight: bold"></div>
+
+		<script type="text/javascript">
+			function tabletocsv() {
+				/* the final csv data */
+				var csv_data = [];
+
+				/* get each row's data */
+				var rows = document.getElementsByTagName('tr');
+				for (var i = 1; i < rows.length; i++) {
+					var cols = rows[i].querySelectorAll('td,th');
+					var csvrow = [];
+					for (var j = 0; j < cols.length; j++) {
+						var txt = cols[j].innerText;
+
+						/* remove the parentheses from the displacement, motion, and rotation data */
+						var newtxt = "";
+						for (var k = 0; k < txt.length; k++) {
+							if ((txt[k] == "(" || txt[k] == ")") && j > 9)
+								newtxt += '';
+							else
+								newtxt += txt[k];
+						}
+						/* the displacement, motion, and rotation column titles */
+						if (i == 1 && txt.slice(0,4) == "Disp")
+							newtxt = 'DispX,DispY,DispZ,MotX,MotY,MotZ,RotP,RotR,RotY';
+						csvrow.push(newtxt);
 					}
-				// csv rows
-		                csvrow.push(newtxt);
-                		}
- 
-		               // Combining each column value with comma
-		               csv_data.push(csvrow.join(","));
-			}            		
- 
-		          // Combining each row data with new line character
-        		  csv_data = csv_data.join('\n');
- 
-		           // Download csv file 
-				downloadCSVFile(csv_data);
-			    } 
-        	
- 
-		        function downloadCSVFile(csv_data) {
- 
-		            // Create CSV file object and feed
-		            // our csv_data into it
-		           CSVFile = new Blob(['\ufeff' + csv_data], {
-                	   type: "text/csv"
-		            });
- 
-		            // Create to temporary link to initiate
-		            // download process
-		            var temp_link = document.createElement('a');
- 
-			    // Download csv file
-			    const d = new Date();
-			    tt = d.getTime();
-		            temp_link.download = "MRQuality"+tt+".csv";
-		            var url = window.URL.createObjectURL(CSVFile);
-		            temp_link.href = url;
- 
-		            // This link should not be displayed
-		            temp_link.style.display = "none";
-		            document.body.appendChild(temp_link);
- 
-		            // Automatically click the link to
-		            // trigger download
-		            temp_link.click();
-		            document.body.removeChild(temp_link);
-        	    }
-		       				
-				
-				
+					csv_data.push(csvrow.join(","));
+				}
+				downloadCSVFile(csv_data.join('\n'));
+			}
+
+			function downloadCSVFile(csv_data) {
+				var CSVFile = new Blob(['﻿' + csv_data], { type: "text/csv" });
+
+				/* a temporary hidden link to start the download */
+				var temp_link = document.createElement('a');
+				temp_link.download = "MRQuality" + new Date().getTime() + ".csv";
+				temp_link.href = window.URL.createObjectURL(CSVFile);
+				temp_link.style.display = "none";
+				document.body.appendChild(temp_link);
+				temp_link.click();
+				document.body.removeChild(temp_link);
+			}
 		</script>
-
-
-				
-			</div>
-
-			<?
-		}
-		else {
-			echo "Found no valid MR studies for this project<br>";
-		}
+		</div>
+		<?
 	}
 
 
@@ -915,35 +590,21 @@
 	/* ------- EditQCParams ----------------------- */
 	/* -------------------------------------------- */
 	function EditQCParams($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		$id = (int)$id;
 
 		DisplayQCParamHeader($id);
-		
-		/* get all of the existing scan parameters */
-		$sqlstring = "select * from mr_qcparams where project_id = '$id' order by protocol_name";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$paramid = $row['mrqcparam_id'];
-			$protocol = $row['protocol_name'];
-			$x_max = $row['max_x'];
-			$y_max = $row['max_y'];
-			$z_max = $row['max_z'];
-			$iosnr_min = $row['min_iosnr'];
-			$iosnr_max = $row['max_iosnr'];
-			$pvsnr_min = $row['min_pvsnr'];
-			$pvsnr_max = $row['max_pvsnr'];
 
-			DisplayQCParamLine($paramid, $protocol, $x_max, $y_max, $z_max, $iosnr_min, $iosnr_max, $pvsnr_min, $pvsnr_max);
-		}
-		
+		/* get all of the existing QC criteria */
+		foreach (MRQCQuery("select * from mr_qcparams where project_id = ? order by protocol_name", 'i', [$id]) as $row)
+			DisplayQCParamLine($row['mrqcparam_id'], $row['protocol_name'], $row['max_x'], $row['max_y'], $row['max_z'], $row['min_iosnr'], $row['max_iosnr'], $row['min_pvsnr'], $row['max_pvsnr']);
+
 		for ($i=0;$i<5;$i++) {
 			DisplayQCParamLine();
 		}
 		?>
 		</table>
-		<input type="submit" value="Update">
+		<a class="ui button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$id?>">Back</a>
+		<input type="submit" value="Update" class="ui primary button">
 		</form>
 		<?
 	}
@@ -953,19 +614,15 @@
 	/* ------- DisplayQCParamHeader --------------- */
 	/* -------------------------------------------- */
 	function DisplayQCParamHeader($projectid) {
-		
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
+		$projectid = (int)$projectid;
+
 		DisplayProtocolDataListForProject($projectid, "protocollist");
-		
 		?>
 		<br><br>
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updateqcparams">
 		<input type="hidden" name="id" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
 		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<tr>
@@ -979,265 +636,44 @@
 			</thead>
 		<?
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayQCParamLine ----------------- */
 	/* -------------------------------------------- */
 	function DisplayQCParamLine($rowid="", $protocol="", $x_max="", $y_max="", $z_max="", $iosnr_min="", $iosnr_max="", $pvsnr_min="", $pvsnr_max="") {
+		$h = function($v) { return htmlspecialchars((string)$v); };
 		?><tr>
-			<input type="hidden" name="param_rowid[]" value="<?=$rowid?>">
-			<td><input type="text" name="param_protocol[]" value="<?=$protocol?>" list="protocollist"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_x_max[]" value="<?=$x_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_y_max[]" value="<?=$y_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_z_max[]" value="<?=$z_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_iosnr_min[]" value="<?=$iosnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_iosnr_max[]" value="<?=$iosnr_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_min[]" value="<?=$pvsnr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_max[]" value="<?=$pvsnr_max?>"></td>
+			<input type="hidden" name="param_rowid[]" value="<?=$h($rowid)?>">
+			<td><input type="text" name="param_protocol[]" value="<?=$h($protocol)?>" list="protocollist"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_x_max[]" value="<?=$h($x_max)?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_y_max[]" value="<?=$h($y_max)?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_z_max[]" value="<?=$h($z_max)?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_iosnr_min[]" value="<?=$h($iosnr_min)?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_iosnr_max[]" value="<?=$h($iosnr_max)?>"></td>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_min[]" value="<?=$h($pvsnr_min)?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_pvsnr_max[]" value="<?=$h($pvsnr_max)?>"></td>
 		</tr><?
 	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- ViewMRParams ----------------------- */
-	/* -------------------------------------------- */
-	function ViewMRParams($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
-		/* get all of the MR params for this project */
-		$sqlstring = "select * from mr_scanparams where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) < 1){
-			?>No MR parameters specified for this project. Add them <a href="projects.php?action=editmrparams&id=<?=$id?>">here</a>.<?
-			return;
-		}
-		else {
-			$i=0;
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$parms['protocol'][$i] = $row['protocol_name'];
-				$parms['sequence'][$i] = $row['sequence_name'];
-				$parms['tr_min'][$i] = number_format($row['tr_min'],3,'.','');
-				$parms['tr_max'][$i] = number_format($row['tr_max'],3,'.','');
-				$parms['te_min'][$i] = number_format($row['te_min'],3,'.','');
-				$parms['te_max'][$i] = number_format($row['te_max'],3,'.','');
-				$parms['ti_min'][$i] = number_format($row['ti_min'],3,'.','');
-				$parms['ti_max'][$i] = number_format($row['ti_max'],3,'.','');
-				$parms['flip_min'][$i] = number_format($row['flip_min'],3,'.','');
-				$parms['flip_max'][$i] = number_format($row['flip_max'],3,'.','');
-				$parms['xdim_min'][$i] = number_format($row['xdim_min'],3,'.','');
-				$parms['xdim_max'][$i] = number_format($row['xdim_max'],3,'.','');
-				$parms['ydim_min'][$i] = number_format($row['ydim_min'],3,'.','');
-				$parms['ydim_max'][$i] = number_format($row['ydim_max'],3,'.','');
-				$parms['zdim_min'][$i] = number_format($row['zdim_min'],3,'.','');
-				$parms['zdim_max'][$i] = number_format($row['zdim_max'],3,'.','');
-				$parms['tdim_min'][$i] = number_format($row['tdim_min'],3,'.','');
-				$parms['tdim_max'][$i] = number_format($row['tdim_max'],3,'.','');
-				$parms['slicethickness_min'][$i] = number_format($row['slicethickness_min'],3,'.','');
-				$parms['slicethickness_max'][$i] = number_format($row['slicethickness_max'],3,'.','');
-				$parms['slicespacing_min'][$i] = number_format($row['slicespacing_min'],3,'.','');
-				$parms['slicespacing_max'][$i] = number_format($row['slicespacing_max'],3,'.','');
-				$parms['bandwidth_min'][$i] = number_format($row['bandwidth_min'],3,'.','');
-				$parms['bandwidth_max'][$i] = number_format($row['bandwidth_max'],3,'.','');
-				$i++;
-			}
-			$numparms = $i;
-		}
-		
-		/* get list of studies associated with this project */
-		$sqlstring = "select c.study_id, c.study_num, a.uid from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where b.project_id = '$id' and c.study_modality = 'MR'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0){
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				$uid = $row['uid'];
-				$studynum = $row['study_num'];
-				if ($studyid > 0) {
-					/* get the mr_series rows */
-					$sqlstringA = "select * from mr_series where study_id = $studyid order by series_num";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysqli_num_rows($resultA) > 0){
-						?>
-						<table width="100%">
-							<tr>
-								<td colspan="2" style="background-color: #444; color: white; padding: 3px 6px; border-radius:4px; margin-top: 10px; margin-bottom:5px"><b>Checking <?=$uid?><?=$studynum?>...</td>
-							</tr>
-						<?
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$seriesnum = $rowA['series_num'];
-							$series_desc = $rowA['series_desc'];
-							$series_protocol = $rowA['series_protocol'];
-							$sequence = $rowA['series_sequencename'];
-							$tr = number_format($rowA['series_tr'],3,'.','');
-							$te = number_format($rowA['series_te'],3,'.','');
-							$ti = number_format($rowA['series_ti'],3,'.','');
-							$flip = number_format($rowA['series_flip'],3,'.','');
-							$slicethickness = number_format($rowA['slicethickness'],3,'.','');
-							$slicespacing = number_format($rowA['slicespacing'],3,'.','');
-							$dimx = number_format($rowA['dimX'],3,'.','');
-							$dimy = number_format($rowA['dimY'],3,'.','');
-							$dimz = number_format($rowA['dimZ'],3,'.','');
-							$dimt = number_format($rowA['dimT'],3,'.','');
-							$bandwidth = number_format($rowA['bandwidth'],3,'.','');
-							
-							$protocol1 = $series_desc;
-							$protocol2 = $series_protocol;
-							
-							$matched = false;
-							$mismatch = "";
-							$nummismatch = array();
-							/* check if the params in this study match with any of the rows in the QA params table */
-							for ($i=0;$i<$numparms;$i++) {
-								$rowmatch = true;
-								$nummismatch[$i] = 0;
-								if (($protocol1 != $parms['protocol'][$i]) && ($protocol2 != $parms['protocol'][$i])) { $rowmatch = false; $nummismatch[$i]++; }
-								if ($sequence != $parms['sequence'][$i]) { $rowmatch = false; $nummismatch[$i]++; }
 
-								$localdebug = 0;
-								if (!between($tr, $parms['tr_min'][$i], $parms['tr_max'][$i])) { if ($localdebug) { echo "TR not within range (" . $parms['tr_min'][$i] . " - $tr - " . $parms['tr_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($te, $parms['te_min'][$i], $parms['te_max'][$i])) { if ($localdebug) { echo "TE not within range (" . $parms['te_min'][$i] . " - $te - " . $parms['te_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($ti, $parms['ti_min'][$i], $parms['ti_max'][$i])) { if ($localdebug) { echo "TI not within range (" . $parms['ti_min'][$i] . " - $ti - " . $parms['ti_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($flip, $parms['flip_min'][$i], $parms['flip_max'][$i])) { if ($localdebug) { echo "Flip not within range (" . $parms['flip_min'][$i] . " - $flip - " . $parms['flip_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($dimx, $parms['dimx_min'][$i], $parms['dimx_max'][$i])) { if ($localdebug) { echo "dimx not within range (" . $parms['dimx_min'][$i] . " - $dimx - " . $parms['dimx_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($dimy, $parms['dimy_min'][$i], $parms['dimy_max'][$i])) { if ($localdebug) { echo "dimy not within range (" . $parms['dimy_min'][$i] . " - $dimy - " . $parms['dimy_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($dimz, $parms['dimz_min'][$i], $parms['dimz_max'][$i])) { if ($localdebug) { echo "dimz not within range (" . $parms['dimz_min'][$i] . " - $dimz - " . $parms['dimz_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($dimt, $parms['dimt_min'][$i], $parms['dimt_max'][$i])) { if ($localdebug) { echo "dimt not within range (" . $parms['dimt_min'][$i] . " - $dimt - " . $parms['dimt_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($slicethickness, $parms['slicethickness_min'][$i], $parms['slicethickness_max'][$i])) { if ($localdebug) { echo "slicethickness not within range (" . $parms['slicethickness_min'][$i] . " - $slicethickness - " . $parms['slicethickness_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($slicespacing, $parms['slicespacing_min'][$i], $parms['slicespacing_max'][$i])) { if ($localdebug) { echo "slicespacing not within range (" . $parms['slicespacing_min'][$i] . " - $slicespacing - " . $parms['slicespacing_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-								if (!between($bandwidth, $parms['bandwidth_min'][$i], $parms['bandwidth_max'][$i])) { if ($localdebug) { echo "bandwidth not within range (" . $parms['bandwidth_min'][$i] . " - $bandwidth - " . $parms['bandwidth_max'][$i] . " )<br>"; } $rowmatch = false; $nummismatch[$i]++; }
-
-								if ($rowmatch) { $matched = true; break; }
-								
-							}
-							//PrintVariable($nummismatch);
-							
-							if ($matched) {
-								?>
-								<tr style="font-size: 9pt">
-									<td style="width: 30px"></td>
-									<td style="color: green">Series <?=$seriesnum?> [<?=$protocol1?>] <b>OK</b></td>
-								</tr><?
-							}
-							else {
-								?><tr>
-									<td style="width: 30px"></td>
-									<td style="padding-left: 30px"><span style="color: red; font-size:9pt">Series <?=$seriesnum?> [<?=$protocol1?>] did NOT match. Nearest matches:
-								<?
-								$min = min($nummismatch);
-								$idx = array_keys($nummismatch, $min);
-								?>
-								<table class="ui very compact small celled table">
-									<thead>
-										<tr>
-										<th>Protocol</th>
-										<th>Sequence</th>
-										<th>TR</th>
-										<th>TE</th>
-										<th>TI</th>
-										<th>Flip &ang;</th>
-										<th>X dim</th>
-										<th>Y dim</th>
-										<th>Z dim</th>
-										<th>T dim</th>
-										<th>Slice thick</th>
-										<th>Slice spacing</th>
-										<th>Bandwidth</th>
-										<th></th>
-										</tr>
-									</thead>
-									<tr style="font-weight: bold">
-										<td><?=$protocol1?></td>
-										<td><?=$sequence?></td>
-										<td><?=$tr?></td>
-										<td><?=$te?></td>
-										<td><?=$ti?></td>
-										<td><?=$flip?></td>
-										<td><?=$dimx?></td>
-										<td><?=$dimy?></td>
-										<td><?=$dimz?></td>
-										<td><?=$dimt?></td>
-										<td><?=$slicethickness?></td>
-										<td><?=$slicespacing?></td>
-										<td><?=$bandwidth?></td>
-										<td><a href="projects.php?id=<?=$id?>&action=loadmrparams&existingstudy=<?="$uid$studynum"?>&existingseries=<?=$seriesnum?>">Add to QA list</a></td>
-									</tr>
-								<?
-								?></table>
-								</td>
-								</tr>
-							<?
-							}
-						}
-						?></table><?
-					}
-					else {
-						echo "Found no MR series for this study [$uid$studynum]";
-					}
-				}
-				else {
-					echo "Invalid study ID [$study_id]<br>";
-				}
-			}
-		}
-		else {
-			echo "Found no valid MR studies for this project<br>";
-		}
-	}
-	
 
 	/* -------------------------------------------- */
 	/* ------- EditMRScanParams ------------------- */
 	/* -------------------------------------------- */
 	function EditMRScanParams($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		if (!isInteger($projectid)) { echo "Invalid project ID [$projectid]"; return; }
+		$projectid = (int)$projectid;
 
 		DisplayMRScanParamHeader($projectid);
-		
-		/* get all of the existing scan parameters */
-		$sqlstring = "select * from mr_scanparams where project_id = '$projectid' order by protocol_name, sequence_name";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$paramid = $row['mrscanparam_id'];
-			$protocol = $row['protocol_name'];
-			$sequence = $row['sequence_name'];
-			$tr_min = $row['tr_min'];
-			$tr_max = $row['tr_max'];
-			$te_min = $row['te_min'];
-			$te_max = $row['te_max'];
-			$ti_min = $row['ti_min'];
-			$ti_max = $row['ti_max'];
-			$flip_min = $row['flip_min'];
-			$flip_max = $row['flip_max'];
-			$xdim_min = $row['xdim_min'];
-			$xdim_max = $row['xdim_max'];
-			$ydim_min = $row['ydim_min'];
-			$ydim_max = $row['ydim_max'];
-			$zdim_min = $row['zdim_min'];
-			$zdim_max = $row['zdim_max'];
-			$tdim_min = $row['tdim_min'];
-			$tdim_max = $row['tdim_max'];
-			$slicethickness_min = $row['slicethickness_min'];
-			$slicethickness_max = $row['slicethickness_max'];
-			$slicespacing_min = $row['slicespacing_min'];
-			$slicespacing_max = $row['slicespacing_max'];
-			$bandwidth_min = $row['bandwidth_min'];
-			$bandwidth_max = $row['bandwidth_max'];
 
-			DisplayMRScanParamLine($paramid, $protocol, $sequence, $tr_min, $tr_max, $te_min, $te_max, $ti_min, $ti_max, $flip_min, $flip_max, $xdim_min, $xdim_max, $ydim_min, $ydim_max, $zdim_min, $zdim_max, $tdim_min, $tdim_max, $slicethickness_min, $slicethickness_max, $slicespacing_min, $slicespacing_max, $bandwidth_min, $bandwidth_max);
-		}
-		
+		/* get all of the existing scan parameters */
+		foreach (MRQCQuery("select * from mr_scanparams where project_id = ? order by protocol_name, sequence_name", 'i', [$projectid]) as $row)
+			DisplayMRScanParamLine($row);
+
 		for ($i=0;$i<5;$i++) {
 			DisplayMRScanParamLine();
 		}
 		?>
 		</table>
-		<input type="submit" value="Update">
+		<a class="ui button" href="mrqcchecklist.php?action=viewqcparams&id=<?=$projectid?>">Back</a>
+		<input type="submit" value="Update" class="ui primary button">
 		</form>
 		<?
 	}
@@ -1247,20 +683,16 @@
 	/* ------- DisplayMRScanParamHeader ----------- */
 	/* -------------------------------------------- */
 	function DisplayMRScanParamHeader($projectid) {
-		
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
+		$projectid = (int)$projectid;
 		?>
 		<br><br>
 		<fieldset>
-			<legend>Add scan parameters from existing study</legend>
-			<form>
+			<legend>Add scan parameters from an existing study in this project</legend>
+			<form method="post" action="mrqcchecklist.php">
 			<input type="hidden" name="action" value="loadmrparams">
 			<input type="hidden" name="id" value="<?=$projectid?>">
-			<input type="text" name="existingstudy"> &nbsp; <input type="submit" value="Load Parameters"><br>
+			<?=CSRFTokenField()?>
+			<input type="text" name="existingstudy" required> &nbsp; <input type="submit" value="Load Parameters"><br>
 			<span class="tiny">Enter study ID in the format <u>S1234ABC5</u></span>
 			</form>
 		</fieldset>
@@ -1268,6 +700,7 @@
 		<form action="mrqcchecklist.php" method="post">
 		<input type="hidden" name="action" value="updatemrparams">
 		<input type="hidden" name="id" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
 		<table class="ui small celled selectable grey very compact table">
 			<thead>
 				<th>Protocol<br><span class="tiny">Leave blank to remove the row</span></th>
@@ -1286,99 +719,42 @@
 			</thead>
 		<?
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayMRScanParamLine ------------- */
 	/* -------------------------------------------- */
-	function DisplayMRScanParamLine($rowid="", $protocol="", $sequence="", $tr_min="", $tr_max="", $te_min="", $te_max="", $ti_min="", $ti_max="", $flip_min="", $flip_max="", $xdim_min="", $xdim_max="", $ydim_min="", $ydim_max="", $zdim_min="", $zdim_max="", $tdim_min="", $tdim_max="", $slicethickness_min="", $slicethickness_max="", $slicespacing_min="", $slicespacing_max="", $bandwidth_min="", $bandwidth_max="") {
+	/* one editable row; $row is an mr_scanparams row, or empty for a blank row */
+	function DisplayMRScanParamLine($row = array()) {
+		$h = function($key) use ($row) { return htmlspecialchars((string)($row[$key] ?? '')); };
+		$dims = array('xdim', 'ydim', 'zdim', 'tdim');
 		?><tr>
-			<input type="hidden" name="param_rowid[]" value="<?=$rowid?>">
-			<td><input type="text" name="param_protocol[]" value="<?=$protocol?>"></td>
-			<td><input type="text" name="param_sequence[]" value="<?=$sequence?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_tr_min[]" value="<?=$tr_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_tr_max[]" value="<?=$tr_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_te_min[]" value="<?=$te_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_te_max[]" value="<?=$te_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_ti_min[]" value="<?=$ti_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_ti_max[]" value="<?=$ti_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_flip_min[]" value="<?=$flip_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_flip_max[]" value="<?=$flip_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_xdim_min[]" value="<?=$xdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_xdim_max[]" value="<?=$xdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_ydim_min[]" value="<?=$ydim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_ydim_max[]" value="<?=$ydim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_zdim_min[]" value="<?=$zdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_zdim_max[]" value="<?=$zdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_tdim_min[]" value="<?=$tdim_min?>">&nbsp;<input type="number" style="width: 55px" name="param_tdim_max[]" value="<?=$tdim_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_min[]" value="<?=$slicethickness_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicethickness_max[]" value="<?=$slicethickness_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_min[]" value="<?=$slicespacing_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_slicespacing_max[]" value="<?=$slicespacing_max?>"></td>
-			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_min[]" value="<?=$bandwidth_min?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_bandwidth_max[]" value="<?=$bandwidth_max?>"></td>
+			<input type="hidden" name="param_rowid[]" value="<?=$h('mrscanparam_id')?>">
+			<td><input type="text" name="param_protocol[]" value="<?=$h('protocol_name')?>"></td>
+			<td><input type="text" name="param_sequence[]" value="<?=$h('sequence_name')?>"></td>
+			<? foreach (MRScanParamNames() as $name) {
+				if (in_array($name, $dims, true)) { ?>
+			<td style="padding: 2px 15px"><input type="number" style="width: 55px" name="param_<?=$name?>_min[]" value="<?=$h($name . '_min')?>">&nbsp;<input type="number" style="width: 55px" name="param_<?=$name?>_max[]" value="<?=$h($name . '_max')?>"></td>
+				<? } else { ?>
+			<td style="padding: 2px 15px"><input type="text" style="width: 45px" maxlength="8" name="param_<?=$name?>_min[]" value="<?=$h($name . '_min')?>">&nbsp;<input type="text" style="width: 45px" maxlength="8" name="param_<?=$name?>_max[]" value="<?=$h($name . '_max')?>"></td>
+				<? }
+			} ?>
 		</tr><?
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- UpdateMRScanParams ----------------- */
-	/* -------------------------------------------- */
-	function UpdateMRScanParams($id, $param_rowid, $param_protocol, $param_sequence, $param_tr_min, $param_tr_max, $param_te_min, $param_te_max, $param_ti_min, $param_ti_max, $param_flip_min, $param_flip_max, $param_xdim_min, $param_xdim_max, $param_ydim_min, $param_ydim_max, $param_zdim_min, $param_zdim_max, $param_tdim_min, $param_tdim_max, $param_slicethickness_min, $param_slicethickness_max, $param_slicespacing_min, $param_slicespacing_max, $param_bandwidth_min, $param_bandwidth_max) {
-		
-		$i=0;
-		foreach ($param_rowid as $paramid) {
-			$paramid = (int)$paramid;
-			
-			$protocol = mysqli_real_escape_string($GLOBALS['linki'], trim($param_protocol[$i]));
-			$sequence = mysqli_real_escape_string($GLOBALS['linki'], trim($param_sequence[$i]));
-			$tr_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr_min[$i])),3,'.','');
-			$tr_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tr_max[$i])),3,'.','');
-			$te_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te_min[$i])),3,'.','');
-			$te_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_te_max[$i])),3,'.','');
-			$ti_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti_min[$i])),3,'.','');
-			$ti_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ti_max[$i])),3,'.','');
-			$flip_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip_min[$i])),3,'.','');
-			$flip_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_flip_max[$i])),3,'.','');
-			$xdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim_min[$i])),3,'.','');
-			$xdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_xdim_max[$i])),3,'.','');
-			$ydim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim_min[$i])),3,'.','');
-			$ydim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_ydim_max[$i])),3,'.','');
-			$zdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim_min[$i])),3,'.','');
-			$zdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_zdim_max[$i])),3,'.','');
-			$tdim_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim_min[$i])),3,'.','');
-			$tdim_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_tdim_max[$i])),3,'.','');
-			$slicethickness_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness_min[$i])),3,'.','');
-			$slicethickness_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicethickness_max[$i])),3,'.','');
-			$slicespacing_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing_min[$i])),3,'.','');
-			$slicespacing_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_slicespacing_max[$i])),3,'.','');
-			$bandwidth_min = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth_min[$i])),3,'.','');
-			$bandwidth_max = number_format(mysqli_real_escape_string($GLOBALS['linki'], trim($param_bandwidth_max[$i])),3,'.','');
-			
-			if ($protocol != "") {
-				if ($paramid == 0) {
-					$sqlstring = "insert ignore into mr_scanparams (protocol_name, sequence_name, project_id, tr_min, tr_max, te_min, te_max, ti_min, ti_max, flip_min, flip_max, xdim_min, xdim_max, ydim_min, ydim_max, zdim_min, zdim_max, tdim_min, tdim_max, slicethickness_min, slicethickness_max, slicespacing_min, slicespacing_max, bandwidth_min, bandwidth_max) values ('$protocol', '$sequence', '$id', '$tr_min', '$tr_max', '$te_min', '$te_max', '$ti_min', '$ti_max', '$flip_min', '$flip_max', '$xdim_min', '$xdim_max', '$ydim_min', '$ydim_max', '$zdim_min', '$zdim_max', '$tdim_min', '$tdim_max', '$slicethickness_min', '$slicethickness_max', '$slicespacing_min', '$slicespacing_max', '$bandwidth_min', '$bandwidth_max')";
-				}
-				else {
-					$sqlstring = "update ignore mr_scanparams set protocol_name = '$protocol', sequence_name = '$sequence', tr_min = '$tr_min', tr_max = '$tr_max', te_min = '$te_min', te_max = '$te_max', ti_min = '$ti_min', ti_max = '$ti_max', flip_min = '$flip_min', flip_max = '$flip_max', xdim_min = '$xdim_min', xdim_max = '$xdim_max', ydim_min = '$ydim_min', ydim_max = '$ydim_max', zdim_min = '$zdim_min', zdim_max = '$zdim_max', tdim_min = '$tdim_min', tdim_max = '$tdim_max', slicethickness_min = '$slicethickness_min', slicethickness_max = '$slicethickness_max', slicespacing_min = '$slicespacing_min', slicespacing_max = '$slicespacing_max', bandwidth_min = '$bandwidth_min', bandwidth_max = '$bandwidth_max' where mrscanparam_id = $paramid";
-				}
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			if (($protocol == "") && ($paramid != 0)) {
-				$sqlstring = "delete from mr_scanparams where mrscanparam_id = $paramid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
-			$i++;
-		}
-	}
-	
-	
+
 	/* -------------------------------------------- */
 	/* ------- DisplayProtocolDataListForProject -- */
 	/* -------------------------------------------- */
 	function DisplayProtocolDataListForProject($projectid, $datalistid) {
-		$sqlstring = "select distinct(a.series_desc) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid order by a.series_desc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?><datalist id="<?=$datalistid?>"><?
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			?><option value="<?=$row['series_desc']?>"><?
+		$rows = MRQCQuery("select distinct(a.series_desc) from mr_series a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? order by a.series_desc", 'i', [(int)$projectid]);
+		?><datalist id="<?=htmlspecialchars($datalistid)?>"><?
+		foreach ($rows as $row) {
+			?><option value="<?=htmlspecialchars((string)$row['series_desc'])?>"><?
 		}
 		?></datalist><?
 	}
-	
-	
+
 ?>
 
 <? include("footer.php") ?>

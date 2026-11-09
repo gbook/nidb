@@ -30,13 +30,13 @@ for the reference implementation.
 | `analysis.php` | 3 | ✅ |
 | `analysisbuilder.php` | 2 | ✅ |
 | `batchupload.php` | 1 | ✅ |
-| `calendar.php` | 2 | ⬜ |
+| `calendar.php` | 2 | ✅ |
 | `calendar_appointments.php` | 3 | ✅ |
 | `calendar_calendars.php` | 3 | ✅ |
-| `checklist.php` | 1 | ⬜ |
+| `checklist.php` | 1 | ✅ |
 | `cleanup.php` | 4 | ✅ |
 | `clustersettings.php` | 6 | ✅ |
-| `datadictionary.php` | 4 | ⬜ |
+| `datadictionary.php` | 4 | ✅ |
 | `datasetrequests.php` | 2 | ✅ |
 | `diagnosis.php` | 1 | ✅ |
 | `enrollment.php` | 3 | ✅ |
@@ -50,22 +50,22 @@ for the reference implementation.
 | `importupload_functions.php` | 1 | ✅ |
 | `importwizard.php` | 1 | ✅ |
 | `instance.php` | 1 | ⬜ |
-| `instruments.php` | 4 | ⬜ |
-| `interventions.php` | 1 | ⬜ |
+| `instruments.php` | 4 | ✅ |
+| `interventions.php` | 1 | ✅ |
 | `login.php` | 1 | ⬜ |
 | `managefiles.php` | 2 | ✅ |
 | `menu.php` | 3 | ⬜ |
 | `merge.php` | 2 | ✅ |
 | `minipipeline.php` | 3 | ✅ |
-| `mrqcchecklist.php` | 2 | ⬜ |
+| `mrqcchecklist.php` | 2 | ✅ |
 | `nda.php` | 3 | ✅ |
 | `ndarequests.php` | 1 | ⬜ |
-| `nonimaging.php` | 1 | ⬜ |
-| `observations.php` | 1 | ⬜ |
+| `nonimaging.php` | 1 | ✅ |
+| `observations.php` | 1 | ✅ |
 | `packages.php` | 19 | ✅ |
 | `pipelinecontainers.php` | 2 | ✅ |
 | `pipelines.php` | 4 | ✅ |
-| `projectchecklist.php` | 1 | ⬜ |
+| `projectchecklist.php` | 1 | ✅ |
 | `projects.php` | 8 | ✅ |
 | `ratings.php` | 2 | ✅ |
 | `remoteconnections.php` | 2 | ✅ |
@@ -78,9 +78,8 @@ for the reference implementation.
 | `studies.php` | 14 | ✅ |
 | `subjects.php` | 11 | ✅ |
 | `system.php` | 1 | ⬜ |
-| `templates.php` | 4 | ⬜ |
-| `timeline.php` | 1 | ⬜ |
+| `templates.php` | 4 | ✅ |
+| `timeline.php` | 1 | ✅ |
 | `users.php` | 3 | ✅ |
-| `visualization.php` | 1 | ⬜ |
 
 _Regenerated 2026-11-09 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

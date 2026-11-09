@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -41,9 +42,10 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$interventionid = GetVariable("interventionid");
-	$enrollmentid = GetVariable("enrollmentid");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("addintervention", "deleteintervention"));
+	$interventionid = (int)GetVariable("interventionid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$interventionname = GetVariable('intervention_name');
 	$dose = GetVariable('dose');
 	$freq = GetVariable('freq');
@@ -54,13 +56,19 @@
 
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 		case 'addintervention':
+			ob_start();
 			AddIntervention($enrollmentid, $interventionname, $dose, $freq, $route, $startdate, $enddate, $interventiontype);
-			DisplayInterventionList($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("interventions.php?enrollmentid=$enrollmentid");
 			break;
 		case 'deleteintervention':
-			DeleteIntervention($interventionid);
-			DisplayInterventionList($enrollmentid);
+			ob_start();
+			DeleteIntervention($interventionid, $enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("interventions.php?enrollmentid=$enrollmentid");
 			break;
 		default:
 			DisplayInterventionList($enrollmentid);
@@ -71,14 +79,45 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetEnrollmentDataPerms ------------- */
+	/* -------------------------------------------- */
+	/* Interventions are project data: View Data on the enrollment's project to view them, Edit Data to
+	   add or delete. Returns [enrollment row or null, viewdata, modifydata] */
+	function GetEnrollmentDataPerms($enrollmentid) {
+		$enrollment = ((int)$enrollmentid > 0) ? GetEnrollment($enrollmentid) : null;
+		if ($enrollment == null)
+			return array(null, 0, 0);
+
+		$projectid = (int)$enrollment['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return array($enrollment, GetPerm($perms, 'viewdata', $projectid), GetPerm($perms, 'modifydata', $projectid));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddIntervention -------------------- */
 	/* -------------------------------------------- */
 	function AddIntervention($enrollmentid, $interventionname, $dose, $freq, $route, $startdate, $enddate, $interventiontype) {
 		$enrollmentid = (int)$enrollmentid;
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into interventions (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, intervention_name, intervention_type) values (?, ?, ?, ?, ?, ?, ?, ?)");
-		mysqli_stmt_bind_param($stmt, 'isssssss', $enrollmentid, $startdate, $enddate, $dose, $freq, $route, $interventionname, $interventiontype);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return;
+		}
+		if (!$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
+		}
+
+		/* a blank end date is stored as NULL rather than an invalid empty datetime */
+		$enddate = (trim((string)$enddate) === '') ? null : $enddate;
+
+		$sqlstring = "insert into interventions (enrollment_id, startdate, enddate, doseamount, dosefrequency, administration_route, intervention_name, intervention_type) values (?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = [$enrollmentid, $startdate, $enddate, $dose, $freq, $route, $interventionname, $interventiontype];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'isssssss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 	}
 
@@ -86,11 +125,32 @@
 	/* -------------------------------------------- */
 	/* ------- DeleteIntervention ----------------- */
 	/* -------------------------------------------- */
-	function DeleteIntervention($id) {
-		$id = (int)$id;
-		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from interventions where intervention_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+	function DeleteIntervention($interventionid, $enrollmentid) {
+		$interventionid = (int)$interventionid;
+		$enrollmentid = (int)$enrollmentid;
+
+		/* the intervention must belong to the enrollment in the request */
+		$sqlstring = "select enrollment_id from interventions where intervention_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $interventionid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$interventionid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row || ((int)$row['enrollment_id'] != $enrollmentid)) {
+			Error("Invalid intervention");
+			return;
+		}
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if (($enrollment == null) || !$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
+		}
+
+		$sqlstring = "delete from interventions where intervention_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $interventionid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$interventionid]);
 		mysqli_stmt_close($stmt);
 
 		Notice("Intervention deleted");
@@ -102,23 +162,27 @@
 	/* -------------------------------------------- */
 	function DisplayInterventionList($enrollmentid) {
 		$enrollmentid = (int)$enrollmentid;
-		/* get subject's info for the breadcrumb list */
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
-		$projectname = $row['project_name'];
 
+		ShowFlashMessage();
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Enrollment not found");
+			return;
+		}
+		if (!$viewdata) {
+			Error("You do not have permission to view data in this project");
+			return;
+		}
 		?>
 		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
 
+		<? if ($modifydata) { ?>
 		<div class="ui segment">
 			<form action="interventions.php" method="post" class="ui form">
 				<input type="hidden" name="action" value="addintervention">
 				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				<?=CSRFTokenField()?>
 
 				<div class="seven fields">
 					<div class="field">
@@ -168,6 +232,7 @@
 				</div>
 			</form>
 		</div>
+		<? } ?>
 
 		<?
 		$rowdata = array();
@@ -196,6 +261,43 @@
 
 		<script>
 			const rowData = <?=$data?>;
+			const CAN_EDIT = <?=($modifydata ? 'true' : 'false')?>;
+			const ENROLLMENT_ID = <?=$enrollmentid?>;
+			const CSRF_TOKEN = <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
+
+			/* delete column (Edit Data only): an inline POST form with the CSRF token, so it can't be triggered by a link */
+			const deleteColDef = {
+				headerName: 'Delete',
+				field: 'interventionid',
+				width: 90,
+				minWidth: 90,
+				maxWidth: 90,
+				filter: false,
+				sortable: false,
+				resizable: false,
+				cellStyle: { 'text-align': 'center' },
+				cellRenderer: function(params) {
+					const form = document.createElement('form');
+					form.method = 'post';
+					form.action = 'interventions.php';
+					form.style.cssText = 'display:inline; margin:0';
+					[['action', 'deleteintervention'], ['interventionid', params.value], ['enrollmentid', ENROLLMENT_ID], ['csrftoken', CSRF_TOKEN]].forEach(function(f) {
+						const input = document.createElement('input');
+						input.type = 'hidden';
+						input.name = f[0];
+						input.value = f[1];
+						form.appendChild(input);
+					});
+					form.onsubmit = function() { return confirm('Are you sure you want to delete this record?'); };
+					const btn = document.createElement('button');
+					btn.type = 'submit';
+					btn.title = 'Delete this intervention';
+					btn.style.cssText = 'background:none; border:none; padding:0; cursor:pointer';
+					btn.innerHTML = '<i class="red alternate trash icon"></i>';
+					form.appendChild(btn);
+					return form;
+				}
+			};
 			let gridApi;
 
 			function updateDisplayedRowCount() {
@@ -212,22 +314,8 @@
 					{ headerName: 'Type', field: 'type', minWidth: 130 },
 					{ headerName: 'Dose / Frequency', field: 'dosefreq', minWidth: 150 },
 					{ headerName: 'Route', field: 'route', minWidth: 120 },
-					{ headerName: 'Date range', field: 'dates', flex: 1.3, minWidth: 260 },
-					{
-						headerName: 'Delete',
-						field: 'interventionid',
-						width: 90,
-						minWidth: 90,
-						maxWidth: 90,
-						filter: false,
-						sortable: false,
-						resizable: false,
-						cellStyle: { 'text-align': 'center' },
-						cellRenderer: function(params) {
-							return '<a href="interventions.php?action=deleteintervention&interventionid=' + params.value + '&enrollmentid=<?=$enrollmentid?>" title="Delete this intervention" onclick="return confirm(\'Are you sure you want to delete this record?\')"><i class="red alternate trash icon"></i></a>';
-						}
-					}
-				],
+					{ headerName: 'Date range', field: 'dates', flex: 1.3, minWidth: 260 }
+				].concat(CAN_EDIT ? [deleteColDef] : []),
 				rowData: rowData,
 				defaultColDef: { sortable: true, filter: true, resizable: true },
 				animateRows: false,

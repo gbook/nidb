@@ -404,6 +404,7 @@ DEPRECATED_WEB_FILES=(
     "subject_inlineupdate.php"
     "subjectlist.php"
     "validatepath.php"
+    "visualization.php"
     "vitals.php"
     "register.php"
     "scripts/securimage/example_form.php"

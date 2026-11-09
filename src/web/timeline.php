@@ -40,244 +40,209 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	PrintVariable($_POST);
-	
 	/* ----- setup variables ----- */
+	/* read-only page: the filter form is a GET, so refresh/Back/bookmarks just re-run the view */
 	$action = GetVariable("action");
-	$enrollmentid = GetVariable("enrollmentid");
+	$enrollmentid = (int)GetVariable("enrollmentid");
 	$id = (int)GetVariable("id");
 	$startdatetime = GetVariable("startdatetime");
 	$enddatetime = GetVariable("enddatetime");
-	$resolution = GetVariable("resolution");
 	$selectedprotocols = GetVariable("selectedprotocols");
-	$allobservations = GetVariable("allobservations");
+	$allobservations = (GetVariable("allobservations") == "1");
 
-	if (is_null($enrollmentid) || trim($enrollmentid) == "")
+	if ($enrollmentid < 1)
 		$enrollmentid = $id;
-	
-	if (!is_null($startdatetime))
-		$startdatetime = str_replace("T", " ", $startdatetime);
-		
-	if (!is_null($enddatetime))
-		$enddatetime = str_replace("T", " ", $enddatetime);
-		
-	/* determine action */
-	switch ($action) {
-		case 'displaytimeline':
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations);
-			break;
-		default:
-			DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations);
-	}
-	
-	
+
+	/* datetime-local values ("YYYY-MM-DDTHH:MM") become "YYYY-MM-DD HH:MM"; blank means no limit */
+	$startdatetime = (is_string($startdatetime) && (trim($startdatetime) != "")) ? str_replace("T", " ", trim($startdatetime)) : null;
+	$enddatetime = (is_string($enddatetime) && (trim($enddatetime) != "")) ? str_replace("T", " ", trim($enddatetime)) : null;
+
+	/* selected protocols are "modality:protocol" strings; null means show everything */
+	if (is_array($selectedprotocols))
+		$selectedprotocols = array_values(array_filter($selectedprotocols, 'is_string'));
+	else
+		$selectedprotocols = null;
+
+	DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $selectedprotocols, $allobservations);
+
+
 	/* ------------------------------------ functions ------------------------------------ */
-	
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayTimeline -------------------- */
 	/* -------------------------------------------- */
-	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $resolution, $selectedprotocols, $allobservations) {
-		
-		if ((is_null($enrollmentid)) || ($enrollmentid < 0) || ($enrollmentid == 0)) {
-			?><span class="error">Invalid enrollment ID</div><?
-			return;
-		}
-		$enrollmentid = (int)$enrollmentid;
-		
-		$selectedModalities = array();
-		
-		/* get all the information about the enrollment */
-		$q = mysqli_stmt_init($GLOBALS['linki']);
-		mysqli_stmt_prepare($q, "select * from enrollment a left join projects b on a.project_id = b.project_id left join subjects c on a.subject_id = c.subject_id where a.enrollment_id = ?");
-		mysqli_stmt_bind_param($q, 'i', $enrollmentid);
-		$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$projectname = $row['project_name'];
-			$projectnumber = $row['project_costcenter'];
-			$projectid = $row['project_id'];
-			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
-			$enrollmentid = $row['enrollment_id'];
-			$enroll_startdate = $row['enroll_startdate'];
-			$enroll_enddate = $row['enroll_enddate'];
-			$enrollgroup = $row['enroll_subgroup'];
-			$enrollstatus = $row['enroll_status'];
-		}
-		else {
-			return;
-		}
+	/* Imaging series and observations are project data: View Data on the enrollment's project */
+	function DisplayTimeline($enrollmentid, $startdatetime, $enddatetime, $selectedprotocols, $allobservations) {
 
-		/* get privacy information */
-		$userid = $_SESSION['userid'];
-	
-		$perms = GetCurrentUserProjectPermissions($projectids);
-		//$urllist['Subjects'] = "subjects.php";
+		$enrollment = ($enrollmentid > 0) ? GetEnrollment($enrollmentid) : null;
+		if ($enrollment == null) {
+			Error("Enrollment not found");
+			return;
+		}
+		$projectid = (int)$enrollment['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
 		DisplayPermissions($perms);
-
-		if (is_null($selectedprotocols)) {
-			$all = true;
+		if (!GetPerm($perms, 'viewdata', $projectid)) {
+			Error("You do not have permission to view data in this project");
+			return;
 		}
-		else {
-			/* get associative array of selected protocols */
+
+		$series = array();
+		$protocols = array();
+		$modalities = array();
+		$selprot = array();
+		$selectedModalities = array();
+		$mindate = null;
+		$maxdate = null;
+
+		$all = is_null($selectedprotocols);
+		if (!$all) {
+			/* associative array of selected protocols: modality => [protocols] */
 			foreach ($selectedprotocols as $sp) {
-				list($a, $b) = explode(":",$sp,2);
-				$selprot[$a][] = $b;
-				
-				$selectedModalities[] = $a;
+				$parts = explode(":", $sp, 2);
+				if (count($parts) != 2) continue;
+				$selprot[$parts[0]][] = $parts[1];
+				$selectedModalities[] = $parts[0];
 			}
 			$selectedModalities = array_unique($selectedModalities);
-			$all = false;
 		}
 
 		/* get list of studies for this enrollment */
-		$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = $enrollmentid order by a.study_num asc";
-		$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.*, datediff(a.study_datetime, c.birthdate) 'ageatscan' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.enrollment_id = ? order by a.study_num asc";
+		$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt2, 'i', $enrollmentid);
+		$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring, [$enrollmentid]);
 		if (mysqli_num_rows($result2) > 0) {
 			$i = 0;
-			
+
 			while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-				$study_id = $row2['study_id'];
+				$study_id = (int)$row2['study_id'];
 				$study_num = $row2['study_num'];
-				$modality = $row2['study_modality'];
+				$modality = (string)$row2['study_modality'];
 				$study_datetime = $row2['study_datetime'];
 				$study_ageatscan = $row2['study_ageatscan'];
-				$calcage = number_format($row2['ageatscan']/365.25,1);
-				$study_operator = $row2['study_operator'];
-				$study_performingphysician = $row2['study_performingphysician'];
+				$calcage = (float)$row2['ageatscan'] / 365.25;
 				$study_site = $row2['study_site'];
 				$study_type = $row2['study_type'];
-				$study_status = $row2['study_status'];
-				$study_doradread = $row2['study_doradread'];
-				
+
 				/* get the age at the time of the study */
-				if ((!is_null($study_ageatscan)) && (trim($study_ageatscan) != 0)) {
-					$age = (double)$study_ageatscan;
-				}
-				else {
-					$age = (double)$calcage;
+				if ((!is_null($study_ageatscan)) && ((float)$study_ageatscan != 0))
+					$age = (float)$study_ageatscan;
+				else
+					$age = $calcage;
+
+				if ($modality == "")
+					continue;
+
+				/* the series table name comes from the study's modality: validate it, it can't be bound */
+				$seriestable = GetSeriesTableName($modality);
+				if (($seriestable == "") || !DatabaseTableExists($seriestable)) {
+					echo "<span style='color:red'>Invalid modality [" . htmlspecialchars($modality) . "]</span><br>";
+					continue;
 				}
 
-				/* check if valid modality */
-				if ($modality != "") {
-					$sqlstring4 = "show tables like '" . strtolower($modality) . "_series'";
-					$result4 = MySQLiQuery($sqlstring4, __FILE__, __LINE__);
-					if (mysqli_num_rows($result4) > 0) {
-						$sqlstring3 = "select * from " . strtolower($modality) . "_series where study_id = $study_id order by series_num asc";
-						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
-						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
-							if ($row3['series_desc'] == "") {
-								$protocol = $row3['series_protocol'];
-							}
-							else {
-								$protocol = $row3['series_desc'];
-							}
-							$seriesdatetime = $row3['series_datetime'];
-							$seriesnum = $row3['series_num'];
-							$seriestr = $row3['series_tr'];
-							$boldreps = $row3['bold_reps'];
-							$dimT = $row3['dimT'];
-							$numfiles = $row3['numfiles'];
-							$seriesduration = $row3['series_duration'];
-							
-							if (is_null($mindate))
-								$mindate = $seriesdatetime;
-							else {
-								if ($seriesdatetime < $mindate)
-									$mindate = $seriesdatetime;
-							}
-							
-							if (is_null($maxdate))
-								$maxdate = $seriesdatetime;
-							else {
-								if ($seriesdatetime > $maxdate)
-									$maxdate = $seriesdatetime;
-							}
+				$sqlstring3 = "select * from `$seriestable` where study_id = ? order by series_num asc";
+				$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+				mysqli_stmt_bind_param($stmt3, 'i', $study_id);
+				$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, [$study_id]);
+				while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
+					$protocol = (string)((($row3['series_desc'] ?? '') == "") ? ($row3['series_protocol'] ?? '') : $row3['series_desc']);
+					$seriesdatetime = (string)($row3['series_datetime'] ?? '');
+					$seriesnum = $row3['series_num'] ?? '';
+					$seriestr = (float)($row3['series_tr'] ?? 0);
+					$boldreps = (int)($row3['bold_reps'] ?? 0);
+					$dimT = (int)($row3['dimT'] ?? 0);
+					$numfiles = (int)($row3['numfiles'] ?? 0);
+					$seriesduration = $row3['series_duration'] ?? '';
 
-							/* calculate scan/experiment duration */
-							if ($seriesduration == "") {
-								if (($boldreps > 1) || ($dimT > 1)) {
-									$duration = ($seriestr * max($boldreps, $dimT))/1000.0;
-								}
-								else {
-									$duration = ($seriestr * $numfiles)/1000.0;
-								}
-							}
-							else {
-								$duration = $seriesduration;
-							}
-							
-							/* check if all modalities should be displayed, or only the selected modalities */
-							if (($all) || (in_array($modality, $selectedModalities))) {
-								/* check if all protocols for this modality should be displayed, or only the selected */
-								if ($all || in_array($protocol, $selprot[$modality])) {
-									/* check if the series datetime is within range */
-									if ( (is_null($startdatetime) || is_null($enddatetime)) || (($seriesdatetime > $startdatetime) && ($seriesdatetime < $enddatetime)) ) {
-										$series[$i]['studynum'] = $study_num;
-										$series[$i]['seriesnum'] = $seriesnum;
-										$series[$i]['modality'] = $modality;
-										$series[$i]['studydate'] = $study_datetime;
-										$series[$i]['seriesdate'] = $seriesdatetime;
-										$series[$i]['protocol'] = $protocol;
-										$series[$i]['age'] = $age;
-										$series[$i]['studysite'] = $study_site;
-										$series[$i]['studytype'] = $study_type;
-										$series[$i]['duration'] = $duration;
-									}
-								}
-							}
-							
-							if (is_null($protocols[$modality]))
-								$protocols[$modality][] = $protocol;
-							
-							if (!in_array($protocol, $protocols[$modality]))
-								$protocols[$modality][] = $protocol;
-							
-							$modalities[] =$modality;
-							
-							$i++;
-						}
+					if (is_null($mindate) || ($seriesdatetime < $mindate))
+						$mindate = $seriesdatetime;
+					if (is_null($maxdate) || ($seriesdatetime > $maxdate))
+						$maxdate = $seriesdatetime;
+
+					/* calculate scan/experiment duration (seconds) */
+					if ((string)$seriesduration == "") {
+						if (($boldreps > 1) || ($dimT > 1))
+							$duration = ($seriestr * max($boldreps, $dimT)) / 1000.0;
+						else
+							$duration = ($seriestr * $numfiles) / 1000.0;
 					}
 					else {
-						echo "<span style='color:red'>Invalid modality [$modality]</span><br>";
+						$duration = (float)$seriesduration;
 					}
-				}
-			}
-			
-			/* get observations */
-			if ($allobservations) {
-				$sqlstringA = "select * from observations where enrollment_id = $enrollmentid order by observation_name";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$observation_name = $rowA['observation_name'];
-					$instrument_name = $rowA['instrument_name'];
-					$observation_value = $rowA['observation_value'];
-					$observation_startdate = $rowA['observation_startdate'];
-					$observation_enddate = $rowA['observation_enddate'];
-					$observation_duration = $rowA['observation_duration'];
-					
-					$series[$i]['studynum'] = '';
-					$series[$i]['seriesnum'] = '';
-					$series[$i]['modality'] = 'Measure';
-					$series[$i]['studydate'] = $observation_startdate;
-					$series[$i]['seriesdate'] = $observation_startdate;
-					$series[$i]['protocol'] = $observation_name;
-					$series[$i]['age'] = 0;
-					$series[$i]['studysite'] = '';
-					$series[$i]['studytype'] = $instrument_name;
-					$series[$i]['duration'] = $observation_duration;
+
+					/* show all modalities/protocols, or only the selected ones, within the date range */
+					if ($all || (in_array($modality, $selectedModalities) && in_array($protocol, $selprot[$modality] ?? array()))) {
+						if (is_null($startdatetime) || is_null($enddatetime) || (($seriesdatetime > $startdatetime) && ($seriesdatetime < $enddatetime))) {
+							$series[$i] = array(
+								'studynum' => $study_num,
+								'seriesnum' => $seriesnum,
+								'modality' => $modality,
+								'studydate' => $study_datetime,
+								'seriesdate' => $seriesdatetime,
+								'protocol' => $protocol,
+								'age' => $age,
+								'studysite' => $study_site,
+								'studytype' => $study_type,
+								'duration' => $duration,
+							);
+						}
+					}
+
+					if (!isset($protocols[$modality]) || !in_array($protocol, $protocols[$modality]))
+						$protocols[$modality][] = $protocol;
+
+					$modalities[] = $modality;
+
 					$i++;
 				}
+				mysqli_stmt_close($stmt3);
 			}
-			
+
+			/* get observations */
+			if ($allobservations) {
+				$sqlstringA = "select observation_name, observation_instrument, observation_startdate, observation_duration from observations where enrollment_id = ? order by observation_name";
+				$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+				mysqli_stmt_bind_param($stmtA, 'i', $enrollmentid);
+				$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$enrollmentid]);
+				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+					$series[$i] = array(
+						'studynum' => '',
+						'seriesnum' => '',
+						'modality' => 'Measure',
+						'studydate' => $rowA['observation_startdate'],
+						'seriesdate' => (string)$rowA['observation_startdate'],
+						'protocol' => (string)$rowA['observation_name'],
+						'age' => 0.0,
+						'studysite' => '',
+						'studytype' => $rowA['observation_instrument'],
+						'duration' => (float)$rowA['observation_duration'],
+					);
+					$i++;
+				}
+				mysqli_stmt_close($stmtA);
+			}
+
 			$modalities = array_unique($modalities);
-			
-			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate);
-			
-			$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'seriesnum'=>SORT_ASC, 'modality'=>SORT_DESC));
+
+			DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selprot, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate);
+
+			if (count($series) > 0)
+				$series = array_msort($series, array('seriesdate'=>SORT_ASC, 'seriesnum'=>SORT_ASC, 'modality'=>SORT_DESC));
+
+			/* chart rows, built server-side and passed to JS as JSON (protocol names come from DICOM headers) */
+			$datarows = array();
+			foreach ($series as $v) {
+				$sdate = str_replace(" ", "T", $v['seriesdate']);
+				$stime = strtotime($v['seriesdate']);
+				if ($stime === false) continue;
+				$edate = date('Y-m-d\TH:i:s', (int)($stime + $v['duration']));
+				$datarows[] = array((string)$v['protocol'], $sdate, $edate);
+			}
+			$datajson = json_encode($datarows, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE);
 			?>
-			
+
 			<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 			<script type="text/javascript">
 				google.charts.load('current', {'packages':['timeline']});
@@ -287,27 +252,18 @@
 					var chart = new google.visualization.Timeline(container);
 					var dataTable = new google.visualization.DataTable();
 
-					dataTable.addColumn({ type: 'string', id: 'President' });
+					dataTable.addColumn({ type: 'string', id: 'Protocol' });
 					dataTable.addColumn({ type: 'date', id: 'Start' });
 					dataTable.addColumn({ type: 'date', id: 'End' });
-					dataTable.addRows([<?
-						foreach ($series as $key => $v) {
-							$sdate = str_replace(" ", "T", $v['seriesdate']);
-							//$edate = date_format(date_add(date_create($sdate), date_interval_create_from_date_string("$v['duration'] seconds")), "Y-m-d H:i:s");
-							$edateinsec = (int)(strtotime($sdate) + $v['duration']);
-							$edate = date('Y-m-d H:i:s', $edateinsec);
-							$desc = $v['protocol'];
-							$datarows[] = "[ '$desc', new Date('$sdate'), new Date('$edate') ]";
-						}
-						echo implode2("\n,", $datarows);
-						?>]);
+					var rows = <?=$datajson?>;
+					dataTable.addRows(rows.map(function(r) { return [r[0], new Date(r[1]), new Date(r[2])]; }));
 					var options = { avoidOverlappingGridLines: false, height: 800, timeline: { barLabelStyle: {fontName: "arial", fontSize: "8" }} };
 					chart.draw(dataTable, options);
 				}
 			</script>
 
 			<div id="timeline" style="height: 800px;"></div>
-  
+
 			<table class="smalldisplaytable">
 				<thead>
 					<th>Study</th>
@@ -323,22 +279,22 @@
 				</thead>
 				<tbody>
 				<?
-					foreach ($series as $key => $tr) {
+					foreach ($series as $tr) {
 						?>
 						<tr>
-							<td><?=$tr['studynum']?></td>
-							<td><?=$tr['seriesnum']?></td>
+							<td><?=htmlspecialchars((string)$tr['studynum'])?></td>
+							<td><?=htmlspecialchars((string)$tr['seriesnum'])?></td>
 							<td><?
 							 if ($tr['modality'] == "") { ?><span style="color: white; background-color: red">&nbsp;blank&nbsp;</span><? }
-							 else { echo $tr['modality']; }
+							 else { echo htmlspecialchars((string)$tr['modality']); }
 							?></td>
-							<td><?=$tr['studydate']?></td>
-							<td><?=$tr['seriesdate']?></td>
-							<td><?=$tr['protocol']?></td>
-							<td><?=number_format($tr['age'],1)?></td>
-							<td><?=$tr['studysite']?></td>
-							<td><?=$tr['studytype']?></td>
-							<td><?=$tr['duration']?></td>
+							<td><?=htmlspecialchars((string)$tr['studydate'])?></td>
+							<td><?=htmlspecialchars((string)$tr['seriesdate'])?></td>
+							<td><?=htmlspecialchars((string)$tr['protocol'])?></td>
+							<td><?=number_format((float)$tr['age'], 1)?></td>
+							<td><?=htmlspecialchars((string)$tr['studysite'])?></td>
+							<td><?=htmlspecialchars((string)$tr['studytype'])?></td>
+							<td><?=htmlspecialchars((string)$tr['duration'])?></td>
 						</tr>
 						<?
 					}
@@ -350,39 +306,34 @@
 		else {
 			echo "No imaging studies";
 		}
+		mysqli_stmt_close($stmt2);
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayOptionsTable ---------------- */
 	/* -------------------------------------------- */
-	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selectedprotocols, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate) {
-		
+	/* the filter form. It changes nothing, so it's a GET */
+	function DisplayOptionsTable($protocols, $modalities, $enrollmentid, $selprot, $allobservations, $startdatetime, $enddatetime, $mindate, $maxdate) {
+
 		natsort($modalities);
-		
-		$selprot = array();
-		
-		foreach ($selectedprotocols as $sp) {
-			list($a, $b) = explode(":",$sp,2);
-			
-			$selprot[$a][] = $b;
-		}
-		
+
 		?>
 		<div style="background-color: #eee; border: 2px solid #888; border-radius: 8px; padding: 10px;">
-		
-		<form method="post" id="form1" action="timeline.php">
+
+		<form method="get" id="form1" action="timeline.php">
 		<input type="hidden" name="action" value="displaytimeline">
-		<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+		<input type="hidden" name="enrollmentid" value="<?=(int)$enrollmentid?>">
 		<b>Protocols</b>
 		<table style="font-size: smaller;">
 			<tr>
 			<?
 			foreach ($modalities as $modality) {
-				$p = $protocols[$modality];
+				$p = $protocols[$modality] ?? array();
 				natsort($p);
-				$parentCheckID = "parent-$modality";
-				$childCheckClass = "child-$modality";
+				/* modality passed GetSeriesTableName(), so it is alphanumeric; safe in ids/classes */
+				$parentCheckID = "parent-" . preg_replace('/[^A-Za-z0-9]/', '', $modality);
+				$childCheckClass = "child-" . preg_replace('/[^A-Za-z0-9]/', '', $modality);
 				?>
 				<script>
 					$(document).ready(function() {
@@ -399,21 +350,16 @@
 						});
 					});
 				</script>
-				
+
 				<td valign="top" style="border-right: 1px solid #aaa; padding: 8px">
-				<b style="font-size: larger;"><?=$modality?></b> &nbsp; <label style="color: #666;"><input type="checkbox" id="<?=$parentCheckID?>"> Select all</label>
+				<b style="font-size: larger;"><?=htmlspecialchars($modality)?></b> &nbsp; <label style="color: #666;"><input type="checkbox" id="<?=$parentCheckID?>"> Select all</label>
 				<br><br>
 				<div style="column-count: 2; column-fill: auto;">
 				<?
 				foreach ($p as $protocol) {
-					if ((isset($selprot[$modality])) && (in_array($protocol, $selprot[$modality]))) {
-						$checked = "checked";
-					}
-					else {
-						$checked = "";
-					}
+					$checked = (isset($selprot[$modality]) && in_array($protocol, $selprot[$modality])) ? "checked" : "";
 					?>
-					<label><input type="checkbox" class="all child-<?=$modality?>" name="selectedprotocols[]" value="<?=$modality?>:<?=$protocol?>" <?=$checked?>> <?=$protocol?></label><br>
+					<label><input type="checkbox" class="all <?=$childCheckClass?>" name="selectedprotocols[]" value="<?=htmlspecialchars($modality . ":" . $protocol)?>" <?=$checked?>> <?=htmlspecialchars($protocol)?></label><br>
 					<?
 				}
 				?>
@@ -426,20 +372,20 @@
 		</table>
 		<hr>
 		<b>Measures</b>
-		<input type="checkbox" name="allobservations" value="1" <? if ($allobservations) { echo "checked"; } ?>> Include all observations
+		<label><input type="checkbox" name="allobservations" value="1" <? if ($allobservations) { echo "checked"; } ?>> Include all observations</label>
 		<hr>
 		<b>Series Date</b><br>
-		Data range <?=$mindate?> to <?=$maxdate?><br>
-		<input type="datetime-local" name="startdatetime" value="<?=str_replace(" ", "T", $startdatetime)?>"> to <input type="datetime-local" name="enddatetime" value="<?=str_replace(" ", "T", $enddatetime)?>">
-		
+		Data range <?=htmlspecialchars((string)$mindate)?> to <?=htmlspecialchars((string)$maxdate)?><br>
+		<input type="datetime-local" name="startdatetime" value="<?=htmlspecialchars(str_replace(" ", "T", (string)$startdatetime))?>"> to <input type="datetime-local" name="enddatetime" value="<?=htmlspecialchars(str_replace(" ", "T", (string)$enddatetime))?>">
+
 		<br><br><br>
 		<input type="submit" value="Update" class="ui primary button">
-		
+
 		</form>
 		</div>
 		<?
 	}
-	
+
 ?>
 
 

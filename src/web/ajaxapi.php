@@ -131,8 +131,10 @@
 		case 'updatestudydetails':
 			if (AjaxRequirePOSTToken()) UpdateStudyDetails($subjectid, $studyid, $column, $value);
 			break;
+		/* observations.php: changes are POST + CSRF token; every handler checks View/Edit Data on the
+		   observations' projects (see CheckObservationPerms) */
 		case 'updateobservationdetails':
-			UpdateObservationDetails($observationid, $column, $value, $tz_offset);
+			if (AjaxRequirePOSTToken()) UpdateObservationDetails($observationid, $column, $value, $tz_offset);
 			break;
 		case 'updateseriesdetails':
 			UpdateSeriesDetails(GetVariable("id"), GetVariable("modality"), GetVariable("element_id"), GetVariable("update_value"));
@@ -158,23 +160,24 @@
 		case 'getchecklisttimeseries':
 			GetChecklistTimeseries(GetVariable("enrollmentid"), GetVariable("instrumentitemid"), GetVariable("tstart"), GetVariable("tend"), GetVariable("maxpoints"));
 			break;
+		/* checklist.php missing-data reasons: POST + CSRF token, Edit Data on the enrollment's project */
 		case 'setmissingreason':
-			ChecklistSetMissingReason(GetVariable("enrollmentid"), GetVariable("projectchecklistid"), GetVariable("reason"));
+			if (AjaxRequirePOSTTokenJSON()) ChecklistSetMissingReason(GetVariable("enrollmentid"), GetVariable("projectchecklistid"), GetVariable("reason"));
 			break;
 		case 'deletemissingreason':
-			ChecklistDeleteMissingReason(GetVariable("missingdataid"));
+			if (AjaxRequirePOSTTokenJSON()) ChecklistDeleteMissingReason(GetVariable("missingdataid"));
 			break;
 		case 'bulkupdateobservations':
-			BulkUpdateObservations($observationids, $column, $value, $tz_offset);
+			if (AjaxRequirePOSTTokenJSON()) BulkUpdateObservations($observationids, $column, $value, $tz_offset);
 			break;
 		case 'bulkdeleteobservations':
-			BulkDeleteObservations($observationids);
+			if (AjaxRequirePOSTTokenJSON()) BulkDeleteObservations($observationids);
 			break;
 		case 'bulkconvertvaluetometa':
-			BulkConvertValueToMeta($observationids);
+			if (AjaxRequirePOSTTokenJSON()) BulkConvertValueToMeta($observationids);
 			break;
 		case 'bulkmovenewsurvey':
-			BulkMoveToNewSurvey($observationids);
+			if (AjaxRequirePOSTTokenJSON()) BulkMoveToNewSurvey($observationids);
 			break;
 		case 'searchinstruments':
 			SearchInstruments($term, $projectid);
@@ -183,25 +186,25 @@
 			SearchInstrumentItems($term, $instrumentid);
 			break;
 		case 'addinstrument':
-			AddInstrumentAjax($instrumentname, $instrumentnotes, $projectid);
+			if (AjaxRequirePOSTTokenJSON()) AddInstrumentAjax($instrumentname, $instrumentnotes, $projectid);
 			break;
 		case 'addinstrumentitem':
-			AddInstrumentItemAjax($itemname, $itemtype, $itemnotes, $instrumentid);
+			if (AjaxRequirePOSTTokenJSON()) AddInstrumentItemAjax($itemname, $itemtype, $itemnotes, $instrumentid);
 			break;
 		case 'formalizeinstrument':
-			FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
+			if (AjaxRequirePOSTTokenJSON()) FormalizeInstrument($instrumentname, $originalname, $projectid, $itemnamesJson);
 			break;
 		case 'getsurveys':
 			GetSurveys((int)$enrollmentid, (int)$instrumentid);
 			break;
 		case 'assigntosurvey':
-			AssignToSurvey((int)$surveyid, $observationids);
+			if (AjaxRequirePOSTTokenJSON()) AssignToSurvey((int)$surveyid, $observationids);
 			break;
 		case 'createandassignsurvey':
-			CreateAndAssignSurvey((int)$enrollmentid, (int)$instrumentid, $startdate, $enddate, $rater, $notes, $observationids);
+			if (AjaxRequirePOSTTokenJSON()) CreateAndAssignSurvey((int)$enrollmentid, (int)$instrumentid, $startdate, $enddate, $rater, $notes, $observationids);
 			break;
 		case 'updatesurvey':
-			UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes, $surveystatus);
+			if (AjaxRequirePOSTTokenJSON()) UpdateSurvey((int)$surveyid, $startdate, $enddate, $rater, $notes, $surveystatus);
 			break;
 		case 'getinstrumentitems':
 			GetInstrumentItems((int)$instrumentid);
@@ -224,11 +227,12 @@
 		case 'bulkdeletemappings':
 			BulkDeleteMappings(GetVariable('ids'));
 			break;
+		/* instruments.php grid: POST + CSRF token, Edit Data on the items' project */
 		case 'bulkdeleteitems':
-			BulkDeleteItems(GetVariable('ids'));
+			if (AjaxRequirePOSTTokenJSON()) BulkDeleteItems(GetVariable('ids'));
 			break;
 		case 'bulkupdateitemtype':
-			BulkUpdateItemType(GetVariable('ids'), GetVariable('type'));
+			if (AjaxRequirePOSTTokenJSON()) BulkUpdateItemType(GetVariable('ids'), GetVariable('type'));
 			break;
 		case 'dicomreceivercounts':
 			GetDicomReceiverCounts();
@@ -1421,11 +1425,162 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- AjaxRequirePOSTTokenJSON ----------- */
+	/* -------------------------------------------- */
+	/* AjaxRequirePOSTToken() for actions that answer in JSON: the error is {"error": "..."} */
+	function AjaxRequirePOSTTokenJSON() {
+		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || !VerifyCSRFToken(false)) {
+			JsonHeader();
+			echo json_encode(['error' => 'This request could not be verified. Reload the page and try again']);
+			return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckObservationPerms -------------- */
+	/* -------------------------------------------- */
+	/* Observations are project data: View Data on the enrollment's project to read them, Edit Data to
+	   change them. $ids is an observation ID or an array of them. Returns the de-duplicated int IDs if
+	   every one exists, belongs to $enrollmentid (when > 0), and the user has $perm ('viewdata' or
+	   'modifydata') on its project. Returns false otherwise, so a request with one bad ID does nothing */
+	function CheckObservationPerms($ids, $perm, $enrollmentid = 0) {
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$ids), function($id) { return $id > 0; })));
+		if (count($ids) == 0)
+			return false;
+
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select o.observation_id, e.enrollment_id, e.project_id from observations o join enrollment e on o.enrollment_id = e.enrollment_id where o.observation_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$rows[] = $row;
+		mysqli_stmt_close($stmt);
+
+		if (count($rows) != count($ids))
+			return false;
+
+		$perms = GetCurrentUserProjectPermissions(array_column($rows, 'project_id'));
+		foreach ($rows as $row) {
+			if (((int)$enrollmentid > 0) && ((int)$row['enrollment_id'] != (int)$enrollmentid))
+				return false;
+			if (!GetPerm($perms, $perm, $row['project_id']))
+				return false;
+		}
+		return $ids;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckSurveyPerms ------------------- */
+	/* -------------------------------------------- */
+	/* An observation survey has no project of its own; it belongs to the projects of the observations
+	   assigned to it. True if the survey exists and the user has $perm on every one of those projects.
+	   A survey with no observations belongs to no project, so only admins may change it */
+	function CheckSurveyPerms($surveyid, $perm) {
+		$surveyid = (int)$surveyid;
+
+		$sqlstring = "select survey_id from observation_surveys where survey_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $surveyid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$surveyid]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$exists)
+			return false;
+
+		$sqlstring = "select distinct e.project_id from observations o join enrollment e on o.enrollment_id = e.enrollment_id where o.observationsurvey_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $surveyid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$surveyid]);
+		$projectids = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$projectids[] = (int)$row['project_id'];
+		mysqli_stmt_close($stmt);
+
+		if (count($projectids) == 0)
+			return IsAdminUser();
+
+		$perms = GetCurrentUserProjectPermissions($projectids);
+		foreach ($projectids as $projectid) {
+			if (!GetPerm($perms, $perm, $projectid))
+				return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckProjectDataPerm --------------- */
+	/* -------------------------------------------- */
+	/* true if the user has $perm ('viewdata' or 'modifydata') on $projectid */
+	function CheckProjectDataPerm($projectid, $perm) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1)
+			return false;
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, $perm, $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetInstrumentProjectID ------------- */
+	/* -------------------------------------------- */
+	/* the project an instrument belongs to, or 0 if the instrument doesn't exist */
+	function GetInstrumentProjectID($instrumentid) {
+		$instrumentid = (int)$instrumentid;
+		$sqlstring = "select project_id from instruments where instrument_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return $row ? (int)$row['project_id'] : 0;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckInstrumentItemEditPerms ------- */
+	/* -------------------------------------------- */
+	/* Instrument items are project definitions: Edit Data on the instrument's project to change them.
+	   Returns the de-duplicated int IDs if every item exists and is editable, otherwise false */
+	function CheckInstrumentItemEditPerms($ids) {
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$ids), function($id) { return $id > 0; })));
+		if (count($ids) == 0)
+			return false;
+
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select ii.instrumentitem_id, ins.project_id from instrument_items ii join instruments ins on ii.instrument_id = ins.instrument_id where ii.instrumentitem_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$rows[] = $row;
+		mysqli_stmt_close($stmt);
+
+		if (count($rows) != count($ids))
+			return false;
+
+		$perms = GetCurrentUserProjectPermissions(array_column($rows, 'project_id'));
+		foreach ($rows as $row) {
+			if (!GetPerm($perms, 'modifydata', $row['project_id']))
+				return false;
+		}
+		return $ids;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- UpdateObservationDetails ----------- */
 	/* -------------------------------------------- */
 	function UpdateObservationDetails($observationid, $column, $value, $tz_offset = '') {
 		$observationid = (int)$observationid;
 		if ($observationid < 1) { echo "error - invalid observation ID"; return; }
+		if (!CheckObservationPerms($observationid, 'modifydata')) { echo "error - you do not have permission to edit data in this project"; return; }
 
 		$allowedColumns = [
 			'name'          => 'observation_name',
@@ -1438,7 +1593,7 @@
 		];
 
 		if (!array_key_exists($column, $allowedColumns)) {
-			echo "error - column [$column] not recognized";
+			echo "error - column not recognized";
 			return;
 		}
 
@@ -1456,7 +1611,7 @@
 			mysqli_stmt_bind_param($stmt, 'si', $value, $observationid);
 		} elseif (in_array($column, $dateColumns)) {
 			$nullableValue  = (trim($value) === '') ? null : $value;
-			$nullableTzOff  = (trim($tz_offset) === '') ? null : $tz_offset;
+			$nullableTzOff  = ValidTzOffset($tz_offset);
 			$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
 			mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $observationid);
 		} else {
@@ -1711,6 +1866,7 @@
 		JsonHeader();
 		$observationid = (int)$observationid;
 		if ($observationid < 1) { echo json_encode(['error' => 'Invalid ID']); return; }
+		if (!CheckObservationPerms($observationid, 'viewdata')) { echo json_encode(['error' => 'You do not have permission to view data in this project']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select variable, value from observation_meta where observation_id = ? order by variable");
 		mysqli_stmt_bind_param($stmt, 'i', $observationid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -1734,6 +1890,7 @@
 		JsonHeader();
 		$observationid = (int)$observationid;
 		if ($observationid < 1) { echo json_encode(['error' => 'Invalid observation ID']); return; }
+		if (!CheckObservationPerms($observationid, 'viewdata')) { echo json_encode(['error' => 'You do not have permission to view data in this project']); return; }
 
 		$maxpoints = (int)$maxpoints;
 		if ($maxpoints < 100)   $maxpoints = 2000;
@@ -1827,6 +1984,11 @@
 		$instrumentitemid = (int)$instrumentitemid;
 		if ($enrollmentid < 1 || $instrumentitemid < 1) { echo json_encode(['error' => 'Invalid parameters']); return; }
 
+		/* checklist.php: any member of the enrollment's project may view the checklist charts */
+		$enrollment = GetEnrollment($enrollmentid);
+		$projectid = $enrollment ? (int)$enrollment['project_id'] : 0;
+		if (($projectid < 1) || !IsProjectMember(GetCurrentUserProjectPermissions(array($projectid)), $projectid)) { echo json_encode(['error' => 'You do not have permission to view this project']); return; }
+
 		$maxpoints = (int)$maxpoints;
 		if ($maxpoints < 100)   $maxpoints = 1000;
 		if ($maxpoints > 20000) $maxpoints = 20000;
@@ -1917,17 +2079,19 @@
 			'obsInstrument' => 'observation_instrument',
 		];
 		if (!array_key_exists($column, $allowedColumns)) {
-			echo json_encode(['error' => "Column [$column] not recognized"]);
+			echo json_encode(['error' => "Column not recognized"]);
 			return;
 		}
+
+		$ids = CheckObservationPerms($ids, 'modifydata');
+		if ($ids === false) { echo json_encode(['error' => 'You do not have permission to edit one or more of the selected observations']); return; }
+
 		$dbColumn      = $allowedColumns[$column];
 		$isDate        = ($column === 'startdate' || $column === 'enddate');
 		$nullableValue = (trim($value) === '') ? null : $value;
-		$nullableTzOff = (trim($tz_offset) === '') ? null : $tz_offset;
+		$nullableTzOff = ValidTzOffset($tz_offset);
 		$updated = 0;
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 			if ($isDate) {
 				$stmt = mysqli_prepare($GLOBALS['linki'], "update observations set $dbColumn = ?, observation_tz_offset = ? where observation_id = ?");
 				mysqli_stmt_bind_param($stmt, 'ssi', $nullableValue, $nullableTzOff, $id);
@@ -1950,10 +2114,12 @@
 		JsonHeader();
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
+
+		$ids = CheckObservationPerms($ids, 'modifydata');
+		if ($ids === false) { echo json_encode(['error' => 'You do not have permission to delete one or more of the selected observations']); return; }
+
 		$deleted = 0;
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "delete from observations where observation_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -1974,24 +2140,36 @@
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 
-		$intIds = array_values(array_filter(array_map('intval', $ids), function($id) { return $id > 0; }));
-		if (empty($intIds)) { echo json_encode(['error' => 'No valid IDs']); return; }
+		$intIds = CheckObservationPerms($ids, 'modifydata');
+		if ($intIds === false) { echo json_encode(['error' => 'You do not have permission to edit one or more of the selected observations']); return; }
 
-		$idList = implode(',', $intIds);
+		$placeholders = implode(',', array_fill(0, count($intIds), '?'));
+		$types = str_repeat('i', count($intIds));
 
 		/* derive survey startdate from the earliest non-zero observation_startdate */
-		$row = mysqli_fetch_array(MySQLiQuery(
-			"select min(case when observation_startdate = '0000-01-01 00:00:00' or observation_startdate is null then null else observation_startdate end) as min_date from observations where observation_id in ($idList)",
-			__FILE__, __LINE__
-		), MYSQLI_ASSOC);
-		$startdate_sql = (!empty($row['min_date'])) ? "'" . mysqli_real_escape_string($GLOBALS['linki'], $row['min_date']) . "'" : "null";
+		$sqlstring = "select min(case when observation_startdate = '0000-01-01 00:00:00' or observation_startdate is null then null else observation_startdate end) as min_date from observations where observation_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$intIds);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $intIds);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$startdate = (!empty($row['min_date'])) ? $row['min_date'] : null;
 
 		/* create the new survey (no instrument affiliation — observations may span instruments) */
-		MySQLiQuery("insert into observation_surveys (instrument_id, survey_startdate, survey_entrydate) values (null, $startdate_sql, now())", __FILE__, __LINE__);
+		$sqlstring = "insert into observation_surveys (instrument_id, survey_startdate, survey_entrydate) values (null, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $startdate);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$startdate]);
 		$surveyid = (int)mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 
 		/* reassign all selected observations to the new survey regardless of prior assignment */
-		MySQLiQuery("update observations set observationsurvey_id = $surveyid where observation_id in ($idList)", __FILE__, __LINE__);
+		$sqlstring = "update observations set observationsurvey_id = ? where observation_id in ($placeholders)";
+		$params = array_merge([$surveyid], $intIds);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i' . $types, ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
 		echo json_encode(['survey_id' => $surveyid, 'moved' => count($intIds)]);
 	}
@@ -2023,12 +2201,13 @@
 		$ids = json_decode($observationidsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['error' => 'No IDs provided']); return; }
 
+		$ids = CheckObservationPerms($ids, 'modifydata');
+		if ($ids === false) { echo json_encode(['error' => 'You do not have permission to edit one or more of the selected observations']); return; }
+
 		$converted = 0;
 		$skipped   = 0;
 
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 
 			/* fetch current value */
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select observation_value from observations where observation_id = ?");
@@ -2075,7 +2254,8 @@
 	/* -------------------------------------------- */
 	function SearchInstruments($term, $projectid) {
 		JsonHeader();
-		if ($projectid < 1) { echo json_encode([]); return; }
+		$projectid = (int)$projectid;
+		if (!CheckProjectDataPerm($projectid, 'viewdata')) { echo json_encode([]); return; }
 		$term = trim($term);
 		$results = array();
 		if ($term === '') {
@@ -2100,7 +2280,9 @@
 	/* -------------------------------------------- */
 	function SearchInstrumentItems($term, $instrumentid) {
 		JsonHeader();
+		$instrumentid = (int)$instrumentid;
 		if ($instrumentid < 1) { echo json_encode([]); return; }
+		if (!CheckProjectDataPerm(GetInstrumentProjectID($instrumentid), 'viewdata')) { echo json_encode([]); return; }
 		$term = trim($term);
 		$results = array();
 		if ($term === '') {
@@ -2126,7 +2308,9 @@
 	function AddInstrumentAjax($name, $notes, $projectid) {
 		JsonHeader();
 		$name = trim($name);
+		$projectid = (int)$projectid;
 		if ($name == '' || $projectid < 1) { echo json_encode(['error' => 'Invalid name or project']); return; }
+		if (!CheckProjectDataPerm($projectid, 'modifydata')) { echo json_encode(['error' => 'You do not have permission to edit data in this project']); return; }
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instruments (project_id, instrument_name, instrument_notes) values (?, ?, ?)");
 		mysqli_stmt_bind_param($stmt, 'iss', $projectid, $name, $notes);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2142,7 +2326,9 @@
 	function AddInstrumentItemAjax($name, $type, $notes, $instrumentid) {
 		JsonHeader();
 		$name = trim($name);
+		$instrumentid = (int)$instrumentid;
 		if ($name == '' || $instrumentid < 1) { echo json_encode(['error' => 'Invalid name or instrument']); return; }
+		if (!CheckProjectDataPerm(GetInstrumentProjectID($instrumentid), 'modifydata')) { echo json_encode(['error' => 'You do not have permission to edit data in this project']); return; }
 		$validTypes = ['int', 'double', 'string', 'timeseries'];
 		if (!in_array($type, $validTypes)) $type = 'string';
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into instrument_items (instrument_id, item_name, item_type, item_notes) values (?, ?, ?, ?)");
@@ -2161,14 +2347,18 @@
 		JsonHeader();
 		$instrumentname = trim($instrumentname);
 		$originalname   = trim($originalname);
+		$projectid      = (int)$projectid;
 		if ($instrumentname === '' || $projectid < 1) { echo json_encode(['error' => 'Invalid instrument name or project']); return; }
+		/* converts observations across the whole project, so needs Edit Data on the project */
+		if (!CheckProjectDataPerm($projectid, 'modifydata')) { echo json_encode(['error' => 'You do not have permission to edit data in this project']); return; }
 
 		/* check for duplicate */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select instrument_id from instruments where project_id = ? and instrument_name = ? limit 1");
 		mysqli_stmt_bind_param($stmt, 'is', $projectid, $instrumentname);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) { echo json_encode(['error' => 'An instrument with this name already exists in the project']); return; }
+		$duplicate = (mysqli_num_rows($result) > 0);
 		mysqli_stmt_close($stmt);
+		if ($duplicate) { echo json_encode(['error' => 'An instrument with this name already exists in the project']); return; }
 
 		$itemnames = json_decode($itemnamesJson, true);
 		if (!is_array($itemnames)) $itemnames = array();
@@ -2185,6 +2375,7 @@
 		/* create items and convert observations project-wide */
 		$totalConverted = 0;
 		foreach ($itemnames as $itemname) {
+			if (!is_string($itemname)) continue;
 			$itemname = trim($itemname);
 			if ($itemname === '') continue;
 
@@ -2212,13 +2403,22 @@
 	/* returns JSON array of surveys for a given enrollment + instrument, most recent first */
 	function GetSurveys($enrollmentid, $instrumentid) {
 		JsonHeader();
+		$enrollmentid = (int)$enrollmentid;
+		$instrumentid = (int)$instrumentid;
 		if ($enrollmentid <= 0 || $instrumentid <= 0) {
 			echo json_encode(array());
 			return;
 		}
+		$enrollment = GetEnrollment($enrollmentid);
+		if (($enrollment == null) || !CheckProjectDataPerm($enrollment['project_id'], 'viewdata')) {
+			echo json_encode(array());
+			return;
+		}
 		/* find surveys that have at least one observation from this enrollment */
-		$sqlstring = "select s.survey_id, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observation_surveys s join observations o on o.observationsurvey_id = s.survey_id where o.enrollment_id = $enrollmentid and s.instrument_id = $instrumentid group by s.survey_id order by s.survey_startdate desc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select s.survey_id, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit from observation_surveys s join observations o on o.observationsurvey_id = s.survey_id where o.enrollment_id = ? and s.instrument_id = ? group by s.survey_id order by s.survey_startdate desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $instrumentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentid, $instrumentid]);
 		$surveys = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$surveys[] = array(
@@ -2230,6 +2430,7 @@
 				'visit'     => $row['survey_visit'],
 			);
 		}
+		mysqli_stmt_close($stmt);
 		echo json_encode($surveys);
 	}
 
@@ -2240,6 +2441,7 @@
 	/* assigns a list of observation IDs to an existing survey */
 	function AssignToSurvey($surveyid, $observationidsJson) {
 		JsonHeader();
+		$surveyid = (int)$surveyid;
 		if ($surveyid <= 0) {
 			echo json_encode(array('error' => 'invalid survey_id'));
 			return;
@@ -2249,9 +2451,19 @@
 			echo json_encode(array('error' => 'no observation IDs provided'));
 			return;
 		}
-		$idList = implode(',', array_map('intval', $ids));
-		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
-		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* Edit Data on the observations' projects, and on the projects of the survey's existing observations */
+		$ids = CheckObservationPerms($ids, 'modifydata');
+		if (($ids === false) || !CheckSurveyPerms($surveyid, 'modifydata')) {
+			echo json_encode(array('error' => 'You do not have permission to edit these observations or this survey'));
+			return;
+		}
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "update observations set observationsurvey_id = ? where observation_id in ($placeholders)";
+		$params = array_merge([$surveyid], $ids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($params)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		echo json_encode(array('success' => true));
 	}
 
@@ -2262,6 +2474,8 @@
 	/* creates a new observation_surveys record and assigns a list of observations to it */
 	function CreateAndAssignSurvey($enrollmentid, $instrumentid, $startdate, $enddate, $rater, $notes, $observationidsJson) {
 		JsonHeader();
+		$enrollmentid = (int)$enrollmentid;
+		$instrumentid = (int)$instrumentid;
 		if ($enrollmentid <= 0) {
 			echo json_encode(array('error' => 'invalid enrollment_id'));
 			return;
@@ -2271,23 +2485,39 @@
 			echo json_encode(array('error' => 'no observation IDs provided'));
 			return;
 		}
+		/* the observations must all belong to this enrollment, with Edit Data on its project */
+		$ids = CheckObservationPerms($ids, 'modifydata', $enrollmentid);
+		if ($ids === false) {
+			echo json_encode(array('error' => 'You do not have permission to edit one or more of these observations'));
+			return;
+		}
+		/* the instrument, if given, must belong to the enrollment's project */
+		$enrollment = GetEnrollment($enrollmentid);
+		if (($instrumentid > 0) && (($enrollment == null) || (GetInstrumentProjectID($instrumentid) != (int)$enrollment['project_id']))) {
+			echo json_encode(array('error' => 'invalid instrument'));
+			return;
+		}
 		$startdateVal    = !empty(trim($startdate)) ? $startdate : null;
 		$enddateVal      = !empty(trim($enddate))   ? $enddate   : null;
 		$raterVal        = !empty(trim($rater))     ? $rater     : null;
 		$notesVal        = !empty(trim($notes))     ? $notes     : null;
-		$instrumentidVal = ($instrumentid > 0)      ? (int)$instrumentid : null;
+		$instrumentidVal = ($instrumentid > 0)      ? $instrumentid : null;
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into observation_surveys (instrument_id, survey_startdate, survey_enddate, survey_rater, survey_notes, survey_entrydate) values (?, ?, ?, ?, ?, now())");
 		mysqli_stmt_bind_param($stmt, 'issss', $instrumentidVal, $startdateVal, $enddateVal, $raterVal, $notesVal);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		$surveyid = mysqli_insert_id($GLOBALS['linki']);
+		$surveyid = (int)mysqli_insert_id($GLOBALS['linki']);
 		mysqli_stmt_close($stmt);
 
-		$idList = implode(',', array_map('intval', $ids));
-		$sqlstring = "update observations set observationsurvey_id = $surveyid where observation_id in ($idList)";
-		MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "update observations set observationsurvey_id = ? where observation_id in ($placeholders)";
+		$params = array_merge([$surveyid], $ids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($params)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
-		echo json_encode(array('success' => true, 'survey_id' => (int)$surveyid));
+		echo json_encode(array('success' => true, 'survey_id' => $surveyid));
 	}
 
 
@@ -2297,8 +2527,13 @@
 	/* updates metadata fields on an existing observation_surveys record */
 	function UpdateSurvey($surveyid, $startdate, $enddate, $rater, $notes, $status = "") {
 		JsonHeader();
+		$surveyid = (int)$surveyid;
 		if ($surveyid <= 0) {
 			echo json_encode(array('error' => 'invalid survey_id'));
+			return;
+		}
+		if (!CheckSurveyPerms($surveyid, 'modifydata')) {
+			echo json_encode(array('error' => 'You do not have permission to edit this survey'));
 			return;
 		}
 		$startdateVal = !empty(trim($startdate)) ? $startdate : null;
@@ -2689,12 +2924,16 @@
 	/* -------------------------------------------- */
 	function BulkDeleteItems($idsJson) {
 		JsonHeader();
-		$ids = json_decode($idsJson, true);
+		$ids = json_decode((string)$idsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$ids = CheckInstrumentItemEditPerms($ids);
+		if ($ids === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit one or more of the selected items']); return; }
+
+		/* observations linked to the items keep their data */
+		UnlinkInstrumentItems($ids);
+
 		$deleted = 0;
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "DELETE FROM instrument_items WHERE instrumentitem_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2702,6 +2941,33 @@
 			$deleted++;
 		}
 		echo json_encode(['ok' => true, 'deleted' => $deleted]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckMissingDataPerms -------------- */
+	/* -------------------------------------------- */
+	/* missing-data reasons annotate project data: the enrollment and the checklist item must belong to
+	   the same project, and the user needs Edit Data on it. Returns "" if allowed, otherwise the error */
+	function CheckMissingDataPerms($enrollmentid, $projectchecklistid) {
+		$enrollment = GetEnrollment($enrollmentid);
+		if ($enrollment == null)
+			return "Invalid enrollment";
+		$projectid = (int)$enrollment['project_id'];
+		$projectchecklistid = (int)$projectchecklistid;
+
+		$sqlstring = "select projectchecklist_id from project_checklist where projectchecklist_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $projectchecklistid, $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectchecklistid, $projectid]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$exists)
+			return "Invalid checklist item";
+
+		if (!CheckProjectDataPerm($projectid, 'modifydata'))
+			return "You do not have permission to edit data in this project";
+		return "";
 	}
 
 
@@ -2714,8 +2980,10 @@
 		JsonHeader();
 		$enrollmentid       = (int)$enrollmentid;
 		$projectchecklistid = (int)$projectchecklistid;
-		$reason             = trim($reason);
+		$reason             = trim((string)$reason);
 		if ($enrollmentid < 1 || $projectchecklistid < 1) { echo json_encode(['ok' => false, 'error' => 'Invalid parameters']); return; }
+		$error = CheckMissingDataPerms($enrollmentid, $projectchecklistid);
+		if ($error != "") { echo json_encode(['ok' => false, 'error' => $error]); return; }
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into enrollment_missingdata (enrollment_id, projectchecklist_id, missing_reason, missingreason_date) values (?, ?, ?, now()) on duplicate key update missing_reason = ?, missingreason_date = now()");
 		mysqli_stmt_bind_param($stmt, 'iiss', $enrollmentid, $projectchecklistid, $reason, $reason);
@@ -2740,6 +3008,17 @@
 		JsonHeader();
 		$missingdataid = (int)$missingdataid;
 		if ($missingdataid < 1) { echo json_encode(['ok' => false, 'error' => 'Invalid ID']); return; }
+
+		$sqlstring = "select enrollment_id, projectchecklist_id from enrollment_missingdata where missingdata_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $missingdataid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$missingdataid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) { echo json_encode(['ok' => false, 'error' => 'Invalid ID']); return; }
+		$error = CheckMissingDataPerms($row['enrollment_id'], $row['projectchecklist_id']);
+		if ($error != "") { echo json_encode(['ok' => false, 'error' => $error]); return; }
+
 		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from enrollment_missingdata where missingdata_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $missingdataid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -2755,12 +3034,12 @@
 		JsonHeader();
 		$allowed = ['string', 'int', 'double', 'enum', 'timeseries', 'image', 'csv'];
 		if (!in_array($type, $allowed, true)) { echo json_encode(['ok' => false, 'error' => 'Invalid type']); return; }
-		$ids = json_decode($idsJson, true);
+		$ids = json_decode((string)$idsJson, true);
 		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$ids = CheckInstrumentItemEditPerms($ids);
+		if ($ids === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit one or more of the selected items']); return; }
 		$updated = 0;
 		foreach ($ids as $id) {
-			$id = (int)$id;
-			if ($id < 1) continue;
 			$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE instrument_items SET item_type = ? WHERE instrumentitem_id = ?");
 			mysqli_stmt_bind_param($stmt, 'si', $type, $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);

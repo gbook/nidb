@@ -4343,7 +4343,6 @@
 			</div>
 		</div>
 		<a href="pipelines.php?action=viewusage" class="ui button"><i class="hdd icon"></i> Disk Usage (slow)</a>
-		<a href="visualization.php?action=visualize&type=ica" class="ui button"><i class="images icon"></i> Visualization</a>
 		<? if ($viewhidden) { ?>
 		<a href="pipelines.php" class="ui button"><i class="eye slash icon"></i> Hide hidden pipelines</a>
 		<? } else { ?>

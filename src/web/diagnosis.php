@@ -42,7 +42,8 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("adddiagnosis", "deletediagnosis"));
 	$diagnosisid = (int)GetVariable("diagnosisid");
 	$enrollmentid = (int)GetVariable("enrollmentid");
 	$icd10id = GetVariable("icd10_id");
@@ -117,6 +118,9 @@
 			return;
 		}
 
+		/* a blank end date is stored as NULL rather than an invalid empty date */
+		$enddate = (trim((string)$enddate) === '') ? null : $enddate;
+
 		$stmt = mysqli_prepare($GLOBALS['linki'], "insert into diagnosis (enrollment_id, icd10_id, start_date, end_date) values (?, ?, ?, ?)");
 		mysqli_stmt_bind_param($stmt, 'iiss', $enrollmentid, $icd10id, $startdate, $enddate);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
@@ -186,6 +190,7 @@
 			<form action="diagnosis.php" method="post" class="ui form" id="diagnosisform">
 				<input type="hidden" name="action" value="adddiagnosis">
 				<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="icd10_id" id="icd10_id" required>
 
 				<div class="three fields">
@@ -237,6 +242,8 @@
 		<script>
 			const rowData = <?=$data?>;
 			const canEdit = <?=($modifydata ? 'true' : 'false')?>;
+			const ENROLLMENT_ID = <?=$enrollmentid?>;
+			const CSRF_TOKEN = <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
 			let gridApi;
 
 			function updateDisplayedRowCount() {
@@ -264,8 +271,27 @@
 						sortable: false,
 						resizable: false,
 						cellStyle: { 'text-align': 'center' },
+						/* an inline POST form with the CSRF token, so deleting can't be triggered by a link */
 						cellRenderer: function(params) {
-							return '<a href="diagnosis.php?action=deletediagnosis&diagnosisid=' + params.value + '&enrollmentid=<?=$enrollmentid?>" title="Delete this diagnosis" onclick="return confirm(\'Are you sure you want to delete this record?\')"><i class="red alternate trash icon"></i></a>';
+							const form = document.createElement('form');
+							form.method = 'post';
+							form.action = 'diagnosis.php';
+							form.style.cssText = 'display:inline; margin:0';
+							[['action', 'deletediagnosis'], ['diagnosisid', params.value], ['enrollmentid', ENROLLMENT_ID], ['csrftoken', CSRF_TOKEN]].forEach(function(f) {
+								const input = document.createElement('input');
+								input.type = 'hidden';
+								input.name = f[0];
+								input.value = f[1];
+								form.appendChild(input);
+							});
+							form.onsubmit = function() { return confirm('Are you sure you want to delete this record?'); };
+							const btn = document.createElement('button');
+							btn.type = 'submit';
+							btn.title = 'Delete this diagnosis';
+							btn.style.cssText = 'background:none; border:none; padding:0; cursor:pointer';
+							btn.innerHTML = '<i class="red alternate trash icon"></i>';
+							form.appendChild(btn);
+							return form;
 						}
 					}
 				],

@@ -23,12 +23,13 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title>NiDB - Behavioral data analysis pipelines</title>
+		<title>NiDB - Study templates</title>
 	</head>
 
 <body>
@@ -39,19 +40,10 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
-
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpscriptname = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpscriptname))
-		$selfcall = true;
-	else
-		$selfcall = false;
-
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token (this replaces the old HTTP_REFERER self-call check) */
+	$mutating = array("createstudytemplate", "createprojecttemplate", "updatestudytemplate", "updateprojecttemplate", "deletestudytemplate", "deleteprojecttemplate");
+	$action = GetSafeAction($mutating);
 	$templateid = (int)GetVariable("templateid");
 	$projectid = (int)GetVariable("projectid");
 	$ptid = (int)GetVariable("ptid");
@@ -66,67 +58,126 @@
 	$studyphysician = GetVariable("studyphysician");
 	$studysite = GetVariable("studysite");
 	$studynotes = GetVariable("studynotes");
-	
-	/* determine action */
-	if ($selfcall) {
-		switch ($action) {
-			case 'displaystudytemplatelist':
-				DisplayStudyTemplateList($projectid);
-				break;
-			case 'createstudytemplate':
-				StudyTemplateForm($projectid, 0, $newtemplatename, $newtemplatemodality);
-				break;
-			case 'createprojecttemplate':
-				ProjectTemplateForm($projectid, 0, $newtemplatename);
-				break;
-			case 'editstudytemplate':
-				StudyTemplateForm($projectid, $templateid, '','');
-				break;
-			case 'editprojecttemplate':
-				ProjectTemplateForm($projectid, $ptid, '');
-				break;
-			case 'updatestudytemplate':
-				UpdateStudyTemplate($projectid, $templateid, $itemprotocol);
-				StudyTemplateForm($projectid, $templateid, '','');
-				break;
-			case 'updateprojecttemplate':
-				UpdateProjectTemplate($projectid, $ptid, $visittype, $modality, $protocols, $studydesc, $studyoperator, $studyphysician, $studysite, $studynotes);
-				ProjectTemplateForm($projectid, $ptid, '');
-				break;
-			case 'deletestudytemplate':
-				DeleteStudyTemplate($templateid);
-				DisplayStudyTemplateList($projectid);
-				DisplayProjectStudyTemplateList($projectid);
-				break;
-			case 'deleteprojecttemplate':
-				DeleteProjectTemplate($ptid);
-				DisplayStudyTemplateList($projectid);
-				DisplayProjectStudyTemplateList($projectid);
-				break;
-			default:
-				DisplayStudyTemplateList($projectid);
-				DisplayProjectStudyTemplateList($projectid);
+
+	/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then redirect to a
+	   GET (the template's edit page, or the list) so a refresh/Back doesn't re-submit the form */
+	if (in_array($action, $mutating, true)) {
+		$redirect = "templates.php?projectid=$projectid";
+		ob_start();
+		list($ismember, $canedit) = GetTemplatePerms($projectid);
+		if (!$canedit) {
+			Error("You do not have permission to edit this project's templates");
 		}
+		else {
+			switch ($action) {
+				case 'createstudytemplate':
+					$newid = CreateStudyTemplate($projectid, $newtemplatename, $newtemplatemodality);
+					if ($newid > 0) $redirect = "templates.php?action=editstudytemplate&projectid=$projectid&templateid=$newid";
+					break;
+				case 'createprojecttemplate':
+					$newid = CreateProjectTemplate($projectid, $newtemplatename);
+					if ($newid > 0) $redirect = "templates.php?action=editprojecttemplate&projectid=$projectid&ptid=$newid";
+					break;
+				case 'updatestudytemplate':
+					UpdateStudyTemplate($projectid, $templateid, $itemprotocol);
+					$redirect = "templates.php?action=editstudytemplate&projectid=$projectid&templateid=$templateid";
+					break;
+				case 'updateprojecttemplate':
+					UpdateProjectTemplate($projectid, $ptid, $visittype, $modality, $protocols, $studydesc, $studyoperator, $studyphysician, $studysite, $studynotes);
+					$redirect = "templates.php?action=editprojecttemplate&projectid=$projectid&ptid=$ptid";
+					break;
+				case 'deletestudytemplate': DeleteStudyTemplate($projectid, $templateid); break;
+				case 'deleteprojecttemplate': DeleteProjectTemplate($projectid, $ptid); break;
+			}
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo($redirect);
+	}
+
+	ShowFlashMessage();
+
+	list($ismember, $canedit) = GetTemplatePerms($projectid);
+	if ($projectid < 1) {
+		Error("Invalid project ID");
+	}
+	elseif (!$ismember) {
+		Error("You do not have permission to view this project's templates");
 	}
 	else {
-		DisplayStudyTemplateList($projectid);
-		DisplayProjectStudyTemplateList($projectid);
+		switch ($action) {
+			case 'editstudytemplate':
+				StudyTemplateForm($projectid, $templateid, $canedit);
+				break;
+			case 'editprojecttemplate':
+				ProjectTemplateForm($projectid, $ptid, $canedit);
+				break;
+			default:
+				DisplayStudyTemplateList($projectid, $canedit);
+				DisplayProjectStudyTemplateList($projectid, $canedit);
+		}
 	}
-	
+
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetTemplatePerms ------------------- */
+	/* -------------------------------------------- */
+	/* Study templates are project definitions: any member of the project (any permission on it) may view
+	   them; Edit Data is needed to create, change or delete them. Returns [ismember, canedit] */
+	function GetTemplatePerms($projectid) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1)
+			return array(false, false);
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return array(IsProjectMember($perms, $projectid), (GetPerm($perms, 'modifydata', $projectid) == 1));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TemplateQuery ---------------------- */
+	/* -------------------------------------------- */
+	/* runs a bound query; $types/$params as for mysqli_stmt_bind_param. Returns all rows */
+	function TemplateQuery($sqlstring, $types = '', $params = array()) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if ($types != '')
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$rows = array();
+		if ($result && ($result !== true)) {
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+				$rows[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudyTemplate ------------------- */
+	/* -------------------------------------------- */
+	/* the study template row if it belongs to $projectid, otherwise null */
+	function GetStudyTemplate($projectid, $templateid) {
+		$rows = TemplateQuery("select * from study_template where studytemplate_id = ? and project_id = ?", 'ii', [(int)$templateid, (int)$projectid]);
+		return (count($rows) > 0) ? $rows[0] : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetProjectTemplate ----------------- */
+	/* -------------------------------------------- */
+	/* the project template row if it belongs to $projectid, otherwise null */
+	function GetProjectTemplate($projectid, $ptid) {
+		$rows = TemplateQuery("select * from project_template where projecttemplate_id = ? and project_id = ?", 'ii', [(int)$ptid, (int)$projectid]);
+		return (count($rows) > 0) ? $rows[0] : null;
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- DisplayStudyTemplateList ----------- */
 	/* -------------------------------------------- */
-	function DisplayStudyTemplateList($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
+	function DisplayStudyTemplateList($projectid, $canedit) {
+		$projectid = (int)$projectid;
 		?>
 		<div class="ui container">
 
@@ -138,23 +189,26 @@
 					</h2>
 				</div>
 				<div class="ten wide column" align="right">
+					<? if ($canedit) { ?>
 					<form action="templates.php" method="post" name="theform" id="theform">
 					<input type="hidden" name="action" value="createstudytemplate">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<?=CSRFTokenField()?>
 					<div class="ui labeled action input">
 						<input type="text" name="newtemplatename" placeholder="New template name" required>
 						<select name="newtemplatemodality" class="ui selection dropdown" required>
 							<option value="">Modality...</option>
 						<?
 							$modalities = GetModalityList();
-							foreach ($modalities as $modality) {
-								?><option value="<?=$modality?>"><?=$modality?></option><?
+							foreach ((array)$modalities as $modality) {
+								?><option value="<?=htmlspecialchars($modality)?>"><?=htmlspecialchars($modality)?></option><?
 							}
 						?>
 						</select>
 						<button type="submit" class="ui button primary"><i class="plus square outline icon"></i> Create Study Template</button>
 					</div>
 					</form>
+					<? } ?>
 				</div>
 			</div>
 
@@ -164,22 +218,14 @@
 					<th>Modality</th>
 				</thead>
 			<?
-			$sqlstring = "select * from study_template where project_id = $projectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$templateid = $row['studytemplate_id'];
-				$templatename = $row['template_name'];
-				$templatemodality = $row['template_modality'];
-				
-				if ($templatename == "")
-					$templatename = "(blank)";
-				
-				if ($templatemodality == "")
-					$templatemodality = "(blank)";
+			foreach (TemplateQuery("select * from study_template where project_id = ?", 'i', [$projectid]) as $row) {
+				$templateid = (int)$row['studytemplate_id'];
+				$templatename = ($row['template_name'] == "") ? "(blank)" : $row['template_name'];
+				$templatemodality = ($row['template_modality'] == "") ? "(blank)" : $row['template_modality'];
 				?>
 				<tr>
-					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=$templatename?></td>
-					<td><?=$templatemodality?></td>
+					<td><a href="templates.php?action=editstudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><?=htmlspecialchars($templatename)?></a></td>
+					<td><?=htmlspecialchars($templatemodality)?></td>
 				</tr>
 				<?
 			}
@@ -193,14 +239,8 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayProjectStudyTemplateList ---- */
 	/* -------------------------------------------- */
-	function DisplayProjectStudyTemplateList($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
+	function DisplayProjectStudyTemplateList($projectid, $canedit) {
+		$projectid = (int)$projectid;
 		?>
 		<br><br><br>
 		<div class="ui container">
@@ -212,14 +252,17 @@
 					</h2>
 				</div>
 				<div class="column" align="right">
+					<? if ($canedit) { ?>
 					<form action="templates.php" method="post" name="theform" id="theform">
 					<input type="hidden" name="action" value="createprojecttemplate">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">
+					<?=CSRFTokenField()?>
 					<div class="ui labeled action input">
 						<input type="text" name="newtemplatename" placeholder="New template name" required>
 						<button type="submit" value="Create Project Template" class="ui button primary"><i class="plus square outline icon"></i> Create Project Template</button>
 					</div>
 					</form>
+					<? } ?>
 				</div>
 			</div>
 			<table class="ui celled selectable grey table">
@@ -238,34 +281,17 @@
 					</tr>
 				</thead>
 			<?
-			$sqlstring = "select * from project_template where project_id = $projectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$ptid = $row['projecttemplate_id'];
-				$name = $row['template_name'];
-				$createdate = $row['template_createdate'];
-				$modifydate = $row['template_modifydate'];
-
-				if ($name == "")
-					$name = "(blank)";
-				
-				$sqlstringA = "select count(*) 'count' from project_templatestudies where pt_id = $ptid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-				$numstudies = $rowA['count'];
-				
-				$sqlstringA = "select count(*) 'count' from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-				$numseries = $rowA['count'];
-				
+			$sqlstring = "select a.projecttemplate_id, a.template_name, a.template_createdate, a.template_modifydate, (select count(*) from project_templatestudies s where s.pt_id = a.projecttemplate_id) numstudies, (select count(*) from project_templatestudyitems i join project_templatestudies s on i.pts_id = s.pts_id where s.pt_id = a.projecttemplate_id) numseries from project_template a where a.project_id = ?";
+			foreach (TemplateQuery($sqlstring, 'i', [$projectid]) as $row) {
+				$ptid = (int)$row['projecttemplate_id'];
+				$name = ($row['template_name'] == "") ? "(blank)" : $row['template_name'];
 				?>
 				<tr>
-					<td><a href="templates.php?action=editprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>"><?=$name?></td>
-					<td><?=$numstudies?></td>
-					<td><?=$numseries?></td>
-					<td><?=$createdate?></td>
-					<td><?=$modifydate?></td>
+					<td><a href="templates.php?action=editprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>"><?=htmlspecialchars($name)?></a></td>
+					<td><?=(int)$row['numstudies']?></td>
+					<td><?=(int)$row['numseries']?></td>
+					<td><?=htmlspecialchars((string)$row['template_createdate'])?></td>
+					<td><?=htmlspecialchars((string)$row['template_modifydate'])?></td>
 				</tr>
 				<?
 			}
@@ -274,105 +300,117 @@
 		</div>
 		<?
 	}
-	
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateStudyTemplate ---------------- */
+	/* -------------------------------------------- */
+	/* returns the id of the new template, or of the existing template with that name */
+	function CreateStudyTemplate($projectid, $name, $modality) {
+		$projectid = (int)$projectid;
+		$name = trim((string)$name);
+		$modality = trim((string)$modality);
+		if ($name == "") { Error("Template name cannot be blank"); return 0; }
+		if (!in_array($modality, (array)GetModalityList(), true)) { Error("Invalid modality"); return 0; }
+
+		/* if a template with this name already exists, show that one */
+		$rows = TemplateQuery("select studytemplate_id from study_template where template_name = ? and project_id = ? limit 1", 'si', [$name, $projectid]);
+		if (count($rows) > 0) {
+			Notice("Template named <b>" . htmlspecialchars($name) . "</b> already exists. Displaying that template");
+			return (int)$rows[0]['studytemplate_id'];
+		}
+
+		TemplateQuery("insert into study_template (project_id, template_name, template_modality) values (?, ?, ?)", 'iss', [$projectid, $name, $modality]);
+		return (int)mysqli_insert_id($GLOBALS['linki']);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CreateProjectTemplate -------------- */
+	/* -------------------------------------------- */
+	/* returns the id of the new template */
+	function CreateProjectTemplate($projectid, $name) {
+		$projectid = (int)$projectid;
+		$name = trim((string)$name);
+		if ($name == "") { Error("Template name cannot be blank"); return 0; }
+		TemplateQuery("insert into project_template (project_id, template_name, template_createdate, template_modifydate) values (?, ?, now(), now())", 'is', [$projectid, $name]);
+		return (int)mysqli_insert_id($GLOBALS['linki']);
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- StudyTemplateForm ------------------ */
 	/* -------------------------------------------- */
-	function StudyTemplateForm($projectid, $templateid, $newtemplatename, $newtemplatemodality) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		$newtemplatename = mysqli_real_escape_string($GLOBALS['linki'], $newtemplatename);
-		$newtemplatemodality = mysqli_real_escape_string($GLOBALS['linki'], $newtemplatemodality);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
-		//echo "function StudyTemplateForm($projectid, $templateid, $newtemplatename, $newtemplatemodality)";
-		
-		if (($templateid == "") || ($templateid == 0)) {
-			/* check if this item name already exists */
-			$sqlstring = "select * from study_template where template_name = '$newtemplatename' and project_id = $projectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 1) {
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$templateid = $row['studytemplate_id'];
-				$templatename = $row['template_name'];
-				$templatemodality = $row['template_modality'];
-				Notice("Template named <b>$templatename</b> already exists. Displaying that template");
-			}
-			else {
-				$sqlstring = "insert into study_template (project_id, template_name, template_modality) values ($projectid, '$newtemplatename', '$newtemplatemodality')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$templateid = mysqli_insert_id($GLOBALS['linki']);
-				$templatename = $newtemplatename;
-				$templatemodality = $newtemplatemodality;
-			}
+	function StudyTemplateForm($projectid, $templateid, $canedit) {
+		$projectid = (int)$projectid;
+		$template = GetStudyTemplate($projectid, $templateid);
+		if ($template == null) {
+			Error("Study template not found");
+			return;
 		}
-		else {
-			$sqlstring = "select * from study_template where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$templatename = $row['template_name'];
-			$templatemodality = $row['template_modality'];
-		}
+		$templateid = (int)$template['studytemplate_id'];
+		$ro = $canedit ? "" : "readonly";
 		?>
-		
+
 		<div class="ui text container">
 			<div class="ui attached visible message">
-				<div class="header"><b><?=$templatename?></b> - <?=$templatemodality?></div>
+				<div class="header"><b><?=htmlspecialchars($template['template_name'])?></b> - <?=htmlspecialchars($template['template_modality'])?></div>
 			</div>
 			<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 			<input type="hidden" name="action" value="updatestudytemplate">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
 			<input type="hidden" name="templateid" value="<?=$templateid?>">
-			<span class="tiny">Leave protocol blank to delete</span>
+			<?=CSRFTokenField()?>
+			<? if ($canedit) { ?><span class="tiny">Leave protocol blank to delete</span><? } ?>
 			<table class="ui selectable grey compact table">
 				<thead>
 					<th>Series</th>
 					<th>Protocol</th>
 				</thead>
-				<tr>
 			<?
 			$n=1;
-			$sqlstring = "select * from study_templateitems a left join study_template b on a.studytemplate_id = b.studytemplate_id where a.studytemplate_id = $templateid order by item_order";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			//PrintSQLTable($result);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$itemprotocol = $row['item_protocol'];
+			foreach (TemplateQuery("select item_protocol from study_templateitems where studytemplate_id = ? order by item_order", 'i', [$templateid]) as $row) {
 				?>
 				<tr>
 					<td><?=$n++?></td>
-					<td><input type="text" name="itemprotocol[]" value="<?=$itemprotocol?>" size="50"></td>
+					<td><input type="text" name="itemprotocol[]" value="<?=htmlspecialchars((string)$row['item_protocol'])?>" size="50" <?=$ro?>></td>
 				</tr>
 				<?
 			}
 			/* add 5 blank rows */
-			for($i=0;$i<5;$i++) {
-				?>
-				<tr>
-					<td><?=$n++?></td>
-					<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
-				</tr>
-				<?
+			if ($canedit) {
+				for ($i=0;$i<5;$i++) {
+					?>
+					<tr>
+						<td><?=$n++?></td>
+						<td><input type="text" name="itemprotocol[]" value="" size="50"></td>
+					</tr>
+					<?
+				}
 			}
 			?>
 			</table>
-			
+
 			<div class="ui two column grid">
 				<div class="column">
-					<input type="hidden" name="username" value="<?=$username?>">
-					<a class="ui red button" href="templates.php?action=deletestudytemplate&projectid=<?=$projectid?>&templateid=<?=$templateid?>"><i class="trash icon"></i>Delete</a>
+					<? if ($canedit) { ?>
+					<button type="submit" form="deletestudytemplateform" class="ui red button"><i class="trash icon"></i>Delete</button>
+					<? } ?>
 				</div>
 				<div class="column" align="right">
 					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
-					<input type="submit" value="Save" class="ui button primary">
+					<? if ($canedit) { ?><input type="submit" value="Save" class="ui button primary"><? } ?>
 				</div>
 			</div>
 			</form>
+			<? if ($canedit) { ?>
+			<form method="post" action="templates.php" id="deletestudytemplateform" onsubmit="return confirm('Are you sure you want to delete this template?')">
+				<input type="hidden" name="action" value="deletestudytemplate">
+				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<input type="hidden" name="templateid" value="<?=$templateid?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 		</div>
 		<?
 	}
@@ -381,40 +419,29 @@
 	/* -------------------------------------------- */
 	/* ------- ProjectTemplateForm ---------------- */
 	/* -------------------------------------------- */
-	function ProjectTemplateForm($projectid, $ptid, $newtemplatename) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$ptid = mysqli_real_escape_string($GLOBALS['linki'], $ptid);
-		$newtemplatename = mysqli_real_escape_string($GLOBALS['linki'], $newtemplatename);
-	
-		$sqlstring = "select * from projects where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-	
-		if (($ptid == "") || ($ptid == 0)) {
-			$sqlstring = "insert into project_template (project_id, template_name, template_createdate, template_modifydate) values ($projectid, '$newtemplatename', now(), now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$ptid = mysqli_insert_id($GLOBALS['linki']);
-			$templatename = $newtemplatename;
+	function ProjectTemplateForm($projectid, $ptid, $canedit) {
+		$projectid = (int)$projectid;
+		$template = GetProjectTemplate($projectid, $ptid);
+		if ($template == null) {
+			Error("Project template not found");
+			return;
 		}
-		else {
-			$sqlstring = "select * from project_template where projecttemplate_id = $ptid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$templatename = $row['template_name'];
-		}
+		$ptid = (int)$template['projecttemplate_id'];
+		$ro = $canedit ? "" : "readonly";
+		$modalities = (array)GetModalityList();
 		?>
-		
+
 		<div class="ui container">
 			<div class="ui top attached visible message">
-			  <div class="header"><?=$templatename?></div>
+			  <div class="header"><?=htmlspecialchars($template['template_name'])?></div>
 			</div>
 
 		<form action="templates.php" method="post" name="theform" id="theform" class="ui form attached fluid segment">
 		<input type="hidden" name="action" value="updateprojecttemplate">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
 		<input type="hidden" name="ptid" value="<?=$ptid?>">
-		<span class="tiny">Leave protocol blank to delete</span>
+		<?=CSRFTokenField()?>
+		<? if ($canedit) { ?><span class="tiny">Leave visit type blank to delete</span><? } ?>
 		<table class="ui selectable grey very compact table">
 			<thead>
 				<th>Visit Type</th>
@@ -426,81 +453,43 @@
 				<th>Site</th>
 				<th>Notes</th>
 			</thead>
-			<tr>
 		<?
-		/* get a list of the study templates for this project template */
-		$sqlstring = "select * from project_templatestudies where pt_id = $ptid order by pts_order asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$ptsid = $row['pts_id'];
-			$pts_visittype = $row['pts_visittype'];
-			$pts_modality = $row['pts_modality'];
-
-			$pts_desc = $row['pts_desc'];
-			$pts_operator = $row['pts_operator'];
-			$pts_physician = $row['pts_physician'];
-			$pts_site = $row['pts_site'];
-			$pts_notes = $row['pts_notes'];
+		/* the studies in this project template, then 5 blank rows for new ones */
+		$studies = TemplateQuery("select * from project_templatestudies where pt_id = ? order by pts_order asc", 'i', [$ptid]);
+		if ($canedit) {
+			for ($i=0;$i<5;$i++)
+				$studies[] = array('pts_id' => 0);
+		}
+		foreach ($studies as $row) {
+			$ptsid = (int)$row['pts_id'];
+			$pts_modality = (string)($row['pts_modality'] ?? '');
+			$str = "";
+			if ($ptsid > 0) {
+				$p = array();
+				foreach (TemplateQuery("select ptsitem_protocol from project_templatestudyitems where pts_id = ? order by ptsitem_order asc", 'i', [$ptsid]) as $rowA)
+					$p[] = $rowA['ptsitem_protocol'];
+				$str = implode(", ", $p);
+			}
 			?>
 			<tr>
-				<td><input type="text" name="visittype[]" value="<?=$pts_visittype?>"></td>
+				<td><input type="text" name="visittype[]" value="<?=htmlspecialchars((string)($row['pts_visittype'] ?? ''))?>" <?=$ro?>></td>
 				<td>
-					<select name="modality[]">
+					<select name="modality[]" <?=($canedit ? "" : "disabled")?>>
 						<option value="">Select modality</option>
 						<?
-							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
-								if ($modality == $pts_modality) { $checked = "selected"; } else { $checked = ""; }
-								?><option value="<?=$modality?>" <?=$checked?>><?=$modality?></option><?
+								$checked = ($modality == $pts_modality) ? "selected" : "";
+								?><option value="<?=htmlspecialchars($modality)?>" <?=$checked?>><?=htmlspecialchars($modality)?></option><?
 							}
 						?>
 					</select>
 				</td>
-				<td>
-					<?
-						$str = "";
-						
-						$sqlstringA = "select * from project_templatestudyitems where pts_id = $ptsid order by ptsitem_order asc";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						$p = array();
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$p[] = $rowA['ptsitem_protocol'];
-						}
-						$str = implode2(", ", $p);
-					?>
-					<input type="text" name="protocols[]" value="<?=$str?>" size="60">
-				</td>
-				<td><input type="text" name="studydesc[]" value="<?=$pts_desc?>"></td>
-				<td><input type="text" name="studyoperator[]" value="<?=$pts_operator?>"></td>
-				<td><input type="text" name="studyphysician[]" value="<?=$pts_physician?>"></td>
-				<td><input type="text" name="studysite[]" value="<?=$pts_site?>"></td>
-				<td><input type="text" name="studynotes[]" value="<?=$pts_notes?>"></td>
-			</tr>
-			<?
-		}
-		for($i=0;$i<5;$i++) {
-			?>
-			<tr>
-				<td><input type="text" name="visittype[]" value=""></td>
-				<td>
-					<select name="modality[]">
-						<option value="">Select modality</option>
-					<?
-						$modalities = GetModalityList();
-						foreach ($modalities as $modality) {
-							?><option value="<?=$modality?>"><?=$modality?></option><?
-						}
-					?>
-					</select>
-				</td>
-				<td>
-					<input type="text" name="protocols[]" size="60">
-				</td>
-				<td><input type="text" name="studydesc[]"></td>
-				<td><input type="text" name="studyoperator[]"></td>
-				<td><input type="text" name="studyphysician[]"></td>
-				<td><input type="text" name="studysite[]"></td>
-				<td><input type="text" name="studynotes[]"></td>
+				<td><input type="text" name="protocols[]" value="<?=htmlspecialchars($str)?>" size="60" <?=$ro?>></td>
+				<td><input type="text" name="studydesc[]" value="<?=htmlspecialchars((string)($row['pts_desc'] ?? ''))?>" <?=$ro?>></td>
+				<td><input type="text" name="studyoperator[]" value="<?=htmlspecialchars((string)($row['pts_operator'] ?? ''))?>" <?=$ro?>></td>
+				<td><input type="text" name="studyphysician[]" value="<?=htmlspecialchars((string)($row['pts_physician'] ?? ''))?>" <?=$ro?>></td>
+				<td><input type="text" name="studysite[]" value="<?=htmlspecialchars((string)($row['pts_site'] ?? ''))?>" <?=$ro?>></td>
+				<td><input type="text" name="studynotes[]" value="<?=htmlspecialchars((string)($row['pts_notes'] ?? ''))?>" <?=$ro?>></td>
 			</tr>
 			<?
 		}
@@ -508,15 +497,24 @@
 		</table>
 			<div class="ui two column grid">
 				<div class="column">
-					<input type="hidden" name="username" value="<?=$username?>">
-					<a class="ui red button" href="templates.php?action=deleteprojecttemplate&projectid=<?=$projectid?>&ptid=<?=$ptid?>" onclick="return confirm('Are you sure you want to delete this template?')"><i class="trash icon"></i>Delete</a>
+					<? if ($canedit) { ?>
+					<button type="submit" form="deleteprojecttemplateform" class="ui red button"><i class="trash icon"></i>Delete</button>
+					<? } ?>
 				</div>
 				<div class="column" align="right">
 					<a class="ui button" href="templates.php?projectid=<?=$projectid?>">Back</a>
-					<input type="submit" value="Save" class="ui button primary">
+					<? if ($canedit) { ?><input type="submit" value="Save" class="ui button primary"><? } ?>
 				</div>
 			</div>
 		</form>
+		<? if ($canedit) { ?>
+		<form method="post" action="templates.php" id="deleteprojecttemplateform" onsubmit="return confirm('Are you sure you want to delete this template?')">
+			<input type="hidden" name="action" value="deleteprojecttemplate">
+			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<input type="hidden" name="ptid" value="<?=$ptid?>">
+			<?=CSRFTokenField()?>
+		</form>
+		<? } ?>
 		</div>
 		<?
 	}
@@ -526,34 +524,25 @@
 	/* ------- UpdateStudyTemplate ---------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyTemplate($projectid, $templateid, $itemprotocol) {
-		//PrintVariable($itemprotocol);
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		$itemprotocol = mysqli_real_escape_array($GLOBALS['linki'], $itemprotocol);
-		
-		/* start a transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete existing template items for this templateid */
-		$sqlstring = "delete from study_templateitems where studytemplate_id = $templateid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		//PrintVariable($itemprotocol);
+		$template = GetStudyTemplate($projectid, $templateid);
+		if ($template == null) { Error("Study template not found"); return; }
+		$templateid = (int)$template['studytemplate_id'];
+		$itemprotocol = is_array($itemprotocol) ? $itemprotocol : array();
+
+		mysqli_begin_transaction($GLOBALS['linki']);
+
+		/* replace the template's items */
+		TemplateQuery("delete from study_templateitems where studytemplate_id = ?", 'i', [$templateid]);
 		$i = 0;
 		foreach ($itemprotocol as $protocol) {
-			if (trim($protocol) != "") {
-				$sqlstring = "insert into study_templateitems (studytemplate_id, item_order, item_protocol) values ($templateid, $i, '$protocol')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$protocol = trim((string)$protocol);
+			if ($protocol != "") {
+				TemplateQuery("insert into study_templateitems (studytemplate_id, item_order, item_protocol) values (?, ?, ?)", 'iis', [$templateid, $i, $protocol]);
 				$i++;
-				//PrintSQL($sqlstring);
 			}
 		}
-		
-		/* commit the transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
+
+		mysqli_commit($GLOBALS['linki']);
 		Notice("Study template updated");
 	}
 
@@ -562,68 +551,45 @@
 	/* ------- UpdateProjectTemplate -------------- */
 	/* -------------------------------------------- */
 	function UpdateProjectTemplate($projectid, $ptid, $visittype, $modality, $protocols, $studydesc, $studyoperator, $studyphysician, $studysite, $studynotes) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$ptid = mysqli_real_escape_string($GLOBALS['linki'], $ptid);
-		$visittype = mysqli_real_escape_array($GLOBALS['linki'], $visittype);
-		$modality = mysqli_real_escape_array($GLOBALS['linki'], $modality);
-		$protocols = mysqli_real_escape_array($GLOBALS['linki'], $protocols);
-		$studydesc = mysqli_real_escape_array($GLOBALS['linki'], $studydesc);
-		$studyoperator = mysqli_real_escape_array($GLOBALS['linki'], $studyoperator);
-		$studyphysician = mysqli_real_escape_array($GLOBALS['linki'], $studyphysician);
-		$studysite = mysqli_real_escape_array($GLOBALS['linki'], $studysite);
-		$studynotes = mysqli_real_escape_array($GLOBALS['linki'], $studynotes);
-		
-		/* start a transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* delete existing project template study items */
-		$sqlstring = "delete from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = $ptid)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* delete existing project templates studies */
-		$sqlstring = "delete from project_templatestudies where pt_id = $ptid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* insert the project-template-studies */
-		$i = 0;
-		$studyorder = 0;
-		foreach ($visittype as $vtype) {
-			if (trim($vtype) != "") {
-				$v = $vtype;
-				$m = $modality[$i];
-				$protocollist = $protocols[$i];
-				
-				$desc = $studydesc[$i];
-				$operator = $studyoperator[$i];
-				$physician = $studyphysician[$i];
-				$site = $studysite[$i];
-				$notes = $studynotes[$i];
-				
-				$sqlstring = "insert into project_templatestudies (pt_id, pts_order, pts_visittype, pts_modality, pts_desc, pts_operator, pts_physician, pts_site, pts_notes) values ($ptid, $studyorder, '$v', '$m', '$desc', '$operator', '$physician', '$site', '$notes')";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$ptsid = mysqli_insert_id($GLOBALS['linki']);
-				$protocolitems = explode(",", $protocollist);
-				$ii = 0;
-				foreach ($protocolitems as $item) {
-					$item = trim($item);
-					/* in case they used quotes */
-					$item = str_replace('"','',$item);
-					$item = str_replace('\\','',$item);
-					$sqlstring = "insert into project_templatestudyitems (pts_id, ptsitem_order, ptsitem_protocol) values ($ptsid, $ii, '$item')";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$ii++;
-				}
-				
-				$studyorder++;
-			}
-			$i++;
-		}
-		
-		/* commit the transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$template = GetProjectTemplate($projectid, $ptid);
+		if ($template == null) { Error("Project template not found"); return; }
+		$ptid = (int)$template['projecttemplate_id'];
 
+		foreach (array('visittype', 'modality', 'protocols', 'studydesc', 'studyoperator', 'studyphysician', 'studysite', 'studynotes') as $var) {
+			if (!is_array($$var)) $$var = array();
+		}
+		$modalities = (array)GetModalityList();
+
+		mysqli_begin_transaction($GLOBALS['linki']);
+
+		/* replace the template's studies and their items */
+		TemplateQuery("delete from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = ?)", 'i', [$ptid]);
+		TemplateQuery("delete from project_templatestudies where pt_id = ?", 'i', [$ptid]);
+
+		$studyorder = 0;
+		foreach ($visittype as $i => $vtype) {
+			$v = trim((string)$vtype);
+			if ($v == "") continue;
+			$m = (string)($modality[$i] ?? '');
+			if (!in_array($m, $modalities, true)) $m = '';
+
+			$params = [$ptid, $studyorder, $v, $m, (string)($studydesc[$i] ?? ''), (string)($studyoperator[$i] ?? ''), (string)($studyphysician[$i] ?? ''), (string)($studysite[$i] ?? ''), (string)($studynotes[$i] ?? '')];
+			TemplateQuery("insert into project_templatestudies (pt_id, pts_order, pts_visittype, pts_modality, pts_desc, pts_operator, pts_physician, pts_site, pts_notes) values (?, ?, ?, ?, ?, ?, ?, ?, ?)", 'iisssssss', $params);
+			$ptsid = (int)mysqli_insert_id($GLOBALS['linki']);
+
+			$ii = 0;
+			foreach (explode(",", (string)($protocols[$i] ?? '')) as $item) {
+				/* in case they used quotes */
+				$item = trim(str_replace(array('"', '\\'), '', $item));
+				if ($item == "") continue;
+				TemplateQuery("insert into project_templatestudyitems (pts_id, ptsitem_order, ptsitem_protocol) values (?, ?, ?)", 'iis', [$ptsid, $ii, $item]);
+				$ii++;
+			}
+			$studyorder++;
+		}
+		TemplateQuery("update project_template set template_modifydate = now() where projecttemplate_id = ?", 'i', [$ptid]);
+
+		mysqli_commit($GLOBALS['linki']);
 		Notice("Study project template updated");
 	}
 
@@ -631,44 +597,32 @@
 	/* -------------------------------------------- */
 	/* ------- DeleteStudyTemplate ---------------- */
 	/* -------------------------------------------- */
-	function DeleteStudyTemplate($templateid) {
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		
-		if ($templateid > 0) {
-			$sqlstring = "delete from study_templateitems where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	function DeleteStudyTemplate($projectid, $templateid) {
+		$template = GetStudyTemplate($projectid, $templateid);
+		if ($template == null) { Error("Invalid study template ID"); return; }
+		$templateid = (int)$template['studytemplate_id'];
 
-			$sqlstring = "delete from study_template where studytemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			
-			Notice("Template deleted");
-		}
-		else {
-			Error("Invalid study template ID");
-		}
+		TemplateQuery("delete from study_templateitems where studytemplate_id = ?", 'i', [$templateid]);
+		TemplateQuery("delete from study_template where studytemplate_id = ?", 'i', [$templateid]);
+		Notice("Template deleted");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- DeleteProjectTemplate -------------- */
 	/* -------------------------------------------- */
-	function DeleteProjectTemplate($templateid) {
-		$templateid = mysqli_real_escape_string($GLOBALS['linki'], $templateid);
-		
-		if ($templateid > 0) {
-			$sqlstring = "delete from project_templatestudyitems where pts_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+	function DeleteProjectTemplate($projectid, $ptid) {
+		$template = GetProjectTemplate($projectid, $ptid);
+		if ($template == null) { Error("Invalid project template ID"); return; }
+		$ptid = (int)$template['projecttemplate_id'];
 
-			$sqlstring = "delete from project_template where projecttemplate_id = $templateid";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			
-			Notice("Project Template deleted");
-		}
-		else {
-			Error("Invalid project template ID");
-		}
+		/* the template's studies and their items go with it */
+		TemplateQuery("delete from project_templatestudyitems where pts_id in (select pts_id from project_templatestudies where pt_id = ?)", 'i', [$ptid]);
+		TemplateQuery("delete from project_templatestudies where pt_id = ?", 'i', [$ptid]);
+		TemplateQuery("delete from project_template where projecttemplate_id = ?", 'i', [$ptid]);
+		Notice("Project Template deleted");
 	}
-	
+
 ?>
 
 

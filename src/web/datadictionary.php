@@ -23,6 +23,7 @@
 
 	define("LEGIT_REQUEST", true);
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -31,7 +32,7 @@
 		<title>NiDB - Data Dictionary</title>
 	</head>
 
-<body onload="onload()">
+<body>
 	<div id="wrapper">
 <?
 	require "functions.php";
@@ -39,169 +40,195 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpscriptname = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpscriptname))
-		$selfcall = true;
-	else
-		$selfcall = false;
-
-	//PrintVariable($_POST,'post');
-	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token (this replaces the old HTTP_REFERER self-call check) */
+	$mutating = array("addvariable", "updatevariables", "addvariables", "addcsv");
+	$action = GetSafeAction($mutating);
 	$projectid = (int)GetVariable("projectid");
-	$datadictid = (int)GetVariable("datadictid");
 	$varname = GetVariable("varname");
 	$desc = GetVariable("desc");
 	$type = GetVariable("type");
-	$expectedcount = GetVariable("expectedcount");
-	$rangelow = GetVariable("rangelow");
-	$rangehigh = GetVariable("rangehigh");
 	$itemids = GetVariable("itemids");
 	$deleteids = GetVariable("deleteids");
-	if (!is_array($deleteids)) $deleteids = array();
 	$csv = GetVariable("csv");
-	
-	/* determine action */
-	if ($selfcall) {
-		switch ($action) {
-			case 'addvariable':
-				AddVariable($projectid, $varname, $desc, $type, $expectedcount, $rangelow, $rangehigh);
-				break;
-			case 'updatevariables':
-				UpdateVariables($projectid, $datadictid, $desc, $type, $expectedcount, $rangelow, $rangehigh, $deleteids);
-				break;
-			case 'addvariables':
-				AddVariables($projectid, $varname, $desc, $type, $expectedcount, $rangelow, $rangehigh, $itemids);
-				break;
-			case 'addcsv':
-				AddCSV($projectid, $csv);
-				break;
-			case 'deletevariable':
-				DeleteVariable($datadictid);
-				break;
+
+	/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then redirect to a
+	   GET so a refresh/Back doesn't re-submit the form */
+	if (in_array($action, $mutating, true)) {
+		ob_start();
+		list($ismember, $canedit) = GetDataDictPerms($projectid);
+		if (!$canedit) {
+			Error("You do not have permission to edit this project's data dictionary");
 		}
-		DisplayVariables($projectid);
+		else {
+			switch ($action) {
+				case 'addvariable': AddVariable($projectid, $varname, $desc, $type); break;
+				case 'updatevariables': UpdateVariables($projectid, $desc, $type, $deleteids); break;
+				case 'addvariables': AddVariables($projectid, $varname, $desc, $type, $itemids); break;
+				case 'addcsv': AddCSV($projectid, $csv); break;
+			}
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("datadictionary.php?projectid=$projectid");
 	}
-	else {
-		DisplayVariables($projectid);
-	}
-	
-	
+
+	DisplayVariables($projectid);
+
+
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetDataDictPerms ------------------- */
+	/* -------------------------------------------- */
+	/* The data dictionary is a project definition: any member of the project (any permission on it) may
+	   view it; Edit Data is needed to change it. Returns [ismember, canedit] */
+	function GetDataDictPerms($projectid) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1)
+			return array(false, false);
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return array(IsProjectMember($perms, $projectid), (GetPerm($perms, 'modifydata', $projectid) == 1));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- Data dictionary types -------------- */
+	/* -------------------------------------------- */
+	/* data_dictionary.datadict_type is enum('drug','vital','measure','other'), the old names for
+	   interventions and observations. The page uses the current names and maps them when saving and
+	   reading. Returns '' for an unknown type */
+	function DataDictTypeToDB($type) {
+		$map = array('observation' => 'measure', 'intervention' => 'drug', 'vital' => 'vital', 'other' => 'other');
+		return $map[strtolower(trim((string)$type))] ?? '';
+	}
+	function DataDictTypeFromDB($dbtype) {
+		$map = array('measure' => 'observation', 'drug' => 'intervention', 'vital' => 'vital', 'other' => 'other');
+		return $map[(string)$dbtype] ?? '';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SaveVariable ----------------------- */
+	/* -------------------------------------------- */
+	/* adds a variable to the project's data dictionary, or updates it if the project already has a
+	   variable with that name (there is no unique key on project/name, so this checks first). The value
+	   key is only changed when $setvaluekey is true. Returns false if the name or type is invalid */
+	function SaveVariable($projectid, $varname, $type, $desc, $valuekey = null, $setvaluekey = false) {
+		$projectid = (int)$projectid;
+		$varname = trim((string)$varname);
+		$desc = trim((string)$desc);
+		$dbtype = DataDictTypeToDB($type);
+		if (($varname == "") || ($dbtype == ""))
+			return false;
+
+		$sqlstring = "select datadict_id from data_dictionary where project_id = ? and datadict_varname = ? order by datadict_id limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $projectid, $varname);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $varname]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		if ($row) {
+			$datadictid = (int)$row['datadict_id'];
+			if ($setvaluekey) {
+				$sqlstring = "update data_dictionary set datadict_type = ?, datadict_desc = ?, datadict_valuekey = ? where datadict_id = ?";
+				$params = [$dbtype, $desc, $valuekey, $datadictid];
+				$types = 'sssi';
+			}
+			else {
+				$sqlstring = "update data_dictionary set datadict_type = ?, datadict_desc = ? where datadict_id = ?";
+				$params = [$dbtype, $desc, $datadictid];
+				$types = 'ssi';
+			}
+		}
+		else {
+			$sqlstring = "insert into data_dictionary (datadict_type, project_id, datadict_varname, datadict_desc, datadict_valuekey) values (?, ?, ?, ?, ?)";
+			$params = [$dbtype, $projectid, $varname, $desc, ($setvaluekey ? $valuekey : null)];
+			$types = 'sisss';
+		}
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		return true;
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- AddVariable ------------------------ */
 	/* -------------------------------------------- */
-	function AddVariable($projectid, $varname, $desc, $type, $expectedcount, $rangelow, $rangehigh) {
-		/* perform data checks */
-		if (!ValidID($projectid)) { return; }
-		$varname = mysqli_real_escape_string($GLOBALS['linki'], $varname);
-		$desc = mysqli_real_escape_string($GLOBALS['linki'], $desc);
-		$type = mysqli_real_escape_string($GLOBALS['linki'], $type);
-		$expectedcount = mysqli_real_escape_string($GLOBALS['linki'], $expectedcount);
-		$rangelow = mysqli_real_escape_string($GLOBALS['linki'], $rangelow);
-		$rangehigh = mysqli_real_escape_string($GLOBALS['linki'], $rangehigh);
-		
-		if (trim($expectedcount) == "")
-			$expectedcount = "null";
-		if (trim($rangelow) == "")
-			$rangelow = "null";
-		if (trim($rangehigh) == "")
-			$rangehigh = "null";
-		
-		if (trim($varname) == "") {
+	function AddVariable($projectid, $varname, $desc, $type) {
+		if (trim((string)$varname) == "") {
 			Error("Blank variable name");
 			return;
 		}
-		
-		/* insert the variable */
-		$sqlstring = "insert ignore into data_dictionary (datadict_type, project_id, datadict_varname, datadict_desc, datadict_expectedtimepoints, datadict_rangelow, datadict_rangehigh) values ('$type', $projectid, '$varname', '$desc', $expectedcount, $rangelow, $rangehigh) on duplicate key update datadict_desc = '$desc', datadict_type = '$type', datadict_expectedtimepoints = $expectedcount, datadict_rangelow = $rangelow, datadict_rangehigh = $rangehigh";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-		?><div align="center"><span class="message"><?=$varname?> added</span></div><br><br><?
+		if (SaveVariable($projectid, $varname, $type, $desc))
+			Notice(htmlspecialchars(trim($varname)) . " added");
+		else
+			Error("Invalid variable type");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateVariables -------------------- */
 	/* -------------------------------------------- */
-	function UpdateVariables($projectid, $datadictid, $descs, $types, $expectedcounts, $rangelows, $rangehighs, $deleteids) {
-		/* perform data checks */
-		if (!ValidID($projectid)) { return; }
-		$descs = mysqli_real_escape_array($GLOBALS['linki'], $descs);
-		$types = mysqli_real_escape_array($GLOBALS['linki'], $types);
-		//$expectedcounts = mysqli_real_escape_array($expectedcounts);
-		$rangelows = mysqli_real_escape_array($GLOBALS['linki'], $rangelows);
-		$rangehighs = mysqli_real_escape_array($GLOBALS['linki'], $rangehighs);
-		$deleteids = mysqli_real_escape_array($GLOBALS['linki'], $deleteids);
-		
-		$ids = array_keys($types);
-		foreach ($ids as $id) {
-			if (!ValidID($id)) { continue; }
-			
-			/* check if we need to delete the variable, or update it */
-			if (in_array($id, $deleteids)) {
-				$sqlstring = "delete from data_dictionary where datadict_id = $id";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	/* $descs and $types are keyed by datadict_id. Only this project's rows are changed */
+	function UpdateVariables($projectid, $descs, $types, $deleteids) {
+		$projectid = (int)$projectid;
+		$descs = is_array($descs) ? $descs : array();
+		$types = is_array($types) ? $types : array();
+		$deleteids = is_array($deleteids) ? array_map('intval', $deleteids) : array();
+
+		$updated = 0;
+		$deleted = 0;
+		foreach ($types as $id => $type) {
+			$id = (int)$id;
+			if ($id < 1) continue;
+
+			if (in_array($id, $deleteids, true)) {
+				$sqlstring = "delete from data_dictionary where datadict_id = ? and project_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ii', $id, $projectid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $projectid]);
+				$deleted += mysqli_stmt_affected_rows($stmt);
+				mysqli_stmt_close($stmt);
+				continue;
 			}
-			else {
-				$desc = $descs[$id];
-				$type = $types[$id];
-				$expectedcount = $expectedcounts[$id];
-				$rangelow = $rangelows[$id];
-				$rangehigh = $rangehighs[$id];
-				
-				$expectedcount = (trim($expectedcount) === "" || !is_numeric($expectedcount)) ? "null" : ($expectedcount + 0);
-				$rangelow      = (trim($rangelow) === ""      || !is_numeric($rangelow))      ? "null" : ($rangelow + 0);
-				$rangehigh     = (trim($rangehigh) === ""     || !is_numeric($rangehigh))     ? "null" : ($rangehigh + 0);
-				
-				/* update the variable */
-				$sqlstring = "update ignore data_dictionary set datadict_desc = '$desc', datadict_type = '$type', datadict_expectedtimepoints = $expectedcount, datadict_rangelow = $rangelow, datadict_rangehigh = $rangehigh where datadict_id = $id";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
+
+			$dbtype = DataDictTypeToDB($type);
+			if ($dbtype == "") continue;
+			$desc = trim((string)($descs[$id] ?? ''));
+			$sqlstring = "update data_dictionary set datadict_desc = ?, datadict_type = ? where datadict_id = ? and project_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ssii', $desc, $dbtype, $id, $projectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$desc, $dbtype, $id, $projectid]);
+			mysqli_stmt_close($stmt);
+			$updated++;
 		}
+		Notice("Data dictionary updated" . (($deleted > 0) ? ", $deleted variable(s) deleted" : ""));
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- AddVariables ----------------------- */
 	/* -------------------------------------------- */
-	function AddVariables($projectid, $varnames, $descs, $types, $expectedcounts, $rangelows, $rangehighs, $ids) {
-		/* perform data checks */
-		if (!ValidID($projectid)) { return; }
-		$varnames = mysqli_real_escape_array($GLOBALS['linki'], $varnames);
-		$descs = mysqli_real_escape_array($GLOBALS['linki'], $descs);
-		$types = mysqli_real_escape_array($GLOBALS['linki'], $types);
-		$expectedcounts = mysqli_real_escape_array($GLOBALS['linki'], $expectedcounts);
-		$rangelows = mysqli_real_escape_array($GLOBALS['linki'], $rangelows);
-		$rangehighs = mysqli_real_escape_array($GLOBALS['linki'], $rangehighs);
-		
-		foreach ($ids as $id) {
-			$varname = $varnames[$id];
-			$desc = $descs[$id];
-			$type = $types[$id];
-			$expectedcount = $expectedcounts[$id];
-			$rangelow = $rangelows[$id];
-			$rangehigh = $rangehighs[$id];
-			
-			if (trim($expectedcount) == "")
-				$expectedcount = "null";
-			if (trim($rangelow) == "")
-				$rangelow = "null";
-			if (trim($rangehigh) == "")
-				$rangehigh = "null";
-			
-			/* insert the variable */
-			$sqlstring = "insert ignore into data_dictionary (datadict_type, project_id, datadict_varname, datadict_desc, datadict_expectedtimepoints, datadict_rangelow, datadict_rangehigh) values ('$type', $projectid, '$varname', '$desc', $expectedcount, $rangelow, $rangehigh) on duplicate key update datadict_desc = '$desc', datadict_type = '$type', datadict_expectedtimepoints = $expectedcount, datadict_rangelow = $rangelow, datadict_rangehigh = $rangehigh";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	/* adds the selected uncategorized variables. $varnames/$descs/$types are keyed by row number, and
+	   $ids is the list of selected row numbers */
+	function AddVariables($projectid, $varnames, $descs, $types, $ids) {
+		$varnames = is_array($varnames) ? $varnames : array();
+		$descs = is_array($descs) ? $descs : array();
+		$types = is_array($types) ? $types : array();
+		$ids = is_array($ids) ? $ids : array();
 
-			?><div align="center"><span class="message"><?=$varname?> added</span></div><br><br><?
+		$added = array();
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			$varname = (string)($varnames[$id] ?? '');
+			if (SaveVariable($projectid, $varname, $types[$id] ?? '', $descs[$id] ?? ''))
+				$added[] = htmlspecialchars(trim($varname));
 		}
+		Notice(count($added) . " variable(s) added" . ((count($added) > 0) ? ": " . implode(", ", $added) : ""));
 	}
 
 
@@ -209,44 +236,49 @@
 	/* ------- AddCSV ----------------------------- */
 	/* -------------------------------------------- */
 	function AddCSV($projectid, $csv) {
-		/* perform data checks */
-		if (!ValidID($projectid)) { return; }
-		$data = ParseCSV($csv);
-		//PrintVariable($data);
-		
+		$data = ParseCSV((string)$csv);
+
+		$added = 0;
+		$problems = array();
 		foreach ($data as $i => $row) {
-			$varname = mysqli_real_escape_string($GLOBALS['linki'], trim($row['variablename']));
-			$vartype = mysqli_real_escape_string($GLOBALS['linki'], trim($row['type']));
-			$vardesc = mysqli_real_escape_string($GLOBALS['linki'], trim($row['description']));
-			$varkey = mysqli_real_escape_string($GLOBALS['linki'], trim($row['valuekey']));
-			
-			if ($varname == "")
-				echo "Line $i: variablename was blank<br>";
-			if ($vartype == "")
-				echo "Line $i: type was blank<br>";
-			if ($vardesc == "")
-				echo "Line $i: description was blank<br>";
-			
-			if (trim($varkey) == "")
-				$varkey = "null";
-			else
-				$varkey = "'$varkey'";
-			
-			/* insert the variable */
-			$sqlstring = "insert ignore into data_dictionary (datadict_type, project_id, datadict_varname, datadict_desc, datadict_valuekey, datadict_expectedtimepoints, datadict_rangelow, datadict_rangehigh) values ('$vartype', $projectid, '$varname', '$vardesc', $varkey, NULL, NULL, NULL) on duplicate key update datadict_desc = '$vardesc', datadict_valuekey = $varkey, datadict_type = '$vartype', datadict_expectedtimepoints = NULL, datadict_rangelow = NULL, datadict_rangehigh = NULL";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			if (count($row) == 0) continue;   /* blank line */
+			$line = $i + 2;   /* +1 for the header, +1 for 1-based numbering */
+			$varname = trim((string)($row['variablename'] ?? ''));
+			$vartype = trim((string)($row['type'] ?? ''));
+			$vardesc = trim((string)($row['description'] ?? ''));
+			$varkey = trim((string)($row['valuekey'] ?? ''));
+
+			if ($varname == "") { $problems[] = "Line $line: variablename was blank"; continue; }
+			if (DataDictTypeToDB($vartype) == "") { $problems[] = "Line $line: type must be observation or intervention"; continue; }
+			if ($vardesc == "") $problems[] = "Line $line: description was blank";
+
+			if (SaveVariable($projectid, $varname, $vartype, $vardesc, ($varkey == "") ? null : $varkey, true))
+				$added++;
 		}
+		$msg = "$added variable(s) added or updated";
+		if (count($problems) > 0)
+			$msg .= "<br>" . implode("<br>", array_map('htmlspecialchars', $problems));
+		Notice($msg);
 	}
 
+
 	/* -------------------------------------------- */
-	/* ------- DeleteVariable --------------------- */
+	/* ------- GetNameCounts ---------------------- */
 	/* -------------------------------------------- */
-	function DeleteVariable($datadictid) {
-		if (!ValidID($datadictid)) { return; }
-		$sqlstring = "delete from data_dictionary where datadict_id = $datadictid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}	
+	/* runs a "select name, count" query bound to $projectid; returns [name => count] */
+	function GetNameCounts($sqlstring, $projectid) {
+		$counts = array();
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if ((string)$row['name'] != "")
+				$counts[(string)$row['name']] = (int)$row['cnt'];
+		}
+		mysqli_stmt_close($stmt);
+		return $counts;
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayVariables ------------------- */
@@ -256,54 +288,72 @@
 	   information about variables, from the
 	   data_dictionary table */
 	function DisplayVariables($projectid) {
-		if (!ValidID($projectid)) { return; }
-		
+		$projectid = (int)$projectid;
+		if ($projectid < 1) { Error("Invalid project ID"); return; }
+
+		ShowFlashMessage();
+
+		list($ismember, $canedit) = GetDataDictPerms($projectid);
+		if (!$ismember) {
+			Error("You do not have permission to view this project's data dictionary");
+			return;
+		}
+
 		$datadictitems = array();
 		/* get all items from data_dictionary table */
-		$sqlstring = "select * from data_dictionary where project_id = $projectid order by datadict_varname";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select * from data_dictionary where project_id = ? order by datadict_varname";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$datadictitems[$row['datadict_varname']]['id'] = $row['datadict_id'];
-			$datadictitems[$row['datadict_varname']]['type'] = $row['datadict_type'];
-			$datadictitems[$row['datadict_varname']]['desc'] = $row['datadict_desc'];
-			$datadictitems[$row['datadict_varname']]['count'] = $row['datadict_expectedtimepoints'];
-			$datadictitems[$row['datadict_varname']]['rangelow'] = $row['datadict_rangelow'];
-			$datadictitems[$row['datadict_varname']]['rangehigh'] = $row['datadict_rangehigh'];
+			$name = (string)$row['datadict_varname'];
+			if (isset($datadictitems[$name])) continue;   /* older duplicates of the same name: show the first */
+			$datadictitems[$name] = array('id' => (int)$row['datadict_id'], 'type' => DataDictTypeFromDB($row['datadict_type']), 'desc' => (string)$row['datadict_desc']);
 		}
-		
+		mysqli_stmt_close($stmt);
+
+		/* how many records of each variable name the project has, by kind */
+		$obscounts = GetNameCounts("select a.observation_name name, count(*) cnt from observations a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? group by a.observation_name", $projectid);
+		$intcounts = GetNameCounts("select a.intervention_name name, count(*) cnt from interventions a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? group by a.intervention_name", $projectid);
+		$vitalcounts = DatabaseTableExists("vitals") ? GetNameCounts("select c.vital_name name, count(*) cnt from vitals a join enrollment b on a.enrollment_id = b.enrollment_id join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = ? group by c.vital_name", $projectid) : array();
+		$kinds = array('observation' => $obscounts, 'intervention' => $intcounts, 'vital' => $vitalcounts);
+
+		$typelabels = array('observation' => 'Observation', 'vital' => 'Vital', 'intervention' => 'Intervention', 'other' => 'Other');
+
 		/* start the table */
-		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Issues", "Delete", ""), "ui table", "datadictionarytable");
+		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Issues", ($canedit ? "Delete" : ""), ""), "ui table", "datadictionarytable");
 		?>
 		<tbody>
 		<tr>
 			<td colspan="8" style="background-color: #888; color: #fff; font-size: larger; padding:10px; font-weight: bold">Data Dictionary</td>
 		</tr>
+		<? if ($canedit) { ?>
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addvariable">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
 		<tr>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="text" name="varname" required></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;">
 				<select name="type" required>
 					<option value="">(Select type)
 					<option value="observation">Observation
-					<!--<option value="vital">Vital-->
 					<option value="intervention">Intervention
 					<option value="other">Other
 				</select>
 			</td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="text" name="desc" required></td>
-			<!--<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="text" name="rangelow" style="width:80px"> - <input type="text" name="rangehigh" style="width:80px"></td>-->
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"></td>
 			<td style="border-bottom: solid #888 2px; padding: 6px;"><input type="submit" value="Add Single Variable" class="ui primary button"></td>
 		</tr>
 		</form>
-		
+
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addcsv">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
 		<tr>
 			<td colspan="8" style="border-bottom: solid #888 2px; padding: 6px;">
 				<details>
@@ -327,108 +377,65 @@ variable_2, intervention, "Important Variable 1 - no keys", </div>
 			</td>
 		</tr>
 		</form>
-		
+
 		<form method="post" action="datadictionary.php">
 			<input type="hidden" name="action" value="updatevariables">
 			<input type="hidden" name="projectid" value="<?=$projectid?>">
+			<?=CSRFTokenField()?>
+		<? } ?>
 		<?
 		/* display the table rows */
-		foreach($datadictitems as $varname => $details) {
+		foreach ($datadictitems as $varname => $details) {
 			$id = $details['id'];
 			$type = $details['type'];
 			$desc = $details['desc'];
-			//$count = $details['count'];
-			$rangelow = $details['rangelow'];
-			$rangehigh = $details['rangehigh'];
-			
-			$sqlstring = "select count(b.observation_name) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid and b.observation_name = '$varname'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$observationcount = (int)$row['count'];
 
-			//$sqlstring = "select count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid and c.vital_name = '$varname'";
-			//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			//$vitalcount = (int)$row['count'];
-
-			$sqlstring = "select count(a.intervention_name) 'count' from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid and c.intervention_name = '$varname'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$interventioncount = (int)$row['count'];
-
+			/* the count is the variable's records of its own kind; records of another kind are reported as issues */
+			$count = ($type != "" && isset($kinds[$type])) ? ($kinds[$type][$varname] ?? 0) : '';
 			$errors = array();
-			switch ($type) {
-				case "observation":
-					if ($vitalcount > 0)
-						$errors[] = "Data dictionary variable has $vitalcount entries mis-classified as vital";
-					if ($interventioncount > 0)
-						$errors[] = "Data dictionary variable has $interventioncount entries mis-classified as intervention";
-					
-					$count = $observationcount;
-					break;
-				case "vital":
-					if ($observationcount > 0)
-						$errors[] = "Data dictionary variable has $observationcount entries mis-classified as observation";
-					if ($interventioncount > 0)
-						$errors[] = "Data dictionary variable has $interventioncount entries mis-classified as intervention";
-					
-					$count = $vitalcount;
-					break;
-				case "intervention":
-					if ($observationcount > 0)
-						$errors[] = "Data dictionary variable has $observationcount entries mis-classified as observation";
-					if ($vitalcount > 0)
-						$errors[] = "Data dictionary variable has $vitalcount entries mis-classified as vital";
-					
-					$count = $interventioncount;
-					break;
+			if ($type != "other") {
+				foreach ($kinds as $kind => $counts) {
+					if (($kind != $type) && (($counts[$varname] ?? 0) > 0))
+						$errors[] = "Data dictionary variable has " . $counts[$varname] . " entries mis-classified as $kind";
+				}
 			}
-			
 			?>
 			<tr>
-				<td><?=$varname?></td>
+				<td><?=htmlspecialchars($varname)?></td>
 				<td>
+					<? if ($canedit) { ?>
 					<select name="type[<?=$id?>]">
-						<option value="" <? if (!in_array($type, array("observation", "vital", "intervention", "other"))) { echo "selected"; } ?> >(Select type)
-						<option value="observation" <? if ($type == "observation") { echo "selected"; } ?> >Observation
-						<option value="vital" <? if ($type == "vital") { echo "selected"; } ?> >Vital
-						<option value="intervention" <? if ($type == "intervention") { echo "selected"; } ?> >Intervention
-						<option value="other" <? if ($type == "other") { echo "selected"; } ?> >Other
+						<option value="" <? if (!isset($typelabels[$type])) { echo "selected"; } ?> >(Select type)
+						<? foreach ($typelabels as $tkey => $tlabel) { ?>
+						<option value="<?=$tkey?>" <? if ($type == $tkey) { echo "selected"; } ?> ><?=$tlabel?>
+						<? } ?>
 					</select>
+					<? } else { echo htmlspecialchars($typelabels[$type] ?? ''); } ?>
 				</td>
-				<td><input type="text" name="desc[<?=$id?>]" value="<?=$desc?>"></td>
-				<!--<td><input type="text" name="rangelow" style="width:80px" value="<?=$rangelow?>"> - <input type="text" name="rangehigh" style="width:80px" value="<?=$rangehigh?>"></td>-->
+				<td><? if ($canedit) { ?><input type="text" name="desc[<?=$id?>]" value="<?=htmlspecialchars($desc)?>"><? } else { echo htmlspecialchars($desc); } ?></td>
 				<td><?=$count?></td>
 				<td>
-				<?
-					if (count($errors) > 0) {
-						?>
-						<details style="font-size: smaller">
-						<summary><?=count($errors)?> issue(s)</summary>
-							<ul>
-							<?
-								foreach ($errors as $err) {
-									echo "<li>$err\n";
-								}
-							?>
-							</ul>
-						</details>
-						<?
-					}
-					else {
-					}
-				?>
+				<? if (count($errors) > 0) { ?>
+					<details style="font-size: smaller">
+					<summary><?=count($errors)?> issue(s)</summary>
+						<ul>
+						<? foreach ($errors as $err) { echo "<li>" . htmlspecialchars($err) . "\n"; } ?>
+						</ul>
+					</details>
+				<? } ?>
 				</td>
-				<td><input name="deleteids[]" type="checkbox" value="<?=$id?>"></td>
+				<td><? if ($canedit) { ?><input name="deleteids[]" type="checkbox" value="<?=$id?>"><? } ?></td>
 				<td></td>
 			</tr>
 			<?
 		}
 		?>
+		<? if ($canedit) { ?>
 		<tr>
 			<td colspan="8" align="right"><input type="submit" value="Update Data Dictionary" class="ui primary button"></td>
 		</tr>
 		</form>
+		<? } ?>
 		</tbody>
 		<?
 		/* end the data dictionary table */
@@ -436,71 +443,46 @@ variable_2, intervention, "Important Variable 1 - no keys", </div>
 		?>
 		<br>
 		<?
-		
-		/* get all observation variables */
-		$sqlstring = "select a.observation_name, count(a.observationname_id) 'count' from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid group by a.observation_name order by a.observation_name";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$observationname = $row['observation_name'];
-			$dbitems[$observationname]['type'] = 'observation';
-			$dbitems[$observationname]['count'] = $row['count'];
-		}
 
-		
-		/* get all vital variables */
-		$sqlstring = "select c.vital_name, count(c.vitalname_id) 'count' from vitals a left join enrollment b on a.enrollment_id = b.enrollment_id left join vitalnames c on a.vitalname_id = c.vitalname_id where b.project_id = $projectid group by c.vital_name order by c.vital_name";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$vitalname = $row['vital_name'];
-			$dbitems[$vitalname]['type'] = 'vital';
-			$dbitems[$vitalname]['count'] = $row['count'];
+		/* variables recorded in the project that aren't in the data dictionary */
+		$dbitems = array();
+		foreach ($kinds as $kind => $counts) {
+			foreach ($counts as $name => $cnt) {
+				if (!isset($datadictitems[$name]) && !isset($dbitems[$name]))
+					$dbitems[$name] = array('type' => $kind, 'count' => $cnt);
+			}
 		}
-
-		/* get all intervention variables */
-		$sqlstring = "select a.intervention_name, count(a.intervention_name) 'count' from interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid group by a.intervention_name order by a.intervention_name";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$interventionname = $row['intervention_name'];
-			$dbitems[$interventionname]['type'] = 'intervention';
-			$dbitems[$interventionname]['count'] = $row['count'];
-		}
-		
 		ksort($dbitems);
-		
-		StartHTMLTable(array("Variable", "Type", "Description", "Count", "Action"), "ui table", "datadictionarytable");
+
+		StartHTMLTable(array("Variable", "Type", "Description", "Count", ($canedit ? "Add" : "")), "ui table", "datadictionarytable");
 		?>
 		<tr>
 			<td colspan="7" style="background-color: #888; color: #fff; font-size: larger; padding:10px; font-weight: bold">Uncategorized Variables</td>
 		</tr>
+		<? if ($canedit) { ?>
 		<form method="post" action="datadictionary.php">
 		<input type="hidden" name="action" value="addvariables">
-		<input type="hidden" name="datadictid" value="<?=$id?>">
 		<input type="hidden" name="projectid" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
+		<? } ?>
 		<?
 		$rownum = 0;
-		foreach($dbitems as $varname => $details) {
+		foreach ($dbitems as $varname => $details) {
 			$type = $details['type'];
-			$desc = $details['desc'];
 			$count = $details['count'];
-			$rangelow = $details['rangelow'];
-			$rangehigh = $details['rangehigh'];
-			
-			if (!in_array($varname, array_keys($datadictitems))) {
 			?>
 			<tr>
-				<td><input type="hidden" name="varname[<?=$rownum?>]" value="<?=$varname?>"><?=$varname?></td>
-				<td><input type="hidden" name="type[<?=$rownum?>]" value="<?=$type?>"><?=$type?></td>
-				<td><input type="text" name="desc[<?=$rownum?>]" value="<?=$desc?>"></td>
-				<!--<td><input type="text" name="rangelow[<?=$rownum?>]" style="width:80px" value="<?=$rangelow?>"> - <input type="text" name="rangehigh[<?=$rownum?>]" style="width:80px" value="<?=$rangehigh?>"></td>-->
-				<td><?=$count?></td>
-				<!--<td></td>-->
-				<td><input name="itemids[]" type="checkbox" value="<?=$rownum?>"></td>
+				<td><? if ($canedit) { ?><input type="hidden" name="varname[<?=$rownum?>]" value="<?=htmlspecialchars($varname)?>"><? } ?><?=htmlspecialchars($varname)?></td>
+				<td><? if ($canedit) { ?><input type="hidden" name="type[<?=$rownum?>]" value="<?=$type?>"><? } ?><?=htmlspecialchars($typelabels[$type] ?? $type)?></td>
+				<td><? if ($canedit) { ?><input type="text" name="desc[<?=$rownum?>]" value=""><? } ?></td>
+				<td><?=(int)$count?></td>
+				<td><? if ($canedit) { ?><input name="itemids[]" type="checkbox" value="<?=$rownum?>"><? } ?></td>
 			</tr>
 			<?
 			$rownum++;
-			}
 		}
 		?>
+		<? if ($canedit) { ?>
 		<tr>
 			<td colspan="7" align="right">
 				<b>With Selected Variables:</b><br>
@@ -509,6 +491,7 @@ variable_2, intervention, "Important Variable 1 - no keys", </div>
 			</td>
 		</tr>
 		</form>
+		<? } ?>
 		</tbody>
 		<?
 		/* end the table */

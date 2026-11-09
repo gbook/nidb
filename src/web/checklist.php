@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -40,7 +41,8 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	$action    = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action    = GetSafeAction(array("editchecklistupdate"));
 	$projectid = (int)GetVariable("projectid");
 
 	/* subject enrollment-status filter, applied across all views (default: all) */
@@ -56,7 +58,39 @@
 		'observationtimeseries' => ['label' => 'Observation timeseries','icon' => 'chartline icon',     'color' => 'green',  'hex' => '#21ba45', 'desc' => 'Observations with continuous timeseries data'],
 	];
 
+	/* The checklists report on a project as a whole: any member of the project (any permission on it)
+	   may view every checklist; Edit Data is needed to edit the checklist items and to set or delete
+	   missing data reasons. Images are still served by getfile.php, which needs View Data */
+	$ismember = false;
+	$canedit = false;
+	if ($projectid > 0) {
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		$ismember = IsProjectMember($perms, $projectid);
+		$canedit = (GetPerm($perms, 'modifydata', $projectid) == 1);
+	}
+
+	/* the checklist editor uses POST/Redirect/GET: run the handler, stash its message, then redirect to a
+	   GET so a refresh/Back doesn't re-submit the form */
+	if ($action == 'editchecklistupdate') {
+		ob_start();
+		if (!$canedit)
+			Error("You do not have permission to edit this project's checklist");
+		else
+			UpdateImagingChecklist($projectid, GetVariable("itemid"), GetVariable("itemname"), GetVariable("itemtype"), GetVariable("modality"), GetVariable("mappedname"), GetVariable("expectedcount"), GetVariable("deleteitem"), GetVariable("instrumentid"));
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("checklist.php?action=editchecklist&projectid=$projectid&enrollstatus=$enrollstatus");
+	}
+
+	ShowFlashMessage();
+
+	if (($projectid > 0) && !$ismember) {
+		Error("You do not have permission to view this project's checklists");
+		$action = 'denied';
+	}
+
 	switch ($action) {
+		case 'denied':
+			break;
 		case 'observationimages':
 			DisplayObservationImages($projectid);
 			break;
@@ -67,11 +101,10 @@
 			DisplayImaging($projectid);
 			break;
 		case 'editchecklist':
-			DisplayEditImagingChecklist($projectid);
-			break;
-		case 'editchecklistupdate':
-			UpdateImagingChecklist($projectid, GetVariable("itemid"), GetVariable("itemname"), GetVariable("itemtype"), GetVariable("modality"), GetVariable("mappedname"), GetVariable("expectedcount"), GetVariable("deleteitem"), GetVariable("instrumentid"));
-			DisplayEditImagingChecklist($projectid);
+			if (($projectid > 0) && !$canedit)
+				Error("You do not have permission to edit this project's checklist");
+			else
+				DisplayEditImagingChecklist($projectid);
 			break;
 		case 'observations':
 			DisplayObservations($projectid);
@@ -234,11 +267,16 @@
 						<select name="projectid" class="ui fluid search dropdown" required onchange="this.form.submit()">
 							<option value="">Select Project...</option>
 							<?
-								$sqlstring = "select a.project_id, a.project_name, a.project_costcenter from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+								$username = (string)($_SESSION['username'] ?? '');
+								$instanceid = (int)($_SESSION['instanceid'] ?? 0);
+								$sqlstring = "select a.project_id, a.project_name, a.project_costcenter from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) and a.instance_id = ? order by a.project_name";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'si', $username, $instanceid);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $instanceid]);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									?><option value="<?=$row['project_id']?>"><?=htmlspecialchars($row['project_name'])?> (<?=htmlspecialchars($row['project_costcenter'])?>)</option><?
+									?><option value="<?=(int)$row['project_id']?>"><?=htmlspecialchars($row['project_name'] ?? '')?> (<?=htmlspecialchars($row['project_costcenter'] ?? '')?>)</option><?
 								}
+								mysqli_stmt_close($stmt);
 							?>
 						</select>
 					</div>
@@ -718,7 +756,7 @@
 								var XMIN   = <?=$xMinJs?>;   /* shared x-axis range (epoch seconds) */
 								var XMAX   = <?=$xMaxJs?>;
 								var COLOR  = '<?=$info['hex']?>';
-								var charts = <?=json_encode($charts)?>;
+								var charts = <?=json_encode($charts, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
 								var GAP_MIN_SEC = 60 * 60;   /* never shade gaps shorter than 60 minutes */
 
 								/* uPlot hook: shade a gray band over any span with no data for longer than the
@@ -817,7 +855,7 @@
 	/* Imaging checklist matrix (subjects x checklist items), ported from projectchecklist.php.
 	   Rendered full page width because of the number of columns. Honors the enrollment filter. */
 	function DisplayImaging($projectid) {
-		global $enrollstatus;
+		global $enrollstatus, $canedit;
 
 		if ($projectid < 1) { DisplayProjectPicker(); return; }
 		$enrollFilter = EnrollStatusSQL($enrollstatus, 'a');
@@ -899,6 +937,8 @@
 			$rowtotal       = 0;
 
 			if ($enrollmentid == '') continue;
+			$enrollmentid = (int)$enrollmentid;
+			$subjectid = (int)$subjectid;
 
 			$studyids = GetStudiesByEnrollment($enrollmentid);
 
@@ -923,54 +963,49 @@
 				$customidtext  = "<i style='color: red'>missing ID</i>";
 			} else {
 				$customidstyle = "";
-				$customidtext  = $altuid;
+				$customidtext  = htmlspecialchars($altuid);
 			}
 
 			$gridrow = array(
 				'enrollmentid'    => $enrollmentid,
 				'primaryid'       => $customidtext,
 				'primaryid_style' => $customidstyle,
-				'uid'             => "<a href=\"subjects.php?id=$subjectid\">$uid</a> $deleted",
-				'guid'            => $guid,
-				'enrolldate'      => "<a href=\"enrollment.php?id=$enrollmentid\">$enrolldate</a>",
+				'uid'             => "<a href=\"subjects.php?id=$subjectid\">" . htmlspecialchars((string)$uid) . "</a> $deleted",
+				'guid'            => htmlspecialchars((string)$guid),
+				'enrolldate'      => "<a href=\"enrollment.php?id=$enrollmentid\">" . htmlspecialchars((string)$enrolldate) . "</a>",
 				'numstudies'      => count($studyids),
-				'group'           => $enrollsubgroup
+				'group'           => htmlspecialchars((string)$enrollsubgroup)
 			);
 
 			/* evaluate every checklist item for this subject (even with no studies), so that any
 			   item can be marked as missing with a reason. */
 			$ii = 5;
 			foreach ($checklist as $i => $item) {
-				$itemid   = strtolower($item['id']);
-				$modality = strtolower($item['modality']);
-				$protocol = $item['protocol'];
+				$itemid   = (int)$item['id'];
+				$modality = strtolower((string)$item['modality']);
+				$protocol = (string)$item['protocol'];
 
-				$protocols = explode(',', $protocol);
-				foreach ($protocols as $k => $pp) { $protocols[$k] = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($protocols[$k])) . "'"; }
+				$protocols = array_map('trim', explode(',', $protocol));
 
 				$msg = "";
-				if (!preg_match('/^[a-z0-9]+$/', $modality)) $modality = "";
+				/* the series table name comes from the item's modality: validate it, it can't be bound */
 				$seriestable = GetSeriesTableName($modality);
 
-				/* prod-safe existence check (SHOW ... LIKE can't be prepared on older MariaDB) */
-				$tableexists = false;
-				if ($seriestable != "") {
-					$stmt = mysqli_prepare($GLOBALS['linki'], "select table_name from information_schema.tables where table_schema = database() and table_name = ?");
-					mysqli_stmt_bind_param($stmt, 's', $seriestable);
-					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-					$tableexists = (mysqli_num_rows($result) > 0);
-					mysqli_stmt_close($stmt);
-				}
-
-				if ($tableexists) {
+				if (($seriestable != "") && DatabaseTableExists($seriestable)) {
 					/* imaging item: look for a matching series (only possible if the subject has studies) */
 					if (count($studyids) > 0) {
-						$numfilesfield = (strtolower($modality) == "mr") ? "numfiles" : "series_numfiles";
-						$sqlstring = "select study_id from $seriestable where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") and (trim(series_desc) in (" . implode(',', $protocols) . ") or trim(series_protocol) in (" . implode(',', $protocols) . ")) and $numfilesfield > 0";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						if (mysqli_num_rows($result) > 0) {
-							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-							$studyid = $row['study_id'];
+						$numfilesfield = ($modality == "mr") ? "numfiles" : "series_numfiles";
+						$studyplaceholders = implode(',', array_fill(0, count($studyids), '?'));
+						$protocolplaceholders = implode(',', array_fill(0, count($protocols), '?'));
+						$sqlstring = "select study_id from `$seriestable` where study_id in ($studyplaceholders) and (trim(series_desc) in ($protocolplaceholders) or trim(series_protocol) in ($protocolplaceholders)) and $numfilesfield > 0 limit 1";
+						$params = array_merge($studyids, $protocols, $protocols);
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, str_repeat('i', count($studyids)) . str_repeat('s', 2 * count($protocols)), ...$params);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+						mysqli_stmt_close($stmt);
+						if ($row) {
+							$studyid = (int)$row['study_id'];
 							$msg = "<a href='studies.php?id=$studyid'>&#10004;</a>";
 							$totals[$ii]++;
 							$rowtotal++;
@@ -997,17 +1032,18 @@
 					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 					if (mysqli_num_rows($result) > 0) {
 						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$missingdataid = $row['missingdata_id'];
-						$reason        = $row['missing_reason'];
-						$date          = $row['missingreason_date'];
+						$missingdataid = (int)$row['missingdata_id'];
+						$reason        = (string)$row['missing_reason'];
+						$date          = htmlspecialchars((string)$row['missingreason_date']);
 						$reasonAttr    = htmlspecialchars($reason, ENT_QUOTES);
-						$gridrow["checklist_$itemid"]            = "<a href=\"#\" class=\"mark-missing\" onclick=\"openMissingReasonModal(this); return false;\" data-enrollmentid=\"$enrollmentid\" data-projectchecklistid=\"$itemid\" data-missingdataid=\"$missingdataid\" data-reason=\"$reasonAttr\" data-item=\"$itemAttr\" data-uid=\"$uidAttr\">&#10006;</a>";
+						/* setting/changing a reason needs Edit Data; others just see the mark and the reason */
+						$gridrow["checklist_$itemid"]            = $canedit ? "<a href=\"#\" class=\"mark-missing\" onclick=\"openMissingReasonModal(this); return false;\" data-enrollmentid=\"$enrollmentid\" data-projectchecklistid=\"$itemid\" data-missingdataid=\"$missingdataid\" data-reason=\"$reasonAttr\" data-item=\"$itemAttr\" data-uid=\"$uidAttr\">&#10006;</a>" : "&#10006;";
 						$gridrow["checklist_$itemid" . "_style"]   = "background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);";
 						$gridrow["checklist_$itemid" . "_tooltip"] = "<b>" . htmlspecialchars($reason) . "</b> - $date";
 					} else {
-						$gridrow["checklist_$itemid"]            = "<a href=\"#\" class=\"mark-missing\" onclick=\"openMissingReasonModal(this); return false;\" data-enrollmentid=\"$enrollmentid\" data-projectchecklistid=\"$itemid\" data-missingdataid=\"\" data-reason=\"\" data-item=\"$itemAttr\" data-uid=\"$uidAttr\">?</a>";
+						$gridrow["checklist_$itemid"]            = $canedit ? "<a href=\"#\" class=\"mark-missing\" onclick=\"openMissingReasonModal(this); return false;\" data-enrollmentid=\"$enrollmentid\" data-projectchecklistid=\"$itemid\" data-missingdataid=\"\" data-reason=\"\" data-item=\"$itemAttr\" data-uid=\"$uidAttr\">?</a>" : "?";
 						$gridrow["checklist_$itemid" . "_style"]   = "border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);";
-						$gridrow["checklist_$itemid" . "_tooltip"] = "Click to set reason for missing data";
+						$gridrow["checklist_$itemid" . "_tooltip"] = $canedit ? "Click to set reason for missing data" : "Missing data, no reason given";
 					}
 					mysqli_stmt_close($stmt);
 				} else {
@@ -1057,7 +1093,7 @@
 				<div class="ui two column grid" style="margin-bottom:2px">
 					<div class="column">Displaying <b><?=$numenrollments?> enrollments</b></div>
 					<div class="right aligned column">
-						<a href="checklist.php?action=editchecklist&projectid=<?=$projectid?>&enrollstatus=<?=$enrollstatus?>" class="ui primary basic button"><i class="edit icon"></i> Edit imaging checklist</a>
+						<? if ($canedit) { ?><a href="checklist.php?action=editchecklist&projectid=<?=$projectid?>&enrollstatus=<?=$enrollstatus?>" class="ui primary basic button"><i class="edit icon"></i> Edit imaging checklist</a><? } ?>
 					</div>
 				</div>
 
@@ -1141,6 +1177,15 @@
 		</div>
 		<script>
 			var mrmCtx = {};
+			var CSRF_TOKEN = <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
+
+			/* POSTs to ajaxapi.php with the CSRF token; resolves to the parsed JSON */
+			function mrmPost(fields) {
+				var body = new FormData();
+				body.append('csrftoken', CSRF_TOKEN);
+				Object.keys(fields).forEach(function(k) { body.append(k, fields[k]); });
+				return fetch('ajaxapi.php', { method: 'POST', body: body, credentials: 'same-origin' }).then(function(r) { return r.json(); });
+			}
 			var MRM_STYLE_HAS  = "background-image: repeating-linear-gradient(-45deg, transparent, transparent 5px, #ddd 5px, #ddd 10px);";
 			var MRM_STYLE_NONE = "border-left: 1px solid #ffd699; background-image: repeating-linear-gradient(45deg, transparent, transparent 5px, #ffe0b3 5px, #ffe0b3 10px);";
 
@@ -1190,11 +1235,7 @@
 				var reason = document.getElementById('mrmReason').value;
 				var btn = document.getElementById('mrmSave');
 				btn.classList.add('loading', 'disabled');
-				fetch('ajaxapi.php?action=setmissingreason'
-						+ '&enrollmentid=' + encodeURIComponent(mrmCtx.enrollmentid)
-						+ '&projectchecklistid=' + encodeURIComponent(mrmCtx.projectchecklistid)
-						+ '&reason=' + encodeURIComponent(reason))
-					.then(function(r) { return r.json(); })
+				mrmPost({ action: 'setmissingreason', enrollmentid: mrmCtx.enrollmentid, projectchecklistid: mrmCtx.projectchecklistid, reason: reason })
 					.then(function(resp) {
 						btn.classList.remove('loading', 'disabled');
 						if (!resp || !resp.ok) { alert('Save failed: ' + ((resp && resp.error) || 'unknown error')); return; }
@@ -1208,8 +1249,7 @@
 			function mrmDeleteReason() {
 				if (!mrmCtx.missingdataid) return;
 				if (!confirm('Delete this missing-data reason?')) return;
-				fetch('ajaxapi.php?action=deletemissingreason&missingdataid=' + encodeURIComponent(mrmCtx.missingdataid))
-					.then(function(r) { return r.json(); })
+				mrmPost({ action: 'deletemissingreason', missingdataid: mrmCtx.missingdataid })
 					.then(function(resp) {
 						if (!resp || !resp.ok) { alert('Delete failed: ' + ((resp && resp.error) || 'unknown error')); return; }
 						mrmCtx.missingdataid = '';
@@ -1250,9 +1290,18 @@
 	/* -------------------------------------------- */
 	/* saves the checklist item rows (insert/update/delete), ported from projectchecklist.php */
 	function UpdateImagingChecklist($projectid, $itemid, $itemname, $itemtype, $modality, $mappedname, $expectedcount, $deleteitem, $instrumentid) {
-		$projectid = trim($projectid);
-		if (!isInteger($projectid)) { Error("Invalid project ID [$projectid]"); return; }
 		$projectid = (int)$projectid;
+		if ($projectid < 1) { Error("Invalid project ID"); return; }
+
+		/* an Instrument item may only use one of this project's instruments */
+		$projectinstruments = array();
+		$sqlstring = "select instrument_id from instruments where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$projectinstruments[] = (int)$row['instrument_id'];
+		mysqli_stmt_close($stmt);
 
 		$itemids        = is_array($itemid)        ? $itemid        : array();
 		$itemnames      = is_array($itemname)      ? $itemname      : array();
@@ -1285,26 +1334,26 @@
 
 		$itemorder = 1;
 		foreach ($allindices as $i) {
-			$rowid             = isset($itemids[$i])        ? trim($itemids[$i])        : "";
-			$name              = isset($itemnames[$i])      ? trim($itemnames[$i])      : "";
-			$type              = isset($itemtypes[$i])      ? trim($itemtypes[$i])      : "Checkbox";
-			$itemmodality      = isset($modalities[$i])     ? trim($modalities[$i])     : "";
+			$rowid             = isset($itemids[$i])        ? trim((string)$itemids[$i])        : "";
+			$name              = isset($itemnames[$i])      ? trim((string)$itemnames[$i])      : "";
+			$type              = isset($itemtypes[$i])      ? trim((string)$itemtypes[$i])      : "Checkbox";
+			$itemmodality      = isset($modalities[$i])     ? trim((string)$modalities[$i])     : "";
 			/* mapped name arrives as an array (multi-select); store it comma-separated */
 			if (!isset($mappednames[$i])) {
 				$itemmappedname = "";
 			} elseif (is_array($mappednames[$i])) {
-				$vals = array_filter(array_map('trim', $mappednames[$i]), function($v) { return $v !== ""; });
+				$vals = array_filter(array_map('trim', array_filter($mappednames[$i], 'is_string')), function($v) { return $v !== ""; });
 				$itemmappedname = implode(',', $vals);
 			} else {
-				$itemmappedname = trim($mappednames[$i]);
+				$itemmappedname = trim((string)$mappednames[$i]);
 			}
-			$itemexpectedcount = isset($expectedcounts[$i]) ? trim($expectedcounts[$i]) : "";
-			$delete            = isset($deleteitems[$i])    ? trim($deleteitems[$i])    : "0";
+			$itemexpectedcount = isset($expectedcounts[$i]) ? trim((string)$expectedcounts[$i]) : "";
+			$delete            = isset($deleteitems[$i])    ? trim((string)$deleteitems[$i])    : "0";
 			$iteminstrumentid  = isset($instrumentids[$i])  ? (int)$instrumentids[$i]   : null;
-			if ($iteminstrumentid < 1) $iteminstrumentid = null;
+			if (($iteminstrumentid < 1) || !in_array($iteminstrumentid, $projectinstruments, true)) $iteminstrumentid = null;
 
 			if (($rowid != "") && (!isInteger($rowid))) { continue; }
-			if (!in_array($type, array("Checkbox", "Imaging", "Intervention", "Observation", "Diagnosis", "Instrument"))) { $type = "Checkbox"; }
+			if (!in_array($type, array("Checkbox", "Imaging", "Intervention", "Observation", "Diagnosis", "Instrument"), true)) { $type = "Checkbox"; }
 			if (($itemexpectedcount == "") || (!isInteger($itemexpectedcount)) || ($itemexpectedcount < 1)) { $itemexpectedcount = "null"; }
 			else { $itemexpectedcount = intval($itemexpectedcount); }
 
@@ -1435,6 +1484,7 @@
 					<input type="hidden" name="action" value="editchecklistupdate">
 					<input type="hidden" name="projectid" value="<?=$projectid?>">
 					<input type="hidden" name="enrollstatus" value="<?=$enrollstatus?>">
+					<?=CSRFTokenField()?>
 
 					<script type="text/javascript">
 						/* existing series_desc values for the project, keyed by (upper-cased) modality */
@@ -1663,7 +1713,7 @@
 									<tr class="checklist-row">
 										<td class="center aligned"><span class="checklist-itemorder-display"><?=$itemorder?></span></td>
 										<td>
-											<input type="hidden" class="checklist-itemid" name="itemid[<?=$itemorder?>]" value="<?=$checklistrowid?>">
+											<input type="hidden" class="checklist-itemid" name="itemid[<?=$itemorder?>]" value="<?=(int)$checklistrowid?>">
 											<input type="hidden" class="checklist-deleteitem" name="deleteitem[<?=$itemorder?>]" value="0">
 											<div class="ui fluid input">
 												<input type="text" class="checklist-itemname" name="itemname[<?=$itemorder?>]" value="<?=$itemname?>" required>
@@ -1862,7 +1912,12 @@
 				{ field: 'enrollmentRowID', hide: true },
 				{
 					headerName: 'UID', field: 'uid', pinned: 'left', width: 150,
-					cellRenderer: function(params) { return '<a href="subjects.php?id=' + params.data.subjectRowID + '">' + (params.value == null ? '' : params.value) + '</a>'; },
+					cellRenderer: function(params) {
+						var a = document.createElement('a');
+						a.href = 'subjects.php?id=' + encodeURIComponent(params.data.subjectRowID);
+						a.textContent = (params.value == null) ? '' : String(params.value);
+						return a;
+					},
 					headerTooltip: 'Click to go to the subject'
 				}
 			];

@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -42,7 +43,8 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("addobservation", "deleteobservation"));
 	$observationid = (int)GetVariable("observationid");
 	$enrollmentid = (int)GetVariable("enrollmentid");
 	$observationname = GetVariable('observation_name');
@@ -56,13 +58,19 @@
 
 	/* determine action */
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 		case 'addobservation':
+			ob_start();
 			AddObservation($enrollmentid, $observationname, $observationvalue, $observationstartdate, $observationenddate, $observationtzoffset, $observationrater, $observationinstrument, $instrumentitemid);
-			DisplayObservationList($enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("observations.php?enrollmentid=$enrollmentid");
 			break;
 		case 'deleteobservation':
-			DeleteObservation($observationid);
-			DisplayObservationList($enrollmentid);
+			ob_start();
+			DeleteObservation($observationid, $enrollmentid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("observations.php?enrollmentid=$enrollmentid");
 			break;
 		default:
 			DisplayObservationList($enrollmentid);
@@ -73,56 +81,104 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetEnrollmentDataPerms ------------- */
+	/* -------------------------------------------- */
+	/* Observations are project data: View Data on the enrollment's project to view them, Edit Data to
+	   add, edit or delete. Returns [enrollment row or null, viewdata, modifydata] */
+	function GetEnrollmentDataPerms($enrollmentid) {
+		$enrollment = ((int)$enrollmentid > 0) ? GetEnrollment($enrollmentid) : null;
+		if ($enrollment == null)
+			return array(null, 0, 0);
+
+		$projectid = (int)$enrollment['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return array($enrollment, GetPerm($perms, 'viewdata', $projectid), GetPerm($perms, 'modifydata', $projectid));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- AddObservation --------------------- */
 	/* -------------------------------------------- */
 	function AddObservation($enrollmentid, $observationname, $observationvalue, $observationstartdate, $observationenddate, $observationtzoffset, $observationrater, $observationinstrument, $instrumentitemid) {
-		$observationvalue = mysqli_real_escape_string($GLOBALS['linki'], $observationvalue);
-		$observationrater = mysqli_real_escape_string($GLOBALS['linki'], $observationrater);
+		$enrollmentid = (int)$enrollmentid;
+		$instrumentitemid = (int)$instrumentitemid;
 
-		/* if an instrument item is linked, derive observation_name and observation_instrument from the DB */
-		if ((int)$instrumentitemid > 0) {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select ii.item_name, ins.instrument_name from instrument_items ii left join instruments ins on ii.instrument_id = ins.instrument_id where ii.instrumentitem_id = ?");
-			mysqli_stmt_bind_param($stmt, 'i', $instrumentitemid);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			if ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$observationname = $row['item_name'];
-				$observationinstrument = $row['instrument_name'];
-			}
-			mysqli_stmt_close($stmt);
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Invalid enrollment");
+			return;
+		}
+		if (!$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
 		}
 
-		$observationname = mysqli_real_escape_string($GLOBALS['linki'], $observationname);
-		$observationinstrument = mysqli_real_escape_string($GLOBALS['linki'], $observationinstrument);
+		/* if an instrument item is linked, derive observation_name and observation_instrument from the DB.
+		   The item must belong to an instrument in the enrollment's project */
+		if ($instrumentitemid > 0) {
+			$sqlstring = "select ii.item_name, ins.instrument_name, ins.project_id from instrument_items ii join instruments ins on ii.instrument_id = ins.instrument_id where ii.instrumentitem_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $instrumentitemid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentitemid]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row || ((int)$row['project_id'] != (int)$enrollment['project_id'])) {
+				Error("Invalid instrument item");
+				return;
+			}
+			$observationname = $row['item_name'];
+			$observationinstrument = $row['instrument_name'];
+		}
 
-		if (trim($observationrater) == "")      $observationrater = "null";
-		else $observationrater = "'" . trim($observationrater) . "'";
+		/* blank optional fields are stored as NULL */
+		$observationname = trim((string)$observationname);
+		$observationvalue = (string)$observationvalue;
+		$observationrater = (trim((string)$observationrater) === "") ? null : trim($observationrater);
+		$observationinstrument = (trim((string)$observationinstrument) === "") ? null : trim($observationinstrument);
+		$observationstartdate = (trim((string)$observationstartdate) === "") ? null : trim($observationstartdate);
+		$observationenddate = (trim((string)$observationenddate) === "") ? null : trim($observationenddate);
+		$observationtzoffset = ValidTzOffset($observationtzoffset);
+		$instrumentitemid = ($instrumentitemid > 0) ? $instrumentitemid : null;
 
-		if (trim($observationinstrument) == "") $observationinstrument = "null";
-		else $observationinstrument = "'" . trim($observationinstrument) . "'";
-
-		if (trim($observationstartdate) == "")  $observationstartdate_sql = "null";
-		else $observationstartdate_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationstartdate)) . "'";
-
-		if (trim($observationenddate) == "")    $observationenddate_sql = "null";
-		else $observationenddate_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationenddate)) . "'";
-
-		if (trim($observationtzoffset) == "")   $observationtzoffset_sql = "null";
-		else $observationtzoffset_sql = "'" . mysqli_real_escape_string($GLOBALS['linki'], trim($observationtzoffset)) . "'";
-
-		if ((int)$instrumentitemid > 0) $instrumentitemid_sql = (int)$instrumentitemid;
-		else $instrumentitemid_sql = "null";
-
-		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, instrumentitem_id, observation_startdate, observation_enddate, observation_tz_offset) values ($enrollmentid, now(), '$observationname', '$observationvalue', $observationrater, $observationinstrument, $instrumentitemid_sql, $observationstartdate_sql, $observationenddate_sql, $observationtzoffset_sql)";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, instrumentitem_id, observation_startdate, observation_enddate, observation_tz_offset) values (?, now(), ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = [$enrollmentid, $observationname, $observationvalue, $observationrater, $observationinstrument, $instrumentitemid, $observationstartdate, $observationenddate, $observationtzoffset];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'issssisss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- DeleteObservation ------------------ */
 	/* -------------------------------------------- */
-	function DeleteObservation($id) {
-		$sqlstring = "delete from observations where observation_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	function DeleteObservation($observationid, $enrollmentid) {
+		$observationid = (int)$observationid;
+		$enrollmentid = (int)$enrollmentid;
+
+		/* the observation must belong to the enrollment in the request */
+		$sqlstring = "select enrollment_id from observations where observation_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$observationid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row || ((int)$row['enrollment_id'] != $enrollmentid)) {
+			Error("Invalid observation");
+			return;
+		}
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if (($enrollment == null) || !$modifydata) {
+			Error("You do not have permission to edit data in this project");
+			return;
+		}
+
+		$sqlstring = "delete from observations where observation_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $observationid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$observationid]);
+		mysqli_stmt_close($stmt);
 
 		Notice("Observation deleted");
 	}
@@ -174,9 +230,17 @@
 	 *   (no label)         → __none__ group (states 7-8)
 	 */
 	function DisplayObservationList($enrollmentid) {
+		$enrollmentid = (int)$enrollmentid;
 
-		if ((trim($enrollmentid) == "") || ($enrollmentid < 0)) {
-			?>Invalid or blank enrollment ID [<?=$enrollmentid?>]<?
+		ShowFlashMessage();
+
+		list($enrollment, $viewdata, $modifydata) = GetEnrollmentDataPerms($enrollmentid);
+		if ($enrollment == null) {
+			Error("Enrollment not found");
+			return;
+		}
+		if (!$viewdata) {
+			Error("You do not have permission to view data in this project");
 			return;
 		}
 
@@ -191,8 +255,7 @@
 		$debugTime = array();
 		$debugStart = microtime(true);
 
-		/* get subject's info and project for the breadcrumb/form */
-		list(,,,,$projectid) = GetEnrollmentInfo($enrollmentid);
+		$projectid = (int)$enrollment['project_id'];
 
 		/* flush the loading indicator to the browser before running the heavy SQL queries */
 		?>
@@ -496,6 +559,7 @@
 					<input type="hidden" name="observation_instrument" id="instrumentNameHidden">
 					<input type="hidden" name="instrumentitem_id" id="instrumentitemId">
 					<input type="hidden" name="observation_tz_offset" id="obsTzOffset">
+					<?=CSRFTokenField()?>
 
 					<div class="fields">
 						<div class="eight wide field">
@@ -524,7 +588,7 @@
 						</div>
 						<div class="four wide field">
 							<label>Rater</label>
-							<input type="text" name="observation_rater" size="15" value="<?=$GLOBALS['username']?>">
+							<input type="text" name="observation_rater" size="15" value="<?=htmlspecialchars($GLOBALS['username'] ?? '')?>">
 						</div>
 					</div>
 					<div class="fields">
@@ -561,10 +625,12 @@
 		/* joined to instrument_items and instruments to resolve states 1-4 (instrumentitem_id set);
 		   joined to observation_surveys to pull survey dates/rater for states 1,3,5,7;
 		   left joins fall through to NULLs for states 2,4,6,8 (no survey) */
-		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, s.survey_status, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = $enrollmentid order by a.observation_name";
-		$debugSQL['main observations query'] = $sqlstring;
+		$sqlstring = "select a.*, ii.item_name, ii.item_type, ins.instrument_name as linked_instrument_name, s.survey_startdate, s.survey_enddate, s.survey_rater, s.survey_notes, s.survey_visit, s.survey_status, f.file_contenttype, f.file_name, (select count(*) from observation_meta om where om.observation_id = a.observation_id) as meta_count from observations a left join instrument_items ii on a.instrumentitem_id = ii.instrumentitem_id left join instruments ins on ii.instrument_id = ins.instrument_id left join observation_surveys s on a.observationsurvey_id = s.survey_id left join files f on a.observation_fileid = f.file_id where a.enrollment_id = ? order by a.observation_name";
+		$debugSQL['main observations query (enrollment_id=' . $enrollmentid . ')'] = $sqlstring;
 		$t = microtime(true);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $enrollmentid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentid]);
 		if ($debug) $debugTime['main observations query (' . mysqli_num_rows($result) . ' rows)'] = (microtime(true) - $t) * 1000;
 		$t = microtime(true);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -616,6 +682,7 @@
 			}
 		}
 
+		mysqli_stmt_close($stmt);
 		if ($debug) $debugTime['build $groups from main query rows'] = (microtime(true) - $t) * 1000;
 
 		/* sort instrument groups alphabetically; move __none__ to end */
@@ -721,8 +788,11 @@
 			if ($hasInstrument && $instrRow) {
 				$t = microtime(true);
 				$iid = (int)$instrRow['instrument_id'];
-				$itemCountResult = MySQLiQuery("select count(*) as cnt from instrument_items where instrument_id = $iid", __FILE__, __LINE__);
+				$stmt = mysqli_prepare($GLOBALS['linki'], "select count(*) as cnt from instrument_items where instrument_id = ?");
+				mysqli_stmt_bind_param($stmt, 'i', $iid);
+				$itemCountResult = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 				$itemCountRow = mysqli_fetch_array($itemCountResult, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
 				$itemCount = (int)$itemCountRow['cnt'];
 				$tItemCount += microtime(true) - $t;
 			}
@@ -775,12 +845,14 @@
 		</div>
 		<? } ?>
 		<div style="margin: 8px 0; display:flex; align-items:center; gap:1em; flex-wrap:wrap">
+			<? if ($modifydata) { ?>
 			<button class="ui primary button" onclick="$('#addObsModal').modal('show')">
 				<i class="plus icon"></i> Add observation
 			</button>
 			<button class="ui green button disabled" id="withSelectedBtn" disabled onclick="openBulkActionModal()">
 				<i class="tasks icon"></i>With selected...
 			</button>
+			<? } ?>
 			<div style="margin-left:auto">
 				<div class="ui icon input">
 					<input type="text" id="obsSearchInput" placeholder="Search observations..." style="min-width:240px">
@@ -813,6 +885,11 @@
 			const surveyMeta    = <?=$surveyMetaJson?>;
 			const PROJECT_ID    = <?=(int)$projectid?>;
 			const ENROLLMENT_ID = <?=(int)$enrollmentid?>;
+			/* Edit Data on the enrollment's project: shows the add/edit/delete/bulk/survey controls.
+			   ajaxapi.php and this page check the permission again on every change */
+			const CAN_EDIT      = <?=($modifydata ? 'true' : 'false')?>;
+			/* sent with every POST to ajaxapi.php */
+			const CSRF_TOKEN    = <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
 
 			/* ── UTC / timezone helpers ──────────────────────────────────────
 			 * Dates are stored as UTC. datetime-local inputs return local time.
@@ -869,6 +946,7 @@
 				const value  = isDate ? localToUTC(params.newValue ?? '') : (params.newValue ?? '');
 				const postData = {
 					action: 'updateobservationdetails',
+					csrftoken: CSRF_TOKEN,
 					observationid: params.data.observationid,
 					column: colId,
 					value: value,
@@ -892,15 +970,49 @@
 				width: 90, minWidth: 90, maxWidth: 90,
 				filter: false, sortable: false, resizable: false,
 				cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center' },
+				/* deleting is a POST with the CSRF token, so it can't be triggered by a link */
 				cellRenderer: function(params) {
-					const link = document.createElement('a');
-					link.href = 'observations.php?action=deleteobservation&observationid=' + params.value + '&enrollmentid=<?=$enrollmentid?>';
-					link.title = 'Delete this observation';
-					link.onclick = function() { return confirm('Are you sure you want to delete this record?'); };
-					link.innerHTML = '<i class="large red alternate outline trash icon"></i>';
-					return link;
+					const form = document.createElement('form');
+					form.method = 'post';
+					form.action = 'observations.php';
+					form.style.cssText = 'display:inline; margin:0';
+					[['action', 'deleteobservation'], ['observationid', params.value], ['enrollmentid', ENROLLMENT_ID], ['csrftoken', CSRF_TOKEN]].forEach(function(f) {
+						const input = document.createElement('input');
+						input.type = 'hidden';
+						input.name = f[0];
+						input.value = f[1];
+						form.appendChild(input);
+					});
+					form.onsubmit = function() { return confirm('Are you sure you want to delete this record?'); };
+					const btn = document.createElement('button');
+					btn.type = 'submit';
+					btn.title = 'Delete this observation';
+					btn.style.cssText = 'background:none; border:none; padding:0; cursor:pointer';
+					btn.innerHTML = '<i class="large red alternate outline trash icon"></i>';
+					form.appendChild(btn);
+					return form;
 				}
 			};
+
+			/* a cell showing plain text. Values from the database are never inserted as HTML */
+			function textCell(value) {
+				const span = document.createElement('span');
+				span.textContent = (value === null || value === undefined) ? '' : String(value);
+				return span;
+			}
+
+			/* start/end date cell: the date, plus the timezone offset it was entered in */
+			function dateTzCell(params) {
+				if (!params.value) return '';
+				const span = textCell(params.value);
+				const tz = params.data.tzOffset;
+				if (tz) {
+					const tzSpan = textCell(' ' + tz);
+					tzSpan.style.cssText = 'color:#aaa;font-size:0.85em';
+					span.appendChild(tzSpan);
+				}
+				return span;
+			}
 
 			/* entry dates column definition */
 			const datesColDef = {
@@ -922,7 +1034,7 @@
 			/* variable column extracted so both instrColDefs and noneColDefs share the same object */
 			const variableColDef = {
 				headerName: 'Variable', field: 'observationName', flex: 1.3, minWidth: 180,
-				editable: function(params) { return !params.data.instrumentitemid; },
+				editable: function(params) { return CAN_EDIT && !params.data.instrumentitemid; },
 				cellStyle: editableCellStyle
 			};
 
@@ -967,7 +1079,7 @@
 			   falls back to normal editable text for plain observations */
 			const valueColDef = {
 				headerName: 'Value', field: 'value', flex: 1, minWidth: 130,
-				editable: function(params) { return !params.data.fileId && params.data.itemType !== 'timeseries'; },
+				editable: function(params) { return CAN_EDIT && !params.data.fileId && params.data.itemType !== 'timeseries'; },
 				cellStyle: editableCellStyle,
 				cellRenderer: function(params) {
 					if (params.data.itemType === 'timeseries') {
@@ -996,7 +1108,7 @@
 							span.appendChild(code);
 							return span;
 						}
-						return params.value || '';
+						return textCell(params.value);
 					}
 					const isImage = params.data.fileContentType && params.data.fileContentType.startsWith('image/');
 					const icon    = isImage ? 'image' : 'file outline';
@@ -1020,33 +1132,25 @@
 				{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1, minWidth: 150 },
 				{ headerName: 'Type', field: 'itemType', width: 100, minWidth: 100, maxWidth: 120,
 					cellStyle: { color: '#888', fontStyle: 'italic', fontSize: '0.85em' },
-					cellRenderer: function(params) { return params.value || ''; }
+					cellRenderer: function(params) { return textCell(params.value); }
 				},
 				valueColDef,
-				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
-				{ headerName: 'Start date', field: 'startdate', minWidth: 185, editable: true, cellStyle: editableCellStyle,
-					cellRenderer: params => {
-						if (!params.value) return '';
-						const tz = params.data.tzOffset;
-						return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
-					}
+				{ headerName: 'Rater', field: 'rater', minWidth: 120, editable: CAN_EDIT, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
+				{ headerName: 'Start date', field: 'startdate', minWidth: 185, editable: CAN_EDIT, cellStyle: editableCellStyle,
+					cellRenderer: dateTzCell
 				},
-				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: true, cellStyle: editableCellStyle },
-				{ headerName: 'End date', field: 'enddate', minWidth: 185, editable: true, cellStyle: editableCellStyle,
-					cellRenderer: params => {
-						if (!params.value) return '';
-						const tz = params.data.tzOffset;
-						return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
-					}
+				{ headerName: 'Duration', field: 'duration', minWidth: 110, editable: CAN_EDIT, cellStyle: editableCellStyle },
+				{ headerName: 'End date', field: 'enddate', minWidth: 185, editable: CAN_EDIT, cellStyle: editableCellStyle,
+					cellRenderer: dateTzCell
 				},
 				metaColDef,
-				datesColDef,
-				deleteColDef
+				datesColDef
 			];
+			if (CAN_EDIT) instrColDefs.push(deleteColDef);
 
 			/* column defs for the __none__ group (states 7-8): keep Variable, insert an editable Instrument
 			   column so the user can assign a free-text hint (promoting toward state 6), then append the rest */
-			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: true, cellStyle: editableCellStyle };
+			const noneInstrumentColDef = { headerName: 'Instrument', field: 'obsInstrument', flex: 1, minWidth: 150, editable: CAN_EDIT, cellStyle: editableCellStyle };
 			const noneColDefs = [variableColDef, noneInstrumentColDef, ...instrColDefs.filter(function(c) { return c.field !== 'instrumentitem' && c.field !== 'observationName'; })];
 
 			/* sanitizes a string for safe insertion into innerHTML */
@@ -1226,6 +1330,7 @@
 				});
 				var count = selectedObsIds.size;
 				var btn = document.getElementById('withSelectedBtn');
+				if (!btn) return;
 				if (count > 0) {
 					btn.innerHTML = '<i class="tasks icon"></i>With ' + count + ' selected...';
 					btn.disabled = false;
@@ -1288,6 +1393,7 @@
 						if (action === 'delete') {
 							$.post('ajaxapi.php', {
 								action: 'bulkdeleteobservations',
+								csrftoken: CSRF_TOKEN,
 								observationids: JSON.stringify(ids)
 							}, function(data) {
 								if (data && data.error) {
@@ -1305,6 +1411,7 @@
 						} else if (action === 'convertmeta') {
 							$.post('ajaxapi.php', {
 								action: 'bulkconvertvaluetometa',
+								csrftoken: CSRF_TOKEN,
 								observationids: JSON.stringify(ids)
 							}, function(data) {
 								if (data && data.error) {
@@ -1322,6 +1429,7 @@
 						} else if (action === 'movenewsurvey') {
 							$.post('ajaxapi.php', {
 								action: 'bulkmovenewsurvey',
+								csrftoken: CSRF_TOKEN,
 								observationids: JSON.stringify(ids)
 							}, function(data) {
 								if (data && data.error) {
@@ -1349,6 +1457,7 @@
 							var value   = isDate ? localToUTC(rawVal) : rawVal;
 							var postData = {
 								action: 'bulkupdateobservations',
+								csrftoken: CSRF_TOKEN,
 								observationids: JSON.stringify(ids),
 								column: action,
 								value: value,
@@ -1420,6 +1529,7 @@
 						$('#formalizeSaveButton').addClass('loading disabled');
 						$.post('ajaxapi.php', {
 							action:         'formalizeinstrument',
+							csrftoken:      CSRF_TOKEN,
 							instrumentname: newName,       /* potentially renamed instrument name to save */
 							originalname:   formalizeOriginalName, /* original legacy string used for DB WHERE matching */
 							projectid:      PROJECT_ID,
@@ -1490,10 +1600,10 @@
 							instrBadge = '&nbsp;<span class="ui tiny green label" title="All observations linked via instrument item FK"><i class="check icon"></i> Linked</span>';
 						} else if (meta.hasInstrument && meta.legacyCount > 0) {
 							instrBadge = '&nbsp;<span class="ui tiny yellow label" title="Some observations still use a legacy text string"><i class="adjust icon"></i> Partially linked</span>'
-								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="sync icon"></i>Convert remaining</a>';
+								+ (CAN_EDIT ? '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="sync icon"></i>Convert remaining</a>' : '');
 						} else {
 							instrBadge = '&nbsp;<span class="ui tiny orange label" title="No instrument record exists for this name"><i class="warning sign icon"></i> Legacy</span>'
-								+ '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="plus icon"></i>Create instrument</a>';
+								+ (CAN_EDIT ? '&nbsp;<a class="formalize-link" href="#" data-instrument="' + escHtml(instrName) + '" style="font-size:0.85em"><i class="plus icon"></i>Create instrument</a>' : '');
 						}
 					}
 
@@ -1550,7 +1660,7 @@
 								const complColor = (filledCount === totalItems) ? 'green' : (filledCount > 0 ? 'yellow' : 'red');
 								complBadge = '&nbsp;<span class="ui tiny ' + complColor + ' label">' + filledCount + ' / ' + totalItems + ' items</span>';
 							}
-							const editLink = '&nbsp;<a class="edit-survey-link" href="#" data-surveykey="' + escHtml(surveyKey) + '" style="font-size:0.85em"><i class="edit icon"></i>Edit survey</a>';
+							const editLink = !CAN_EDIT ? '' : '&nbsp;<a class="edit-survey-link" href="#" data-surveykey="' + escHtml(surveyKey) + '" style="font-size:0.85em"><i class="edit icon"></i>Edit survey</a>';
 							/* survey_status 1 = Completed → show the observation count in green */
 							const countClass = (sm && sm.status === 1) ? 'ui small circular green label' : 'ui small circular label';
 							surveyTitleHtml = '<i class="dropdown icon"></i><i class="calendar outline icon"></i> '
@@ -1568,7 +1678,7 @@
 						surveyContentDiv.className = 'content';
 
 						/* action bar: shown only for the unaffiliated sub-group of a named instrument */
-						if (isNoneSurvey && !isNoneInstr) {
+						if (CAN_EDIT && isNoneSurvey && !isNoneInstr) {
 							const obsIds = rows.map(function(r) { return r.observationid; });
 							const actionBar = document.createElement('div');
 							actionBar.className = 'survey-action-bar';
@@ -1602,7 +1712,7 @@
 								defaultColDef: { sortable: true, filter: true, resizable: true },
 								animateRows: false,
 								suppressMovableColumns: true,
-								rowSelection: { mode: 'multiRow' },
+								rowSelection: CAN_EDIT ? { mode: 'multiRow' } : undefined,
 								onCellValueChanged: onCellValueChanged,
 								onSelectionChanged: onGridSelectionChanged
 							});
@@ -1682,9 +1792,13 @@
 							onApprove: function() {
 								$.post('ajaxapi.php', {
 									action:         'assigntosurvey',
+									csrftoken:      CSRF_TOKEN,
 									surveyid:       $('#assignSurveySelect').val(),
 									observationids: JSON.stringify(obsIds)
-								}, function() { location.reload(); });
+								}, function(data) {
+									if (data && data.error) { alert(data.error); return; }
+									location.reload();
+								}, 'json').fail(function() { alert('Server error — please try again.'); });
 								return false;
 							}
 						}).modal('show');
@@ -1701,7 +1815,7 @@
 					$('#newSurveyInstrId').val(instrId);
 					$('#newSurveyStartdate').val(new Date(new Date() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16));
 					$('#newSurveyEnddate').val('');
-					$('#newSurveyRater').val('<?=$GLOBALS['username']?>');
+					$('#newSurveyRater').val(<?=json_encode($GLOBALS['username'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>);
 					$('#newSurveyNotes').val('');
 					$('#newSurveyError').hide();
 					$('#newSurveySaveButton').removeClass('loading disabled');
@@ -1712,6 +1826,7 @@
 							$('#newSurveySaveButton').addClass('loading disabled');
 							$.post('ajaxapi.php', {
 								action:         'createandassignsurvey',
+								csrftoken:      CSRF_TOKEN,
 								enrollmentid:   ENROLLMENT_ID,
 								instrumentid:   instrId,
 								startdate:      $('#newSurveyStartdate').val(),
@@ -1754,6 +1869,7 @@
 							$('#editSurveySaveButton').addClass('loading disabled');
 							$.post('ajaxapi.php', {
 								action:    'updatesurvey',
+								csrftoken: CSRF_TOKEN,
 								surveyid:  $('#editSurveyId').val(),
 								startdate: $('#editSurveyStartdate').val(),
 								enddate:   $('#editSurveyEnddate').val(),
@@ -1809,7 +1925,7 @@
 					{ headerName: 'Instrument', field: 'instrumentName', flex: 1.2, minWidth: 150,
 					cellRenderer: function(params) {
 						if (!params.value) return '';
-						if (!params.data.instrumentId) return escHtml(params.value);
+						if (!params.data.instrumentId) return textCell(params.value);
 						const a = document.createElement('a');
 						a.href = 'instruments.php?projectid=' + PROJECT_ID + '&instrumentid=' + params.data.instrumentId;
 						a.textContent = params.value;
@@ -1821,29 +1937,21 @@
 					{ headerName: 'Instrument Item', field: 'instrumentitem', flex: 1,   minWidth: 150 },
 					{ headerName: 'Type', field: 'itemType', width: 100, minWidth: 100, maxWidth: 120,
 						cellStyle: { color: '#888', fontStyle: 'italic', fontSize: '0.85em' },
-						cellRenderer: function(params) { return params.value || ''; }
+						cellRenderer: function(params) { return textCell(params.value); }
 					},
 					valueColDef,
-					{ headerName: 'Rater',           field: 'rater',          minWidth: 120, editable: true, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
-					{ headerName: 'Start date',      field: 'startdate',      minWidth: 185, editable: true, cellStyle: editableCellStyle,
-						cellRenderer: function(params) {
-							if (!params.value) return '';
-							const tz = params.data.tzOffset;
-							return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
-						}
+					{ headerName: 'Rater',           field: 'rater',          minWidth: 120, editable: CAN_EDIT, cellStyle: function() { return { 'font-size': '9pt', cursor: 'text' }; } },
+					{ headerName: 'Start date',      field: 'startdate',      minWidth: 185, editable: CAN_EDIT, cellStyle: editableCellStyle,
+						cellRenderer: dateTzCell
 					},
-					{ headerName: 'Duration',        field: 'duration',       minWidth: 110, editable: true, cellStyle: editableCellStyle },
-					{ headerName: 'End date',        field: 'enddate',        minWidth: 185, editable: true, cellStyle: editableCellStyle,
-						cellRenderer: function(params) {
-							if (!params.value) return '';
-							const tz = params.data.tzOffset;
-							return tz ? params.value + ' <span style="color:#aaa;font-size:0.85em">' + tz + '</span>' : params.value;
-						}
+					{ headerName: 'Duration',        field: 'duration',       minWidth: 110, editable: CAN_EDIT, cellStyle: editableCellStyle },
+					{ headerName: 'End date',        field: 'enddate',        minWidth: 185, editable: CAN_EDIT, cellStyle: editableCellStyle,
+						cellRenderer: dateTzCell
 					},
 					metaColDef,
-					datesColDef,
-					deleteColDef
+					datesColDef
 				];
+				if (CAN_EDIT) searchColDefs.push(deleteColDef);
 
 				const debugT2 = performance.now();
 				const searchGridApi = agGrid.createGrid(document.getElementById('searchGrid'), {
@@ -1853,7 +1961,7 @@
 					defaultColDef: { sortable: true, filter: true, resizable: true },
 					animateRows: false,
 					suppressMovableColumns: true,
-					rowSelection: { mode: 'multiRow' },
+					rowSelection: CAN_EDIT ? { mode: 'multiRow' } : undefined,
 					onCellValueChanged: onCellValueChanged,
 					onSelectionChanged: onGridSelectionChanged
 				});
@@ -2000,7 +2108,7 @@
 								$('#addInstrumentError').text('Instrument name is required.').show();
 								return false;
 							}
-							$.post('ajaxapi.php', { action: 'addinstrument', instrumentname: name, instrumentnotes: notes, projectid: PROJECT_ID }, function(data) {
+							$.post('ajaxapi.php', { action: 'addinstrument', csrftoken: CSRF_TOKEN, instrumentname: name, instrumentnotes: notes, projectid: PROJECT_ID }, function(data) {
 								if (data.error) {
 									$('#addInstrumentError').text(data.error).show();
 									return;
@@ -2042,7 +2150,7 @@
 								$('#addItemError').text('Item name is required.').show();
 								return false;
 							}
-							$.post('ajaxapi.php', { action: 'addinstrumentitem', itemname: name, itemtype: type, itemnotes: notes, instrumentid: instrId }, function(data) {
+							$.post('ajaxapi.php', { action: 'addinstrumentitem', csrftoken: CSRF_TOKEN, itemname: name, itemtype: type, itemnotes: notes, instrumentid: instrId }, function(data) {
 								if (data.error) {
 									$('#addItemError').text(data.error).show();
 									return;

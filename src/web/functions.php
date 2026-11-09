@@ -1545,6 +1545,20 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- IsProjectMember -------------------- */
+	/* -------------------------------------------- */
+	/* true if $perms (from GetCurrentUserProjectPermissions) grants any permission on $projectid. Used
+	   for project definitions that aren't subject data (instruments, the project checklist) */
+	function IsProjectMember($perms, $projectid) {
+		foreach (array('projectadmin', 'viewdata', 'viewphi', 'modifydata', 'modifyphi') as $perm) {
+			if (GetPerm($perms, $perm, $projectid))
+				return true;
+		}
+		return false;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- NoViewPermission ------------------- */
 	/* -------------------------------------------- */
 	/* Placeholder shown in place of a value the user does not have permission to see. The label
@@ -3243,6 +3257,80 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			echo $_SESSION['flash'];
 			unset($_SESSION['flash']);
 		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- UnlinkInstrumentItems -------------- */
+	/* -------------------------------------------- */
+	/* Call before deleting instrument items (and, with $instrumentid, before deleting the instrument),
+	   so nothing is left pointing at rows that no longer exist. Observations linked to the items keep
+	   their data: a blank observation_name/observation_instrument is filled in from the item and
+	   instrument names, and the link is cleared, which makes them 'legacy' observations that can be
+	   formalized again. The items' value-label maps are deleted, and remote-import mappings, surveys and
+	   project checklist items that referenced them are set to NULL. Callers check permissions first */
+	function UnlinkInstrumentItems($itemids, $instrumentid = 0) {
+		$itemids = array_values(array_unique(array_filter(array_map('intval', (array)$itemids), function($id) { return $id > 0; })));
+		$instrumentid = (int)$instrumentid;
+
+		if (count($itemids) > 0) {
+			$placeholders = implode(',', array_fill(0, count($itemids), '?'));
+			$types = str_repeat('i', count($itemids));
+
+			$sqlstring = "update observations o join instrument_items ii on o.instrumentitem_id = ii.instrumentitem_id join instruments ins on ii.instrument_id = ins.instrument_id set o.observation_name = if(o.observation_name is null or o.observation_name = '', ii.item_name, o.observation_name), o.observation_instrument = if(o.observation_instrument is null or o.observation_instrument = '', ins.instrument_name, o.observation_instrument), o.instrumentitem_id = null where ii.instrumentitem_id in ($placeholders)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, $types, ...$itemids);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $itemids);
+			mysqli_stmt_close($stmt);
+
+			foreach (array("delete from instrumentitem_map where instrumentitem_id in ($placeholders)", "update remoteimport_mapping set nidb_variable = null where nidb_variable in ($placeholders)") as $sqlstring) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, $types, ...$itemids);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $itemids);
+				mysqli_stmt_close($stmt);
+			}
+		}
+
+		if ($instrumentid > 0) {
+			foreach (array("update observation_surveys set instrument_id = null where instrument_id = ?", "update project_checklist set instrument_id = null where instrument_id = ?", "update remoteimport_mapping set nidb_instrument = null where nidb_instrument = ?") as $sqlstring) {
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $instrumentid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid]);
+				mysqli_stmt_close($stmt);
+			}
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DatabaseTableExists ---------------- */
+	/* -------------------------------------------- */
+	/* true if $table exists in the NiDB database. Uses information_schema because SHOW can't be prepared
+	   on all MariaDB versions. Results are cached for the request */
+	function DatabaseTableExists($table) {
+		static $cache = array();
+		$table = (string)$table;
+		if ($table == "")
+			return false;
+		if (!isset($cache[$table])) {
+			$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $table);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$table]);
+			$cache[$table] = (mysqli_num_rows($result) > 0);
+			mysqli_stmt_close($stmt);
+		}
+		return $cache[$table];
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidTzOffset ---------------------- */
+	/* -------------------------------------------- */
+	/* returns a UTC offset in the "+HH:MM" / "-HH:MM" form the browser sends, or null if blank or malformed */
+	function ValidTzOffset($tzoffset) {
+		$tzoffset = trim((string)$tzoffset);
+		return preg_match('/^[+-]\d{2}:\d{2}$/', $tzoffset) ? $tzoffset : null;
 	}
 
 
