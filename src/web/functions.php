@@ -3298,18 +3298,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		$GLOBALS['cfg'] = LoadConfig();
 	
 		/* PHP 8.1+ mysqli throws mysqli_sql_exception on a failed connect (the old
-		   `or $dbconnect = false` idiom no longer fires), so catch it explicitly. A
-		   blank/unconfigured dev DB is normal and must not be a fatal error. */
+		   `or $dbconnect = false` idiom no longer fires), so catch it explicitly. */
 		$dbconnect = true;
-		$devdbconnect = true;
 		try {
 			$L = mysqli_connect($GLOBALS['cfg']['mysqlhost'] ?? '', $GLOBALS['cfg']['mysqluser'] ?? '', $GLOBALS['cfg']['mysqlpassword'] ?? '', $GLOBALS['cfg']['mysqldatabase'] ?? '');
 			if ($L) mysqli_close($L);
 		} catch (Throwable $e) { $dbconnect = false; }
-		try {
-			$Ldev = mysqli_connect($GLOBALS['cfg']['mysqldevhost'] ?? '', $GLOBALS['cfg']['mysqldevuser'] ?? '', $GLOBALS['cfg']['mysqldevpassword'] ?? '', $GLOBALS['cfg']['mysqldevdatabase'] ?? '');
-			if ($Ldev) mysqli_close($Ldev);
-		} catch (Throwable $e) { $devdbconnect = false; }
 
 		if ($returnpage == "setup") { $active = "active"; } else { $active = ""; }
 		
@@ -3442,30 +3436,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="text" name="mysqldatabase" value="<?=$mysqldatabase?>"></td>
 							<td class="center aligned"><? if ($dbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Database (default is <tt>nidb</tt>)</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">mysqldevhost</td>
-							<td><input type="text" name="mysqldevhost" value="<?=$GLOBALS['cfg']['mysqldevhost']?>"></td>
-							<td class="center aligned"><? if ($devdbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Development database hostname. This database will only be used if the website is accessed from port 8080 instead of 80. Example <code>http://localhost:8080</code></td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">mysqldevuser</td>
-							<td><input type="text" name="mysqldevuser" value="<?=$GLOBALS['cfg']['mysqldevuser']?>"></td>
-							<td class="center aligned"><? if ($devdbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Development database username</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">mysqldevpassword</td>
-							<td><input type="password" name="mysqldevpassword" value="<?=$GLOBALS['cfg']['mysqldevpassword']?>"></td>
-							<td class="center aligned"><? if ($devdbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Development database password</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">mysqldevdatabase</td>
-							<td><input type="text" name="mysqldevdatabase" value="<?=$GLOBALS['cfg']['mysqldevdatabase']?>"></td>
-							<td class="center aligned"><? if ($devdbconnect) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Development database (default is <tt>nidb</tt>)</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">mysqlclusteruser</td>
@@ -3623,12 +3593,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td>Displayed on NiDB main page and some email notifications</td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">sitenamedev</td>
-							<td><input type="text" name="sitenamedev" value="<?=$GLOBALS['cfg']['sitenamedev']?>"></td>
-							<td></td>
-							<td>Development site name</td>
-						</tr>
-						<tr>
 							<td class="right aligned tt">sitecolor</td>
 							<td><input type="color" name="sitecolor" value="<?=$GLOBALS['cfg']['sitecolor']?>"></td>
 							<td></td>
@@ -3736,6 +3700,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 							<td><input type="text" name="setupips" value="<?=$GLOBALS['cfg']['setupips']?>"></td>
 							<td></td>
 							<td>Comma separated list of IP addresses from which the setup and update functionality can be accessed. Example <code>127.0.0.1, 10.24.1.1</code> Your current IP address is <code><?=$_SERVER['REMOTE_ADDR']?></code></td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">allowsignup</td>
+							<td><input type="checkbox" name="allowsignup" value="1" <? if (($GLOBALS['cfg']['allowsignup'] ?? '1') == '1') { echo "checked"; } ?>></td>
+							<td></td>
+							<td>Allow people to create their own account on the signup page. New accounts are created disabled, and an admin must enable them (the <code>adminemail</code> address is notified)</td>
 						</tr>
 
 						<tr>
@@ -4329,10 +4299,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [mysqluser] = $mysqluser
 [mysqlpassword] = $mysqlpassword
 [mysqldatabase] = $mysqldatabase
-[mysqldevhost] = $mysqldevhost
-[mysqldevuser] = $mysqldevuser
-[mysqldevpassword] = $mysqldevpassword
-[mysqldevdatabase] = $mysqldevdatabase
 [mysqlclusteruser] = $mysqlclusteruser
 [mysqlclusterpassword] = $mysqlclusterpassword
 
@@ -4363,7 +4329,6 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 [siteurl] = $siteurl
 [version] = $version
 [sitename] = $sitename
-[sitenamedev] = $sitenamedev
 [sitecolor] = $sitecolor
 [ispublic] = $ispublic
 [sitetype] = $sitetype
@@ -4383,6 +4348,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 
 # ----- security options -----
 [setupips] = $setupips
+[allowsignup] = $allowsignup
 
 # ----- backup options -----
 [backupsize] = $backupsize

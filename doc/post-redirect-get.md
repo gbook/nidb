@@ -35,7 +35,7 @@ for the reference implementation.
 | `calendar_calendars.php` | 3 | ✅ |
 | `checklist.php` | 1 | ⬜ |
 | `cleanup.php` | 4 | ✅ |
-| `clustersettings.php` | 5 | ✅ |
+| `clustersettings.php` | 6 | ✅ |
 | `datadictionary.php` | 4 | ⬜ |
 | `datasetrequests.php` | 2 | ✅ |
 | `diagnosis.php` | 1 | ✅ |
@@ -68,13 +68,12 @@ for the reference implementation.
 | `projectchecklist.php` | 1 | ⬜ |
 | `projects.php` | 8 | ⬜ |
 | `ratings.php` | 2 | ✅ |
-| `register.php` | 2 | ⬜ |
 | `remoteconnections.php` | 2 | ✅ |
 | `remoteimportmapping.php` | 2 | ⬜ |
 | `search.php` | 5 | ⬜ |
 | `settings.php` | 1 | ✅ |
 | `setup.php` | 1 | ✅ |
-| `signup.php` | 2 | ⬜ |
+| `signup.php` | 3 | ✅ |
 | `status.php` | 1 | ✅ |
 | `studies.php` | 16 | ⬜ |
 | `subjects.php` | 11 | ✅ |
@@ -84,4 +83,4 @@ for the reference implementation.
 | `users.php` | 2 | ⬜ |
 | `visualization.php` | 1 | ⬜ |
 
-_Regenerated 2026-11-06 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-11-09 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._

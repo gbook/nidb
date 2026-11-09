@@ -15,14 +15,11 @@ client, using either the **curl** command line or **C++ with libcurl**.
 
 ### Base URL
 
-| Environment | Base URL |
-| --- | --- |
-| Production | `https://YOUR-NIDB-HOST/api2.php` |
-| Development | `http://YOUR-NIDB-HOST:8080/api2.php` |
+`https://YOUR-NIDB-HOST/api2.php`
 
-> **HTTPS is required in production.** Plain `http://` requests are rejected with
-> `403`. The development server (reached on port `8080`) is exempt so it can be
-> tested over `http`.
+> **HTTPS is required.** Plain `http://` requests are rejected with `403`. For
+> testing on a server without TLS, an admin can set `API_ENFORCE_HTTPS` to `false`
+> at the top of `api2.php`.
 
 ### Response envelope
 
@@ -184,7 +181,7 @@ Returns `data.objectTypes`. *(Under development.)*
 Set a couple of shell variables first:
 
 ```bash
-BASE="https://YOUR-NIDB-HOST/api2.php"     # dev: http://YOUR-NIDB-HOST:8080/api2.php
+BASE="https://YOUR-NIDB-HOST/api2.php"
 USER="myapiuser"
 TOKEN="the-api-key-from-my-account"
 ```

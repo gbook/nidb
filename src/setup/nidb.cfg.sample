@@ -29,10 +29,6 @@
 [mysqldatabase] = nidb
 [mysqluser] = nidb
 [mysqlpassword] = password
-[mysqldevhost] = localhost
-[mysqldevdatabase] = nidb
-[mysqldevuser] = nidb
-[mysqldevpassword] = password
 
 # ----- E-mail -----
 # emaillib options (case-sensitive): Net-SMTP-TLS (default), Email-Send-SMTP-Gmail
@@ -53,11 +49,11 @@
 [qsubpath] = qsub # full path to the qsub executable
 [version] = 5.6.0
 [sitename] = NiDB 
-[sitenamedev] = NiDB (DEV)
 [sitecolor] = #ed5e4e
 [ispublic] = 0
 [sitetype] = local
 [allowphi] = 1
+[allowsignup] = 1
 
 # ----- CAS authentication -----
 [enablecas] = 0

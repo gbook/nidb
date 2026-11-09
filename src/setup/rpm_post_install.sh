@@ -200,8 +200,41 @@ sed -i 's/^;.*max_input_vars = .*/max_input_vars = 1000/g' /etc/php.ini # this l
 sed -i 's/^max_input_time = .*/max_input_time = 600/g' /etc/php.ini
 sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' /etc/php.ini
 sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' /etc/php.ini
-sed -i 's/^display_errors = .*/display_errors = On/g' /etc/php.ini
+sed -i 's/^display_errors = .*/display_errors = Off/g' /etc/php.ini
 sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& \~E_DEPRECATED \& \~E_STRICT \& \~E_NOTICE/' /etc/php.ini
+
+# ----- PHP security settings -----
+# A drop-in ini that loads after php.ini, so its values win. Rewritten on every install/upgrade;
+# local changes go in a file that sorts after it (e.g. zz-local.ini).
+# session.cookie_secure is only turned on when [siteurl] is https://. A Secure cookie is never sent
+# over plain http, so on an http-only site it would make every login fail.
+if [[ "${config[siteurl]:-}" =~ ^[Hh][Tt][Tt][Pp][Ss]:// ]]; then COOKIESECURE=1; else COOKIESECURE=0; fi
+echo "Writing PHP security settings (/etc/php.d/99-nidb.ini, cookie_secure=$COOKIESECURE)..."
+mkdir -p "$(dirname /etc/php.d/99-nidb.ini)"
+cat > /etc/php.d/99-nidb.ini <<EOF
+; NiDB PHP security settings - written by the NiDB installer, overwritten on upgrade.
+; Put local changes in a file that sorts after this one (e.g. zz-local.ini).
+
+; don't show errors (file paths, SQL) to visitors; they go to the php-fpm error log instead
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+
+; don't advertise the PHP version in the X-Powered-By header
+expose_php = Off
+
+; session cookie: not readable by JavaScript, not sent with cross-site POSTs, session ids only
+; accepted from the cookie, and ids the server didn't issue are rejected
+session.cookie_httponly = 1
+session.cookie_samesite = Lax
+session.use_only_cookies = 1
+session.use_strict_mode = 1
+; 1 only when [siteurl] in nidb.cfg is https:// (re-checked on every upgrade)
+session.cookie_secure = $COOKIESECURE
+
+; functions NiDB doesn't use. exec, shell_exec and system are used by NiDB and must stay enabled
+disable_functions = dl,popen,proc_open,pcntl_exec,pcntl_fork,pcntl_signal,pcntl_alarm,pcntl_wait,pcntl_waitpid
+EOF
 
 # change PHP-fpm users
 echo 'Change php-fpm settings...'
@@ -221,6 +254,28 @@ cat > /etc/my.cnf.d/nidb-mariadb.cnf <<'EOF'
 event_scheduler=ON
 EOF
 
+# ----- Apache hardening for the NiDB docroot -----
+# Rewritten on every install/upgrade. For local changes (e.g. allowing phpMyAdmin from an admin
+# subnet) create a separate file that loads after this one rather than editing this file.
+echo 'Writing Apache settings for NiDB (/etc/httpd/conf.d/nidb.conf)...'
+mkdir -p "$(dirname /etc/httpd/conf.d/nidb.conf)"
+cat > /etc/httpd/conf.d/nidb.conf <<'EOF'
+# NiDB Apache settings - written by the NiDB installer, overwritten on upgrade.
+# Put local overrides in a file that sorts after this one (e.g. zz-nidb-local.conf).
+
+# no directory listings anywhere in the docroot (e.g. /download/ holds export zips).
+# FollowSymLinks stays on: /var/www/html/download is a symlink to the data directory.
+<Directory "/var/www/html">
+    Options -Indexes +FollowSymLinks
+</Directory>
+
+# phpMyAdmin is not part of NiDB. If it is installed under the docroot, only allow it from this server.
+# To allow an admin subnet, override in a later file with e.g. "Require ip 10.0.5.0/24".
+<LocationMatch "(?i)^/phpmyadmin">
+    Require local
+</LocationMatch>
+EOF
+
 # enable and start services
 echo 'Enable and start services...'
 systemctl enable httpd.service   # enable the apache web service
@@ -229,6 +284,10 @@ systemctl enable php-fpm.service # enable PHP-FastCGI Process Manager service
 systemctl start httpd.service
 systemctl start mariadb.service
 systemctl start php-fpm.service
+# reload so an already-running apache (upgrade) picks up the NiDB settings; skip if the config is broken
+apachectl configtest >/dev/null 2>&1 && systemctl reload httpd.service || echo "WARNING: apache config test failed; NiDB Apache settings not loaded. Run: apachectl configtest"
+# reload php-fpm so a running server (upgrade) picks up the PHP settings
+systemctl reload php-fpm.service
 
 # make sure required ports are accessible through the firewall
 echo 'Add ports to firewall...'

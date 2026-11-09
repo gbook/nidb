@@ -59,8 +59,8 @@
 		?>
 		<div align="center">
 		<br><br>
-		<b>Thank you for activating your NiDB account</b><br>
-		You may <a href="login.php">login</a>, or wait to be redirected to the login page in 10s
+		<b>Thank you for verifying your email address</b><br><br>
+		An administrator will now review your account. You will be able to <a href="login.php">log in</a> once it is approved.
 		</div>
 		<?
 	}
@@ -73,7 +73,8 @@
 		?>
 		<div align="center">
 		<br><br>
-		<b>Invalid account activation</b>
+		<b>Invalid account activation</b><br><br>
+		The link may have expired (links last 7 days) or already been used. You can <a href="signup.php">sign up again</a>.
 		</div>
 		<?
 	}
@@ -83,15 +84,23 @@
 	/* ------- Validate --------------------------- */
 	/* -------------------------------------------- */
 	function Validate($k) {
-		if (trim($k ?? '') == "") {
+		if ((!is_string($k)) || (trim($k) == "")) {
 			return 0;
 		}
 		
-		/* check if the key exists in the users_pending table */
-		$sqlstring = "select * from users_pending where emailkey = ?";
+		/* signup.php emails a random 64-hex-digit key and stores only its SHA-256. Keys made before that
+		   change (the SHA-1 of the signup time, which could be computed) never match */
+		$k = trim($k);
+		if (!preg_match('/^[0-9a-f]{64}$/', $k)) {
+			return 0;
+		}
+		$keyhash = hash('sha256', $k);
+
+		/* check if the key exists in the users_pending table, and the signup is less than 7 days old */
+		$sqlstring = "select * from users_pending where emailkey = ? and signupdate >= date_sub(now(), interval 7 day)";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 's', $k);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$k]);
+		mysqli_stmt_bind_param($stmt, 's', $keyhash);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[key]']);
 		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
@@ -134,8 +143,19 @@
 			return 0;
 		}
 
-		/* if no errors were found so far, insert the row, with the user disabled */
-		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values (?, ?, 'Standard', ?, ?, ?, ?, 1)";
+		/* the address may have been registered another way since the signup (e.g. by an admin) */
+		$sqlstring = "select count(*) 'count' from users where username = ? or user_email = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $username, $email);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $email]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($row['count'] > 0) {
+			return 0;
+		}
+
+		/* create the account disabled. An admin enables it in adminusers.php */
+		$sqlstring = "insert into users (username, password, login_type, user_fullname, user_institution, user_country, user_email, user_enabled) values (?, ?, 'Standard', ?, ?, ?, ?, 0)";
 		$params = [$username, $password, $fullname, $institution, $country, $email];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'ssssss', ...$params);
@@ -157,9 +177,16 @@
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
 		mysqli_stmt_close($stmt);
 		
-		$body = "<b>Your NiDB account on " . $GLOBALS['cfg']['siteurl'] . " account is active and you are joined to the main instance</b><br><br>Login now: " . $GLOBALS['cfg']['siteurl'] . "/login.php<br><br>Follow these steps to join other instances<ol><li>Login to NiDB: " . $GLOBALS['cfg']['siteurl'] . "/login.php<li>Click your username at the top of the page<li>Find the instance you want to join on the list of available instances<li>The owner of the instance will receive notification that you want to join<li>You will receive a notifiication of the owners response to your join request</ol><br><br>";
+		$body = "<b>Your email address is verified</b><br><br>Your account on " . $GLOBALS['cfg']['siteurl'] . " is waiting for an administrator to approve it. You will be able to log in once it is approved.<br><br>After you log in, follow these steps to join other instances<ol><li>Login to NiDB: " . $GLOBALS['cfg']['siteurl'] . "/login.php<li>Click your username at the top of the page<li>Find the instance you want to join on the list of available instances<li>The owner of the instance will receive notification that you want to join<li>You will receive a notification of the owner's response to your join request</ol><br><br>";
 		/* send the email */
-		SendEmail($email,'Your NiDB account has been acitvated',$body, 0);
+		SendEmail($email,'Your NiDB email address is verified',$body, 0);
+
+		/* tell the admin there is an account to review */
+		$adminemail = trim($GLOBALS['cfg']['adminemail'] ?? '');
+		if ($adminemail != "") {
+			$body = "<b>A new NiDB account is waiting for approval</b><br><br>Name: " . htmlspecialchars($fullname) . "<br>Email: " . htmlspecialchars($email) . "<br>Institution: " . htmlspecialchars($institution) . "<br>Country: " . htmlspecialchars($country) . "<br><br>The account was created disabled. To approve it, enable it on the users page: " . $GLOBALS['cfg']['siteurl'] . "/adminusers.php<br>If you don't recognize it, leave it disabled or delete it.";
+			SendEmail($adminemail, 'NiDB account waiting for approval', $body, 0);
+		}
 		
 		return 1;
 	}

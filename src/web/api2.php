@@ -36,7 +36,7 @@
 	define("API_SESSION_MAX_PER_USER", 2);   /* max concurrent sessions per API user */
 	define("API_MAX_FAILED_LOGINS", 10);     /* max failed logins per IP within the window */
 	define("API_FAILED_LOGIN_WINDOW", 15);   /* failed-login window, in minutes */
-	define("API_ENFORCE_HTTPS", true);       /* require HTTPS (skipped on the dev server) */
+	define("API_ENFORCE_HTTPS", true);       /* require HTTPS. Set to false only for testing on a server without TLS */
 	define("API_ALLOWED_ORIGIN", "");        /* set to a single origin to enable CORS; '' disables */
 	define("API_MAX_UPLOAD_BYTES", 512 * 1024 * 1024);
 
@@ -67,8 +67,8 @@
 	require "functions.php";
 	require "includes_php.php";
 
-	/* ----- require HTTPS (except on the development server, which runs on http/:8080) ----- */
-	if (API_ENFORCE_HTTPS && !$isdevserver) {
+	/* ----- require HTTPS ----- */
+	if (API_ENFORCE_HTTPS) {
 		$ishttps = (!empty($_SERVER['HTTPS']) && ($_SERVER['HTTPS'] != "off"))
 			|| (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && ($_SERVER['HTTP_X_FORWARDED_PROTO'] == "https"))
 			|| (isset($_SERVER['SERVER_PORT']) && ((int)$_SERVER['SERVER_PORT'] == 443));

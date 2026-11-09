@@ -22,20 +22,31 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
-	/* required for CAPTCHA */
+
+	/* buffer output so the POST handlers can redirect (Post/Redirect/GET) */
+	ob_start();
+
+	/* the session holds the CAPTCHA, the CSRF token, and flash messages */
 	session_start();
 
 	$nologin = true;
  	require "functions.php";
  	require "includes_php.php";
-	
+
 	/* more CAPTCHA code */
 	include_once $_SERVER['DOCUMENT_ROOT'] . '/scripts/securimage/securimage.php';
+
+	/* password reset links carry a token in the URL, so don't send it to other sites in a Referer header */
+	header("Referrer-Policy: no-referrer");
+
+	/* self-registration can be turned off with [allowsignup] in the config. A missing setting means on,
+	   which was the behavior before the setting existed. New accounts still need admin approval (v.php) */
+	$allowsignup = (($GLOBALS['cfg']['allowsignup'] ?? '1') == '1');
 ?>
 
 <html>
 	<head>
+		<meta charset="utf-8">
 		<link rel="icon" type="image/png" href="images/squirrel.png">
 		<title>NiDB</title>
 	</head>
@@ -45,148 +56,229 @@
 <br><br>
 <?
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	if ($action == "") { $action = GetVariable("a"); }
+	/* the mutating actions must be a POST carrying this session's CSRF token. The "a" link parameter
+	   only selects read-only views, so it can't be used to reach a mutating action */
+	$action = GetSafeAction(array("create", "rp", "setpassword"));
+	$a = GetVariable("a");
+	if (($action == "") && in_array($a, array("r", "reset", "msg"), true)) { $action = $a; }
 
 	/* edit variables */
 	$email = GetVariable("email");
 	$e = GetVariable("e");
+	$k = GetVariable("k");
 	$firstname = GetVariable("firstname");
 	$midname = GetVariable("midname");
 	$lastname = GetVariable("lastname");
 	$institution = GetVariable("institution");
-	$instance = GetVariable("instance");
 	$country = GetVariable("country");
 	$password = GetVariable("password");
+	$passwordcheck = GetVariable("password-check");
 
-	/* database connection */
-	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
-
-	
 	/* ----- determine which action to take ----- */
 	switch ($action) {
 		case 'create':
-			$msg = CreateAccount($email, $firstname, $midname, $lastname, $institution, $instance, $country, $password);
+			if (!$allowsignup) {
+				DisplaySignupDisabled();
+				break;
+			}
+			$msg = CreateAccount($email, $firstname, $midname, $lastname, $institution, $country, $password, $passwordcheck);
 			if ($msg != "") {
-				DisplayForm($msg, $email, $firstname, $midname, $lastname, $institution, $instance, $country);
+				DisplayForm($msg, $email, $firstname, $midname, $lastname, $institution, $country);
 			}
 			else {
-				DisplaySuccessMessage($email, $firstname, $midname, $lastname, $institution, $instance, $country, $password);
+				$_SESSION['flash'] = "<b>Thank you for signing up</b><br><br>An email has been sent to &lt;" . htmlspecialchars($email ?? '') . "&gt; with a link to verify your email address.<br>After that, an administrator will review your account. You will be able to log in once it is approved.";
+				RedirectTo("signup.php?a=msg");
 			}
 			break;
 		case 'r':
 			ResetPasswordForm("");
 			break;
 		case 'rp':
-			ResetPassword($e);
+			$msg = RequestPasswordReset($e);
+			if ($msg != "") {
+				ResetPasswordForm($msg);
+			}
+			else {
+				/* the same message whether or not the address has an account, so this can't be used to find accounts */
+				$_SESSION['flash'] = "If an active account uses that address, an email has been sent to it with a link to choose a new password.<br>The link can be used once, and expires in 1 hour.";
+				RedirectTo("signup.php?a=msg");
+			}
+			break;
+		case 'reset':
+			SetPasswordForm($k, "");
+			break;
+		case 'setpassword':
+			$msg = SetPassword($k, $password, $passwordcheck);
+			if ($msg != "") {
+				SetPasswordForm($k, $msg);
+			}
+			else {
+				$_SESSION['flash'] = "Your password has been changed.";
+				RedirectTo("signup.php?a=msg");
+			}
+			break;
+		case 'msg':
+			DisplayMessage();
 			break;
 		default:
-			DisplayForm("");
+			if ($allowsignup) {
+				DisplayForm("");
+			}
+			else {
+				DisplaySignupDisabled();
+			}
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplaySuccessMessage -------------- */
+	/* ------- DisplayMessage --------------------- */
 	/* -------------------------------------------- */
-	function DisplaySuccessMessage($email, $name, $institution, $country, $password) {
+	/* shows the flash message stashed by a POST handler before it redirected here */
+	function DisplayMessage() {
 		?>
 		<div align="center">
 		<br><br>
-		<b>Thank you for signing up</b><br><br>
-		An email has been sent to &lt;<?=$email?>&gt; with a link to activate your account.
+		<? ShowFlashMessage(); ?>
+		<br><br>
+		<a href="login.php">Go to the login page</a>
 		</div>
 		<?
 	}
 
-	
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySignupDisabled -------------- */
+	/* -------------------------------------------- */
+	function DisplaySignupDisabled() {
+		?>
+		<div align="center">
+		<br><br>
+		<b>Self-registration is turned off on this server</b><br><br>
+		Contact the site administrator to request an account.<br><br>
+		<a href="login.php">Go to the login page</a>
+		</div>
+		<?
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- CreateAccount ---------------------- */
 	/* -------------------------------------------- */
-	function CreateAccount($email, $firstname, $midname, $lastname, $institution, $instance, $country, $password) {
-		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
-		$firstname = mysqli_real_escape_string($GLOBALS['linki'], $firstname);
-		$midname = mysqli_real_escape_string($GLOBALS['linki'], $midname);
-		$lastname = mysqli_real_escape_string($GLOBALS['linki'], $lastname);
-		$institution = mysqli_real_escape_string($GLOBALS['linki'], $institution);
-		$country = mysqli_real_escape_string($GLOBALS['linki'], $country);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		
+	/* adds a row to users_pending and emails a verification link. Returns "" on success, or an error
+	   message to show with the form. v.php turns the pending row into a disabled account that an
+	   admin must enable. */
+	function CreateAccount($email, $firstname, $midname, $lastname, $institution, $country, $password, $passwordcheck) {
+		$email = trim($email ?? '');
+		$firstname = trim($firstname ?? '');
+		$midname = trim($midname ?? '');
+		$lastname = trim($lastname ?? '');
+		$institution = trim($institution ?? '');
+		$country = trim($country ?? '');
+		$password = $password ?? '';
+		$passwordcheck = $passwordcheck ?? '';
+
 		$securimage = new Securimage();
-		if ($securimage->check($_POST['captcha_code']) == false) {
-			// or you can use the following code if there is no validation or you do not know how
+		if ($securimage->check($_POST['captcha_code'] ?? '') == false) {
 			return "CAPTCHA code entered was incorrect";
 		}
-		if (trim($email) == "") {
+		if ($email == "") {
 			return "Email was blank";
 		}
-		if ((trim($firstname) == "") && (trim($lastname) == "")) {
+		if (filter_var($email, FILTER_VALIDATE_EMAIL) === false) {
+			return "Email address is not valid";
+		}
+		/* the address becomes the username, which is varchar(45) */
+		if (strlen($email) > 45) {
+			return "Email address is too long (maximum 45 characters)";
+		}
+		if (($firstname == "") && ($lastname == "")) {
 			return "Name was blank";
 		}
-		if (trim($institution) == "") {
+		if ($institution == "") {
 			return "Institution was blank";
 		}
-		if (trim($country) == "") {
+		if ($country == "") {
 			return "Country was blank";
 		}
-		if (trim($password) == "") {
-			return "Password was blank";
+		if (strlen($password) < 8) {
+			return "Password must be at least 8 characters";
 		}
-		
-		/* check if the username or email address is already in the users table */
-		$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$count = $row['count'];
-		//echo "Count [$count]<br>";
-		if ($count > 0) {
-			return "Email address already registered";
-		}
-		
-		$userpendingid = -1;
-		
-		/* check if the username or email address is already in the users_pending table */
-		$sqlstring = "select user_id from users_pending where username = '$email' or user_email = '$email'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result)) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$userpendingid = $row['user_id'];
-			echo "Email address already registered, but not activated. Sending verification email again.";
-		}
-		else {
-			/* if no errors were found so far, insert the row, with the user disabled */
-			/* insert a temp account into the DB */
-			//$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_institution, user_country, user_email, user_enabled) values ('$email',sha1('$password'),'Standard','$instance','$name','$institution','$country','$email',0)";
-			$sqlstring = "insert into users_pending (username, password, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values ('$email',sha1('$password'),'$firstname','$midname','$lastname','$institution','$country','$email',sha1(now()), now())";
-			//echo "$sqlstring<br>";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$userpendingid = mysqli_insert_id($GLOBALS['linki']);
+		if ($password !== $passwordcheck) {
+			return "Passwords do not match";
 		}
 
-		/* get the generated SHA1 hash */
-		$sqlstring = "select emailkey from users_pending where user_id = $userpendingid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* signups that were never verified expire after 7 days */
+		MySQLiQuery("delete from users_pending where signupdate < date_sub(now(), interval 7 day)", __FILE__, __LINE__);
+
+		/* check if the username or email address is already in the users table */
+		$sqlstring = "select count(*) 'count' from users where username = ? or user_email = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $email, $email);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$email, $email]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$emailkey = $row['emailkey'];
-		
-		$body = "<b>Thank for you signing up for NiDB</b><br><br>Click the link below to activate your account (or copy and paste into a browser)\n" . $GLOBALS['cfg']['siteurl'] . "/v.php?k=$emailkey";
-		/* send the email */
-		if (!SendEmail($email,'Acitvate your NiDB account',$body, 0)) {
-			return "System error. Unable to send email!";
-			$sqlstring = "delete from users_pending where user_id = $userpendingid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		mysqli_stmt_close($stmt);
+		if ($row['count'] > 0) {
+			return "Email address already registered";
+		}
+
+		/* the verification key is random, and only its SHA-256 is stored, so it can't be guessed or
+		   read back out of the table */
+		$emailkey = bin2hex(random_bytes(32));
+		$keyhash = hash('sha256', $emailkey);
+
+		/* check if the username or email address is already in the users_pending table */
+		$sqlstring = "select user_id from users_pending where username = ? or user_email = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $email, $email);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$email, $email]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		$isnew = false;
+		if ($row) {
+			/* already signed up but not verified: send a new link. Only the key changes. The details
+			   (including the password) are kept from the first signup, so someone else can't replace
+			   them and have the owner of the address verify an account with a password they chose */
+			$userpendingid = (int)$row['user_id'];
+			$sqlstring = "update users_pending set emailkey = ?, signupdate = now() where user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $keyhash, $userpendingid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$keyhash, $userpendingid]);
+			mysqli_stmt_close($stmt);
 		}
 		else {
-			return "";
+			$sqlstring = "insert into users_pending (username, password, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, emailkey, signupdate) values (?, sha1(?), 0, '', ?, ?, ?, ?, ?, ?, ?, now())";
+			$params = [$email, $password, $firstname, $midname, $lastname, $institution, $country, $email, $keyhash];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'sssssssss', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[email]', '[password]', $firstname, $midname, $lastname, $institution, $country, '[email]', '[key]']);
+			$userpendingid = (int)mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+			$isnew = true;
 		}
+
+		$url = $GLOBALS['cfg']['siteurl'] . "/v.php?k=$emailkey";
+		$body = "<b>Thank you for signing up for NiDB</b><br><br>Click the link below to verify your email address (or copy and paste it into a browser). The link expires in 7 days.<br><br><a href=\"$url\">$url</a><br><br>After you verify your address, an administrator will review your account. You will be able to log in once it is approved.";
+		/* send the email */
+		if (!SendEmail($email, 'Verify your NiDB email address', $body, 0)) {
+			if ($isnew) {
+				$sqlstring = "delete from users_pending where user_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $userpendingid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userpendingid]);
+				mysqli_stmt_close($stmt);
+			}
+			return "System error. Unable to send email!";
+		}
+
+		return "";
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayForm ------------------------ */
 	/* -------------------------------------------- */
-	function DisplayForm($message, $email="", $name="", $institution="", $instance="", $country="") {
+	function DisplayForm($message, $email="", $firstname="", $midname="", $lastname="", $institution="", $country="") {
 		?>
 			<script type="text/javascript">
 			$(document).ready(function() {
@@ -222,6 +314,7 @@
 				
 			<form method="post" action="signup.php">
 			<input type="hidden" name="action" value="create">
+			<?=CSRFTokenField()?>
 			
 			<table width="100%" height="90%">
 				<tr>
@@ -237,41 +330,42 @@
 								<? if ($GLOBALS['cfg']['sitetype'] == "commercial") { ?>
 								<?=$GLOBALS['cfg']['sitename']?> is transitioning to an automated hosting service. In the meantime, instances must still be created manually. If you want to create a new instance, and therefore a new billing account, contact the site administrator after you create an NiDB login.
 								<? } else { ?>
-								Fill out the information below. You will receive an email with a link to activate your account
+								Fill out the information below. You will receive an email with a link to verify your address. An administrator then reviews the account before you can log in.
 								<? } ?>
-								&nbsp;<small style="color: red"><?=$message?></small>
+								&nbsp;<small style="color: red"><?=htmlspecialchars($message)?></small>
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Name</td>
 								<td>
-									<input type="text" name="firstname" maxlength="50" required autofocus="autofocus" value="<?=$name?>" placeholder="First">&nbsp;<input type="text" name="midname" maxlength="1" style="width:20px" value="<?=$name?>" placeholder="M">&nbsp;<input type="text" name="lastname" maxlength="50" required value="<?=$name?>" placeholder="Last">
+									<input type="text" name="firstname" maxlength="50" required autofocus="autofocus" value="<?=htmlspecialchars($firstname ?? '')?>" placeholder="First">&nbsp;<input type="text" name="midname" maxlength="1" style="width:20px" value="<?=htmlspecialchars($midname ?? '')?>" placeholder="M">&nbsp;<input type="text" name="lastname" maxlength="50" required value="<?=htmlspecialchars($lastname ?? '')?>" placeholder="Last">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Email</td>
 								<td>
-									<input type="email" name="email" maxlength="50" size="50" required value="<?=$email?>">
+									<input type="email" name="email" maxlength="50" size="50" required value="<?=htmlspecialchars($email ?? '')?>">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Institution</td>
 								<td>
-									<input type="text" name="institution" maxlength="50" size="50" required value="<?=$institution?>">
+									<input type="text" name="institution" maxlength="50" size="50" required value="<?=htmlspecialchars($institution ?? '')?>">
 								</td>
 							</tr>
 							<tr>
 								<td class="label">Country</td>
 								<script>
-									$(document).ready(function() {
-										$("#country option[value='<?=$country?>']").attr("selected","selected");
+									/* reselect the country after a failed submit */
+									document.addEventListener('DOMContentLoaded', function() {
+										var c = <?=json_encode((string)($country ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>;
+										if (c != '') document.getElementById('country').value = c;
 									});
 								</script>
 								<td>
-									<!--<input type="text" name="country" maxlength="50" required value="<?=$country?>">-->
 									<select id="country" name="country">
 									<option value="AF">Afghanistan</option>
-									<option value="AX">Åland Islands</option>
+									<option value="AX">Ã…land Islands</option>
 									<option value="AL">Albania</option>
 									<option value="DZ">Algeria</option>
 									<option value="AS">American Samoa</option>
@@ -571,11 +665,12 @@
 		?>
 			<form method="post" action="signup.php">
 			<input type="hidden" name="action" value="rp">
-			
+			<?=CSRFTokenField()?>
+
 			<div align="center">
 			<table style="border: 1px solid #ccc; padding:5px">
 				<tr>
-					<td align="center" style="color: darkred"><?=$msg?></td>
+					<td align="center" style="color: darkred"><?=htmlspecialchars($msg)?></td>
 					<td align="center" style="color: #555; font-size: 10pt">
 						<img id="captcha" src="scripts/securimage/securimage_show.php" alt="CAPTCHA Image" />
 						<br>
@@ -585,78 +680,175 @@
 						<br>
 						Enter email <input type="email" name="e" required>
 						&nbsp;
-						<input type="submit" value="Reset password" class="ui primary button">
+						<input type="submit" value="Email me a reset link" class="ui primary button">
 					</td>
 				</tr>
 			</table>
+			</div>
 			</form>
 		<?
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- ResetPassword ---------------------- */
-	/* -------------------------------------------- */
-	function ResetPassword($email) {
-		$email = mysqli_real_escape_string($GLOBALS['linki'], $email);
 
-		$safetoemail = 0;
-		
+	/* -------------------------------------------- */
+	/* ------- RequestPasswordReset --------------- */
+	/* -------------------------------------------- */
+	/* emails a single-use link to choose a new password. Nothing about the account changes until the
+	   link is used, so a request made by someone else can't lock the owner out. Returns "" (also when
+	   no account matches, so the response doesn't reveal which addresses have accounts), or an error
+	   message to show with the form */
+	function RequestPasswordReset($email) {
+		$email = trim($email ?? '');
+
 		$securimage = new Securimage();
-		if ($securimage->check($_POST['captcha_code']) == false) {
-			// or you can use the following code if there is no validation or you do not know how
-			ResetPasswordForm("CAPTCHA code entered was incorrect");
+		if ($securimage->check($_POST['captcha_code'] ?? '') == false) {
+			return "CAPTCHA code entered was incorrect";
 		}
-		if (trim($email) == "") {
-			ResetPasswordForm("Email was blank");
+		if ($email == "") {
+			return "Email was blank";
 		}
-		
-		/* check if the username or email address is already in the users table */
-		$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$count = $row['count'];
-		//echo "Count [$count]<br>";
-		if ($count > 0) {
-			$safetoemail = 1;
+
+		/* only enabled accounts whose password is stored in NiDB (Standard) can be reset. 'recent' is
+		   true if a link was sent in the last 5 minutes (links last 1 hour), so repeated requests don't
+		   flood the inbox */
+		$sqlstring = "select user_id, user_email, (user_resetexpires is not null and user_resetexpires > date_add(now(), interval 55 minute)) 'recent' from users where (username = ? or user_email = ?) and login_type = 'Standard' and user_enabled = 1 and (user_deleted is null or user_deleted = 0)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $email, $email);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$email, $email]);
+		mysqli_stmt_close($stmt);
+
+		$accounts = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$accounts[] = $row;
 		}
-		else {
-			/* check if the username or email address is already in the users_pending table */
-			$sqlstring = "select count(*) 'count' from users where username = '$email' or user_email = '$email'";
-			//echo "$sqlstring<br>";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$count = $row['count'];
-			//echo "Count [$count]<br>";
-			if ($count > 0) {
-				?>This email address was used to sign up for an account, but has not been activated<?
-			}
-			else {
-				?>This email address is not valid in this system<?
-				return 0;
-			}
+
+		foreach ($accounts as $row) {
+			if ($row['recent']) { continue; }
+
+			/* send to the address on the account, not the one typed into the form */
+			$to = trim($row['user_email'] ?? '');
+			if ($to == "") { continue; }
+
+			/* the token is random, and only its SHA-256 is stored */
+			$token = bin2hex(random_bytes(32));
+			$tokenhash = hash('sha256', $token);
+			$userid = (int)$row['user_id'];
+
+			$sqlstring = "update users set user_resettoken = ?, user_resetexpires = date_add(now(), interval 1 hour) where user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $tokenhash, $userid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[token]', $userid]);
+			mysqli_stmt_close($stmt);
+
+			$url = $GLOBALS['cfg']['siteurl'] . "/signup.php?a=reset&k=$token";
+			$body = "A password reset was requested for your NiDB account on " . $GLOBALS['cfg']['siteurl'] . "<br><br>To choose a new password, open the link below within 1 hour. It can only be used once.<br><br><a href=\"$url\">$url</a><br><br>If you did not request this, you can ignore this email. Your password has not been changed.";
+			SendEmail($to, 'NiDB password reset', $body, 0);
 		}
-		
-		
-		$newpass = GenerateRandomString(10);
-		
-		/* send a password reset email */
-		$body = "Your password has been temporarily reset to '$newpass'. Please login to " . $GLOBALS['cfg']['siteurl'] . " and change your password";
-		/* send the email */
-		if (!SendEmail($email,'NiDB password reset',$body, 0)) {
-			echo "System error. Unable to send email!";
-			//$sqlstring = "delete from users_pending where user_id = $rowid";
-			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		else {
-			$sqlstring = "update users set password = sha1('$newpass') where user_email = '$email'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			echo "Email sent to '$email'. Check it and get back to me";
-		}
-		?><?
+
+		return "";
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetResetUserID --------------------- */
+	/* -------------------------------------------- */
+	/* returns the user_id that a password reset token belongs to, or 0 if the token is malformed,
+	   unknown, used, or expired */
+	function GetResetUserID($k) {
+		if ((!is_string($k)) || (!preg_match('/^[0-9a-f]{64}$/', $k))) {
+			return 0;
+		}
+		$tokenhash = hash('sha256', $k);
+
+		$sqlstring = "select user_id from users where user_resettoken = ? and user_resetexpires > now() and login_type = 'Standard' and user_enabled = 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $tokenhash);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[token]']);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return $row ? (int)$row['user_id'] : 0;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetPasswordForm -------------------- */
+	/* -------------------------------------------- */
+	function SetPasswordForm($k, $msg) {
+		if (GetResetUserID($k) < 1) {
+			?>
+			<div align="center">
+			<br><br>
+			<b>This password reset link is not valid</b><br><br>
+			It may have expired or already been used. <a href="signup.php?a=r">Request a new link</a>
+			</div>
+			<?
+			return;
+		}
+		?>
+			<form method="post" action="signup.php">
+			<input type="hidden" name="action" value="setpassword">
+			<input type="hidden" name="k" value="<?=htmlspecialchars($k)?>">
+			<?=CSRFTokenField()?>
+
+			<div align="center">
+			<table style="border: 1px solid #ccc; padding:5px" cellpadding="5">
+				<tr>
+					<td colspan="2" align="center"><b>Choose a new password</b><br><span style="color: darkred"><?=htmlspecialchars($msg)?></span></td>
+				</tr>
+				<tr>
+					<td>New password</td>
+					<td><input type="password" name="password" maxlength="50" pattern=".{8,50}" required autofocus> <span class="tiny">Minimum 8 characters</span></td>
+				</tr>
+				<tr>
+					<td>Re-enter password</td>
+					<td><input type="password" name="password-check" maxlength="50" required></td>
+				</tr>
+				<tr>
+					<td colspan="2" align="center"><input type="submit" value="Change password" class="ui primary button"></td>
+				</tr>
+			</table>
+			</div>
+			</form>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetPassword ------------------------ */
+	/* -------------------------------------------- */
+	/* sets the new password and clears the token in one statement, so a token works only once.
+	   Returns "" on success, or an error message to show with the form */
+	function SetPassword($k, $password, $passwordcheck) {
+		$password = $password ?? '';
+		$passwordcheck = $passwordcheck ?? '';
+
+		$userid = GetResetUserID($k);
+		if ($userid < 1) {
+			return "This password reset link is not valid";
+		}
+		if (strlen($password) < 8) {
+			return "Password must be at least 8 characters";
+		}
+		if ($password !== $passwordcheck) {
+			return "Passwords do not match";
+		}
+
+		$tokenhash = hash('sha256', $k);
+		$sqlstring = "update users set password = sha1(?), user_resettoken = null, user_resetexpires = null where user_id = ? and user_resettoken = ? and user_resetexpires > now()";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sis', $password, $userid, $tokenhash);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[password]', $userid, '[token]']);
+		$changed = mysqli_stmt_affected_rows($stmt);
+		mysqli_stmt_close($stmt);
+
+		if ($changed < 1) {
+			return "This password reset link is not valid";
+		}
+
+		return "";
+	}
+
 
 ob_end_flush();
 	

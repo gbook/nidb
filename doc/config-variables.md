@@ -13,10 +13,10 @@ Reference count of every configuration variable against the PHP and C++ code bas
 
 | Metric | Value |
 |---|---:|
-| Config variables defined in writer | 111 |
-| Total references | 754 (PHP 478 / C++ 276) |
+| Config variables defined in writer | 107 |
+| Total references | 743 (PHP 467 / C++ 276) |
 | Used in both PHP and C++ | 62 |
-| PHP-only | 49 |
+| PHP-only | 45 |
 | C++-only | 0 |
 | Unused in both trees | 0 |
 
@@ -28,6 +28,7 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 |---|---:|---:|:--:|---|
 | `adminemail` | 13 | 2 | both |  |
 | `allowrawdicomexport` | 5 | 0 | php |  |
+| `allowsignup` | 3 | 0 | php | Self-registration on `signup.php`. Missing = on. New accounts are created disabled for admin approval. |
 | `analysisdir` | 15 | 4 | both |  |
 | `analysisdirb` | 12 | 3 | both |  |
 | `archivedir` | 57 | 29 | both |  |
@@ -103,10 +104,6 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 | `mysqlclusterpassword` | 1 | 1 | both |  |
 | `mysqlclusteruser` | 1 | 1 | both |  |
 | `mysqldatabase` | 26 | 2 | both |  |
-| `mysqldevdatabase` | 3 | 0 | php |  |
-| `mysqldevhost` | 3 | 0 | php |  |
-| `mysqldevpassword` | 3 | 0 | php |  |
-| `mysqldevuser` | 3 | 0 | php |  |
 | `mysqlhost` | 10 | 1 | both |  |
 | `mysqlpassword` | 12 | 2 | both |  |
 | `mysqluser` | 13 | 2 | both |  |
@@ -125,7 +122,6 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 | `setupips` | 5 | 0 | php |  |
 | `sitecolor` | 2 | 0 | php |  |
 | `sitename` | 10 | 1 | both |  |
-| `sitenamedev` | 2 | 0 | php |  |
 | `sitetype` | 3 | 0 | php |  |
 | `siteurl` | 14 | 0 | php |  |
 | `tmpdir` | 6 | 35 | both |  |

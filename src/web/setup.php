@@ -103,10 +103,6 @@
 	$c['mysqluser'] = GetVariable("mysqluser");
 	$c['mysqlpassword'] = GetVariable("mysqlpassword");
 	$c['mysqldatabase'] = GetVariable("mysqldatabase");
-	$c['mysqldevhost'] = GetVariable("mysqldevhost");
-	$c['mysqldevuser'] = GetVariable("mysqldevuser");
-	$c['mysqldevpassword'] = GetVariable("mysqldevpassword");
-	$c['mysqldevdatabase'] = GetVariable("mysqldevdatabase");
 	$c['mysqlclusteruser'] = GetVariable("mysqlclusteruser");
 	$c['mysqlclusterpassword'] = GetVariable("mysqlclusterpassword");
 
@@ -134,7 +130,6 @@
 	$c['siteurl'] = GetVariable("siteurl");
 	$c['version'] = GetVariable("version");
 	$c['sitename'] = GetVariable("sitename");
-	$c['sitenamedev'] = GetVariable("sitenamedev");
 	$c['sitecolor'] = GetVariable("sitecolor");
 	$c['ispublic'] = GetVariable("ispublic");
 	$c['sitetype'] = GetVariable("sitetype");
@@ -154,6 +149,7 @@
 	$c['enablewebexport'] = GetVariable("enablewebexport");
 
 	$c['setupips'] = GetVariable("setupips");
+	$c['allowsignup'] = GetVariable("allowsignup");
 
 	$c['backupsize'] = GetVariable("backupsize");
 	$c['backupdevice'] = GetVariable("backupdevice");

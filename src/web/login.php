@@ -390,7 +390,7 @@ window.onload = AreCookiesEnabled;
 							<tr>
 								<td>
 									<? if ($GLOBALS['cfg']['ispublic']) { ?>
-									New user? <a href="signup.php">Sign up</a>.<br>
+									<? if (($GLOBALS['cfg']['allowsignup'] ?? '1') == '1') { ?>New user? <a href="signup.php">Sign up</a>.<br><? } ?>
 									Forgot password? <a href="signup.php?a=r">Reset it</a>.
 									<? } ?>
 								</td>

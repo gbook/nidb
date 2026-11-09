@@ -216,9 +216,42 @@ if [[ -n "$PHPVER" ]]; then
         sed -i 's/^max_input_time = .*/max_input_time = 600/g' "$INI"
         sed -i 's/^max_execution_time = .*/max_execution_time = 600/g' "$INI"
         sed -i 's/^post_max_size = .*/post_max_size = 5000M/g' "$INI"
-        sed -i 's/^display_errors = .*/display_errors = On/g' "$INI"
+        sed -i 's/^display_errors = .*/display_errors = Off/g' "$INI"
         sed -i 's/^error_reporting = .*/error_reporting = E_ALL \& \~E_DEPRECATED \& \~E_STRICT \& \~E_NOTICE/' "$INI"
     done
+
+    # ----- PHP security settings -----
+    # A drop-in ini that loads after php.ini, so its values win. Rewritten on every install/upgrade;
+    # local changes go in a file that sorts after it (e.g. zz-local.ini).
+    # session.cookie_secure is only turned on when [siteurl] is https://. A Secure cookie is never sent
+    # over plain http, so on an http-only site it would make every login fail.
+    if [[ "${config[siteurl]:-}" =~ ^[Hh][Tt][Tt][Pp][Ss]:// ]]; then COOKIESECURE=1; else COOKIESECURE=0; fi
+    echo "Writing PHP security settings (/etc/php/$PHPVER/fpm/conf.d/99-nidb.ini, cookie_secure=$COOKIESECURE)..."
+    mkdir -p "$(dirname /etc/php/$PHPVER/fpm/conf.d/99-nidb.ini)"
+    cat > /etc/php/$PHPVER/fpm/conf.d/99-nidb.ini <<EOF
+; NiDB PHP security settings - written by the NiDB installer, overwritten on upgrade.
+; Put local changes in a file that sorts after this one (e.g. zz-local.ini).
+
+; don't show errors (file paths, SQL) to visitors; they go to the php-fpm error log instead
+display_errors = Off
+display_startup_errors = Off
+log_errors = On
+
+; don't advertise the PHP version in the X-Powered-By header
+expose_php = Off
+
+; session cookie: not readable by JavaScript, not sent with cross-site POSTs, session ids only
+; accepted from the cookie, and ids the server didn't issue are rejected
+session.cookie_httponly = 1
+session.cookie_samesite = Lax
+session.use_only_cookies = 1
+session.use_strict_mode = 1
+; 1 only when [siteurl] in nidb.cfg is https:// (re-checked on every upgrade)
+session.cookie_secure = $COOKIESECURE
+
+; functions NiDB doesn't use. exec, shell_exec and system are used by NiDB and must stay enabled
+disable_functions = dl,popen,proc_open,pcntl_exec,pcntl_fork,pcntl_signal,pcntl_alarm,pcntl_wait,pcntl_waitpid
+EOF
 
     # change PHP-fpm pool user/group to nidb
     echo 'Change php-fpm settings...'
@@ -248,6 +281,29 @@ if command -v a2enmod >/dev/null 2>&1; then
     [[ -n "$PHPVER" ]] && a2enconf "php$PHPVER-fpm" >/dev/null 2>&1
 fi
 
+# ----- Apache hardening for the NiDB docroot -----
+# Rewritten on every install/upgrade. For local changes (e.g. allowing phpMyAdmin from an admin
+# subnet) create a separate file that loads after this one rather than editing this file.
+echo 'Writing Apache settings for NiDB (/etc/apache2/conf-available/nidb.conf)...'
+mkdir -p "$(dirname /etc/apache2/conf-available/nidb.conf)"
+cat > /etc/apache2/conf-available/nidb.conf <<'EOF'
+# NiDB Apache settings - written by the NiDB installer, overwritten on upgrade.
+# Put local overrides in a file that sorts after this one (e.g. zz-nidb-local.conf).
+
+# no directory listings anywhere in the docroot (e.g. /download/ holds export zips).
+# FollowSymLinks stays on: /var/www/html/download is a symlink to the data directory.
+<Directory "/var/www/html">
+    Options -Indexes +FollowSymLinks
+</Directory>
+
+# phpMyAdmin is not part of NiDB. If it is installed under the docroot, only allow it from this server.
+# To allow an admin subnet, override in a later file with e.g. "Require ip 10.0.5.0/24".
+<LocationMatch "(?i)^/phpmyadmin">
+    Require local
+</LocationMatch>
+EOF
+command -v a2enconf >/dev/null 2>&1 && a2enconf nidb >/dev/null 2>&1
+
 # enable and start services
 echo 'Enable and start services...'
 systemctl enable apache2.service   # enable the apache web service
@@ -266,6 +322,10 @@ if command -v ufw >/dev/null 2>&1; then
     ufw allow 8104/tcp
     ufw allow 8104/udp
 fi
+# reload so an already-running apache (upgrade) picks up the NiDB settings; skip if the config is broken
+apachectl configtest >/dev/null 2>&1 && systemctl reload apache2.service || echo "WARNING: apache config test failed; NiDB Apache settings not loaded. Run: apachectl configtest"
+# reload php-fpm so a running server (upgrade) picks up the PHP settings
+[[ -n "$PHPVER" ]] && systemctl reload "php$PHPVER-fpm.service"
 
 # create nidb user if it does not exist, add nidb to the www-data group, and www-data to the nidb group
 echo 'Add nidb user...'

@@ -3704,6 +3704,8 @@ CREATE TABLE `users` (
   `user_canimport` tinyint(1) DEFAULT 0,
   `sendmail_dailysummary` tinyint(1) DEFAULT NULL,
   `user_enablebeta` tinyint(1) DEFAULT 0,
+  `user_resettoken` varchar(64) DEFAULT NULL,
+  `user_resetexpires` datetime DEFAULT NULL,
   `lastupdate` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `user_deleted` tinyint(1) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci ROW_FORMAT=DYNAMIC;

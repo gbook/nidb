@@ -61,9 +61,6 @@
 		exit(0);
 	}
 	
-	if (stristr($_SERVER['HTTP_HOST'],":8080") != false) { $isdevserver = true; }
-	else { $isdevserver = false; }
-
 	/* CSRF token. One token per session: per-request tokens break the back button and multiple
 	   tabs, and buy nothing against this threat. Pages that change state should emit it with
 	   CSRFTokenField() and verify it with VerifyCSRFToken(). Guarded on session_status() because
@@ -81,18 +78,8 @@
 	$pagestart = $time;
 	
 	/* database connection */
-	if ($isdevserver) {
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqldevhost'], $GLOBALS['cfg']['mysqldevuser'], $GLOBALS['cfg']['mysqldevpassword'], $GLOBALS['cfg']['mysqldevdatabase']);
-		//or die (SendEmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
-		
-		$sitename = $cfg['sitenamedev'];
-	}
-	else {
-		$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']);
-		//or die (SendEmail($GLOBALS['cfg']['adminemail'], __FILE__ . " unable to connect to database","PHP script could not connect to database", 0));
-		
-		$sitename = $cfg['sitename'];
-	}
+	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']);
+	$sitename = $cfg['sitename'];
 
 	/* check if DB connection was successful */
 	if (mysqli_connect_errno()) {

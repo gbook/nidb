@@ -27,12 +27,6 @@
 	$action = GetVariable("action");
 ?>
 
-<? if ($isdevserver) { ?>
-<div class="ui inverted red attached segment">
-	<b>Development server</b> - Use for testing only
-</div>
-<? } ?>
-
 <!-- menu -->
 
 <!-- ****************** top menu ****************** -->
