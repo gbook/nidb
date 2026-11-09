@@ -207,8 +207,9 @@
 					<i class="dropdown icon"></i>
 					<div class="menu">
 						<? if ($GLOBALS['isadmin']) { ?>
-							<a class="item" class="item" href="projects.php?action=resetqa&id=<?=$projectid?>"><i class="red sync icon"></i> Reset basic QA</a>
-							<a class="item" class="item" href="projects.php?action=resetmriqc&id=<?=$projectid?>"><i class="red sync icon"></i> Reset advanced mriqc</a>
+							<? /* these reset QC for the whole project, so they are POST forms with the CSRF token */ ?>
+							<form method="post" action="projects.php" class="item" style="margin: 0" onsubmit="return confirm('Reset basic QA for every MR series in this project?')"><input type="hidden" name="action" value="resetqa"><input type="hidden" name="id" value="<?=(int)$projectid?>"><?=CSRFTokenField()?><button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit"><i class="red sync icon"></i> Reset basic QA</button></form>
+							<form method="post" action="projects.php" class="item" style="margin: 0" onsubmit="return confirm('Reset advanced mriqc for every MR series in this project?')"><input type="hidden" name="action" value="resetmriqc"><input type="hidden" name="id" value="<?=(int)$projectid?>"><?=CSRFTokenField()?><button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit"><i class="red sync icon"></i> Reset advanced mriqc</button></form>
 							<a class="item" class="item" href="importremote.php?action=viewimports&projectid=<?=$projectid?>"><i class="cloud download alternate icon"></i> Remote import sources</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>

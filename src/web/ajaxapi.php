@@ -124,11 +124,12 @@
 		case 'checksgehost':
 			CheckSGESubmitStatus($hostname, $clustertype, $submithostuser);
 			break;
+		/* cell edits from the projects.php grids: POST + CSRF token, permissions checked in the handler */
 		case 'updatesubjectdetails':
-			UpdateSubjectDetails($subjectid, $projectid, $column, $value);
+			if (AjaxRequirePOSTToken()) UpdateSubjectDetails($subjectid, $projectid, $column, $value);
 			break;
 		case 'updatestudydetails':
-			UpdateStudyDetails($subjectid, $studyid, $column, $value);
+			if (AjaxRequirePOSTToken()) UpdateStudyDetails($subjectid, $studyid, $column, $value);
 			break;
 		case 'updateobservationdetails':
 			UpdateObservationDetails($observationid, $column, $value, $tz_offset);
@@ -1257,94 +1258,58 @@
 	/* ------- UpdateSubjectDetails --------------- */
 	/* -------------------------------------------- */
 	function UpdateSubjectDetails($subjectid, $projectid, $column, $value) {
-
+		/* a cell edit in the projects.php subject grids. Permissions follow subjects.php: enrollment
+		   columns need Edit Data on the project, PHI columns need Edit PHI on the subject, and other
+		   subject columns need Edit Data or Edit PHI on any of the subject's projects */
 		$subjectid = (int)$subjectid;
 		$projectid = (int)$projectid;
-		$column = trim($column);          /* only ever matched against a whitelist below */
-		$value = trim($value);            /* bound as a parameter below - do not pre-escape */
+		$column = trim($column ?? '');
+		$value = trim($value ?? '');
 
-		if ($subjectid < 1) {
-			echo "error, subjectID blank";
+		/* the subject must be enrolled in this project */
+		$enrollmentid = (int)GetEnrollmentID($subjectid, $projectid);
+		if (($subjectid < 1) || ($enrollmentid < 1)) {
+			echo "error: subject is not enrolled in this project";
 			return;
 		}
-		
-		if ($column == "altuids") {
-			StartSQLTransaction();
-			/* get enrollmentid */
-			$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$enrollmentid = (int)$row['enrollment_id'];
 
-			/* delete entries for this subject from the altuid table ... */
-			$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			/* ... and insert the new rows into the altuids table */
-			$altuidsublist = $value;
-			//echo($altuidsublist);
-			$altuids = explode(',',$altuidsublist);
-			foreach ($altuids as $altuid) {
-				$altuid = trim($altuid);
-				if ($altuid != "") {
-					$isprimary = 0;
-					if (strpos($altuid, '*') !== FALSE) {
-						$altuid = str_replace('*','',$altuid);
-						$isprimary = 1;
-					}
-					$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (?, ?, ?, ?)");
-					mysqli_stmt_bind_param($stmt, 'isii', $subjectid, $altuid, $isprimary, $enrollmentid);
-					MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-					mysqli_stmt_close($stmt);
-				}
-			}
-			CommitSQLTransaction();
+		$enrollmentcols = array('altuids', 'enrollgroup', 'enrollstatus');
+		$phicols = array('dob' => 'birthdate', 'ethnicity1' => 'ethnicity1', 'ethnicity2' => 'ethnicity2', 'handedness' => 'handedness', 'education' => 'education', 'marital' => 'marital_status');
+		$subjectcols = array('guid' => 'guid', 'sex' => 'sex', 'gender' => 'gender', 'smoking' => 'smoking_status');
+
+		if (in_array($column, $enrollmentcols)) {
+			$perms = GetCurrentUserProjectPermissions(array($projectid));
+			if (!GetPerm($perms, 'modifydata', $projectid)) { echo "error: you don't have Edit Data permission on this project"; return; }
 		}
-		elseif ($column == "enrollgroup") {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "update enrollment set enroll_subgroup = ? where project_id = ? and subject_id = ?");
-			mysqli_stmt_bind_param($stmt, 'sii', $value, $projectid, $subjectid);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			mysqli_stmt_close($stmt);
+		elseif (isset($phicols[$column])) {
+			if (!GetSubjectPermissions($subjectid)['modifyphi']) { echo "error: you don't have Edit PHI permission for this subject"; return; }
 		}
-		elseif ($column == "enrollstatus") {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "update enrollment set enroll_status = ? where project_id = ? and subject_id = ?");
-			mysqli_stmt_bind_param($stmt, 'sii', $value, $projectid, $subjectid);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		elseif (isset($subjectcols[$column])) {
+			if (!GetSubjectPermissions($subjectid)['canedit']) { echo "error: you don't have permission to edit this subject"; return; }
+		}
+		else {
+			echo "error: column not recognized";
+			return;
+		}
+
+		if ($column == "altuids") {
+			ReplaceEnrollmentAltUIDs($subjectid, $enrollmentid, $value);
+		}
+		elseif (($column == "enrollgroup") || ($column == "enrollstatus")) {
+			$dbcol = ($column == "enrollgroup") ? "enroll_subgroup" : "enroll_status";
+			$sqlstring = "update enrollment set $dbcol = ? where enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $value, $enrollmentid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($value, $enrollmentid));
 			mysqli_stmt_close($stmt);
 		}
 		else {
-			$sqlstring = "update subjects set ";
-			switch ($column) {
-				case "uid": $sqlstring .= "uid"; break;
-				case "guid": $sqlstring .= "guid"; break;
-				case "sex": $sqlstring .= "subjects.sex"; break;
-				case "gender": $sqlstring .= "gender"; break;
-				case "dob": $sqlstring .= "birthdate"; break;
-				case "ethnicity1": $sqlstring .= "ethnicity1"; break;
-				case "ethnicity2": $sqlstring .= "ethnicity2"; break;
-				case "handedness": $sqlstring .= "handedness"; break;
-				case "education":
-					switch ($value) {
-						case "Unknown": $value = 0; break;
-						case "Grade School": $value = 1; break;
-						case "Middle School": $value = 2; break;
-						case "High School/GED": $value = 3; break;
-						case "Trade School": $value = 4; break;
-						case "Associates Degree": $value = 5; break;
-						case "Bachelors Degree": $value = 6; break;
-						case "Masters Degree": $value = 7; break;
-						case "Doctoral Degree": $value = 8; break;
-						default: $value = "";
-					}
-					$sqlstring .= "education";
-					break;
-				case "marital": $sqlstring .= "marital_status"; break;
-				case "smoking": $sqlstring .= "smoking_status"; break;
-				case "enrollgroup": $sqlstring .= "enroll_subgroup"; break;
-				default: echo "error - [$column] not recognized"; return;
+			$dbcol = $phicols[$column] ?? $subjectcols[$column];
+			if ($column == "education") {
+				$levels = array("Unknown" => 0, "Grade School" => 1, "Middle School" => 2, "High School/GED" => 3, "Trade School" => 4, "Associates Degree" => 5, "Bachelors Degree" => 6, "Masters Degree" => 7, "Doctoral Degree" => 8);
+				$value = isset($levels[$value]) ? (string)$levels[$value] : "";
 			}
-			$sqlstring .= " = ? where subject_id = ?";
-
-			//echo "$sqlstring";
+			$sqlstring = "update subjects set $dbcol = ? where subject_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'si', $value, $subjectid);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($value, $subjectid));
@@ -1359,78 +1324,50 @@
 	/* ------- UpdateStudyDetails ----------------- */
 	/* -------------------------------------------- */
 	function UpdateStudyDetails($subjectid, $studyid, $column, $value) {
-
+		/* a cell edit in the projects.php studies grid. Study columns and the alternate UIDs need Edit Data
+		   on the study's project; sex/gender (subject columns) need permission to edit the subject */
 		$subjectid = (int)$subjectid;
 		$studyid = (int)$studyid;
-		$column = trim($column);          /* only ever matched against a whitelist below */
-		$value = trim($value);            /* bound as a parameter below - do not pre-escape */
+		$column = trim($column ?? '');
+		$value = trim($value ?? '');
 
-		if ($subjectid < 1) {
-			echo "error, subjectid blank";
+		/* the study, its enrollment and project; the subject must be the study's subject */
+		$sqlstring = "select a.enrollment_id, b.project_id, b.subject_id from studies a join enrollment b on a.enrollment_id = b.enrollment_id where a.study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $studyid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($studyid));
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row || ((int)$row['subject_id'] != $subjectid)) {
+			echo "error: study not found";
 			return;
 		}
-		if ($studyid < 1) {
-			echo "error, studyid blank";
+		$enrollmentid = (int)$row['enrollment_id'];
+		$projectid = (int)$row['project_id'];
+
+		$studycols = array('visit' => 'study_type', 'studydate' => 'study_datetime', 'studyage' => 'study_ageatscan', 'desc' => 'study_desc', 'study_id' => 'study_alternateid', 'site' => 'study_site');
+
+		if (($column == "sex") || ($column == "gender")) {
+			if (!GetSubjectPermissions($subjectid)['canedit']) { echo "error: you don't have permission to edit this subject"; return; }
+			$sqlstring = "update subjects set $column = ? where subject_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $value, $subjectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($value, $subjectid));
+			mysqli_stmt_close($stmt);
+			echo "success";
 			return;
 		}
-		
+
+		if (($column != "altuids") && !isset($studycols[$column])) { echo "error: column not recognized"; return; }
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		if (!GetPerm($perms, 'modifydata', $projectid)) { echo "error: you don't have Edit Data permission on this study's project"; return; }
+
 		if ($column == "altuids") {
-			StartSQLTransaction();
-			
-			list($path2, $uid2, $studynum2, $studyid2, $subjectid2, $modality2, $type2, $studydatetime2, $enrollmentid, $projectname2, $projectid2) = GetStudyInfo($studyid);
-			$enrollmentid = (int)$enrollmentid;
-
-			/* delete entries for this subject from the altuid table ... */
-			$sqlstring = "delete from subject_altuid where subject_id = $subjectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			/* ... and insert the new rows into the altuids table */
-			$altuidsublist = $value;
-			//echo($altuidsublist);
-			$altuids = explode(',',$altuidsublist);
-			foreach ($altuids as $altuid) {
-				$altuid = trim($altuid);
-				if ($altuid != "") {
-					if ($enrollmentid == "") { $enrollmentid = 0; }
-					//echo "enrollmentID [$enrollmentid] - altuid [$altuid]<br>";
-					$isprimary = 0;
-					if (strpos($altuid, '*') !== FALSE) {
-						$altuid = str_replace('*','',$altuid);
-						$isprimary = 1;
-					}
-					$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (?, ?, ?, ?)");
-					mysqli_stmt_bind_param($stmt, 'isii', $subjectid, $altuid, $isprimary, $enrollmentid);
-					MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-					mysqli_stmt_close($stmt);
-				}
-			}
-			CommitSQLTransaction();
-		}
-		elseif ($column == "sex") {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "update subjects set sex = ? where subject_id = ?");
-			mysqli_stmt_bind_param($stmt, 'si', $value, $subjectid);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			mysqli_stmt_close($stmt);
-		}
-		elseif ($column == "gender") {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "update subjects set gender = ? where subject_id = ?");
-			mysqli_stmt_bind_param($stmt, 'si', $value, $subjectid);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-			mysqli_stmt_close($stmt);
+			/* only this enrollment's alternate UIDs (previously this deleted all of the subject's) */
+			ReplaceEnrollmentAltUIDs($subjectid, $enrollmentid, $value);
 		}
 		else {
-			$sqlstring = "update studies set ";
-			switch ($column) {
-				case "visit": $sqlstring .= "study_type"; break;
-				case "studydate": $sqlstring .= "study_datetime"; break;
-				case "studyage": $sqlstring .= "study_ageatscan"; break;
-				case "desc": $sqlstring .= "study_desc"; break;
-				case "study_id": $sqlstring .= "study_alternateid"; break;
-				case "site": $sqlstring .= "study_site"; break;
-				default: echo "error - [$column] not recognized"; return;
-			}
-			$sqlstring .= " = ? where study_id = ?";
-
-			//echo "$sqlstring";
+			$sqlstring = "update studies set " . $studycols[$column] . " = ? where study_id = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'si', $value, $studyid);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($value, $studyid));
@@ -1438,6 +1375,48 @@
 		}
 		
 		echo "success";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ReplaceEnrollmentAltUIDs ----------- */
+	/* -------------------------------------------- */
+	/* replace an enrollment's alternate UIDs with a comma separated list ('*' marks the primary) */
+	function ReplaceEnrollmentAltUIDs($subjectid, $enrollmentid, $list) {
+		$subjectid = (int)$subjectid;
+		$enrollmentid = (int)$enrollmentid;
+		StartSQLTransaction();
+		$sqlstring = "delete from subject_altuid where subject_id = ? and enrollment_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $enrollmentid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($subjectid, $enrollmentid));
+		mysqli_stmt_close($stmt);
+		$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (?, ?, ?, ?)";
+		foreach (explode(',', $list) as $altuid) {
+			$altuid = trim($altuid);
+			if ($altuid == "") continue;
+			$isprimary = (strpos($altuid, '*') !== false) ? 1 : 0;
+			$altuid = str_replace('*', '', $altuid);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'isii', $subjectid, $altuid, $isprimary, $enrollmentid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($subjectid, $altuid, $isprimary, $enrollmentid));
+			mysqli_stmt_close($stmt);
+		}
+		CommitSQLTransaction();
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AjaxRequirePOSTToken --------------- */
+	/* -------------------------------------------- */
+	/* for state-changing ajax actions: true if this is a POST with a valid CSRF token, otherwise
+	   prints an error (the callers show the response text) and returns false */
+	function AjaxRequirePOSTToken() {
+		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || !VerifyCSRFToken(false)) {
+			echo "error: this request could not be verified. Reload the page and try again";
+			return false;
+		}
+		return true;
 	}
 
 

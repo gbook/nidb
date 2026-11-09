@@ -22,9 +22,9 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
-	
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -40,10 +40,10 @@
 	require "includes_php.php";
 	require "includes_html.php";
 	require "menu.php";
-	
+
 	/* setup variables */
-	$action = GetVariable("action");
-	$password = GetVariable("password");
+	$action = GetSafeAction(array("saveoptions", "joininstance", "regenerateapikey")); /* mutating actions require POST + CSRF token */
+	$password = GetVariable("password") ?? '';
 	$c['firstname'] = GetVariable("firstname");
 	$c['midname'] = GetVariable("midname");
 	$c['lastname'] = GetVariable("lastname");
@@ -60,36 +60,56 @@
 	$c['institution'] = GetVariable("institution");
 	$c['dept'] = GetVariable("dept");
 	$c['website'] = GetVariable("website");
-	
+
 	$sendmail_dailysummary = GetVariable("sendmail_dailysummary");
 	$enablebeta = GetVariable("enablebeta");
-	$id = (int)GetVariable("id");
 	$instanceid = (int)GetVariable("instanceid");
 	$notifications = GetVariable("notification");
+	if (!is_array($notifications)) $notifications = array();
 	$projectids = GetVariables("projectid");
-
-//echo "id: $username";
+	if (!is_array($projectids)) $projectids = array();
 
 	switch ($action) {
+		/* mutating actions use POST/Redirect/GET: run the handler, stash its message,
+		   then redirect to a GET so a refresh/Back doesn't re-submit the form */
 		case 'saveoptions':
+			ob_start();
 			SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids);
-			DisplayOptions($username);
-			break;
-		case 'deletenot':
-			DeleteNotification($id);
-			DisplayOptions($username);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("users.php");
 			break;
 		case 'joininstance':
-			SendJoinInstanceRequest($instanceid);
-			DisplayOptions($username);
+			ob_start();
+			SendJoinInstanceRequest($username, $instanceid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("users.php");
 			break;
 		case 'regenerateapikey':
+			ob_start();
 			RegenerateApiKey($username);
-			DisplayOptions($username);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("users.php");
 			break;
-		case 'menu':
 		default:
 			DisplayOptions($username);
+	}
+
+
+	/* ----------------------------------------------- */
+	/* --------- GetUserRow -------------------------- */
+	/* ----------------------------------------------- */
+	/* returns the users row for $username, or null */
+	function GetUserRow($username) {
+		if (trim($username ?? '') == "") { return null; }
+
+		$sqlstring = "select * from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		mysqli_stmt_close($stmt);
+		if (mysqli_num_rows($result) < 1) { return null; }
+
+		return mysqli_fetch_array($result, MYSQLI_ASSOC);
 	}
 
 
@@ -99,133 +119,146 @@
 	function SaveOptions($username, $password, $c, $sendmail_dailysummary, $enablebeta, $notifications, $projectids) {
 		if (IsGuest($username)) { return; }
 		if (trim($username) == "") { return; }
-		
+
 		foreach ($c as $key => $val) {
-			$c[$key] = mysqli_real_escape_string($GLOBALS['linki'], $val);
+			$c[$key] = trim($val ?? '');
 		}
-		
-		if ($sendmail_dailysummary == "") { $sendmail_dailysummary = 0; }
-		if ($enablebeta == "") { $enablebeta = 0; }
-		
-		$sqlstring = "select * from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$userid = $row['user_id'];
-			
-			if ((trim($userid) == '') || ($userid == 0)) {
-				?>
-				<span class="staticmessage">UserID is blank</span>
-				<?
+
+		$sendmail_dailysummary = ($sendmail_dailysummary == "1") ? 1 : 0;
+		$enablebeta = ($enablebeta == "1") ? 1 : 0;
+
+		$row = GetUserRow($username);
+		if ($row === null) {
+			Error("Unable to find your user account");
+			return;
+		}
+		$userid = (int)$row['user_id'];
+		if ($userid == 0) {
+			Error("Unable to find your user account");
+			return;
+		}
+
+		/* update the account information */
+		$sqlstring = "update users set user_firstname = ?, user_midname = ?, user_lastname = ?, user_email = ?, user_email2 = ?, user_phone1 = ?, user_phone2 = ?, user_address1 = ?, user_address2 = ?, user_city = ?, user_state = ?, user_zip = ?, user_country = ?, user_institution = ?, user_dept = ?, user_website = ?, sendmail_dailysummary = ?, user_enablebeta = ? where user_id = ?";
+		$params = [$c['firstname'], $c['midname'], $c['lastname'], $c['email1'], $c['email2'], $c['phone1'], $c['phone2'], $c['address1'], $c['address2'], $c['city'], $c['state'], $c['zip'], $c['country'], $c['institution'], $c['dept'], $c['website'], $sendmail_dailysummary, $enablebeta, $userid];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssssssssssssssiii', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		/* update the password, only for local (Standard) accounts. A NIS account
+		   must not get a local password, which would keep working after the NIS account is removed */
+		if ($password != "") {
+			if ($row['login_type'] == "Standard") {
+				$sqlstring = "update users set password = sha1(?) where user_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'si', $password, $userid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['********', $userid]);
+				mysqli_stmt_close($stmt);
 			}
 			else {
-				/* update */
-				$sqlstring = "update users set";
-				if ($password != "") { $sqlstring .= " password = sha1('$password'), "; }
-				$sqlstring .= " user_firstname = '".$c['firstname']."', user_midname = '".$c['midname']."', user_lastname = '".$c['lastname']."', user_email = '".$c['email1']."', user_email2 = '".$c['email2']."', user_phone1 = '".$c['phone1']."', user_phone2 = '".$c['phone2']."', user_address1 = '".$c['address1']."', user_address2 = '".$c['address2']."', user_city = '".$c['city']."', user_state = '".$c['state']."', user_zip = '".$c['zip']."', user_country = '".$c['country']."', user_institution = '".$c['institution']."', user_dept = '".$c['dept']."', user_website = '".$c['website']."', sendmail_dailysummary = '$sendmail_dailysummary', user_enablebeta = '$enablebeta' where username = '$username'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				/* delete all existing notification entries */
-				$sqlstring = "delete from notification_user where user_id = $userid";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				/* update the notifications */
-				foreach ($notifications as $notificationid) {
-					$pids = $projectids[$notificationid];
-					if (in_array(0,$pids) || in_array('all',$pids)) {
-						$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, 0, $notificationid)";
-						//PrintSQL($sqlstring);
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-					else {
-						foreach ($pids as $projectid) {
-							$sqlstring = "insert into notification_user (user_id, project_id, notiftype_id) values ($userid, $projectid, $notificationid)";
-							//PrintSQL($sqlstring);
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						}
-					}
-				}
+				Error("Password not changed. This account logs in through the system (NIS/Unix) password, which can't be changed here.");
 			}
 		}
-		else {
-			?>
-			<span class="staticmessage">How did you get this far? You should already have a row in the user table from when you first logged in.</span>
-			<?
+
+		/* delete all existing notification entries */
+		$sqlstring = "delete from notification_user where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		mysqli_stmt_close($stmt);
+
+		/* update the notifications */
+		$sqlstring = "insert ignore into notification_user (user_id, project_id, notiftype_id) values (?, ?, ?)";
+		foreach ($notifications as $notificationid) {
+			$notificationid = (int)$notificationid;
+			if ($notificationid <= 0) { continue; }
+
+			$pids = $projectids[$notificationid] ?? array();
+			if (!is_array($pids)) { $pids = array($pids); }
+
+			/* no projects selected, or 'All Projects' selected -> project 0 (all) */
+			if ((count($pids) == 0) || in_array('0', $pids, true) || in_array(0, $pids, true) || in_array('all', $pids, true)) {
+				$pids = array(0);
+			}
+
+			foreach ($pids as $projectid) {
+				$projectid = (int)$projectid;
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'iii', $userid, $projectid, $notificationid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $projectid, $notificationid]);
+				mysqli_stmt_close($stmt);
+			}
 		}
+
+		Notice("Account options saved");
 	}
 
 
 	/* ----------------------------------------------- */
 	/* --------- SendJoinInstanceRequest ------------- */
 	/* ----------------------------------------------- */
-	function SendJoinInstanceRequest($instanceid) {
-		$sqlstring = "select user_id from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
-		if (($userid == "") || ($userid == 0)) {
-			?>
-			<span class="staticmessage">userid is blank</span>
-			<?
+	function SendJoinInstanceRequest($username, $instanceid) {
+		$row = GetUserRow($username);
+		$userid = (int)($row['user_id'] ?? 0);
+		if ($userid == 0) {
+			Error("Unable to find your user account");
+			return;
 		}
-		
-		$sqlstring = "select * from user_instance where user_id = '$userid' and instance_id = $instanceid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		/* get the instance and its owner */
+		$sqlstring = "select a.instance_name, b.user_email, b.user_fullname from instance a left join users b on a.instance_ownerid = b.user_id where a.instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceid]);
+		mysqli_stmt_close($stmt);
+		if (mysqli_num_rows($result) < 1) {
+			Error("Instance not found");
+			return;
+		}
+		$irow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$instancename = $irow['instance_name'];
+		$oEmail = $irow['user_email'] ?? '';
+		$oFullname = $irow['user_fullname'] ?? '';
+
+		$sqlstring = "select instance_joinrequest from user_instance where user_id = ? and instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $userid, $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $instanceid]);
+		mysqli_stmt_close($stmt);
 		$sendemail = 0;
 		if (mysqli_num_rows($result) < 1) {
-			$sqlstringA = "insert into user_instance (user_id, instance_id, instance_joinrequest) values ($userid, $instanceid, 1)";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$sqlstring = "insert into user_instance (user_id, instance_id, instance_joinrequest) values (?, ?, 1)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $userid, $instanceid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $instanceid]);
+			mysqli_stmt_close($stmt);
 			$sendemail = 1;
 		}
 		else {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$joinrequest = $row['instance_joinrequest'];
-			if ($joinrequest) {
+			$jrow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			if ($jrow['instance_joinrequest']) {
 				$sendemail = 1;
 			}
 		}
-		
+
 		if ($sendemail) {
 			/* send an email to the owner of the instance */
-			$sqlstring = "select * from users where user_id = (select instance_ownerid from instance where instance_id = $instanceid)";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$oEmail = $row['user_email'];
-			$oFullname = $row['user_fullname'];
-			
-			/* get the user in-question's information */
-			$sqlstring = "select * from users where user_id = $userid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$uEmail = $row['user_email'];
 			$uFullname = $row['user_fullname'];
 
-			/* get the instance information */
-			$sqlstring = "select * from instance where instance_id = $instanceid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$instancename = $row['instance_name'];
-			
-			$body = "$oFullname,<br><br><b>$uFullname ($uEmail)</b> has requested to join your Neuroinformatics Database (NiDB) instance: <b>$instancename</b>\n\nTo accept or reject this request, login to NiDB and go to Admin->Instances and click Accept or Reject";
-			
-			if (!SendEmail($oEmail,'NiDB instance join request',$body,0)) {
-				echo "System error. Unable to send email!";
+			$body = htmlspecialchars($oFullname) . ",<br><br><b>" . htmlspecialchars($uFullname) . " (" . htmlspecialchars($uEmail) . ")</b> has requested to join your Neuroinformatics Database (NiDB) instance: <b>" . htmlspecialchars($instancename) . "</b><br><br>To accept or reject this request, login to NiDB and go to Admin->Instances and click Accept or Reject";
+
+			if (($oEmail == '') || (!SendEmail($oEmail,'NiDB instance join request',$body,0))) {
+				Error("Request recorded, but unable to email the instance owner");
 			}
 			else {
+				Notice("Request sent");
 			}
-			
-			?><span class="message">Request sent</span><?
 		}
 	}
-	
-	
+
+
 	/* ----------------------------------------------- */
 	/* --------- RegenerateApiKey -------------------- */
 	/* ----------------------------------------------- */
@@ -263,36 +296,36 @@
 			<?
 			return;
 		}
-		
-		/* get the range of years that studies have occured */
-		$sqlstring = "select * from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		$password = $row['password'];
-		$email = $row['user_email'];
-		$fullname = $row['user_fullname'];
-		
-		$firstname = $row['user_firstname'];
-		$midname = $row['user_midname'];
-		$lastname = $row['user_lastname'];
-		$institution = $row['user_institution'];
-		$country = $row['user_country'];
-		$email1 = $row['user_email'];
-		$email2 = $row['user_email2'];
-		$address1 = $row['user_address1'];
-		$address2 = $row['user_address2'];
-		$city = $row['user_city'];
-		$state = $row['user_state'];
-		$zip = $row['user_zip'];
-		$phone1 = $row['user_phone1'];
-		$phone2 = $row['user_phone2'];
-		$website = $row['user_website'];
-		$dept = $row['user_dept'];
-		
+
+		$row = GetUserRow($username);
+		if ($row === null) {
+			Error("Unable to find your user account");
+			return;
+		}
+		$userid = (int)$row['user_id'];
+
+		/* every value below is displayed in HTML, so escape it once here */
+		$h = function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); };
+		$firstname = $h($row['user_firstname']);
+		$midname = $h($row['user_midname']);
+		$lastname = $h($row['user_lastname']);
+		$institution = $h($row['user_institution']);
+		$country = $h($row['user_country']);
+		$email1 = $h($row['user_email']);
+		$email2 = $h($row['user_email2']);
+		$address1 = $h($row['user_address1']);
+		$address2 = $h($row['user_address2']);
+		$city = $h($row['user_city']);
+		$state = $h($row['user_state']);
+		$zip = $h($row['user_zip']);
+		$phone1 = $h($row['user_phone1']);
+		$phone2 = $h($row['user_phone2']);
+		$website = $h($row['user_website']);
+		$dept = $h($row['user_dept']);
+
 		$login_type = $row['login_type'];
-		if ($row['sendmail_dailysummary'] == "1") { $dailycheck = "checked"; }
-		if ($row['user_enablebeta'] == "1") { $enablebeta = "checked"; }
+		$dailycheck = ($row['sendmail_dailysummary'] == "1") ? "checked" : "";
+		$enablebeta = ($row['user_enablebeta'] == "1") ? "checked" : "";
 
 		$sqlstring = "select apiuser_id from api_users where username = ? limit 1";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -301,17 +334,21 @@
 		mysqli_stmt_close($stmt);
 		$hasApiAccess = (mysqli_num_rows($result) > 0);
 
-		$sqlstring = "select count(*) 'count' from user_project where user_id = $userid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$projectcount = $row['count'];
-		
+		$sqlstring = "select count(*) 'count' from user_project where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		mysqli_stmt_close($stmt);
+		$prow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$projectcount = (int)$prow['count'];
+
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		?>
 		<span class="tiny">I have permissions to <?=$projectcount?> projects!<br><br></span>
 		<script type="text/javascript">
 			$(document).ready(function() {
 				/* check the matching passwords */
-				$("#submit").click(function(){
+				$("#accountform").submit(function(){
 					$(".error").hide();
 					var hasError = false;
 					var passwordVal = $("#password").val();
@@ -323,13 +360,6 @@
 					}
 					if(hasError == true) {return false;}
 				});
-
-				/* to disable the autofill thing in Chrome */
-				if ($.browser.webkit) {
-					$('input[name="username"]').attr('autocomplete', 'off');
-					$('input[name="fullname"]').attr('autocomplete', 'off');
-					$('input[name="password"]').attr('autocomplete', 'off');
-				}
 			});
 		</script>
 
@@ -344,6 +374,7 @@
 						<? if ($hasApiAccess) { ?>
 						<form method="post" action="users.php" style="float:right; margin:0">
 							<input type="hidden" name="action" value="regenerateapikey">
+							<?=CSRFTokenField()?>
 							<button type="submit" class="ui basic green button">Regenerate API Key</button>
 						</form>
 						<? } ?>
@@ -351,23 +382,24 @@
 				</div>
 			</div>
 
-			<form method="post" action="users.php" autocomplete="off" class="ui form attached fluid segment">
+			<form method="post" action="users.php" autocomplete="off" class="ui form attached fluid segment" id="accountform">
 			<input type="hidden" name="action" value="saveoptions">
+			<?=CSRFTokenField()?>
 
 			<h3 class="ui header">Information</h3>
 			
 			<div class="three fields">
 				<div class="required seven wide field">
 					<label>First</label>
-					<input type="text" name="firstname" id="firstname" maxlength="50" required autofocus="autofocus" value="<?=$firstname?>" placeholder="First" required>
+					<input type="text" name="firstname" id="firstname" maxlength="50" required autofocus="autofocus" value="<?=$firstname?>" placeholder="First">
 				</div>
 				<div class="two wide field">
 					<label>Middle</label>
-					<input type="text" name="midname" id="midname" maxlength="1" required value="<?=$midname?>">
+					<input type="text" name="midname" id="midname" maxlength="1" value="<?=$midname?>">
 				</div>
 				<div class="required seven wide field">
 					<label>Last</label>
-					<input type="text" name="lastname" id="lastname" maxlength="50" required value="<?=$lastname?>" required>
+					<input type="text" name="lastname" id="lastname" maxlength="50" required value="<?=$lastname?>">
 				</div>
 			</div>
 
@@ -412,7 +444,7 @@
 				</div>
 				<script>
 					$(document).ready(function() {
-						$("#state option[value='<?=$state?>']").attr("selected","selected");
+						$("#state").val(<?=json_encode($row['user_state'] ?? '', JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP)?>);
 					});
 				</script>
 				<div class="seven wide field">
@@ -486,7 +518,7 @@
 
 			<script>
 				$(document).ready(function() {
-					$("#country option[value='<?=$country?>']").attr("selected","selected");
+					$("#country").val(<?=json_encode($row['user_country'] ?? '', JSON_HEX_TAG|JSON_HEX_APOS|JSON_HEX_QUOT|JSON_HEX_AMP)?>);
 				});
 			</script>
 			<div class="field">
@@ -763,6 +795,7 @@
 				</div>
 			</div>
 			
+			<? if ($login_type == "Standard") { ?>
 			<div class="ui grey segment">
 				<h3 class="ui header">Password</h3>
 				<span class="tiny">Only enter password if you want to change it</span>
@@ -782,6 +815,7 @@
 					</div>
 				</div>
 			</div>
+			<? } ?>
 
 			<div class="ui grey segment">
 				<h3 class="ui header">Options</h3>
@@ -792,23 +826,24 @@
 						<?
 							$sqlstring  = "select * from notifications";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$notificationid = $row['notiftype_id'];
-								$notificationname = $row['notiftype_name'];
-								$notificationdesc = $row['notiftype_desc'];
-								$notificationneedproject = $row['notiftype_needproject'];
-								$projectid = $row['project_id'];
-								$frequency = $row['notiftype_frequency'];
+							while ($nrow = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+								$notificationid = (int)$nrow['notiftype_id'];
+								$notificationname = $nrow['notiftype_name'];
+								$notificationdesc = $nrow['notiftype_desc'];
+								$notificationneedproject = $nrow['notiftype_needproject'];
 								
-								$sqlstringA = "select * from notification_user where user_id = $userid and notiftype_id = $notificationid";
-								$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+								/* reset for each notification, so one notification's projects don't carry over to the next */
+								$projectids = array();
+								$sqlstringA = "select project_id from notification_user where user_id = ? and notiftype_id = ?";
+								$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+								mysqli_stmt_bind_param($stmtA, 'ii', $userid, $notificationid);
+								$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$userid, $notificationid]);
+								mysqli_stmt_close($stmtA);
 								if (mysqli_num_rows($resultA) > 0) {
 									$notifenabled = "checked";
-									unset($projectids);
 									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 										$projectids[] = $rowA['project_id'];
 									}
-									//PrintVariable($projectids);
 								}
 								else {
 									$notifenabled = "";
@@ -816,7 +851,7 @@
 								?>
 								<tr>
 									<td valign="top">
-										<div title="<?=$notificationdesc?>"><input type="checkbox" <?=$notifenabled?> name="notification[]" value="<?=$notificationid?>"> <b><?=$notificationname?></b></div>
+										<div title="<?=$h($notificationdesc)?>"><input type="checkbox" <?=$notifenabled?> name="notification[]" value="<?=$notificationid?>"> <b><?=$h($notificationname)?></b></div>
 									</td>
 									<? if ($notificationneedproject == 1) { ?>
 									<td valign="top"><? DisplayProjectSelectBox(0,"projectid-$notificationid"."[]",'','',1,$projectids); ?></td>
@@ -859,16 +894,16 @@
 			</thead>
 			<tbody>
 			<?
-				$sqlstring = "select * from instance order by instance_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$instanceid = $row['instance_id'];
-					$uid = $row['instance_uid'];
-					$name = $row['instance_name'];
-					$owner = $row['instance_ownerid'];
-					$default = $row['instance_default'];
-					$requested = $row['instance_joinrequest'];
-					$ownername = $row['username'];
+				/* this user's membership/join-request status for each instance */
+				$sqlstring = "select a.instance_id, a.instance_name, a.instance_ownerid, b.instance_joinrequest, b.user_id 'member' from instance a left join user_instance b on a.instance_id = b.instance_id and b.user_id = ? order by a.instance_name";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $userid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+				mysqli_stmt_close($stmt);
+				while ($irow = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+					$instanceid = (int)$irow['instance_id'];
+					$name = $h($irow['instance_name']);
+					$owner = $irow['instance_ownerid'];
 					
 					if ($owner == $userid) {
 						?><tr><td><a href="instance.php?instanceid=<?=$instanceid?>"><?=$name?></a></td><?
@@ -876,12 +911,8 @@
 						?><tr><td><?=$name?></td><?
 					}
 					
-					$sqlstringA = "select * from user_instance where user_id = (select user_id from users where username = '$username') and instance_id = $instanceid";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysqli_num_rows($resultA) > 0) {
-						$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-						$joinrequest = $rowA['instance_joinrequest'];
-						if ($joinrequest) {
+					if ($irow['member'] !== null) {
+						if ($irow['instance_joinrequest']) {
 							?><td style="color: #888">Request Sent</td></tr><?
 						}
 						else {
@@ -890,12 +921,16 @@
 					}
 					else {
 						?>
-						<td><a href="users.php?action=joininstance&instanceid=<?=$instanceid?>">Request to Join</a></td></tr>
+						<td>
+							<form method="post" action="users.php" style="margin:0">
+								<input type="hidden" name="action" value="joininstance">
+								<input type="hidden" name="instanceid" value="<?=$instanceid?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui mini basic button">Request to Join</button>
+							</form>
+						</td></tr>
 						<?
 					}
-					?>
-					</tr>
-					<?
 				}
 			?>
 				<? if ($GLOBALS['cfg']['sitetype'] == "commercial") { ?>
@@ -914,10 +949,8 @@
 	function IsGuest($username) {
 		if (trim($username) == "") { return false; }
 		
-		$sqlstring = "select login_type from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$type = $row['login_type'];
+		$row = GetUserRow($username);
+		$type = $row['login_type'] ?? '';
 		
 		if ($type == "Guest") {
 			return true;

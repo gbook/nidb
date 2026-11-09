@@ -65,3 +65,6 @@ INSERT IGNORE INTO `user_instance` (`userinstance_id`, `user_id`, `instance_id`,
 
 INSERT IGNORE INTO `users` (`user_id`, `username`, `password`, `login_type`, `user_instanceid`, `user_fullname`, `user_firstname`, `user_midname`, `user_lastname`, `user_institution`, `user_country`, `user_email`, `user_email2`, `user_address1`, `user_address2`, `user_city`, `user_state`, `user_zip`, `user_phone1`, `user_phone2`, `user_website`, `user_dept`, `user_lastlogin`, `user_logincount`, `user_enabled`, `user_isadmin`, `user_issiteadmin`, `user_canimport`, `sendmail_dailysummary`, `user_enablebeta`, `lastupdate`) VALUES
 (1, 'admin', sha1('password'), 'Standard', 1, 'Administrator', '', '', '', '', '', 'email@email.com', '', '', '', '', '', '', '', '', '', '', '0000-00-00 00:00:00', 0, 1, 1, 1, 0, 0, 0, '0000-00-00 00:00:00');
+
+/* remote FTP exports were never implemented; clear any FTP passwords stored in plaintext by older versions */
+UPDATE `exports` SET `remoteftp_password` = NULL WHERE `remoteftp_password` <> '';

@@ -85,11 +85,6 @@ int moduleExport::Run() {
             QString exporttype = q.value("destinationtype").toString().trimmed();
             QString filetype = q.value("filetype").toString().trimmed();
             QString nfsdir = q.value("nfsdir").toString().trimmed();
-            QString remoteftppassword = q.value("remoteftp_password").toString().trimmed();
-            QString remoteftppath = q.value("remoteftp_path").toString().trimmed();
-            QString remoteftpport = q.value("remoteftp_port").toString().trimmed();
-            QString remoteftpserver = q.value("remoteftp_server").toString().trimmed();
-            QString remoteftpusername = q.value("remoteftp_username").toString().trimmed();
             QString squirreldesc = q.value("squirrel_desc").toString().trimmed();
             QString squirreltitle = q.value("squirrel_title").toString().trimmed();
             QStringList bidsflags = q.value("bids_flags").toString().trimmed().split(",");
@@ -169,7 +164,10 @@ int moduleExport::Run() {
                     n->Log("Invalid remote connection [" + conn.msg + "]");
             }
             else if (exporttype == "remoteftp") {
-                found = ExportToRemoteFTP(exportid, remoteftpusername, remoteftppassword, remoteftpserver, remoteftpport.toInt(), remoteftppath, status, log);
+                /* remote FTP was never implemented, and ExportToRemoteFTP() only returned true, so these
+                   exports were marked complete without sending anything. Fail them instead */
+                log += n->Log("Remote FTP export is not supported");
+                status = "error";
             }
             else {
                 log += n->Log(QString("Unknown export type [%1]").arg(exporttype));
@@ -2154,7 +2152,9 @@ bool moduleExport::ExportToRemoteFTP(int exportid, QString remoteftpusername, QS
 
     /* was once implemented in Perl version, but was never used. Now not implemented */
 
-    n->Log(QString("ExportToRemoteFTP(%1, %2, %3, %4, %5, %6, %7, %8) called").arg(exportid).arg(remoteftpusername).arg(remoteftppassword).arg(remoteftpserver).arg(remoteftpport).arg(remoteftppath).arg(exportstatus).arg(msg));
+    /* (the password is not logged) */
+    Q_UNUSED(remoteftppassword);
+    n->Log(QString("ExportToRemoteFTP(%1, %2, %3, %4, %5, %6, %7) called").arg(exportid).arg(remoteftpusername).arg(remoteftpserver).arg(remoteftpport).arg(remoteftppath).arg(exportstatus).arg(msg));
 
     return true;
 }

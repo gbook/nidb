@@ -1,6 +1,6 @@
 <?
  // ------------------------------------------------------------------------------
- // NiDB viewfile.php
+ // NiDB viewimagefile.php
  // Copyright (C) 2004 - 2026
  // Gregory A Book <gregory.book@hhchealth.org> <gbook@gbook.org>
  // Olin Neuropsychiatry Research Center, Hartford Hospital
@@ -29,36 +29,39 @@ session_start();
 require "functions.php";
 require "includes_php.php";
 
-$action = GetVariable("action");
 $file = GetVariable("file");
 
-if ($file != "") {
+/* only images are shown here (in an <img> data URI), with the browser-supported types */
+$mimetypes = array('png' => 'image/png', 'jpg' => 'image/jpeg', 'jpeg' => 'image/jpeg', 'gif' => 'image/gif', 'bmp' => 'image/bmp', 'webp' => 'image/webp');
 
-	$archivePath = $GLOBALS['cfg']['archivedir'];
-	$mountPath = $GLOBALS['cfg']['mountdir'];
-	
-	/* file must live within the archive directory or mount directory */
-	if ((substr($file, 0, strlen($archivePath)) === $archivePath) || (substr($file, 0, strlen($mountPath)) === $mountPath)) {
-		if (file_exists($file)) {
-		?>
-			<body bgcolor="#DDD">
-			<div style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
-			<div style="padding:5px; background-color: 393939; color:white; font-size:11pt"><?=$file?></div>
+if ($file == "") {
+	echo "Filename was blank";
+}
+else {
+	/* resolve symlinks and ../ first, so the directory check can't be bypassed with a path
+	   like <archivedir>/../../etc/passwd. Same check as viewfile.php */
+	$realfile = realpath($file);
+	$ext = strtolower(pathinfo((string)$realfile, PATHINFO_EXTENSION));
 
-				<?
-				$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-				$imgdata = base64_encode(file_get_contents($file));
-				?>
-				<img border="1" src="data:image/<?=$ext?>;base64,<?=$imgdata?>">
-			</div>
-		<?
-		}
-		else { echo "file [$file] does not exist"; }
+	if (($realfile === false) || (!is_file($realfile))) {
+		echo "File [" . htmlspecialchars($file) . "] does not exist";
+	}
+	elseif (!IsViewablePath($realfile)) {
+		echo htmlspecialchars($file) . " is not within an archive, mount, or analysis directory";
+	}
+	elseif (!isset($mimetypes[$ext])) {
+		echo htmlspecialchars($file) . " is not an image file";
 	}
 	else {
-		echo "$file does not start with archive path";
+		$imgdata = base64_encode(file_get_contents($realfile));
+		?>
+		<body bgcolor="#DDD">
+		<div style="border: 1px solid #BBB; margin:10px; padding:10px; background-color: white; font-family: monospace; white-space: pre;">
+			<div style="padding:5px; background-color: #393939; color:white; font-size:11pt"><?=htmlspecialchars($file)?></div>
+			<img border="1" src="data:<?=$mimetypes[$ext]?>;base64,<?=$imgdata?>">
+		</div>
+		<?
 	}
 }
-else { echo "filename was blank"; }
 
 ?>

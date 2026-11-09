@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -47,7 +48,7 @@
 	$GLOBALS['cfg']['debug'] = 0;
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("submit", "anonymize")); /* mutating actions require POST + CSRF token */
 
 	/* searching variables */
     $searchvars['s_searchhistoryid'] = GetVariable("s_searchhistoryid");
@@ -141,12 +142,6 @@
 	$requestvars['publicdownloadreleasenotes'] = GetVariable("publicdownloadreleasenotes");
 	$requestvars['publicdownloadshareinternal'] = GetVariable("publicdownloadshareinternal");
 	$requestvars['remoteconnid'] = GetVariable("remoteconnid");
-	$requestvars['remoteftppassword'] = GetVariable("remoteftppassword");
-	$requestvars['remoteftppath'] = GetVariable("remoteftppath");
-	$requestvars['remoteftpport'] = GetVariable("remoteftpport");
-	$requestvars['remoteftpsecure'] = GetVariable("remoteftpsecure");
-	$requestvars['remoteftpserver'] = GetVariable("remoteftpserver");
-	$requestvars['remoteftpusername'] = GetVariable("remoteftpusername");
 	$requestvars['seriesdata'] = GetVariable("seriesdata");
 	$requestvars['seriesid'] = GetVariable("seriesid");
 	$requestvars['seriesmeta'] = GetVariable("seriesmeta");
@@ -176,6 +171,8 @@
 	}
 	
 	/* ----- determine which action to take ----- */
+	/* searching is a read, so it isn't PRG (results can't go in a flash message). Exports and
+	   anonymize requests are PRG: run the handler, stash its message, redirect to a GET */
 	switch ($action) {
 		case 'searchform': DisplaySearchForm($searchvars, $action); break;
 		case 'search':
@@ -183,9 +180,20 @@
 			DisplaySearchForm($searchvars, $action);
 			Search($searchvars);
 			break;
-		case 'submit': ProcessRequest($requestvars, $username); break;
-		case 'anonymize': Anonymize($requestvars, $username); break;
+		case 'submit':
+			ob_start();
+			ProcessRequest($requestvars, $username);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("search.php");
+			break;
+		case 'anonymize':
+			ob_start();
+			Anonymize($requestvars, $username);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("search.php");
+			break;
 		default:
+			ShowFlashMessage(); /* show any message from an export/anonymize request that redirected here (PRG) */
 			DisplaySearchForm($searchvars, $action);
 	}
 
@@ -196,10 +204,19 @@
 	function DisplaySearchForm($s, $action) {
 	
 		/* if using a previous search, load it up */
+		/* (only the user's own searches; they can contain names and DOBs that were searched for) */
+		$row = null;
 		if (isInteger($s['s_searchhistoryid'])) {
-			$sqlstring = "select * from search_history where searchhistory_id = " . $s['s_searchhistoryid'];
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$searchhistoryid = (int)$s['s_searchhistoryid'];
+			$userid = (int)$_SESSION['userid'];
+			$sqlstring = "select * from search_history where searchhistory_id = ? and user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $searchhistoryid, $userid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$searchhistoryid, $userid]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+		}
+		if ($row) {
 			
 			$s['s_subjectuid'] = $row['subjectuid'];
 			$s['s_subjectaltuid'] = $row['subjectaltuid'];
@@ -210,7 +227,7 @@
 			$s['s_ageatscanmax'] = $row['ageatscanmax'];
 			$s['s_subjectgender'] = $row['subjectgender'];
 			$s['s_subjectgroupid'] = $row['subjectgroupid'];
-			$s['s_projectids'] = $row['projectids'];
+			$s['s_projectids'] = (($row['projectids'] ?? '') == '') ? null : explode(',', $row['projectids']);
 			$s['s_enrollsubgroup'] = $row['enrollsubgroup'];
 			$s['s_observationsearch'] = $row['observationsearch'];
 			$s['s_observationlist'] = $row['observationlist'];
@@ -345,21 +362,21 @@
 								UIDs <i class="small blue question circle outline icon" title="<b>Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy & Paste from Excel"></i>
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectuid" value="<?=$s['s_subjectuid'];?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>" placeholder="UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectuid" value="<?=htmlspecialchars($s['s_subjectuid'] ?? '')?>" class="ui input importantfield <? echo (!isEmpty($s['s_subjectuid'])) ? 'hasdata' : '';?>" placeholder="UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Alternate UIDs <i class="small blue question circle outline icon" title="<b>Alternate Subject UID(s)</b><br><br>Can be a list of UIDs, separated by commas, spaces, semi-colons, tabs, or Copy&Paste from Excel"></i>
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectaltuid" value="<?=$s['s_subjectaltuid'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>" placeholder="Alternate UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectaltuid" value="<?=htmlspecialchars($s['s_subjectaltuid'] ?? '')?>" class="importantfield <? echo (!isEmpty($s['s_subjectaltuid'])) ? 'hasdata' : '';?>" placeholder="Alternate UIDs" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Name
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_subjectname" value="<?=$s['s_subjectname'];?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>" placeholder="Name" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_subjectname" value="<?=htmlspecialchars($s['s_subjectname'] ?? '')?>" class="importantfield <? echo (!isEmpty($s['s_subjectname'])) ? 'hasdata' : '';?>" placeholder="Name" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 						</div>
 						
@@ -375,14 +392,14 @@
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui small input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_subjectdobstart" value="<?=$s['s_subjectdobstart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_subjectdobstart" value="<?=htmlspecialchars($s['s_subjectdobstart'] ?? '')?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 									<i class="arrows alternate horizontal icon"></i> &nbsp;
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui small input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_subjectdobend" value="<?=$s['s_subjectdobend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_subjectdobend" value="<?=htmlspecialchars($s['s_subjectdobend'] ?? '')?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 								</div>
@@ -393,14 +410,14 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small right labeled input">
-									<input type="number" name="s_ageatscanmin" value="<?=$s['s_ageatscanmin'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="number" name="s_ageatscanmin" value="<?=htmlspecialchars($s['s_ageatscanmin'] ?? '')?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">
 										years
 									</div>
 								</div>
 								<i class="arrows alternate horizontal icon"></i>
 								<div class="ui small right labeled input">
-									<input type="number" name="s_ageatscanmax" value="<?=$s['s_ageatscanmax'];?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="number" name="s_ageatscanmax" value="<?=htmlspecialchars($s['s_ageatscanmax'] ?? '')?>" maxlength="3" style="width: 80px" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">
 										years
 									</div>
@@ -412,7 +429,7 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small input">
-									<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=$s['s_subjectgender']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_subjectgender" size="1" maxlength="1" value="<?=htmlspecialchars($s['s_subjectgender'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<span class="tiny">&nbsp;F, M, O, U</span>
 							</div>
@@ -438,7 +455,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<option value="<?=htmlspecialchars($groupid ?? '')?>" <?=$selected?>><?=htmlspecialchars($groupname ?? '')?></option>
 										<?
 									}
 								?>
@@ -472,8 +489,12 @@
 									<option value="all">All Projects</option>
 									<?
 										
-										$sqlstring = "select * from projects where instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										$forminstanceid = (int)$_SESSION['instanceid'];
+										$sqlstring = "select * from projects where instance_id = ? order by project_name";
+										$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+										mysqli_stmt_bind_param($stmt, 'i', $forminstanceid);
+										$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$forminstanceid]);
+										mysqli_stmt_close($stmt);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$project_id = $row['project_id'];
 											$project_name = $row['project_name'];
@@ -483,7 +504,7 @@
 											$perms = GetCurrentUserProjectPermissions(array($project_id));
 											if (GetPerm($perms, 'viewdata', $project_id)) { $disabled = ""; } else { $disabled="disabled"; }
 											?>
-											<option value="<?=$project_id?>" <?=$selected?>  <?=$disabled?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+											<option value="<?=htmlspecialchars($project_id ?? '')?>" <?=$selected?>  <?=$disabled?>><?=htmlspecialchars($project_name ?? '')?> (<?=htmlspecialchars($project_costcenter ?? '')?>)</option>
 											<?
 										}
 									?>
@@ -498,14 +519,13 @@
 							</div>
 							<div class="twelve wide left aligned column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=$s['s_enrollsubgroup']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_enrollsubgroup" id="s_enrollsubgroup" list="s_enrollsubgroup" value="<?=htmlspecialchars($s['s_enrollsubgroup'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_enrollsubgroup">
 								<?
-									$sqlstring = "select distinct(enroll_subgroup) from enrollment order by enroll_subgroup";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=$row['enroll_subgroup']?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('enrollment', 'enroll_subgroup') as $row) {
+										?><option value="<?=htmlspecialchars($row['enroll_subgroup'] ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -527,14 +547,14 @@
 								Study IDs
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_studyid" value="<?=$s['s_studyid']?>" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_studyid" value="<?=htmlspecialchars($s['s_studyid'] ?? '')?>" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
 								Alternate Scan IDs
 							</div>
 							<div class="twelve wide column">
-								<input type="text" name="s_studyaltscanid" value="<?=$s['s_studyaltscanid']?>" size="50" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+								<input type="text" name="s_studyaltscanid" value="<?=htmlspecialchars($s['s_studyaltscanid'] ?? '')?>" size="50" class="importantfield" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 							</div>
 
 							<div class="four wide right aligned middle aligned column slabel">
@@ -545,14 +565,14 @@
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_studydatestart" value="<?=$s['s_studydatestart'];?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_studydatestart" value="<?=htmlspecialchars($s['s_studydatestart'] ?? '')?>" placeholder="start" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 									&nbsp; <i class="arrows alternate horizontal icon"></i> &nbsp;
 									<div class="ui calendar custom_format_calendar">
 										<div class="ui input left icon">
 											<i class="calendar icon"></i>
-											<input type="text" name="s_studydateend" value="<?=$s['s_studydateend'];?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+											<input type="text" name="s_studydateend" value="<?=htmlspecialchars($s['s_studydateend'] ?? '')?>" placeholder="end" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 										</div>
 									</div>
 								</div>
@@ -571,9 +591,7 @@
 										$mod_desc = $row['mod_desc'];
 										
 										/* check if the modality table exists */
-										$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($mod_code) . "_series'";
-										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-										if (mysqli_num_rows($result2) > 0) {
+										if (GetSearchSeriesTable($mod_code) != "") {
 										
 											/* if the table does exist, allow the user to search on it */
 											if (($mod_code == "MR") && ($s['s_studymodality'] == "")) {
@@ -588,7 +606,7 @@
 												}
 											}
 											?>
-											<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option>
+											<option value="<?=htmlspecialchars($mod_code ?? '')?>" <?=$selected?>><?=htmlspecialchars($mod_desc ?? '')?></option>
 											<?
 										}
 									}
@@ -607,14 +625,13 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=$s['s_studyinstitution']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyinstitution" id="s_studyinstitution" list="s_studyinstitution" value="<?=htmlspecialchars($s['s_studyinstitution'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyinstitution">
 								<?
-									$sqlstring = "select distinct(study_institution) from studies order by study_institution";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=$row['study_institution']?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_institution') as $row) {
+										?><option value="<?=htmlspecialchars($row['study_institution'] ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -628,9 +645,8 @@
 								<select name="s_studyequipment" class="ui small fluid dropdown" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<option value="">Select equipment</option>
 								<?
-									$sqlstring = "select distinct(study_site) from studies order by study_site";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_site') as $row) {
 										$study_site = $row['study_site'];
 										
 										if ($study_site != "") {
@@ -641,7 +657,7 @@
 												$selected = "";
 											}
 											?>
-											<option value="<?=$study_site?>" <?=$selected?>><?=$study_site?></option>
+											<option value="<?=htmlspecialchars($study_site ?? '')?>" <?=$selected?>><?=htmlspecialchars($study_site ?? '')?></option>
 											<?
 										}
 									}
@@ -654,14 +670,13 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studydesc" list="s_studydesc" value="<?=$s['s_studydesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studydesc" list="s_studydesc" value="<?=htmlspecialchars($s['s_studydesc'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studydesc">
 								<?
-									$sqlstring = "select distinct(study_desc) from studies where study_desc <> '' order by study_desc";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=trim($row['study_desc'])?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_desc') as $row) {
+										?><option value="<?=htmlspecialchars(trim($row['study_desc']) ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -672,14 +687,13 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=$s['s_studyphysician']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyphysician" list="s_studyphysician" value="<?=htmlspecialchars($s['s_studyphysician'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyphysician">
 								<?
-									$sqlstring = "select distinct(study_performingphysician) from studies where study_performingphysician <> '' order by study_performingphysician";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=trim($row['study_performingphysician'])?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_performingphysician') as $row) {
+										?><option value="<?=htmlspecialchars(trim($row['study_performingphysician']) ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -690,14 +704,13 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=$s['s_studyoperator']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studyoperator" list="s_studyoperator" value="<?=htmlspecialchars($s['s_studyoperator'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studyoperator">
 								<?
-									$sqlstring = "select distinct(study_operator) from studies where study_operator <> '' order by study_operator";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=trim($row['study_operator'])?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_operator') as $row) {
+										?><option value="<?=htmlspecialchars(trim($row['study_operator']) ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -708,14 +721,13 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_studytype" list="s_studytype" value="<?=$s['s_studytype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_studytype" list="s_studytype" value="<?=htmlspecialchars($s['s_studytype'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 								<datalist id="s_studytype">
 								<?
-									$sqlstring = "select distinct(study_type) from studies where study_type <> '' order by study_type";
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										?><option value="<?=trim($row['study_type'])?>"><?
+									/* only values from projects the user can view */
+									foreach (GetSearchFormValues('studies', 'study_type') as $row) {
+										?><option value="<?=htmlspecialchars(trim($row['study_type']) ?? '')?>"><?
 									}
 								?>
 								</datalist>
@@ -742,7 +754,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<option value="<?=htmlspecialchars($groupid ?? '')?>" <?=$selected?>><?=htmlspecialchars($groupname ?? '')?></option>
 										<?
 									}
 								?>
@@ -767,7 +779,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui fluid input">
-									<input type="text" name="s_seriesdesc" value="<?=$s['s_seriesdesc']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesdesc" value="<?=htmlspecialchars($s['s_seriesdesc'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -793,7 +805,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriessequence" value="<?=$s['s_seriessequence']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriessequence" value="<?=htmlspecialchars($s['s_seriessequence'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -802,7 +814,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriesimagetype" value="<?=$s['s_seriesimagetype']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesimagetype" value="<?=htmlspecialchars($s['s_seriesimagetype'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -811,7 +823,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small fluid input">
-									<input type="text" name="s_seriesimagecomments" value="<?=$s['s_seriesimagecomments']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesimagecomments" value="<?=htmlspecialchars($s['s_seriesimagecomments'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 
@@ -820,7 +832,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small right labeled input">
-									<input type="text" name="s_seriestr" value="<?=$s['s_seriestr']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriestr" value="<?=htmlspecialchars($s['s_seriestr'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 									<div class="ui label">ms</div>
 								</div>
 							</div>
@@ -830,7 +842,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small input">
-									<input type="text" name="s_seriesnum" value="<?=$s['s_seriesnum']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesnum" value="<?=htmlspecialchars($s['s_seriesnum'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 							
@@ -839,7 +851,7 @@
 							</div>
 							<div class="twelve wide column">
 								<div class="ui small input">
-									<input type="text" name="s_seriesnumfiles" value="<?=$s['s_seriesnumfiles']?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
+									<input type="text" name="s_seriesnumfiles" value="<?=htmlspecialchars($s['s_seriesnumfiles'] ?? '')?>" onChange="inputColor(this)" onInput="inputColor(this)" onBlur="inputColor(this)">
 								</div>
 							</div>
 
@@ -864,7 +876,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<?=$groupid?>" <?=$selected?>><?=$groupname?></option>
+										<option value="<?=htmlspecialchars($groupid ?? '')?>" <?=$selected?>><?=htmlspecialchars($groupname ?? '')?></option>
 										<?
 									}
 								?>
@@ -958,7 +970,7 @@
 											$pipelineid = $row2['pipeline_id'];
 											$pipelinename = $row2['pipeline_name'];
 											?>
-											<option value="<?=$pipelineid?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
+											<option value="<?=htmlspecialchars($pipelineid ?? '')?>" <? if ($s['s_pipelineid'] == $pipelineid) { echo "selected"; } ?>><?=htmlspecialchars($pipelinename ?? '')?></option>
 											<?
 										}
 									?>
@@ -967,11 +979,11 @@
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result name</td>
-									<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultname']?>" size="50" class="importantfield"></td>
+									<td><input type="text" name="s_pipelineresultname" onClick="SwitchOption('viewpipeline')" value="<?=htmlspecialchars($s['s_pipelineresultname'] ?? '')?>" size="50" class="importantfield"></td>
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result unit</td>
-									<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultunit']?>" size="20" maxsize="20" class="importantfield"></td>
+									<td><input type="text" name="s_pipelineresultunit" onClick="SwitchOption('viewpipeline')" value="<?=htmlspecialchars($s['s_pipelineresultunit'] ?? '')?>" size="20" maxsize="20" class="importantfield"></td>
 								</tr>
 								<tr>
 									<td class="fieldlabel" width="150px">Result type</td>
@@ -1013,7 +1025,7 @@
 												<option value="<" <? if ($s['s_pipelineresultcompare'] == '<') { echo "selected"; } ?>>&lt;
 												<option value="<=" <? if ($s['s_pipelineresultcompare'] == '<=') { echo "selected"; } ?>>&lt;=
 											</select>
-											<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=$s['s_pipelineresultvalue']?>" size="15" class="smallsearchbox">
+											<input type="text" name="s_pipelineresultvalue" onClick="SwitchOption('viewpipeline')" value="<?=htmlspecialchars($s['s_pipelineresultvalue'] ?? '')?>" size="15" class="smallsearchbox">
 										</div>
 										<div class="ui checkbox">
 											<input type="checkbox" name="s_pipelinecolorize" onClick="SwitchOption('viewpipeline')" value="1" <? if ($s['s_pipelinecolorize'] == 1) { echo "checked"; } ?>>
@@ -1082,7 +1094,7 @@
 										$qcresultname = $row2['qcresult_name'];
 										$qcresultunits = $row2['qcresult_units'];
 										?>
-										<option value="<?=$qcresultnameid?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=$qcresultname?> [<?=$qcresultunits?>]</option>
+										<option value="<?=htmlspecialchars($qcresultnameid ?? '')?>" <? if ($s['s_qcvariableid'] == $qcresultnameid) { echo "selected"; } ?>><?=htmlspecialchars($qcresultname ?? '')?> [<?=htmlspecialchars($qcresultunits ?? '')?>]</option>
 										<?
 									}
 									
@@ -1152,84 +1164,57 @@
 	/* -------------------------------------------- */
 	function UpdateSearchHistory($s) {
 		
-		/* get the users id */
-		$sqlstring = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
-		if ($userid == "") {
-			Error("Username was blank. You appear not to be logged in. Please login with your username to access NiDB");
+		$userid = (int)($_SESSION['userid'] ?? 0);
+		if ($userid == 0) {
+			Error("You appear not to be logged in. Please login with your username to access NiDB");
 			return;
 		}
-		
-		/* only keep the 10 most recent searches */
-		$sqlstring = "delete from search_history where user_id = $userid and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = $userid order by date_added desc limit 10) temp_tab)";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* escape all the variables and put them back into meaningful variable names */
-		foreach ($s as $key => $value) {
-			if (is_array($value)) { $$key = mysqli_real_escape_array($GLOBALS['linki'], $s[$key]); }
-			elseif (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
-			else { $$key = $s[$key]; }
+
+		/* search_history column => search variable */
+		$cols = array('subjectuid' => 's_subjectuid', 'subjectaltuid' => 's_subjectaltuid', 'subjectname' => 's_subjectname', 'subjectdobstart' => 's_subjectdobstart', 'subjectdobend' => 's_subjectdobend', 'ageatscanmin' => 's_ageatscanmin', 'ageatscanmax' => 's_ageatscanmax', 'subjectgender' => 's_subjectgender', 'subjectgroupid' => 's_subjectgroupid', 'projectids' => 's_projectids', 'enrollsubgroup' => 's_enrollsubgroup', 'observationsearch' => 's_observationsearch', 'observationlist' => 's_observationlist', 'studyinstitution' => 's_studyinstitution', 'studyequipment' => 's_studyequipment', 'studyid' => 's_studyid', 'studyaltscanid' => 's_studyaltscanid', 'studydatestart' => 's_studydatestart', 'studydateend' => 's_studydateend', 'studydesc' => 's_studydesc', 'studyphysician' => 's_studyphysician', 'studyoperator' => 's_studyoperator', 'studytype' => 's_studytype', 'studymodality' => 's_studymodality', 'studygroupid' => 's_studygroupid', 'seriesdesc' => 's_seriesdesc', 'usealtseriesdesc' => 's_usealtseriesdesc', 'seriessequence' => 's_seriessequence', 'seriesimagetype' => 's_seriesimagetype', 'seriestr' => 's_seriestr', 'seriesimagecomments' => 's_seriesimagecomments', 'seriesnum' => 's_seriesnum', 'seriesnumfiles' => 's_seriesnumfiles', 'seriesgroupid' => 's_seriesgroupid', 'pipelineid' => 's_pipelineid', 'pipelineresultname' => 's_pipelineresultname', 'pipelineresultunit' => 's_pipelineresultunit', 'pipelineresultvalue' => 's_pipelineresultvalue', 'pipelineresultcompare' => 's_pipelineresultcompare', 'pipelineresulttype' => 's_pipelineresulttype', 'pipelinecolorize' => 's_pipelinecolorize', 'pipelinecormatrix' => 's_pipelinecormatrix', 'pipelineresultstats' => 's_pipelineresultstats', 'resultorder' => 's_resultoutput', 'formid' => 's_formid', 'formfieldid' => 's_formfieldid', 'formcriteria' => 's_formcriteria', 'formvalue' => 's_formvalue', 'audit' => 's_audit', 'qcbuiltinvariable' => 's_qcbuiltinvariable', 'qcvariableid' => 's_qcvariableid');
+
+		$values = array();
+		foreach ($cols as $col => $var) {
+			$v = $s[$var] ?? '';
+			if ($var == 's_projectids') {
+				/* a list of project ids, or blank for all */
+				$v = (is_array($v) && !in_array('all', $v)) ? implode(',', array_map('intval', $v)) : '';
+			}
+			elseif (is_array($v)) {
+				$v = implode(',', $v);
+			}
+			$v = trim((string)$v);
+			$values[$col] = ($v == '') ? null : $v;
 		}
 
-		$s_subjectuid = ($s_subjectuid == '') ? "null" : "'$s_subjectuid'";
-		$s_subjectaltuid = ($s_subjectaltuid == '') ? "null" : "'$s_subjectaltuid'";
-		$s_subjectname = ($s_subjectname == '') ? "null" : "'$s_subjectname'";
-		$s_subjectdobstart = ($s_subjectdobstart == '') ? "null" : "'$s_subjectdobstart'";
-		$s_subjectdobend = ($s_subjectdobend == '') ? "null" : "'$s_subjectdobend'";
-		$s_ageatscanmin = ($s_ageatscanmin == '') ? "null" : "'$s_ageatscanmin'";
-		$s_ageatscanmax = ($s_ageatscanmax == '') ? "null" : "'$s_ageatscanmax'";
-		$s_subjectgender = ($s_subjectgender == '') ? "null" : "'$s_subjectgender'";
-		$s_subjectgroupid = ($s_subjectgroupid == '') ? "null" : "'$s_subjectgroupid'";
-		
-		if (($s_projectids == '') || ($s_projectids == 'all')) { $projectid = "null"; } else { $projectid = "'" . implode2(",", $s_projectids) . "'"; }
-		
-		$s_enrollsubgroup = ($s_enrollsubgroup == '') ? "null" : "'$s_enrollsubgroup'";
-		$s_observationsearch = ($s_observationsearch == '') ? "null" : "'$s_observationsearch'";
-		$s_observationlist = ($s_observationlist == '') ? "null" : "'$s_observationlist'";
-		$s_studyinstitution = ($s_studyinstitution == '') ? "null" : "'$s_studyinstitution'";
-		$s_studyequipment = ($s_studyequipment == '') ? "null" : "'$s_studyequipment'";
-		$s_studyid = ($s_studyid == '') ? "null" : "'$s_studyid'";
-		$s_studyaltscanid = ($s_studyaltscanid == '') ? "null" : "'$s_studyaltscanid'";
-		$s_studydatestart = ($s_studydatestart == '') ? "null" : "'$s_studydatestart'";
-		$s_studydateend = ($s_studydateend == '') ? "null" : "'$s_studydateend'";
-		$s_studydesc = ($s_studydesc == '') ? "null" : "'$s_studydesc'";
-		$s_studyphysician = ($s_studyphysician == '') ? "null" : "'$s_studyphysician'";
-		$s_studyoperator = ($s_studyoperator == '') ? "null" : "'$s_studyoperator'";
-		$s_studytype = ($s_studytype == '') ? "null" : "'$s_studytype'";
-		$s_studymodality = ($s_studymodality == '') ? "null" : "'$s_studymodality'";
-		$s_studygroupid = ($s_studygroupid == '') ? "null" : "'$s_studygroupid'";
-		$s_seriesdesc = ($s_seriesdesc == '') ? "null" : "'$s_seriesdesc'";
-		$s_usealtseriesdesc = ($s_usealtseriesdesc == '') ? "null" : "'$s_usealtseriesdesc'";
-		$s_seriessequence = ($s_seriessequence == '') ? "null" : "'$s_seriessequence'";
-		$s_seriesimagetype = ($s_seriesimagetype == '') ? "null" : "'$s_seriesimagetype'";
-		$s_seriestr = ($s_seriestr == '') ? "null" : "'$s_seriestr'";
-		$s_seriesimagecomments = ($s_seriesimagecomments == '') ? "null" : "'$s_seriesimagecomments'";
-		$s_seriesnum = ($s_seriesnum == '') ? "null" : "'$s_seriesnum'";
-		$s_seriesnumfiles = ($s_seriesnumfiles == '') ? "null" : "'$s_seriesnumfiles'";
-		$s_seriesgroupid = ($s_seriesgroupid == '') ? "null" : "'$s_seriesgroupid'";
-		$s_pipelineid = ($s_pipelineid == '') ? "null" : "'$s_pipelineid'";
-		$s_pipelineresultname = ($s_pipelineresultname == '') ? "null" : "'$s_pipelineresultname'";
-		$s_pipelineresultunit = ($s_pipelineresultunit == '') ? "null" : "'$s_pipelineresultunit'";
-		$s_pipelineresultvalue = ($s_pipelineresultvalue == '') ? "null" : "'$s_pipelineresultvalue'";
-		$s_pipelineresultcompare = ($s_pipelineresultcompare == '') ? "null" : "'$s_pipelineresultcompare'";
-		$s_pipelineresulttype = ($s_pipelineresulttype == '') ? "null" : "'$s_pipelineresulttype'";
-		$s_pipelinecolorize = ($s_pipelinecolorize == '') ? "null" : "'$s_pipelinecolorize'";
-		$s_pipelinecormatrix = ($s_pipelinecormatrix == '') ? "null" : "'$s_pipelinecormatrix'";
-		$s_pipelineresultstats = ($s_pipelineresultstats == '') ? "null" : "'$s_pipelineresultstats'";
-		$s_resultoutput = ($s_resultoutput == '') ? "null" : "'$s_resultoutput'";
-		$s_formid = ($s_formid == '') ? "null" : "'$s_formid'";
-		$s_formfieldid = ($s_formfieldid == '') ? "null" : "'$s_formfieldid'";
-		$s_formcriteria = ($s_formcriteria == '') ? "null" : "'$s_formcriteria'";
-		$s_formvalue = ($s_formvalue == '') ? "null" : "'$s_formvalue'";
-		$s_audit = ($s_audit == '') ? "null" : "'$s_audit'";
-		$s_qcbuiltinvariable = ($s_qcbuiltinvariable == '') ? "null" : "'$s_qcbuiltinvariable'";
-		$s_qcvariableid = ($s_qcvariableid == '') ? "null" : "'$s_qcvariableid'";
+		/* don't add a duplicate when the same search is run again (e.g. the page is refreshed) */
+		$sqlstring = "select * from search_history where user_id = ? order by date_added desc, searchhistory_id desc limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		$last = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if ($last) {
+			$same = true;
+			foreach ($values as $col => $v) {
+				if ((string)($last[$col] ?? '') !== (string)($v ?? '')) { $same = false; break; }
+			}
+			if ($same) return;
+		}
 
-		$sqlstring = "insert into search_history (user_id, date_added, saved_name, subjectuid, subjectaltuid, subjectname, subjectdobstart, subjectdobend, ageatscanmin, ageatscanmax, subjectgender, subjectgroupid, projectids, enrollsubgroup, observationsearch, observationlist, studyinstitution, studyequipment, studyid, studyaltscanid, studydatestart, studydateend, studydesc, studyphysician, studyoperator, studytype, studymodality, studygroupid, seriesdesc, usealtseriesdesc, seriessequence, seriesimagetype, seriestr, seriesimagecomments, seriesnum, seriesnumfiles, seriesgroupid, pipelineid, pipelineresultname, pipelineresultunit, pipelineresultvalue, pipelineresultcompare, pipelineresulttype, pipelinecolorize, pipelinecormatrix, pipelineresultstats, resultorder, formid, formfieldid, formcriteria, formvalue, audit, qcbuiltinvariable, qcvariableid) values ($userid, now(), '', $s_subjectuid, $s_subjectaltuid, $s_subjectname, $s_subjectdobstart, $s_subjectdobend, $s_ageatscanmin, $s_ageatscanmax, $s_subjectgender, $s_subjectgroupid, $projectid, $s_enrollsubgroup, $s_observationsearch, $s_observationlist, $s_studyinstitution, $s_studyequipment, $s_studyid, $s_studyaltscanid, $s_studydatestart, $s_studydateend, $s_studydesc, $s_studyphysician, $s_studyoperator, $s_studytype, $s_studymodality, $s_studygroupid, $s_seriesdesc, $s_usealtseriesdesc, $s_seriessequence, $s_seriesimagetype, $s_seriestr, $s_seriesimagecomments, $s_seriesnum, $s_seriesnumfiles, $s_seriesgroupid, $s_pipelineid, $s_pipelineresultname, $s_pipelineresultunit, $s_pipelineresultvalue, $s_pipelineresultcompare, $s_pipelineresulttype, $s_pipelinecolorize, $s_pipelinecormatrix, $s_pipelineresultstats, $s_resultoutput, $s_formid, $s_formfieldid, $s_formcriteria, $s_formvalue, $s_audit, $s_qcbuiltinvariable, $s_qcvariableid)";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		/* only keep the 10 most recent searches */
+		$sqlstring = "delete from search_history where user_id = ? and searchhistory_id not in (select * from (select searchhistory_id from search_history where user_id = ? order by date_added desc limit 10) temp_tab)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $userid, $userid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $userid]);
+		mysqli_stmt_close($stmt);
+
+		$sqlstring = "insert into search_history (user_id, date_added, saved_name, " . implode(', ', array_keys($values)) . ") values (?, now(), ''" . str_repeat(', ?', count($values)) . ")";
+		$params = array_merge(array($userid), array_values($values));
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i' . str_repeat('s', count($values)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 	}
 
 	/* -------------------------------------------- */
@@ -1237,16 +1222,14 @@
 	/* -------------------------------------------- */
 	function DisplaySearchHistory() {
 		
-		/* get the users id */
-		$sqlstring = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
+		$userid = (int)($_SESSION['userid'] ?? 0);
+		if ($userid == 0) { return; }
 		
-		if ($userid == "") { return; }
-		
-		$sqlstring = "select * from search_history where user_id = $userid order by date_added desc";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select * from search_history where user_id = ? order by date_added desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) < 1) {
 			echo "No search history";
 		}
@@ -1285,7 +1268,7 @@
 							$s['Age Max'] = $row['ageatscanmax'];
 							$s['Gender'] = $row['subjectgender'];
 							$s['Subject Group ID'] = $row['subjectgroupid'];
-							$s['Project ID'] = $row['projectid'];
+							$s['Project ID'] = $row['projectids'];
 							$s['Enroll Subgroup'] = $row['enrollsubgroup'];
 							$s['Observation Search'] = $row['observationsearch'];
 							$s['Observation List'] = $row['observationlist'];
@@ -1331,8 +1314,8 @@
 							}
 							if ($chips != "") {
 							?>
-								<a href="search.php?s_searchhistoryid=<?=$searchhistoryid?>" class="searchhistory-item">
-									<div class="searchhistory-date"><i class="clock outline icon"></i> <?=$date_added?></div>
+								<a href="search.php?s_searchhistoryid=<?=(int)$searchhistoryid?>" class="searchhistory-item">
+									<div class="searchhistory-date"><i class="clock outline icon"></i> <?=htmlspecialchars($date_added)?></div>
 									<div class="searchhistory-terms"><?=$chips?></div>
 								</a>
 							<?
@@ -1354,11 +1337,9 @@
 	function Search($s) {
 		
 		$msg = ValidateSearchVariables($s);
-		
 		if ($msg != "") {
-			Error("Search error", $msg);
-		}
-		else {
+			Error("Search error: " . htmlspecialchars($msg));
+			return;
 		}
 		
 		/*
@@ -1370,28 +1351,26 @@
 				b) display the results
 		*/
 		
-		/* --------- [1] get the SQL search string ---------- */
-		$sqlstring = BuildSQLString($s);
-
-		if ($sqlstring == "") { return; }
+		/* --------- [1] build the (bound) search query. It only covers projects the user has View Data on ---------- */
+		$q = BuildSQLString($s);
+		if ($q === null) { return; }
 		
 		/* ---------- [2] run the query ----------- */
 		$starttime = microtime(true);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$result = RunSearchQuery($q);
 		$querytime = microtime(true) - $starttime;
 		
-		/* escape all the variables and put them back into meaningful variable names */
+		/* put the search variables into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
-			else { $$key = $s[$key]; }
+			$$key = $value;
 		}
 		
 		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
 		$s_studymodality = strtolower($s_studymodality);
 
-		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames) = GetResultMetrics($result, $sqlstring, $s);
+		list($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames) = GetResultMetrics($result, $s);
 		
-		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s);
+		DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $q, $s);
 		
 		if (($numrows > 100000) && ($s_resultoutput != "pipelinecsv"))
 			return;
@@ -1467,7 +1446,7 @@
 	/* -------------------------------------------- */
 	/* ------- GetResultMetrics ------------------- */
 	/* -------------------------------------------- */
-	function GetResultMetrics($result, $sqlstring, $s) {
+	function GetResultMetrics($result, $s) {
 		$numresults = 0;
 		$missinguids = array();
 		$missingaltuids = array();
@@ -1477,15 +1456,13 @@
 		/* ----- get number of results ----- */
 		$numresults = mysqli_num_rows($result);
 		
-		/* ----- get list of projects they don't have access to ----- */
-		$allowedprojectids = array();
-		$allowedprojectnames = array();
-		/* check to see which projects this user has access to view */
-		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '" . $_SESSION['userid'] . "' and (a.view_data = 1 or a.view_phi = 1)";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$allowedprojectids[] = $rowC['projectid'];
-			$allowedprojectnames[] = $rowC['projectname'];
+		/* ----- projects in the search's scope with matching rows the user can't view (the results only contain viewable projects) ----- */
+		$rq = BuildSQLString($s, "restricted");
+		if ($rq !== null) {
+			$resultR = RunSearchQuery($rq);
+			while ($rowR = mysqli_fetch_array($resultR, MYSQLI_ASSOC)) {
+				$restrictedprojectnames[] = $rowR['project_name'];
+			}
 		}
 		
 		/* ----- get list of unique subjects/studies/series ----- */
@@ -1503,14 +1480,6 @@
 			$subjectid = $row['subject_id'];
 			$uid = $row['uid'];
 
-			if (!in_array($projectid, $allowedprojectids)) {
-				//echo "$projectid is not in allowedprojectids<br>";
-				if (!in_array($projectname, $allowedprojectnames)) {
-					//echo "$projectname is not in allowedprojectnames<br>";
-					$restrictedprojectnames[] = $projectname;
-				}
-			}
-			
 			/* ... AND ... while we're in this loop, count the number of unique studies ... */
 			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
 				$studies[] = $studyid;
@@ -1533,17 +1502,6 @@
 		$numsubjects = count($subjects);
 		$numstudies = count($studies);
 
-		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
-		if (($s['s_projectids'] != "") && ($s['s_projectids'] != "all")) {
-			foreach ($subjectids as $subjid) {
-				foreach ($s['s_projectids'] as $projectid) {
-					if ($projectid != "") {
-						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
-					}
-				}
-			}
-		}
-		
 		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
 		if ($s['s_subjectuid'] != "") {
 			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
@@ -1554,35 +1512,45 @@
 			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
 
 			/* get list of UIDs from the list of alternate UIDs */
+			$altuids = array();
 			if (count($subjectids) > 0) {
-				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode(',', array_map('intval', (array)$subjectids)) . ")";
-				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				$ids = array_map('intval', $subjectids);
+				$sqlstringX = "select altuid from subject_altuid where subject_id in (" . implode(',', array_fill(0, count($ids), '?')) . ")";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringX);
+				mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+				$resultX = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringX, $ids);
 				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 					$altuids[] = $rowX['altuid'];
 				}
-				$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
+				mysqli_stmt_close($stmt);
 			}
+			$missingaltuids = array_udiff($altuidsearchlist, $altuids, 'strcasecmp');
 		}
+		/* (UIDs and study IDs aren't PHI, so listing the group members that weren't found is fine) */
 		if ($s['s_subjectgroupid'] != "") {
-			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
-			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
+			$missingsubjects = array_values(array_diff(GetIDListFromGroup($s['s_subjectgroupid']), array_map('intval', $subjects)));
 			if (count($missingsubjects) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_fill(0, count($missingsubjects), '?')) . ")";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringY);
+				mysqli_stmt_bind_param($stmt, str_repeat('i', count($missingsubjects)), ...$missingsubjects);
+				$resultY = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringY, $missingsubjects);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missinguids[] = $rowY['uid'];
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		if ($s['s_studygroupid'] != "") {
-			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
-			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
+			$missingstudies = array_values(array_diff(GetIDListFromGroup($s['s_studygroupid']), array_map('intval', $studies)));
 			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
+				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where a.study_id in (" . implode(',', array_fill(0, count($missingstudies), '?')) . ")";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringY);
+				mysqli_stmt_bind_param($stmt, str_repeat('i', count($missingstudies)), ...$missingstudies);
+				$resultY = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringY, $missingstudies);
 				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
 					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
 				}
+				mysqli_stmt_close($stmt);
 			}
 		}
 		
@@ -1598,7 +1566,12 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayResultMetrics --------------- */
 	/* -------------------------------------------- */
-	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $sqlstring, $s) {
+	function DisplayResultMetrics($numrows, $numsubjects, $numstudies, $totalbytes, $missinguids, $missingaltuids, $missingstudynums, $restrictedprojectnames, $querytime, $q, $s) {
+		/* the UIDs/IDs listed below were typed by the user (or come from groups), so escape them */
+		$missinguids = array_map('htmlspecialchars', $missinguids);
+		$missingaltuids = array_map('htmlspecialchars', $missingaltuids);
+		$missingstudynums = array_map('htmlspecialchars', $missingstudynums);
+		list($sqlstring, $sqltypes, $sqlparams) = $q;
 		?>
 		<div class="ui container">
 		<div class="ui top attached blue large segment">
@@ -1674,7 +1647,7 @@
 					<?
 					natcasesort($restrictedprojectnames);
 					foreach ($restrictedprojectnames as $projectname) {
-						echo "<li>$projectname</li>\n";
+						echo "<li>" . htmlspecialchars($projectname) . "</li>\n";
 					}
 					?>
 				</ul>
@@ -1691,7 +1664,9 @@
 						View SQL query
 					</div>
 					<div class="content" style="padding-top:5px; padding-bottom:5px">
-						<div class="ui segment"><span class="tt"><?=getFormattedSQL($sqlstring)?></span></div>
+						<div class="ui segment"><span class="tt"><?=getFormattedSQL(htmlspecialchars($sqlstring))?></span>
+						<? if (count($sqlparams) > 0) { ?><br><br><b>Parameters</b> <span class="tt"><?=htmlspecialchars(implode(' | ', array_map(function($p) { return var_export($p, true); }, $sqlparams)))?></span><? } ?>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -1733,19 +1708,20 @@
 	/* ------- DisplaySearchResultsDefault -------- */
 	/* -------------------------------------------- */
 	function DisplaySearchResultsDefault(&$result, $s, $colors, $colors2) {
-		error_reporting(-1);
-		ini_set('display_errors', '1');
 	
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
-			else { $$key = $s[$key]; }
+			$$key = $value;
 		}
 
 		/* ---------------- regular search --------------- */
 		$s_studymodality = strtolower($s_studymodality);
-		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
-		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		$s_studymodality = strtolower($s_studymodality);
+		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = ?";
+		$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+		mysqli_stmt_bind_param($stmt3, 's', $s_studymodality);
+		$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, [$s_studymodality]);
+		mysqli_stmt_close($stmt3);
 		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 			$ratingseriesid = $row3['data_id'];
 			$ratings[$ratingseriesid][] = $row3['rating_value'];
@@ -1755,6 +1731,7 @@
 		<form name="subjectlist" method="post" action="search.php" class="ui form">
 		<input type="hidden" name="modality" value="<?=$s_studymodality?>">
 		<input type="hidden" name="action" value="submit">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="objecttype" value="series">
 		<?
 		
@@ -1792,8 +1769,12 @@
 		
 		/* get a list of previously downloaded series and their dates */
 		$downloadhistory = array();
-		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = '" . $_SESSION['username'] ."' and req_modality = '$s_studymodality'";
-		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		$requsername = $_SESSION['username'];
+		$sqlstring3 = "select req_seriesid, req_completedate, req_destinationtype from data_requests where req_username = ? and req_modality = ?";
+		$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+		mysqli_stmt_bind_param($stmt3, 'ss', $requsername, $s_studymodality);
+		$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, [$requsername, $s_studymodality]);
+		mysqli_stmt_close($stmt3);
 		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 			$req_seriesid = $row3['req_seriesid'];
 			$downloadhistory[$req_seriesid]['date'] = $row3['req_completedate'];
@@ -1824,19 +1805,7 @@
 		$projectids = array();
 		$projectnames = array();
 
-		/* get the users id */
-		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-		$userid = $rowC['user_id'];
-				
-		/* check to see which projects this user has access to view */
-		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
-		//print "$sqlstringC<br>";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$projectids[] = $rowC['projectid'];
-		}
+		/* (the query only returns projects the user has View Data on, see BuildSQLString) */
 		
 		/* tell the user if there are results for projects they don't have access to */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1875,16 +1844,13 @@
 			$observationnames = array();
 			
 			$project_id = $row['project_id'];
-			/* if the user doesn't have view access to this project, skip to the next record */
-			if (($projectids == null) || (!in_array($project_id, $projectids))) {
-				continue;
-			}
+			$row = SearchResultRow($row); /* escape for display, and mask the PHI the user can't view */
 			$enrollment_id = $row['enrollment_id'];
 			$project_id = $row['project_id'];
 			$project_name = $row['project_name'];
 			$project_costcenter = $row['project_costcenter'];
 			$name = $row['name'];
-			$birthdate = $row['birthdate'];
+			$birthdate = $row['_raw']['birthdate'] ?? ''; /* only used to calculate the age, which isn't PHI */
 			$gender = $row['gender'];
 			$uid = $row['uid'];
 			$subject_id = $row['subject_id'];
@@ -1913,7 +1879,7 @@
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
 				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
-					$displayid = $displayids[$subject_id];
+					$displayid = htmlspecialchars($displayids[$subject_id]);
 					$displayidcolor = "";
 				}
 				else {
@@ -1922,7 +1888,7 @@
 			}
 			
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id,'');
+			$altuids = SearchAltUIDs($subject_id);
 			if (count($altuids) > 0) {
 				$altuidlist = implode2(",",$altuids);
 			}
@@ -1939,7 +1905,7 @@
 			list($studyAge, $calcStudyAge) = GetStudySearchResultsAge($birthdate, $study_ageatscan, $study_datetime);
 
 			/* fix some fields */
-			$name = GetFixedName($name);
+			$name = $row['_canviewphi'] ? htmlspecialchars(GetFixedName($row['_raw']['name'] ?? '')) : NoViewPermission();
 			
 			$study_desc = str_replace("^"," ",$study_desc);
 			$ts = strtotime($study_datetime);
@@ -2159,7 +2125,7 @@
 									<td class="two wide yellow"><span class="tt" style="color: #222">
 										<?
 										if (strlen($altuidlist) > 30) {
-											?><span title="<?=$altuidlist?>"><?=substr($altuidlist,0,30)?>&hellip;</span><?
+											?><span title="<?=$altuidlist?>"><?=htmlspecialchars(substr(html_entity_decode($altuidlist, ENT_QUOTES),0,30))?>&hellip;</span><?
 										}
 										else {
 											echo "$altuidlist";
@@ -2173,7 +2139,7 @@
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$enrollsubgroup?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><? if (is_numeric($studyAge)) { echo number_format($studyAge, 1) . "Y"; } else { echo "-"; } ?> , <? if (is_numeric($calcStudyAge)) { echo number_format($calcStudyAge, 1) . "Y"; } else { echo "-"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$gender?></span></td>
-									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=substr($study_alternateid,0,20)?><?if (strlen($study_alternateid) > 20) { echo "&hellip;"; } ?></span></td>
+									<td class="one wide yellow segment" title="<?=$study_alternateid?>"><span class="tt" style="color: #222; white-space: nowrap;"><?=htmlspecialchars(substr($row['_raw']['study_alternateid'] ?? '',0,20))?><?if (strlen($row['_raw']['study_alternateid'] ?? '') > 20) { echo "&hellip;"; } ?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_type?></span></td>
 									<td class="one wide yellow segment"><span style="color: #222; font-size: larger;"><?=$study_site?></span></td>
 								</tr>
@@ -2248,7 +2214,7 @@
 						</td>
 						<td class="<?=$rowstyle?>">
 							<span><? if ($s_usealtseriesdesc) { echo $series_altdesc; } else { echo $series_desc; } ?></span></a>
-							&nbsp;<a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a>
+							&nbsp;<a href="preview.php?image=<?=urlencode(html_entity_decode($thumbpath, ENT_QUOTES))?>" class="preview"><i class="image icon"></i></a>
 						</td>
 						<? if (($s_resultoutput == "series") || ($s_resultoutput == "table") || ($s_resultoutput == "operations")) { ?>
 							<td class="<?=$rowstyle?>"><a href="subjects.php?id=<?=$subject_id?>"><tt style="color: <?=$displayidcolor?>;"><?=$displayid?></tt></a></td>
@@ -2359,7 +2325,7 @@
 		/* ---------- generate csv file ---------- */
 		if ($s_resultoutput == "csv") {
 			$filename = "query" . GenerateRandomString(10) . ".csv";
-			file_put_contents("/tmp/" . $filename, $csv);
+			file_put_contents("/tmp/" . $filename, html_entity_decode($csv, ENT_QUOTES)); /* the values were HTML-escaped for the page */
 			?>
 			<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
 			Download .csv file <a href="download.php?type=file&filename=<?="/tmp/$filename";?>"><img src="images/download16.png"></a>
@@ -2391,19 +2357,20 @@
 	/* ------- DisplaySearchResultsTable ---------- */
 	/* -------------------------------------------- */
 	function DisplaySearchResultsTable(&$result, $s) {
-		error_reporting(-1);
-		ini_set('display_errors', '1');
 	
 		/* escape all the variables and put them back into meaningful variable names */
 		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
-			else { $$key = $s[$key]; }
+			$$key = $value;
 		}
 
 		/* ---------------- regular search --------------- */
 		$s_studymodality = strtolower($s_studymodality);
-		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = '$s_studymodality'";
-		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		$s_studymodality = strtolower($s_studymodality);
+		$sqlstring3 = "select data_id, rating_value from ratings where rating_type = 'series' and data_modality = ?";
+		$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+		mysqli_stmt_bind_param($stmt3, 's', $s_studymodality);
+		$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, [$s_studymodality]);
+		mysqli_stmt_close($stmt3);
 		while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 			$ratingseriesid = $row3['data_id'];
 			$ratings[$ratingseriesid][] = $row3['rating_value'];
@@ -2416,19 +2383,7 @@
 		
 		$projectids = array();
 
-		/* get the user's id */
-		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-		$userid = $rowC['user_id'];
-				
-		/* check to see which projects this user has access to view */
-		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
-		//print "$sqlstringC<br>";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$projectids[] = $rowC['projectid'];
-		}
+		/* (the query only returns projects the user has View Data on, see BuildSQLString) */
 		$subjectids = array();
 		/* tell the user if there are results for projects they don't have access to */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -2503,16 +2458,13 @@
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 
 			$project_id = $row['project_id'];
-			/* if the user doesn't have view access to this project, skip to the next record */
-			if (($projectids == null) || (!in_array($project_id, $projectids))) {
-				continue;
-			}
+			$row = SearchResultRow($row); /* escape for display, and mask the PHI the user can't view */
 			$enrollment_id = $row['enrollment_id'];
 			$project_id = $row['project_id'];
 			$project_name = $row['project_name'];
 			$project_costcenter = $row['project_costcenter'];
 			$name = $row['name'];
-			$birthdate = $row['birthdate'];
+			$birthdate = $row['_raw']['birthdate'] ?? ''; /* only used to calculate the age, which isn't PHI */
 			$gender = $row['gender'];
 			$uid = $row['uid'];
 			$subject_id = $row['subject_id'];
@@ -2541,7 +2493,7 @@
 			$displayidcolor = "";
 			if (($s_projectids != "") && ($s_projectids != "all")) {
 				if (isset($displayids[$subject_id]) && ($displayids[$subject_id] != "")) {
-					$displayid = $displayids[$subject_id];
+					$displayid = htmlspecialchars($displayids[$subject_id]);
 					$displayidcolor = "";
 				}
 				else {
@@ -2550,7 +2502,7 @@
 			}
 			
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id,'');
+			$altuids = SearchAltUIDs($subject_id);
 			if (count($altuids) > 0) {
 				$altuidlist = implode2(",",$altuids);
 			}
@@ -2562,7 +2514,7 @@
 			$study_bmi = GetBMI($study_height, $study_weight);
 			$newstudyid = $uid . $study_num;
 			list($studyAge, $calcStudyAge) = GetStudySearchResultsAge($birthdate, $study_ageatscan, $study_datetime);
-			$name = GetFixedName($name);
+			$name = $row['_canviewphi'] ? htmlspecialchars(GetFixedName($row['_raw']['name'] ?? '')) : NoViewPermission();
 			$study_desc = str_replace("^"," ",$study_desc);
 			$study_datetime = GetStudyDateTime($s_resultoutput, $study_datetime);
 
@@ -2730,7 +2682,7 @@
 		/* ---------- generate csv file ---------- */
 		if ($s_resultoutput == "csv") {
 			$filename = "query" . GenerateRandomString(10) . ".csv";
-			file_put_contents("/tmp/" . $filename, $csv);
+			file_put_contents("/tmp/" . $filename, html_entity_decode($csv, ENT_QUOTES)); /* the values were HTML-escaped for the page */
 			?>
 			<div class="ui container">
 				<div class="ui center aligned segment">
@@ -2914,20 +2866,21 @@
 		if ($s_pipelineresulttype == "i") {
 			
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
-			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
+			$sqlstringX = "select resultname_id, result_name from analysis_resultnames";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+				$resultnames[$rowX['resultname_id']] = htmlspecialchars($rowX['result_name'] ?? '');
 			}
 			/* and get the result unit (due to the same MySQL bug) */
-			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
+			$sqlstringX = "select resultunit_id, result_unit from analysis_resultunit";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
+				$resultunit[$rowX['resultunit_id']] = htmlspecialchars($rowX['result_unit'] ?? '');
 			}
 			
 			/* ---------------- pipeline results (images) --------------- */
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$row = SearchResultRow($row); /* escape for display, and mask the PHI the user can't view */
 				//PrintVariable($row);
 			
 				$step = $row['analysis_step'];
@@ -2993,8 +2946,8 @@
 								list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
 							?>
 								<!--<td style="padding:2px">
-									<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview">
-										<img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" style="max-width: <?=$maximgwidth?>px">
+									<a href="preview.php?image=<?=urlencode($GLOBALS['cfg']['mountdir'] . "/" . html_entity_decode($dispval, ENT_QUOTES))?>" class="preview">
+										<img src="preview.php?image=<?=urlencode($GLOBALS['cfg']['mountdir'] . "/" . html_entity_decode($dispval, ENT_QUOTES))?>" style="max-width: <?=$maximgwidth?>px">
 									</a>
 								</td>-->
 								
@@ -3004,7 +2957,7 @@
 											<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></div>
 											<div class="meta"><?=$dispval?></div>
 											<div class="description">
-												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$dispval?>"></a>
+												<a href="preview.php?image=<?=urlencode($GLOBALS['cfg']['mountdir'] . "/" . html_entity_decode($dispval, ENT_QUOTES))?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=urlencode($GLOBALS['cfg']['mountdir'] . "/" . html_entity_decode($dispval, ENT_QUOTES))?>"></a>
 											</div>
 										</div>
 									</div>
@@ -3023,20 +2976,21 @@
 		else {
 			/* ---------------- pipeline results (values) --------------- */
 			/* get the result names first (due to MySQL bug which prevents joining in this table in the main query) */
-			$sqlstringX = "select * from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
+			$sqlstringX = "select resultname_id, result_name from analysis_resultnames";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
+				$resultnames[$rowX['resultname_id']] = htmlspecialchars($rowX['result_name'] ?? '');
 			}
 			/* and get the result unit (due to the same MySQL bug) */
-			$sqlstringX = "select * from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
+			$sqlstringX = "select resultunit_id, result_unit from analysis_resultunit";
 			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
 			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$resultunit[$rowX['resultunit_id']] = $rowX['result_unit'];
+				$resultunit[$rowX['resultunit_id']] = htmlspecialchars($rowX['result_unit'] ?? '');
 			}
 
 			/* load the data into a useful table */
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$row = SearchResultRow($row); /* escape for display, and mask the PHI the user can't view */
 				
 				$step = $row['analysis_step'];
 				$pipelinename = $row['pipeline_name'];
@@ -3044,7 +2998,7 @@
 				$subject_id = $row['subject_id'];
 				$study_id = $row['study_id'];
 				$studynum = $row['study_num'];
-				$birthdate = $row['birthdate'];
+				$birthdate = $row['_raw']['birthdate'] ?? ''; /* only used to calculate the age, which isn't PHI */
 				$gender = $row['gender'];
 				$study_datetime = $row['study_datetime'];
 				$visittype = $row['study_type'];
@@ -3077,7 +3031,7 @@
 					case "h": $thevalue = $filename; break;
 					case "i":
 						?>
-						<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><img src="images/preview.gif" border="0"></a>
+						<a href="preview.php?image=<?=urlencode($GLOBALS['cfg']['mountdir'] . "/" . html_entity_decode($filename, ENT_QUOTES))?>" class="preview"><img src="images/preview.gif" border="0"></a>
 						<?
 						break;
 				}
@@ -3091,7 +3045,7 @@
 				$tables["$uid$studynum"]['calcStudyAge'] = $calcStudyAge;
 				$tables["$uid$studynum"]['gender'] = $gender;
 				$tables["$uid$studynum"]['subjectid'] = $subject_id;
-				$tables["$uid$studynum"]['altuids'] = implode2("|", GetAlternateUIDs($subject_id,''));
+				$tables["$uid$studynum"]['altuids'] = implode2("|", SearchAltUIDs($subject_id));
 				$tables["$uid$studynum"]['studyid'] = $study_id;
 				$tables["$uid$studynum"]['studynum'] = $studynum;
 				$tables["$uid$studynum"]['studydate'] = $study_datetime;
@@ -3118,7 +3072,7 @@
 					$csv .= "\n";
 				}
 				$filename = "query" . GenerateRandomString(10) . ".csv";
-				file_put_contents("/tmp/" . $filename, $csv);
+				file_put_contents("/tmp/" . $filename, html_entity_decode($csv, ENT_QUOTES)); /* the values were HTML-escaped for the page */
 				?>
 				<br><br>
 				<div width="50%" align="center" style="background-color: #FAF8CC; padding: 5px;">
@@ -3340,227 +3294,30 @@
 	/* ------- DisplaySearchResultsThumbnail ------ */
 	/* -------------------------------------------- */
 	function DisplaySearchResultsThumbnail(&$result, $s) {
-		error_reporting(-1);
-		ini_set('display_errors', '1');
-	
-		/* escape all the variables and put them back into meaningful variable names */
-		foreach ($s as $key => $value) {
-			if (is_scalar($value)) { $$key = mysqli_real_escape_string($GLOBALS['linki'], $s[$key]); }
-			else { $$key = $s[$key]; }
-		}
-
-		?>
-		<? if ($s_resultoutput == "table") { ?>
-		<table width="100%" class="searchresultssheet">
-		<? } else { ?>
-		<!--<table width="100%" class="searchresults" border="1">-->
-		<? } ?>
-			<script type="text/javascript">
-			$(document).ready(function() {
-				$("#seriesall").click(function() {
-					var checked_status = this.checked;
-					$(".allseries").find("input[type='checkbox']").each(function() {
-						this.checked = checked_status;
-					});
-				});
-			});
-			</script>
-		<?
-		$projectids = array();
-		$projectnames = array();
-
-		/* get the users id */
-		$sqlstringC = "select user_id from users where username = '" . $_SESSION['username'] ."'";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-		$userid = $rowC['user_id'];
-				
-		/* check to see which projects this user has access to view */
-		$sqlstringC = "select a.project_id 'projectid', b.project_name 'projectname' from user_project a left join projects b on a.project_id = b.project_id where a.user_id = '$userid' and (a.view_data = 1 or a.view_phi = 1)";
-		//print "$sqlstringC<br>";
-		$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
-		while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-			$projectids[] = $rowC['projectid'];
-		}
-		
-		/* tell the user if there are results for projects they don't have access to */
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$projectid = $row['project_id'];
-			$projectname = $row['project_name'];
-			$studyid = $row['study_id'];
-			$subjectid = $row['subject_id'];
-			$uid = $row['uid'];
-
-			if (!in_array($projectid, $projectids)) {
-				//echo "$projectid is not in projectids<br>";
-				if (!in_array($projectname, $projectnames)) {
-					//echo "$projectname is not in projectnames<br>";
-					$projectnames[] = $projectname;
-				}
-			}
-			
-			/* BUT! while we're in this loop, count the number of unique studies ... */
-			if ((!isset($studies)) || (!in_array($studyid, $studies))) {
-				$studies[] = $studyid;
-			}
-			/* ... and # of unique subjects */
-			if ((!isset($subjects)) || (!in_array($subjectid, $subjects))) {
-				$subjects[] = $subjectid;
-			}
-			/* also a unique list of UIDs ... */
-			if ((!isset($uids)) || (!in_array($uid, $uids))) {
-				$uids[] = $uid;
-			}
-			/* ... and a unique list of SubjectIDs */
-			if ((!isset($subjectids)) || (!in_array($subjectid, $subjectids))) {
-				$subjectids[] = $subjectid;
-			}
-		}
-		
-		/* if a project is selected, get a list of the display IDs (the primary project ID) to be used instead of the UID */
-		if (($s_projectids != "") && ($s_projectids != "all")) {
-			foreach ($subjectids as $subjid) {
-				foreach ($s_projectids as $projectid) {
-					if ($projectid != "") {
-						$displayids[$subjid] = GetPrimaryProjectID($subjid, $projectid);
-					}
-				}
-			}
-		}
-		
-		/* if there was a list of UIDs or alternate UIDs, determine which were not found */
-		if ($s['s_subjectuid'] != "") {
-			$uidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectuid']);
-			$missinguids = array_udiff($uidsearchlist,$uids, 'strcasecmp');
-		}
-		if ($s['s_subjectaltuid'] != "") {
-			$altuidsearchlist = preg_split('/[\^,;\'\s\t\n\f\r]+/', $s['s_subjectaltuid']);
-
-			/* get list of UIDs from the list of alternate UIDs */
-			$sqlstringX = "select altuid from subject_altuid a left join subjects b on a.subject_id = b.subject_id where a.altuid in (" . MakeSQLList($s['s_subjectaltuid']) . ")";
-			$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
-			while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-				$altuids[] = $rowX['altuid'];
-			}
-			$missingaltuids = array_udiff($altuidsearchlist,$altuids, 'strcasecmp');
-		}
-		if ($s['s_subjectgroupid'] != "") {
-			$subjectids = explode(',', GetIDListFromGroup($s['s_subjectgroupid']));
-			$missingsubjects = array_udiff($subjectids,$subjects, 'strcasecmp');
-			if (count($missingsubjects) > 0) {
-				$sqlstringY = "select uid from subjects where subject_id in (" . implode(',', array_map('intval', (array)$missingsubjects)) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
-					$missinguids[] = $rowY['uid'];
-				}
-			}
-		}
-		if ($s['s_studygroupid'] != "") {
-			$studyids = explode(',', GetIDListFromGroup($s['s_studygroupid']));
-			$missingstudies = array_udiff($studyids,$studies, 'strcasecmp');
-			if (count($missingstudies) > 0) {
-				$sqlstringY = "select a.study_num, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on c.subject_id = b.subject_id where study_id in (" . implode(',', array_map('intval', (array)$missingstudies)) . ")";
-				$resultY = MySQLiQuery($sqlstringY,__FILE__,__LINE__);
-				while ($rowY = mysqli_fetch_array($resultY, MYSQLI_ASSOC)) {
-					$missingstudynums[] = $rowY['uid'] . $rowY['study_num'];
-				}
-			}
-		}
-		?>
-		Found <b><?=count($subjects)?> subjects</b> in <b><?=count($studies)?> studies</b> with <b><?=mysqli_num_rows($result)?> series</b> matching your query
-		<?
-			if (count($missinguids) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missinguids)?> UIDs not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missinguids)?></span>
-				</details>
-			<?
-			}
-			elseif ($uidsearchlist != '') {
-			?>
-				<br><span style="font-size:8pt">All UIDs found</span>
-			<?
-			}
-			
-			if (count($missingaltuids) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingaltuids)?> alternate UIDs not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missingaltuids)?></span>
-				</details>
-			<?
-			}
-			elseif ($altuidsearchlist != '') {
-			?>
-				<br><span style="font-size:8pt">All alternate UIDs found</span>
-			<?
-			}
-			
-			if (count($missingstudynums) > 0) {
-			?>
-				<details>
-				<summary style="font-size:9pt; background-color: orangered; color: white;"><?=count($missingstudynums)?> Studies not found</summary>
-				<span style="font-size:9pt"><?=implode('<br>',$missingstudynums)?></span>
-				</details>
-			<?
-			}
-		?>
-		<br><br>
-		<?
-		if (count($projectnames) > 0) {
-		?>
-			<div style="border: 2px solid darkred; background-color: #FFEEEE; text-align: left; padding:5px; border-radius: 5px">
-			<b>Your search results contain subjects enrolled in the following projects to which you do not have view access</b>
-			<br>Contact your PI or project administrator for access
-			<ul>
-			<?
-			natcasesort($projectnames);
-			foreach ($projectnames as $projectname) {
-				echo "<li>$projectname</li>\n";
-			}
-			?>
-			</ul>
-			</div>
-			<?
-		}
-		
-		/* ----- loop through the results and display them ----- */
+		/* (the counts, missing IDs and restricted projects are shown above the results by DisplayResultMetrics()) */
 		?>
 		<div class="ui eight cards">
 		<?
 		mysqli_data_seek($result,0); /* rewind the record pointer */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-
-			$project_id = $row['project_id'];
-			/* if the user doesn't have view access to this project, skip to the next record */
-			if (($projectids == null) || (!in_array($project_id, $projectids))) {
-				continue;
-			}
-			$enrollment_id = $row['enrollment_id'];
-			$subjectid = $row['subject_id'];
+			$row = SearchResultRow($row);
 			$uid = $row['uid'];
-			$studyid = $row['study_id'];
+			$studyid = (int)$row['study_id'];
 			$studynum = $row['study_num'];
 			$seriesnum = $row['series_num'];
 			$seriesdesc = $row['series_desc'];
 
-			$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/thumb.png";
-			
-			//echo "$thumbpath<br>";
-			
+			$thumbpath = $GLOBALS['cfg']['archivedir'] . "/" . ($row['_raw']['uid'] ?? '') . "/" . (int)$row['_raw']['study_num'] . "/" . (int)$row['_raw']['series_num'] . "/thumb.png";
 			?>
-				<!--<div class="ui center aligned column">-->
 					<div class="ui card">
 						<div class="content">
 							<div class="header"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a> series <?=$seriesnum?></div>
 							<div class="meta"><?=$seriesdesc?></div>
 							<div class="description">
-								<a href="preview.php?image=<?=$thumbpath?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=$thumbpath?>"></a>
+								<a href="preview.php?image=<?=urlencode($thumbpath)?>" class="preview"><img class="ui fluid image" src="preview.php?image=<?=urlencode($thumbpath)?>"></a>
 							</div>
 						</div>
 					</div>
-				<!--</div>-->
 			<?
 		}
 		?>
@@ -3580,6 +3337,7 @@
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
 		<input type="hidden" name="action" value="submit">
+		<?=CSRFTokenField()?>
 		<table class="ui table">
 			<thead>
 				<tr>
@@ -3588,15 +3346,18 @@
 				</tr>
 			</thead>
 		<?
+		$foundprojectids = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row = SearchResultRow($row); /* escape for display */
+			$foundprojectids[$row['_raw']['project_id']] = "";
 			$uid = $row['uid'];
-			$subject_id = $row['subject_id'];
-			$study_id = $row['study_id'];
+			$subject_id = (int)$row['subject_id'];
+			$study_id = (int)$row['study_id'];
 			$study_num = $row['study_num'];
 			$study_alternateid = $row['study_alternateid'];
 
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id,'');
+			$altuids = SearchAltUIDs($subject_id);
 
 			?>
 			<tr>
@@ -3610,7 +3371,7 @@
 		?>
 		</table>
 		<?
-		DisplayDownloadBox('', 'subject', $projectids);
+		DisplayDownloadBox('', 'subject', $foundprojectids);
 	}
 	
 	
@@ -3624,6 +3385,7 @@
 		<form name="subjectlist" method="post" action="search.php">
 		<input type="hidden" name="modality" value="">
 		<input type="hidden" name="action" value="submit">
+		<?=CSRFTokenField()?>
 		<table class="ui very compact small celled selectable table" width="100%">
 			<thead>
 				<tr>
@@ -3640,9 +3402,12 @@
 				</tr>
 			</thead>
 		<?
+		$foundprojectids = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row = SearchResultRow($row); /* escape for display, and mask the PHI (DOB, race, ethnicity, education, handedness) the user can't view */
+			$foundprojectids[$row['_raw']['project_id']] = "";
 			$uid = $row['uid'];
-			$subject_id = $row['subject_id'];
+			$subject_id = (int)$row['subject_id'];
 			$enrollment_id = $row['enrollment_id'];
 			$project_name = $row['project_name'];
 			$enroll_startdate = $row['enroll_startdate'];
@@ -3658,19 +3423,16 @@
 			$uuid = strtoupper($row['uuid']);
 
 			/* get list of alternate subject UIDs */
-			$altuids = GetAlternateUIDs($subject_id,'');
+			$altuids = SearchAltUIDs($subject_id);
 			
 			$ts = strtotime($enroll_startdate); $enroll_startdate = $ts !== false ? date("Y-m-d", $ts) : '';
-			if ($enroll_enddate == '0000-00-00 00:00:00') {
+			if (($enroll_enddate == '0000-00-00 00:00:00') || ($enroll_enddate == '')) {
 				$enroll_enddate = 'present';
 			}
 			else {
 				$ts = strtotime($enroll_enddate); $enroll_enddate = $ts !== false ? date("Y-m-d", $ts) : '';
 			}
 			
-			if ($gender == '') { $gender = '-'; }
-			if (($ethnicity1 == '') && ($ethnicity2 == '')) { $ethnicity = '-'; }
-			else { $ethnicity = "$ethnicity $ethnicity2"; }
 			if ($gender == '') { $gender = '-'; }
 			//if ($handedness == '') { $handedness = '-'; }
 			?>
@@ -3691,7 +3453,7 @@
 		?>
 		</table>
 		<?
-		DisplayDownloadBox('', 'subject', $projectids);
+		DisplayDownloadBox('', 'subject', $foundprojectids);
 	}
 	
 	
@@ -3703,21 +3465,27 @@
 		mysqli_data_seek($result, 0);
 		
 		$modality = '';
+		$longs = array();
+		$subjects2 = array();
+		$studies2 = array();
+		$series2 = array();
+		$foundprojectids = array();
 		/* gather scans into longitudinal format */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row = SearchResultRow($row); /* escape for display */
 			$uid = $row['uid'];
-			$studyid = $row['study_id'];
+			$studyid = (int)$row['study_id'];
 			$studynum = $row['study_num'];
 			$studydate = $row['study_datetime'];
-			$seriesdesc = $row['series_desc'];
-			$seriesid = $row['mrseries_id'];
-			$modality = strtolower($row['study_modality']);
+			$modality = strtolower($row['_raw']['study_modality']);
+			$seriesdesc = $row['series_desc'] ?? ($row['series_altdesc'] ?? '');
+			$seriesid = (int)($row['_raw'][$modality . 'series_id'] ?? 0);
+			$foundprojectids[$row['_raw']['project_id']] = "";
 			
 			$longs[$uid][$seriesdesc][$studydate][] = "$seriesid,$studyid,$studynum";
-			$subjects[$uid]++;
-			$studies[$studyid]++;
-			$series[$seriesid]++;
 		}
+		$seriestable = GetSearchSeriesTable($modality);
+		$seriesidcol = $modality . "series_id";
 		
 		//echo "<pre>";
 		//print_r($longs);
@@ -3732,10 +3500,10 @@
 				}
 				if (count($value2) > 1) {
 					foreach ($longs[$uid][$seriesdesc] as $studydate => $seriesids) {
-						$subjects2[$uid]++;
-						$studies2[$studydate]++;
+						$subjects2[$uid] = ($subjects2[$uid] ?? 0) + 1;
+						$studies2[$studydate] = ($studies2[$studydate] ?? 0) + 1;
 						foreach ($longs[$uid][$seriesdesc][$studydate] as $seriesid) {
-							$series2[$seriesid]++;
+							$series2[$seriesid] = ($series2[$seriesid] ?? 0) + 1;
 						}
 					}
 				}
@@ -3743,8 +3511,9 @@
 		}
 		?>
 		<form name="subjectlist" method="post" action="search.php">
-		<input type="hidden" name="modality" value="<?=$modality?>">
+		<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
 		<input type="hidden" name="action" value="submit">
+		<?=CSRFTokenField()?>
 		<style>
 			.darkblue { color: darkblue; font-weight: bold; }
 			tr.rowhover:hover { background-color: ffff96; }
@@ -3800,12 +3569,16 @@
 					?><tr class="rowhover" style="<?=$borderstyle?>"><?
 					if ($printeduid != true) {
 						/* get a list of alternate UIDs */
-						$altuids = null;
-						$sqlstringC = "select * from subject_altuid where subject_id in (select subject_id from subjects where uid = '$uid')";
-						$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+						$altuids = array();
+						$rawuid = html_entity_decode($uid, ENT_QUOTES);
+						$sqlstringC = "select altuid from subject_altuid where subject_id in (select subject_id from subjects where uid = ?)";
+						$stmtC = mysqli_prepare($GLOBALS['linki'], $sqlstringC);
+						mysqli_stmt_bind_param($stmtC, 's', $rawuid);
+						$resultC = MySQLiBoundQuery($stmtC, __FILE__, __LINE__, $sqlstringC, [$rawuid]);
 						while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
-							$altuids[] = $rowC['altuid'];
+							$altuids[] = htmlspecialchars($rowC['altuid'] ?? '');
 						}
+						mysqli_stmt_close($stmtC);
 						?>
 						<td valign="top" style="border-top: solid black 1pt; padding: 1px 5px;"><b><?=$uid?></b><br>
 						<span class="tiny">(<?=implode(', ', $altuids)?>)</span></td>
@@ -3858,18 +3631,28 @@
 						$seriesid = $seriesparts[0] ?? '';
 						$studyid  = $seriesparts[1] ?? '';
 						$studynum = $seriesparts[2] ?? '';
-							$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = '$seriesid'";
-							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-							$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+							$seriesid = (int)$seriesid;
+							$row = array();
+							if ($seriestable != "") {
+								$sqlstring = "select * from `$seriestable` where `$seriesidcol` = ?";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+								$resultS = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+								$row = mysqli_fetch_array($resultS, MYSQLI_ASSOC);
+								mysqli_stmt_close($stmt);
+								if (!$row) $row = array();
+								/* displayed in HTML (title attribute) */
+								$row = array_map(function($v) { return is_string($v) ? htmlspecialchars($v, ENT_QUOTES) : $v; }, $row);
+							}
 							$seriesnum = $row['series_num'];
 							$ts = strtotime($row['series_datetime']); $seriesdate = $ts !== false ? date("M j, Y h:m:s a", $ts) : '';
 							$protocol = $row['series_desc'];
 							$sequence = $row['series_sequencename'];
 							$series_num = $row['series_num'];
 							$series_tr = $row['series_tr'];
-							$series_spacingx = number_format($row['series_spacingx'],2);
-							$series_spacingy = number_format($row['series_spacingy'],2);
-							$series_spacingz = number_format($row['series_spacingz'],2);
+							$series_spacingx = number_format((float)($row['series_spacingx'] ?? 0),2);
+							$series_spacingy = number_format((float)($row['series_spacingy'] ?? 0),2);
+							$series_spacingz = number_format((float)($row['series_spacingz'] ?? 0),2);
 							$series_fieldstrength = $row['series_fieldstrength'];
 							$series_notes = $row['series_notes'];
 							$img_rows = $row['img_rows'];
@@ -3908,7 +3691,7 @@
 		.csv file with study numbers<br>
 		<textarea rows="8" cols="150"><?=$csv2?></textarea>
 		<?
-		DisplayDownloadBox(strtolower($modality), 'long', $projectids);
+		DisplayDownloadBox(strtolower($modality), 'long', $foundprojectids);
 	}
 
 	
@@ -3933,6 +3716,7 @@
 		$i = 0;
 		/* gather scans into longitudinal format */
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row = SearchResultRow($row); /* escape for display */
 			$uid = strtoupper(trim($row['uid']));
 			$encuid = crc32(strtoupper(trim($row['uid'])));
 			$studyid = $row['study_id'];
@@ -4000,10 +3784,14 @@
 		//echo "</pre>";
 		
 		foreach ($series as $resultid) {
-			$sqlstring = "select result_name from analysis_resultnames where resultname_id = '$resultid'";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$resultname = $row['result_name'];
+			$resultid = (int)$resultid;
+			$sqlstring = "select result_name from analysis_resultnames where resultname_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $resultid);
+			$resultN = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$resultid]);
+			$rowN = mysqli_fetch_array($resultN, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			$resultname = htmlspecialchars($rowN['result_name'] ?? '');
 			?>
 			<?=$resultname?> [<?=$resultid?>]<br>
 			<table cellspacing="0" style="font-size: 8pt" border="1">
@@ -4107,7 +3895,10 @@
 		//PrintSQLTable($result);
 		
 		/* gather scans into longitudinal format */
+		$qc = array();
+		$mrseriesids = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row = SearchResultRow($row); /* escape for display */
 			$uid = strtoupper(trim($row['uid']));
 			$studydate = trim($row['studydate']);
 			$studyid = trim($row['study_id']);
@@ -4122,17 +3913,25 @@
 			$qc[$seriesdesc][$studydate]['studyid'] = $studyid;
 			$qc[$seriesdesc][$studydate]['studynum'] = "$uid$studynum";
 
-			$mrseriesids[] = $row['mrseries_id'];
+			$mrseriesids[] = (int)$row['_raw']['mrseries_id'];
 		}
 		
-		array_unique($mrseriesids);
-		
-		$mrserieslist = implode2(',', $mrseriesids);
+		$mrseriesids = array_values(array_unique(array_filter($mrseriesids)));
 		
 		/* now we have a list of MR series ids, so lets get all modular QC for these seriesids */
-		$sqlstring = "SELECT a.*, b.*,c.*,d.*, e.series_desc, DATE(series_datetime) 'studydate' FROM `qc_moduleseries` a LEFT JOIN `qc_results` b ON b.qcmoduleseries_id = a.qcmoduleseries_id LEFT JOIN `qc_modules` c ON c.qcmodule_id = a.qcmodule_id left join `qc_resultnames` d on d.qcresultname_id = b.qcresultname_id left join mr_series e on e.mrseries_id = a.series_id left join studies f on e.study_id = f.study_id WHERE a.series_id IN ($mrserieslist) and d.qcresult_type = 'number'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		if (count($mrseriesids) > 0) {
+			$sqlstring = "SELECT a.*, b.*,c.*,d.*, e.series_desc, DATE(series_datetime) 'studydate' FROM `qc_moduleseries` a LEFT JOIN `qc_results` b ON b.qcmoduleseries_id = a.qcmoduleseries_id LEFT JOIN `qc_modules` c ON c.qcmodule_id = a.qcmodule_id left join `qc_resultnames` d on d.qcresultname_id = b.qcresultname_id left join mr_series e on e.mrseries_id = a.series_id left join studies f on e.study_id = f.study_id WHERE a.series_id IN (" . implode(',', array_fill(0, count($mrseriesids), '?')) . ") and d.qcresult_type = 'number'";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, str_repeat('i', count($mrseriesids)), ...$mrseriesids);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $mrseriesids);
+			mysqli_stmt_close($stmt);
+		}
+		else {
+			$result = null;
+		}
+		while (($result !== null) && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			/* displayed in HTML */
+			$row = array_map(function($v) { return is_string($v) ? htmlspecialchars($v, ENT_QUOTES) : $v; }, $row);
 			$modulename = $row['qcm_name'];
 			$variable = $row['qcresult_name'];
 			$value = $row['qcresults_valuenumber'];
@@ -4143,7 +3942,7 @@
 			
 			$qc[$seriesdesc][$studydate]['data'][$variable] = trim($value);
 			
-			if ($qc[$seriesdesc][$studydate]['studyid'] == "") {
+			if (($qc[$seriesdesc][$studydate]['studyid'] ?? "") == "") {
 				list($path, $seriespath, $qpath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, 'MR');
 				$qc[$seriesdesc][$studydate]['studyid'] = $studyid;
 				$qc[$seriesdesc][$studydate]['studynum'] = "$uid$studynum";
@@ -4196,7 +3995,7 @@
 							
 							?>
 							<td valign="top">
-							<img src='xygraph.php?h=200&w=420&t=<?=$chartname?>&x=<?=$x?>&y=<?=$y?>&xtype=dat&ytype=lin'>
+							<img src='xygraph.php?h=200&w=420&t=<?=urlencode(html_entity_decode($chartname, ENT_QUOTES))?>&x=<?=urlencode($x)?>&y=<?=urlencode($y)?>&xtype=dat&ytype=lin'>
 							<details>
 							<summary>Data</summary>
 							<table class="ui very compact small celled table">
@@ -4658,19 +4457,21 @@
 					<div class="ui horizontal left aligned divider">Mini-pipelines</div>
 					<div class="ui action input">
 						<?
-							if (count($projectids) > 0) {
-								$projectids2 = array_unique(array_keys($projectids));
-								$projidlist = implode2(',', $projectids2);
-								$mpselectbox = "<select name='minipipelineid' class='ui selection dropdown'><option value='0' selected>(none)";
-								$sqlstring = "select * from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in ($projidlist) order by b.project_name, a.mp_name";
-								//PrintSQL($sqlstring);
-								$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$mpselectbox = "";
+							if (is_array($projectids) && (count($projectids) > 0)) {
+								$projectids2 = array_values(array_unique(array_map('intval', array_keys($projectids))));
+								$mpselectbox = "<select name='minipipelineid' class='ui selection dropdown'><option value='0' selected>(none)</option>";
+								$sqlstring = "select a.minipipeline_id, a.mp_version, a.mp_name, b.project_name from minipipelines a left join projects b on a.project_id = b.project_id where a.project_id in (" . implode(',', array_fill(0, count($projectids2), '?')) . ") order by b.project_name, a.mp_name";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, str_repeat('i', count($projectids2)), ...$projectids2);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $projectids2);
+								mysqli_stmt_close($stmt);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$mpid = $row['minipipeline_id'];
-									$mpversion = $row['mp_version'];
-									$mpname = $row['mp_name'];
-									$projectname = $row['project_name'];
-									$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)";
+									$mpid = (int)$row['minipipeline_id'];
+									$mpversion = htmlspecialchars($row['mp_version'] ?? '');
+									$mpname = htmlspecialchars($row['mp_name'] ?? '');
+									$projectname = htmlspecialchars($row['project_name'] ?? '');
+									$mpselectbox .= "<option value='".$mpid."'>$projectname - $mpname (v$mpversion)</option>";
 								}
 								$mpselectbox .= "</select>";
 							}
@@ -4901,13 +4702,16 @@
 									<select name="publicdatasetid">
 										<option value="">Select existing public dataset...
 										<?
-											$username = $_SESSION['username'];
-											$sqlstring  = "select * from public_datasets where publicdataset_createdby = '$username'";
-											$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+											$pdusername = $_SESSION['username'];
+											$sqlstring  = "select publicdataset_id, publicdataset_name from public_datasets where publicdataset_createdby = ?";
+											$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+											mysqli_stmt_bind_param($stmt, 's', $pdusername);
+											$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pdusername]);
+											mysqli_stmt_close($stmt);
 											while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-												$id = $row['publicdataset_id'];
-												$name = $row['publicdataset_name'];
-												echo "<option value='$id'>$name";
+												$id = (int)$row['publicdataset_id'];
+												$name = htmlspecialchars($row['publicdataset_name'] ?? '');
+												echo "<option value='$id'>$name</option>";
 											}
 										?>
 									</select>
@@ -5002,18 +4806,6 @@
 								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
 							</div>-->
 							
-							<!-- Remote FTP tab -->
-							<div class="ui <? if ($activeTab == "remoteftp") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remoteftp" style="background-color: #EBF5FB">
-								<p style="text-align: center">Remote FTP settings (this option is deprecated)</p>
-								<table class="remoteftp" style="margin-left:40px; border:1px solid gray">
-									<tr><td align="right" width="30%" style="font-size:10pt">Remote FTP Server</td><td><input type="text" name="remoteftpserver"></td></tr>
-									<tr><td align="right" width="30%" style="font-size:10pt">Remote Directory</td><td><input type="text" name="remoteftppath"></td></tr>
-									<tr><td align="right" width="30%" style="font-size:10pt">Username</td><td><input type="text" name="remoteftpusername"></td></tr>
-									<tr><td align="right" width="30%" style="font-size:10pt">Password</td><td><input type="text" name="remoteftppassword"></td></tr>
-									<tr><td align="right" width="30%" style="font-size:10pt">Port number</td><td><input type="text" name="remoteftpport" value="21" size="5"></td></tr>
-								</table>
-							</div>
-							
 							<!-- Remote NiDB tab -->
 							<div class="ui <? if ($activeTab == "remotenidb") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
 								<div class="ui message">
@@ -5027,9 +4819,14 @@
 								<select name="remoteconnid">
 									<option value="">(Select connection)</option>
 									<?
-										$sqlstring = "select * from remote_connections where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "') order by conn_name";
-										$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+										$rcuserid = (int)$_SESSION['userid'];
+										$sqlstring = "select * from remote_connections where user_id = ? order by conn_name";
+										$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+										mysqli_stmt_bind_param($stmt, 'i', $rcuserid);
+										$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$rcuserid]);
+										mysqli_stmt_close($stmt);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$row = array_map(function($v) { return is_string($v) ? htmlspecialchars($v, ENT_QUOTES) : $v; }, $row);
 											$connid = $row['remoteconn_id'];
 											$connname = $row['conn_name'];
 											$remoteserver = $row['remote_server'];
@@ -5521,455 +5318,491 @@
 	/* -------------------------------------------- */
 	/* ------- BuildSQLString --------------------- */
 	/* -------------------------------------------- */
-	function BuildSQLString($s) {
-		
-		Debug(__FILE__, __LINE__, "<pre>" . print_r($s,true) . "</pre>");
-		
-		$s_projectids = array();
-		
-		/* escape all the variables and put them back into meaningful variable names */
+	function BuildSQLString($s, $mode = "results") {
+
+		/* returns array($sqlstring, $types, $params) for a bound query, or null if the search can't be run.
+		   $mode "results" is the search itself. $mode "restricted" returns the names of the projects,
+		   within the search's scope, that have matching rows the user can't view (for the notice) */
+
+		/* trim the scalar search values into meaningful variable names (they are bound, never concatenated) */
 		foreach ($s as $key => $value) {
-			if (is_array($value)) {
-				//PrintVariable($value);
-				$$key = mysqli_real_escape_array($GLOBALS['linki'], $s[$key]);
-			}
-			elseif (is_scalar($value)) {
-				$$key = trim(mysqli_real_escape_string($GLOBALS['linki'], $s[$key]));
-			}
-			else {
-				$$key = $s[$key];
-			}
+			if (is_scalar($value)) { $$key = trim((string)$value); }
+			else { $$key = $value; }
 		}
 
-		/* make modality lower case to conform with table names... MySQL table names are case sensitive when using the 'show tables' command */
-		$s_studymodality = strtolower($s_studymodality);
-		$modality = $s_studymodality;
-		/* also make a variable for the series table */
-		$modalitytable = $s_studymodality . "_series";
-
-		/* check if modality_series table actually exists */
-		$sqlstring = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '$modalitytable'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) < 1) {
-			?>
-			<?=$modality?>_series table does not exist. Unable to query information about <?=$modality?> series
-			<?
-			return "";
+		/* the series table name is built from the modality, so it must be a valid one */
+		$modality = strtolower($s_studymodality ?? '');
+		$modalitytable = GetSearchSeriesTable($modality);
+		if ($modalitytable == "") {
+			if ($mode == "results") {
+				?><div class="ui text container"><div class="ui warning message">There is no series table for modality [<?=htmlspecialchars($modality)?>]. Unable to search <?=htmlspecialchars($modality)?> series</div></div><?
+			}
+			return null;
 		}
-		
-		/* determine which fields have criteria, build the where clause */
-		if (($s_subjectuid != "") || ($s_subjectgroupid != "")) {
-			if ($s_subjectgroupid != "") {
-				$ids = GetIDListFromGroup($s_subjectgroupid);
-				$sqlwhere .= " and `subjects`.subject_id in (" . $ids . ")";
+		$seriesidcol = $modality . "series_id";
+
+		$where = array();
+		$wparams = array();
+		$wtypes = "";
+		/* add a bound value to the where clause, returns its placeholder */
+		$bind = function($v, $t = 's') use (&$wparams, &$wtypes) { $wparams[] = $v; $wtypes .= $t; return '?'; };
+		/* placeholders for a list of bound values */
+		$bindlist = function($list, $t = 's') use ($bind) {
+			$ph = array();
+			foreach ($list as $v) { $ph[] = $bind($v, $t); }
+			return implode(',', $ph);
+		};
+
+		/* ----- project scope: the selected projects (or all in this instance), limited to those the user has View Data on ----- */
+		$scopeprojectids = array();
+		if (is_array($s_projectids) && !in_array("all", $s_projectids) && (count($s_projectids) > 0)) {
+			$scopeprojectids = array_values(array_filter(array_map('intval', $s_projectids)));
+		}
+		else {
+			$instanceid = (int)$_SESSION['instanceid'];
+			$sqlstringP = "select project_id from projects where instance_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringP);
+			mysqli_stmt_bind_param($stmt, 'i', $instanceid);
+			$resultP = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringP, [$instanceid]);
+			while ($rowP = mysqli_fetch_array($resultP, MYSQLI_ASSOC)) {
+				$scopeprojectids[] = (int)$rowP['project_id'];
 			}
-			else {
-				if (preg_match('/[\^\,;\'\s]/', $s_subjectuid) == 0) {
-					$sqlwhere .= " and `subjects`.uid = '$s_subjectuid'";
-				}
-				else {
-					$sqlwhere .= " and `subjects`.uid in (" . MakeSQLList($s_subjectuid) . ")";
-				}
+			mysqli_stmt_close($stmt);
+		}
+		$viewdataprojectids = GetSearchPermProjectIDs('viewdata'); /* null = admin, all projects */
+		if ($viewdataprojectids === null) {
+			$allowedprojectids = $scopeprojectids;
+			$restrictedprojectids = array();
+		}
+		else {
+			$allowedprojectids = array_values(array_intersect($scopeprojectids, $viewdataprojectids));
+			$restrictedprojectids = array_values(array_diff($scopeprojectids, $viewdataprojectids));
+		}
+
+		if ($mode == "restricted") {
+			if (count($restrictedprojectids) == 0) return null;
+			$where[] = "`projects`.project_id in (" . $bindlist($restrictedprojectids, 'i') . ")";
+		}
+		else {
+			if (count($allowedprojectids) == 0) {
+				?><div class="ui text container"><div class="ui warning message">You do not have View Data permission on any of the projects being searched. Select a project you have access to, or contact your PI or project administrator</div></div><?
+				return null;
 			}
+			$where[] = "`projects`.project_id in (" . $bindlist($allowedprojectids, 'i') . ")";
+		}
+
+		/* ----- PHI (name, DOB) criteria only match subjects the user can view PHI for, so the search can't be used to probe PHI ----- */
+		$viewphiprojectids = GetSearchPermProjectIDs('viewphi'); /* null = admin */
+		if (($s_subjectname != "") || ($s_subjectdobstart != "") || ($s_subjectdobend != "")) {
+			if ($viewphiprojectids !== null) {
+				if (count($viewphiprojectids) == 0) {
+					if ($mode == "results") {
+						?><div class="ui text container"><div class="ui warning message">Searching by name or date of birth requires View PHI permission, which you don't have on any project</div></div><?
+					}
+					return null;
+				}
+				$where[] = "`subjects`.subject_id in (select phi_e.subject_id from enrollment phi_e where phi_e.project_id in (" . $bindlist($viewphiprojectids, 'i') . "))";
+			}
+			if ($s_subjectname != "") { $where[] = "`subjects`.name like " . $bind("%$s_subjectname%"); }
+			if ($s_subjectdobstart != "") { $where[] = "`subjects`.birthdate >= " . $bind($s_subjectdobstart); }
+			if ($s_subjectdobend != "") { $where[] = "`subjects`.birthdate <= " . $bind($s_subjectdobend); }
+		}
+
+		/* ----- the other criteria ----- */
+		if ($s_subjectgroupid != "") {
+			$ids = GetIDListFromGroup($s_subjectgroupid);
+			$where[] = (count($ids) > 0) ? "`subjects`.subject_id in (" . $bindlist($ids, 'i') . ")" : "0 = 1";
+		}
+		elseif ($s_subjectuid != "") {
+			$uids = array_values(array_filter(DelimitedListToArray($s_subjectuid), 'strlen'));
+			if (count($uids) == 1) { $where[] = "`subjects`.uid = " . $bind($uids[0]); }
+			elseif (count($uids) > 1) { $where[] = "`subjects`.uid in (" . $bindlist($uids) . ")"; }
 		}
 		if ($s_subjectaltuid != "") {
-			if (preg_match('/[\^\,;\'\s]/', $s_subjectaltuid) == 0) {
-				$sqlwhere .= "and `subject_altuid`.altuid like '%$s_subjectaltuid%'";
-			}
-			else {
-				$sqlwhere .= "and `subject_altuid`.altuid in (" . MakeSQLList($s_subjectaltuid) . ")";
-			}
+			$altuids = array_values(array_filter(DelimitedListToArray($s_subjectaltuid), 'strlen'));
+			if (count($altuids) == 1) { $where[] = "`subject_altuid`.altuid like " . $bind("%" . $altuids[0] . "%"); }
+			elseif (count($altuids) > 1) { $where[] = "`subject_altuid`.altuid in (" . $bindlist($altuids) . ")"; }
 		}
-		if ($s_subjectname != "") { $sqlwhere .= " and `subjects`.name like '%$s_subjectname%'"; }
-		if ($s_subjectdobstart != "") { $sqlwhere .= " and `subjects`.birthdate >= '$s_subjectdobstart'"; }
-		if ($s_subjectdobend != "") { $sqlwhere .= " and `subjects`.birthdate <= '$s_subjectdobend'"; }
-		if ($s_ageatscanmin != "") { $sqlwhere .= " and `studies`.study_ageatscan >= '$s_ageatscanmin'"; }
-		if ($s_ageatscanmax != "") { $sqlwhere .= " and `studies`.study_ageatscan <= '$s_ageatscanmax'"; }
-		if ($s_subjectgender != "") { $sqlwhere .= " and `subjects`.gender = '$s_subjectgender'"; }
-		//PrintVariable($s_projectids);
-		if (isset($s_projectids) && (!in_array("all", $s_projectids) && (count($s_projectids) > 0))) {
-			$sqlwhere .= " and `projects`.project_id in (" . implode(",", array_map('intval', (array)$s_projectids)) . ")";
-		}
-		else {
-			$tmpsqlstring = "select project_id from projects where instance_id = '" . $_SESSION['instanceid'] . "'";		
-			$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
-			while ($tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC)) {
-				if ($tmprow['project_id'] != "") {
-					$projectids[] = $tmprow['project_id'];
-				}
-			}
-			$projectidlist = implode(",",$projectids);
-			$sqlwhere .= " and `projects`.project_id in ($projectidlist)";
-		}
-		if ($s_enrollsubgroup != "") { $sqlwhere .= " and `enrollment`.enroll_subgroup = '$s_enrollsubgroup'"; }
+		if ($s_ageatscanmin != "") { $where[] = "`studies`.study_ageatscan >= " . $bind((float)$s_ageatscanmin, 'd'); }
+		if ($s_ageatscanmax != "") { $where[] = "`studies`.study_ageatscan <= " . $bind((float)$s_ageatscanmax, 'd'); }
+		if ($s_subjectgender != "") { $where[] = "`subjects`.gender = " . $bind($s_subjectgender); }
+		if ($s_enrollsubgroup != "") { $where[] = "`enrollment`.enroll_subgroup = " . $bind($s_enrollsubgroup); }
 		if ($s_studygroupid != "") {
-			$studyids = GetIDListFromGroup($s_studygroupid);
-			$sqlwhere .= " and `studies`.study_id in (" . $studyids . ")";
+			$ids = GetIDListFromGroup($s_studygroupid);
+			$where[] = (count($ids) > 0) ? "`studies`.study_id in (" . $bindlist($ids, 'i') . ")" : "0 = 1";
 		}
-		if ($s_studyinstitution != "") { $sqlwhere .= " and `studies`.study_institution like '%$s_studyinstitution%'"; }
-		if ($s_studyequipment != "") { $sqlwhere .= " and `studies`.study_site like '%$s_studyequipment%'"; }
+		if ($s_studyinstitution != "") { $where[] = "`studies`.study_institution like " . $bind("%$s_studyinstitution%"); }
+		if ($s_studyequipment != "") { $where[] = "`studies`.study_site like " . $bind("%$s_studyequipment%"); }
 		if ($s_studyid != "") {
-			/* check for any kind of delimiter, indicating more than one ID */
-			$s1 = array();
-			$arr = DelimitedListToArray($s_studyid);
-			foreach ($arr as $sid) {
-				/* first 8 characters are UID, remaining number(s) are studynum */
-				//PrintVariable($sid);
-				$uid = substr($sid,0,8);
-				$studynum = intval(substr($sid,8)) + 0; // convert to integer
-				$s1[] = "(`subjects`.uid = '$uid' and `studies`.study_num = $studynum)";
+			/* any kind of delimiter separates IDs. First 8 characters are the UID, the rest is the study number */
+			$ors = array();
+			foreach (DelimitedListToArray($s_studyid) as $sid) {
+				if ($sid == "") continue;
+				$ors[] = "(`subjects`.uid = " . $bind(substr($sid,0,8)) . " and `studies`.study_num = " . $bind(intval(substr($sid,8)), 'i') . ")";
 			}
-			$s2 = implode2(' or ', $s1);
-			$sqlwhere .= " and ($s2)";
+			if (count($ors) > 0) $where[] = "(" . implode(' or ', $ors) . ")";
 		}
 		if ($s_studyaltscanid != "") {
-			if (preg_match('/[\^\,;\'\s]/', $s_studyaltscanid) == 0) {
-				$sqlwhere .= " and `studies`.study_alternateid like '%$s_studyaltscanid%'";
-			}
-			else {
-				$sqlwhere .= " and `studies`.study_alternateid in (" . MakeSQLList($s_studyaltscanid) . ")";
-			}
+			$altids = array_values(array_filter(DelimitedListToArray($s_studyaltscanid), 'strlen'));
+			if (count($altids) == 1) { $where[] = "`studies`.study_alternateid like " . $bind("%" . $altids[0] . "%"); }
+			elseif (count($altids) > 1) { $where[] = "`studies`.study_alternateid in (" . $bindlist($altids) . ")"; }
 		}
-		if ($s_studydatestart != "") { $sqlwhere .= " and `studies`.study_datetime >= '$s_studydatestart 00:00:00'"; }
-		if ($s_studydateend != "") { $sqlwhere .= " and `studies`.study_datetime <= '$s_studydateend 23:59:59'"; }
-		if ($s_studydesc != "") { $sqlwhere .= " and `studies`.study_desc like '%$s_studydesc%'"; }
-		if ($s_studyphysician != "") { $sqlwhere .= " and `studies`.study_performingphysician like '%$s_studyphysician%'"; }
-		if ($s_studyoperator != "") { $sqlwhere .= " and `studies`.study_operator like '%$s_studyoperator%'"; }
-		if ($s_studytype != "") { $sqlwhere .= " and `studies`.study_type like '%$s_studytype%'"; }
+		if ($s_studydatestart != "") { $where[] = "`studies`.study_datetime >= " . $bind("$s_studydatestart 00:00:00"); }
+		if ($s_studydateend != "") { $where[] = "`studies`.study_datetime <= " . $bind("$s_studydateend 23:59:59"); }
+		if ($s_studydesc != "") { $where[] = "`studies`.study_desc like " . $bind("%$s_studydesc%"); }
+		if ($s_studyphysician != "") { $where[] = "`studies`.study_performingphysician like " . $bind("%$s_studyphysician%"); }
+		if ($s_studyoperator != "") { $where[] = "`studies`.study_operator like " . $bind("%$s_studyoperator%"); }
+		if ($s_studytype != "") { $where[] = "`studies`.study_type like " . $bind("%$s_studytype%"); }
 		if ($s_seriesgroupid != "") {
-			$seriesids = GetIDListFromGroup($s_seriesgroupid);
-			$sqlwhere .= " and `$modalitytable`.$modality" . "series_id in (" . $seriesids . ")";
+			$ids = GetIDListFromGroup($s_seriesgroupid);
+			$where[] = (count($ids) > 0) ? "`$modalitytable`.`$seriesidcol` in (" . $bindlist($ids, 'i') . ")" : "0 = 1";
 		}
 		if (($s_seriesdesc != "") && ($s_pipelineid == "")) {
-			$sqlwhere .= " and (";
-			/* if it contains a comma, the search will be OR */
-			//if (strpos($s_seriesdesc,',') !== false) {
-				$seriesdescs = explode(',',$s_seriesdesc);
-				$wheres = array();
-				foreach ($seriesdescs as $seriesdesc) {
-					if ($s_usealtseriesdesc) {
-						$wheres[] = "(`$modalitytable`.series_altdesc like '%" . trim($seriesdesc) . "%')";
-					}
-					else {
-						/* protocol name for MR is stored in series_desc, all other modalities is series_protocol */
-						if ($modality == "mr") {
-							$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
-						}
-						else {
-							$wheres[] = "(`$modalitytable`.series_protocol like '%" . trim($seriesdesc) . "%')";
-						}
-					}
-				}
-				$sqlwhere .= implode(" or ", $wheres);
-			//}
-			//else {
-				/* otherwise the search is an AND */
-				//$seriesdescs = explode(';',$s_seriesdesc);
-				//$wheres = array();
-				//foreach ($seriesdescs as $seriesdesc) {
-				//	$wheres[] = "(`$modalitytable`.series_desc like '%" . trim($seriesdesc) . "%')";
-				//}
-				//$sqlwhere .= implode(" and ", $wheres);
-			//}
-			
-			$sqlwhere .= ")";
+			/* a comma separated list is an OR search. Protocol name for MR is stored in series_desc, all other modalities in series_protocol */
+			if ($s_usealtseriesdesc) $col = "series_altdesc";
+			elseif ($modality == "mr") $col = "series_desc";
+			else $col = "series_protocol";
+			$ors = array();
+			foreach (explode(',', $s_seriesdesc) as $seriesdesc) {
+				$ors[] = "(`$modalitytable`.$col like " . $bind("%" . trim($seriesdesc) . "%") . ")";
+			}
+			$where[] = "(" . implode(" or ", $ors) . ")";
 		}
-		if ($s_seriessequence != "") { $sqlwhere .= " and `$modalitytable`.series_sequencename like '%$s_seriessequence%'"; }
+		if ($s_seriessequence != "") { $where[] = "`$modalitytable`.series_sequencename like " . $bind("%$s_seriessequence%"); }
 		if ($s_seriesimagetype != "") {
-		
-			$sqlwhere .= " and (";
-			$seriesimagetypes = explode(',',$s_seriesimagetype);
-			$wheres = array();
-			foreach ($seriesimagetypes as $seriesimagetype) {
-				if (strpos($seriesimagetype,'*') !== false) {
-					$seriesimagetype = str_replace('*','%',$seriesimagetype);
-					$wheres[] = "(`$modalitytable`.image_type like '" . trim($seriesimagetype) . "')";
-				}
-				else {
-					$wheres[] = "(`$modalitytable`.image_type = '" . trim($seriesimagetype) . "')";
-				}
+			$ors = array();
+			foreach (explode(',', $s_seriesimagetype) as $seriesimagetype) {
+				$seriesimagetype = trim($seriesimagetype);
+				if (strpos($seriesimagetype,'*') !== false)
+					$ors[] = "(`$modalitytable`.image_type like " . $bind(str_replace('*','%',$seriesimagetype)) . ")";
+				else
+					$ors[] = "(`$modalitytable`.image_type = " . $bind($seriesimagetype) . ")";
 			}
-			$sqlwhere .= implode(" or ", $wheres);
-			$sqlwhere .= ")";
-		
-			//$sqlwhere .= " and `$modalitytable`.image_type like '%$s_seriesimagetype%'";
+			$where[] = "(" . implode(" or ", $ors) . ")";
 		}
-		if ($s_seriesimagecomments != "") { $sqlwhere .= " and `$modalitytable`.image_comments like '%$s_seriesimagecomments%'"; }
-		if ($s_seriestr != "") { $sqlwhere .= " and `$modalitytable`.series_tr = '$s_seriestr'"; }
-		if ($s_seriesnum != "") {
-			if (substr($s_seriesnum,0,2) == '>=') {
-				$val = substr($s_seriesnum,2);
-				$sqlwhere .= " and `$modalitytable`.series_num >= '$val'";
+		if ($s_seriesimagecomments != "") { $where[] = "`$modalitytable`.image_comments like " . $bind("%$s_seriesimagecomments%"); }
+		if ($s_seriestr != "") { $where[] = "`$modalitytable`.series_tr = " . $bind($s_seriestr); }
+		/* series number and number of files accept a comparison prefix: >=, <=, >, <, ~ (not equal) */
+		foreach (array('series_num' => $s_seriesnum, 'numfiles' => $s_seriesnumfiles) as $col => $val) {
+			if ($val == "") continue;
+			$op = "=";
+			foreach (array('>=' => '>=', '<=' => '<=', '>' => '>', '<' => '<', '~' => '<>') as $prefix => $sqlop) {
+				if (substr($val, 0, strlen($prefix)) == $prefix) {
+					$op = $sqlop;
+					$val = substr($val, strlen($prefix));
+					break;
+				}
 			}
-			elseif (substr($s_seriesnum,0,2) == '<=') {
-				$val = substr($s_seriesnum,2);
-				$sqlwhere .= " and `$modalitytable`.series_num <= '$val'";
-			}
-			elseif (substr($s_seriesnum,0,1) == '>') {
-				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$modalitytable`.series_num > '$val'";
-			}
-			elseif (substr($s_seriesnum,0,1) == '<') {
-				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$modalitytable`.series_num < '$val'";
-			}
-			elseif (substr($s_seriesnum,0,1) == '~') {
-				$val = substr($s_seriesnum,1);
-				$sqlwhere .= " and `$modalitytable`.series_num <> '$val'";
-			}
-			else {
-				$sqlwhere .= " and `$modalitytable`.series_num = '$s_seriesnum'";
-			}
-		}
-		if ($s_seriesnumfiles != "") {
-			if (substr($s_seriesnumfiles,0,2) == '>=') {
-				$val = substr($s_seriesnumfiles,2);
-				$sqlwhere .= " and `$modalitytable`.numfiles >= '$val'";
-			}
-			elseif (substr($s_seriesnumfiles,0,2) == '<=') {
-				$val = substr($s_seriesnumfiles,2);
-				$sqlwhere .= " and `$modalitytable`.numfiles <= '$val'";
-			}
-			elseif (substr($s_seriesnumfiles,0,1) == '>') {
-				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$modalitytable`.numfiles > '$val'";
-			}
-			elseif (substr($s_seriesnumfiles,0,1) == '<') {
-				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$modalitytable`.numfiles < '$val'";
-			}
-			elseif (substr($s_seriesnumfiles,0,1) == '~') {
-				$val = substr($s_seriesnumfiles,1);
-				$sqlwhere .= " and `$modalitytable`.numfiles <> '$val'";
-			}
-			else {
-				$sqlwhere .= " and `$modalitytable`.numfiles = '$s_seriesnumfiles'";
-			}
+			$where[] = "`$modalitytable`.$col $op " . $bind(trim($val));
 		}
 		if ($s_observationsearch != "") {
-			//$tmpsqlstring = "select observationname_id from observationnames where observation_name = '$s_observations'";
-			//$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
-			//$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
-			//$observationnameid = $tmprow['observationname_id'];
-			
-			if (is_numeric($observationvalue)) {
-				$valtype = "observation_valuenum";
+			list($obswhere, $obsparams) = ParseObservationSearchList($s_observationsearch);
+			if ($obswhere != "") {
+				foreach ($obsparams as $p) { $bind($p); }
+				$where[] = $obswhere;
 			}
-			else {
-				$valtype = "observation_valuestring";
-			}
-			switch ($s_observationcriteria) {
-				case "contains": $val = " like '%$s_observationvalue%'"; break;
-				case "eq": $val = " = '$s_observationvalue'"; break;
-				case "gt": $val = " > '$s_observationvalue'"; break;
-				case "lt": $val = " < '$s_observationvalue'"; break;
-			}
-			
-			$observationsearch = ParseObservationSearchList($s_observationsearch);
-			if ($observationsearch != "") {
-				$sqlwhere .= " and " . $observationsearch;
-			}
-			
 		}
-		//if ($s_formvalue[0] != "") {
-		//	/* get the formfield datatype to make sure we compare against the correct assessment_data value */
-		//	$tmpsqlstring = "select * from assessment_formfields where formfield_id = $s_formfieldid[0]";
-		//	$tmpresult = MySQLiQuery($tmpsqlstring,__FILE__,__LINE__);
-		//	$tmprow = mysqli_fetch_array($tmpresult, MYSQLI_ASSOC);
-		//	$datatype = $tmprow['formfield_datatype'];
-			
-		//	switch ($datatype) {
-		//		case "string": $valtype = "value_string"; break;
-		//		case "number": $valtype = "value_number"; break;
-		//		case "multichoice": $valtype = "value_text"; break;
-		//		case "singlechoice": $valtype = "value_text"; break;
-		//		case "text": $valtype = "value_text"; break;
-		//		case "date": $valtype = "value_binary"; break;
-		//		case "binary": $valtype = "value_binary"; break;
-		//		case "header": $valtype = "value_text"; break;
-		//	}
-		//	switch ($s_formcriteria[0]) {
-		//		case "contains": $val = " like '%$s_formvalue[0]%'"; break;
-		//		case "eq": $val = " = '$s_formvalue[0]'"; break;
-		//		case "gt": $val = " > '$s_formvalue[0]'"; break;
-		//		case "lt": $val = " < '$s_formvalue[0]'"; break;
-		//	}
-			
-		//	$sqlwhere .= " and `assessment_formfields`.formfield_id = $s_formfieldid[0] and `assessment_data`.$valtype $val";
-		//}
-		Debug(__FILE__, __LINE__, "Checkpoint A");
-		if ($s_pipelineid != ""){
-			Debug(__FILE__, __LINE__, "Checkpoint B");
-			$sqlwhere .= " and `analysis`.pipeline_id = $s_pipelineid";
+		if ($s_pipelineid != "") {
+			$where[] = "`analysis`.pipeline_id = " . $bind((int)$s_pipelineid, 'i');
 			if ($s_pipelineresultname != "") {
-				//echo "s_pipelineresultname is not blank";
-				
-				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
-				$sqlstringX = "select resultname_id from analysis_resultnames where result_name like '%$s_pipelineresultname%' ";
-				$resultX = MySQLiQuery($sqlstringX, __FILE__, __LINE__);
-				if (mysqli_num_rows($resultX) > 0) {
-					while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-						$resultnames[] = $rowX['resultname_id'];
-					}
+				/* get the list of result names in a separate query (a bug in the 5.x series of MySQL) */
+				$resultnames = array();
+				$sqlstringX = "select resultname_id from analysis_resultnames where result_name like ?";
+				$likename = "%$s_pipelineresultname%";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringX);
+				mysqli_stmt_bind_param($stmt, 's', $likename);
+				$resultX = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringX, [$likename]);
+				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					$resultnames[] = (int)$rowX['resultname_id'];
+				}
+				mysqli_stmt_close($stmt);
+				if (count($resultnames) > 0) {
 					$resultnames[] = 5429; /* hack... to always include ICV */
-					$resultnamelist = implode2(',',$resultnames);
-					$sqlwhere .= " and `analysis_results`.`result_nameid` in ($resultnamelist) ";
+					$where[] = "`analysis_results`.`result_nameid` in (" . $bindlist($resultnames, 'i') . ")";
 				}
 				else {
-					$sqlwhere .= " and `analysis_results`.`result_nameid` = '' ";
+					$where[] = "0 = 1";
 				}
 			}
-			Debug(__FILE__, __LINE__, "Checkpoint C");
 			if ($s_pipelineresultunit != "") {
-				Debug(__FILE__, __LINE__, "Checkpoint D");
-				
-				/* need to do a subquery outside of the main query to get the list of result names. This is due to a bug in the 5.x series of MySQL */
-				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like '%$s_pipelineresultunit%' ";
-				$resultX = MySQLiQuery($sqlstringX, __FILE__, __LINE__);
-				if (mysqli_num_rows($resultX) > 0) {
-					while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
-						$resultunit[] = $rowX['resultunit_id'];
-					}
-					$resultunitlist = implode2(',',$resultunit);
-					$sqlwhere .= " and `analysis_results`.`result_unitid` in ($resultunitlist) ";
+				$resultunits = array();
+				$sqlstringX = "select resultunit_id from analysis_resultunit where result_unit like ?";
+				$likeunit = "%$s_pipelineresultunit%";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringX);
+				mysqli_stmt_bind_param($stmt, 's', $likeunit);
+				$resultX = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringX, [$likeunit]);
+				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
+					$resultunits[] = (int)$rowX['resultunit_id'];
 				}
-				else {
-					$sqlwhere .= " and `analysis_results`.`result_unitid` = '' ";
-				}
+				mysqli_stmt_close($stmt);
+				$where[] = (count($resultunits) > 0) ? "`analysis_results`.`result_unitid` in (" . $bindlist($resultunits, 'i') . ")" : "0 = 1";
 			}
 			if ($s_pipelineresultvalue != "") {
-				Debug(__FILE__, __LINE__, "Checkpoint E");
-				//echo "s_pipelineresultvalue is not blank";
-				$sqlwhere .= " and `analysis_results`.`result_value` $s_pipelineresultcompare '$s_pipelineresultvalue' ";
+				/* the comparison operator is part of the SQL, so only allow the ones offered by the form */
+				$compare = in_array($s_pipelineresultcompare, array('=', '>', '>=', '<', '<='), true) ? $s_pipelineresultcompare : '=';
+				$where[] = "`analysis_results`.`result_value` $compare " . $bind($s_pipelineresultvalue);
 			}
 			if ($s_pipelineresulttype != "") {
-				Debug(__FILE__, __LINE__, "Checkpoint F");
-				//echo "s_pipelineresulttype is not blank";
-				$sqlwhere .= " and `analysis_results`.`result_type` = '$s_pipelineresulttype' ";
+				$where[] = "`analysis_results`.`result_type` = " . $bind($s_pipelineresulttype);
 			}
 		}
-	
+
 		/* ----- put the whole SQL query together ----- */
-		/* first setup the SELECT, depending on the type of query ... */
-		if ($s_resultoutput == "pipeline") {
-			Debug(__FILE__, __LINE__, "Checkpoint G");
-			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, studies.study_type, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
-		}
-		elseif ($s_resultoutput == "pipelinelong") {
-			Debug(__FILE__, __LINE__, "Checkpoint H");
-			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
-		}
-		elseif ($s_resultoutput == "pipelinelongyear") {
-			Debug(__FILE__, __LINE__, "Checkpoint I");
-			$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
-		}
-		elseif ($s_resultoutput == "long") {
-			if ($s_usealtseriesdesc) {
-				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_altdesc";
-			}
-			else {
-				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.series_desc";
-			}
-		}
-		elseif (($s_resultoutput == 'qctable') || ($s_resultoutput == 'qcchart')) {
-			/* return all custom QC variables */
-			//if ($s_qcvariableid != "") {
-			//	$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_num, unix_timestamp(DATE(series_datetime)) 'studydate', $modalitytable.series_desc, qc_resultnames.qcresult_name, qc_resultnames.qcresult_units, qc_results.qcresults_valuenumber";
-			//}
-			//else {
-				$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_id, studies.study_num, DATE(series_datetime) 'studydate', $modalitytable.series_desc, $modality" . "_qa.*";
-			//}
-		}
-		elseif ($s_resultoutput == 'subject') {
-			$sqlstring = "select subjects.*, projects.*, enrollment.*";
-		}
-		elseif ($s_resultoutput == 'uniquesubject') {
-			$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_id, studies.study_alternateid, studies.study_num";
+		/* first the SELECT, depending on the type of query ... */
+		$sparams = array();
+		$stypes = "";
+		if ($mode == "restricted") {
+			$sqlstring = "select distinct `projects`.project_name";
 		}
 		else {
-			$sqlstring = "select *";
+			if ($s_resultoutput == "pipeline") {
+				$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, studies.study_type, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+			}
+			elseif ($s_resultoutput == "pipelinelong") {
+				$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(MONTH, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+			}
+			elseif ($s_resultoutput == "pipelinelongyear") {
+				$sqlstring = "select subjects.uid, studies.study_num, studies.study_id, studies.study_datetime, subjects.subject_id, subjects.birthdate, subjects.gender, timestampdiff(YEAR, subjects.birthdate, studies.study_datetime) 'ageinmonths', analysis_results.*";
+			}
+			elseif ($s_resultoutput == "long") {
+				$descol = ($s_usealtseriesdesc) ? "series_altdesc" : "series_desc";
+				$sqlstring = "select subjects.uid, studies.study_id, studies.study_num, studies.study_datetime, studies.study_modality, subjects.subject_id, `$modalitytable`.$descol";
+			}
+			elseif (($s_resultoutput == 'qctable') || ($s_resultoutput == 'qcchart')) {
+				$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_datetime, studies.study_id, studies.study_num, DATE(series_datetime) 'studydate', `$modalitytable`.series_desc, `$modality" . "_qa`.*";
+			}
+			elseif ($s_resultoutput == 'subject') {
+				$sqlstring = "select subjects.*, projects.*, enrollment.*";
+			}
+			elseif ($s_resultoutput == 'uniquesubject') {
+				$sqlstring = "select subjects.subject_id, subjects.uid, studies.study_id, studies.study_alternateid, studies.study_num";
+			}
+			else {
+				$sqlstring = "select *";
+			}
+			/* every view gets the project, and whether the user can view this subject's PHI (View PHI on any
+			   project the subject is enrolled in). Displays mask name/DOB/etc when canviewphi is 0 */
+			$sqlstring .= ", `projects`.project_id, `projects`.project_name";
+			if ($viewphiprojectids === null) {
+				$sqlstring .= ", 1 'canviewphi'";
+			}
+			elseif (count($viewphiprojectids) == 0) {
+				$sqlstring .= ", 0 'canviewphi'";
+			}
+			else {
+				$sqlstring .= ", (`subjects`.subject_id in (select phi_c.subject_id from enrollment phi_c where phi_c.project_id in (" . implode(',', array_fill(0, count($viewphiprojectids), '?')) . "))) 'canviewphi'";
+				foreach ($viewphiprojectids as $pid) { $sparams[] = (int)$pid; $stypes .= 'i'; }
+			}
+			/* check if the observations should be returned as well */
+			if ($s_observationsearch != "") {
+				$sqlstring .= ", observations.*, observationnames.observation_name";
+			}
+			if ($s_pipelineid == "") {
+				$sqlstring .= ", `$modalitytable`.`$seriesidcol`";
+			}
 		}
-		/* check if the observations should be returned as well */
-		if ($s_observationsearch != ""){
-			$sqlstring .= ", observations.*, observationnames.observation_name";
-		}
-		
-		if ($s_pipelineid == "") {
-			$sqlstring .= ", `$modalitytable`.$modality" . "series_id";
-		}
-		
+
 		/* ... then add the table JOINs ... */
 		$sqlstring .= " from `enrollment`
 		join `projects` on `enrollment`.project_id = `projects`.project_id
 		join `subjects` on `subjects`.subject_id = `enrollment`.subject_id
 		join `studies` on `studies`.enrollment_id = `enrollment`.enrollment_id";
-		/* join in other tables if necessary */
 		if ($s_subjectaltuid != "") {
 			$sqlstring .= " join `subject_altuid` on `subjects`.subject_id = `subject_altuid`.subject_id";
 		}
-		if ($s_pipelineid == ""){
+		if ($s_pipelineid == "") {
 			$sqlstring .= " join `$modalitytable` on `$modalitytable`.study_id = `studies`.study_id";
 		}
-		if ($s_observationsearch != ""){
-			/* join in the observation table if there is a observation to search for */
+		if ($s_observationsearch != "") {
 			$sqlstring .= " left join `observations` on `observations`.enrollment_id = `enrollment`.enrollment_id left join `observationnames` on `observations`.observationname_id = `observationnames`.observationname_id";
 		}
-		//if ($s_formvalue[0] != ""){
-		//	/* join in the form tables if there is formfield criteria to search for */
-		//	$sqlstring .= " join `assessments` on `assessments`.enrollment_id = `enrollment`.enrollment_id
-		//	join `assessment_formfields` on `assessment_formfields`.form_id = `assessments`.form_id
-		//	join `assessment_data` on `assessment_data`.formfield_id = `assessment_formfields`.formfield_id";
-		//}
-		if ($s_pipelineid != ""){
-			/* join in the pipeline tables if there is formfield criteria to search for */
+		if ($s_pipelineid != "") {
 			$sqlstring .= " join `analysis` on `analysis`.study_id = `studies`.study_id
 			join `analysis_results` on `analysis_results`.analysis_id = `analysis`.analysis_id";
 		}
 		if (($modality == "mr") && ($s_pipelineid == "")) {
 			$sqlstring .= " left join `mr_qa` on `mr_qa`.mrseries_id = `mr_series`.mrseries_id";
 		}
-		//if (($s_resultoutput == 'qctable') || ($s_resultoutput == 'qcchart')) {
-		//	if ($s_qcvariableid != "") {
-		//		if ($s_qcvariableid == "all") {
-		//			$sqlstring .= " LEFT JOIN `qc_moduleseries` ON `qc_moduleseries`.series_id = `mr_series`.mrseries_id LEFT JOIN `qc_modules` ON `qc_modules`.qcmodule_id = `qc_moduleseries`.qcmodule_id LEFT JOIN `qc_results` ON `qc_results`.qcmoduleseries_id = `qc_moduleseries`.qcmoduleseries_id LEFT JOIN `qc_resultnames` ON `qc_results`.qcresultname_id = `qc_resultnames`.qcresult_name";
-		//		}
-		//	}
-		//}
-		
-		/* ... then add the WHERE clause (created earlier) and the ORDER BY and GROUP BY clauses if necessary */
-		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = '$modality' $sqlwhere ";
-		if ($s_resultoutput == 'subject') {
+
+		/* ... then the WHERE clause, and the GROUP BY and ORDER BY clauses */
+		$sqlstring .= " where `subjects`.isactive = 1 and `studies`.study_modality = ? and " . implode(" and ", $where);
+		$params = array_merge($sparams, array($modality), $wparams);
+		$types = $stypes . 's' . $wtypes;
+
+		if ($mode == "restricted") {
+			$sqlstring .= " order by `projects`.project_name";
+		}
+		elseif ($s_resultoutput == 'subject') {
 			$sqlstring .= " group by enrollment.enrollment_id order by subjects.uid, projects.project_name";
 		}
 		elseif ($s_resultoutput == 'uniquesubject') {
 			$sqlstring .= " group by studies.study_id";
 		}
-		else {
-			if ($s_formvalue[0] != ""){
-				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id ";
-			}
-			if (($s_resultoutput != "pipeline") && ($s_resultoutput != "pipelinecsv") && ($s_resultoutput != "pipelinelong") && ($s_resultoutput != "pipelinelongyear")) {
-				$sqlstring .= " group by `$modalitytable`.$modality" . "series_id order by `studies`.study_datetime, `studies`.study_id";
-				if ($s_pipelineid == ""){
-					$sqlstring .= ", `$modalitytable`.series_num";
-				}
+		elseif (($s_resultoutput != "pipeline") && ($s_resultoutput != "pipelinecsv") && ($s_resultoutput != "pipelinelong") && ($s_resultoutput != "pipelinelongyear")) {
+			$sqlstring .= " group by `$modalitytable`.`$seriesidcol` order by `studies`.study_datetime, `studies`.study_id";
+			if ($s_pipelineid == "") {
+				$sqlstring .= ", `$modalitytable`.series_num";
 			}
 		}
-		return $sqlstring;
+
+		return array($sqlstring, $types, $params);
 	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RunSearchQuery --------------------- */
+	/* -------------------------------------------- */
+	/* run a query returned by BuildSQLString() */
+	function RunSearchQuery($q) {
+		list($sqlstring, $types, $params) = $q;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if (count($params) > 0)
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		return $result;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSearchPermProjectIDs ------------ */
+	/* -------------------------------------------- */
+	/* ids of all projects (any instance) on which the current user has $perm ('viewdata', 'viewphi',
+	   ...), with the implied permissions applied. Returns null for admins, meaning every project */
+	function GetSearchPermProjectIDs($perm) {
+		static $cache = array();
+		if (IsAdminUser()) return null;
+		if (isset($cache[$perm])) return $cache[$perm];
+
+		$userid = (int)$_SESSION['userid'];
+		$ids = array();
+		$sqlstring = "select project_id from user_project where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$ids[] = (int)$row['project_id'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$perms = GetCurrentUserProjectPermissions($ids);
+		$cache[$perm] = array();
+		foreach ($perms as $pid => $p) {
+			if (GetPerm($perms, $perm, $pid)) $cache[$perm][] = (int)$pid;
+		}
+		return $cache[$perm];
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSearchFormValues ---------------- */
+	/* -------------------------------------------- */
+	/* the distinct non-blank values of $column (a literal from this file) in $table ('studies' or
+	   'enrollment'), for the search form's suggestion lists. Only values from projects the user has
+	   View Data on (every project for admins), so the lists don't show other projects' metadata.
+	   Returns rows of array($column => value) */
+	function GetSearchFormValues($table, $column) {
+		if (!in_array($table, array('studies', 'enrollment'), true) || !preg_match('/^[a-z_]+$/', $column)) return array();
+
+		$projectids = GetSearchPermProjectIDs('viewdata'); /* null = admin */
+		if (($projectids !== null) && (count($projectids) == 0)) return array();
+
+		if ($table == 'studies')
+			$sqlstring = "select distinct(a.`$column`) '$column' from studies a join enrollment b on a.enrollment_id = b.enrollment_id where a.`$column` <> ''";
+		else
+			$sqlstring = "select distinct(b.`$column`) '$column' from enrollment b where b.`$column` <> ''";
+		if ($projectids !== null)
+			$sqlstring .= " and b.project_id in (" . implode(',', array_fill(0, count($projectids), '?')) . ")";
+		$sqlstring .= " order by 1";
+
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if ($projectids !== null)
+			mysqli_stmt_bind_param($stmt, str_repeat('i', count($projectids)), ...$projectids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ($projectids === null) ? array() : $projectids);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+		return $rows;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSearchSeriesTable --------------- */
+	/* -------------------------------------------- */
+	/* the <modality>_series table name if the modality is valid and the table exists, else "" */
+	function GetSearchSeriesTable($modality) {
+		static $cache = array();
+		$modality = strtolower(trim($modality ?? ''));
+		if (isset($cache[$modality])) return $cache[$modality];
+
+		$table = GetSeriesTableName($modality);
+		if ($table != "") {
+			$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $table);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$table]);
+			if (mysqli_num_rows($result) < 1) $table = "";
+			mysqli_stmt_close($stmt);
+		}
+		$cache[$modality] = $table;
+		return $table;
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- GetIDListFromGroup ----------------- */
 	/* -------------------------------------------- */
+	/* the data ids (ints) in a group */
 	function GetIDListFromGroup($groupid) {
-		$sqlstring = "select data_id from group_data where group_id = $groupid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$groupid = (int)$groupid;
+		$ids = array();
+		$sqlstring = "select data_id from group_data where group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $groupid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid]);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$groupids[] = $row['data_id'];
+			$ids[] = (int)$row['data_id'];
 		}
-		return implode2(',',$groupids);
+		mysqli_stmt_close($stmt);
+		return $ids;
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchResultRow -------------------- */
+	/* -------------------------------------------- */
+	/* prepare a search result row for display: every string value is HTML-escaped, and the PHI fields
+	   are replaced by the "no view permissions" box unless the user can view this subject's PHI
+	   (the query's canviewphi column). The raw row is kept in ['_raw'] for calculations, paths and
+	   CSV files, and ['_canviewphi'] says whether PHI may be shown */
+	function SearchResultRow($row) {
+		$raw = $row;
+		$canviewphi = !empty($row['canviewphi']);
+		foreach ($row as $k => $v) {
+			if (is_string($v)) $row[$k] = htmlspecialchars($v, ENT_QUOTES);
+		}
+		if (!$canviewphi) {
+			foreach (array('name', 'birthdate', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital_status', 'phone1', 'email', 'cancontact') as $f) {
+				if (array_key_exists($f, $row)) $row[$f] = NoViewPermission();
+			}
+		}
+		$row['_raw'] = $raw;
+		$row['_canviewphi'] = $canviewphi;
+		return $row;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SearchAltUIDs ---------------------- */
+	/* -------------------------------------------- */
+	/* a subject's alternate UIDs, HTML-escaped for display (not PHI) */
+	function SearchAltUIDs($subjectid) {
+		$altuids = GetAlternateUIDs((int)$subjectid, '');
+		return is_array($altuids) ? array_map('htmlspecialchars', $altuids) : array();
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayMRStudyHeader --------------- */
@@ -6114,194 +5947,223 @@
 	/* ------- Anonymize -------------------------- */
 	/* -------------------------------------------- */
 	function Anonymize($r, $username) {
-		$seriesids = $r['seriesid'] ?? '';
+		/* anonymizing rewrites the archived DICOM files, so it needs Edit Data on each series' project */
 		$modality = strtolower($r['modality'] ?? '');
 		$dicomtags = $r['dicomtags'] ?? '';
-		$enrollmentids = $r['enrollmentid'] ?? '';
 
-		if (($seriesids == "") && ($enrollmentids == "")) {
-			echo "You didn't select any series or subjects to transfer! Go back and select something<br>";
-			return;
-		}
+		list($seriesids, $skipped) = GetPermittedSearchSeries($modality, $r['seriesid'] ?? '', 'modifydata');
+		if ($seriesids === null) return;
 
-		/* the modality becomes part of a table name downstream, so only allow a valid one */
-		if (GetSeriesTableName($modality) == "") {
-			echo "Invalid modality [" . htmlspecialchars($modality) . "]. Nothing was submitted.<br>";
-			return;
-		}
-
-		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
 		foreach ($seriesids as $seriesid) {
-			$seriesid = (int)$seriesid;
 			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, anonymize_fields, request_status, username, requestdate) values ('anonymize','series',?,?,?,'pending',?,now())";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'isss', $seriesid, $modality, $dicomtags, $username);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid, $modality, $dicomtags, $username]);
 			mysqli_stmt_close($stmt);
 		}
+
+		if (count($seriesids) > 0)
+			Notice(count($seriesids) . " series queued for anonymization");
+		if ($skipped > 0)
+			Error("$skipped series skipped: not found, or you don't have Edit Data permission on the series' project");
 	}
-	
+
+
+	/* -------------------------------------------- */
+	/* ------- GetPermittedSearchSeries ----------- */
+	/* -------------------------------------------- */
+	/* of the requested series ids (an array or a single id), returns array(ids the user has $perm on
+	   via the series' project, number skipped). Returns array(null, 0) after printing an error if
+	   the modality isn't valid or nothing was selected */
+	function GetPermittedSearchSeries($modality, $seriesids, $perm) {
+		$table = GetSearchSeriesTable($modality);
+		if ($table == "") {
+			Error("Invalid modality [" . htmlspecialchars($modality) . "]. Nothing was submitted");
+			return array(null, 0);
+		}
+		$idcol = strtolower($modality) . "series_id";
+
+		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? array() : array($seriesids));
+		$ids = array_values(array_unique(array_filter(array_map('intval', $seriesids), function($v) { return $v > 0; })));
+		if (count($ids) == 0) {
+			Error("You didn't select any series. Go back and select something");
+			return array(null, 0);
+		}
+
+		/* each series' project */
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select a.`$idcol` 'id', c.project_id from `$table` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.`$idcol` in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+		$seriesproject = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesproject[(int)$row['id']] = (int)$row['project_id'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$perms = GetCurrentUserProjectPermissions(array_values(array_unique($seriesproject)));
+		$permitted = array();
+		foreach ($ids as $id) {
+			if (isset($seriesproject[$id]) && GetPerm($perms, $perm, $seriesproject[$id]))
+				$permitted[] = $id;
+		}
+
+		return array($permitted, count($ids) - count($permitted));
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- ProcessRequest --------------------- */
 	/* -------------------------------------------- */
+	/* create an export of the selected series. Needs View Data on each series' project; public
+	   download / public dataset destinations publish the data, so they need Edit Data */
 	function ProcessRequest($r, $username) {
-		//PrintVariable($r);
-		
+
 		$ip = getenv('REMOTE_ADDR');
-		$modality = $r['modality'];
-		$destinationtype = $r['destination'];
-		$nfsdir = $r['nfsdir'];
-		$realnfsdir = $GLOBALS['cfg']['mountdir'] . "/" . $r['nfsdir'];
-		$seriesids = $r['seriesid'];
-		$enrollmentids = $r['enrollmentid'];
-		$remoteftpusername = $r['remoteftpusername'];
-		$remoteftppassword = $r['remoteftppassword'];
-		$remoteftpserver = $r['remoteftpserver'];
-		$remoteftpport = $r['remoteftpport'];
-		$remoteftppath = $r['remoteftppath'];
-		$remoteconnid = $r['remoteconnid'];
-		$publicdownloaddesc = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloaddesc']);
-		$publicdownloadreleasenotes = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadreleasenotes']);
-		$publicdownloadpassword = $r['publicdownloadpassword'];
-		$publicdownloadshareinternal = ($r['publicdownloadshareinternal'] == 1) ? 1 : 0;
-		$publicdownloadregisterrequired = ($r['publicdownloadregisterrequired'] == 1) ? 1 : 0;
-		$publicdownloadexpire = $r['publicdownloadexpire'];
-		$publicdownloadname = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdownloadname']);
-		$publicdatasetid = mysqli_real_escape_string($GLOBALS['linki'], $r['publicdatasetid']);
-		$bidsreadme = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsreadme']);
-		$bidsflagstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_study']);
-		$bidsflagsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_subject']);
-		//$bidsflaguseuid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_useuid']);
-		//$bidsflagusestudyid = mysqli_real_escape_string($GLOBALS['linki'], $r['bidsflag_usestudyid']);
-		$squirrelflagdataformat = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_dataformat']);
-		$squirrelflagincsubject = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incsubject']);
-		$squirrelflagincstudy = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incstudy']);
-		$squirrelflagincseries = mysqli_real_escape_string($GLOBALS['linki'], $r['squirrelflag_incseries']);
-		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
-		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
-		if ($r['preserveseries'] == '') { $preserveseries = 0; } else { $preserveseries = $r['preserveseries']; }
-		$filetype = mysqli_real_escape_string($GLOBALS['linki'], $r['filetype']);
-		$gzip = ($r['gzip'] == 1) ? 1 : 0;
-		$niftijson = ($r['niftijson'] == 1) ? 1 : 0;
-		$anonymize = $r['anonymize'];
-		$dirformat = $r['dirformat'];
-		$timepoints = $r['timepoints'];
-		$behformat = $r['behformat'];
-		$behdirnameroot = mysqli_real_escape_string($GLOBALS['linki'], $r['behdirnameroot']);
-		$behdirnameseries = mysqli_real_escape_string($GLOBALS['linki'], $r['behdirnameseries']);
-		$subjectmeta = $r['subjectmeta'];
-		$subjectdata = $r['subjectdata'];
-		$subjectphenotype = $r['subjectphenotype'];
-		$subjectforms = $r['subjectforms'];
-		$studymeta = $r['studymeta'];
-		$studydata = $r['studydata'];
-		$seriesmeta = $r['seriesmeta'];
-		$seriesdata = $r['seriesdata'];
-		$allsubject = $r['allsubject'];
-		$downloadimaging = ($r['downloadimaging'] == 1) ? 1 : 0;
-		$downloadbeh = ($r['downloadbeh'] == 1) ? 1 : 0;
-		$downloadqc = ($r['downloadqc'] == 1) ? 1 : 0;
-		$downloadexperiments = ($r['downloadexperiments'] == 1) ? 1 : 0;
-		$downloadresults = ($r['downloadresults'] == 1) ? 1 : 0;
-		$downloadpipelines = ($r['downloadpipelines'] == 1) ? 1 : 0;
-		$downloadvariables = ($r['downloadvariables'] == 1) ? 1 : 0;
-		$downloadminipipelines = ($r['downloadminipipelines'] == 1) ? 1 : 0;
+		$modality = strtolower($r['modality'] ?? '');
+		$destinationtype = $r['destination'] ?? '';
+		$nfsdir = trim($r['nfsdir'] ?? '');
 
-		$ndadownloadtype = $r['ndadownloadtype'];
-
-		if ($anonymize == "") { $anonymize = 0; }
-		
-		if (!$downloadbeh) { $behformat = "behnone"; }
-		
-		if (($seriesids == "") && ($enrollmentids == "")) {
-			echo "You didn't select any series or subjects to transfer! Go back and select something<br>";
-			exit(0);
-		}
-		if ($destinationtype == "nfs") {
-			if ($nfsdir == "") {
-				echo "NFS destination directory was blank! go back and enter a destination directory<br>";
-				exit(0);
-			}
-			if (strpos($nfsdir," ") !== false) {
-				echo "Destination directory cannot contain spaces. You must choose a different destination directory that does not have spaces<br>";
-				exit(0);
-			}
-			if ((file_exists("$realnfsdir") == false) || ($nfsdir == "/")) {
-				echo "Invalid NFS destination directory! go back and enter a valid destination directory<br>";
-				exit(0);
-			}
-			clearstatcache();
-			$perms = substr(sprintf('%o', fileperms($realnfsdir)),-3);
-			if ($perms != "777"){
-				echo "Incorrect permissions [$perms] on destination directory [$realnfsdir]. Should be 777.<br>Set permissions to read/write for everyone by typing 'chmod -R 777 $nfsdir' at the command line in the parent directory of your destination<br>";
-				exit(0);
-			}
-		}
-
-		$requestingip = $ip;
-		
-		$safe = true;
-		
-		if (($img_format == "dicom") && ($destinationtype == "remoteftp")) {
-			$safe = false;
-		}
-		
-		$remoteftpport = 21;
-		$remoteftpsecure = 0;
-		
-		if ($safe) {
-			$totalseriessize += $series_size;
-			
-			$remoteconnid = ($remoteconnid == '') ? 'null' : $remoteconnid;
-			//if (trim($remoteconnid) != "") {
-				//$sqlstringC = "select * from remote_connections where remoteconn_id = $remoteconnid";
-				//$resultC = MySQLiQuery($sqlstringC, __FILE__ , __LINE__);
-				//$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
-				//$remotenidbserver = $rowC['remote_server'];
-				//$remotenidbusername = $rowC['remote_username'];
-				//$remotenidbpassword = $rowC['remote_password'];
-				//$remoteinstanceid = (trim($rowC['remote_instanceid']) == '') ? 'null' : $rowC['remote_instanceid'];
-				//$remoteprojectid = $rowC['remote_projectid'];
-				//$remotesiteid = $rowC['remote_siteid'];
-			//}
-			//$remoteinstanceid = ($remoteinstanceid == '') ? 'null' : $remoteinstanceid;
-			//$remoteprojectid = ($remoteprojectid == '') ? 'null' : $remoteprojectid;
-			//$remotesiteid = ($remotesiteid == '') ? 'null' : $remotesiteid;
-			$publicDownloadRowID = ($publicDownloadRowID == '') ? 'null' : $publicDownloadRowID;
-			$publicDatasetDownloadRowID = ($publicDatasetDownloadRowID == '') ? 'null' : $publicDatasetDownloadRowID;
-			$behonly = ($behonly == 1) ? 1 : 0;
-			//$downloadbeh = $behonly;
-		}
-		else {
-			?>Cannot send non-anonymized DICOM data to a remote server<?
+		/* the destination types the export module handles (dicomae exports come from studies.php). Remote FTP
+		   was never implemented by the export module, and stored the FTP password in plaintext, so it isn't accepted */
+		if (!in_array($destinationtype, array('web', 'publicdownload', 'publicdataset', 'nfs', 'localftp', 'export', 'ndar', 'ndarcsv', 'xnat', 'remotenidb'), true)) {
+			Error("Invalid destination [" . htmlspecialchars($destinationtype) . "]. Export not submitted");
 			return;
 		}
-		
-		/* if this is a public download, create the row in the public_download table, and get the ID */
-		if ($destinationtype == "publicdownload") {
-			$sqlstring = "insert into public_downloads (pd_createdate, pd_createdby, pd_desc, pd_notes, pd_password, pd_shareinternal, pd_registerrequired, pd_expiredays, pd_status) values (now(), '$username', '$publicdownloaddesc', '$publicdownloadreleasenotes', sha1('$publicdownloadpassword'), '$publicdownloadshareinternal', '$publicdownloadregisterrequired', '$publicdownloadexpire', 'started')";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
-		}
-		
-		/* if this is a public DATASET download, create the row in the publicdataset_download table, and get the ID */
-		if ($destinationtype == "publicdataset") {
-			$sqlstring = "insert into publicdataset_downloads (dataset_id, download_name, download_desc) values ($publicdatasetid, '$publicdownloadname', '$publicdownloaddesc')";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
+
+		$ispublic = in_array($destinationtype, array('publicdownload', 'publicdataset'), true);
+		list($seriesids, $skipped) = GetPermittedSearchSeries($modality, $r['seriesid'] ?? '', $ispublic ? 'modifydata' : 'viewdata');
+		if ($seriesids === null) return;
+		if (count($seriesids) == 0) {
+			Error("None of the selected series can be exported: you don't have " . ($ispublic ? "Edit Data" : "View Data") . " permission on their projects" . ($ispublic ? " (needed to publish data)" : ""));
+			return;
 		}
 
-		/* collect the download flags */
-		$ndaflags = array();
-		if ($ndadownloadtype == "web") { $ndaflags[] = "NDA_WEBDOWNLOAD"; } else { $ndaflags[] = "NDA_FTPDOWNLOAD"; }
-		if (count($ndaflags) > 0)
-			$ndaflagstr = "('" . implode2(",",$ndaflags) . "')";
-		else
-			$ndaflagstr = "null";
-		
-		/* collect the download flags */
+		/* remote FTP isn't supported; its columns are left empty */
+		$remoteftpusername = '';
+		$remoteftppassword = '';
+		$remoteftpserver = '';
+		$remoteftppath = '';
+		$remoteftpport = 21;
+		$remoteconnid = (int)($r['remoteconnid'] ?? 0);
+		$publicdownloaddesc = $r['publicdownloaddesc'] ?? '';
+		$publicdownloadreleasenotes = $r['publicdownloadreleasenotes'] ?? '';
+		$publicdownloadpassword = $r['publicdownloadpassword'] ?? '';
+		$publicdownloadshareinternal = (($r['publicdownloadshareinternal'] ?? '') == 1) ? 1 : 0;
+		$publicdownloadregisterrequired = (($r['publicdownloadregisterrequired'] ?? '') == 1) ? 1 : 0;
+		$publicdownloadexpire = (int)($r['publicdownloadexpire'] ?? 0);
+		$publicdownloadname = $r['publicdownloadname'] ?? '';
+		$publicdatasetid = (int)($r['publicdatasetid'] ?? 0);
+		$bidsreadme = $r['bidsreadme'] ?? '';
+		$bidsflagstudy = $r['bidsflag_study'] ?? '';
+		$bidsflagsubject = $r['bidsflag_subject'] ?? '';
+		$squirrelflagdataformat = $r['squirrelflag_dataformat'] ?? '';
+		$squirrelflagincsubject = $r['squirrelflag_incsubject'] ?? '';
+		$squirrelflagincstudy = $r['squirrelflag_incstudy'] ?? '';
+		$squirrelflagincseries = $r['squirrelflag_incseries'] ?? '';
+		$squirreltitle = $r['squirreltitle'] ?? '';
+		$squirreldesc = $r['squirreldesc'] ?? '';
+		$preserveseries = (int)($r['preserveseries'] ?? 0);
+		$filetype = $r['filetype'] ?? '';
+		$gzip = (($r['gzip'] ?? '') == 1) ? 1 : 0;
+		$niftijson = (($r['niftijson'] ?? '') == 1) ? 1 : 0;
+		$anonymize = (int)($r['anonymize'] ?? 0);
+		$dirformat = $r['dirformat'] ?? '';
+		$behformat = $r['behformat'] ?? '';
+		$behdirnameroot = $r['behdirnameroot'] ?? '';
+		$behdirnameseries = $r['behdirnameseries'] ?? '';
+		$downloadimaging = (($r['downloadimaging'] ?? '') == 1) ? 1 : 0;
+		$downloadbeh = (($r['downloadbeh'] ?? '') == 1) ? 1 : 0;
+		$downloadqc = (($r['downloadqc'] ?? '') == 1) ? 1 : 0;
+		$downloadexperiments = (($r['downloadexperiments'] ?? '') == 1) ? 1 : 0;
+		$downloadresults = (($r['downloadresults'] ?? '') == 1) ? 1 : 0;
+		$downloadpipelines = (($r['downloadpipelines'] ?? '') == 1) ? 1 : 0;
+		$downloadvariables = (($r['downloadvariables'] ?? '') == 1) ? 1 : 0;
+		$downloadminipipelines = (($r['downloadminipipelines'] ?? '') == 1) ? 1 : 0;
+		$ndadownloadtype = $r['ndadownloadtype'] ?? '';
+
+		if (!$downloadbeh) { $behformat = "behnone"; }
+
+		if ($destinationtype == "nfs") {
+			if ($nfsdir == "") {
+				Error("NFS destination directory was blank! Go back and enter a destination directory");
+				return;
+			}
+			if (strpos($nfsdir," ") !== false) {
+				Error("Destination directory cannot contain spaces. You must choose a different destination directory that does not have spaces");
+				return;
+			}
+			/* the destination must be a real directory within the mount directory (no ../ out of it) */
+			$realmountdir = realpath($GLOBALS['cfg']['mountdir']);
+			$realnfsdir = realpath($GLOBALS['cfg']['mountdir'] . "/" . $nfsdir);
+			if (($realmountdir === false) || ($realnfsdir === false) || !is_dir($realnfsdir) || ($nfsdir == "/") || (strpos($realnfsdir . '/', rtrim($realmountdir, '/') . '/') !== 0)) {
+				Error("Invalid NFS destination directory! Go back and enter a valid destination directory");
+				return;
+			}
+			clearstatcache();
+			$dirperms = substr(sprintf('%o', fileperms($realnfsdir)),-3);
+			if ($dirperms != "777") {
+				Error("Incorrect permissions [$dirperms] on destination directory [" . htmlspecialchars($realnfsdir) . "]. Should be 777.<br>Set permissions to read/write for everyone by typing 'chmod -R 777 " . htmlspecialchars($nfsdir) . "' at the command line in the parent directory of your destination");
+				return;
+			}
+		}
+
+		/* a remote NiDB connection must be one of the user's own */
+		if ($remoteconnid > 0) {
+			$userid = (int)$_SESSION['userid'];
+			$sqlstring = "select remoteconn_id from remote_connections where remoteconn_id = ? and user_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $remoteconnid, $userid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$remoteconnid, $userid]);
+			$found = (mysqli_num_rows($result) > 0);
+			mysqli_stmt_close($stmt);
+			if (!$found) {
+				Error("Remote connection not found. Export not submitted");
+				return;
+			}
+		}
+		$remoteconnid = ($remoteconnid > 0) ? $remoteconnid : null;
+
+		/* if this is a public download, create the row in the public_download table, and get the ID */
+		$publicDownloadRowID = null;
+		if ($destinationtype == "publicdownload") {
+			$sqlstring = "insert into public_downloads (pd_createdate, pd_createdby, pd_desc, pd_notes, pd_password, pd_shareinternal, pd_registerrequired, pd_expiredays, pd_status) values (now(), ?, ?, ?, sha1(?), ?, ?, ?, 'started')";
+			$params = [$username, $publicdownloaddesc, $publicdownloadreleasenotes, $publicdownloadpassword, $publicdownloadshareinternal, $publicdownloadregisterrequired, $publicdownloadexpire];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ssssiii', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, $publicdownloaddesc, $publicdownloadreleasenotes, '********', $publicdownloadshareinternal, $publicdownloadregisterrequired, $publicdownloadexpire]);
+			$publicDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+		}
+
+		/* if this is a public DATASET download, create the row in the publicdataset_download table, and get the ID */
+		$publicDatasetDownloadRowID = null;
+		if ($destinationtype == "publicdataset") {
+			/* the dataset must be one of the user's own */
+			$sqlstring = "select publicdataset_id from public_datasets where publicdataset_id = ? and publicdataset_createdby = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'is', $publicdatasetid, $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$publicdatasetid, $username]);
+			$owned = (mysqli_num_rows($result) > 0);
+			mysqli_stmt_close($stmt);
+			if (!$owned) {
+				Error("Public dataset not found. Export not submitted");
+				return;
+			}
+			$sqlstring = "insert into publicdataset_downloads (dataset_id, download_name, download_desc) values (?, ?, ?)";
+			$params = [$publicdatasetid, $publicdownloadname, $publicdownloaddesc];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'iss', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			$publicDatasetDownloadRowID = mysqli_insert_id($GLOBALS['linki']);
+			mysqli_stmt_close($stmt);
+		}
+
+		/* the flags are SET columns; each list only contains the literal values below, and an
+		   empty list is stored as NULL */
+		$ndaflags = array(($ndadownloadtype == "web") ? "NDA_WEBDOWNLOAD" : "NDA_FTPDOWNLOAD");
+
 		$downloadflags = array();
 		if ($downloadimaging) $downloadflags[] = "DOWNLOAD_IMAGING";
 		if ($downloadbeh) $downloadflags[] = "DOWNLOAD_BEH";
@@ -6311,99 +6173,54 @@
 		if ($downloadpipelines) $downloadflags[] = "DOWNLOAD_PIPELINES";
 		if ($downloadvariables) $downloadflags[] = "DOWNLOAD_VARIABLES";
 		if ($downloadminipipelines) $downloadflags[] = "DOWNLOAD_MINIPIPELINES";
-		if (count($downloadflags) > 0)
-			$downloadflagstr = "('" . implode2(",",$downloadflags) . "')";
-		else
-			$downloadflagstr = "null";
-		
-		/* collect the BIDS flags */
+
 		$bidsflags = array();
 		switch ($bidsflagsubject) {
-			case "subjectdir_increment":
-				$bidsflags[] = "BIDS_SUBJECTDIR_INCREMENT";
-				break;
-			case "subjectdir_uid":
-				$bidsflags[] = "BIDS_SUBJECTDIR_UID";
-				break;
-			case "subjectdir_altuid":
-				$bidsflags[] = "BIDS_SUBJECTDIR_ALTUID";
-				break;
+			case "subjectdir_increment": $bidsflags[] = "BIDS_SUBJECTDIR_INCREMENT"; break;
+			case "subjectdir_uid": $bidsflags[] = "BIDS_SUBJECTDIR_UID"; break;
+			case "subjectdir_altuid": $bidsflags[] = "BIDS_SUBJECTDIR_ALTUID"; break;
 		}
 		switch ($bidsflagstudy) {
-			case "studydir_increment":
-				$bidsflags[] = "BIDS_STUDYDIR_INCREMENT";
-				break;
-			case "studydir_studynum":
-				$bidsflags[] = "BIDS_STUDYDIR_STUDYNUM";
-				break;
-			case "studydir_altstudyid":
-				$bidsflags[] = "BIDS_STUDYDIR_ALTSTUDYID";
-				break;
-			case "studydir_date":
-				$bidsflags[] = "BIDS_STUDYDIR_DATE";
-				break;
+			case "studydir_increment": $bidsflags[] = "BIDS_STUDYDIR_INCREMENT"; break;
+			case "studydir_studynum": $bidsflags[] = "BIDS_STUDYDIR_STUDYNUM"; break;
+			case "studydir_altstudyid": $bidsflags[] = "BIDS_STUDYDIR_ALTSTUDYID"; break;
+			case "studydir_date": $bidsflags[] = "BIDS_STUDYDIR_DATE"; break;
 		}
-		//if ($bidsflaguseuid) $bidsflags[] = "BIDS_USEUID";
-		//if ($bidsflagusestudyid) $bidsflags[] = "BIDS_USESTUDYID";
-		if (count($bidsflags) > 0)
-			$bidsflagstr = "('" . implode2(",",$bidsflags) . "')";
-		else
-			$bidsflagstr = "null";
 
-		/* collect the Nifti flags */
 		$niftiflags = array();
-		if ($filetype == "nifti3d") $niftiflags[] = "NIFTI_3D";
-		if ($filetype == "nifti3dgz") $niftiflags[] = "NIFTI_3D"; $niftiflags[] = "NIFTI_GZIP";
-		if ($filetype == "nifti4d") $niftiflags[] = "NIFTI_4D";
-		if ($filetype == "nifti4dgz") $niftiflags[] = "NIFTI_4D"; $niftiflags[] = "NIFTI_GZIP";
+		if ($filetype == "nifti3d") { $niftiflags[] = "NIFTI_3D"; }
+		if ($filetype == "nifti3dgz") { $niftiflags[] = "NIFTI_3D"; $niftiflags[] = "NIFTI_GZIP"; }
+		if ($filetype == "nifti4d") { $niftiflags[] = "NIFTI_4D"; }
+		if ($filetype == "nifti4dgz") { $niftiflags[] = "NIFTI_4D"; $niftiflags[] = "NIFTI_GZIP"; }
 		if ($gzip) $niftiflags[] = "NIFTI_GZIP";
 		if ($niftijson) $niftiflags[] = "NIFTI_JSON";
-		if (count($niftiflags) > 0) {
-			$niftiflags = array_unique($niftiflags);
-			$niftiflagstr = "('" . implode2(",",$niftiflags) . "')";
-		}
-		else
-			$niftiflagstr = "null";
+		$niftiflags = array_unique($niftiflags);
 
-		/* collect the squirrel flags */
 		$squirrelflags = array();
 		if ($squirrelflagdataformat == "anon") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZE";
 		if ($squirrelflagdataformat == "anonfull") $squirrelflags[] = "SQUIRREL_FORMAT_ANONYMIZEFULL";
-		if ($squirrelflagdataformat == "nifti4d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFT4D";
+		if ($squirrelflagdataformat == "nifti4d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI4D";
 		if ($squirrelflagdataformat == "nifti4dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI4DGZ";
 		if ($squirrelflagdataformat == "nifti3d") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3D";
 		if ($squirrelflagdataformat == "nifti3dgz") $squirrelflags[] = "SQUIRREL_FORMAT_NIFTI3DGZ";
 		if ($squirrelflagincsubject) $squirrelflags[] = "SQUIRREL_INCSUBJECTNUM";
 		if ($squirrelflagincstudy) $squirrelflags[] = "SQUIRREL_INCSTUDYNUM";
 		if ($squirrelflagincseries) $squirrelflags[] = "SQUIRREL_INCSERIESNUM";
-		if (count($squirrelflags) > 0)
-			$squirrelflagstr = "('" . implode2(",",$squirrelflags) . "')";
-		else
-			$squirrelflagstr = "null";
 
-		$squirreltitle = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreltitle']);
-		$squirreldesc = mysqli_real_escape_string($GLOBALS['linki'], $r['squirreldesc']);
+		$setval = function($list) { return (count($list) > 0) ? implode(",", $list) : null; };
 
-		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, nda_flags, squirrel_title, squirrel_desc, submitdate, status) values ('$username', '$ip', $downloadflagstr, '$destinationtype', '$filetype', $gzip, $preserveseries, $anonymize, '$dirformat', '$behformat', '$behdirnameroot','$behdirnameseries', '$nfsdir', '$remoteftpusername', '$remoteftppassword', '$remoteftpserver', $remoteftpport, '$remoteftppath', '$remoteftplog', $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, '$bidsreadme', $niftiflagstr, $bidsflagstr, $squirrelflagstr, $ndaflagstr, '$squirreltitle', '$squirreldesc', now(), 'submitted')";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, do_gzip, do_preserveseries, anonymization_level, dirformat, beh_format, beh_dirrootname, beh_dirseriesname, nfsdir, remoteftp_username, remoteftp_password, remoteftp_server, remoteftp_port, remoteftp_path, remoteftp_log, remotenidb_connectionid, publicdownloadid, publicdatasetid, bidsreadme, nifti_flags, bids_flags, squirrel_flags, nda_flags, squirrel_title, squirrel_desc, submitdate, status) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), 'submitted')";
+		$params = [$username, $ip, $setval($downloadflags), $destinationtype, $filetype, $gzip, $preserveseries, $anonymize, $dirformat, $behformat, $behdirnameroot, $behdirnameseries, $nfsdir, $remoteftpusername, $remoteftppassword, $remoteftpserver, $remoteftpport, $remoteftppath, $remoteconnid, $publicDownloadRowID, $publicDatasetDownloadRowID, $bidsreadme, $setval($niftiflags), $setval($bidsflags), $setval($squirrelflags), $setval($ndaflags), $squirreltitle, $squirreldesc];
+		$logparams = $params;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssssiiissssssssisiiisssssss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $logparams);
 		$exportRowID = mysqli_insert_id($GLOBALS['linki']);
-		
-		$modality = strtolower($modality);
+		mysqli_stmt_close($stmt);
 
-		/* Validate the modality before recording it. The export module builds a table name from this
-		   value (<modality>_series) and looks the series IDs up in it. Series IDs are per-table
-		   auto-increment and collide across modalities, so an invalid or mismatched modality would
-		   silently export a different subject's series that happens to share the same numeric ID. */
-		if (GetSeriesTableName($modality) == "") {
-			echo "Invalid modality [" . htmlspecialchars($modality) . "]. Export not submitted.<br>";
-			return;
-		}
-
-		/* insert all of the series into the exportseries table */
-		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
+		/* insert all of the series into the exportseries table. (The modality was validated above:
+		   the export module builds a table name from it, and series IDs collide across modalities) */
 		foreach ($seriesids as $seriesid) {
-			$seriesid = (int)$seriesid;
 			$sqlstring = "insert into exportseries (export_id, series_id, modality, status) values (?, ?, ?, 'submitted')";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'iis', $exportRowID, $seriesid, $modality);
@@ -6411,13 +6228,16 @@
 			mysqli_stmt_close($stmt);
 		}
 		$numseries = count($seriesids);
-		
+
 		?>
 		<div class="ui text container">
 			<div class="ui message">
 				<div class="header">
 					Your data export, with <?=$numseries?> series, has been submitted
 				</div>
+				<? if ($skipped > 0) { ?>
+				<p><?=$skipped?> selected series were not included: they weren't found, or you don't have <?=($ispublic ? "Edit Data" : "View Data")?> permission on their projects</p>
+				<? } ?>
 				<br>
 				<a href="requeststatus.php" class="ui primary button"><i class="external alternate icon"></i> View export status</a>
 			</div>
@@ -6429,9 +6249,9 @@
 				<table><tr><td style="border: solid yellow 1pt; background-color:lightyellow">
 				Use the following information to login to the FTP server and transfer your data:<br>
 				<pre>
-			Server/Host: <?=$GLOBALS['cfg']['localftphostname'];?>
-			Login: <?=$GLOBALS['cfg']['localftpusername'];?>
-			Password: <?=$GLOBALS['cfg']['localftppassword'];?>
+			Server/Host: <?=htmlspecialchars($GLOBALS['cfg']['localftphostname'] ?? '');?>
+			Login: <?=htmlspecialchars($GLOBALS['cfg']['localftpusername'] ?? '');?>
+			Password: <?=htmlspecialchars($GLOBALS['cfg']['localftppassword'] ?? '');?>
 			Port: 21
 				</pre>
 				</td></tr></table></div>
@@ -6442,8 +6262,8 @@
 		<br><br>
 		<?
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DelimitedListToArray --------------- */
 	/* -------------------------------------------- */
@@ -6462,65 +6282,26 @@
 	/* ------- ParseObservationSearchList --------- */
 	/* -------------------------------------------- */
 	function ParseObservationSearchList($str) {
+		/* "name=value,name>value,name<value,name~value" (~ is contains). Returns array(where clause with
+		   ? placeholders, values to bind in order), or array("", []) if there are no valid terms */
+		$newparts = array();
+		$params = array();
+		foreach (explode(',', $str) as $part) {
+			foreach (array('~' => 'like', '>' => '>', '<' => '<', '=' => '=') as $sep => $op) {
+				if (strpos($part, $sep) === false) continue;
+				list($observationname, $observationvalue) = explode($sep, $part, 2);
+				$observationname = trim($observationname);
+				$observationvalue = trim($observationvalue);
+				if ($op == 'like') $observationvalue = "%$observationvalue%";
+				$newparts[] = "(observationnames.observation_name = ? and (observations.observation_valuestring $op ? or observations.observation_valuenum $op ?))";
+				array_push($params, $observationname, $observationvalue, $observationvalue);
+				break;
+			}
+		}
+		if (count($newparts) == 0)
+			return array("", array());
 
-		$parts = explode(',',$str);
-		foreach ($parts as $part) {
-			if (strpos($part,'=') !== false) {
-				$subparts = explode('=',$part);
-				$observationname = $subparts[0];
-				$observationvalue = $subparts[1];
-				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring = '$observationvalue' or observations.observation_valuenum = '$observationvalue'))";
-				$newparts[] = $part;
-			}
-			if (strpos($part,'>') !== false) {
-				$subparts = explode('>',$part);
-				$observationname = $subparts[0];
-				$observationvalue = $subparts[1];
-				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring > '$observationvalue' or observations.observation_valuenum > '$observationvalue'))";
-				$newparts[] = $part;
-			}
-			if (strpos($part,'<') !== false) {
-				$subparts = explode('<',$part);
-				$observationname = $subparts[0];
-				$observationvalue = $subparts[1];
-				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring < '$observationvalue' or observations.observation_valuenum < '$observationvalue'))";
-				$newparts[] = $part;
-			}
-			if (strpos($part,'~') !== false) {
-				$subparts = explode('~',$part);
-				$observationname = $subparts[0];
-				$observationvalue = $subparts[1];
-				$part = "(observationnames.observation_name = '$observationname' and (observations.observation_valuestring like '%$observationvalue%' or observations.observation_valuenum like '%$observationvalue%'))";
-				$newparts[] = $part;
-			}
-		}
-		print_r($newparts);
-		if ($newparts == "") {
-			return "";
-		}
-		else {
-			return implode2(" and ", $newparts);
-		}
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- ParseObservationResultList ------------- */
-	/* -------------------------------------------- */
-	function ParseObservationResultList($str, $field) {
-
-		$parts = explode(',',$str);
-		foreach ($parts as $part) {
-			if (strpos($part,'*') !== false) {
-				$part = str_replace('*','%',$part);
-				$part = "$field like '$part'";
-			}
-			else {
-				$part = "$field = '$part'";
-			}
-			$newparts[] = $part;
-		}
-		return implode2(" or ", $newparts);
+		return array(implode(" and ", $newparts), $params);
 	}
 
 

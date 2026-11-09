@@ -750,10 +750,19 @@
 		if ($modality == "") {
 			return array("error - blank modality","","","","");
 		}
+		/* the table name is built from the modality, so it must be a valid name */
+		$seriestable = GetSeriesTableName($modality);
+		if ($seriestable == "") {
+			return array("error - invalid modality","","","","");
+		}
 		
-		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality"."series_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select * from `$seriestable` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.`$modality" . "series_id` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$seriesnum = $row['series_num'];
@@ -777,9 +786,13 @@
 	/* ------- GetDataPathFromStudyID ------------- */
 	/* -------------------------------------------- */
 	function GetDataPathFromStudyID($id) {
-		$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where b.study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$subjectid = $row['subject_id'];
@@ -796,9 +809,13 @@
 	/* -------------------------------------------- */
 	function GetStudyInfo($id) {
 		if ($id != "") {
-			$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where b.study_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$id = (int)$id;
+			$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where b.study_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
 			$uid = $row['uid'];
 			$studynum = $row['study_num'];
 			$subjectid = $row['subject_id'];
@@ -824,11 +841,20 @@
 	/* ------- GetSeriesInfo ---------------------- */
 	/* -------------------------------------------- */
 	function GetSeriesInfo($id, $modality) {
-		$sqlstring = "select * from $modality"."_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality"."series_id = '$id'";
-
-		//$sqlstring = "select * from studies b left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where b.study_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		/* the table name is built from the modality, so it must be a valid name */
+		$modality = strtolower($modality ?? '');
+		$seriestable = GetSeriesTableName($modality);
+		$row = null;
+		if ($seriestable != "") {
+			$id = (int)$id;
+			$sqlstring = "select * from `$seriestable` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.`$modality" . "series_id` = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+		}
+		if (!$row) $row = array();
 		$uid = $row['uid'];
 		$seriesnum = $row['series_num'];
 		$seriesdesc = $row['series_desc'];
@@ -1630,20 +1656,17 @@
 	/* -------------------------------------------- */
 	/* ------- GenerateRandomString --------------- */
 	/* -------------------------------------------- */
+	/* returns $length random characters from [A-Za-z0-9_]. Used for temp file and table names, so
+	   it uses random_int() (a CSPRNG) rather than rand(), which is predictable */
 	function GenerateRandomString($length)
 	{
 		$chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890_';
-		$chars_length = (strlen($chars) - 1);
-		$string = $chars[rand(0, $chars_length)];
-		
-		// Generate random string
-		for ($i = 1; $i < $length; $i = strlen($string))
-		{
-			// Grab a random character from our list
-			$r = $chars[rand(0, $chars_length)];
-			$string .=  $r;
+		$max = strlen($chars) - 1;
+		$string = '';
+		for ($i = 0; $i < $length; $i++) {
+			$string .= $chars[random_int(0, $max)];
 		}
-		
+
 		return $string;
 	}
 

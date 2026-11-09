@@ -22,7 +22,7 @@
  // ------------------------------------------------------------------------------
 
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
 	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
@@ -43,21 +43,16 @@
 
 	$username = $_SESSION['username'];
 	$instanceid = $_SESSION['instanceid'];
-	session_write_close();
 
-	//PrintVariable($_POST);
-	//PrintVariable($_GET);
-	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("update", "saveme", "submitminipipelines", "movestudytosubject", "movestudytoproject", "moveseriestonewstudy", "delete", "deleteseries", "updateseries", "addseries", "renameseries", "updateseriesnotes", "hideseries", "unhideseries", "resetqa", "resetmriqc", "updatebidsmapping", "addtogroup", "sendtopacs"));
 	$studyid = GetVariable("studyid");
 	if ($studyid == 0) { $studyid = GetVariable("id"); }
 	$studyid = (int)$studyid;
-	$subjectid = (int)GetVariable("subjectid");
-	$enrollmentid = (int)GetVariable("enrollmentid");
-	$newuid = GetVariable("newuid");
+	$newuid = trim(GetVariable("newuid") ?? '');
 	$newprojectid = (int)GetVariable("newprojectid");
-	$seriesid = (int)GetVariable("seriesid");
+	$seriesid = GetVariable("seriesid"); /* an int from this page, but an array (seriesid[]) from search.php */
 	$seriesids = GetVariable("seriesids");
 	$minipipelineid = (int)GetVariable("minipipelineid");
 	$minipipelineids = GetVariable("minipipelineids");
@@ -67,8 +62,6 @@
 	$protocol = GetVariable("protocol");
 	$seriesdesc = GetVariable("seriesdesc");
 	$imagetype = GetVariable("imagetype");
-	$bidsentity = GetVariable("bidsentity");
-	$bidssuffix = GetVariable("bidssuffix");
 	$bidsentitysuffix = GetVariable("bidsentitysuffix");
 	$bidsIntendedForEntity = GetVariable("bidsIntendedForEntity");
 	$bidsIntendedForTask = GetVariable("bidsIntendedForTask");
@@ -101,31 +94,26 @@
 	$studysnpchip = GetVariable("studysnpchip");
 	$studyaltid = GetVariable("studyaltid");
 	$studyexperimenter = GetVariable("studyexperimenter");
-	$files = GetVariable("files");
-	$value = GetVariable("value");
-	$search_pipelineid = (int)GetVariable("search_pipelineid");
-	$search_name = GetVariable("search_name");
-	$search_compare = GetVariable("search_compare");
-	$search_value = GetVariable("search_value");
-	$search_type = GetVariable("search_type");
-	$search_swversion = GetVariable("search_swversion");
-	$imgperline = GetVariable("imgperline");
-	$studyids = GetVariable("studyids");
-	$copy_date = GetVariable("copy_date");
-	$study_modality = GetVariable("study_modality");
 
 	$newseriesdesc = GetVariable("newseriesdesc");
 	$newseriesprotocol = GetVariable("newseriesprotocol");
 	$seriesnotes = GetVariable("seriesnotes");
 
-	$studytype = GetVariable("studytype");
-	$studydatetime = GetVariable("studydatetime");
 	$Sdate = GetVariable("Sdate");
-	$stmod = GetVariable("stmod");
 	$studygroupid = GetVariable("studygroupid");
 	$dicomaeid = GetVariable("dicomaeid");
 
-	/* determine action */
+	/* series ids arrive as seriesids[] from this page, and as seriesid[] from search.php */
+	$seriesids = is_array($seriesids) ? $seriesids : array();
+	if (is_array($seriesid)) {
+		$seriesids = array_merge($seriesids, $seriesid);
+		$seriesid = 0;
+	}
+	$seriesid = (int)$seriesid;
+
+	/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then
+	   redirect to a GET so a refresh/Back doesn't re-submit. Each handler checks permissions itself */
+	$studyurl = "studies.php?studyid=$studyid";
 	switch($action) {
 		case 'editform':
 			DisplayStudyForm($studyid);
@@ -134,131 +122,295 @@
 			DisplayMiniPipelineForm($studyid, $seriesids);
 			break;
 		case 'submitminipipelines':
-			/* the variable seriesid can come from the search.php page, and is an array. too much work to change all references to it
-			   so this function needs to check for both variable names: 'seriesid' and 'seriesids' */
-			SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid);
+			ob_start();
+			SubmitMiniPipelines($modality, $seriesids, $minipipelineids, $minipipelineid);
+			$_SESSION['flash'] = ob_get_clean();
+			/* from search.php there is no study to go back to, so show the mini-pipeline's jobs */
+			if ($studyid > 0) RedirectTo($studyurl);
+			elseif ($minipipelineid > 0) RedirectTo("minipipeline.php?action=viewjobs&mpid=$minipipelineid");
+			else RedirectTo("search.php");
 			break;
 		case 'update':
+			ob_start();
 			UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studydaynum, $studytimepoint, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter);
-			DisplayStudy($studyid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
-		case 'mergestudies':
-			MergeStudies($subjectid, $studyids);
+		case 'saveme':
+			ob_start();
+			SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'movestudytosubject':
-			MoveStudyToSubject2($studyid, $newuid);
-			DisplayStudy($studyid);
+			ob_start();
+			QueueMoveStudyToSubject($studyid, $newuid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'movestudytoproject':
-			MoveStudyToProject($subjectid, $studyid, $newprojectid);
-			DisplayStudy($studyid);
+			ob_start();
+			MoveStudyToProject($studyid, $newprojectid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'moveseriestonewstudy':
-			MoveSeriesToNewStudy($subjectid, $studyid, $seriesids);
-			DisplayStudy($studyid);
-			break;
-		case 'upload':
-			Upload($modality, $studyid, $seriesid);
-			DisplayStudy($studyid);
+			ob_start();
+			MoveSeriesToNewStudy($studyid, $seriesids);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'deleteconfirm':
 			DeleteConfirm($studyid);
 			break;
 		case 'delete':
-			Delete($studyid);
+			ob_start();
+			$subjectid = Delete($studyid);
+			$_SESSION['flash'] = ob_get_clean();
+			/* the study is gone, so go back to its subject */
+			if ($subjectid > 0) RedirectTo("subjects.php?id=$subjectid");
+			else RedirectTo($studyurl);
 			break;
 		case 'deleteseries':
-			DeleteSeries($studyid, $seriesid, $seriesids, $modality);
-			DisplayStudy($studyid);
+			ob_start();
+			DeleteSeries($studyid, $seriesid, $seriesids);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'editseries':
-			if (strtoupper($modality) != "MR") {
-				EditGenericSeries($seriesid, $modality);
-			}
+			EditGenericSeries($seriesid, $modality);
 			break;
 		case 'updateseries':
-			if (strtoupper($modality) != "MR") {
-				UpdateGenericSeries($seriesid, $modality, $protocol, $series_datetime, $notes);
-			}
+			ob_start();
+			$seriesstudyid = UpdateGenericSeries($seriesid, $modality, $protocol, $series_datetime, $notes);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("studies.php?studyid=" . (int)$seriesstudyid);
 			break;
 		case 'addseries':
-			if (strtoupper($modality) != "MR") {
-				AddGenericSeries($studyid, $modality, $series_num, $protocol, $series_datetime, $notes);
-			}
-			elseif ($modality == "MR") {
-				AddMRSeries($studyid);
-			}
-			DisplayStudy($studyid);
-			break;
-		case 'rateseries':
-			AddRating($seriesid, $modality, $value, $username);
-			DisplayStudy($studyid);
+			ob_start();
+			AddGenericSeries($studyid, $series_num, $protocol, $series_datetime, $notes);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'renameseriesform':
 			RenameSeriesForm($studyid, $seriesids);
 			break;
 		case 'renameseries':
+			ob_start();
 			RenameSeries($studyid, $newseriesdesc, $newseriesprotocol);
-			DisplayStudy($studyid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'updateseriesnotesform':
 			UpdateSeriesNotesForm($studyid, $seriesids);
 			break;
 		case 'updateseriesnotes':
+			ob_start();
 			UpdateSeriesNotes($studyid, $seriesnotes);
-			DisplayStudy($studyid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'hideseries':
-			HideSeries($modality, $seriesids);
-			DisplayStudy($studyid);
+			ob_start();
+			SetSeriesHidden($studyid, $seriesids, 1);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'unhideseries':
-			UnhideSeries($modality, $seriesids);
-			DisplayStudy($studyid);
+			ob_start();
+			SetSeriesHidden($studyid, $seriesids, 0);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'resetqa':
-			ResetQA($seriesids);
-			DisplayStudy($studyid);
+			ob_start();
+			ResetStudyQC($studyid, $seriesids, "basic");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'resetmriqc':
-			ResetMRIQC($seriesids);
-			DisplayStudy($studyid);
+			ob_start();
+			ResetStudyQC($studyid, $seriesids, "mriqc");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'editbidsmapping':
 			EditBIDSMapping($seriesid, $modality);
 			break;
 		case 'updatebidsmapping':
+			ob_start();
 			UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidstask, $bidspedirection);
-			DisplayStudy($studyid);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($studyurl);
 			break;
 		case 'displayfiles':
 			DisplayStudy($studyid, true);
 			break;
-		case 'saveme':
-			SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod);
-			DisplayStudy($studyid, $audit, $fix, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline, false);
-			break;
-		/* mutating action uses POST/Redirect/GET: run the handler, stash its message,
-		   then redirect back to the study so a refresh/Back doesn't re-submit */
 		case 'addtogroup':
 			ob_start();
 			AddStudyToGroup($studyid, $studygroupid);
 			$_SESSION['flash'] = ob_get_clean();
-			RedirectTo("studies.php?studyid=" . (int)$studyid);
+			RedirectTo($studyurl);
 			break;
 		case 'sendtopacs':
 			ob_start();
-			QueueDICOMTransfer($modality, $seriesids, $dicomaeid);
+			QueueDICOMTransfer($studyid, $seriesids, $dicomaeid);
 			$_SESSION['flash'] = ob_get_clean();
-			RedirectTo("studies.php?studyid=" . (int)$studyid);
+			RedirectTo($studyurl);
 			break;
 		default:
 			ShowFlashMessage();
+			session_write_close(); /* nothing below writes to the session; release the lock so other pages aren't blocked while this one renders */
 			DisplayStudy($studyid);
 	}
-	
-	
+
+
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudyRow ------------------------ */
+	/* -------------------------------------------- */
+	/* the study, with its enrollment, subject, and project. Returns null if not found */
+	function GetStudyRow($studyid) {
+		$studyid = (int)$studyid;
+		if ($studyid <= 0) return null;
+
+		$sqlstring = "select a.*, b.subject_id, b.project_id, c.uid, d.project_name, d.project_costcenter from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $studyid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return $row ? $row : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckStudyPerm --------------------- */
+	/* -------------------------------------------- */
+	/* returns the study row if the current user has $perm ('viewdata' or 'modifydata') on the
+	   study's project, otherwise prints an error and returns null. $adminonly also requires an
+	   admin, for the study operations that are only offered to admins */
+	function CheckStudyPerm($studyid, $perm, $adminonly = false) {
+		$row = GetStudyRow($studyid);
+		if ($row === null) {
+			Error("Study not found");
+			return null;
+		}
+
+		if ($adminonly && !IsAdminUser()) {
+			Error("Only administrators can perform this operation");
+			return null;
+		}
+
+		$projectid = (int)$row['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		if (!GetPerm($perms, $perm, $projectid)) {
+			Error("You do not have " . (($perm == 'modifydata') ? "Edit Data" : "View Data") . " permission on this study's project");
+			return null;
+		}
+
+		return $row;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSeriesTable --------------------- */
+	/* -------------------------------------------- */
+	/* returns [table, id column] for a modality's series table, or null if the modality isn't
+	   one with a series table. The names are built from the modality, so it must be validated */
+	function GetSeriesTable($modality) {
+		$modality = strtolower(trim($modality ?? ''));
+		$table = GetSeriesTableName($modality);
+		if ($table == "") return null;
+
+		$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $table);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$table]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$exists) return null;
+
+		return array($table, $modality . "series_id");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudySeriesIDs ------------------ */
+	/* -------------------------------------------- */
+	/* of the requested series ids, returns the ones that belong to this study (study row from
+	   GetStudyRow). Series ids from the request are never used without this check */
+	function GetStudySeriesIDs($study, $seriesids) {
+		$t = GetSeriesTable($study['study_modality'] ?? '');
+		if ($t === null) return array();
+		list($table, $idcol) = $t;
+
+		if (!is_array($seriesids)) $seriesids = array($seriesids);
+		$ids = array_values(array_unique(array_filter(array_map('intval', $seriesids), function($v) { return $v > 0; })));
+		if (count($ids) == 0) return array();
+
+		$studyid = (int)$study['study_id'];
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select `$idcol` 'id' from `$table` where study_id = ? and `$idcol` in ($placeholders)";
+		$params = array_merge(array($studyid), $ids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($params)), ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$valid = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$valid[] = (int)$row['id'];
+		}
+		mysqli_stmt_close($stmt);
+
+		return $valid;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetSeriesStudyID ------------------- */
+	/* -------------------------------------------- */
+	/* the study a series belongs to, or 0 */
+	function GetSeriesStudyID($modality, $seriesid) {
+		$t = GetSeriesTable($modality);
+		if ($t === null) return 0;
+		list($table, $idcol) = $t;
+
+		$seriesid = (int)$seriesid;
+		$sqlstring = "select study_id from `$table` where `$idcol` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		return (int)($row['study_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- NullIfBlank ------------------------ */
+	/* -------------------------------------------- */
+	/* for optional form fields stored as NULL when left blank */
+	function NullIfBlank($v) {
+		$v = trim($v ?? '');
+		return ($v == "") ? null : $v;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FormatStudyDateTime ---------------- */
+	/* -------------------------------------------- */
+	/* normalize a date/time from a form (including datetime-local's 'T') to 'Y-m-d H:i:s', or "" if invalid */
+	function FormatStudyDateTime($dt) {
+		$dt = trim(str_ireplace("T", " ", $dt ?? ''));
+		if ($dt == "") return "";
+		$ts = strtotime($dt);
+		if ($ts === false) return "";
+		return date("Y-m-d H:i:s", $ts);
+	}
 
 
 	/* -------------------------------------------- */
@@ -266,18 +418,22 @@
 	/* -------------------------------------------- */
 	/* queue the selected series to be sent to a remote DICOM AE (PACS). Only series with
 	   data_type 'dicom' are queued; the export module does the actual DICOM send */
-	function QueueDICOMTransfer($modality, $seriesids, $dicomaeid) {
-		if ($_SERVER['REQUEST_METHOD'] != 'POST') { Error("DICOM transfers must be submitted from the study page"); return; }
+	function QueueDICOMTransfer($studyid, $seriesids, $dicomaeid) {
+		/* sending data off-site is like downloading it: View Data on the study's project */
+		$study = CheckStudyPerm($studyid, 'viewdata');
+		if ($study === null) return;
 
 		$dicomaeid = (int)$dicomaeid;
-		$modality = strtolower($modality ?? '');
 
-		/* the export module builds the table name from this modality (<modality>_series), so validate it */
-		$seriestable = GetSeriesTableName($modality);
-		if (($seriestable == "") || !IsNiDBModality($modality)) {
+		/* the export module builds the table name from this modality (<modality>_series). It comes
+		   from the study, never the request, and must have a series table */
+		$modality = strtolower($study['study_modality'] ?? '');
+		$t = GetSeriesTable($modality);
+		if ($t === null) {
 			Error("Invalid modality [" . htmlspecialchars($modality) . "]. DICOM transfer not queued");
 			return;
 		}
+		list($seriestable, $idcol) = $t;
 
 		/* get the destination AE */
 		$sqlstring = "select ae_title, ae_hostname, ae_ip, ae_port from dicom_ae where dicomae_id = ?";
@@ -289,13 +445,14 @@
 		if (!$aerow) { Error("DICOM AE end point not found. DICOM transfer not queued"); return; }
 		$aehost = ($aerow['ae_hostname'] != "") ? $aerow['ae_hostname'] : $aerow['ae_ip'];
 
-		/* keep only the series that exist and are DICOM */
-		$seriesids = is_array($seriesids) ? $seriesids : (($seriesids == "") ? [] : [$seriesids]);
+		/* keep only the series that belong to this study and are DICOM */
+		$seriesids = GetStudySeriesIDs($study, $seriesids);
+		if (count($seriesids) == 0) { Error("No series from this study were selected. DICOM transfer not queued"); return; }
 		$dicomseriesids = array();
 		$skipped = array();
 		foreach ($seriesids as $seriesid) {
 			$seriesid = (int)$seriesid;
-			$sqlstring = "select series_num, data_type from $seriestable where $modality" . "series_id = ?";
+			$sqlstring = "select series_num, data_type from `$seriestable` where `$idcol` = ?";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, 'i', $seriesid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
@@ -350,6 +507,10 @@
 		$studyid = (int)$studyid;
 		$groupid = (int)$groupid;
 
+		/* groups only hold references, but don't let a user collect studies they can't see */
+		$study = CheckStudyPerm($studyid, 'viewdata');
+		if ($study === null) return;
+
 		/* make sure the group exists and is a study group */
 		$sqlstring = "select group_name from groups where group_id = ? and group_type = 'study'";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -360,16 +521,8 @@
 		$groupname = htmlspecialchars($row['group_name']);
 		mysqli_stmt_close($stmt);
 
-		/* get the study's UID, study number, and modality */
-		$sqlstring = "select a.study_num, a.study_modality, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $studyid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
-		if (mysqli_num_rows($result) < 1) { mysqli_stmt_close($stmt); Error("Study not found"); return; }
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$studyname = htmlspecialchars(($row['uid'] ?? '') . $row['study_num']);
-		$modality = strtolower($row['study_modality'] ?? '');
-		mysqli_stmt_close($stmt);
+		$studyname = htmlspecialchars(($study['uid'] ?? '') . $study['study_num']);
+		$modality = strtolower($study['study_modality'] ?? '');
 
 		/* check if it's already in the group (same matching as groups.php AddStudiesToGroup) */
 		$sqlstring = "select subjectgroup_id from group_data where group_id = ? and data_id = ? and modality = ?";
@@ -393,55 +546,49 @@
 	}
 
 
-	 /* ------------------------------------ functions MAM------------------------------------ */
+	/* -------------------------------------------- */
+	/* ------- SaveSt ----------------------------- */
+	/* -------------------------------------------- */
+	/* the "Quick Update" box on the study page (non-MR studies). Optionally copies the
+	   study date/time to all of the study's series */
+	function SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
 
-
-    /* ----------------Update Studies---------------------------- */
-    /* -------------------------------------------- */
-	function SaveSt($studyid, $studytype, $studydaynum, $studytimepoint, $studydatetime, $Sdate, $stmod) {
-		
-		/* perform data checks */
-		//$studydatetime = str_ireplace("T", " ", $studydatetime) . ":00";
-		$stmod = strtolower($stmod);
+		$studydatetime = FormatStudyDateTime($studydatetime);
+		if ($studydatetime == "") {
+			Error("Invalid study date/time. Study not updated");
+			return;
+		}
+		$studytype = trim($studytype ?? '');
 		$studydaynum = (int)$studydaynum;
 		$studytimepoint = (int)$studytimepoint;
 
-		/* update the user */
+		$sqlstring = "update studies set study_datetime = ?, study_type = ?, study_daynum = ?, study_timepoint = ? where study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssiii', $studydatetime, $studytype, $studydaynum, $studytimepoint, $studyid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studydatetime, $studytype, $studydaynum, $studytimepoint, $studyid]);
+		mysqli_stmt_close($stmt);
 
-		if ($Sdate != 'on') {
-			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $studyid";
-        	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}		
-		elseif ($Sdate == 'on') {
-			$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $studyid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-
-			$sqlstring1 = "update $stmod"."_series set series_datetime = '$studydatetime' where study_id = $studyid";
-			$result1 = MySQLiQuery($sqlstring1, __FILE__, __LINE__);
+		/* the series table comes from the study's own modality, never from the request */
+		if ($Sdate == 'on') {
+			$t = GetSeriesTable($study['study_modality']);
+			if ($t === null) {
+				Error("Study updated, but its modality has no series table, so the series were not updated");
+				return;
+			}
+			list($table, $idcol) = $t;
+			$sqlstring = "update `$table` set series_datetime = ? where study_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $studydatetime, $studyid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studydatetime, $studyid]);
+			mysqli_stmt_close($stmt);
+			Notice("Study and series updated");
+			return;
 		}
 
-		Notice("Study Updated");
-		
-	}	
-	
-	
-	/* -------------------------------------------- */
-	/* ------- AddRating -------------------------- */
-	/* -------------------------------------------- */
-	function AddRating($seriesid, $modality, $value, $username) {
-		/* check for valid inputs */
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		$value = mysqli_real_escape_string($GLOBALS['linki'], $value);
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		if (!ValidID($seriesid,'Series ID')) { return; }
-
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$user_id = $row['user_id'];
-		
-		$sqlstring = "insert into manual_qa (series_id, modality, rater_id, value) values ($seriesid, '$modality', $user_id, $value) on duplicate key update value = $value";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		Notice("Study updated");
 	}
 
 
@@ -449,334 +596,280 @@
 	/* ------- UpdateStudy ------------------------ */
 	/* -------------------------------------------- */
 	function UpdateStudy($studyid, $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, $studytype, $studydaynum, $studytimepoint, $studyoperator, $studyphysician, $studysite, $studynotes, $studydoradread, $studyradreaddate, $studyradreadfindings, $studyetsnellchart, $studyetvergence, $studyettracking, $studysnpchip, $studyaltid, $studyexperimenter) {
-		/* perform data checks */
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-		$studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
-		$studyageatscan = mysqli_real_escape_string($GLOBALS['linki'], $studyageatscan);
-		$studyheight = mysqli_real_escape_string($GLOBALS['linki'], $studyheight);
-		$studyweight = mysqli_real_escape_string($GLOBALS['linki'], $studyweight);
-		$studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
-		$studydaynum = mysqli_real_escape_string($GLOBALS['linki'], $studydaynum);
-		$studytimepoint = mysqli_real_escape_string($GLOBALS['linki'], $studytimepoint);
-		$studyoperator = mysqli_real_escape_string($GLOBALS['linki'], $studyoperator);
-		$studyphysician = mysqli_real_escape_string($GLOBALS['linki'], $studyphysician);
-		$studysite = mysqli_real_escape_string($GLOBALS['linki'], $studysite);
-		$studynotes = mysqli_real_escape_string($GLOBALS['linki'], $studynotes);
-		$studyradreaddate = mysqli_real_escape_string($GLOBALS['linki'], $studyradreaddate);
-		$studyradreadfindings = mysqli_real_escape_string($GLOBALS['linki'], $studyradreadfindings);
-		$studyetsnellchart = mysqli_real_escape_string($GLOBALS['linki'], $studyetsnellchart);
-		$studyetvergence = mysqli_real_escape_string($GLOBALS['linki'], $studyetvergence);
-		$studyettracking = mysqli_real_escape_string($GLOBALS['linki'], $studyettracking);
-		$studysnpchip = mysqli_real_escape_string($GLOBALS['linki'], $studysnpchip);
-		$studyaltid = mysqli_real_escape_string($GLOBALS['linki'], $studyaltid);
-		$studyexperimenter = mysqli_real_escape_string($GLOBALS['linki'], $studyexperimenter);
-		
-		if ($studydoradread == "") $studydoradread = "0";
-		if ($studyradreaddate == "") $studyradreaddate = "null"; else $studyradreaddate = "'$studyradreaddate'";
-		if ($studyetsnellchart == "") $studyetsnellchart = "null"; else $studyetsnellchart = "'$studyetsnellchart'";
-		if ($studytimepoint == "") $studytimepoint = "null"; else $studytimepoint = "'$studytimepoint'";
-		if ($studydaynum == "") $studydaynum = "null"; else $studydaynum = "'$studydaynum'";
-		if ($studyheight == "") $studyheight = "null"; else $studyheight = "'$studyheight'";
-		if ($studyweight == "") $studyweight = "null"; else $studyweight = "'$studyweight'";
-		if ($studyageatscan == "") $studyageatscan = "null"; else $studyageatscan = "'$studyageatscan'";
-		
-		/* update the user */
-		$sqlstring = "update studies set study_experimenter = '$studyexperimenter', study_alternateid = '$studyaltid', study_modality = '$modality', study_datetime = '$studydatetime', study_ageatscan = $studyageatscan, study_height = $studyheight, study_weight = $studyweight, study_type = '$studytype', study_daynum = $studydaynum, study_timepoint = $studytimepoint, study_operator = '$studyoperator', study_performingphysician = '$studyphysician', study_site = '$studysite', study_notes = '$studynotes', study_doradread = '$studydoradread', study_radreaddate = $studyradreaddate, study_radreadfindings = '$studyradreadfindings', study_etsnellenchart = $studyetsnellchart, study_etvergence = '$studyetvergence', study_ettracking = '$studyettracking', study_snpchip = '$studysnpchip', study_status = 'complete' where study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+
+		/* the modality must be one of the defined modalities */
+		$modality = trim($modality ?? '');
+		$sqlstring = "select mod_code from modalities where mod_code = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modality]);
+		$validmodality = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$validmodality) {
+			Error("Invalid modality [" . htmlspecialchars($modality) . "]. Study not updated");
+			return;
+		}
+
+		$studydatetime = FormatStudyDateTime($studydatetime);
+		if ($studydatetime == "") {
+			Error("Invalid study date/time. Study not updated");
+			return;
+		}
+
+		$studydoradread = ($studydoradread == "1") ? 1 : 0;
+		$studyradreaddate = NullIfBlank($studyradreaddate);
+		$studyetsnellchart = NullIfBlank($studyetsnellchart);
+		$studytimepoint = NullIfBlank($studytimepoint);
+		$studydaynum = NullIfBlank($studydaynum);
+		$studyheight = NullIfBlank($studyheight);
+		$studyweight = NullIfBlank($studyweight);
+		$studyageatscan = NullIfBlank($studyageatscan);
+
+		$sqlstring = "update studies set study_experimenter = ?, study_alternateid = ?, study_modality = ?, study_datetime = ?, study_ageatscan = ?, study_height = ?, study_weight = ?, study_type = ?, study_daynum = ?, study_timepoint = ?, study_operator = ?, study_performingphysician = ?, study_site = ?, study_notes = ?, study_doradread = ?, study_radreaddate = ?, study_radreadfindings = ?, study_etsnellenchart = ?, study_etvergence = ?, study_ettracking = ?, study_snpchip = ?, study_status = 'complete' where study_id = ?";
+		$params = [trim($studyexperimenter ?? ''), trim($studyaltid ?? ''), $modality, $studydatetime, $studyageatscan, $studyheight, $studyweight, trim($studytype ?? ''), $studydaynum, $studytimepoint, trim($studyoperator ?? ''), trim($studyphysician ?? ''), trim($studysite ?? ''), $studynotes ?? '', $studydoradread, $studyradreaddate, trim($studyradreadfindings ?? ''), $studyetsnellchart, trim($studyetvergence ?? ''), trim($studyettracking ?? ''), trim($studysnpchip ?? ''), $studyid];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssssssssssssssissssssi', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
 		Notice("Study Updated");
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- UpdateStSe ------------------------ */
-	/* -------------------------------------------- */
-	function UpdateStSe($id, $studydatetime, $studytype, $studydaynum, $studytimepoint, $copy_date, $study_modality) {
-		/* perform data checks */
-		$studydatetime = mysqli_real_escape_string($GLOBALS['linki'], $studydatetime);
-		$studytype = mysqli_real_escape_string($GLOBALS['linki'], $studytype);
-		$studydaynum = mysqli_real_escape_string($GLOBALS['linki'], $studydaynum);
-		$studytimepoint = mysqli_real_escape_string($GLOBALS['linki'], $studytimepoint);
-		$copy_date = mysqli_real_escape_string($GLOBALS['linki'], $copy_date);
-		$study_modality = mysqli_real_escape_string($GLOBALS['linki'], $study_modality);
-		$studydatetime = date("Y-m-d H:i",strtotime($studydatetime));
-
-		/* Update Command */
-		$sqlstring = "update studies set study_datetime = '$studydatetime', study_type = '$studytype', study_daynum = '$studydaynum', study_timepoint = '$studytimepoint' where study_id = $id";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if ($copy_date=="Y"){
-			$sqlstringS = "update `" . strtolower($study_modality) . "_series` set series_datetime = '$studydatetime' where study_id = $id";
-			$result = MySQLiQuery($sqlstringS, __FILE__, __LINE__);
-			Notice("Study and series updated [$copy_date]");
-		}
-		else {
-			Notice("Study updated [$copy_date]");
-		}
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- AddGenericSeries ------------------- */
 	/* -------------------------------------------- */
-	function AddGenericSeries($studyid, $modality, $series_num, $protocol, $series_datetime, $notes) {
-		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
-		if (!ValidID($studyid,'Study ID')) { return; }
+	/* add an empty series to a non-MR study. The series table comes from the study's modality */
+	function AddGenericSeries($studyid, $series_num, $protocol, $series_datetime, $notes) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
 
-		$sqlstring = "insert into " . strtolower($modality) . "_series (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values ($studyid, '$series_num', '$series_datetime', '$protocol', '$notes', '" . $GLOBALS['username'] . "')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		?><div align="center"><span class="message">Series Added</span></div><?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- MergeStudies ----------------------- */
-	/* -------------------------------------------- */
-	function MergeStudies($subjectid, $studyids) {
-		$subjectid = mysqli_real_escape_string($GLOBALS['linki'], $subjectid);
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-
-		$sqlstring = "select uid from subjects where subject_id = $subjectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		
-		if (!is_numeric($subjectid)) {
-			echo "Invalid subject ID [$subjectid]";
-		}
-		
-		$lowestStudyNum = 0;
-		$newstudyid = 0;
-		$basemodality = "";
-		foreach ($studyids as $studyid) {
-			if (is_numeric($studyid)) {
-				list($path, $uid, $studynum, $studyid, $subjectid, $modality) = GetDataPathFromStudyID($studyid);
-				
-				/* get the lowest study number */
-				if ($lowestStudyNum == 0) {
-					$lowestStudyNum = $studynum;
-					$newstudyid = $studyid;
-				}
-				else {
-					if ($studynum < $lowestStudyNum) {
-						$lowestStudyNum = $studynum;
-						$newstudyid = $studyid;
-					}
-				}
-				
-				/* check if the modalities are the same */
-				if ($basemodality == "") {
-					$basemodality = $modality;
-				}
-				if ($basemodality != $modality) {
-					echo "Study modalities do not all match. You can't merge studies with different modalities<br>";
-					return;
-				}
-				
-			}
-		}
-		
-		$basemodality = strtolower($basemodality);
-		
-		if ($basemodality == "") {
-			echo "Modality is blank. Can't merge studies with blank modalities<br>";
+		if (strtolower($study['study_modality']) == "mr") {
+			Error("MR series can't be added by hand. They are created when DICOM data is imported");
 			return;
 		}
-		
-		/* start a transaction */
-		$sqlstring = "start transaction";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		
-		/* get largest series number from the new study */
-		$sqlstring = "select max(series_num) 'maxseries' from $basemodality"."_series where study_id = $newstudyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$maxseries = $row['maxseries'];
-		
-		echo "<b>Moving all studies to study ID [$newstudyid] Num [$lowestStudyNum]. Moving data into [" . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum]</b><br>";
-		
-		echo "<ol>";
-		/* step 2 - Move all database series to the new study */
-		$newseries = $maxseries + 1;
-		foreach ($studyids as $studyid) {
-			if ((is_numeric($studyid)) && ($studyid != $newstudyid)) {
-				list($studypath, $uid, $studynum, $studyid, $subjectid, $modality) = GetDataPathFromStudyID($studyid);
-				$modality = strtolower($modality);
-
-				$sqlstring = "select * from $modality"."_series where study_id = $studyid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$seriesid = $row[$modality."series_id"];
-				
-					list($datapath, $seriespath, $qpath, $seriesuid, $seriesstudynum, $seriesstudyid, $seriessubjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-					$systemstring = "mkdir -p " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries; mv -v $datapath/* " . $GLOBALS['cfg']['archivedir'] . "/$uid/$lowestStudyNum/$newseries/";
-					echo "<li>Moving data [<tt style='color:darkred'>$systemstring</tt>]";
-					echo "<pre>" . shell_exec($systemstring) . "</pre>";
-
-					$sqlstringA = "update $modality"."_series set study_id = $newstudyid, series_num = $newseries where $modality"."series_id = $seriesid";
-					echo "<li>Changing database entry for <b>series</b> [$sqlstring]";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					$newseries++;
-				}
-				$sqlstring = "delete from studies where study_id = $studyid";
-				echo "<li>Deleting database entry for <b>study</b> [$sqlstring]";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			}
+		$t = GetSeriesTable($study['study_modality']);
+		if ($t === null) {
+			Error("This study's modality [" . htmlspecialchars($study['study_modality']) . "] has no series table. Series not added");
+			return;
 		}
-		echo "</ol>";
-		
-		/* commit the transaction */
-		$sqlstring = "commit";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		list($table, $idcol) = $t;
+
+		$series_num = (int)$series_num;
+		$protocol = trim($protocol ?? '');
+		$notes = trim($notes ?? '');
+		$series_datetime = FormatStudyDateTime($series_datetime);
+		if ($series_datetime == "") {
+			Error("Invalid series date/time. Series not added");
+			return;
+		}
+		$createdby = $GLOBALS['username'];
+
+		$sqlstring = "insert into `$table` (study_id, series_num, series_datetime, series_protocol, series_notes, series_createdby) values (?, ?, ?, ?, ?, ?)";
+		$params = [$studyid, $series_num, $series_datetime, $protocol, $notes, $createdby];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iissss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		Notice("Series added");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- MoveSeriesToNewStudy --------------- */
 	/* -------------------------------------------- */
-	function MoveSeriesToNewStudy($subjectid, $studyid, $seriesids) {
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		
+	/* copy this (MR) study to a new study for the same subject/enrollment, then move the selected
+	   series into it, copying the series directories within the archive */
+	function MoveSeriesToNewStudy($studyid, $seriesids) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+
+		if (strtolower($study['study_modality']) != "mr") {
+			Error("Only MR series can be moved to a new study");
+			return;
+		}
+
+		/* only series that belong to this study */
+		$sids = GetStudySeriesIDs($study, $seriesids);
+		if (count($sids) == 0) {
+			Error("No series from this study were selected");
+			return;
+		}
+		$placeholders = implode(',', array_fill(0, count($sids), '?'));
+		$sidtypes = str_repeat('i', count($sids));
+
+		$uid = $study['uid'];
+		$oldstudynum = (int)$study['study_num'];
+		$subjectid = (int)$study['subject_id'];
+		$projectid = (int)$study['project_id'];
+		$enrollmentid = (int)$study['enrollment_id'];
+		$archivedir = $GLOBALS['cfg']['archivedir'];
+
 		$logmsg = "";
 		echo "<ol>";
-		
+
 		/* start a transaction */
-		$sqlstring = "start transaction";
-		echo "<li>Start transaction [ <span class='tt'>$sqlstring</span>]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$logmsg .= "$sqlstring\n";
-		
+		MySQLiQuery("start transaction", __FILE__, __LINE__);
+		echo "<li>Start transaction";
+		$logmsg .= "start transaction\n";
+
 		/* get lowest seriesdatetime, make that the new study time */
-		if (is_array($seriesids)) {
-			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
-		}
-		else {
-			$sqlstring = "select min(a.series_datetime) 'newstudydatetime', b.study_num from mr_series a left join studies b on a.study_id = b.study_id where a.mrseries_id = $seriesids";
-		}
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		echo "<li>Get new study datetime [ <span class='tt'>$sqlstring</span> ]";
+		$sqlstring = "select min(series_datetime) 'newstudydatetime' from mr_series where mrseries_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $sidtypes, ...$sids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $sids);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$newstudydatetime = $row['newstudydatetime'];
-		$oldstudynum = $row['study_num'];
-		echo "<li>New study datetime [$newstudydatetime]";
-		$logmsg .= "[$sqlstring] NewStudyDatetime [$newstudydatetime]\n";
-		
+		echo "<li>New study datetime [" . htmlspecialchars($newstudydatetime ?? '') . "]";
+		$logmsg .= "NewStudyDatetime [$newstudydatetime]\n";
+
 		/* get largest study_num for this subject */
-		$sqlstring = "select max(study_num) 'maxstudynum', b.project_id, b.enrollment_id, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.subject_id = $subjectid";
-		echo "<li>Get new study number [ <span class='tt'>$sqlstring</span> ]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select max(a.study_num) 'maxstudynum' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id where b.subject_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $subjectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$projectid = $row['project_id'];
-		$enrollmentid = $row['enrollment_id'];
-		$newstudynum = $row['maxstudynum'] + 1;
+		mysqli_stmt_close($stmt);
+		$newstudynum = (int)$row['maxstudynum'] + 1;
 		echo "<li>New study number [$newstudynum]";
-		$logmsg .= "[$sqlstring] NewStudyNumber [$newstudynum]\n";
+		$logmsg .= "NewStudyNumber [$newstudynum]\n";
 
 		/* copy the study, get the new study number */
 		/* 1 - create temp table */
-		$sqlstring = "create temporary table tmp_studies select * from studies where study_id = $studyid";
-		echo "<li>Copy study into temp table [$sqlstring]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$logmsg .= "$sqlstring\n";
-		
+		$sqlstring = "create temporary table tmp_studies select * from studies where study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $studyid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+		mysqli_stmt_close($stmt);
+		echo "<li>Copy study into temp table";
+		$logmsg .= "create temporary table tmp_studies (study $studyid)\n";
+
 		/* 2 - update the temp table with new study num, and datetime */
-		$sqlstring = "update tmp_studies set study_id = 0, study_num = $newstudynum, study_datetime = '$newstudydatetime'";
-		echo "<li>Update temp table [ <span class='tt'>$sqlstring</span> ]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$logmsg .= "$sqlstring\n";
+		$sqlstring = "update tmp_studies set study_id = 0, study_num = ?, study_datetime = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $newstudynum, $newstudydatetime);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newstudynum, $newstudydatetime]);
+		mysqli_stmt_close($stmt);
+		echo "<li>Update temp table";
+		$logmsg .= "update tmp_studies\n";
 
 		/* 3 - copy the new study to the studies table */
-		$sqlstring = "insert into studies select * from tmp_studies";
-		echo "<li>Copy new study into studies table [ <span class='tt'>$sqlstring</span> ]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		MySQLiQuery("insert into studies select * from tmp_studies", __FILE__, __LINE__);
 		$newstudyid = mysqli_insert_id($GLOBALS['linki']);
-		$logmsg .= "[$sqlstring] NewStudyID [$newstudyid]\n";
+		echo "<li>Copy new study into studies table. New study ID [$newstudyid]";
+		$logmsg .= "insert into studies. NewStudyID [$newstudyid]\n";
 
-		/* get all series numbers */
-		if (is_array($seriesids)) {
-			$sqlstring = "select series_num from mr_series where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
-		}
-		else {
-			$sqlstring = "select series_num from mr_series where mrseries_id = $seriesids";
-		}
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$logmsg .= "$sqlstring\n";
-		/* foreach series, move it to the new study directory */
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$seriesnum = $row['series_num'];
-			
-			/* copy the data, don't move in case there is a problem */
-			$oldpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$oldstudynum/$seriesnum";
-			$newpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$newstudynum/$seriesnum";
-			$oldpathrenamed = $GLOBALS['cfg']['archivedir'] . "/$uid/$oldstudynum/$seriesnum-" . GenerateRandomString(10);
-			
-			if (!file_exists($oldpath)) {
-				?><li><b style="color: red">The original path [<?=$oldpath?>] does not exist</b><?
-				$logmsg .= "Original path [$oldpath] does not exist\n";
-				return;
-			}
-			
-			$systemstring = "mkdir -pv $newpath 2>&1";
-			$copyresults = shell_exec($systemstring);
-			echo "<li>Creating new directory. Command [ <span class='tt'>$systemstring</span> ] Output [ <span class='tt'>$copyresults</span> ]";
-			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
-			
-			if (!file_exists($newpath)) {
-				?><li><b style="color: red">The new path [<?=$newpath?>] does not exist</b><?
-				$logmsg .= "New path [$newpath] does not exist! [$copyresults]\n";
-				return;
-			}
-			
-			$systemstring = "rsync -rtuv $oldpath/* $newpath/ 2>&1";
-			echo "<li>Moving series data within archive directory (may take a while). Command [<span class='tt'>$systemstring</span>] Output:<br>";
-			$copyresults = shell_exec($systemstring);
-			echo "<pre style='background-color: #eee'><span class='tt'>$copyresults</span></pre>";
-			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
-			
-			$systemstring = "mv $oldpath $oldpathrenamed 2>&1";
-			echo "<li>Renaming original series directory. Command [<tt>$systemstring</tt>] Output:<br>";
-			$copyresults = shell_exec($systemstring);
-			echo "<pre style='background-color: #eee'><tt>$copyresults</tt></pre>";
-			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
-			
-		}
-		
 		/* 4 - drop the temp table */
-		$sqlstring = "drop temporary table if exists tmp_studies";
-		echo "<li>Drop temporary table [ <tt>$sqlstring</tt> ]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$logmsg .= "$sqlstring\n";
-		
+		MySQLiQuery("drop temporary table if exists tmp_studies", __FILE__, __LINE__);
+		echo "<li>Drop temporary table";
+		$logmsg .= "drop temporary table\n";
+
+		/* foreach series, copy it to the new study directory */
+		$sqlstring = "select series_num from mr_series where mrseries_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $sidtypes, ...$sids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $sids);
+		mysqli_stmt_close($stmt);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesnum = (int)$row['series_num'];
+
+			/* copy the data, don't move in case there is a problem */
+			$oldpath = "$archivedir/$uid/$oldstudynum/$seriesnum";
+			$newpath = "$archivedir/$uid/$newstudynum/$seriesnum";
+			$oldpathrenamed = "$archivedir/$uid/$oldstudynum/$seriesnum-" . GenerateRandomString(10);
+
+			if (!file_exists($oldpath)) {
+				MySQLiQuery("rollback", __FILE__, __LINE__);
+				?><li><b style="color: red">The original path [<?=htmlspecialchars($oldpath)?>] does not exist. Stopped, and the database changes were rolled back (series directories already copied above were not moved back)</b></ol><?
+				return;
+			}
+
+			$systemstring = "mkdir -pv " . escapeshellarg($newpath) . " 2>&1";
+			$copyresults = shell_exec($systemstring);
+			echo "<li>Creating new directory. Command [ <span class='tt'>" . htmlspecialchars($systemstring) . "</span> ] Output [ <span class='tt'>" . htmlspecialchars($copyresults ?? '') . "</span> ]";
+			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
+
+			if (!file_exists($newpath)) {
+				MySQLiQuery("rollback", __FILE__, __LINE__);
+				?><li><b style="color: red">The new path [<?=htmlspecialchars($newpath)?>] could not be created. Stopped, and the database changes were rolled back (series directories already copied above were not moved back)</b></ol><?
+				return;
+			}
+
+			/* the trailing '/.' copies the directory's contents, including dot files */
+			$systemstring = "rsync -rtuv " . escapeshellarg("$oldpath/.") . " " . escapeshellarg("$newpath/") . " 2>&1";
+			echo "<li>Moving series data within archive directory (may take a while). Command [<span class='tt'>" . htmlspecialchars($systemstring) . "</span>] Output:<br>";
+			$copyresults = shell_exec($systemstring);
+			echo "<pre style='background-color: #eee'><span class='tt'>" . htmlspecialchars($copyresults ?? '') . "</span></pre>";
+			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
+
+			$systemstring = "mv " . escapeshellarg($oldpath) . " " . escapeshellarg($oldpathrenamed) . " 2>&1";
+			echo "<li>Renaming original series directory. Command [<tt>" . htmlspecialchars($systemstring) . "</tt>] Output:<br>";
+			$copyresults = shell_exec($systemstring);
+			echo "<pre style='background-color: #eee'><tt>" . htmlspecialchars($copyresults ?? '') . "</tt></pre>";
+			$logmsg .= "Command [$systemstring] Output [$copyresults]\n";
+		}
+
 		/* 5 - change the studyid for the series */
-		if (is_array($seriesids)) {
-			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id in (" . implode(',', array_map('intval', (array)$seriesids)) . ")";
-		}
-		else {
-			$sqlstring = "update mr_series set study_id = $newstudyid where mrseries_id = $seriesids";
-		}
-		echo "<li>Update mrseries table with new studyid [ <tt>$sqlstring</tt> ]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$logmsg .= "$sqlstring\n";
-		
+		$sqlstring = "update mr_series set study_id = ? where mrseries_id in ($placeholders)";
+		$params = array_merge(array($newstudyid), $sids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i' . $sidtypes, ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		echo "<li>Update mr_series table with new study ID";
+		$logmsg .= "update mr_series set study_id = $newstudyid\n";
+
 		/* commit the transaction */
-		$sqlstring = "commit";
-		echo "<li>Commit transaction [ <tt>$sqlstring</tt> ]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$logmsg .= "$sqlstring\n";
+		MySQLiQuery("commit", __FILE__, __LINE__);
+		echo "<li>Commit transaction";
+		$logmsg .= "commit\n";
 
 		/* insert a changelog */
-		$instanceid = $GLOBALS['instanceid'];
-		$userid = $GLOBALS['userid'];
-		$logmsg = mysqli_real_escape_string($GLOBALS['linki'], trim($logmsg));
-		$sqlstring = "insert into changelog (performing_userid, affected_userid, affected_instanceid1, affected_instanceid2, affected_siteid1, affected_siteid2, affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, affected_seriesid1, affected_seriesid2, change_datetime, change_event, change_desc) values ('$userid', null, '$instanceid', null, null, null, '$projectid', '$projectid', '$subjectid', '$subjectid', '$enrollmentid', '$enrollmentid', '$studyid', '$newstudyid', null, null, now(), 'MoveSeriesToNewStudy', 'Moved study [$uid$oldstudynum] to [$uid$newstudynum]. Results [$logmsg]')";
-		echo "<li>Insert changelog...<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
+		$instanceid = (int)$GLOBALS['instanceid'];
+		$userid = (int)$_SESSION['userid'];
+		$changedesc = "Moved series from study [$uid$oldstudynum] to [$uid$newstudynum]. Results [" . trim($logmsg) . "]";
+		$sqlstring = "insert into changelog (performing_userid, affected_userid, affected_instanceid1, affected_instanceid2, affected_siteid1, affected_siteid2, affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, affected_seriesid1, affected_seriesid2, change_datetime, change_event, change_desc) values (?, null, ?, null, null, null, ?, ?, ?, ?, ?, ?, ?, ?, null, null, now(), 'MoveSeriesToNewStudy', ?)";
+		$params = [$userid, $instanceid, $projectid, $projectid, $subjectid, $subjectid, $enrollmentid, $enrollmentid, $studyid, $newstudyid, $changedesc];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iiiiiiiiiis', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		echo "<li>Insert changelog";
+
 		echo "</ol>";
+		Notice("Moved " . count($sids) . " series to new study <a href='studies.php?studyid=$newstudyid'>" . htmlspecialchars($uid) . "$newstudynum</a>");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudySeriesRows ----------------- */
+	/* -------------------------------------------- */
+	/* the rows of the selected series that belong to this study, by series number */
+	function GetStudySeriesRows($study, $seriesids) {
+		$rows = array();
+		$sids = GetStudySeriesIDs($study, $seriesids);
+		if (count($sids) == 0) return $rows;
+
+		list($table, $idcol) = GetSeriesTable($study['study_modality']);
+		$placeholders = implode(',', array_fill(0, count($sids), '?'));
+		$sqlstring = "select * from `$table` where `$idcol` in ($placeholders) order by series_num";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($sids)), ...$sids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $sids);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$row['_id'] = (int)$row[$idcol];
+			$rows[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+
+		return $rows;
 	}
 
 
@@ -784,16 +877,21 @@
 	/* ------- RenameSeriesForm ------------------- */
 	/* -------------------------------------------- */
 	function RenameSeriesForm($studyid, $seriesids) {
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
 
-		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-		$modality = strtolower($modality);
+		$rows = GetStudySeriesRows($study, $seriesids);
+		if (count($rows) == 0) {
+			Error("No series from this study were selected");
+			return;
+		}
 
 		?>
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="renameseries">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
+		<?=CSRFTokenField()?>
 		<table class="ui very compact celled collapsing grey table">
 			<thead>
 				<tr>
@@ -811,35 +909,24 @@
 			</thead>
 			<tbody>
 			<?
-			foreach ($seriesids as $seriesid) {
-				if ((is_numeric($seriesid)) && ($seriesid != 0)) {
-					$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$seriesnum = $row['series_num'];
-					$seriesdesc = $row['series_desc'];
-					$seriesprotocol = $row['series_protocol'];
-					?>
-					<tr>
-						<td><?=$seriesnum?></td>
-						<td class="tt"><?=$seriesdesc?></td>
-						<td style="border-right: 1px solid #aaa" class="tt"><?=$seriesprotocol?></td>
-						<td><input type="text" name="newseriesdesc[<?=$seriesid?>]" value="<?=$seriesdesc?>" style="font-family: monospace;"></td>
-						<td><input type="text" name="newseriesprotocol[<?=$seriesid?>]" value="<?=$seriesprotocol?>" style="font-family: monospace;"></td>
-					</tr>
-					<?
-				}
-				else {
-					?>
-					<tr>
-						<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
-					</tr>
-					<?
-				}
+			foreach ($rows as $row) {
+				$seriesid = $row['_id'];
+				$seriesnum = htmlspecialchars($row['series_num']);
+				$seriesdesc = htmlspecialchars($row['series_desc'] ?? '');
+				$seriesprotocol = htmlspecialchars($row['series_protocol'] ?? '');
+				?>
+				<tr>
+					<td><?=$seriesnum?></td>
+					<td class="tt"><?=$seriesdesc?></td>
+					<td style="border-right: 1px solid #aaa" class="tt"><?=$seriesprotocol?></td>
+					<td><input type="text" name="newseriesdesc[<?=$seriesid?>]" value="<?=$seriesdesc?>" style="font-family: monospace;"></td>
+					<td><input type="text" name="newseriesprotocol[<?=$seriesid?>]" value="<?=$seriesprotocol?>" style="font-family: monospace;"></td>
+				</tr>
+				<?
 			}
 		?>
 			<tr>
-				<td colspan="5" align="right"><input type="submit" value="Rename" class="ui primary button"></td>
+				<td colspan="5" align="right"><a href="studies.php?studyid=<?=$studyid?>" class="ui button">Cancel</a> <input type="submit" value="Rename" class="ui primary button"></td>
 			</tr>
 		</table>
 		</form>
@@ -848,28 +935,43 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- UpdateSeriesField ------------------ */
+	/* -------------------------------------------- */
+	/* set one text column ($column is a literal from this file, never from the request) for each
+	   [seriesid => value] in $values, for the series that belong to this study. Returns the count */
+	function UpdateSeriesField($study, $values, $column) {
+		if (!is_array($values) || (count($values) == 0)) return 0;
+
+		$sids = GetStudySeriesIDs($study, array_keys($values));
+		list($table, $idcol) = GetSeriesTable($study['study_modality']);
+
+		$sqlstring = "update `$table` set `$column` = ? where `$idcol` = ?";
+		$n = 0;
+		foreach ($sids as $seriesid) {
+			$value = trim($values[$seriesid] ?? '');
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $value, $seriesid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$value, $seriesid]);
+			mysqli_stmt_close($stmt);
+			$n++;
+		}
+
+		return $n;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- RenameSeries ----------------------- */
 	/* -------------------------------------------- */
 	function RenameSeries($studyid, $newseriesdesc, $newseriesprotocol) {
-		$newseriesdesc = mysqli_real_escape_array($GLOBALS['linki'], $newseriesdesc);
-		$newseriesprotocol = mysqli_real_escape_array($GLOBALS['linki'], $newseriesprotocol);
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		if (GetSeriesTable($study['study_modality']) === null) { Error("This study's modality has no series table"); return; }
 
-		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-		$modality = strtolower($modality);
-		
-		foreach ($newseriesdesc as $seriesid => $desc) {
-			$sqlstring = "update $modality"."_series set series_desc = '$desc' where $modality"."series_id = $seriesid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		foreach ($newseriesprotocol as $seriesid => $protocol) {
-			$sqlstring = "update $modality"."_series set series_protocol = '$protocol' where $modality"."series_id = $seriesid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		
-		Notice("Series names updated");
+		UpdateSeriesField($study, $newseriesdesc, 'series_desc');
+		$n = UpdateSeriesField($study, $newseriesprotocol, 'series_protocol');
+
+		Notice("Series names updated ($n series)");
 	}
 
 
@@ -877,17 +979,22 @@
 	/* ------- UpdateSeriesNotesForm -------------- */
 	/* -------------------------------------------- */
 	function UpdateSeriesNotesForm($studyid, $seriesids) {
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
 
-		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-		$modality = strtolower($modality);
+		$rows = GetStudySeriesRows($study, $seriesids);
+		if (count($rows) == 0) {
+			Error("No series from this study were selected");
+			return;
+		}
 
 		?>
 		<div class="ui text container">
 			<form method="post" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="updateseriesnotes">
 			<input type="hidden" name="studyid" value="<?=$studyid?>">
+			<?=CSRFTokenField()?>
 			<table class="ui celled top attached grey table">
 				<thead>
 					<tr>
@@ -898,29 +1005,15 @@
 				</thead>
 				<tbody>
 				<?
-				foreach ($seriesids as $seriesid) {
-					if ((is_numeric($seriesid)) && ($seriesid != 0)) {
-						$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-						$seriesnum = $row['series_num'];
-						$seriesdesc = $row['series_desc'];
-						$seriesnote = $row['series_notes'];
-						?>
-						<tr>
-							<td><?=$seriesnum?></td>
-							<td class="tt"><?=$seriesdesc?></td>
-							<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=$seriesnote?>" style="font-family: monospace;"></td>
-						</tr>
-						<?
-					}
-					else {
-						?>
-						<tr>
-							<td colspan="5">Invalid <?=$modality?> series [<?=$seriesid?>]</td>
-						</tr>
-						<?
-					}
+				foreach ($rows as $row) {
+					$seriesid = $row['_id'];
+					?>
+					<tr>
+						<td><?=htmlspecialchars($row['series_num'])?></td>
+						<td class="tt"><?=htmlspecialchars($row['series_desc'] ?? '')?></td>
+						<td><input type="text" name="seriesnotes[<?=$seriesid?>]" value="<?=htmlspecialchars($row['series_notes'] ?? '')?>" style="font-family: monospace;"></td>
+					</tr>
+					<?
 				}
 			?>
 			</table>
@@ -938,70 +1031,74 @@
 	/* ------- UpdateSeriesNotes ------------------ */
 	/* -------------------------------------------- */
 	function UpdateSeriesNotes($studyid, $seriesnotes) {
-		$seriesnotes = mysqli_real_escape_array($GLOBALS['linki'], $seriesnotes);
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		if (GetSeriesTable($study['study_modality']) === null) { Error("This study's modality has no series table"); return; }
 
-		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-		$modality = strtolower($modality);
-		
-		foreach ($seriesnotes as $seriesid => $note) {
-			$sqlstring = "update $modality"."_series set series_notes = '$note' where $modality"."series_id = $seriesid";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
+		$n = UpdateSeriesField($study, $seriesnotes, 'series_notes');
 
-		Notice("Series notes updated");
+		Notice("Series notes updated ($n series)");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateBIDSMapping ------------------ */
 	/* -------------------------------------------- */
+	/* BIDS mappings are per project (the study's project), keyed by protocol name + image type */
 	function UpdateBIDSMapping($studyid, $seriesdesc, $imagetype, $bidsentitysuffix, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidstask, $bidspedirection) {
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$seriesdesc = mysqli_real_escape_string($GLOBALS['linki'], trim($seriesdesc));
-		$imagetype = mysqli_real_escape_string($GLOBALS['linki'], trim($imagetype));
-		$bidsentitysuffix = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsentitysuffix));
-		$bidsIntendedForEntity = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForEntity));
-		$bidsIntendedForTask = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForTask));
-		$bidsIntendedForRun = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForRun));
-		$bidsIntendedForSuffix = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForSuffix));
-		$bidsIntendedForFileExtension = mysqli_real_escape_string($GLOBALS['linki'], trim($bidsIntendedForFileExtension));
-		$bidsrun = mysqli_real_escape_string($GLOBALS['linki'], $bidsrun);
-		$bidsautonumberruns = mysqli_real_escape_string($GLOBALS['linki'], $bidsautonumberruns);
-		$bidsincludeacquisition = mysqli_real_escape_string($GLOBALS['linki'], $bidsincludeacquisition);
-		$bidstask = mysqli_real_escape_string($GLOBALS['linki'], trim($bidstask));
-		$bidspedirection = mysqli_real_escape_string($GLOBALS['linki'], trim($bidspedirection));
-		
-		list($bidsentity, $bidssuffix) = explode(":", $bidsentitysuffix);
-		if ($bidsautonumberruns == "1")
-			$bidsautonumberruns = 1;
-		else
-			$bidsautonumberruns = 0;
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$projectid = (int)$study['project_id'];
+		$modality = strtolower($study['study_modality']);
 
-		if ($bidsrun == "")
-			$bidsrun = 0;
+		$seriesdesc = trim($seriesdesc ?? '');
+		$imagetype = trim($imagetype ?? '');
+		$bidsentitysuffix = trim($bidsentitysuffix ?? '');
+		$bidsIntendedForEntity = trim($bidsIntendedForEntity ?? '');
+		$bidsIntendedForTask = trim($bidsIntendedForTask ?? '');
+		$bidsIntendedForRun = trim($bidsIntendedForRun ?? '');
+		$bidsIntendedForSuffix = trim($bidsIntendedForSuffix ?? '');
+		$bidsIntendedForFileExtension = trim($bidsIntendedForFileExtension ?? '');
+		$bidstask = trim($bidstask ?? '');
+		$bidspedirection = trim($bidspedirection ?? '');
+		$bidsrun = (int)$bidsrun;
+		$bidsautonumberruns = ($bidsautonumberruns == "1") ? 1 : 0;
+		$bidsincludeacquisition = ($bidsincludeacquisition == "1") ? 1 : 0;
 
-		if ($bidsincludeacquisition == "")
-			$bidsincludeacquisition = 0;
+		$parts = explode(":", $bidsentitysuffix, 2);
+		$bidsentity = $parts[0];
+		$bidssuffix = $parts[1] ?? '';
 
-		list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
-		$modality = strtolower($modality);
-		
-		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIncludeAcquisition, bidsIntendedForEntity, bidsIntendedForTask, bidsIntendedForRun, bidsIntendedForSuffix, bidsIntendedForFileExtension, bidstask, bidspedirection) values ($projectid, '$seriesdesc', '$imagetype', '$modality', '$bidsentity', '$bidssuffix', $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, '$bidsIntendedForEntity', '$bidsIntendedForTask', '$bidsIntendedForRun', '$bidsIntendedForSuffix', '$bidsIntendedForFileExtension', '$bidstask', '$bidspedirection') on duplicate key update bidsentity = '$bidsentity', bidssuffix = '$bidssuffix', bidsrun = $bidsrun, bidsAutoNumberRuns = $bidsautonumberruns, bidsIncludeAcquisition = $bidsincludeacquisition, bidsIntendedForEntity = '$bidsIntendedForEntity', bidsIntendedForTask = '$bidsIntendedForTask', bidsIntendedForRun = '$bidsIntendedForRun', bidsIntendedForSuffix = '$bidsIntendedForSuffix', bidsIntendedForFileExtension = '$bidsIntendedForFileExtension', bidstask = '$bidstask', bidspedirection = '$bidspedirection'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQL($sqlstring);
+		$sqlstring = "insert ignore into bids_mapping (project_id, protocolname, imagetype, modality, bidsentity, bidssuffix, bidsrun, bidsAutoNumberRuns, bidsIncludeAcquisition, bidsIntendedForEntity, bidsIntendedForTask, bidsIntendedForRun, bidsIntendedForSuffix, bidsIntendedForFileExtension, bidstask, bidspedirection) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) on duplicate key update bidsentity = values(bidsentity), bidssuffix = values(bidssuffix), bidsrun = values(bidsrun), bidsAutoNumberRuns = values(bidsAutoNumberRuns), bidsIncludeAcquisition = values(bidsIncludeAcquisition), bidsIntendedForEntity = values(bidsIntendedForEntity), bidsIntendedForTask = values(bidsIntendedForTask), bidsIntendedForRun = values(bidsIntendedForRun), bidsIntendedForSuffix = values(bidsIntendedForSuffix), bidsIntendedForFileExtension = values(bidsIntendedForFileExtension), bidstask = values(bidstask), bidspedirection = values(bidspedirection)";
+		$params = [$projectid, $seriesdesc, $imagetype, $modality, $bidsentity, $bidssuffix, $bidsrun, $bidsautonumberruns, $bidsincludeacquisition, $bidsIntendedForEntity, $bidsIntendedForTask, $bidsIntendedForRun, $bidsIntendedForSuffix, $bidsIntendedForFileExtension, $bidstask, $bidspedirection];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'isssssiiisssssss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
-		Notice("BIDS mapping updated for this project<br><tt>$seriesdesc | $imagetype</tt> mapped to <tt>$bidsentitysuffix</tt>");
+		Notice("BIDS mapping updated for this project<br><tt>" . htmlspecialchars($seriesdesc) . " | " . htmlspecialchars($imagetype) . "</tt> mapped to <tt>" . htmlspecialchars($bidsentitysuffix) . "</tt>");
 	}
-	
+
 
 	/* -------------------------------------------- */
 	/* ------- EditBIDSMapping -------------------- */
 	/* -------------------------------------------- */
 	function EditBIDSMapping($seriesid, $modality) {
-		$seriesid = mysqli_real_escape_string($GLOBALS['linki'], $seriesid);
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		/* the mapping is saved to the series' project, so it needs Edit Data there */
+		$seriesid = (int)$seriesid;
+		$studyid = GetSeriesStudyID($modality, $seriesid);
+		if ($studyid == 0) {
+			Error("Series not found");
+			return;
+		}
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		if (strtolower($study['study_modality']) != strtolower($modality)) {
+			Error("Series modality does not match the study");
+			return;
+		}
+		$modality = strtolower($modality);
+		list($table, $idcol) = GetSeriesTable($modality);
 
 		$bidsentities['anat'] = array('IRT1','MESE','MEGRE','MP2RAGE','MPM','MTS','MTR','T1map','T2map','T2starmap','R1map','R2map','R2starmap','PDmap','MTRmap','MTsat','UNIT1','T1rho','MWFmap','MTVmap','Chimap','S0map','M0map','T1w','T2w','PDw','T2starw','FLAIR','inplaneT1','inplaneT2','PDT2','angio','T2star','FLASH','PD','VFA','defacemask');
 		$bidsentities['dwi'] = array('dwi','sbref','physio','stim');
@@ -1093,26 +1190,42 @@
 		$suffixDesc['physio'] = "Physiological recording";
 		$suffixDesc['stim'] = "Continuous recording";
 
-		list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
-
-		$imagetype2 = $imagetype;
-		$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-		$sqlstring = "select * from bids_mapping where protocolname = '$seriesdesc' and imagetype = '$imagetype2' and modality = 'MR' and project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select series_desc, image_type from `$table` where `$idcol` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		$seriesdesc = $row['series_desc'] ?? '';
+		$imagetype = $row['image_type'] ?? '';
+		$projectid = (int)$study['project_id'];
+		$projectname = $study['project_name'];
+
+		$sqlstring = "select * from bids_mapping where protocolname = ? and imagetype = ? and modality = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssi', $seriesdesc, $imagetype, $modality, $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesdesc, $imagetype, $modality, $projectid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) $row = array();
+		/* everything below is displayed in HTML */
+		$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 		//PrintVariable($row);
-		$bidsentity = $row['bidsEntity'];
-		$bidssuffix = $row['bidsSuffix'];
-		$bidsIntendedForEntity = $row['bidsIntendedForEntity'];
-		$bidsIntendedForTask = $row['bidsIntendedForTask'];
-		$bidsIntendedForRun = $row['bidsIntendedForRun'];
-		$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'];
-		$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'];
-		$bidsrun = $row['bidsRun'];
-		$bidsautonumberruns = $row['bidsAutoNumberRuns'];
-		$bidsincludeacquisition = $row['bidsIncludeAcquisition'];
-		$bidstask = $row['bidsTask'];
-		$bidspedirection = $row['bidsPEDirection'];
+		$bidsentity = $row['bidsEntity'] ?? '';
+		$bidssuffix = $row['bidsSuffix'] ?? '';
+		$bidsIntendedForEntity = $row['bidsIntendedForEntity'] ?? '';
+		$bidsIntendedForTask = $row['bidsIntendedForTask'] ?? '';
+		$bidsIntendedForRun = $row['bidsIntendedForRun'] ?? '';
+		$bidsIntendedForSuffix = $row['bidsIntendedForSuffix'] ?? '';
+		$bidsIntendedForFileExtension = $row['bidsIntendedForFileExtension'] ?? '';
+		$bidsrun = $row['bidsRun'] ?? '';
+		$bidsautonumberruns = $row['bidsAutoNumberRuns'] ?? '';
+		$bidsincludeacquisition = $row['bidsIncludeAcquisition'] ?? '';
+		$bidstask = $row['bidsTask'] ?? '';
+		$bidspedirection = $row['bidsPEDirection'] ?? '';
+		$seriesdesc = htmlspecialchars($seriesdesc, ENT_QUOTES);
+		$imagetype = htmlspecialchars($imagetype, ENT_QUOTES);
+		$projectname = htmlspecialchars($projectname ?? '', ENT_QUOTES);
 		
 		?>
 		<div class="ui container" style="overflow:visible">
@@ -1139,6 +1252,7 @@
 			
 				<form method="post" action="studies.php" class="ui form" style="overflow:visible">
 					<input type="hidden" name="action" value="updatebidsmapping">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="studyid" value="<?=$studyid?>">
 					<input type="hidden" name="seriesdesc" value="<?=$seriesdesc?>">
 					<input type="hidden" name="imagetype" value="<?=$imagetype?>">
@@ -1157,7 +1271,7 @@
 										natcasesort($suff);
 										foreach ($suff as $suffix) {
 											?>
-											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><tt style="font-weight: bold"><?=$entity?> : <?=$suffix?></tt> <span style="color: #888888">- <?=$suffixDesc[$suffix]?></span></div>
+											<div class="item" data-value="<?=$entity?>:<?=$suffix?>"><tt style="font-weight: bold"><?=$entity?> : <?=$suffix?></tt> <span style="color: #888888">- <?=htmlspecialchars($suffixDesc[$suffix] ?? '')?></span></div>
 											<?
 										}
 									}
@@ -1264,262 +1378,324 @@
 	}
 	
 	
-	/* -------------------------------------------- */
-	/* ------- HideSeries ------------------------- */
-	/* -------------------------------------------- */
-	function HideSeries($modality, $seriesids) {
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
 
-		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
-				$sqlstring = "update $modality" . "_series set ishidden = 1 where mrseries_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				?><div align="center"><span class="message">Series hidden</span></div><?
-			}
-			else {
-				?><div align="center"><span class="message">Invalid <?=$modality?> series</span></div><?
-			}
-		}
-	}
 
-	
 	/* -------------------------------------------- */
-	/* ------- UnhideSeries ----------------------- */
+	/* ------- SetSeriesHidden -------------------- */
 	/* -------------------------------------------- */
-	function UnhideSeries($modality, $seriesids) {
-		$seriesids = mysqli_real_escape_array($GLOBALS['linki'], $seriesids);
-		$modality = strtolower(trim(mysqli_real_escape_string($GLOBALS['linki'], $modality)));
-		
-		foreach ($seriesids as $seriesid) {
-			if ((is_numeric($seriesid)) && ($seriesid != 0)) {
-				$sqlstring = "update $modality" . "_series set ishidden = 0 where mrseries_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				?><div align="center"><span class="message">Series unhidden</span></div><?
-			}
-			else {
-				?><div align="center"><span class="message">Invalid <?=$modality?> series</span></div><?
-			}
+	/* hide ($hidden = 1) or unhide (0) the selected series of this study */
+	function SetSeriesHidden($studyid, $seriesids, $hidden) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$t = GetSeriesTable($study['study_modality']);
+		if ($t === null) { Error("This study's modality has no series table"); return; }
+		list($table, $idcol) = $t;
+		$hidden = $hidden ? 1 : 0;
+
+		$sids = GetStudySeriesIDs($study, $seriesids);
+		if (count($sids) == 0) {
+			Error("No series from this study were selected");
+			return;
 		}
+
+		$sqlstring = "update `$table` set ishidden = ? where `$idcol` = ?";
+		foreach ($sids as $seriesid) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $hidden, $seriesid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$hidden, $seriesid]);
+			mysqli_stmt_close($stmt);
+		}
+
+		Notice(count($sids) . " series " . ($hidden ? "hidden" : "unhidden"));
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateGenericSeries ---------------- */
 	/* -------------------------------------------- */
+	/* returns the series' study ID (for the redirect), or 0 */
 	function UpdateGenericSeries($seriesid, $modality, $protocol, $series_datetime, $notes) {
-		$protocol = mysqli_real_escape_string($GLOBALS['linki'], $protocol);
-		$notes = mysqli_real_escape_string($GLOBALS['linki'], $notes);
-		$series_datetime = mysqli_real_escape_string($GLOBALS['linki'], $series_datetime);
-		//echo "hello!";
-		$sqlstring = "update " . strtolower($modality) . "_series set series_datetime = '$series_datetime', series_protocol = '$protocol', series_notes  = '$notes' where " . strtolower($modality) . "series_id = $seriesid";
-		//echo "$sqlstring<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		?><div align="center"><span class="message">Series Updated</span></div><?
+		$seriesid = (int)$seriesid;
+		$studyid = GetSeriesStudyID($modality, $seriesid);
+		if ($studyid == 0) {
+			Error("Series not found");
+			return 0;
+		}
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return $studyid;
+
+		/* the series must be of the study's modality */
+		if (strtolower($study['study_modality']) != strtolower($modality)) {
+			Error("Series modality does not match the study");
+			return $studyid;
+		}
+		list($table, $idcol) = GetSeriesTable($modality);
+
+		$series_datetime = FormatStudyDateTime($series_datetime);
+		if ($series_datetime == "") {
+			Error("Invalid series date/time. Series not updated");
+			return $studyid;
+		}
+		$protocol = trim($protocol ?? '');
+		$notes = trim($notes ?? '');
+
+		$sqlstring = "update `$table` set series_datetime = ?, series_protocol = ?, series_notes = ? where `$idcol` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'sssi', $series_datetime, $protocol, $notes, $seriesid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$series_datetime, $protocol, $notes, $seriesid]);
+		mysqli_stmt_close($stmt);
+
+		Notice("Series updated");
+		return $studyid;
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DeleteConfirm ---------------------- */
 	/* -------------------------------------------- */
 	function DeleteConfirm($studyid) {
-		if (!ValidID($studyid,'Study ID')) { return; }
-		
-		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$study_num = $row['study_num'];
-		$study_datetime = $row['study_datetime'];
-		$uid = $row['uid'];
-		
+		/* deleting a study is only offered to admins */
+		$study = CheckStudyPerm($studyid, 'modifydata', true);
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+
 		?>
 		<div align="center" class="message">
 		<b>Are you absolutely sure you want to delete this study?</b><img src="images/chili24.png">
 		<br><br>
-		<span><?=$uid?><?=$study_num?></span> collected on <?=$study_datetime?>
+		<span><?=htmlspecialchars($study['uid'] . $study['study_num'])?></span> collected on <?=htmlspecialchars($study['study_datetime'] ?? '')?>
 		<br><br>
 		<table width="100%">
 			<tr>
-				<td align="center" width="50%"><FORM><INPUT TYPE="BUTTON" VALUE="Back" ONCLICK="history.go(-1)"></FORM></td>
-				<form method="post" action="studies.php">
-				<input type="hidden" name="action" value="delete">
-				<input type="hidden" name="studyid" value="<?=$studyid?>">
-				<td align="center"><input type="submit" value="Yes, delete it" class="ui primary button"></td>
-				</form>
+				<td align="center" width="50%"><a href="studies.php?studyid=<?=$studyid?>" class="ui button">Back</a></td>
+				<td align="center">
+					<form method="post" action="studies.php">
+					<input type="hidden" name="action" value="delete">
+					<input type="hidden" name="studyid" value="<?=$studyid?>">
+					<?=CSRFTokenField()?>
+					<input type="submit" value="Yes, delete it" class="ui red button">
+					</form>
+				</td>
 			</tr>
-		</table>		
+		</table>
 		</div>
 		<br><br>
 		<?
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- Delete ----------------------------- */
 	/* -------------------------------------------- */
+	/* returns the study's subject ID (for the redirect), or 0 */
 	function Delete($studyid) {
-		if (!ValidID($studyid,'Study ID')) { return; }
-		
-		$sqlstring = "select a.study_num, a.study_datetime, c.uid from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where a.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$study_num = $row['study_num'];
-		$study_datetime = $row['study_datetime'];
-		$uid = $row['uid'];
-		
-		$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
-		
-		if (is_dir($archivepath)) {
-			$datetime = time();
-			rename($archivepath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num-$datetime");
+		$study = CheckStudyPerm($studyid, 'modifydata', true);
+		if ($study === null) return 0;
+		$studyid = (int)$study['study_id'];
+		$uid = $study['uid'];
+		$study_num = (int)$study['study_num'];
+
+		/* rename (not delete) the study's archive directory */
+		if (($uid != "") && ($study_num > 0)) {
+			$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
+			if (is_dir($archivepath)) {
+				rename($archivepath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num-" . time());
+			}
 		}
-		
-		/* get all existing info about this subject */
-		$sqlstring = "delete from studies where study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		?>
-		<div align="center" class="message">Study deleted</div>
-		<?
+
+		$sqlstring = "delete from studies where study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $studyid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+		mysqli_stmt_close($stmt);
+
+		Notice("Study " . htmlspecialchars($uid . $study_num) . " deleted");
+		return (int)$study['subject_id'];
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- MoveStudyToSubject2 ---------------- */
+	/* ------- QueueMoveStudyToSubject ------------ */
 	/* -------------------------------------------- */
-	function MoveStudyToSubject2($studyid, $newuid) {
-		if (!ValidID($studyid,'Study ID')) { return; }
-		if ($newuid == "") { return; }
-		
-		/* insert row into fileio_requests */
-		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('move','study','$studyid','$newuid', '" . $GLOBALS['username'] . "', now())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			
-		?><div align="center"><span class="message">Study queued for move</span></div><?
-		
+	/* queue a move of the study to another (existing) subject; the backend does the move */
+	function QueueMoveStudyToSubject($studyid, $newuid) {
+		/* only offered to admins */
+		$study = CheckStudyPerm($studyid, 'modifydata', true);
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+
+		if ($newuid == "") { Error("No UID entered"); return; }
+
+		$sqlstring = "select subject_id, uid from subjects where uid = ? and isactive = 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $newuid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newuid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			Error("Subject [" . htmlspecialchars($newuid) . "] not found");
+			return;
+		}
+		if ((int)$row['subject_id'] == (int)$study['subject_id']) {
+			Error("The study already belongs to subject " . htmlspecialchars($row['uid']));
+			return;
+		}
+		$newuid = $row['uid'];
+
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, data_destination, username, requestdate) values ('move', 'study', ?, ?, ?, now())";
+		$params = [$studyid, $newuid, $GLOBALS['username']];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iss', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		Notice("Study queued for move to " . htmlspecialchars($newuid));
 	}
-	
+
 
 	/* -------------------------------------------- */
 	/* ------- MoveStudyToProject ----------------- */
 	/* -------------------------------------------- */
-	function MoveStudyToProject($subjectid, $studyid, $newprojectid) {
-		if (!ValidID($subjectid,'Subject ID')) { return; }
-		if (!ValidID($studyid,'Study ID')) { return; }
-		if (!ValidID($newprojectid,'New Project ID')) { return; }
-		
-		/* get the subject project id which has this subject and the new projectid */
-		$sqlstring = "select * from enrollment where project_id = $newprojectid and subject_id = $subjectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	/* move the study to the subject's enrollment in another project */
+	function MoveStudyToProject($studyid, $newprojectid) {
+		/* only offered to admins */
+		$study = CheckStudyPerm($studyid, 'modifydata', true);
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+		$subjectid = (int)$study['subject_id'];
+		$newprojectid = (int)$newprojectid;
+
+		/* the subject must already be enrolled in the new project */
+		$sqlstring = "select a.enrollment_id, b.project_name from enrollment a left join projects b on a.project_id = b.project_id where a.project_id = ? and a.subject_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $newprojectid, $subjectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newprojectid, $subjectid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$enrollmentid = $row['enrollment_id'];
-		
-		$sqlstring = "update studies set enrollment_id = $enrollmentid where study_id = $studyid";
-		echo $sqlstring;
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		Notice("Study moved to project $newprojectid");
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			Error("The subject is not enrolled in that project. Enroll the subject first");
+			return;
+		}
+		$enrollmentid = (int)$row['enrollment_id'];
+
+		$sqlstring = "update studies set enrollment_id = ? where study_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $enrollmentid, $studyid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentid, $studyid]);
+		mysqli_stmt_close($stmt);
+
+		Notice("Study moved to project " . htmlspecialchars($row['project_name'] ?? ''));
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- Upload ----------------------------- */
+	/* ------- ResetStudyQC ----------------------- */
 	/* -------------------------------------------- */
-	function Upload($modality, $studyid, $seriesid) {
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		if (!ValidID($seriesid,'Series ID')) { return; }
-		if (!ValidID($studyid,'Study ID')) { return; }
-		
-		$sqlstring = "select a.uid, c.study_num, d.series_num from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on c.enrollment_id = b.enrollment_id left join $modality" . "_series d on d.study_id = c.study_id where d.$modality" . "series_id = $seriesid";
-		//echo "[[$sqlstring]]";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$studynum = $row['study_num'];
-		$seriesnum = $row['series_num'];
-		
-		$savepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$modality";
-		
-		if (!file_exists($savepath)) {
-			mkdir($savepath,0777,true);
-			$systemstring = "chmod -R 777 " . $GLOBALS['cfg']['archivedir'] . "/$uid";
-			echo shell_exec($systemstring);
+	/* reset basic QC ($type 'basic') or mriqc ('mriqc') for the selected MR series of this study */
+	function ResetStudyQC($studyid, $seriesids, $type) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		if (strtolower($study['study_modality']) != "mr") {
+			Error("QC can only be reset for MR series");
+			return;
 		}
-		
-		/* go through all the files and save them */
-		foreach ($_FILES['files']['name'] as $i => $name) {
-			if (move_uploaded_file($_FILES['files']['tmp_name'][$i], "$savepath/$name")) {
-				//echo "Received [" . $_FILES['files']['tmp_name'][$i] ." --> $savepath/$name] " . $_FILES['files']['size'][$i] . " bytes<br>";
-				chmod("$savepath/$name", 0777);
-			}
-			else {
-				echo "<br>An error occured moving " . $_FILES['files']['tmp_name'][$i] . " to [" . $_FILES['files']['error'][$i] . "]<br>";
-			}
-		}
-		
-		/* update the DB with the files that were uploaded */
-		$filecount = count(glob("$savepath/*"));
-		$filesize = GetDirectorySize($savepath);
-		
-		$sqlstring = "update $modality" . "_series set series_numfiles = $filecount, series_size = $filesize where $modality" . "series_id = $seriesid";
-		//echo "$sqlstring";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- GetDirectorySize ------------------- */
-	/* -------------------------------------------- */
-	function GetDirectorySize($dirname) {
-		// open the directory, if the script cannot open the directory then return folderSize = 0
-		$dir_handle = opendir($dirname);
-		if (!$dir_handle)
-			return 0;
-
-		$folderSize = 0;
-		
-		// traversal for every entry in the directory
-		while ($file = readdir($dir_handle)){
-			// ignore '.' and '..' directory
-			if  ($file  !=  "."  &&  $file  !=  "..")  {
-				/* if this is a directory then go recursive! */
-				if (is_dir($dirname."/".$file)) {
-					$folderSize += GetDirectorySize($dirname.'/'.$file);
-				} else {
-					$folderSize += filesize($dirname."/".$file);
-				}
-			}
+		$sids = GetStudySeriesIDs($study, $seriesids);
+		if (count($sids) == 0) {
+			Error("No series from this study were selected");
+			return;
 		}
-		// close the directory
-		closedir($dir_handle);
-		// return $dirname folder size
-		return $folderSize ;
+
+		if ($type == "mriqc") {
+			ResetMRIQC($sids);
+		}
+		else {
+			ResetQA($sids);
+			Notice("Basic QC reset for " . count($sids) . " series. It will be regenerated");
+		}
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- SubmitMiniPipelines ---------------- */
 	/* -------------------------------------------- */
-	function SubmitMiniPipelines($modality, $seriesids, $seriesid, $minipipelineids, $minipipelineid) {
-		
-		$s = array();
-		if (is_array($seriesids))
-			$s = $seriesids;
-		elseif (is_array($seriesid))
-			$s = $seriesid;
-			
-		foreach ($s as $key => $seriesid) {
-			if ($minipipelineid != 0)
-				$mpid = $minipipelineid;
-			else
-				$mpid = $minipipelineids[$key];
-			
-			$sqlstring = "insert into minipipeline_jobs (minipipeline_id, mp_modality, mp_seriesid, mp_status, mp_queuedate) values ($mpid, '$modality', $seriesid, 'pending', now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	/* queue mini-pipeline jobs. From the study page each series has its own mini-pipeline
+	   ($minipipelineids, same index as $seriesids); from search.php one mini-pipeline
+	   ($minipipelineid) is run on every selected series. Mini-pipelines write observations into
+	   their project, so each series needs Edit Data on its project, and the mini-pipeline must
+	   belong to that same project */
+	function SubmitMiniPipelines($modality, $seriesids, $minipipelineids, $minipipelineid) {
+		$t = GetSeriesTable($modality);
+		if ($t === null) {
+			Error("Invalid modality [" . htmlspecialchars($modality ?? '') . "]. No mini-pipeline jobs submitted");
+			return;
 		}
-		?>
-		Mini-pipeline jobs submitted
-		<?
+		list($table, $idcol) = $t;
+		$modality = strtolower(trim($modality));
+		if (!is_array($minipipelineids)) $minipipelineids = array();
+		$minipipelineid = (int)$minipipelineid;
+
+		/* series => mini-pipeline */
+		$jobs = array();
+		foreach ($seriesids as $key => $sid) {
+			$sid = (int)$sid;
+			$mpid = ($minipipelineid > 0) ? $minipipelineid : (int)($minipipelineids[$key] ?? 0);
+			if (($sid > 0) && ($mpid > 0))
+				$jobs[] = array($sid, $mpid);
+		}
+		if (count($jobs) == 0) {
+			Error("No series with a mini-pipeline selected. No jobs submitted");
+			return;
+		}
+
+		/* the project of each series */
+		$sids = array_values(array_unique(array_map(function($j) { return $j[0]; }, $jobs)));
+		$placeholders = implode(',', array_fill(0, count($sids), '?'));
+		$sqlstring = "select a.`$idcol` 'id', c.project_id from `$table` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.`$idcol` in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($sids)), ...$sids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $sids);
+		$seriesproject = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesproject[(int)$row['id']] = (int)$row['project_id'];
+		}
+		mysqli_stmt_close($stmt);
+		$perms = GetCurrentUserProjectPermissions(array_values($seriesproject));
+
+		/* the project of each mini-pipeline */
+		$mpids = array_values(array_unique(array_map(function($j) { return $j[1]; }, $jobs)));
+		$placeholders = implode(',', array_fill(0, count($mpids), '?'));
+		$sqlstring = "select minipipeline_id, project_id from minipipelines where minipipeline_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($mpids)), ...$mpids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $mpids);
+		$mpproject = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mpproject[(int)$row['minipipeline_id']] = (int)$row['project_id'];
+		}
+		mysqli_stmt_close($stmt);
+
+		$n = 0;
+		$skipped = 0;
+		$sqlstring = "insert into minipipeline_jobs (minipipeline_id, mp_modality, mp_seriesid, mp_status, mp_queuedate) values (?, ?, ?, 'pending', now())";
+		foreach ($jobs as $job) {
+			list($sid, $mpid) = $job;
+			$projectid = $seriesproject[$sid] ?? 0;
+			if (($projectid == 0) || (($mpproject[$mpid] ?? -1) != $projectid) || !GetPerm($perms, 'modifydata', $projectid)) {
+				$skipped++;
+				continue;
+			}
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'isi', $mpid, $modality, $sid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$mpid, $modality, $sid]);
+			mysqli_stmt_close($stmt);
+			$n++;
+		}
+
+		if ($n > 0)
+			Notice("$n mini-pipeline job(s) submitted");
+		if ($skipped > 0)
+			Error("$skipped series skipped: the series wasn't found, the mini-pipeline belongs to a different project, or you don't have Edit Data permission on the series' project");
 	}
 
 
@@ -1527,32 +1703,34 @@
 	/* ------- DisplayMiniPipelineForm ------------ */
 	/* -------------------------------------------- */
 	function DisplayMiniPipelineForm($studyid, $seriesids) {
-		
-		if (!ValidID($studyid,'Study ID')) { return; }
-		
-		$sqlstring = "select a.study_modality, c.project_id, c.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on c.project_id = b.project_id where a.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$modality = strtolower($row['study_modality']);
-		$projectid = $row['project_id'];
-		$projectname = $row['project_name'];
-		
-		$mpselectbox = "<select name='minipipelineids[]'><option value='0' selected>(none)";
-		$sqlstring = "select * from minipipelines where project_id = $projectid order by mp_name";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$mpid = $row['minipipeline_id'];
-			$mpversion = $row['mp_version'];
-			$mpname = $row['mp_name'];
-			$mpselectbox .= "<option value='".$mpid."'>$mpname (v$mpversion)";
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$studyid = (int)$study['study_id'];
+		$modality = strtolower($study['study_modality']);
+		$projectid = (int)$study['project_id'];
+
+		$rows = GetStudySeriesRows($study, $seriesids);
+		if (count($rows) == 0) {
+			Error("No series from this study were selected");
+			return;
 		}
+
+		$mpselectbox = "<select name='minipipelineids[]'><option value='0' selected>(none)</option>";
+		$sqlstring = "select minipipeline_id, mp_version, mp_name from minipipelines where project_id = ? order by mp_name";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$mpselectbox .= "<option value='" . (int)$row['minipipeline_id'] . "'>" . htmlspecialchars($row['mp_name']) . " (v" . htmlspecialchars($row['mp_version']) . ")</option>";
+		}
+		mysqli_stmt_close($stmt);
 		$mpselectbox .= "</select>";
 		?>
 		<form method="post" action="studies.php">
 		<input type="hidden" name="action" value="submitminipipelines">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<input type="hidden" name="modality" value="<?=$modality?>">
+		<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+		<?=CSRFTokenField()?>
 		<table class="ui very compact celled grey table">
 			<thead>
 				<th>Series</th>
@@ -1561,21 +1739,14 @@
 			</thead>
 			<tbody>
 			<?
-			$seriesidlist = implode2(",",$seriesids);
-			$sqlstring = "select * from $modality" . "_series where $modality" . "series_id in ($seriesidlist) order by series_num";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$seriesid = $row["$modality" . "series_id"];
-				$seriesnum = $row['series_num'];
-				$seriesdesc = $row['series_desc'];
+			foreach ($rows as $row) {
+				$seriesdesc = $row['series_desc'] ?? '';
 				if ($seriesdesc == "")
-					$seriesdesc = $row['series_protocol'];
+					$seriesdesc = $row['series_protocol'] ?? '';
 				?>
 				<tr>
-					<input type="hidden" name="seriesids[]" value="<?=$seriesid?>">
-					<td><?=$seriesnum?></td>
-					<td><?=$seriesdesc?></td>
+					<td><input type="hidden" name="seriesids[]" value="<?=$row['_id']?>"><?=htmlspecialchars($row['series_num'])?></td>
+					<td><?=htmlspecialchars($seriesdesc)?></td>
 					<td><?=$mpselectbox?></td>
 				</tr>
 				<?
@@ -1583,29 +1754,28 @@
 			?>
 			</tbody>
 		</table>
+		<a href="studies.php?studyid=<?=$studyid?>" class="ui button">Cancel</a>
 		<input type="submit" value="Run mini-pipelines" class="ui primary button">
 		</form>
 		<?
-		
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayStudyForm ------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudyForm($studyid) {
-		//PrintVariable($studyid);
-		
-		if (!ValidID($studyid,'Study ID')) { return; }
+		$row = CheckStudyPerm($studyid, 'modifydata');
+		if ($row === null) return;
+		$studyid = (int)$row['study_id'];
+		$study_modality = $row['study_modality'];
 
-		$sqlstring = "select a.*, c.uid, c.subject_id, d.project_id, d.project_name from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		/* everything below is displayed in HTML */
+		$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 		$enrollmentid = $row['enrollment_id'];
 		$equipmentid = $row['equipment_id'];
 		$study_num = $row['study_num'];
 		$study_alternateid = $row['study_alternateid'];
-		$study_modality = $row['study_modality'];
 		$study_datetime = $row['study_datetime'];
 		$study_ageatscan = $row['study_ageatscan'];
 		$study_height = $row['study_height'];
@@ -1631,10 +1801,6 @@
 		$projectname = $row['project_name'];
 
 		$perms = GetCurrentUserProjectPermissions(array($projectid));
-		//$urllist[$projectname] = "projects.php?id=$projectid";
-		//$urllist[$uid] = "subjects.php?id=$subjectid";
-		//$urllist[$study_num] = "studies.php?studyid=$studyid";
-		//DisplayPermissions($perms);
 		
 		$formaction = "update";
 		$formtitle = "Updating study $study_num";
@@ -1662,6 +1828,7 @@
 			<div class="ui bottom attached segment">
 				<form method="post" action="studies.php" class="ui form">
 				<input type="hidden" name="action" value="<?=$formaction?>">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="studyid" value="<?=$studyid?>">
 				<div class="two fields">
 					<div class="field">
@@ -1671,9 +1838,9 @@
 							$sqlstring = "select * from modalities order by mod_desc";
 							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$mod_code = $row['mod_code'];
-								$mod_desc = $row['mod_desc'];
-								if ($mod_code == $study_modality) { $selected = "selected"; } else { $selected = ""; }
+								$mod_code = htmlspecialchars($row['mod_code']);
+								$mod_desc = htmlspecialchars($row['mod_desc'] ?? '');
+								if ($row['mod_code'] == $study_modality) { $selected = "selected"; } else { $selected = ""; }
 								?><option value="<?=$mod_code?>" <?=$selected?>><?=$mod_desc?></option><?
 							}
 						?>
@@ -1794,7 +1961,7 @@
 					</div>
 					<div class="field">
 						<label>Experimenter</label>
-						<input type="text" name="studyexperimenter" <? if ($study_experimenter == "") { echo "style='color:red'"; } ?> value="<? if ($study_experimenter != "") { echo $study_experimenter; } else { echo $GLOBALS['username']; } ?>">
+						<input type="text" name="studyexperimenter" <? if ($study_experimenter == "") { echo "style='color:red'"; } ?> value="<? if ($study_experimenter != "") { echo $study_experimenter; } else { echo htmlspecialchars($GLOBALS['username']); } ?>">
 					</div>
 				</div>
 				
@@ -1802,7 +1969,7 @@
 					<div class="column">
 					</div>
 					<div class="right aligned column">
-						<button class="ui button">Cancel</button>
+						<a href="studies.php?studyid=<?=$studyid?>" class="ui button">Cancel</a>
 						<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 					</div>
 				</div>
@@ -1813,16 +1980,23 @@
 	<?
 	}
 
+
 	/* -------------------------------------------- */
 	/* ------- DisplayStudy ----------------------- */
 	/* -------------------------------------------- */
 	function DisplayStudy($studyid, $displayfiles=false) {
 		if (!ValidID($studyid,'Study ID')) { return; }
+		$studyid = (int)$studyid;
 	
-		$sqlstring = "select a.*, c.uid, d.project_costcenter, d.project_id, d.project_name, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = '$studyid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		/* View Data on the study's project is needed to see the study at all */
+		$row = CheckStudyPerm($studyid, 'viewdata');
+		if ($row !== null) {
+			$rawmodality = $row['study_modality'] ?? '';
+			$rawdatetime = $row['study_datetime'];
+			$rawradreaddate = $row['study_radreaddate'];
+			$row_uid = $row['uid'] ?? '';
+			/* everything below is displayed in HTML */
+			$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 			$study_id = $row['study_id'];
 			$enrollmentid = $row['enrollment_id'];
 			//$equipmentid = $row['equipment_id'];
@@ -1830,9 +2004,9 @@
 			$study_alternateid = $row['study_alternateid'];
 			$study_modality = $row['study_modality'];
 			$study_datetime = $row['study_datetime'];
-			$study_ageatscan = $row['study_ageatscan'];
-			$study_height = $row['study_height'];
-			$study_weight = $row['study_weight'];
+			$study_ageatscan = (float)$row['study_ageatscan'];
+			$study_height = (float)$row['study_height'];
+			$study_weight = (float)$row['study_weight'];
 			$study_type = $row['study_type'];
 			$study_daynum = $row['study_daynum'];
 			$study_timepoint = $row['study_timepoint'];
@@ -1873,7 +2047,6 @@
 			$study_heightft = "$ft1' $in\"";
 		}
 		else {
-			Error("Invalid study ID. Unable to display this study");
 			return;
 		}
 		
@@ -1882,13 +2055,11 @@
 			return;
 		}
 
-		if ($study_modality == "") {
+		if ($rawmodality == "") {
 			$study_modality = "Missing modality"; $class="missing";
 		}
 		else {
-			$sqlstringA = "show tables like '" . strtolower($study_modality) . "_series'";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			if (mysqli_num_rows($resultA) > 0) {
+			if (GetSeriesTable($rawmodality) !== null) {
 				$class = "value";
 			}
 			else {
@@ -1896,23 +2067,12 @@
 			}
 		}
 
-		$dbstudydatetime = strftime('%Y-%m-%dT%H:%M:%S', strtotime($study_datetime));
-		$study_datetime = date("F j, Y g:ia",strtotime($study_datetime));
-		$study_radreaddate = date("F j, Y g:ia",strtotime($study_radreaddate));
+		$dbstudydatetime = date('Y-m-d\TH:i:s', strtotime($rawdatetime ?? ''));
+		$study_datetime = date("F j, Y g:ia",strtotime($rawdatetime ?? ''));
+		$study_radreaddate = (($rawradreaddate ?? '') == "") ? "" : date("F j, Y g:ia",strtotime($rawradreaddate));
 
-		/* get privacy information */
-		$username = $_GLOBALS['username'];
-		$sqlstring = "select user_id from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$userid = $row['user_id'];
-		
 		$perms = GetCurrentUserProjectPermissions(array($projectid));
-
-		if (!GetPerm($perms, 'viewdata', $projectid)) {
-			echo "You do not have data access to this project. Consult your NiDB administrator";
-			return;
-		}
+		$canmodify = GetPerm($perms, 'modifydata', $projectid);
 		
 		/* update the mostrecent table */
 		UpdateMostRecent('', $studyid, '');
@@ -1968,7 +2128,7 @@
 							<td class="right aligned"><b>Modality</td>
 							<td class="<?=$class?>"><?=$study_modality?></td>
 						</tr>
-					<? if (strtolower($study_modality) == "mr") { ?>
+					<? if ((strtolower($study_modality) == "mr") || !$canmodify) { ?>
 						<tr>
 							<td class="right aligned"><b>Date/time</td>
 							<td><?=$study_datetime?></td>
@@ -1981,9 +2141,10 @@
 						<tr>
 							<td colspan="2">
 								<div class="ui styled segment">
-									<form id="Sform" action="studies.php?action=saveme&studyid=<?=$studyid?>" method="post" class="ui form">
-									<input type="hidden" name="subme">
-									<input type="hidden" name="stmod" value="<?=$study_modality?>">
+									<form id="Sform" action="studies.php" method="post" class="ui form">
+									<input type="hidden" name="action" value="saveme">
+									<input type="hidden" name="studyid" value="<?=$studyid?>">
+									<?=CSRFTokenField()?>
 									<div class="inline field">
 										<label>Date/time</label>
 										<input type="datetime-local" value="<?=$dbstudydatetime;?>" name="studydatetime" required>
@@ -2110,8 +2271,10 @@
 						</tr>
 					</table>
 
+					<? if ($canmodify) { ?>
 					<a href="studies.php?action=editform&studyid=<?=$studyid?>" class="ui primary basic fluid button"><i class="edit icon"></i> Edit study</a>
 					<br>
+					<? } ?>
 					<a href="packages.php?action=addobject&objecttype=study&objectids[]=<?=$studyid?>" class="ui primary basic brown fluid button"><em data-emoji=":chipmunk:"></em> Add to Package</a>
 					<br>
 					<div class="ui primary basic fluid button" onclick="$('#addToGroupModal').modal('show')"><i class="user friends icon"></i> Add to group</div>
@@ -2131,6 +2294,7 @@
 							?>
 							<form action="studies.php" method="post" id="addToGroupForm" class="ui form">
 								<input type="hidden" name="action" value="addtogroup">
+								<?=CSRFTokenField()?>
 								<input type="hidden" name="studyid" value="<?=(int)$studyid?>">
 								<div class="field">
 									<label>Study</label>
@@ -2167,7 +2331,7 @@
 						</div>
 					</div>
 
-					<? if ($GLOBALS['isadmin']) { ?>
+					<? if (IsAdminUser()) { ?>
 						<script>
 							$(document).ready(function() {
 								$('#popupbutton1').popup({
@@ -2186,9 +2350,9 @@
 							<br>
 							
 							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="studyid" value="<?=$studyid?>">
 								<input type="hidden" name="action" value="movestudytosubject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
+								<?=CSRFTokenField()?>
 								<b>Move study to existing UID...</b>
 								<div class="ui fluid inline action input">
 									<input type="text" size="10" name="newuid" id="newuid" placeholder="existing UID" required>
@@ -2197,22 +2361,24 @@
 							</form>
 							
 							<form action="studies.php" method="post">
-								<input type="hidden" name="studyid" value="<?=$study_id?>">
+								<input type="hidden" name="studyid" value="<?=$studyid?>">
 								<input type="hidden" name="action" value="movestudytoproject">
-								<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
-								<input type="hidden" name="subjectid" value="<?=$subjectid?>">
+								<?=CSRFTokenField()?>
 								<b>Move study to new project...</b>
 								<div class="ui fluid labeled inline action input">
 									<select name="newprojectid" class="ui fluid selection dropdown" required>
 										<option value="">Select project...</option>
 									<?
-										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = $subjectid";
-										//echo $sqlstringB;
-										$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+										$subjectidB = (int)$subjectid;
+										$sqlstringB = "select a.project_id, b.project_name, b.project_costcenter from enrollment a left join projects b on a.project_id = b.project_id where a.subject_id = ?";
+										$stmtB = mysqli_prepare($GLOBALS['linki'], $sqlstringB);
+										mysqli_stmt_bind_param($stmtB, 'i', $subjectidB);
+										$resultB = MySQLiBoundQuery($stmtB, __FILE__, __LINE__, $sqlstringB, [$subjectidB]);
+										mysqli_stmt_close($stmtB);
 										while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
-											$project_id = $rowB['project_id'];
-											$project_name = $rowB['project_name'];
-											$project_costcenter = $rowB['project_costcenter'];
+											$project_id = (int)$rowB['project_id'];
+											$project_name = htmlspecialchars($rowB['project_name'] ?? '');
+											$project_costcenter = htmlspecialchars($rowB['project_costcenter'] ?? '');
 											?>
 											<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
 											<?
@@ -2233,19 +2399,19 @@
 			<div class="thirteen wide column">
 				<?
 				if ($displayfiles == true) {
-					$studypath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num";
+					$studypath = $GLOBALS['cfg']['archivedir'] . "/" . $row_uid . "/" . (int)$study_num;
 					DisplayFileSeries($studypath, $studyid);
 				}
 				else {
-					$study_modality = strtolower($study_modality);
+					$study_modality = strtolower($rawmodality);
 					if (($study_modality == "mr") || ($study_modality == "pr")) {
-						DisplayMRSeries($studyid, $study_num, $uid, $study_modality);
+						DisplayMRSeries($studyid, $study_num, $row_uid, $study_modality, $projectid, $subjectid, $canmodify);
 					}
 					elseif ($study_modality == "ct") {
-						DisplayCTSeries($studyid, $study_num, $uid);
+						DisplayCTSeries($studyid, $study_num, $row_uid, $canmodify);
 					}
 					else {
-						DisplayGenericSeries($studyid, $study_modality);
+						DisplayGenericSeries($studyid, $study_modality, $canmodify);
 					}
 				}
 				?>
@@ -2258,9 +2424,15 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayMRSeries -------------------- */
 	/* -------------------------------------------- */
-	function DisplayMRSeries($studyid, $study_num, $uid, $modality) {
-		$uid = mysqli_real_escape_string($GLOBALS['linki'], $uid);
+	/* called from DisplayStudy, which has already checked View Data. $canmodify (Edit Data) shows the editing controls */
+	function DisplayMRSeries($studyid, $study_num, $uid, $modality, $projectid, $subjectid, $canmodify) {
+		$studyid = (int)$studyid;
+		$projectid = (int)$projectid;
+		$subjectid = (int)$subjectid;
 		if (!ValidID($studyid,'Study ID')) { return; }
+		$t = GetSeriesTable($modality);
+		if (($t === null) || !in_array($modality, array('mr', 'pr'))) { Error("Invalid modality"); return; }
+		list($seriestable, $idcol) = $t;
 		if (!ValidID($study_num,'Studynum')) { return; }
 	
 		$colors = GenerateColorGradient();
@@ -2273,27 +2445,11 @@
 		//$bidsentities['derived'] = array('derived');
 		//PrintVariable($bidsentities);
 		
-		/* get the subject information */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$dbsubjectname = $row['name'];
-			$dbsubjectdob = $row['birthdate'];
-			$dbsubjectsex = $row['gender'];
-			$dbstudydatetime = $row['study_datetime'];
-			$subjectid = $row['subject_id'];
-			$projectid = $row['project_id'];
-		}
-		else {
-			echo "$sqlstring<br>";
-		}
-
 		$pstats = array();
 		if ($modality == "mr") {
 			/* get the movement & SNR stats by sequence name, compared within this study's project, and
 			   only for the sequences in this study (the whole-database version was too slow) */
-			$statsprojectid = (int)($projectid ?? 0);
+			$statsprojectid = $projectid;
 			$statsstudyid = (int)$studyid;
 			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a join mr_series b on a.mrseries_id = b.mrseries_id join studies c on b.study_id = c.study_id join enrollment d on c.enrollment_id = d.enrollment_id where a.io_snr > 0 and d.project_id = ? and b.series_sequencename in (select series_sequencename from mr_series where study_id = ?) group by b.series_sequencename";
 			$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
@@ -2346,8 +2502,8 @@
 		<form method="post" name="serieslist" id="serieslist" action="studies.php">
 		<input type="hidden" name="action" value="none">
 		<input type="hidden" name="studyid" value="<?=$studyid?>">
-		<input type="hidden" name="subjectid" value="<?=$subjectid?>">
 		<input type="hidden" name="modality" value="<?=$modality?>">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="objecttype" value="series">
 		<table class="ui top attached very compact small celled selectable grey table" style="margin: 0px">
 			<thead>
@@ -2376,18 +2532,15 @@
 			</thead>
 			<tbody>
 				<?
-					/* just get a list of MR series ids */
-					if ($modality == "mr") {
-						$sqlstring = "select mrseries_id from mr_series where study_id = $studyid order by series_num";
-					}
-					if ($modality == "pr") {
-						$sqlstring = "select prseries_id from pr_series where study_id = $studyid order by series_num";
-					}
-					
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					/* get the series */
+					$sqlstring = "select * from `$seriestable` where study_id = ? order by series_num";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $studyid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+					mysqli_stmt_close($stmt);
 					$mrseriesids = array();
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$mrseriesids[] = $row[$modality . 'series_id'];
+						$mrseriesids[] = (int)$row[$idcol];
 					}
 				
 					/* get the rating information */
@@ -2399,25 +2552,22 @@
 						<?
 					}
 					else {
-						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = '$modality' and data_id in (" . implode(',', array_map('intval', (array)$mrseriesids)) . ")";
-						$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+						$sqlstring3 = "select * from ratings where rating_type = 'series' and data_modality = ? and data_id in (" . implode(',', array_fill(0, count($mrseriesids), '?')) . ")";
+						$params3 = array_merge(array($modality), $mrseriesids);
+						$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+						mysqli_stmt_bind_param($stmt3, 's' . str_repeat('i', count($mrseriesids)), ...$params3);
+						$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, $params3);
+						mysqli_stmt_close($stmt3);
 						while ($row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC)) {
 							$ratingseriesid = $row3['data_id'];
 							$ratings[$ratingseriesid][] = $row3['rating_value'];
 						}
 
-						/* get the actual MR series info */
+						/* go through the series info */
 						mysqli_data_seek($result,0);
-						if ($modality == "mr") {
-							$sqlstring = "select * from mr_series where study_id = $studyid order by series_num";
-						}
-						if ($modality == "pr") {
-							$sqlstring = "select * from pr_series where study_id = $studyid order by series_num";
-						}
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						$lastseriesnum = 0;
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$mrseries_id = $row[$modality . 'series_id'];
+							$mrseries_id = (int)$row[$idcol];
 							$series_datetime = date('g:ia',strtotime($row['series_datetime']));
 							$protocol = $row['series_protocol'];
 							$series_desc = $row['series_desc'];
@@ -2486,13 +2636,11 @@
 									$beh_size += filesize($behfile);
 								}
 								if ($numfiles_beh > 0) {
-									if ($modality == "mr") {
-										$sqlstring5 = "update mr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
-									}
-									if ($modality == "pr") {
-										$sqlstring5 = "update pr_series set beh_size = '$beh_size', numfiles_beh = '$numfiles_beh' where mrseries_id = $mrseries_id";
-									}
-									$result5 = MySQLiQuery($sqlstring5, __FILE__, __LINE__);
+									$sqlstring5 = "update `$seriestable` set beh_size = ?, numfiles_beh = ? where `$idcol` = ?";
+									$stmt5 = mysqli_prepare($GLOBALS['linki'], $sqlstring5);
+									mysqli_stmt_bind_param($stmt5, 'iii', $beh_size, $numfiles_beh, $mrseries_id);
+									MySQLiBoundQuery($stmt5, __FILE__, __LINE__, $sqlstring5, [$beh_size, $numfiles_beh, $mrseries_id]);
+									mysqli_stmt_close($stmt5);
 								}
 							}
 							
@@ -2549,9 +2697,12 @@
 							$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 
 							if ($modality == "mr") {
-								$sqlstring2 = "select * from mr_qa where mrseries_id = $mrseries_id";
-								$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+								$sqlstring2 = "select * from mr_qa where mrseries_id = ?";
+								$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
+								mysqli_stmt_bind_param($stmt2, 'i', $mrseries_id);
+								$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring2, [$mrseries_id]);
 								$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+								mysqli_stmt_close($stmt2);
 								$iosnr = $row2['io_snr'];
 								$pvsnr = $row2['pv_snr'];
 								$move_minx = $row2['move_minx'];
@@ -2672,9 +2823,12 @@
 								}
 							}
 							/* get manually entered QA info */
-							$sqlstringC = "select avg(value) 'avgrating', count(value) 'count' from manual_qa where series_id = $mrseries_id and modality = '$modality'";
-							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+							$sqlstringC = "select avg(value) 'avgrating', count(value) 'count' from manual_qa where series_id = ? and modality = ?";
+							$stmtC = mysqli_prepare($GLOBALS['linki'], $sqlstringC);
+							mysqli_stmt_bind_param($stmtC, 'is', $mrseries_id, $modality);
+							$resultC = MySQLiBoundQuery($stmtC, __FILE__, __LINE__, $sqlstringC, [$mrseries_id, $modality]);
 							$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
+							mysqli_stmt_close($stmtC);
 							$avgrating = $rowC['avgrating'];
 							$ratingcount = $rowC['count'];
 							if ($avgrating < 0.5) { $manualqacolor = "black"; }
@@ -2711,33 +2865,37 @@
 							if ($ishidden) { $rowcolor = "#AAA"; }
 
 							/* get BIDS protocol name mapping */
-							if ($series_desc != "") {
-								$imagetype2 = $imagetype;
-								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select * from bids_mapping where protocolname = '$series_desc' and imagetype = '$imagetype2' and modality = '$modality' and project_id = $projectid";
-							}
-							else {
-								$imagetype2 = $imagetype;
-								$imagetype2 = str_replace("\\", "\\\\", $imagetype2);
-								$sqlstring3 = "select * from bids_mapping where protocolname = '$protocol' and imagetype = '$imagetype2' and modality = '$modality' and project_id = $projectid";
-							}
-							//PrintSQL($sqlstring3);
-							$result3 = MySQLiQuery($sqlstring3, __FILE__, __LINE__);
+							/* (series description and protocol come from the DICOM headers, so they must be bound) */
+							$bidsprotocol = ($series_desc != "") ? $series_desc : $protocol;
+							$imagetypeB = $imagetype ?? '';
+							$sqlstring3 = "select * from bids_mapping where protocolname = ? and imagetype = ? and modality = ? and project_id = ?";
+							$stmt3 = mysqli_prepare($GLOBALS['linki'], $sqlstring3);
+							mysqli_stmt_bind_param($stmt3, 'sssi', $bidsprotocol, $imagetypeB, $modality, $projectid);
+							$result3 = MySQLiBoundQuery($stmt3, __FILE__, __LINE__, $sqlstring3, [$bidsprotocol, $imagetypeB, $modality, $projectid]);
 							$row3 = mysqli_fetch_array($result3, MYSQLI_ASSOC);
-							$bidsentity = $row3['bidsEntity'];
-							$bidssuffix = $row3['bidsSuffix'];
-							$bidsIntendedForEntity = $row3['bidsIntendedForEntity'];
-							$bidsIntendedForTask = $row3['bidsIntendedForTask'];
-							$bidsIntendedForRun = $row3['bidsIntendedForRun'];
-							$bidsIntendedForSuffix = $row3['bidsIntendedForSuffix'];
-							$bidsIntendedForFileExtension = $row3['bidsIntendedForFileExtension'];
-							$bidsrun = $row3['bidsRun'];
-							$bidsautonumberruns = $row3['bidsAutoNumberRuns'];
-							$bidsincludeacquisition = $row3['bidsIncludeAcquisition'];
-							$bidstask = $row3['bidsTask'];
-							$bidspedirection = $row3['bidsPEDirection'];
+							mysqli_stmt_close($stmt3);
+							if (!$row3) $row3 = array();
+							/* the mapping values are only displayed */
+							$row3 = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row3);
+							$bidsentity = $row3['bidsEntity'] ?? '';
+							$bidssuffix = $row3['bidsSuffix'] ?? '';
+							$bidsintendedfor = $row3['bidsIntendedForEntity'] ?? '';
+							$bidsrun = $row3['bidsRun'] ?? '';
+							$bidsautonumberruns = $row3['bidsAutoNumberRuns'] ?? '';
+							$bidstask = $row3['bidsTask'] ?? '';
+							$bidspedirection = $row3['bidsPEDirection'] ?? '';
 							
 							$bidstitle = "BIDS&#10;&#10;Entity&nbsp;-&nbsp;$bidsentity&#10;BIDS&nbsp;suffix&nbsp;-&nbsp;$bidssuffix&#10;IntendedFor&nbsp;-&nbsp;$bidsintendedfor&#10;Run&nbsp;-&nbsp;$bidsrun&#10;Autonumber&nbsp;runs&nbsp;-&nbsp;$bidsautonumberruns&#10;Task&nbsp;-&nbsp;$bidstask&#10;PE&nbsp;direction&nbsp;-&nbsp;$bidspedirection";
+
+							/* the text values below come from the DICOM headers or users, and are displayed in HTML */
+							$series_desc = htmlspecialchars($series_desc ?? '');
+							$protocol = htmlspecialchars($protocol ?? '');
+							$sequence_h = htmlspecialchars($sequence ?? '');
+							$imagetype = htmlspecialchars($imagetype ?? '');
+							$image_comments = htmlspecialchars($image_comments ?? '');
+							$series_notes = htmlspecialchars($series_notes ?? '');
+							$validmessage = htmlspecialchars($validmessage ?? '', ENT_QUOTES);
+							$data_type_h = htmlspecialchars($data_type ?? '', ENT_QUOTES);
 							
 							?>
 							<script type="text/javascript">
@@ -2751,7 +2909,7 @@
 								xhttp.onload = function() {
 									document.getElementById("series<?=$series_num?>").innerHTML = this.responseText;
 								}
-								xhttp.open("GET", "ajaxapi.php?action=checkseriesobject&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+								xhttp.open("GET", "ajaxapi.php?action=checkseriesobject&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=urlencode($data_type ?? '')?>", true);
 								xhttp.send();
 
 								$('.series-info-tooltip').tooltip({ items: '.series-info-tooltip', content: function() { return $(this).attr('data-html'); } });
@@ -2760,7 +2918,7 @@
 							//	xhttp2.onload = function() {
 							//		document.getElementById("thumbnail<?=$series_num?>").innerHTML = this.responseText;
 							//	}
-							//	xhttp2.open("GET", "ajaxapi.php?action=getseriesthumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=$data_type?>", true);
+							//	xhttp2.open("GET", "ajaxapi.php?action=getseriesthumbnail&modality=mr&seriesid=<?=$mrseries_id?>&datatype=<?=urlencode($data_type ?? '')?>", true);
 							//	xhttp2.send();
 							});
 							</script>
@@ -2774,7 +2932,7 @@
 									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
 									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
 									<? //} ?>
-									<?php $series_tooltip = "<b>Series Description</b> - $series_desc<br><b>Protocol</b> - $protocol<br><b>Sequence Description</b> - $sequence<br><b>TE</b> - {$series_te}ms<br><b>Magnet</b> - {$series_fieldstrength}T<br><b>Flip angle</b> - {$series_flip}&deg;<br><b>Image type</b> - $imagetype<br><b>Image comment</b> - $image_comments<br><b>Phase encoding</b> - $phase"; ?>
+									<?php $series_tooltip = "<b>Series Description</b> - $series_desc<br><b>Protocol</b> - $protocol<br><b>Sequence Description</b> - $sequence_h<br><b>TE</b> - {$series_te}ms<br><b>Magnet</b> - {$series_fieldstrength}T<br><b>Flip angle</b> - {$series_flip}&deg;<br><b>Image type</b> - $imagetype<br><b>Image comment</b> - $image_comments<br><b>Phase encoding</b> - $phase"; ?>
 					<span class="series-info-tooltip" data-html="<?=htmlspecialchars($series_tooltip, ENT_QUOTES)?>"><i class="ui info circle icon"></i></span>
 									
 									<?
@@ -2787,7 +2945,11 @@
 											$color = "green";
 										}
 									?>
-									<a class="ui <?=$color?> compact tiny basic button right floated" href="studies.php?action=editbidsmapping&modality=mr&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
+									<? if ($canmodify) { ?>
+									<a class="ui <?=$color?> compact tiny basic button right floated" href="studies.php?action=editbidsmapping&modality=<?=$modality?>&seriesid=<?=$mrseries_id?>" data-html="<?=$bidstitle?>" data-inverted="inverted" data-variation="multiline" data-variation="very wide"><?=$label?></a>
+									<? } else { ?>
+									<span class="ui <?=$color?> compact tiny basic label right floated" data-html="<?=$bidstitle?>"><?=$label?></span>
+									<? } ?>
 								</td>
 								<td style="font-size:8pt"><?=$series_datetime?></td>
 								<td style="font-size:8pt"><?=$series_notes;?></td>
@@ -2824,7 +2986,7 @@
 								<td class="seriesrow" align="right" style="background-color: <?=$maxiosnrcolor?>; font-size:8pt">
 									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 								</td>
-								<td><?=$sequence?></td>
+								<td><?=$sequence_h?></td>
 								<td style="font-size:8pt"><?=$scanlength?></td>
 								<td align="right" style="font-size:8pt"><?=$series_tr?></td>
 								<td style="font-size:8pt;white-space: nowrap;">(<?=number_format($series_spacingx,1)?>, <?=number_format($series_spacingy,1)?>, <?=number_format($series_spacingz,1)?>)</td>
@@ -2833,7 +2995,7 @@
 									<? if ($series_size > 0) { ?>
 									<?=$numfiles?> (<?=HumanReadableFilesize($series_size)?>)
 									<? if ($GLOBALS['cfg']['allowrawdicomexport']) { ?>
-									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download <?=$data_type?> data"></i></a>
+									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download <?=$data_type_h?> data"></i></a>
 									<? 	}
 									}
 									?>
@@ -2866,9 +3028,10 @@
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 							<?
+							/* uploading behavioral files needs Edit Data */
 							mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$mrseries_id = $row['mrseries_id'];
+							while ($canmodify && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+								$mrseries_id = (int)$row[$idcol];
 								?>
 								var uploader<?=$mrseries_id?> = new qq.FileUploader({
 									element: document.getElementById('uploader<?=$mrseries_id?>'),
@@ -2906,6 +3069,7 @@
 						<span class="text">With selected series...</span>
 						<div class="ui vertical menu">
 							
+							<? if ($canmodify) { ?>
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="corner i cursor icon"></i> Rename</div>
 							
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Edit notes</div>
@@ -2919,38 +3083,22 @@
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset basic QC</div>
 
 							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetmriqc';document.serieslist.submit();" title="Reset the mriqc metrics for this series. New QC metrics will be re-generated"><i class="redo alternate icon"></i> Reset advanced mriqc</div>
+							<? } ?>
 							
 							<div class="ui item" onclick="document.serieslist.action='packages.php';document.serieslist.action.value='addobject';document.serieslist.submit();"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 
 							<div class="ui item" onclick="ShowSendToPACSModal();" title="Send the selected DICOM series to a remote DICOM AE (PACS)"><i class="paper plane outline icon"></i> Send to PACS</div>
 
+							<? if ($canmodify) { ?>
 							<div class="ui item"></div>
 							
-							<div class="ui item" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete series</div>
+							<div class="ui item" onclick="if (confirm('Are you sure you want to delete the selected series?')) { document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit(); }" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="red trash alternate icon"></i>Delete series</div>
+							<? } ?>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-		<!--
-		<div class="ui popup" id="popupmenu2">
-			<? if ($GLOBALS['isadmin']) { ?>
-				<h3>With Selected Series...</h3>
-				<button class="ui fluid button" name="renameseriesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='renameseriesform';document.serieslist.submit();"><i class="icons"><i class="square outline icon"></i><i class="corner i cursor icon"></i></i>Rename</button>
-				<br>
-				<button class="ui fluid button" name="updateseriesnotesform" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='updateseriesnotesform';document.serieslist.submit();"><i class="clipboard outline icon"></i> Edit notes</button>
-				<br>
-				<button class="ui fluid button" name="moveseriestonewstudy" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='moveseriestonewstudy';document.serieslist.submit();">Move to new study</button>
-				<br>
-				<button class="ui fluid button" name="hideseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='hideseries';document.serieslist.submit();" title="Hide the series. The series will not show up in search results"><i class="eye slash icon"></i> Hide</button>
-				<br>
-				<button class="ui fluid button" name="unhideseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='unhideseries';document.serieslist.submit();" title="Unhide the selected series. The series will now show up in search results"><i class="eye icon"></i> Un-hide</button>
-				<br>
-				<button class="ui fluid button" name="resetqa" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='resetqa';document.serieslist.submit();" title="Reset the QA results for this series. New QA results will be re-generated"><i class="redo alternate icon"></i> Reset QC</button>
-				<br><br>
-				<button class="ui fluid red button" name="deleteseries" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='deleteseries';document.serieslist.submit();" title="Delete the selected series. The series will be moved to the <span class='tt'><?=$GLOBALS['cfg']['deleteddir']?></span> directory and will not appear anywhere on the website"><i class="trash alternate icon"></i>Delete</button>
-			<? } ?>
-		</div>-->
 
 		</form>
 
@@ -2966,7 +3114,7 @@
 				<form action="studies.php" method="post" id="sendToPACSForm" class="ui form">
 					<input type="hidden" name="action" value="sendtopacs">
 					<input type="hidden" name="studyid" value="<?=(int)$studyid?>">
-					<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+					<?=CSRFTokenField()?>
 					<div id="sendToPACSSeriesIDs"></div>
 					<div class="field">
 						<label>Selected series</label>
@@ -3038,24 +3186,11 @@
 	/* -------------------------------------------- */
 	/* ------- DisplayCTSeries -------------------- */
 	/* -------------------------------------------- */
-	function DisplayCTSeries($studyid, $study_num, $uid) {
-		$uid = mysqli_real_escape_string($GLOBALS['linki'], $uid);
+	/* called from DisplayStudy, which has already checked View Data. $canmodify (Edit Data) allows inline note edits */
+	function DisplayCTSeries($studyid, $study_num, $uid, $canmodify) {
+		$studyid = (int)$studyid;
 		if (!ValidID($studyid,'Study ID')) { return; }
 		if (!ValidID($study_num,'Studynum')) { return; }
-
-		/* get the subject information */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$dbsubjectname = $row['name'];
-			$dbsubjectdob = $row['birthdate'];
-			$dbsubjectsex = $row['gender'];
-			$dbstudydatetime = $row['study_datetime'];
-		}
-		else {
-			echo "$sqlstring<br>";
-		}
 	
 		?>
 		<!--<a href="studies.php?studyid=<?=$studyid?>&action=addseries&modality=CT">Add Series</a>-->
@@ -3098,11 +3233,16 @@
 			</thead>
 			<tbody>
 				<?
-					$sqlstring = "select * from ct_series where study_id = $studyid order by series_num";
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$sqlstring = "select * from ct_series where study_id = ? order by series_num";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $studyid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+					mysqli_stmt_close($stmt);
 					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$ctseries_id = $row['ctseries_id'];
-						$series_datetime = date('g:ia',strtotime($row['series_datetime']));
+						$ctseries_id = (int)$row['ctseries_id'];
+						$series_datetime = date('g:ia',strtotime($row['series_datetime'] ?? ''));
+						/* the text values come from the DICOM headers or users, and are displayed in HTML */
+						$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 						$series_desc = $row['series_desc'];
 						$protocol = $row['series_protocol'];
 						$sequence = $row['series_sequencename'];
@@ -3132,13 +3272,12 @@
 						$data_type = $row['data_type'];
 						$lastupdate = $row['lastupdate'];
 						
-						if ( (preg_match("/epfid2d1/i",$sequence)) && ($numfiles_beh < 1)) { $behcolor = "red"; } else { $behcolor = ""; }
-						if ($numfiles_beh < 1) { $numfiles_beh = "-"; }
 
 						$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 						$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 
 						?>
+						<? if ($canmodify) { ?>
 						<script type="text/javascript">
 							$(document).ready(function(){
 								$(".edit_inline<? echo $ctseries_id; ?>").editInPlace({
@@ -3150,10 +3289,11 @@
 								});
 							});
 						</script>
+						<? } ?>
 						<tr>
 							<td><?=$series_num?></td>
 							<td><?=$series_desc?></td>
-							<td><?=$protocol?> <a href="preview.php?image=<?=$thumbpath?>" class="preview"><i class="image icon"></i></a></td>
+							<td><?=$protocol?> <a href="preview.php?image=<?=urlencode($thumbpath)?>" class="preview"><i class="image icon"></i></a></td>
 							<td><?=$series_datetime?></td>
 							<td><span id="series_notes" class="edit_inline<? echo $ctseries_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 8pt;"><? echo $series_notes; ?></span></td>
 							<td><?=$series_contrastbolusagent?></td>
@@ -3168,10 +3308,10 @@
 							<td><?=$series_filtertype?></td>
 							<td><?=$series_generatorpower?><span class="tiny">V</span></td>
 							<td><?=$series_convolutionkernel?></td>
-							<td><?=number_format($series_spacingx,1)?> &times; <?=number_format($series_spacingy,1)?> &times; <?=number_format($series_spacingz,1)?></td>
+							<td><?=number_format((float)$series_spacingx,1)?> &times; <?=number_format((float)$series_spacingy,1)?> &times; <?=number_format((float)$series_spacingz,1)?></td>
 							<td><?=$img_cols?> &times; <?=$img_rows?> &times; <?=$img_slices?></td>
 							<td><?=$numfiles?></td>
-							<td nowrap><?=HumanReadableFilesize($series_size)?> <a href="download.php?modality=ct&type=dicom&seriesid=<?=$ctseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a></td>
+							<td nowrap><?=HumanReadableFilesize((float)$series_size)?> <a href="download.php?modality=ct&type=dicom&seriesid=<?=$ctseries_id?>" border="0"><img src="images/download16.png" title="Download <?=$data_type?> data"></a></td>
 						</tr>
 						<?
 					}
@@ -3182,153 +3322,172 @@
 	}
 	
 	
+
+
 	/* -------------------------------------------- */
 	/* ------- DeleteSeries ----------------------- */
 	/* -------------------------------------------- */
-	function DeleteSeries($studyid, $seriesid, $seriesids, $modality) {
+	/* MR series are queued for deletion by the backend; other modalities are deleted here
+	   (the series directory is renamed, not removed) */
+	function DeleteSeries($studyid, $seriesid, $seriesids) {
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		$t = GetSeriesTable($study['study_modality']);
+		if ($t === null) { Error("This study's modality has no series table"); return; }
+		list($table, $idcol) = $t;
+		$modality = strtolower($study['study_modality']);
 
-		/* combine the two seriesid variables */
+		/* combine the two seriesid variables, keeping only this study's series */
 		$seriesids[] = $seriesid;
-		$seriesids = array_unique($seriesids);
-		$sids = array();
-		foreach ($seriesids as $sid) {
-			if (ValidID($sid)) {
-				$sids[] = $sid;
-			}
+		$sids = GetStudySeriesIDs($study, $seriesids);
+		if (count($sids) == 0) {
+			Error("No series from this study were selected");
+			return;
 		}
 
-		/* check for valid inputs */
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		if (!ValidID($studyid,'Study ID')) { return; }
-		if ($modality == "") { echo "Modality was blank<br>"; return; }
-		
-		$seriesid = "";
-		foreach ($sids as $seriesid) {
+		$uid = $study['uid'];
+		$study_num = (int)$study['study_num'];
+
+		foreach ($sids as $sid) {
 			if ($modality == "mr") {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, requestdate) values ('delete','series','$seriesid', '$modality', now())";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				?><div align="center"><span class="message">Series queued for deletion</span></div><?
+				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, modality, username, requestdate) values ('delete', 'series', ?, ?, ?, now())";
+				$params = [$sid, $modality, $GLOBALS['username']];
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'iss', ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				mysqli_stmt_close($stmt);
 			}
 			else {
-				/* get information to figure out the path */
-				$sqlstring = "select a.*, c.uid, d.project_costcenter, c.subject_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id left join projects d on b.project_id = d.project_id where a.study_id = $studyid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* get the series number, to find the series path */
+				$sqlstring = "select series_num from `$table` where `$idcol` = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $sid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sid]);
 				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$study_num = $row['study_num'];
-				$uid = $row['uid'];
-				
-				/* get series number */
-				$sqlstring = "select * from $modality" . "_series where $modality" . "series_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$series_num = $row['series_num'];
+				mysqli_stmt_close($stmt);
+				$series_num = (int)($row['series_num'] ?? 0);
 
-				/* reconstruct the series path and delete */
-				$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num";
-				//echo "[$seriespath]";
-				if (is_dir($seriespath)) {
-					$datetime = time();
-					$newpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num-$datetime";
-					rename($seriespath, $newpath);
+				/* rename the series directory */
+				if (($uid != "") && ($study_num > 0) && ($series_num > 0)) {
+					$seriespath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num";
+					if (is_dir($seriespath)) {
+						rename($seriespath, $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num-" . time());
+					}
 				}
-				
-				$sqlstring = "delete from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $seriesid";
-				//echo "[$sqlstring]";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				
-				?><div align="center"><span class="message">Series deleted</span></div><br><br><?
+
+				$sqlstring = "delete from `$table` where `$idcol` = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $sid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$sid]);
+				mysqli_stmt_close($stmt);
 			}
 		}
+
+		if ($modality == "mr")
+			Notice(count($sids) . " series queued for deletion");
+		else
+			Notice(count($sids) . " series deleted");
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- EditGenericSeries ------------------ */
 	/* -------------------------------------------- */
 	function EditGenericSeries($seriesid, $modality) {
-		$sqlstring = "select * from " . strtolower($modality) . "_series where " . strtolower($modality) . "series_id = $seriesid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$seriesid = (int)$seriesid;
+		$studyid = GetSeriesStudyID($modality, $seriesid);
+		if ($studyid == 0) {
+			Error("Series not found");
+			return;
+		}
+		$study = CheckStudyPerm($studyid, 'modifydata');
+		if ($study === null) return;
+		if (strtolower($study['study_modality']) != strtolower($modality)) {
+			Error("Series modality does not match the study");
+			return;
+		}
+		$modality = strtolower($modality);
+		list($table, $idcol) = GetSeriesTable($modality);
+
+		$sqlstring = "select * from `$table` where `$idcol` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$series_id = $row[strtolower($modality) . "series_id"];
+		mysqli_stmt_close($stmt);
 		$series_num = $row['series_num'];
 		$series_datetime = $row['series_datetime'];
-		$protocolA = trim($row['series_protocol']);
+		$protocolA = trim($row['series_protocol'] ?? '');
 		$notes = $row['series_notes'];
+
+		/* protocols defined for this modality, plus any already used */
+		$protocols = array();
+		$sqlstring = "select protocol from modality_protocol where modality = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modality]);
+		while ($prow = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if (trim($prow['protocol'] ?? '') != "") {
+				$protocols[] = trim($prow['protocol']);
+			}
+		}
+		mysqli_stmt_close($stmt);
+		$result = MySQLiQuery("select distinct(series_protocol) from `$table`", __FILE__, __LINE__);
+		while ($prow = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			if (trim($prow['series_protocol'] ?? '') != "") {
+				$protocols[] = trim($prow['series_protocol']);
+			}
+		}
+		/* keep the current protocol selectable even if it's no longer in either list */
+		if ($protocolA != "") $protocols[] = $protocolA;
+		$protocols = array_unique($protocols, SORT_STRING);
+		sort($protocols);
 		?>
-		<div align="center">
-		<table class="entrytable">
-			<form method="post" action="studies.php">
+		<div class="ui text container">
+			<form method="post" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="updateseries">
 			<input type="hidden" name="seriesid" value="<?=$seriesid?>">
-			<input type="hidden" name="modality" value="<?=$modality?>">
-			<tr>
-				<td class="heading" colspan="2" align="center">
-					<b>Series <?=$series_num?></b>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Protocol</td>
-				<td>
-					<select name="protocol">
-					<?
-						$protocols = array();
-						
-						$sqlstring = "select protocol from modality_protocol where modality = '$modality'";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							if (trim($row['protocol']) != "") {
-								$protocols[] = trim($row['protocol']);
-							}
-						}
-						$sqlstring = "select distinct(series_protocol) from " . strtolower($modality) . "_series";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							if (trim($row['series_protocol']) != "") {
-								$protocols[] = trim($row['series_protocol']);
-							}
-						}
-						$protocols = array_unique($protocols, SORT_STRING);
-						sort($protocols);
-						
-						foreach ($protocols as $protocolB) {
-							?>
-							<option value="<?=$protocolB?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><?=$protocolB?></option>
-							<?
-						}
-					?>
-					</select>
-				</td>
-			</tr>
-			<tr>
-				<td class="label">Date/time<br><span class="tiny">24 hour clock</span></td>
-				<td><input type="text" name="series_datetime" value="<?=$series_datetime?>"></td>
-			</tr>
-			<tr>
-				<td class="label">Notes</td>
-				<td><input type="text" size="70" name="notes" value="<?=$notes?>"></td>
-			</tr>
-			<tr>
-				<td colspan="2" align="center">
-					<input type="submit" value="Update">
-				</td>
-			</tr>
+			<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
+			<?=CSRFTokenField()?>
+			<h3 class="ui header">Series <?=htmlspecialchars($series_num)?></h3>
+			<div class="field">
+				<label>Protocol</label>
+				<select name="protocol">
+				<?
+					foreach ($protocols as $protocolB) {
+						?>
+						<option value="<?=htmlspecialchars($protocolB)?>" <? if ($protocolA == $protocolB) { echo "selected"; } ?>><?=htmlspecialchars($protocolB)?></option>
+						<?
+					}
+				?>
+				</select>
+			</div>
+			<div class="field">
+				<label>Date/time <span class="tiny">24 hour clock</span></label>
+				<input type="text" name="series_datetime" value="<?=htmlspecialchars($series_datetime ?? '')?>">
+			</div>
+			<div class="field">
+				<label>Notes</label>
+				<input type="text" size="70" name="notes" value="<?=htmlspecialchars($notes ?? '')?>">
+			</div>
+			<a href="studies.php?studyid=<?=$studyid?>" class="ui button">Cancel</a>
+			<input type="submit" value="Update" class="ui primary button">
 			</form>
-		</table>
 		</div>
 		<br><br><br>
-		
 		<?
 	}
-	
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayGenericSeries --------------- */
 	/* -------------------------------------------- */
-	function DisplayGenericSeries($id, $modality) {
+	/* called from DisplayStudy, which has already checked View Data. $canmodify (Edit Data) shows the editing controls */
+	function DisplayGenericSeries($id, $modality, $canmodify) {
 		
 		/* check for valid inputs */
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
+		$id = (int)$id;
+		$modality = strtolower(trim($modality ?? ''));
 		if (!ValidID($id,'Study ID')) { return; }
 		if ((trim($modality) == "") || (strtolower($modality) == "missing modality")) {
 			?><div align="center" color="red">Modality was blank, unable to display data</div><?
@@ -3364,7 +3523,7 @@
 					<th>Notes</th>
 					<th>Files</th>
 					<th>Size</th>
-					<th>Upload <?=strtoupper($modality)?> files <span class="tiny" style="font-weight: normal">(Drag & Drop)</span></th>
+					<th>Upload <?=htmlspecialchars(strtoupper($modality))?> files <span class="tiny" style="font-weight: normal">(Drag & Drop)</span></th>
 					<th>Download</th>
 					<th align="left">Operations <input type="checkbox" id="seriesall"><span class="tiny" style="font-weight: normal"> Select All</span></th>
 				</tr>
@@ -3372,17 +3531,24 @@
 			<form method="post" name="serieslist" id="serieslist" action="studies.php" class="ui form">
 			<input type="hidden" name="action" value="" id="serieslistaction">
 			<input type="hidden" name="studyid" value="<?=$id?>">
+			<?=CSRFTokenField()?>
 			<tbody>
 				<?
 					$firstdate = "";
-					$sqlstringA = "show tables like '" . strtolower($modality) . "_series'";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					if (mysqli_num_rows($resultA) > 0) {
-						$max_seriesnum = 0;
-						$sqlstring = "select * from `" . strtolower($modality) . "_series` where study_id = $id order by series_num";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+					$max_seriesnum = 0;
+					$result = null;
+					$t = GetSeriesTable($modality);
+					if ($t !== null) {
+						list($seriestable, $idcol) = $t;
+						$sqlstring = "select * from `$seriestable` where study_id = ? order by series_num";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $id);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+						mysqli_stmt_close($stmt);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$series_id = $row[strtolower($modality) . "series_id"];
+							$series_id = (int)$row[$idcol];
+							/* the text values are displayed in HTML */
+							$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 							$series_num = $row['series_num'];
 							if ($series_num > $max_seriesnum) { $max_seriesnum = $series_num; }
 							//$series_datetime = date('M j, Y g:ia',strtotime($row['series_datetime']));
@@ -3406,7 +3572,8 @@
 							}
 								
 							if ($numfiles < 1) { $numfiles = "0"; }
-							if ($series_size > 1) { $series_size = HumanReadableFilesize($series_size); } else { $series_size = "-"; }
+							if ($series_size > 1) { $series_size = HumanReadableFilesize((float)$series_size); } else { $series_size = "-"; }
+							if ($canmodify) {
 							?>
 							<script type="text/javascript">
 								$(document).ready(function(){
@@ -3419,8 +3586,9 @@
 									});
 								});
 							</script>
+							<? } ?>
 							<tr>
-								<td style="text-align: center;"><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=strtolower($modality)?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a></td>
+								<td style="text-align: center;"><? if ($canmodify) { ?><a href="studies.php?action=editseries&seriesid=<?=$series_id?>&modality=<?=$modality?>" style="font-weight: bold; font-size: larger;"><?=$series_num?></a><? } else { ?><b><?=$series_num?></b><? } ?></td>
 								<td><span id="series_protocol" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $protocol; ?></span></td>
 								<td class="<?=$datecolor?>"><?=$datemsg;?><span id="series_datetime" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $series_datetime; ?></span></td>
 								<td><span id="series_notes" class="edit_inline<? echo $series_id; ?>" style="background-color: lightyellow; padding: 1px 3px; font-size: 11pt;"><? echo $notes; ?></span></td>
@@ -3445,7 +3613,7 @@
 						?>
 						<tr>
 							<td colspan="1">
-								<span style="color: red">Invalid modality [<?=$modality?>]</span>
+								<span style="color: red">Invalid modality [<?=htmlspecialchars($modality)?>]</span>
 							</td>
 						</tr>
 						<?
@@ -3456,9 +3624,11 @@
 						function createUploaders(){
 							/* window.onload can only be called once, so make 1 function to create all uploaders */
 							<?
+							/* uploading files needs Edit Data */
+							if ($canmodify && ($result !== null)) {
 							mysqli_data_seek($result,0); /* reset the sql result, so we can loop through it again */
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$series_id = $row[strtolower($modality) . "series_id"];
+								$series_id = (int)$row[$idcol];
 								?>
 									var uploader<?=$series_id?> = new qq.FileUploader({
 										element: document.getElementById('uploader<?=$series_id?>'),
@@ -3468,16 +3638,15 @@
 									});
 								<?
 							}
+							}
 							?>
 						}
 						// in your app create uploader as soon as the DOM is ready
 						// don't wait for the window to load  
 						window.onload = createUploaders;
 					</script>
-				<!--<form action="studies.php" method="post">
-				<input type="hidden" name="action" value="addseries">-->
-				<input type="hidden" name="modality" value="<?=strtoupper($modality)?>">
-				<!--<input type="hidden" name="id" value="<?=$id?>">-->
+				<input type="hidden" name="modality" value="<?=htmlspecialchars(strtoupper($modality))?>">
+				<? if ($canmodify) { ?>
 				<tr>
 					<td>
 						<div class="ui input">
@@ -3489,12 +3658,15 @@
 						</div>
 						<datalist id="protocols">
 						<?
-							$sqlstring = "select * from modality_protocol where modality = '$modality'";
-							$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+							$sqlstring = "select protocol from modality_protocol where modality = ?";
+							$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+							mysqli_stmt_bind_param($stmt, 's', $modality);
+							$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$modality]);
+							mysqli_stmt_close($stmt);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$protocol = $row['protocol'];
+								$protocol = htmlspecialchars($row['protocol'] ?? '');
 								?>
-									<option value=" <?=$protocol?>"><?=$protocol?></option>
+									<option value="<?=$protocol?>"><?=$protocol?></option>
 								<?
 							}
 						?>
@@ -3503,9 +3675,10 @@
 					<td title="Time should be formatted as a 24-hour clock"><div class="ui input"><input type="text" name="series_datetime" value="<?=date('Y-m-d H:i:s')?>" required></td>
 					<td><div class="ui input"><input type="text" name="notes"></div></td>
 					<td colspan="5">
-						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries'; document.serieslist.action.submit()"><i class="arrow alternate circle left icon"></i> Create series</button>
+						<button type="submit" class="ui button" value="Create" onClick="document.serieslist.action.value='addseries';"><i class="arrow alternate circle left icon"></i> Create series</button>
 					</td>
 				</tr>
+				<? } ?>
 			</tbody>
 		</table>
 		<div class="ui two column grid">
@@ -3513,28 +3686,32 @@
 				<a class="ui basic button" href="studies.php?studyid=<?=$id?>&action=displayfiles"><i class="file alternate icon"></i> View file list</a>
 			</div>
 			<div class="right aligned column">
+				<? if ($canmodify) { ?>
 				<b>With Selected</b> &nbsp; &nbsp; <br>
 				<br>
-				<button class="ui red button" style="width:200px" onclick="document.serieslist.action.value='deleteseries'; document.serieslist.submit(); return confirm('Are you absolutely sure you want to DELETE the selected series?')"><i class="trash icon"></i> Delete</button>
+				<button type="button" class="ui red button" style="width:200px" onclick="if (confirm('Are you absolutely sure you want to DELETE the selected series?')) { document.serieslist.action.value='deleteseries'; document.serieslist.submit(); }"><i class="trash icon"></i> Delete</button>
 				<br><br>
-				<button class="ui button" name="minipipelineform" style="width: 200px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()"><i class="cogs icon"></i> Run mini-pipeline</button>
+				<button type="button" class="ui button" style="width: 200px" onclick="document.serieslist.action='studies.php';document.serieslist.action.value='minipipelineform'; document.serieslist.submit()"><i class="cogs icon"></i> Run mini-pipeline</button>
+				<? } ?>
 			</div>
 		</form>
 
 		<?
 	}
 	
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayFileSeries ------------------ */
 	/* -------------------------------------------- */
 	function DisplayFileSeries($path, $studyid) {
 	
 		if (file_exists($path)) {
-			$dir = scandir($path);
 			$files = find_all_files($path);
+			if (!is_array($files)) $files = array();
 
 			?>
-			<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>">Normal View</a> Showing (<?=count($files)?> files) from <code><?=$path?></code>
+			<a class="ui basic button" href="studies.php?studyid=<?=$studyid?>">Normal View</a> Showing (<?=count($files)?> files) from <code><?=htmlspecialchars($path)?></code>
 			<table class="ui very compact small celled table">
 				<thead>
 					<tr>
@@ -3587,7 +3764,6 @@
 					if (stristr(strtolower($file),".json") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".tsv") !== FALSE) { $filetype = 'text'; }
 					if (stristr(strtolower($file),".html") !== FALSE) { $filetype = 'text'; }
-					if ($istext) { $filetype = "text"; }
 					//echo "[$file $filetype]";
 				}
 				$filecolor = "black";
@@ -3597,7 +3773,8 @@
 				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
-				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
+				/* file names can come from uploads, so escape them */
+				$displayfile = htmlspecialchars(substr($displayfile,0,$lastslash)) . '<b>' . htmlspecialchars(substr($displayfile,$lastslash)) . '</b>';
 				
 				$displayperms = '';
 				for ($i=1;$i<=3;$i++) {
@@ -3619,12 +3796,12 @@
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<?=urlencode($file)?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
 					?>
-					<a href="viewimagefile.php?file=<?="$file"?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewimagefile.php?file=<?=urlencode($file)?>" target="_blank"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'nifti':
@@ -3638,9 +3815,9 @@
 					<?=$displayfile?>
 					<? } ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=date("M j, Y H:i:s",$timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=is_int($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : $timestamp2?></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format($size2)?></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=number_format((float)$size2)?></td>
 				</tr>
 				<?
 			}
@@ -3652,318 +3829,7 @@
 	}
 	
 	
-	/* -------------------------------------------- */
-	/* ------- DisplayAnalyses -------------------- */
-	/* -------------------------------------------- */
-	function DisplayAnalyses($studyid, $search_pipelineid, $search_name, $search_compare, $search_value, $search_type, $search_swversion, $imgperline) {
 
-		/* check for valid inputs */
-		$modality = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $modality));
-		if (!ValidID($studyid,'Study ID')) { return; }
-		if (!ValidID($search_pipelineid,'Pipeline ID')) { return; }
-
-		if ($imgperline == "") { $imgperline = 4; }
-		
-		//echo "DisplayAnalyses($studyid, $search_name, $search_compare, $search_value, $search_swversion)<br>";
-		if (($search_pipelineid != 0) || ($search_name != "") || ($search_value != "") || ($search_type != "") || ($search_swversion != "")) {
-			$sqlstring = "select a.*, c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid ";
-			$sqlstring2 = "select distinct(c.pipeline_id), c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id where b.study_id = $studyid ";
-			if ($search_pipelineid != 0) {
-				$sqlstring .= " and c.pipeline_id = $search_pipelineid ";
-				$sqlstring2 .= " and c.pipeline_id = $search_pipelineid ";
-			}
-			if ($search_name != "") {
-				$sqlstring .= " and d.result_name like '%$search_name%' ";
-				$sqlstring2 .= " and d.result_name like '%$search_name%' ";
-			}
-			if ($search_value != "") {
-				$sqlstring .= " and a.result_value $search_compare '$search_value' ";
-				$sqlstring2 .= " and a.result_value $search_compare '$search_value' ";
-			}
-			if ($search_type != "") {
-				$sqlstring .= " and a.result_type = '$search_type' ";
-				$sqlstring2 .= " and a.result_type = '$search_type' ";
-			}
-			if ($search_swversion != "") {
-				$sqlstring .= "and a.result_swversion like '%$search_swversion%' ";
-				$sqlstring2 .= "and a.result_swversion like '%$search_swversion%' ";
-			}
-			$sqlstring .= " order by d.result_name";
-			$sqlstring2 .= " order by d.result_name";
-		}
-		else {
-			$sqlstring = "select a.*, c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid order by c.pipeline_name, d.result_name";
-			$sqlstring2 = "select distinct(c.pipeline_id), c.pipeline_name, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid order by d.result_name";
-		}
-		
-		?>
-		Analyses for this study<br><br>
-		<?
-		$sqlstring = "select * from analysis a left join pipelines b on a.pipeline_id = b.pipeline_id where a.study_id = $studyid and analysis_statusdatetime is not null";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$pipelinename = $row['pipeline_name'];
-				$pipelineversion = $row['pipeline_version'];
-				$analysis_id = $row['analysis_id'];
-				$analysis_status = $row['analysis_status'];
-				$analysis_statusmessage = $row['analysis_statusmessage'];
-				$analysis_statusdatetime = $row['analysis_statusdatetime'];
-				$analysis_iscomplete = $row['analysis_iscomplete'];
-				?>
-				<details>
-				<summary><?=$pipelinename?> v<?=$pipelineversion?> <span class="tiny"><?=$analysis_statusmessage?></style> &nbsp; <span style="color: darkred;"><?=$analysis_statusdatetime?></span></span></summary>
-				<?
-					$sqlstring2 = "select a.*, d.result_name from analysis_results a left join analysis b on a.analysis_id = b.analysis_id left join pipelines c on b.pipeline_id = c.pipeline_id left join analysis_resultnames d on d.resultname_id = a.result_nameid where b.study_id = $studyid and a.analysis_id = $analysis_id order by d.result_name";
-				?>
-				<table class="smalldisplaytable">
-					<?
-						$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-						while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-							//$step = $row['analysis_step'];
-							$pipelinename = $row2['pipeline_name'];
-							$type = $row2['result_type'];
-							$size = $row2['result_size'];
-							$name = $row2['result_name'];
-							$text = $row2['result_text'];
-							$value = $row2['result_value'];
-							$units = $row2['result_units'];
-							$filename = $row2['result_filename'];
-							$swversion = $row2['result_softwareversion'];
-							$important = $row2['result_isimportant'];
-							$lastupdate = $row2['result_lastupdate'];
-							
-							if (strpos($units,'^') !== false) {
-								$units = str_replace('^','<sup>',$units);
-								$units .= '</sup>';
-							}
-							if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
-							?>
-							<tr style="font-weight: <?=$bold?>">
-								<td><b><?=$pipelinename?></b></td>
-								<td><?=$name?></td>
-								<td align="right">
-									<?
-										switch($type) {
-											case "v":
-												echo "$value";
-												break;
-											case "f":
-												echo $filename;
-												break;
-											case "t":
-												echo $text;
-												break;
-											case "h":
-												echo $filename;
-												break;
-											case "i":
-												?>
-												<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
-												<?
-												break;
-										}
-									?>
-								</td>
-								<td style="padding-left:0px"><?=$units?></td>
-								<!--<td><?=$size?></td>-->
-								<td><?=$swversion?></td>
-								<td nowrap><?=$lastupdate?></td>
-							</tr>
-							<?
-						}
-					?>
-				</table>
-				</details>
-				<?
-			}
-		}
-		
-		return
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-		?>
-		<style>
-			.smallsearchbox { border: 1px solid #BBBBBB; font-size:9pt}
-		</style>
-		<b>Analyses</b><br><br>
-		<table class="smalldisplaytable">
-			<form method="post" action="studies.php">
-			<input type="hidden" name="id" value="<?=$studyid?>">
-			<thead>
-				<tr>
-					<th valign="top" align="left">
-						Pipeline<br>
-						<select name="search_pipelineid">
-							<option value="">Select pipeline</option>
-						<?
-							$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
-							while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-								$pipelineid = $row2['pipeline_id'];
-								$pipelinename = $row2['pipeline_name'];
-								?>
-								<option value="<?=$pipelineid?>" <? if ($search_pipelineid == $pipelineid) { echo "selected"; } ?>><?=$pipelinename?></option>
-								<?
-							}
-						?>
-						</select>
-					</th>
-					<th valign="top" align="left">Name<br><input type="text" name="search_name" value="<?=$search_name?>" class="smallsearchbox">
-					</th>
-					<th colspan="2" valign="top" align="left">Result<br>
-					<select name="search_compare">
-						<option value="=" <? if ($search_compare == '=') { echo "selected"; } ?>>=
-						<option value=">" <? if ($search_compare == '>') { echo "selected"; } ?>>&gt;
-						<option value=">=" <? if ($search_compare == '>=') { echo "selected"; } ?>>&gt;=
-						<option value="<" <? if ($search_compare == '<') { echo "selected"; } ?>>&lt;
-						<option value="<=" <? if ($search_compare == '<=') { echo "selected"; } ?>>&lt;=
-					</select>
-					<input type="text" name="search_value" value="<?=$search_value?>" size="15" class="smallsearchbox"><br>
-					<select name="search_type">
-						<option value="" <? if ($search_type == '') { echo "selected"; } ?>>Select type
-						<option value="v" <? if ($search_type == 'v') { echo "selected"; } ?>>value
-						<option value="f" <? if ($search_type == 'f') { echo "selected"; } ?>>file
-						<option value="i" <? if ($search_type == 'i') { echo "selected"; } ?>>image
-						<option value="h" <? if ($search_type == 'h') { echo "selected"; } ?>>html
-					</select>
-					<br>
-					Num img per line:
-					<select name="imgperline">
-						<?
-						for($i=1;$i<=20;$i++) {
-							?>
-							<option value="<?=$i?>" <? if ($imgperline == $i) { echo "selected"; } ?>><?=$i?>
-						<? } ?>
-					</select>
-
-					</th>
-					<!--<th valign="top" align="left">Size</th>-->
-					<th valign="top" align="left">SW version<br><input type="text" name="search_swversion" value="<?=$search_swversion?>" class="smallsearchbox"></th>
-					<th valign="top" align="left">Date added<br><input type="submit" value="Search" style="font-size:9pt"></th>
-				</tr>
-			</thead>
-			</form>
-			
-			<? if ($search_type == "i") { ?>
-			</table>
-			<table width="100%">
-				<?
-					$pagewidth = 1000;
-					$maximgwidth = $pagewidth/$imgperline;
-					$maximgwidth -= ($maximgwidth*0.05); /* subtract 5% of image width to give a gap between them */
-					$i = 0;
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						$pipelinename = $row['pipeline_name'];
-						$name = $row['result_name'];
-						$filename = $row['result_filename'];
-						$swversion = $row['result_softwareversion'];
-						$important = $row['result_isimportant'];
-						$lastupdate = $row['result_lastupdate'];
-						$i++;
-						
-						if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
-						
-						list($width, $height, $type, $attr) = getimagesize($GLOBALS['cfg']['mountdir'] . "/$filename");
-						$filesize = number_format(filesize($GLOBALS['cfg']['mountdir'] . "/$filename")/1000) . " kB";
-						?>
-							<td>
-								<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>"><img src="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" width="<?=$maximgwidth?>px"></a>
-								<table width="<?=$maximgwidth?>px">
-									<tr>
-										<td style="font-size:9pt">
-											<b><?=$name?></b><br>
-											<?=$swversion?><br>
-											<?=$lastupdate?>
-										</td>
-										<td align="right" valign="top">
-											<span class="tiny"><?=$width?>x<?=$height?><br><?=$filesize?></span>
-										</td>
-									</tr>
-								</table>
-							</td>
-						<?
-						if ($i>=$imgperline) {
-							$i=0;
-							?>
-								</tr>
-								<tr>
-							<?
-						}
-					}
-				?></table><?
-			}
-			else { ?>
-			<tbody>
-				<?
-					$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-						//$step = $row['analysis_step'];
-						$pipelinename = $row['pipeline_name'];
-						$type = $row['result_type'];
-						$size = $row['result_size'];
-						$name = $row['result_name'];
-						$text = $row['result_text'];
-						$value = $row['result_value'];
-						$units = $row['result_units'];
-						$filename = $row['result_filename'];
-						$swversion = $row['result_softwareversion'];
-						$important = $row['result_isimportant'];
-						$lastupdate = $row['result_lastupdate'];
-						
-						if (strpos($units,'^') !== false) {
-							$units = str_replace('^','<sup>',$units);
-							$units .= '</sup>';
-						}
-						if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
-						?>
-						<tr style="font-weight: <?=$bold?>">
-							<td><b><?=$pipelinename?></b></td>
-							<td><?=$name?></td>
-							<td align="right">
-								<?
-									switch($type) {
-										case "v":
-											echo "$value";
-											break;
-										case "f":
-											echo $filename;
-											break;
-										case "t":
-											echo $text;
-											break;
-										case "h":
-											echo $filename;
-											break;
-										case "i":
-											?>
-											<a href="preview.php?image=<?=$GLOBALS['cfg']['mountdir']?>/<?=$filename?>" class="preview"><i class="image icon"></i></a>
-											<?
-											break;
-									}
-								?>
-							</td>
-							<td style="padding-left:0px"><?=$units?></td>
-							<!--<td><?=$size?></td>-->
-							<td><?=$swversion?></td>
-							<td nowrap><?=$lastupdate?></td>
-						</tr>
-						<?
-					}
-				?>
-			</tbody>
-		</table>
-			<? }
-		}
-		else {
-			?>
-			No analyses for this study
-			<?
-		}
-	}
-	
 ?>
 
 

@@ -21,10 +21,10 @@
  // You should have received a copy of the GNU General Public License
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
-
 	define("LEGIT_REQUEST", true);
-	
+
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 ?>
 
 <html>
@@ -42,151 +42,106 @@
 	require "nidbapi.php";
 	require "menu.php";
 
-	//PrintVariable($_POST);
-	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("updatestudyage", "changeproject", "updateexperimentmapping", "applytags", "obliteratesubject", "obliteratestudy", "rearchivestudies", "rearchivesubjects", "resetqa", "resetmriqc", "setfavorite", "unsetfavorite", "batchupdatesubject", "batchaddsubjects", "batchupdatestudy"));
 	$id = (int)GetVariable("id");
 	$projectid = (int)GetVariable("projectid");
 	if ($id == 0) { $id = $projectid; }
 	$viewtype = GetVariable("viewtype");
+	if (!in_array($viewtype, array("", "groupbypi", "groupbyadmin"), true)) $viewtype = "";
+	$returnto = GetVariable("returnto");
 	$newprojectid = (int)GetVariable("newprojectid");
 	$studyids = GetVariable("studyids");
+	if (!is_array($studyids)) $studyids = array();
 	$matchidonly = GetVariable("matchidonly");
 	$modalities = GetVariable("modalities");
-	$oldnames = GetVariable("oldname");
-	$newnames = GetVariable("newname");
 	$protocolnames = GetVariable("protocolname");
 	$experimentids = GetVariable("experimentid");
-	$subjectids = GetVariable("subjectid");
-	$altuids = GetVariable("altuids");
-	$guids = GetVariable("guids");
-	$birthdates = GetVariable("birthdates");
-	$genders = GetVariable("genders");
-	$ethnicity1s = GetVariable("ethnicity1");
-	$ethnicity2s = GetVariable("ethnicity2");
-	$educations = GetVariable("education");
-	$maritalstatus = GetVariable("maritalstatus");
-	$smokingstatus = GetVariable("smokingstatus");
-	$enrollgroups = GetVariable("enrollgroup");
-	$studytable = GetVariable("studytable");
-	$subjecttable = GetVariable("subjecttable");
 	$tags = GetVariable("tags");
-	$serieslist1 = GetVariable("serieslist1");
-	$serieslist2 = GetVariable("serieslist2");
 	$csv = GetVariable("csv");
-	
-	$rdoc_label = GetVariable("rdoc_label");
-	$itemprotocol = GetVariable("itemprotocol");
-	//$xnathost = GetVariable("xnathost");
 
-	/* determine action */
+	/* mutating actions use POST/Redirect/GET: run the handler, stash its message, then redirect
+	   to a GET so a refresh/Back doesn't re-submit. Each handler checks permissions itself */
+	$flashthen = function($url) { $_SESSION['flash'] = ob_get_clean(); RedirectTo($url); };
 	switch ($action) {
 		case 'displaystudies':
+			ShowFlashMessage();
 			DisplayStudiesTable($id);
 			break;
 		case 'updatestudyage':
-			UpdateStudyAge($id);
-			DisplayStudiesTable($id);
-			break;
-		case 'auditstudies':
-			AuditStudies($id);
+			ob_start(); UpdateStudyAge($id);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'changeproject':
-			ChangeProject($newprojectid, $studyids);
-			DisplayStudiesTable($id);
-			break;
-		case 'editbidsdatatypes':
-			EditBIDSDatatypes($id);
-			break;
-		case 'viewbidsdatatypes':
-			ViewBIDSDatatypes($id);
-			break;
-		case 'dismissnewstudies':
-			DismissNewStudies($id);
-			DisplayProject($id);
+			ob_start(); ChangeProject($id, $newprojectid, $studyids);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'updateexperimentmapping':
-			UpdateExperimentMapping($id, $modalities, $protocolnames, $experimentids);
-			EditExperimentMapping($id);
+			ob_start(); UpdateExperimentMapping($id, $modalities, $protocolnames, $experimentids);
+			$flashthen("projects.php?action=editexperimentmapping&id=$id");
 			break;
 		case 'editexperimentmapping':
+			ShowFlashMessage();
 			EditExperimentMapping($id);
 			break;
-		case 'displayprojectinfo':
-			DisplayProject($id);
-			break;
 		case 'editsubjects':
-			DisplaySubjectsTable($id);
-			break;
 		case 'displaysubjects':
-			DisplaySubjectsTable($id,1);
+			ShowFlashMessage();
+			DisplaySubjectsTable($id);
 			break;
 		case 'applytags':
-			ApplyTags($id, $studyids, $tags);
-			DisplayStudiesTable($id);
-			break;
-		case 'displaycompleteprojecttable':
-			DisplayCompleteProjectTable($id);
-			break;
-		case 'compareserieslists':
-			DisplayCompareSeriesLists($id, $serieslist1, $serieslist2);
-			break;
-		case 'viewinstancesummary':
-			DisplayInstanceSummary($id);
-			break;
-		case 'changealternatenames':
-			ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames);
-			EditBIDSDatatypes($id);
+			ob_start(); ApplyTags($id, $studyids, $tags);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'obliteratesubject':
-			ObliterateSubject($studyids);
-			DisplayProjects($viewtype);
+			ob_start(); ObliterateSubject($id, $studyids);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'obliteratestudy':
-			ObliterateStudy($studyids);
-			DisplayProjects($viewtype);
+			ob_start(); ObliterateStudy($id, $studyids);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'rearchivestudies':
-			RearchiveStudies($studyids, $matchidonly);
-			DisplayProjects($viewtype);
+			ob_start(); RearchiveStudies($id, $studyids, $matchidonly);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'rearchivesubjects':
-			RearchiveSubjects($studyids, $matchidonly);
-			DisplayProjects($viewtype);
+			ob_start(); RearchiveSubjects($id, $studyids, $matchidonly);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'resetqa':
-			ResetProjectQA($id);
-			DisplayStudiesTable($id);
+			ob_start(); ResetProjectQC($id, "basic");
+			$flashthen("projects.php?id=$id");
 			break;
 		case 'resetmriqc':
-			ResetProjectMRIQC($id);
-			DisplayStudiesTable($id);
+			ob_start(); ResetProjectQC($id, "mriqc");
+			$flashthen("projects.php?id=$id");
 			break;
 		case 'setfavorite':
-			SetFavorite($id);
-			DisplayProject($id);
-			break;
 		case 'unsetfavorite':
-			UnsetFavorite($id);
-			DisplayProject($id);
+			ob_start(); SetProjectFavorite($id, ($action == 'setfavorite') ? 1 : 0);
+			/* back to the project page, or to the project list it was clicked from */
+			$flashthen(($returnto == "project") ? "projects.php?id=$id" : "projects.php?viewtype=" . urlencode($viewtype));
 			break;
 		case 'batchupdatesubject':
-			BatchUpdateSubject($id, $csv);
-			DisplaySubjectsTable($id);
+			ob_start(); BatchUpdateSubject($id, $csv);
+			$flashthen("projects.php?action=editsubjects&id=$id");
 			break;
 		case 'batchaddsubjects':
-			BatchAddSubjects($id, $csv);
-			DisplaySubjectsTable($id);
+			ob_start(); BatchAddSubjects($id, $csv);
+			$flashthen("projects.php?action=editsubjects&id=$id");
 			break;
 		case 'batchupdatestudy':
-			BatchUpdateStudy($id, $csv);
-			DisplayStudiesTable($id);
+			ob_start(); BatchUpdateStudy($id, $csv);
+			$flashthen("projects.php?action=displaystudies&id=$id");
 			break;
 		case 'displaynonimaging':
 			DisplayNonImagingTable($id);
 			break;
+		case 'displayprojectinfo':
 		default:
+			ShowFlashMessage();
 			if ($id == 0) {
 				DisplayProjects($viewtype);
 			}
@@ -195,58 +150,250 @@
 			}
 			break;
 	}
-	
-	
+
+
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- GetProjectRow ---------------------- */
+	/* -------------------------------------------- */
+	/* the project row, or null if it doesn't exist */
+	function GetProjectRow($projectid) {
+		$projectid = (int)$projectid;
+		if ($projectid <= 0) return null;
+		$sqlstring = "select * from projects where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return $row ? $row : null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckProjectPerm ------------------- */
+	/* -------------------------------------------- */
+	/* returns the project row if the current user has any one of $perms (e.g. array('viewdata', 'viewphi'))
+	   on the project, otherwise prints an error and returns null */
+	function CheckProjectPerm($projectid, $perms) {
+		$project = GetProjectRow($projectid);
+		if ($project === null) {
+			Error("Project not found");
+			return null;
+		}
+		$p = GetCurrentUserProjectPermissions(array((int)$projectid));
+		foreach ((array)$perms as $perm) {
+			if (GetPerm($p, $perm, $projectid)) return $project;
+		}
+		$labels = array('viewdata' => 'View Data', 'viewphi' => 'View PHI', 'modifydata' => 'Edit Data', 'modifyphi' => 'Edit PHI', 'projectadmin' => 'project admin');
+		Error("You need " . implode(" or ", array_map(function($x) use ($labels) { return $labels[$x] ?? $x; }, (array)$perms)) . " permission on this project");
+		return null;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetProjectStudyIDs ----------------- */
+	/* -------------------------------------------- */
+	/* of the requested study ids, the ones that belong to this project (ints) */
+	function GetProjectStudyIDs($projectid, $studyids) {
+		$projectid = (int)$projectid;
+		$ids = array_values(array_unique(array_filter(array_map('intval', (array)$studyids), function($v) { return $v > 0; })));
+		if (($projectid <= 0) || (count($ids) == 0)) return array();
+
+		$sqlstring = "select a.study_id from studies a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? and a.study_id in (" . implode(',', array_fill(0, count($ids), '?')) . ")";
+		$params = array_merge(array($projectid), $ids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($params)), ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$valid = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$valid[] = (int)$row['study_id'];
+		}
+		mysqli_stmt_close($stmt);
+		return $valid;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckPowerToolAccess --------------- */
+	/* -------------------------------------------- */
+	/* the 'Powerful Tools' on the studies table (tags, move, re-archive, obliterate) are only shown to
+	   site admins; enforce that here. Returns the selected study ids that belong to this project, or
+	   null after printing an error */
+	function CheckPowerToolAccess($projectid, $studyids) {
+		if (!isSiteAdmin()) {
+			Error("Only site administrators can perform this operation");
+			return null;
+		}
+		if (GetProjectRow($projectid) === null) {
+			Error("Project not found");
+			return null;
+		}
+		$ids = GetProjectStudyIDs($projectid, $studyids);
+		if (count($ids) == 0) {
+			Error("No studies from this project were selected");
+			return null;
+		}
+		return $ids;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- QueueFileIORequests ---------------- */
+	/* -------------------------------------------- */
+	/* queue a backend fileio operation ($operation, a literal) for each subject or study id */
+	function QueueFileIORequests($operation, $datatype, $ids) {
+		$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values (?, ?, ?, ?, now())";
+		$username = $GLOBALS['username'];
+		foreach ($ids as $id) {
+			$id = (int)$id;
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ssis', $operation, $datatype, $id, $username);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$operation, $datatype, $id, $username]);
+			mysqli_stmt_close($stmt);
+		}
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetStudiesSubjects ----------------- */
+	/* -------------------------------------------- */
+	/* the subjects (subject_id => uid) of a list of study ids */
+	function GetStudiesSubjects($studyids) {
+		$subjects = array();
+		if (count($studyids) == 0) return $subjects;
+		$sqlstring = "select distinct c.subject_id, c.uid from studies a join enrollment b on a.enrollment_id = b.enrollment_id join subjects c on b.subject_id = c.subject_id where a.study_id in (" . implode(',', array_fill(0, count($studyids), '?')) . ")";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($studyids)), ...$studyids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $studyids);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$subjects[(int)$row['subject_id']] = $row['uid'];
+		}
+		mysqli_stmt_close($stmt);
+		return $subjects;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FavoriteToggle --------------------- */
+	/* -------------------------------------------- */
+	/* the favorite star for a project, as a small POST form. $returnto 'project' goes back to the project
+	   page, otherwise to the project list ($viewtype) */
+	function FavoriteToggle($projectid, $favorite, $returnto, $viewtype = "") {
+		$projectid = (int)$projectid;
+		?><form method="post" action="projects.php" style="display: inline; margin: 0"><input type="hidden" name="action" value="<?=($favorite ? "unsetfavorite" : "setfavorite")?>"><input type="hidden" name="id" value="<?=$projectid?>"><input type="hidden" name="returnto" value="<?=htmlspecialchars($returnto)?>"><input type="hidden" name="viewtype" value="<?=htmlspecialchars($viewtype)?>"><?=CSRFTokenField()?><button type="submit" style="background: none; border: none; padding: 0; cursor: pointer"><? if ($favorite) { ?><i class="yellow star icon" title="Click to remove this project from your favorites"></i><? } else { ?><i class="grey star outline icon" title="Click to add this project to your favorites"></i><? } ?></button></form><?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- JSONForScript ---------------------- */
+	/* -------------------------------------------- */
+	/* json_encode() a value for embedding in a <script> block (no </script> breakout) */
+	function JSONForScript($v) {
+		return json_encode($v, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_PARTIAL_OUTPUT_ON_ERROR);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ParseBatchCSV ---------------------- */
+	/* -------------------------------------------- */
+	/* parse pasted CSV into an array of rows keyed by the lowercased, space-free header names. Short
+	   rows are padded with ''. Returns null (after a notice) if there is no header + data row */
+	function ParseBatchCSV($csvstr) {
+		$lines = preg_split('/\r\n|\r|\n/', trim($csvstr ?? ''));
+		if (count($lines) < 2) { Notice("CSV must contain a header row and at least one data row."); return null; }
+
+		$header = array_map(function($h) { return strtolower(str_replace(' ', '', trim($h))); }, str_getcsv($lines[0]));
+		$rows = array();
+		for ($i = 1; $i < count($lines); $i++) {
+			if (trim($lines[$i]) === '') continue;
+			$values = array_map('trim', str_getcsv($lines[$i]));
+			$row = array();
+			foreach ($header as $idx => $col) {
+				$row[$col] = $values[$idx] ?? '';
+			}
+			$row['_line'] = $i;
+			$rows[] = $row;
+		}
+		return $rows;
+	}
 
 
 	/* -------------------------------------------- */
 	/* ------- BatchUpdateSubject ----------------- */
 	/* -------------------------------------------- */
+	/* update subjects enrolled in this project from pasted CSV. Permissions follow subjects.php:
+	   enrollment columns (status, enrollgroup, altuids, icd10) need Edit Data on this project, PHI
+	   columns need Edit PHI on the subject, and other subject columns need either */
 	function BatchUpdateSubject($projectid, $csvstr) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		
-		$csv = preg_split('/\r\n|\r|\n/', $csvstr);
-		$csv[0] = str_replace(' ','', $csv[0]);
-		
-		$data = array_map('str_getcsv', $csv);
-		array_walk($data, function(&$a) use ($data) {
-			$a = array_combine($data[0], $a);
-		});
-		array_shift($data); # remove column header
-		
-		$msgs = array();
-		foreach ($data as $line) {
-			$uid = $line['uid'];
-			$sqlstring = "select subject_id from subjects where uid = '$uid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0){
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$subjectid = $row['subject_id'];
-				foreach ($line as $column => $value) {
-					$column = mysqli_real_escape_string($GLOBALS['linki'], trim($column));
-					$value = mysqli_real_escape_string($GLOBALS['linki'], trim($value));
-					if (in_array($column, array('status', 'altuids', 'guid', 'birthdate', 'sex', 'gender', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital', 'smoking', 'enrollgroup', 'icd10'))) {
-						$msgs[] = UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value);
-					}
-				}
+		$project = CheckProjectPerm($projectid, array('modifydata', 'modifyphi'));
+		if ($project === null) return;
+		$projectid = (int)$projectid;
+		$pperms = GetCurrentUserProjectPermissions(array($projectid));
+		$canmodifydata = GetPerm($pperms, 'modifydata', $projectid);
 
-				/* firstname/lastname combine into subjects.name as 'lastname^firstname'. Handled
-				   together (not as individual columns) so one does not overwrite the other. Only
-				   applied when at least one is provided, so a row without them leaves name unchanged. */
-				if (array_key_exists('firstname', $line) || array_key_exists('lastname', $line)) {
-					$firstname = mysqli_real_escape_string($GLOBALS['linki'], trim($line['firstname'] ?? ''));
-					$lastname  = mysqli_real_escape_string($GLOBALS['linki'], trim($line['lastname'] ?? ''));
-					if (($firstname !== '') || ($lastname !== '')) {
+		$rows = ParseBatchCSV($csvstr);
+		if ($rows === null) return;
+
+		$enrollmentcols = array('status', 'enrollgroup', 'altuids', 'icd10');
+		$phicols = array('birthdate', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'marital');
+		$subjectcols = array('guid', 'sex', 'gender', 'smoking');
+
+		$msgs = array();
+		foreach ($rows as $line) {
+			$uid = $line['uid'] ?? '';
+			$h_uid = htmlspecialchars($uid);
+			if ($uid == '') { $msgs[] = "Row " . $line['_line'] . ": skipped &mdash; uid is blank"; continue; }
+
+			/* the subject must be enrolled in this project */
+			$sqlstring = "select a.subject_id from subjects a join enrollment b on a.subject_id = b.subject_id where a.uid = ? and b.project_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $uid, $projectid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$uid, $projectid]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) { $msgs[] = "$h_uid - not enrolled in this project, skipped"; continue; }
+			$subjectid = (int)$row['subject_id'];
+			$sp = GetSubjectPermissions($subjectid);
+
+			foreach ($line as $column => $value) {
+				if (in_array($column, $enrollmentcols)) $allowed = $canmodifydata;
+				elseif (in_array($column, $phicols)) $allowed = $sp['modifyphi'];
+				elseif (in_array($column, $subjectcols)) $allowed = $sp['canedit'];
+				else continue;
+
+				if (!$allowed) {
+					$msgs[] = "$h_uid - " . htmlspecialchars($column) . " not changed: you don't have permission to edit it";
+					continue;
+				}
+				$msgs[] = UpdateSubjectDetails($uid, $subjectid, $projectid, $column, trim($value));
+			}
+
+			/* firstname/lastname combine into subjects.name as 'lastname^firstname'. Handled together
+			   (not as individual columns) so one does not overwrite the other. Only applied when at
+			   least one is provided, so a row without them leaves name unchanged. Name is PHI */
+			if (array_key_exists('firstname', $line) || array_key_exists('lastname', $line)) {
+				$firstname = trim($line['firstname'] ?? '');
+				$lastname = trim($line['lastname'] ?? '');
+				if (($firstname !== '') || ($lastname !== '')) {
+					if (!$sp['modifyphi']) {
+						$msgs[] = "$h_uid - name not changed: you don't have Edit PHI permission";
+					}
+					else {
 						$newname = $lastname . '^' . $firstname;
-						$sqlstring = "update subjects set name = '$newname' where subject_id = $subjectid";
-						MySQLiQuery($sqlstring, __FILE__, __LINE__);
-						$msgs[] = "$uid - Updated name &rarr; <tt>$newname</tt>";
+						$sqlstring = "update subjects set name = ? where subject_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'si', $newname, $subjectid);
+						MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newname, $subjectid]);
+						mysqli_stmt_close($stmt);
+						$msgs[] = "$h_uid - Updated name &rarr; <tt>" . htmlspecialchars($newname) . "</tt>";
 					}
 				}
 			}
 		}
-		Notice(implode2("<br>", $msgs));
+		Notice(implode("<br>", array_filter($msgs)));
 	}
 
 
@@ -254,24 +401,18 @@
 	/* ------- BatchUpdateStudy ------------------- */
 	/* -------------------------------------------- */
 	function BatchUpdateStudy($projectid, $csvstr) {
+		$project = CheckProjectPerm($projectid, array('modifydata'));
+		if ($project === null) return;
 		$projectid = (int)$projectid;
 
-		$lines = preg_split('/\r\n|\r|\n/', trim($csvstr));
-		if (count($lines) < 2) { Notice("CSV must contain a header row and at least one data row."); return; }
-
-		/* strip spaces from header, lowercase for case-insensitive matching */
-		$header = array_map('trim', str_getcsv($lines[0]));
-		$headerLower = array_map('strtolower', $header);
-
-		$requiredCols = ['uid', 'studynum'];
-		foreach ($requiredCols as $req) {
-			if (!in_array($req, $headerLower)) {
-				Notice("CSV is missing required column: <b>$req</b>");
-				return;
-			}
+		$rows = ParseBatchCSV($csvstr);
+		if ($rows === null) return;
+		if (!array_key_exists('uid', $rows[0] ?? array()) || !array_key_exists('studynum', $rows[0] ?? array())) {
+			Notice("CSV must contain the columns <b>uid</b> and <b>studynum</b>");
+			return;
 		}
 
-		/* map optional CSV column (lowercased) -> studies table column */
+		/* CSV column -> studies column (literals) */
 		$colMap = array(
 			'visit'         => 'study_type',
 			'studydatetime' => 'study_datetime',
@@ -282,971 +423,673 @@
 		);
 
 		$msgs = array();
-		for ($i = 1; $i < count($lines); $i++) {
-			$line = trim($lines[$i]);
-			if ($line === '') continue;
-
-			$values = array_map('trim', str_getcsv($line));
-			/* zip header to values (lowercased keys); pad short rows with empty strings */
-			$row = array();
-			foreach ($headerLower as $idx => $col) {
-				$row[$col] = isset($values[$idx]) ? $values[$idx] : '';
-			}
-
-			$uid = mysqli_real_escape_string($GLOBALS['linki'], $row['uid']);
+		foreach ($rows as $row) {
+			$i = $row['_line'];
+			$uid = $row['uid'];
+			$h_uid = htmlspecialchars($uid);
 			$studynum = (int)$row['studynum'];
 			if ($uid === '') { $msgs[] = "Row $i: skipped &mdash; uid is blank"; continue; }
-			if ($studynum <= 0) { $msgs[] = "Row $i ($uid): skipped &mdash; studynum is missing or invalid"; continue; }
+			if ($studynum <= 0) { $msgs[] = "Row $i ($h_uid): skipped &mdash; studynum is missing or invalid"; continue; }
 
 			/* find the study for this uid + studynum within this project */
-			$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects d on d.subject_id = b.subject_id where d.uid = '$uid' and a.study_num = $studynum and b.project_id = $projectid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) < 1) { $msgs[] = "Row $i ($uid $studynum): study not found in this project"; continue; }
+			$sqlstring = "select a.study_id from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects d on d.subject_id = b.subject_id where d.uid = ? and a.study_num = ? and b.project_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'sii', $uid, $studynum, $projectid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$uid, $studynum, $projectid]);
 			$rowS = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$rowS) { $msgs[] = "Row $i ($h_uid $studynum): study not found in this project"; continue; }
 			$studyid = (int)$rowS['study_id'];
 
 			/* build the update from whichever optional columns are present in the CSV */
 			$sets = array();
+			$params = array();
 			$updated = array();
 			foreach ($colMap as $csvcol => $dbcol) {
 				if (!array_key_exists($csvcol, $row)) continue;
 				$raw = $row[$csvcol];
 				/* skip blank values for numeric/datetime columns to avoid invalid writes */
 				if (($raw === '') && in_array($dbcol, array('study_datetime', 'study_ageatscan'))) continue;
-				$val = mysqli_real_escape_string($GLOBALS['linki'], $raw);
-				$sets[] = "$dbcol = '$val'";
+				$sets[] = "$dbcol = ?";
+				$params[] = $raw;
 				$updated[] = $csvcol;
 			}
-			if (count($sets) < 1) { $msgs[] = "Row $i ($uid $studynum): no updatable columns provided"; continue; }
+			if (count($sets) < 1) { $msgs[] = "Row $i ($h_uid $studynum): no updatable columns provided"; continue; }
 
-			$sqlstringA = "update studies set " . implode(", ", $sets) . " where study_id = $studyid";
-			MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$msgs[] = "$uid $studynum &mdash; updated <tt>" . implode(", ", $updated) . "</tt>";
+			$sqlstring = "update studies set " . implode(", ", $sets) . " where study_id = ?";
+			$params[] = $studyid;
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, str_repeat('s', count($params) - 1) . 'i', ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
+			$msgs[] = "$h_uid $studynum &mdash; updated <tt>" . implode(", ", $updated) . "</tt>";
 		}
-		Notice(implode2("<br>", $msgs));
+		Notice(implode("<br>", $msgs));
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- BatchAddSubjects ------------------- */
 	/* -------------------------------------------- */
+	/* create (or find, by alternate ID) subjects from pasted CSV and enroll them in this project.
+	   Needs Edit Data on the project, plus Edit PHI if any PHI column (name, birthdate, race,
+	   ethnicity, handedness, education, marital status) has values */
 	function BatchAddSubjects($projectid, $csvstr) {
+		$project = CheckProjectPerm($projectid, array('modifydata'));
+		if ($project === null) return;
 		$projectid = (int)$projectid;
+		$pperms = GetCurrentUserProjectPermissions(array($projectid));
 
-		$lines = preg_split('/\r\n|\r|\n/', trim($csvstr));
-		if (count($lines) < 2) { Notice("CSV must contain a header row and at least one data row."); return; }
+		$rows = ParseBatchCSV($csvstr);
+		if ($rows === null) return;
 
-		/* strip spaces from header, lowercase for case-insensitive matching */
-		$header = array_map('trim', str_getcsv($lines[0]));
-		$headerLower = array_map('strtolower', $header);
-
-		$requiredCols = ['id', 'sex', 'gender', 'status', 'enrollgroup'];
-		foreach ($requiredCols as $req) {
-			if (!in_array($req, $headerLower)) {
+		foreach (array('id', 'sex', 'gender', 'status', 'enrollgroup') as $req) {
+			if (!array_key_exists($req, $rows[0])) {
 				Notice("CSV is missing required column: <b>$req</b>");
 				return;
 			}
 		}
 
-		$validSex      = ['F','M','O','U',''];
-		$validGender   = ['F','M','O','U',''];
-		$validStatus   = ['consented','excluded','completed',''];
+		/* PHI columns need Edit PHI. Refuse the whole batch rather than silently dropping values */
+		if (!GetPerm($pperms, 'modifyphi', $projectid)) {
+			foreach ($rows as $row) {
+				foreach (array('birthdate', 'ethnicity1', 'ethnicity2', 'handedness', 'education', 'maritalstatus', 'firstname', 'lastname') as $phicol) {
+					if (($row[$phicol] ?? '') !== '') {
+						Error("The CSV contains PHI (" . htmlspecialchars($phicol) . "), which needs Edit PHI permission on this project. No subjects were added");
+						return;
+					}
+				}
+			}
+		}
+
+		$validSex    = ['F','M','O','U',''];
+		$validStatus = ['consented','excluded','completed',''];
 
 		$msgs = [];
-
-		for ($i = 1; $i < count($lines); $i++) {
-			$line = trim($lines[$i]);
-			if ($line === '') continue;
-
-			$values = array_map('trim', str_getcsv($line));
-			/* zip header to values; pad short rows with empty strings */
-			$row = [];
-			foreach ($header as $idx => $col) {
-				$row[strtolower($col)] = isset($values[$idx]) ? $values[$idx] : '';
-			}
-
-			$altid       = mysqli_real_escape_string($GLOBALS['linki'], $row['id']);
-			$sex         = strtoupper(mysqli_real_escape_string($GLOBALS['linki'], $row['sex']));
-			$gender      = strtoupper(mysqli_real_escape_string($GLOBALS['linki'], $row['gender']));
-			$status      = strtolower(mysqli_real_escape_string($GLOBALS['linki'], $row['status']));
-			$enrollgroup = mysqli_real_escape_string($GLOBALS['linki'], $row['enrollgroup']);
+		foreach ($rows as $row) {
+			$i = $row['_line'];
+			$altid = $row['id'];
+			$h_altid = htmlspecialchars($altid);
+			$sex = strtoupper($row['sex']);
+			$gender = strtoupper($row['gender']);
+			$status = strtolower($row['status']);
+			$enrollgroup = $row['enrollgroup'];
 
 			if ($altid === '') { $msgs[] = "Row $i: skipped — ID is blank"; continue; }
-			if (!in_array($sex,    $validSex))    { $msgs[] = "Row $i ($altid): invalid sex '$sex' — must be F, M, O, or U"; continue; }
-			if (!in_array($gender, $validGender)) { $msgs[] = "Row $i ($altid): invalid gender '$gender' — must be F, M, O, or U"; continue; }
-			if (!in_array($status, $validStatus)) { $msgs[] = "Row $i ($altid): invalid status '$status' — must be consented, excluded, completed, or blank"; continue; }
+			if (!in_array($sex, $validSex)) { $msgs[] = "Row $i ($h_altid): invalid sex '" . htmlspecialchars($sex) . "' — must be F, M, O, or U"; continue; }
+			if (!in_array($gender, $validSex)) { $msgs[] = "Row $i ($h_altid): invalid gender '" . htmlspecialchars($gender) . "' — must be F, M, O, or U"; continue; }
+			if (!in_array($status, $validStatus)) { $msgs[] = "Row $i ($h_altid): invalid status '" . htmlspecialchars($status) . "' — must be consented, excluded, completed, or blank"; continue; }
 
 			/* optional columns */
-			$guid         = mysqli_real_escape_string($GLOBALS['linki'], $row['guid']         ?? '');
-			$birthdate    = mysqli_real_escape_string($GLOBALS['linki'], $row['birthdate']     ?? '');
-			$ethnicity1   = mysqli_real_escape_string($GLOBALS['linki'], $row['ethnicity1']    ?? '');
-			$ethnicity2   = mysqli_real_escape_string($GLOBALS['linki'], $row['ethnicity2']    ?? '');
-			$handedness   = mysqli_real_escape_string($GLOBALS['linki'], $row['handedness']    ?? '');
-			$education    = mysqli_real_escape_string($GLOBALS['linki'], $row['education']     ?? '');
-			$marital      = mysqli_real_escape_string($GLOBALS['linki'], $row['maritalstatus'] ?? '');
-			$smoking      = mysqli_real_escape_string($GLOBALS['linki'], $row['smokingstatus'] ?? '');
-			$firstname    = mysqli_real_escape_string($GLOBALS['linki'], $row['firstname'] ?? '');
-			$lastname     = mysqli_real_escape_string($GLOBALS['linki'], $row['lastname'] ?? '');
+			$guid       = $row['guid'] ?? '';
+			$birthdate  = $row['birthdate'] ?? '';
+			$ethnicity1 = $row['ethnicity1'] ?? '';
+			$ethnicity2 = $row['ethnicity2'] ?? '';
+			$handedness = $row['handedness'] ?? '';
+			$education  = $row['education'] ?? '';
+			$marital    = $row['maritalstatus'] ?? '';
+			$smoking    = $row['smokingstatus'] ?? '';
+			$firstname  = $row['firstname'] ?? '';
+			$lastname   = $row['lastname'] ?? '';
 			if ($birthdate === '') $birthdate = '0000-00-00';
 
 			/* if a first and/or last name was provided, store it in subjects.name as
 			   'lastname^firstname'; otherwise fall back to the CSV ID */
-			if (($firstname !== '') || ($lastname !== ''))
-				$name = $lastname . '^' . $firstname;
-			else
-				$name = $altid;
+			$name = (($firstname !== '') || ($lastname !== '')) ? ($lastname . '^' . $firstname) : $altid;
 
 			/* check if a subject with this altuid already exists */
-			$result = MySQLiQuery("select sa.subject_id from subject_altuid sa where sa.altuid = '$altid'", __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$row2 = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$sqlstring = "select subject_id from subject_altuid where altuid = ? limit 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $altid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$altid]);
+			$row2 = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($row2) {
 				$subjectRowID = (int)$row2['subject_id'];
-				$msgs[] = "<b>$altid</b>: subject already exists (subject_id=$subjectRowID) — checking enrollment";
-			} else {
-				/* generate a unique NiDB UID */
+				$msgs[] = "<b>$h_altid</b>: subject already exists (subject_id=$subjectRowID) — checking enrollment";
+			}
+			else {
+				/* generate a unique NiDB UID, and a unique family UID */
 				do {
 					$uid = NIDB\CreateUID('S', 3);
-					$chk = MySQLiQuery("select subject_id from subjects where uid = '$uid'", __FILE__, __LINE__);
-				} while (mysqli_num_rows($chk) > 0);
-
-				/* generate a unique family UID */
+				} while (BatchValueExists("select subject_id from subjects where uid = ?", $uid));
 				do {
 					$familyuid = NIDB\CreateUID('F');
-					$chk = MySQLiQuery("select family_id from families where family_uid = '$familyuid'", __FILE__, __LINE__);
-				} while (mysqli_num_rows($chk) > 0);
+				} while (BatchValueExists("select family_id from families where family_uid = ?", $familyuid));
 
 				/* insert subject */
-				MySQLiQuery("insert into subjects (name, birthdate, sex, gender, ethnicity1, ethnicity2, handedness, education, marital_status, smoking_status, uid, uuid, guid) values ('$name', '$birthdate', '$sex', '$gender', '$ethnicity1', '$ethnicity2', '$handedness', '$education', '$marital', '$smoking', '$uid', uuid(), '$guid')", __FILE__, __LINE__);
+				$sqlstring = "insert into subjects (name, birthdate, sex, gender, ethnicity1, ethnicity2, handedness, education, marital_status, smoking_status, uid, uuid, guid) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, uuid(), ?)";
+				$params = [$name, $birthdate, $sex, $gender, $ethnicity1, $ethnicity2, $handedness, $education, $marital, $smoking, $uid, $guid];
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ssssssssssss', ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 				$subjectRowID = (int)mysqli_insert_id($GLOBALS['linki']);
+				mysqli_stmt_close($stmt);
 
 				/* create family record */
-				MySQLiQuery("insert into families (family_uid, family_createdate, family_name) values ('$familyuid', now(), 'Proband-$uid')", __FILE__, __LINE__);
+				$familyname = "Proband-$uid";
+				$sqlstring = "insert into families (family_uid, family_createdate, family_name) values (?, now(), ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ss', $familyuid, $familyname);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$familyuid, $familyname]);
 				$familyRowID = (int)mysqli_insert_id($GLOBALS['linki']);
-				MySQLiQuery("insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())", __FILE__, __LINE__);
+				mysqli_stmt_close($stmt);
+
+				$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values (?, ?, now())";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ii', $familyRowID, $subjectRowID);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$familyRowID, $subjectRowID]);
+				mysqli_stmt_close($stmt);
 
 				/* store the CSV ID as the subject's alt UID */
-				MySQLiQuery("insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$altid')", __FILE__, __LINE__);
+				$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values (?, ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'is', $subjectRowID, $altid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectRowID, $altid]);
+				mysqli_stmt_close($stmt);
 
-				$msgs[] = "<b>$altid</b>: created new subject <tt>$uid</tt>";
+				$msgs[] = "<b>$h_altid</b>: created new subject <tt>" . htmlspecialchars($uid) . "</tt>";
 			}
 
 			/* enroll in project if not already enrolled */
-			$result = MySQLiQuery("select enrollment_id from enrollment where project_id = $projectid and subject_id = $subjectRowID", __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0) {
-				$erow = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$enrollmentRowID = (int)$erow['enrollment_id'];
+			$sqlstring = "select enrollment_id from enrollment where project_id = ? and subject_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $projectid, $subjectRowID);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $subjectRowID]);
+			$erow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($erow) {
 				/* update group and status on existing enrollment */
-				MySQLiQuery("update enrollment set enroll_subgroup = '$enrollgroup', enroll_status = '$status' where enrollment_id = $enrollmentRowID", __FILE__, __LINE__);
+				$enrollmentRowID = (int)$erow['enrollment_id'];
+				$sqlstring = "update enrollment set enroll_subgroup = ?, enroll_status = ? where enrollment_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ssi', $enrollgroup, $status, $enrollmentRowID);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollgroup, $status, $enrollmentRowID]);
+				mysqli_stmt_close($stmt);
 				$msgs[] = "&nbsp;&nbsp;&rarr; already enrolled — updated group/status";
-			} else {
-				MySQLiQuery("insert into enrollment (project_id, subject_id, enroll_startdate, enroll_subgroup, enroll_status) values ($projectid, $subjectRowID, now(), '$enrollgroup', '$status')", __FILE__, __LINE__);
-				$msgs[] = "&nbsp;&nbsp;&rarr; enrolled in project (group: <i>$enrollgroup</i>, status: <i>$status</i>)";
+			}
+			else {
+				$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate, enroll_subgroup, enroll_status) values (?, ?, now(), ?, ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'iiss', $projectid, $subjectRowID, $enrollgroup, $status);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $subjectRowID, $enrollgroup, $status]);
+				mysqli_stmt_close($stmt);
+				$msgs[] = "&nbsp;&nbsp;&rarr; enrolled in project (group: <i>" . htmlspecialchars($enrollgroup) . "</i>, status: <i>" . htmlspecialchars($status) . "</i>)";
 			}
 		}
 
-		Notice(implode2("<br>", $msgs));
+		Notice(implode("<br>", $msgs));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BatchValueExists ------------------- */
+	/* -------------------------------------------- */
+	/* true if a one-parameter (string) select returns any rows */
+	function BatchValueExists($sqlstring, $value) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $value);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$value]);
+		$exists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		return $exists;
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateSubjectDetails --------------- */
 	/* -------------------------------------------- */
+	/* set one column for a subject (batch update). The caller has checked permissions. Returns a
+	   message (HTML) */
 	function UpdateSubjectDetails($uid, $subjectid, $projectid, $column, $value) {
-		
-		if ($subjectid == "") {
-			echo "error, subjectID blank";
-			return;
-		}
-		
-		$msg = "";
-		
-		if ($value == "") {
-			$msg = "$uid, $column - Batch will not update to a blank value";
-		}
-		else {
-			
-			if ($column == "altuids") {
-				StartSQLTransaction();
-				/* get enrollmentid */
-				$enrollmentid = GetEnrollmentID($subjectid, $projectid);
-				//$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectid and project_id = $projectid";
-				//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				//$enrollmentid = $row['enrollment_id'];
-				//if ($enrollmentid == "") { $enrollmentid = 0; }
+		$subjectid = (int)$subjectid;
+		$projectid = (int)$projectid;
+		$h = htmlspecialchars("$uid, $column");
+		if ($subjectid <= 0) return "$h - subject ID blank";
+		if ($value == "") return "$h - Batch will not update to a blank value";
 
-				/* delete entries for this subject from the altuid table ... */
-				$sqlstring = "delete from subject_altuid where subject_id = $subjectid and enrollment_id = $enrollmentid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				/* ... and insert the new rows into the altuids table */
-				$altuidsublist = $value;
-				$altuids = explode(',',$altuidsublist);
-				foreach ($altuids as $altuid) {
-					$altuid = trim($altuid);
-					if ($altuid != "") {
-						//$enrollmentid = $enrollmentids[$i];
-						if ($enrollmentid == "") { $enrollmentid = 0; }
-						if (strpos($altuid, '*') !== FALSE) {
-							$altuid = str_replace('*','',$altuid);
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',1, '$enrollmentid')";
-						}
-						else {
-							$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values ($subjectid, '$altuid',0, '$enrollmentid')";
-						}
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					}
-				}
-				CommitSQLTransaction();
-				$msg = "$uid - Updated $column alternate UIDs <tt>$value</tt>";
-			}
-			elseif ($column == "status") {
-				$sqlstring = "update enrollment set enroll_status = '$value' where project_id = $projectid and subject_id = $subjectid";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				$msg = "$uid - Updated enrollment status &rarr; <tt>$value</tt>";
-			}
-			elseif ($column == "enrollgroup") {
-				$sqlstring = "update enrollment set enroll_subgroup = '$value' where project_id = $projectid and subject_id = $subjectid";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				$msg = "$uid - Updated enroll group &rarr; <tt>$value</tt>";
-			}
-			elseif ($column == "icd10") {
-				$enrollmentRowID = GetEnrollmentID($subjectid, $projectid);
-				
-				/* get icd10 rowID */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "select icd10_id from icd10 where icd10_code = ?");
-				mysqli_stmt_bind_param($stmt, 's', $value);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$icd10RowID = $row['icd10_id'];
+		if ($column == "altuids") {
+			$enrollmentid = (int)GetEnrollmentID($subjectid, $projectid);
+			StartSQLTransaction();
+			/* replace this enrollment's alternate UIDs */
+			$sqlstring = "delete from subject_altuid where subject_id = ? and enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $enrollmentid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid, $enrollmentid]);
+			mysqli_stmt_close($stmt);
+			/* comma or space separated; an asterisk marks the primary ID */
+			$sqlstring = "insert ignore into subject_altuid (subject_id, altuid, isprimary, enrollment_id) values (?, ?, ?, ?)";
+			foreach (preg_split('/[\s,]+/', $value) as $altuid) {
+				$altuid = trim($altuid);
+				if ($altuid == "") continue;
+				$isprimary = (strpos($altuid, '*') !== false) ? 1 : 0;
+				$altuid = str_replace('*', '', $altuid);
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'isii', $subjectid, $altuid, $isprimary, $enrollmentid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid, $altuid, $isprimary, $enrollmentid]);
 				mysqli_stmt_close($stmt);
-				
-				/* update the icd10 code */
-				$stmt = mysqli_prepare($GLOBALS['linki'], "insert ignore into diagnosis (enrollment_id, icd10_id) values (?,?)");
-				mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $icd10RowID);
-				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$icd10RowID = $row['icd10_id'];
-				mysqli_stmt_close($stmt);
-				
 			}
-			else {
-				$sqlstring = "update subjects set ";
-				switch ($column) {
-					case "guid": $sqlstring .= "guid"; break;
-					case "sex": $sqlstring .= "subjects.sex"; break;
-					case "gender": $sqlstring .= "gender"; break;
-					case "birthdate": $sqlstring .= "birthdate"; break;
-					case "ethnicity1": $sqlstring .= "ethnicity1"; break;
-					case "ethnicity2": $sqlstring .= "ethnicity2"; break;
-					case "handedness": $sqlstring .= "handedness"; break;
-					case "education":
-						switch ($value) {
-							case "Unknown": $value = 0; break;
-							case "Grade School": $value = 1; break;
-							case "Middle School": $value = 2; break;
-							case "High School/GED": $value = 3; break;
-							case "Trade School": $value = 4; break;
-							case "Associates Degree": $value = 5; break;
-							case "Bachelors Degree": $value = 6; break;
-							case "Masters Degree": $value = 7; break;
-							case "Doctoral Degree": $value = 8; break;
-							default: $value = "";
-						}
-						$sqlstring .= "education";
-						break;
-					case "marital": $sqlstring .= "marital_status"; break;
-					case "smoking": $sqlstring .= "smoking_status"; break;
-					case "enrollgroup": $sqlstring .= "enroll_subgroup"; break;
-					default: echo "error - [$column] not recognized"; return;
-				}
-				$sqlstring .= " = '$value' where subject_id = $subjectid";
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				$msg = "$uid - Updated $column &rarr; <tt>$value</tt>";
-			}
+			CommitSQLTransaction();
+			return htmlspecialchars($uid) . " - Updated alternate UIDs <tt>" . htmlspecialchars($value) . "</tt>";
 		}
-		
-		return $msg;
+		elseif (($column == "status") || ($column == "enrollgroup")) {
+			$dbcol = ($column == "status") ? "enroll_status" : "enroll_subgroup";
+			$sqlstring = "update enrollment set $dbcol = ? where project_id = ? and subject_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'sii', $value, $projectid, $subjectid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$value, $projectid, $subjectid]);
+			mysqli_stmt_close($stmt);
+			return htmlspecialchars($uid) . " - Updated " . htmlspecialchars($column) . " &rarr; <tt>" . htmlspecialchars($value) . "</tt>";
+		}
+		elseif ($column == "icd10") {
+			$enrollmentRowID = (int)GetEnrollmentID($subjectid, $projectid);
+			$sqlstring = "select icd10_id from icd10 where icd10_code = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $value);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$value]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$row) return "$h - ICD10 code <tt>" . htmlspecialchars($value) . "</tt> not found";
+			$icd10RowID = (int)$row['icd10_id'];
+
+			$sqlstring = "insert ignore into diagnosis (enrollment_id, icd10_id) values (?, ?)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $enrollmentRowID, $icd10RowID);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$enrollmentRowID, $icd10RowID]);
+			mysqli_stmt_close($stmt);
+			return htmlspecialchars($uid) . " - Added diagnosis <tt>" . htmlspecialchars($value) . "</tt>";
+		}
+
+		/* subject columns (literals) */
+		$cols = array('guid' => 'guid', 'sex' => 'sex', 'gender' => 'gender', 'birthdate' => 'birthdate', 'ethnicity1' => 'ethnicity1', 'ethnicity2' => 'ethnicity2', 'handedness' => 'handedness', 'education' => 'education', 'marital' => 'marital_status', 'smoking' => 'smoking_status');
+		if (!isset($cols[$column])) return "$h - column not recognized";
+		if ($column == "education") {
+			$levels = array("Unknown" => 0, "Grade School" => 1, "Middle School" => 2, "High School/GED" => 3, "Trade School" => 4, "Associates Degree" => 5, "Bachelors Degree" => 6, "Masters Degree" => 7, "Doctoral Degree" => 8);
+			/* the batch help lists the numbers 0-8; the names are also accepted */
+			if (isset($levels[$value])) $value = $levels[$value];
+			elseif (!preg_match('/^[0-8]$/', $value)) return "$h - invalid education value";
+		}
+		$sqlstring = "update subjects set " . $cols[$column] . " = ? where subject_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		$value = (string)$value;
+		mysqli_stmt_bind_param($stmt, 'si', $value, $subjectid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$value, $subjectid]);
+		mysqli_stmt_close($stmt);
+		return htmlspecialchars($uid) . " - Updated " . htmlspecialchars($column) . " &rarr; <tt>" . htmlspecialchars($value) . "</tt>";
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- ApplyTags -------------------------- */
 	/* -------------------------------------------- */
-	function ApplyTags($projectRowID, $studyids, $tags) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
+	/* tag the enrollments of the selected studies (site admin 'Powerful Tools') */
+	function ApplyTags($projectid, $studyids, $tags) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
 
-		/* prepare the fields for SQL */
-		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		$tags = mysqli_real_escape_string($GLOBALS['linki'], $tags);
-		$taglist = explode(',', $tags);
-		
-		$studyids = implode2(",", $studyids);
-		
+		$taglist = array_values(array_filter(array_map('trim', explode(',', $tags ?? '')), 'strlen'));
+		if (count($taglist) == 0) { Error("No tags entered"); return; }
+
+		/* the enrollments of these studies */
+		$sqlstring = "select distinct a.enrollment_id, c.uid from studies a join enrollment b on a.enrollment_id = b.enrollment_id join subjects c on b.subject_id = c.subject_id where a.study_id in (" . implode(',', array_fill(0, count($ids), '?')) . ")";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
 		$uids = array();
-		if ($studyids != "") {
-			/* get list of enrollments from these studies */
-			$sqlstring = "select enrollment_id from studies where study_id in ($studyids)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0){
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$enrollmentid = $row['enrollment_id'];
-
-					list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-					$uids[] = $uid;
-					foreach ($taglist as $tag) {
-						$sqlstringA = "insert ignore into tags (enrollment_id, tag) values ($enrollmentid, '$tag')";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					}
-				}
+		$sqlstringA = "insert ignore into tags (enrollment_id, tag) values (?, ?)";
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$enrollmentid = (int)$row['enrollment_id'];
+			$uids[] = $row['uid'];
+			foreach ($taglist as $tag) {
+				$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+				mysqli_stmt_bind_param($stmtA, 'is', $enrollmentid, $tag);
+				MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$enrollmentid, $tag]);
+				mysqli_stmt_close($stmtA);
 			}
 		}
+		mysqli_stmt_close($stmt);
+
+		Notice("Applied tags '" . htmlspecialchars(implode(", ", $taglist)) . "' to subjects " . htmlspecialchars(implode(", ", array_unique($uids))));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SetProjectFavorite ----------------- */
+	/* -------------------------------------------- */
+	/* the user's own favorite flag for a project */
+	function SetProjectFavorite($projectid, $favorite) {
+		$projectid = (int)$projectid;
+		$userid = (int)$_SESSION['userid'];
+		$favorite = $favorite ? 1 : 0;
+		$sqlstring = "update user_project set favorite = ? where user_id = ? and project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iii', $favorite, $userid, $projectid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$favorite, $userid, $projectid]);
+		mysqli_stmt_close($stmt);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ResetProjectQC --------------------- */
+	/* -------------------------------------------- */
+	/* reset basic QC ($type 'basic') or mriqc ('mriqc') for every MR series in the project. Offered
+	   to admins only (menu.php) */
+	function ResetProjectQC($projectid, $type) {
+		if (!IsAdminUser()) { Error("Only administrators can reset QC for a whole project"); return; }
+		$projectid = (int)$projectid;
+		if (GetProjectRow($projectid) === null) { Error("Project not found"); return; }
+
+		$sqlstring = "select a.mrseries_id from mr_series a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		$seriesids = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$seriesids[] = (int)$row['mrseries_id'];
+		}
+		mysqli_stmt_close($stmt);
+		if (count($seriesids) == 0) { Notice("No MR series in this project"); return; }
+
+		if ($type == "mriqc") {
+			ResetMRIQC($seriesids);
+		}
 		else {
-			Notice("No studies selected");
-		}
-		?>
-		<div class="ui text container">
-			<div class="ui message">
-				<h2 class="ui header">
-					Applying tags '<?=implode2(", ", $taglist)?>' to studies in project <?=$projectName?>
-				</h2>
-				Applied to subjects <?=implode2(", ", $uids)?>
-			</div>
-		</div>
-		<?
-		
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DismissNewStudies ------------------ */
-	/* -------------------------------------------- */
-	function DismissNewStudies($id) {
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		$sqlstring = "update user_project set lastview_cleardate = now() where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		Notice("New studies dismissed");
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- SetFavorite ------------------------ */
-	/* -------------------------------------------- */
-	function SetFavorite($id) {
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		$sqlstring = "update user_project set favorite = 1 where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- UnsetFavorite ---------------------- */
-	/* -------------------------------------------- */
-	function UnsetFavorite($id) {
-		/* prepare the fields for SQL */
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		$sqlstring = "update user_project set favorite = 0 where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- ResetProjectQA --------------------- */
-	/* -------------------------------------------- */
-	function ResetProjectQA($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if ($id == 0) {
-			Error("Invalid project ID");
-		}
-		
-		/* get list of series associated with this project */
-		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$seriesid = $row['mrseries_id'];
-			echo "$seriesid<br>";
-			ResetQA($seriesid);
+			ResetQA($seriesids);
+			Notice("Basic QC reset for " . count($seriesids) . " MR series. It will be regenerated");
 		}
 	}
 
 
-	/* -------------------------------------------- */
-	/* ------- ResetProjectMRIQC ------------------ */
-	/* -------------------------------------------- */
-	function ResetProjectMRIQC($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if ($id == 0) {
-			Error("Invalid project ID");
-		}
-		
-		/* get list of series associated with this project */
-		$sqlstring = "select mrseries_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$seriesid = $row['mrseries_id'];
-			echo "$seriesid<br>";
-			ResetMRIQC($seriesid);
-		}
-	}
-
-	
 	/* -------------------------------------------- */
 	/* ------- ObliterateSubject ------------------ */
 	/* -------------------------------------------- */
-	function ObliterateSubject($studyids) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		$ids = array();
-		$uids = array();
+	/* queue deletion of the subjects of the selected studies (site admin 'Powerful Tools') */
+	function ObliterateSubject($projectid, $studyids) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
 
-		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$ids[] = $row['subject_id'];
-			$uids[] = $row['uid'];
-		}
-		
-		/* delete all information about this SUBJECT from the database */
-		foreach ($ids as $id) {
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for obliteration</div>
-		<?
+		$subjects = GetStudiesSubjects($ids);
+		QueueFileIORequests('delete', 'subject', array_keys($subjects));
+		Notice("Subjects [" . htmlspecialchars(implode(', ', $subjects)) . "] queued for obliteration");
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- ObliterateStudy -------------------- */
 	/* -------------------------------------------- */
-	function ObliterateStudy($studyids) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
+	function ObliterateStudy($projectid, $studyids) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
 
-		/* delete all information about this SUBJECT from the database */
-		foreach ($studyids as $id) {
-			$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('delete', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Studies [<?=implode2(', ',$studyids)?>] queued for obliteration</div>
-		<?
+		QueueFileIORequests('delete', 'study', $ids);
+		Notice("Studies [" . implode(', ', $ids) . "] queued for obliteration");
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- RearchiveStudies ------------------- */
 	/* -------------------------------------------- */
-	function RearchiveStudies($studyids, $matchidonly) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
-		
-		/* rearchive all the studies */
-		foreach ($studyids as $id) {
-			if ($matchidonly) {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			else {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'study', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		Notice("Studies [" . implode(', ',$studyids) . "] queued for re-archiving");
+	function RearchiveStudies($projectid, $studyids, $matchidonly) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
+
+		QueueFileIORequests($matchidonly ? 'rearchiveidonly' : 'rearchive', 'study', $ids);
+		Notice("Studies [" . implode(', ', $ids) . "] queued for re-archiving");
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- RearchiveSubjects ------------------ */
 	/* -------------------------------------------- */
-	function RearchiveSubjects($studyids, $matchidonly) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
-		$studyids = mysqli_real_escape_array($GLOBALS['linki'], $studyids);
-		$matchidonly = mysqli_real_escape_string($GLOBALS['linki'], $matchidonly);
-		$ids = array();
-		$uids = array();
+	function RearchiveSubjects($projectid, $studyids, $matchidonly) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
 
-		/* get list of subjects from the studyids */
-		$sqlstring = "select subject_id, uid from subjects where subject_id in (select subject_id from enrollment where enrollment_id in (select enrollment_id from studies where study_id in (" . implode(',', array_map('intval', (array)$studyids)) . ") ))";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$ids[] = $row['subject_id'];
-			$uids[] = $row['uid'];
-		}
-		
-		/* delete all information about this subject from the database */
-		foreach ($ids as $id) {
-			if ($matchidonly) {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchiveidonly', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			else {
-				$sqlstring = "insert into fileio_requests (fileio_operation, data_type, data_id, username, requestdate) values ('rearchive', 'subject', $id,'" . $GLOBALS['username'] . "', now())";
-			}
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		}
-		?>
-		<div align="center" class="message">Subjects [<?=implode(', ',$uids)?>] queued for re-archiving</div>
-		<?
+		$subjects = GetStudiesSubjects($ids);
+		QueueFileIORequests($matchidonly ? 'rearchiveidonly' : 'rearchive', 'subject', array_keys($subjects));
+		Notice("Subjects [" . htmlspecialchars(implode(', ', $subjects)) . "] queued for re-archiving");
 	}
-	
-	
+
+
 	/* -------------------------------------------- */
 	/* ------- ChangeProject ---------------------- */
 	/* -------------------------------------------- */
-	function ChangeProject($projectRowID, $studyids) {
-		if (empty($studyids)) { Notice("No studies selected"); return; }
-		$projectRowID = mysqli_real_escape_string($GLOBALS['linki'], $projectRowID);
-	
+	/* move the selected studies to the subject's enrollment in another project, enrolling the subject
+	   there if needed (site admin 'Powerful Tools') */
+	function ChangeProject($projectid, $newprojectid, $studyids) {
+		$ids = CheckPowerToolAccess($projectid, $studyids);
+		if ($ids === null) return;
+		$newprojectid = (int)$newprojectid;
+		$newproject = GetProjectRow($newprojectid);
+		if ($newproject === null) { Error("Destination project not found"); return; }
+		$newprojectname = htmlspecialchars($newproject['project_name']);
+
 		$msgs = array();
-		
-		foreach ($studyids as $studyRowID) {
-			$studyRowID = mysqli_real_escape_string($GLOBALS['linki'], $studyRowID);
-			
-			list($path, $subjectUID, $studyNumber, $studyRowID, $subjectRowID, $modality, $type, $studyDateTime, $existingEnrollmentRowID, $projectName, $existingProjectRowID) = GetStudyInfo($studyRowID);
-			
-			if ($existingEnrollmentRowID == "") {
-				$msgs[] = "<span class='ui red text'>This studyRowID [$studyRowID] is not part of an enrollment... <b>skipping</b></span>";
+		foreach ($ids as $studyid) {
+			/* the study, its enrollment and subject */
+			$sqlstring = "select a.study_num, a.enrollment_id, b.subject_id, c.uid from studies a join enrollment b on a.enrollment_id = b.enrollment_id join subjects c on b.subject_id = c.subject_id where a.study_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $studyid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$studyid]);
+			$srow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if (!$srow) { $msgs[] = "<span class='ui red text'>Study [$studyid] is not part of an enrollment... <b>skipping</b></span>"; continue; }
+			$subjectid = (int)$srow['subject_id'];
+			$studyname = htmlspecialchars($srow['uid'] . $srow['study_num']);
+
+			/* the subject's enrollment in the new project, creating it if needed */
+			$sqlstring = "select enrollment_id from enrollment where project_id = ? and subject_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $newprojectid, $subjectid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newprojectid, $subjectid]);
+			$erow = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			if ($erow) {
+				$newenrollmentid = (int)$erow['enrollment_id'];
+			}
+			else {
+				$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values (?, ?, now())";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'ii', $newprojectid, $subjectid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newprojectid, $subjectid]);
+				$newenrollmentid = (int)mysqli_insert_id($GLOBALS['linki']);
+				mysqli_stmt_close($stmt);
+				$msgs[] = "Enrolled subject <b>" . htmlspecialchars($srow['uid']) . "</b> in project <b>$newprojectname</b>";
+			}
+
+			if ((int)$srow['enrollment_id'] == $newenrollmentid) {
+				$msgs[] = "Study $studyname is already in project $newprojectname";
 				continue;
 			}
-		
-			/* check if the subject is enrolled in the project */
-			$sqlstring = "select * from enrollment where project_id = $projectRowID and subject_id = $subjectRowID";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0){
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				
-				$msgs[] = "Subject $subjectUID is already enrolled in project $projectName";
-			}
-			else {
-				/* if they're not enrolled, create the enrollment, with the enrollment date of the 'scandate' */
-				$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectRowID, $subjectRowID, now())";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$newEnrollmentRowID = mysqli_insert_id($GLOBALS['linki']);
-				
-				$msgs[] = "Enrolled subject <b>$subjectUID</b> in project <b>$projectName</b>";
-			}
-			
-			/* check if the study is already associated with the enrollment, and if not, move the study to the enrollment */
-			$sqlstring = "select * from studies where enrollment_id = $existingEnrollmentRowID and study_id = $studyRowID";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			if (mysqli_num_rows($result) > 0){
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$enrollmentRowID = $row['enrollment_id'];
-				$studyNumber = $row['study_num'];
-				$msgs[] = "Study $subjectUID$studyNumber is already part of enrollment in project $projectName";
-			}
-			else {
-				/* if the study is not associated with the enrollment, associate it */
-				$sqlstring = "update studies set enrollment_id = $enrollmentRowID where study_id = $studyRowID";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				echo "Moved study from enrollment $existingEnrollmentRowID to $enrollmentRowID<br>";
-				$msgs[] = "Moved study <b>$subjectUID$studyNumber</b> to project <b>$projectRowID</b>";
-			}
+			$sqlstring = "update studies set enrollment_id = ? where study_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $newenrollmentid, $studyid);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$newenrollmentid, $studyid]);
+			mysqli_stmt_close($stmt);
+			$msgs[] = "Moved study <b>$studyname</b> to project <b>$newprojectname</b>";
 		}
-		?>
-		<div class="ui text container">
-			<div class="ui scrolling segment">
-				<h2 class="ui header">
-					Moving studies to <?=$projectName?>
-				</h2>
-				<ul>
-				<?
-				foreach ($msgs as $msg) {
-					?><li><?=$msg?><?
-				}
-				?>
-				</ul>
-			</div>
-		</div>
-		<?
+		Notice("<ul><li>" . implode("<li>", $msgs) . "</ul>", "Moving studies to $newprojectname");
 	}
 
 
 	/* -------------------------------------------- */
 	/* ------- UpdateStudyAge --------------------- */
 	/* -------------------------------------------- */
+	/* set each study's StudyAge to the age calculated from the subject's DOB and the study date */
 	function UpdateStudyAge($projectid) {
-		$projectid = mysqli_real_escape_array($GLOBALS['linki'], $projectid);
-		
-		/* get list of studies for this project */
-		$sqlstring = "select a.study_id, a.study_datetime, a.study_ageatscan, d.birthdate from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* for each study, calculate and update the StudyAge */
+		$project = CheckProjectPerm($projectid, array('modifydata'));
+		if ($project === null) return;
+		$projectid = (int)$projectid;
+
+		$sqlstring = "select a.study_id, a.study_datetime, a.study_ageatscan, d.birthdate from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects d on d.subject_id = b.subject_id where b.project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		mysqli_stmt_close($stmt);
+
 		$numupdated = 0;
+		$sqlstringA = "update studies set study_ageatscan = ? where study_id = ?";
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $row['study_ageatscan'], $row['study_datetime']);
-			
 			if ($calcStudyAge != null) {
-				$studyid = $row["study_id"];
-				$sqlstringA = "update studies set study_ageatscan = $calcStudyAge where study_id = $studyid";
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$studyid = (int)$row["study_id"];
+				$calcStudyAge = (float)$calcStudyAge;
+				$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+				mysqli_stmt_bind_param($stmtA, 'di', $calcStudyAge, $studyid);
+				MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$calcStudyAge, $studyid]);
+				mysqli_stmt_close($stmtA);
 				$numupdated++;
 			}
 		}
- 
+
 		Notice("Updated StudyAge for $numupdated studies");
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- ChangeSeriesAlternateNames --------- */
+	/* ------- GetSubjectGridRows ----------------- */
 	/* -------------------------------------------- */
-	function ChangeSeriesAlternateNames($id, $modalities, $oldnames, $newnames) {
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		/* get all studies associated with this project */
-		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numrowsaffected = 0;
+	/* the rows for the project's subject grids. PHI (DOB, race, ethnicity, handedness, education,
+	   marital status) is blanked unless the user can view the subject's PHI (View PHI on any project
+	   the subject is enrolled in), and each row says what the user may edit: PHI needs Edit PHI on
+	   the subject, other subject fields need Edit Data or Edit PHI on any of the subject's projects.
+	   $isactive null returns active and deleted subjects */
+	function GetSubjectGridRows($projectid, $isactive = null) {
+		$projectid = (int)$projectid;
+
+		/* the projects of every subject in this project, to work out per-subject PHI permissions */
+		$subjectprojects = array();
+		$sqlstring = "select subject_id, project_id from enrollment where subject_id in (select subject_id from enrollment where project_id = ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		$allprojects = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$uid = $row['uid'];
-			
-			foreach ($modalities as $i => $modality) {
-				$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-				$oldname = mysqli_real_escape_string($GLOBALS['linki'], $oldnames[$i]);
-				$newname = mysqli_real_escape_string($GLOBALS['linki'], $newnames[$i]);
-				
-				if (IsNiDBModality($modality)) {
-					if (($modality != "") && ($studyid != "") && ($oldname != "") && ($newname != "")) {
-						$sqlstringA = "update $modality" . "_series set series_altdesc = '$newname' where (series_desc = '$oldname' or (series_protocol = '$oldname' and (series_desc = '' or series_desc is null))) and study_id = '$studyid'";
-						$numupdates = 0;
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						$numupdates = mysqli_affected_rows($GLOBALS['linki']);
-						$numrowsaffected += $numupdates;
-						if ($numupdates > 0) {
-							//echo "[$sqlstringA]<br>";
-							echo "<b>Added alternate series description for $uid$studynum. $oldname &rarr; $newname</b><br>";
-						}
-					}
-				}
-			}
+			$subjectprojects[(int)$row['subject_id']][] = (int)$row['project_id'];
+			$allprojects[(int)$row['project_id']] = 1;
 		}
-		echo "Updated [$numrowsaffected] rows<br>";
+		mysqli_stmt_close($stmt);
+		$perms = GetCurrentUserProjectPermissions(array_keys($allprojects));
+		$subjectperm = function($subjectid, $perm) use ($subjectprojects, $perms) {
+			foreach ($subjectprojects[$subjectid] ?? array() as $pid) {
+				if (GetPerm($perms, $perm, $pid)) return true;
+			}
+			return false;
+		};
+
+		/* alternate UIDs: all of the subject's, and those for this project's enrollment */
+		$globalaltids = array();
+		$projectaltids = array();
+		$sqlstring = "select a.subject_id, a.altuid, a.isprimary, a.enrollment_id, b.project_id from subject_altuid a left join enrollment b on a.enrollment_id = b.enrollment_id where a.subject_id in (select subject_id from enrollment where project_id = ?) and a.altuid <> '' order by a.isprimary desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$sid = (int)$row['subject_id'];
+			$altid = ($row['isprimary'] ? "*" : "") . $row['altuid'];
+			$globalaltids[$sid][$altid] = 1;
+			if ((int)$row['project_id'] == $projectid) $projectaltids[$sid][$altid] = 1;
+		}
+		mysqli_stmt_close($stmt);
+
+		$educations = array(0 => "Unknown", 1 => "Grade School", 2 => "Middle School", 3 => "High School/GED", 4 => "Trade School", 5 => "Associates Degree", 6 => "Bachelors Degree", 7 => "Masters Degree", 8 => "Doctoral Degree");
+
+		$sqlstring = "select a.subject_id, a.uid, a.guid, a.sex, a.gender, a.birthdate, a.ethnicity1, a.ethnicity2, a.handedness, a.education, a.marital_status, a.smoking_status, a.isactive, b.enrollment_id, b.enroll_subgroup, b.enroll_status from subjects a join enrollment b on a.subject_id = b.subject_id where b.project_id = ?" . (($isactive === null) ? "" : " and a.isactive = ?") . " order by a.uid";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if ($isactive === null) {
+			mysqli_stmt_bind_param($stmt, 'i', $projectid);
+			$params = [$projectid];
+		}
+		else {
+			$isactive = (int)$isactive;
+			mysqli_stmt_bind_param($stmt, 'ii', $projectid, $isactive);
+			$params = [$projectid, $isactive];
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$sid = (int)$row['subject_id'];
+			$canviewphi = $subjectperm($sid, 'viewphi');
+			$education = $row['education'];
+			if ($education === null || $education === '') $education = "-";
+			else $education = $educations[(int)$education] ?? $education;
+
+			$r = array(
+				'id' => $sid,
+				'enrollmentid' => (int)$row['enrollment_id'],
+				'isactive' => (int)$row['isactive'],
+				'uid' => $row['uid'] ?? '',
+				'globalaltuids' => implode(", ", array_keys($globalaltids[$sid] ?? array())),
+				'altuids' => implode(", ", array_keys($projectaltids[$sid] ?? array())),
+				'guid' => $row['guid'] ?? '',
+				'sex' => $row['sex'] ?? '',
+				'gender' => $row['gender'] ?? '',
+				'smoking' => $row['smoking_status'] ?? '',
+				'enrollgroup' => $row['enroll_subgroup'] ?? '',
+				'enrollstatus' => $row['enroll_status'] ?? '',
+				'canviewphi' => $canviewphi,
+				'canmodifyphi' => $subjectperm($sid, 'modifyphi'),
+				'canedit' => ($subjectperm($sid, 'modifydata') || $subjectperm($sid, 'modifyphi')),
+			);
+			/* PHI only if the user may view it */
+			$phi = array('dob' => $row['birthdate'] ?? '', 'ethnicity1' => $row['ethnicity1'] ?? '', 'ethnicity2' => $row['ethnicity2'] ?? '', 'handedness' => $row['handedness'] ?? '', 'education' => $education, 'marital' => $row['marital_status'] ?? '');
+			foreach ($phi as $k => $v) {
+				$r[$k] = $canviewphi ? $v : '';
+			}
+			$rows[] = $r;
+		}
+		return $rows;
 	}
 
 
 	/* -------------------------------------------- */
-	/* ------- AuditStudies ----------------------- */
+	/* ------- GridScript ------------------------- */
 	/* -------------------------------------------- */
-	function AuditStudies($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-	
-		$sqlstring = "select * from projects where project_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$name = $row['project_name'];
-		$admin = $row['project_admin'];
-		$pi = $row['project_pi'];
-		$costcenter = $row['project_costcenter'];
-		$startdate = $row['project_startdate'];
-		$enddate = $row['project_enddate'];
-		
-		/* get list of all studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numstudies = mysqli_num_rows($result);
+	/* shared JavaScript for the editable grids: HTML escaping for cell renderers, the gray
+	   'no view permissions' box, and saving an edited cell to ajaxapi.php by POST with the CSRF token.
+	   $saveaction is the ajaxapi action; $extra are fixed fields sent with every save */
+	function GridScript($saveaction, $extra) {
 		?>
-		<table class="ui very compact celled grey table">
-			<thead>
-				<th>Study</th>
-				<th>Date</th>
-				<th># series</th>
-				<th>Modality</th>
-				<th>Ok?</th>
-			</thead>
-		<?
-		/* for each study get a list of series and check if they exist on disk */
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$modality = strtolower($row['study_modality']);
-			$study_datetime = $row['study_datetime'];
-			$study_site = $row['study_site'];
-			$studynum = $row['study_num'];
-			$study_desc = $row['study_desc'];
-			$study_visit = $row['study_type'];
-			$study_site = $row['study_site'];
-			$study_altid = $row['study_alternateid'];
-			$study_ageatscan = $row['study_ageatscan'];
-			$age = $row['age'];
-			$sex = $row['gender'];
-			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
-			$project_name = $row['project_name'];
-			$project_costcenter = $row['project_costcenter'];
-			$isactive = $row['isactive'];
-			
-			$sqlstringA = "select * from " . $modality . "_series where study_id = $studyid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$numseries = mysqli_num_rows($resultA);
-			/* check all the series on disk */
-			$problem = 0;
-			$problems = array();
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$seriesid = $rowA[$modality . "series_id"];
-				$seriesnum = $rowA['series_num'];
-				$seriesdesc = $rowA['series_desc'];
-				$datatype = $rowA['data_type'];
-				$numfiles = $rowA['numfiles'];
-
-				if ($datatype == "") { $datatype = $modality; }
-				
-				if (($numfiles == 0) || ($numfiles == "")) {
-					$numfiles = $rowA['series_numfiles'];
-				}
-				
-				$archivepath = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
-				//echo "$archivepath ";
-				
-				//if (($numfiles == 0) || ($numfiles == "")) {
-				//	/* the database says there are no files, so don't check the filesystem */
-				//}
-				//else {
-					if (!file_exists($archivepath)) {
-						/* only report a problem if the database says there should be files on the disk */
-						//if ($numfiles > 0) {
-							$problem = 1;
-							$problems[] = "Directory [$archivepath] does not exist";
-						//}
-					}
-					else {
-						/* check if there are actually files in there */
-						$filecount = 0;
-						$files = glob("$archivepath/*");
-						if ($files){
-							$filecount = count($files);
+		<script type="text/javascript">
+			/* escape a value for insertion into HTML */
+			function gridEsc(s) {
+				return String((s === null) || (s === undefined) ? '' : s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+			}
+			/* renderer for PHI columns: the value, or the gray box if the user can't view it */
+			function gridPHIRenderer(params) {
+				if (!params.data.canviewphi) return <?=JSONForScript(NoViewPermission())?>;
+				return gridEsc(params.value);
+			}
+			/* save an edited cell. On failure the cell is put back to its old value */
+			function gridSaveCell(event, fields) {
+				if (event.source === 'revert') return; /* our own revert after a failed save */
+				const body = new FormData();
+				body.append('action', <?=JSONForScript($saveaction)?>);
+				body.append('csrftoken', <?=JSONForScript($_SESSION['csrftoken'] ?? '')?>);
+				const extra = <?=JSONForScript($extra)?>;
+				for (const k in extra) body.append(k, extra[k]);
+				for (const k in fields) body.append(k, fields[k]);
+				body.append('column', event.column.getColDef().field);
+				body.append('value', (event.newValue === null) || (event.newValue === undefined) ? '' : event.newValue);
+				const col = gridEsc(event.column.getColDef().headerName || event.column.getColDef().field);
+				fetch('ajaxapi.php', { method: 'POST', body: body, credentials: 'same-origin' })
+					.then(function(r) { return r.text(); })
+					.then(function(text) {
+						if (text.trim() == "success") {
+							document.getElementById("updateresult").innerHTML = '<div class="ui success message">Success updating <b>' + col + '</b> to \'' + gridEsc(event.newValue) + '\'</div>';
 						}
-						
-						if ($filecount == 0) {
-							$problem = 1;
-							$problems[] = "Directory [$archivepath] is empty";
+						else {
+							document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating <b>' + col + '</b>: ' + gridEsc(text) + '</div>';
+							event.node.setDataValue(event.column.getColId(), event.oldValue, 'revert');
 						}
-						elseif ($filecount != $numfiles) {
-							$problem = 1;
-							$problems[] = "Number of files in DB [$numfiles] different than on filesystem [$filecount] for [$archivepath]";
-						}
-					}
-				//}
+					})
+					.catch(function() {
+						document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating <b>' + col + '</b></div>';
+					});
 			}
-
-			if (!$problem) {
-				?>
-				<tr>
-					<td><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td><?=$study_datetime?></td>
-					<td><?=$numseries?></td>
-					<td><?=$modality?></td>
-					<td><span style="color: green">&#10004;</span></td>
-				</tr>
-				<?
-			}
-			else {
-				?>
-				<tr style="font-weight: bold">
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><a href="studies.php?id=<?=$studyid?>"><?="$uid$studynum"?></a></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$study_datetime?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$numseries?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><?=$modality?></td>
-					<td style="border-top: 1px solid red; background-color: #ffd1d1"><span style="color: red">&#10006;</span></td>
-				</tr>
-				<tr>
-					<td colspan="5" style="padding-left: 20px; border-bottom: 1px solid red; background-color: #ffd1d1">
-						<?
-						foreach ($problems as $prob) {
-							?><?=$prob?><br><?
-						}
-						?>
-
-					</td>
-				</tr>
-				<?
-			}
-		}
-		?>
-		</table>
-		<?
-	}
-	
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayCompleteProjectTable -------- */
-	/* -------------------------------------------- */
-	function DisplayCompleteProjectTable($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-	
-		$sqlstring = "select * from projects where project_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$name = $row['project_name'];
-		$admin = $row['project_admin'];
-		$pi = $row['project_pi'];
-		$costcenter = $row['project_costcenter'];
-		$startdate = $row['project_startdate'];
-		$enddate = $row['project_enddate'];
-
-		?>
-		<form method="post" action="projects.php">
-		<input type="hidden" name="action" value="compareserieslists">
-		<input type="hidden" name="id" value="<?=$id?>">
-		Series list from this server<br>
-		<textarea style="width: 100%; height: 300px" name="serieslist1" readonly><?
-		/* get all series associated with this project (MR only for now) */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id left join mr_series d on c.study_id = d.study_id where b.project_id = $id order by c.study_datetime, d.series_num";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjectid = $row['subject_id'];
-			$uid = $row['uid'];
-			$guid = $row['guid'];
-			$gender = $row['gender'];
-			$birthdate = $row['birthdate'];
-			$enrollsubgroup = $row['enroll_subgroup'];
-			$enrollmentid = $row['enrollment_id'];
-			$studydatetime = $row['study_datetime'];
-			$studyaltid = $row['study_alternateid'];
-			$seriesdatetime = $row['series_datetime'];
-			$seriesdesc = $row['series_desc'];
-			$seriesprotocol = $row['series_protocol'];
-			$seriessequencename = $row['series_sequencename'];
-			$seriesnum = $row['series_num'];
-			$seriesnumfiles = $row['numfiles'];
-			$seriesnumbeh = $row['numfiles_beh'];
-
-			$altuids = implode(',', GetAlternateUIDs($subjectid, $enrollmentid));
-			
-			if ($studydatetime == "") { $studydatetime = "No Studies"; }
-			
-			echo "$studydatetime\t$seriesnum\t$seriesdatetime\t$seriesdesc\t$seriesprotocol\t$seriesnumfiles\t$seriesnumbeh\t$uid\t$altuids\n";
-		}
-		?>
-		</textarea>
-		<br><br>
-		PASTE a series list from another NiDB server here<br>
-		<textarea style="width: 100%; height: 300px" name="serieslist2"></textarea>
-		<input type="submit" value="Compare">
-		</form>
-		<?
-	}
-
-	
-	/* -------------------------------------------- */
-	/* ------- DisplayCompareSeriesLists ---------- */
-	/* -------------------------------------------- */
-	function DisplayCompareSeriesLists($id, $locallist, $foreignlist) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-	
-		$sqlstring = "select * from projects where project_id = ?";
-		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		mysqli_stmt_close($stmt);
-		$name = $row['project_name'];
-		$admin = $row['project_admin'];
-		$pi = $row['project_pi'];
-		$costcenter = $row['project_costcenter'];
-		$startdate = $row['project_startdate'];
-		$enddate = $row['project_enddate'];
-
-		$localseries = explode("\n",$locallist);
-		$foreignseries = explode("\n",$foreignlist);
-		
-		$i = 0;
-		foreach ($localseries as $row) {
-			if (trim($row) != "") {
-				$p = explode("\t", $row);
-				if ($p[0] != "No Studies") {
-					$ids = $p[7] . " " . $p[8];
-					$series = implode(",",array($p[0],$p[1],$p[2],$p[3],$p[4],$p[5],$p[6]));
-					$local[$i]['ids'] = trim($ids);
-					$local[$i]['series'] = trim($series);
-					$i++;
-				}
-			}
-		}
-		//PrintVariable($local);
-		
-		$i = 0;
-		foreach ($foreignseries as $row) {
-			if (trim($row) != "") {
-				$p = explode("\t", $row);
-				if ($p[0] != "No Studies") {
-					$ids = $p[7] . " " . $p[8];
-					$series = implode(",",array($p[0],$p[1],$p[2],$p[3],$p[4],$p[5],$p[6]));
-					$remote[$i]['ids'] = trim($ids);
-					$remote[$i]['series'] = trim($series);
-					$i++;
-				}
-			}
-		}
-		//PrintVariable($remote);
-		
-		?>
-		The following LOCAL series were not found in the REMOTE database
-		<table class="ui very small very compact celled selectable grey table">
-			<thead>
-				<tr>
-					<th>UID</th>
-					<th>Study Date</th>
-					<th>Series Num</th>
-					<th>Series Date</th>
-					<th>SeriesDesc</th>
-					<th>Protocol</th>
-					<th>Num files</th>
-					<th>Num beh</th>
-				</tr>
-		<?
-		/* find all local rows that are NOT in the remote rows */
-		foreach ($local as $i => $series1) {
-			$localseries = $series1['series'];
-			
-			$found = 0;
-			foreach ($remote as $j => $series2) {
-				$remoteseries = $series2['series'];
-				if ($localseries == $remoteseries) {
-					$found = 1;
-					break;
-				}
-			}
-			if (!$found) {
-				$localids = $series1['ids'];
-				$localuids = explode(" ", $localids);
-				$localuid = $localuids[0];
-				
-				$sp = explode(",", $localseries);
-				?>
-				<tr>
-					<td><?=$localuid?></td>
-					<td><?=$sp[0]?></td>
-					<td><?=$sp[1]?></td>
-					<td><?=$sp[2]?></td>
-					<td><?=$sp[3]?></td>
-					<td><?=$sp[4]?></td>
-					<td><?=$sp[5]?></td>
-					<td><?=$sp[6]?></td>
-				</tr>
-				<?
-			}
-		}
-		?>
-			</tr>
-		</table>
+		</script>
 		<?
 	}
 
@@ -1255,95 +1098,23 @@
 	/* ------- DisplaySubjectsTable --------------- */
 	/* -------------------------------------------- */
 	function DisplaySubjectsTable($id, $isactive=1) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
-		$rowdata = array();
-		
+		/* the subject list needs View Data or View PHI on the project; PHI columns are blanked per
+		   subject without View PHI, and each column is editable only with the matching permission */
+		$project = CheckProjectPerm($id, array('viewdata', 'viewphi'));
+		if ($project === null) return;
+		$id = (int)$id;
+		$pperms = GetCurrentUserProjectPermissions(array($id));
+		$canmodifydata = (bool)GetPerm($pperms, 'modifydata', $id);
+		$cancsvedit = ($canmodifydata || GetPerm($pperms, 'modifyphi', $id));
+
 		/* Get all subjects (active and deleted), and their enrollment info, associated with the
 		   project. Everything is loaded so the table can be filtered client-side by status and by
 		   deleted state; the grid defaults to showing active subjects only. */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id order by a.uid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$rows = GetSubjectGridRows($id, null);
 		$numsubjects = 0;
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$rowisactive = (int)$row['isactive'];
-			if ($rowisactive == 1) $numsubjects++;   /* initial view shows active subjects only */
-			$subjectid = $row['subject_id'];
-			$enrollmentid = $row['enrollment_id'];
-			$uid = $row['uid'];
-			$guid = $row['guid'];
-			$sex = $row['sex'];
-			$gender = $row['gender'];
-			$birthdate = $row['birthdate'];
-			$ethnicity1 = $row['ethnicity1'];
-			$ethnicity2 = $row['ethnicity2'];
-			$handedness = $row['handedness'];
-			$education = $row['education'];
-			$maritalstatus = $row['marital_status'];
-			$smokingstatus = $row['smoking_status'];
-			$enrollsubgroup = $row['enroll_subgroup'];
-			$enrollstatus = $row['enroll_status'];
-			
-			$globalaltids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$globalaltids[] = "*" . $altid;
-				}
-				else {
-					$globalaltids[] = $altid;
-				}
-			}
-			$globalaltids = array_unique($globalaltids);
-			$globalaltuidlist = implode2(", ",$globalaltids);
-			
-			$projectaltids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$projectaltids[] = "*" . $altid;
-				}
-				else {
-					$projectaltids[] = $altid;
-				}
-			}
-			$projectaltids = array_unique($projectaltids);
-			$projectaltuidlist = implode2(", ",$projectaltids);
-			//PrintVariable($projectaltids);
-			$projectaltids = array();
-			
-			switch ($education) {
-				case "": $education = "-"; break;
-				case 0: $education = "Unknown"; break;
-				case 1: $education = "Grade School"; break;
-				case 2: $education = "Middle School"; break;
-				case 3: $education = "High School/GED"; break;
-				case 4: $education = "Trade School"; break;
-				case 5: $education = "Associates Degree"; break;
-				case 6: $education = "Bachelors Degree"; break;
-				case 7: $education = "Masters Degree"; break;
-				case 8: $education = "Doctoral Degree"; break;
-			}
-
-			$rowdata[] = "{ id: $subjectid, enrollmentid: $enrollmentid, isactive: $rowisactive, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$projectaltuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", ethnicity1: \"$ethnicity1\", ethnicity2: \"$ethnicity2\", handedness: \"$handedness\", education: \"$education\", marital: \"$maritalstatus\", smoking: \"$smokingstatus\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
-		}
+		foreach ($rows as $row) { if ($row['isactive'] == 1) $numsubjects++; }   /* initial view shows active subjects only */
 		/* total enrolled in this project, across all statuses and active + deleted */
-		$numtotalsubjects = count($rowdata);
-		$data = "";
-		if (count($rowdata) > 0)
-			$data = implode(",", $rowdata);
+		$numtotalsubjects = count($rows);
 
 		?>
 		
@@ -1374,8 +1145,12 @@
 					</div>
 				</div>
 				<div class="right aligned seven wide column">
+					<? if ($cancsvedit) { ?>
 					<button class="ui small basic primary compact button" id="batchsubjectupdatebutton"> Batch update subjects...</button> &nbsp;
+					<? } ?>
+					<? if ($canmodifydata) { ?>
 					<button class="ui small basic primary compact button" id="batchsubjectaddbutton"><i class="user plus icon"></i> Batch add subjects...</button> &nbsp;
+					<? } ?>
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
@@ -1386,6 +1161,7 @@
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchaddsubjects">
 					<input type="hidden" name="projectid" value="<?=$id?>">
+					<?=CSRFTokenField()?>
 					<div class="field">
 						<label>Paste .csv formatted data</label>
 						<textarea name="csv" style="font-family:monospace"></textarea>
@@ -1443,6 +1219,7 @@
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchupdatesubject">
 					<input type="hidden" name="projectid" value="<?=$id?>">
+					<?=CSRFTokenField()?>
 					<div class="field">
 						<label>Paste .csv formatted data</label>
 						<textarea name="csv" style="font-family:monospace"></textarea>
@@ -1492,11 +1269,13 @@
 			.completed { background-color: #bfb; }
 			.excluded { background-color: #eee; color: #444; }
 		</style>
+		<? GridScript('updatesubjectdetails', array('projectid' => $id)); ?>
 		<script type="text/javascript">
 			let gridApi;
+			const canModifyData = <?=JSONForScript($canmodifydata)?>;
 
 			/* the full subject dataset (active + deleted); the grid is given only the filtered subset */
-			const allSubjectRows = [ <?=$data?> ];
+			const allSubjectRows = <?=JSONForScript($rows)?>;
 
 			/* subject table filter: single-select. one of
 			     'active'    - all active subjects, any enrollment status
@@ -1564,13 +1343,13 @@
 						pinned: 'left',
 						width: 150,
 						cellRenderer: function(params) {
-							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+							return '<a href="subjects.php?id=' + encodeURIComponent(params.data.id) + '">' + gridEsc(params.value) + '</a>'
 						}
 					},
 					{
 						headerName: "Status",
 						field: "enrollstatus",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'consented', 'excluded', 'completed'],
@@ -1583,26 +1362,26 @@
 						editable: false,
 						cellEditor: 'agLargeTextCellEditor',
 						cellRenderer: function(params) {
-							return '<tt>' + params.value + '</tt>'
+							return '<tt>' + gridEsc(params.value) + '</tt>'
 						},
 						
 					},
 					{ 
 						headerName: "Project Alt UIDs",
 						field: "altuids",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agLargeTextCellEditor',
 						cellRenderer: function(params) {
-							return '<tt>' + params.value + '</tt>'
+							return '<tt>' + gridEsc(params.value) + '</tt>'
 						},
 						
 					},
-					{ headerName: "GUID", field: "guid", editable: true },
-					{ headerName: "Birthdate", field: "dob", editable: true, cellDataType: 'dateString' },
+					{ headerName: "GUID", field: "guid", editable: (p) => p.data.canedit },
+					{ headerName: "Birthdate", field: "dob", editable: (p) => p.data.canmodifyphi, cellDataType: 'dateString', cellRenderer: gridPHIRenderer },
 					{
 						headerName: "Sex",
 						field: "sex",
-						editable: true,
+						editable: (p) => p.data.canedit,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
@@ -1612,7 +1391,7 @@
 					{
 						headerName: "Gender",
 						field: "gender",
-						editable: true,
+						editable: (p) => p.data.canedit,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
@@ -1622,7 +1401,8 @@
 					{
 						headerName: "Ethnicity1",
 						field: "ethnicity1",
-						editable: true,
+						editable: (p) => p.data.canmodifyphi,
+						cellRenderer: gridPHIRenderer,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'hispanic', 'nothispanic'],
@@ -1632,7 +1412,8 @@
 					{ 
 						headerName: "Ethnicity2",
 						field: "ethnicity2",
-						editable: true,
+						editable: (p) => p.data.canmodifyphi,
+						cellRenderer: gridPHIRenderer,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['unknown','','asian','black','white','indian','islander','mixed','other'],
@@ -1642,32 +1423,35 @@
 					{
 						headerName: "Handedness",
 						field: "handedness",
-						editable: true,
+						editable: (p) => p.data.canmodifyphi,
+						cellRenderer: gridPHIRenderer,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {	values: ['', 'R', 'L', 'U', 'A'], valueListGap: 0 }
 					},
 					{
 						headerName: "Education",
 						field: "education",
-						editable: true,
+						editable: (p) => p.data.canmodifyphi,
+						cellRenderer: gridPHIRenderer,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {	values: ['Unknown', '', 'Grade School', 'Middle School', 'High School/GED', 'Trade School', 'Associates Degree', 'Bachelors Degree', 'Masters Degree', 'Doctoral Degree'], valueListGap: 0 }
 					},
 					{
 						headerName: "Marital Status",
 						field: "marital",
-						editable: true,
+						editable: (p) => p.data.canmodifyphi,
+						cellRenderer: gridPHIRenderer,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {	values: ['unknown', '', 'married', 'single', 'divorced', 'separated', 'civilunion', 'cohabitating', 'widowed'], valueListGap: 0 }
 					},
 					{
 						headerName: "Smoking Status",
 						field: "smoking",
-						editable: true,
+						editable: (p) => p.data.canedit,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {	values: ['unknown', '', 'never', 'current', 'past'], valueListGap: 0 }
 					},
-					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
+					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: canModifyData },
 				],
 
 				/* rows are supplied by applySubjectFilter() after the grid is created */
@@ -1690,23 +1474,7 @@
 				undoRedoCellEditing: true,
 				suppressMovableColumns: true,
 				onCellValueChanged: (event) => {
-
-					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&enrollmentid=" + event.data.enrollmentid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
-					var xhttp = new XMLHttpRequest();
-					xhttp.onreadystatechange = function() {
-						if (this.readyState == 4 && this.status == 200) {
-							console.log(this.responseText);
-							if (this.responseText == "success") {
-								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
-							}
-							else {
-								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
-							}
-						}
-					};
-					xhttp.open("GET", url, true);
-					xhttp.send();
-					
+					gridSaveCell(event, { subjectid: event.data.id, enrollmentid: event.data.enrollmentid });
 				},				
 			};
 
@@ -1787,70 +1555,18 @@
 	/* ------- DisplayCompactSubjectsTable -------- */
 	/* -------------------------------------------- */
 	function DisplayCompactSubjectsTable($id, $isactive=1) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
-		$rowdata = array();
-		
-		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select * from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id and a.isactive = '$isactive' order by a.uid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numsubjects = mysqli_num_rows($result);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$subjectid = $row['subject_id'];
-			$enrollmentid = $row['enrollment_id'];
-			$uid = $row['uid'];
-			$guid = $row['guid'];
-			$sex = $row['sex'];
-			$gender = $row['gender'];
-			$birthdate = $row['birthdate'];
-			$enrollsubgroup = $row['enroll_subgroup'];
-			$enrollstatus = $row['enroll_status'];
-			
-			$globalaltids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$globalaltids[] = "*" . $altid;
-				}
-				else {
-					$globalaltids[] = $altid;
-				}
-			}
-			$globalaltids = array_unique($globalaltids);
-			$globalaltuidlist = implode2(", ",$globalaltids);
-
-			$altids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$altids[] = "*" . $altid;
-				}
-				else {
-					$altids[] = $altid;
-				}
-			}
-			$altids = array_unique($altids);
-			$altuidlist = implode2(", ",$altids);
-			$altids = array();
-			
-			$rowdata[] = "{ id: $subjectid, uid: \"$uid\", globalaltuids: \"$globalaltuidlist\", altuids: \"$altuidlist\", guid: \"$guid\", dob: \"$birthdate\", sex: \"$sex\", gender: \"$gender\", enrollgroup: \"$enrollsubgroup\", enrollstatus: \"$enrollstatus\" }";
+		/* shown on the project page. Needs View Data or View PHI on the project (no error otherwise,
+		   since the rest of the project page is visible to everyone) */
+		$id = (int)$id;
+		$pperms = GetCurrentUserProjectPermissions(array($id));
+		if (!GetPerm($pperms, 'viewdata', $id) && !GetPerm($pperms, 'viewphi', $id)) {
+			?><div class="ui message">You don't have permission to view this project's subjects</div><?
+			return;
 		}
-		
-		$data = "";
-		if (count($rowdata) > 0)
-			$data = implode(",", $rowdata);
+		$canmodifydata = (bool)GetPerm($pperms, 'modifydata', $id);
+
+		$rows = GetSubjectGridRows($id, (int)$isactive);
+		$numsubjects = count($rows);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -1880,8 +1596,10 @@
 			.completed { background-color: #bfb; }
 			.excluded { background-color: #eee; color: #444; }
 		</style>
+		<? GridScript('updatesubjectdetails', array('projectid' => $id)); ?>
 		<script type="text/javascript">
 			let gridApi;
+			const canModifyData = <?=JSONForScript($canmodifydata)?>;
 
 			// Function to demonstrate calling grid's API
 			function deselect(){
@@ -1904,13 +1622,13 @@
 						pinned: 'left',
 						width: 150,
 						cellRenderer: function(params) {
-							return '<a href="subjects.php?id=' + params.data.id + '">' + params.value + '</a>'
+							return '<a href="subjects.php?id=' + encodeURIComponent(params.data.id) + '">' + gridEsc(params.value) + '</a>'
 						}
 					},
 					{
 						headerName: "Status",
 						field: "enrollstatus",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'consented', 'excluded', 'completed'],
@@ -1923,24 +1641,24 @@
 						editable: false,
 						cellEditor: 'agLargeTextCellEditor',
 						cellRenderer: function(params) {
-							return '<tt>' + params.value + '</tt>'
+							return '<tt>' + gridEsc(params.value) + '</tt>'
 						},
 						
 					},
 					{ 
 						headerName: "Alt UIDs",
 						field: "altuids",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agLargeTextCellEditor',
 						cellRenderer: function(params) {
-							return '<tt>' + params.value + '</tt>'
+							return '<tt>' + gridEsc(params.value) + '</tt>'
 						},
 						
 					},
 					{
 						headerName: "Sex",
 						field: "sex",
-						editable: true,
+						editable: (p) => p.data.canedit,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
@@ -1950,17 +1668,17 @@
 					{
 						headerName: "Gender",
 						field: "gender",
-						editable: true,
+						editable: (p) => p.data.canedit,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
 							valueListGap: 0
 						}
 					},
-					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: true },
+					{ headerName: "Enroll Sub-group", field: "enrollgroup", editable: canModifyData },
 				],
 
-				rowData: [ <?=$data?> ],
+				rowData: <?=JSONForScript($rows)?>,
 				
 				rowClassRules: {
 					"completed": "data.enrollstatus == 'completed'",
@@ -1977,22 +1695,7 @@
 				suppressMovableColumns: true,
 				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellValueChanged: (event) => {
-
-					url = "ajaxapi.php?action=updatesubjectdetails&projectid=<?=$id?>&subjectid=" + event.data.id + "&column=" + event.column.getColDef().field + "&value=" + event.value;
-					var xhttp = new XMLHttpRequest();
-					xhttp.onreadystatechange = function() {
-						if (this.readyState == 4 && this.status == 200) {
-							if (this.responseText == "success") {
-								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
-							}
-							else {
-								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
-							}
-						}
-					};
-					xhttp.open("GET", url, true);
-					xhttp.send();
-					
+					gridSaveCell(event, { subjectid: event.data.id, enrollmentid: event.data.enrollmentid });
 				},				
 			};
 
@@ -2023,8 +1726,13 @@
 	/* ------- DisplayStudiesTable ---------------- */
 	/* -------------------------------------------- */
 	function DisplayStudiesTable($id, $isactive=1) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
+		/* the study list needs View Data on the project; editing needs Edit Data */
+		$project = CheckProjectPerm($id, array('viewdata'));
+		if ($project === null) return;
+		$id = (int)$id;
+		$pperms = GetCurrentUserProjectPermissions(array($id));
+		$canmodifydata = (bool)GetPerm($pperms, 'modifydata', $id);
+		$issiteadmin = isSiteAdmin();
 		?>
 
 		<script type="text/javascript">
@@ -2043,76 +1751,54 @@
 			@ob_flush();
 			@flush();
 
-		$rowdata = array();
-		
-		/* get all subjects, and their enrollment info, associated with the project */
-		/* display studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.* from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* this project's alternate UIDs for each subject */
+		$altids = array();
+		$sqlstring = "select a.subject_id, a.altuid, a.isprimary from subject_altuid a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? and a.altuid <> '' order by a.isprimary desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$altids[(int)$row['subject_id']][($row['isprimary'] ? "*" : "") . $row['altuid']] = 1;
+		}
+		mysqli_stmt_close($stmt);
+
+		/* studies associated with this project. (DOB is only used to calculate the age, which isn't PHI) */
+		$sqlstring = "select a.study_id, a.study_modality, a.study_datetime, a.study_site, a.study_num, a.study_desc, a.study_type, a.study_alternateid, a.study_ageatscan, d.sex, d.gender, d.birthdate, d.uid, d.subject_id from studies a join enrollment b on a.enrollment_id = b.enrollment_id join subjects d on d.subject_id = b.subject_id where b.project_id = ? order by d.uid asc, a.study_modality asc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		$numstudies = mysqli_num_rows($result);
-		$rowhighlight = 0;
+		$rows = array();
 		$lastuid = "";
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$study_id = $row['study_id'];
-			$modality = $row['study_modality'];
-			$studydatetime = $row['study_datetime'];
-			$studysite = $row['study_site'];
-			$studynum = $row['study_num'];
-			$studydesc = $row['study_desc'];
-			$studyvisit = $row['study_type'];
-			$studyaltid = $row['study_alternateid'];
-			$studyageatscan = number_format($row['study_ageatscan'], 1);
-			//$age = $row['age'];
-			$sex = $row['sex'];
-			$gender = $row['gender'];
-			$dob = $row['birthdate'];
-			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
-			$enrollmentid = $row['enrollment_id'];
-			$project_name = $row['project_name'];
-			$project_costcenter = $row['project_costcenter'];
-			$isactive = $row['isactive'];
+			$uid = $row['uid'] ?? '';
+			$subjectid = (int)$row['subject_id'];
+			$studyageatscan = number_format((float)$row['study_ageatscan'], 1);
 
-			list($studyAge, $calcStudyAge) = GetStudyAge($dob, $studyageatscan, $studydatetime);
-			//echo "list($studyAge, $calcStudyAge) = GetStudyAge($dob, $studyageatscan, $studydatetime)";
-			
-			if ($studyAge == null)
-				$studyAge = "";
-			else
-				$studyAge = number_format($studyAge,1);
+			list($studyAge, $calcStudyAge) = GetStudyAge($row['birthdate'], $studyageatscan, $row['study_datetime']);
+			$calcStudyAge = ($calcStudyAge == null) ? "-" : number_format($calcStudyAge, 1);
 
-			if ($calcStudyAge == null)
-				$calcStudyAge = "-";
-			else
-				$calcStudyAge = number_format($calcStudyAge,1);
-			
-			$altids = array();
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' and altuid <> '' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$isprimary = $rowA['isprimary'];
-				$altid = $rowA['altuid'];
-				if ($isprimary) {
-					$altids[] = "*" . $altid;
-				}
-				else {
-					$altids[] = $altid;
-				}
-			}
-			$altids = array_unique($altids);
-			$altuidlist = implode2(", ",$altids);
-			
-			if ($uid != $lastuid) { $rowhighlight = 1; }
-			else { $rowhighlight = 0; }
-			
-			$rowdata[] = "{ subjectid: $subjectid, studyid: $study_id, rowhighlight: $rowhighlight, uid: \"$uid\", sex: \"$sex\", gender: \"$gender\", altuids: \"$altuidlist\", uidstudynum: \"$uid$studynum\", visit: \"$studyvisit\", studydate: \"$studydatetime\", studyage: \"$studyageatscan\", calcstudyage: \"$calcStudyAge\", modality: \"$modality\", desc: \"$studydesc\", study_id: \"$studyaltid\", site: \"$studysite\"}";
-
+			$rows[] = array(
+				'subjectid' => $subjectid,
+				'studyid' => (int)$row['study_id'],
+				'rowhighlight' => ($uid != $lastuid) ? 1 : 0,
+				'uid' => $uid,
+				'sex' => $row['sex'] ?? '',
+				'gender' => $row['gender'] ?? '',
+				'altuids' => implode(", ", array_keys($altids[$subjectid] ?? array())),
+				'uidstudynum' => $uid . $row['study_num'],
+				'visit' => $row['study_type'] ?? '',
+				'studydate' => $row['study_datetime'] ?? '',
+				'studyage' => $studyageatscan,
+				'calcstudyage' => $calcStudyAge,
+				'modality' => $row['study_modality'] ?? '',
+				'desc' => $row['study_desc'] ?? '',
+				'study_id' => $row['study_alternateid'] ?? '',
+				'site' => $row['study_site'] ?? '',
+			);
 			$lastuid = $uid;
 		}
-		
-		$data = "";
-		if (count($rowdata) > 0)
-			$data = implode(",", $rowdata);
 		?>
 		
 		<!-- Include the JS for AG Grid -->
@@ -2133,8 +1819,15 @@
 					</h2>
 				</div>
 				<div class="right aligned seven wide column">
+					<? if ($canmodifydata) { ?>
 					<button type="button" class="ui small basic primary compact button" id="batchstudyupdatebutton" title="Paste a CSV to batch update studies">Batch Update...</button>
-					<a href="projects.php?action=updatestudyage&id=<?=$id?>" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</a>
+					<form method="post" action="projects.php" style="display: inline; margin: 0">
+						<input type="hidden" name="action" value="updatestudyage">
+						<input type="hidden" name="id" value="<?=$id?>">
+						<?=CSRFTokenField()?>
+						<button type="submit" class="ui small basic primary compact button" title="Set StudyAge to CalcStudyAge for all studies">Update StudyAge</button>
+					</form>
+					<? } ?>
 					<div class="ui small basic primary compact button" onClick="onBtnExport()"><i class="file excel outline icon"></i> Export table as .csv</div> &nbsp;
 				</div>
 			</div>
@@ -2145,6 +1838,7 @@
 			<div class="scrolling content">
 				<form action="projects.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="batchupdatestudy">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="projectid" value="<?=$id?>">
 					<div class="field">
 						<label>Paste .csv formatted data</label>
@@ -2192,6 +1886,7 @@
 		<form method="post" action="projects.php" id="theform" name="theform" onSubmit="return onSubmitForm();">
 		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="">
+		<?=CSRFTokenField()?>
 		
 		<div id="myGrid" class="ag-theme-alpine" style="height: 60vh"></div>
 		<style>
@@ -2199,8 +1894,10 @@
 				border-top: 2px solid #888;
 			}
 		</style>
+		<? GridScript('updatestudydetails', array('projectid' => $id)); ?>
 		<script type="text/javascript">
 			let gridApi;
+			const canModifyData = <?=JSONForScript($canmodifydata)?>;
 
 			// Function to demonstrate calling grid's API
 			function deselect(){
@@ -2225,7 +1922,7 @@
 						pinned: 'left',
 						width: 150,
 						cellRenderer: function(params) {
-							return '<a href="subjects.php?id=' + params.data.subjectid + '">' + params.value + '</a>'
+							return '<a href="subjects.php?id=' + encodeURIComponent(params.data.subjectid) + '">' + gridEsc(params.value) + '</a>'
 						}
 					},
 					{
@@ -2233,14 +1930,14 @@
 						field: "uidstudynum",
 						pinned: 'left',
 						cellRenderer: function(params) {
-							return '<a href="studies.php?id=' + params.data.studyid + '"><b>' + params.value + '</b></a>'
+							return '<a href="studies.php?id=' + encodeURIComponent(params.data.studyid) + '"><b>' + gridEsc(params.value) + '</b></a>'
 						},
-						<? if ($GLOBALS['issiteadmin']) { ?> checkboxSelection: true, cellStyle: { 'background-color': '#ff9' } <? } ?>
+						<? if ($issiteadmin) { ?> checkboxSelection: true, cellStyle: { 'background-color': '#ff9' } <? } ?>
 					},
 					{
 						headerName: "Sex",
 						field: "sex",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
@@ -2250,7 +1947,7 @@
 					{
 						headerName: "Gender",
 						field: "gender",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agSelectCellEditor',
 						cellEditorParams: {
 							values: ['', 'F', 'M', 'O', 'U'],
@@ -2260,16 +1957,16 @@
 					{ 
 						headerName: "Subject Alt UIDs",
 						field: "altuids",
-						editable: true,
+						editable: canModifyData,
 						cellEditor: 'agLargeTextCellEditor',
 						cellRenderer: function(params) {
-							return '<tt>' + params.value + '</tt>'
+							return '<tt>' + gridEsc(params.value) + '</tt>'
 						},
 						
 					},
-					{ headerName: "Visit", field: "visit", editable: true },
+					{ headerName: "Visit", field: "visit", editable: canModifyData },
 					{ headerName: "Study Datetime", field: "studydate", editable: false },
-					{ headerName: "StudyAge", field: "studyage", editable: true },
+					{ headerName: "StudyAge", field: "studyage", editable: canModifyData },
 					{ headerName: "Calculated StudyAge", field: "calcstudyage", editable: false },
 					{ headerName: "Modality", field: "modality", editable: false },
 					{ headerName: "Description", field: "desc", editable: false },
@@ -2277,7 +1974,7 @@
 					{ headerName: "Site", field: "site", editable: false },
 				],
 
-				rowData: [ <?=$data?> ],
+				rowData: <?=JSONForScript($rows)?>,
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true},
@@ -2286,7 +1983,7 @@
 					'rowhighlight': 'data.rowhighlight == 1',
 				},
 
-				<? if ($GLOBALS['issiteadmin']) { ?>
+				<? if ($issiteadmin) { ?>
 				rowSelection: {
 					mode: 'multiRow',
 					//headerCheckbox: true,
@@ -2298,22 +1995,7 @@
 				suppressMovableColumns: true,
 				autoSizeStrategy: { type: 'fitCellContents' },
 				onCellValueChanged: (event) => {
-
-					url = "ajaxapi.php?action=updatestudydetails&subjectid=" + event.data.subjectid + "&studyid=" + event.data.studyid + "&column=" + event.column.getColDef().field + "&value=" + event.value;
-					var xhttp = new XMLHttpRequest();
-					xhttp.onreadystatechange = function() {
-						if (this.readyState == 4 && this.status == 200) {
-							if (this.responseText == "success") {
-								document.getElementById("updateresult").innerHTML = '<div class="ui success message" style="transition: opacity 3s ease-in-out, opacity 1; !important">Success updating <b>' + event.column.getColDef().field + '</b> to \'' + event.value + '\'</div>';
-							}
-							else {
-								document.getElementById("updateresult").innerHTML = '<div class="ui error message">Error updating ' + event.column.getColDef().field + ' to ' + event.value + '</div>';
-							}
-						}
-					};
-					xhttp.open("GET", url, true);
-					xhttp.send();
-					
+					gridSaveCell(event, { subjectid: event.data.subjectid, studyid: event.data.studyid });
 				},				
 			};
 
@@ -2348,7 +2030,7 @@
 			
 		</script>
 		
-		<? if ($GLOBALS['issiteadmin']) { ?>
+		<? if ($issiteadmin) { ?>
 		<div class="ui compact yellow segment" style="background-color: #FFFF99">
 
 			<h2 class="ui header">
@@ -2371,7 +2053,7 @@
 						$sqlstring = "select distinct(tag) 'tag' from tags where enrollment_id is not null and enrollment_id <> 0 and enrollment_id <> ''";
 						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-							$tag = $row['tag'];
+							$tag = htmlspecialchars($row['tag'] ?? '');
 							?>
 							<option value="<?=$tag?>">
 							<?
@@ -2400,7 +2082,7 @@
 							
 							if (strtotime($project_enddate) < strtotime("now")) { $style="color: gray"; } else { $style = ""; }
 							?>
-							<option value="<?=$project_id?>" style="<?=$style?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+							<option value="<?=(int)$project_id?>" style="<?=$style?>"><?=htmlspecialchars($project_name ?? '')?> (<?=htmlspecialchars($project_costcenter ?? '')?>)</option>
 							<?
 						}
 					?>
@@ -2447,21 +2129,23 @@
 	/* ------- DisplayNonImagingTable ------------- */
 	/* -------------------------------------------- */
 	function DisplayNonImagingTable($id, $isactive=1) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
+		/* observations are data: View Data on the project */
+		$project = CheckProjectPerm($id, array('viewdata'));
+		if ($project === null) return;
+		$id = (int)$id;
+		$isactive = (int)$isactive;
+		$name = $project['project_name'];
 		
 		$rowdata = array();
 		
 		$observationNames = array();
 		$table = array();
 		/* get all subjects, and their enrollment info, associated with the project */
-		$sqlstring = "select a.observation_name, observation_value, observation_startdate, b.enrollment_id, c.subject_id, c.uid, c.sex, c.gender from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = '$isactive'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.observation_name, observation_value, observation_startdate, b.enrollment_id, c.subject_id, c.uid, c.sex, c.gender from observations a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = ? and c.isactive = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $id, $isactive);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id, $isactive]);
+		mysqli_stmt_close($stmt);
 		$numObservations = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjectRowID = $row['subject_id'];
@@ -2478,7 +2162,7 @@
 			
 			$table[$subjectRowID]['uid'] = $uid;
 			$table[$subjectRowID]['enrollmentRowID'] = $enrollmentRowID;
-			$table[$subjectRowID]['observations'][$obsv_name]++;
+			$table[$subjectRowID]['observations'][$obsv_name] = ($table[$subjectRowID]['observations'][$obsv_name] ?? 0) + 1;
 			$observationNames[] = $obsv_name;
 		}
 		
@@ -2490,18 +2174,18 @@
 		foreach ($table as $subjectRowID => $data) {
 			$uid = $data['uid'];
 			$enrollmentRowID = $data['enrollmentRowID'];
-			$row = "{ subjectRowID: $subjectRowID, enrollmentRowID: $enrollmentRowID, uid: " . json_encode((string)$uid) . " ";
+			$row = "{ subjectRowID: $subjectRowID, enrollmentRowID: $enrollmentRowID, uid: " . JSONForScript((string)$uid) . " ";
 			foreach ($observationNames as $name) {
 				$obsvName = $name;
-				$obsvCount = $data['observations'][$name];
+				$obsvCount = $data['observations'][$name] ?? 0;
 				if ($obsvCount < 1) {
 					$obsvCount = 0;
 				}
 				else {
-					$stats[$obsvName]++;
+					$stats[$obsvName] = ($stats[$obsvName] ?? 0) + 1;
 				}
 
-				$row .= ", " . json_encode((string)$obsvName) . ": $obsvCount";
+				$row .= ", " . JSONForScript((string)$obsvName) . ": $obsvCount";
 			}
 			$row .= "}\n";
 			$rowdata[] = $row;
@@ -2570,16 +2254,16 @@
 						width: 150,
 						cellDataType: 'text',
 						cellRenderer: function(params) {
-							return '<a href="subjects.php?id=' + params.data.subjectRowID + '">' + params.value + '</a>'
+							return '<a href="subjects.php?id=' + encodeURIComponent(params.data.subjectRowID) + '">' + String(params.value).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }) + '</a>'
 						},
 						headerTooltip: "Click to go to the subject",
 					},
 					<? foreach ($observationNames as $name) {
-						$percent = number_format(($stats[$name]/$numSubjects) * 100.0, 0);
+						$percent = ($numSubjects > 0) ? number_format((($stats[$name] ?? 0)/$numSubjects) * 100.0, 0) : 0;
 						?>
 					{
-						field: <?=json_encode((string)$name)?>,
-						headerName: <?=json_encode("$name ($percent%)")?>,
+						field: <?=JSONForScript((string)$name)?>,
+						headerName: <?=JSONForScript("$name ($percent%)")?>,
 						valueParser: numberParser,
 
 						cellStyle: function(params) {
@@ -2643,233 +2327,70 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- EditBIDSDatatypes ------------------ */
-	/* -------------------------------------------- */
-	function EditBIDSDatatypes($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		if (!isInteger($id)) { echo "Invalid project ID [$id]"; return; }
-		
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-
-		/* get all studies associated with this project */
-		$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$modality = strtolower($row['study_modality']);
-			
-			if (IsNiDBModality($modality)) {
-				if (($modality != "") && ($studyid != "")) {
-					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-					//PrintSQL($sqlstringA);
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						$seriesaltdesc = $rowA['series_altdesc'];
-						if ($rowA['series_desc'] != "") {
-							$seriesdesc = $rowA['series_desc'];
-						}
-						elseif ($rowA['series_protocol'] != "") {
-							$seriesdesc = $rowA['series_protocol'];
-						}
-						if ($seriesdesc != "") {
-							$seriesdescs[$modality][$seriesdesc]++;
-						}
-						
-						$altdesc[$seriesdesc][$modality] = $seriesaltdesc;
-					}
-				}
-			}
-		}
-		
-		?>
-		<br><br>
-		<form action="projects.php" method="post">
-		<input type="hidden" name="action" value="changealternatenames">
-		<input type="hidden" name="id" value="<?=$id?>">
-		Click <b>Update</b> below to apply these changes to all studies associated with this project
-		<br><br>
-		<table class="ui very compact celled grey table">
-			<thead>
-				<th>Modality</th>
-				<th>Series Description</th>
-				<th>Count</th>
-				<th>BIDS datatype</th>
-			</thead>
-		<?
-		$i=0;
-		foreach ($seriesdescs as $modality => $serieslist) {
-			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
-			foreach ($serieslist as $series => $count) {
-
-				$currentaltdesc = "";
-				$currentaltdesc = $altdesc[$series][$modality];
-				?>
-				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
-					<td><?=$count?></td>
-					<td><input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="oldname[<?=$i?>]" value="<?=$series?>"><input type="text" name="newname[<?=$i?>]" value="<?=$currentaltdesc?>"></td>
-				</tr>
-				<?
-				$i++;
-			}
-		}
-		?>
-			<tr>
-				<td colspan="3" align="right"><input type="submit" value="Update"></td>
-			</tr>
-		</table>
-
-		<?
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- ViewBIDSDatatypes ------------------ */
-	/* -------------------------------------------- */
-	function ViewBIDSDatatypes($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-
-		$sqlstring = "select * from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['project_name'];
-		
-		/* get all studies associated with this project */
-		$sqlstring = "select study_id, study_modality, uid, study_num from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = b.subject_id where a.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$studyid = $row['study_id'];
-				$studynum = $row['study_num'];
-				$uid = $row['uid'];
-				$modality = strtolower($row['study_modality']);
-				
-				if (IsNiDBModality($modality)) {
-					if (($modality != "") && ($studyid != "")) {
-						$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-							$seriesaltdesc = $rowA['series_altdesc'];
-							if ($seriesaltdesc != "") {
-								$seriesdescs[$uid][$modality][$seriesaltdesc]++;
-								$uniqueseries[$modality][$seriesaltdesc]++;
-							}
-						}
-					}
-				}
-			}
-		}
-		
-		?>
-		<br><br>
-		<table class="ui very compact celled grey table">
-			<thead>
-				<tr>
-					<th></th>
-					<?
-						foreach ($uniqueseries as $modality => $series) {
-							$count = count($series);
-							echo "<th colspan='$count'>$modality</th>";
-						}
-					?>
-				</tr>
-				<tr>
-					<th>UID</th>
-					<?
-						foreach ($uniqueseries as $modality => $series) {
-							foreach ($series as $ser => $count) {
-								echo "<th>$ser ($count)</th>";
-							}
-						}
-					?>
-				</tr>
-			</thead>
-		<?
-
-		foreach ($seriesdescs as $uid => $modalities) {
-			?>
-			<tr>
-				<td><?=$uid?></td>
-				<?
-				foreach ($uniqueseries as $modality => $series) {
-					foreach ($series as $ser => $count) {
-						$localcount = $seriesdescs[$uid][$modality][$ser];
-						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
-						?>
-							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
-						<?
-					}
-				}
-				?>
-			</tr><?
-		}
-		?>
-		</table>
-
-		<?
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- EditExperimentMapping -------------- */
 	/* -------------------------------------------- */
+	/* map the protocol names in this project's series to the project's experiments */
 	function EditExperimentMapping($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim($projectid));
-		
-		if (($projectid == "null") || ($projectid == null) || ($projectid == "")) {
-			$projectid = 'null';
-		}
-			
-		/* get all studies, and all series, associated with this project */
-		if ($projectid == "null")
-			$sqlstring = "select study_id, study_modality from studies where study_modality = 'mr'";
-		else
-			$sqlstring = "select study_id, study_modality from projects a left join enrollment b on a.project_id = b.project_id left join studies c on b.enrollment_id = c.enrollment_id where a.project_id = $projectid";
-		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$project = CheckProjectPerm($projectid, array('modifydata'));
+		if ($project === null) return;
+		$projectid = (int)$projectid;
+
+		/* the distinct series descriptions (or protocol, if blank) for each modality in this project */
+		$seriesdescs = array();
+		$sqlstring = "select distinct a.study_modality from studies a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		$modalitylist = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$modality = strtolower($row['study_modality']);
-			
-			if (IsNiDBModality($modality)) {
-				if (($modality != "") && ($studyid != "")) {
-					$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' order by series_desc";
-					$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-						if ($rowA['series_desc'] != "") {
-							$seriesdesc = $rowA['series_desc'];
-						}
-						elseif ($rowA['series_protocol'] != "") {
-							$seriesdesc = $rowA['series_protocol'];
-						}
-						if ($seriesdesc != "") {
-							$seriesdescs[$modality][$seriesdesc]++;
-						}
-					}
+			$modalitylist[] = strtolower($row['study_modality'] ?? '');
+		}
+		mysqli_stmt_close($stmt);
+		foreach (array_unique($modalitylist) as $modality) {
+			/* the table name is built from the modality, so it must be a valid name with a series table */
+			$table = GetSeriesTableName($modality);
+			if (($table == "") || !TableExists($table)) continue;
+			$sqlstringA = "select a.series_desc, a.series_protocol from `$table` a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ?";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'i', $projectid);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$projectid]);
+			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
+				$seriesdesc = (($rowA['series_desc'] ?? '') != "") ? $rowA['series_desc'] : ($rowA['series_protocol'] ?? '');
+				if ($seriesdesc != "") {
+					$seriesdescs[$modality][$seriesdesc] = ($seriesdescs[$modality][$seriesdesc] ?? 0) + 1;
 				}
 			}
+			mysqli_stmt_close($stmtA);
 		}
 
-		/* get list of NDA experimentid mappings for this project */
-		if ($projectid == "null")
-			$sqlstring = "select * from experiment_mapping where project_id is null";
-		else
-			$sqlstring = "select * from experiment_mapping where project_id = $projectid";
-
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		/* this project's current experiment mappings */
+		$mapping = array();
+		$sqlstring = "select modality, protocolname, experiment_id from experiment_mapping where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$mapping[$row['modality']][$row['protocolname']] = $row['experiment_id'];
+			$mapping[strtolower($row['modality'])][$row['protocolname']] = $row['experiment_id'];
 		}
+		mysqli_stmt_close($stmt);
+
+		/* this project's experiments */
+		$experiments = array();
+		$sqlstring = "select experiment_id, exp_name from experiments where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$experiments[(int)$row['experiment_id']] = $row['exp_name'];
+		}
+		mysqli_stmt_close($stmt);
 		?>
 		<br><br>
 		<div class="ui text container grid">
 		<form action="projects.php" method="post">
 		<input type="hidden" name="action" value="updateexperimentmapping">
 		<input type="hidden" name="id" value="<?=$projectid?>">
+		<?=CSRFTokenField()?>
 		<b>Experiment mapping</b>
 		<br>
 		This mapping associates <a href="experiment.php?projectid=<?=$projectid?>">experiments</a> with protocol names.
@@ -2881,35 +2402,23 @@
 				<th>Experiment</th>
 			</thead>
 		<?
-		
-		/* get list of experiments for this project */
-		$sqlstring = "select * from experiments where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$experiments[$row['experiment_id']] = $row['exp_name'];
-		}
-		
 		$i=0;
 		foreach ($seriesdescs as $modality => $serieslist) {
-			array_multisort(array_keys($serieslist), SORT_NATURAL| SORT_FLAG_CASE, $serieslist);
+			uksort($serieslist, 'strnatcasecmp');
 			foreach ($serieslist as $series => $count) {
-
-				$experiment_id = "";
-				$experiment_id = $mapping[$modality][$series];
-		
+				$experiment_id = $mapping[$modality][$series] ?? "";
 				?>
 				<tr>
-					<td><?=strtoupper($modality)?></td>
-					<td><tt><?=$series?></tt></td>
+					<td><?=htmlspecialchars(strtoupper($modality))?></td>
+					<td><tt><?=htmlspecialchars($series)?></tt></td>
 					<td>
-						<input type="hidden" name="modalities[<?=$i?>]" value="<?=strtolower($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=$series?>">
-						<!--<input type="text" name="experimentid[<?=$i?>]" value="<?=$experiment_id?>">-->
+						<input type="hidden" name="modalities[<?=$i?>]" value="<?=htmlspecialchars($modality)?>"><input type="hidden" name="protocolname[<?=$i?>]" value="<?=htmlspecialchars($series)?>">
 						<select class="ui selection dropdown" name="experimentid[<?=$i?>]">
 							<option value="">Select experiment...</option>
 						<?
 							foreach ($experiments as $expid => $name) {
-								if ($expid == $experiment_id) { $selected = "selected"; } else { $selected = ""; }
-								echo "<option value='$expid' $selected>$name</option>";
+								$selected = ($expid == $experiment_id) ? "selected" : "";
+								echo "<option value='$expid' $selected>" . htmlspecialchars($name ?? '') . "</option>";
 							}
 						?>
 						</select>
@@ -2923,135 +2432,129 @@
 			<tr>
 				<td colspan="3">
 				<div class="column" align="right">
-					<button class="ui button" onClick="window.location.href='projects.php?id=<?=$projectid?>'; return false;">Cancel</button>
+					<a class="ui button" href="projects.php?id=<?=$projectid?>">Cancel</a>
 					<input class="ui primary button" type="submit" id="submit" value="Update">
 				</div>
 				</td>
 			</tr>
 		</table>
-
+		</form>
+		</div>
 		<?
 	}
 
-	
+
 	/* -------------------------------------------- */
 	/* ------- UpdateExperimentMapping ------------ */
 	/* -------------------------------------------- */
+	/* replace each listed protocol's mapping: the selected experiment (which must belong to this
+	   project), or no mapping if none is selected */
 	function UpdateExperimentMapping($projectid, $modalities, $protocolnames, $experimentids) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], trim(strtolower($projectid)));
-		
-		if (isInteger($projectid) || $projectid == "" || $projectid == "null") { }
-		else {
-			Error("Invalid project ID [$projectid]");
-			return;
+		$project = CheckProjectPerm($projectid, array('modifydata'));
+		if ($project === null) return;
+		$projectid = (int)$projectid;
+		if (!is_array($modalities)) { Error("Nothing to update"); return; }
+
+		/* this project's experiments */
+		$experiments = array();
+		$sqlstring = "select experiment_id from experiments where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$experiments[(int)$row['experiment_id']] = 1;
 		}
-		
+		mysqli_stmt_close($stmt);
+
+		$n = 0;
+		StartSQLTransaction();
 		foreach ($modalities as $i => $modality) {
-			$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
-			$protocolname = mysqli_real_escape_string($GLOBALS['linki'], $protocolnames[$i]);
-			$experimentid = mysqli_real_escape_string($GLOBALS['linki'], $experimentids[$i]);
-			if (($modality != "") && ($protocolname != "") && ($experimentid != "") && (is_numeric($experimentid)) && ($experimentid > 0)) {
-				
-				$sqlstring = "insert ignore into experiment_mapping (project_id, protocolname, modality, experiment_id) values ($projectid, '$protocolname', '$modality', '$experimentid')";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$modality = strtolower(trim($modality ?? ''));
+			$protocolname = $protocolnames[$i] ?? '';
+			$experimentid = (int)($experimentids[$i] ?? 0);
+			if (($modality == "") || ($protocolname == "")) continue;
+
+			/* (experiment_mapping has no unique key, so replace rather than insert) */
+			$sqlstring = "delete from experiment_mapping where project_id = ? and modality = ? and protocolname = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'iss', $projectid, $modality, $protocolname);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $modality, $protocolname]);
+			mysqli_stmt_close($stmt);
+
+			if (isset($experiments[$experimentid])) {
+				$sqlstring = "insert into experiment_mapping (project_id, protocolname, modality, experiment_id) values (?, ?, ?, ?)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'issi', $projectid, $protocolname, $modality, $experimentid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $protocolname, $modality, $experimentid]);
+				mysqli_stmt_close($stmt);
+				$n++;
 			}
 		}
+		CommitSQLTransaction();
+		Notice("Experiment mapping saved ($n protocols mapped)");
 	}
 
-	
+
+	/* -------------------------------------------- */
+	/* ------- TableExists ------------------------ */
+	/* -------------------------------------------- */
+	function TableExists($table) {
+		static $cache = array();
+		if (isset($cache[$table])) return $cache[$table];
+		$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $table);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$table]);
+		$cache[$table] = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		return $cache[$table];
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayProject --------------------- */
 	/* -------------------------------------------- */
 	function DisplayProject($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		/* the project page (name, counts, links) is visible to any user, like the project list. The
+		   subject list at the bottom checks View Data / View PHI itself, as do the linked pages */
+		$id = (int)$id;
+		$project = GetProjectRow($id);
+		if ($project === null) {
+			Error("Project not found");
+			return;
+		}
 
 		/* update the mostrecent table */
 		UpdateMostRecent('', '', $id);
 		
-		$sqlstring = "select * from projects where project_id = ?";
+		$name = htmlspecialchars($project['project_name'] ?? '');
+		$projectdesc = htmlspecialchars($project['project_desc'] ?? '');
+
+		/* the user's favorite flag */
+		$userid = (int)$_SESSION['userid'];
+		$sqlstring = "select favorite from user_project where user_id = ? and project_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_bind_param($stmt, 'ii', $userid, $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $id]);
+		$rowA = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
-		$name = $row['project_name'];
-		$admin = $row['project_admin'];
-		$pi = $row['project_pi'];
-		$costcenter = $row['project_costcenter'];
-		$startdate = $row['project_startdate'];
-		$enddate = $row['project_enddate'];
-		$projectdesc = $row['project_desc'];
+		$favorite = $rowA['favorite'] ?? 0;
 
-		/* get user_project info */
-		$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-		$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-		$viewdata = $rowA['view_data'];
-		$viewphi = $rowA['view_phi'];
-		$lastview = $rowA['lastview_cleardate'];
-		if (($lastview == "") || ($lastview == "null"))
-			$lastview = "0000-00-00 00:00:00";
-		$favorite = $rowA['favorite'];
-	
-		/* get studies associated with this project */
-		$sqlstring = "select a.*, c.*, d.*,(datediff(a.study_datetime, d.birthdate)/365.25) 'age' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join projects c on b.project_id = c.project_id left join subjects d on d.subject_id = b.subject_id where c.project_id = $id order by d.uid asc, a.study_modality asc";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$numstudies = mysqli_num_rows($result);
-		
-		/* get some stats about the project */
-		$siteids = array();
-		$ages = array();
-		$studydates = array();
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$uid = $row['uid'];
-			$siteids[] = $row['study_nidbsite'];
-			$uids[$uid]['sex'] = $row['gender']; /* create hash of UID and sex */
-			$studydates[] = $row['study_datetime']; /* get list of study dates */
-			$genders[$row['gender']]['count']++; /* get the count of each gender */
-			if ($row['study_ageatscan'] > 0) {
-				$ages[] = $row['study_ageatscan'];
-				$genders[$row['gender']]['ages'][] = $row['study_ageatscan'];
-			}
-			else {
-				$ages[] = $row['age'];
-				$genders[$row['gender']]['ages'][] = $row['age'];
-			}
-			$subjects[$uid] = "1";
+		/* counts shown on the page */
+		$counts = array(
+			'numstudies' => "select count(*) 'n' from studies a join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ?",
+			'numsubjects' => "select count(*) 'n' from subjects a join enrollment b on a.subject_id = b.subject_id where b.project_id = ?",
+			'numinstruments' => "select count(*) 'n' from instruments where project_id = ?",
+			'numexperiments' => "select count(*) 'n' from experiments where project_id = ?",
+		);
+		foreach ($counts as $var => $sqlstring) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			mysqli_stmt_close($stmt);
+			$$var = (int)($row['n'] ?? 0);
 		}
-
-		$sqlstring = "select count(*) 'numsubjects' from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$numsubjects = $row['numsubjects'];
-
-		$sqlstring = "select count(*) 'n' from instruments where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$numinstruments = $row['n'];
-
-		$sqlstring = "select count(*) 'n' from experiments where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$numexperiments = $row['n'];
-
-		if (count($studydates) > 0) {
-			$lowdate = min($studydates);
-			$highdate = max($studydates);
-		}
-		else {
-			$lowdate = "";
-			$highdate = "";
-		}
-		
-		/* get instance ID */
-		$sqlstring = "select instance_id from projects where project_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instanceid = $row['instance_id'];
-
-		/* get list of site IDs */
-		$siteids = array_unique($siteids);
 		
 		?>
 		
@@ -3060,11 +2563,7 @@
 				<div class="sixteen wide column">
 					<h1 class="ui header">
 						<?=$name?>
-						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-						<? } ?>
+						<? FavoriteToggle($id, $favorite, "project"); ?>
 						<div class="sub header"><?=$numsubjects?> subjects &nbsp; &nbsp; <?=$numstudies?> studies</div>
 					</h1>
 					<p><?=$projectdesc?></p>
@@ -3209,10 +2708,6 @@
 			</div>
 
 			<?
-				/* get list of studies created since project.lastview */
-				$sqlstring = "select *, year(c.birthdate) 'dobyear' from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and a.lastupdate > '$lastview'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$numnewstudies = mysqli_num_rows($result);
 			?>
 
 			<script type="text/javascript">
@@ -3238,156 +2733,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- DisplayInstanceSummary ------------- */
-	/* -------------------------------------------- */
-	function DisplayInstanceSummary($id) {
-		$id = mysqli_real_escape_string($GLOBALS['linki'], $id);
-		
-		/* get all studies associated with this project */
-		$sqlstring = "SELECT b.enrollment_id, c.study_id, c.study_modality, c.study_num, c.study_ageatscan, d.uid, d.subject_id, d.birthdate, e.altuid, a.project_name FROM projects a LEFT JOIN enrollment b on a.project_id = b.project_id LEFT JOIN studies c on b.enrollment_id = c.enrollment_id LEFT JOIN subjects d on d.subject_id = b.subject_id LEFT JOIN subject_altuid e on e.subject_id = d.subject_id WHERE a.instance_id = $id and d.isactive = 1 order by a.project_name, e.altuid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQL($sqlstring);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-			$studynum = $row['study_num'];
-			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
-			$age = $row['study_ageatscan'];
-			$dob = $row['birthdate'];
-			$projectname = $row['project_name'];
-			$modality = strtolower($row['study_modality']);
-			$enrollmentid = $row['enrollment_id'];
-			
-			$sqlstringA = "select altuid, isprimary from subject_altuid where subject_id = '$subjectid' order by isprimary desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$isprimary = $rowA['isprimary'];
-			$altuid = $rowA['altuid'];
-			
-			if (($modality != "") && ($studyid != "")) {
-				/* check for valid modality */
-				$sqlstring2 = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "_series'";
-				$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
-				if (mysqli_num_rows($result2) < 1) {
-					continue;
-				}
-
-				/* get the series */
-				$sqlstringA = "select * from $modality" . "_series where study_id = '$studyid' and ishidden <> 1";
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$seriesaltdesc = $rowA['series_altdesc'];
-					if ($seriesaltdesc != "") {
-						$seriesdescs[$uid][$modality][$seriesaltdesc]++;
-						$uniqueseries[$modality][$seriesaltdesc]++;
-						$seriesdescs[$uid]['age'] = $age;
-						$seriesdescs[$uid]['dob'] = $dob;
-						$seriesdescs[$uid]['altuid'] = $altuid;
-						$seriesdescs[$uid]['subjectid'] = $subjectid;
-						$seriesdescs[$uid]['project'] = $projectname;
-					}
-				}
-				
-				/* get the observations */
-				$sqlstringA = "select * from observations where enrollment_id = '$enrollmentid'";
-				//PrintSQL($sqlstringA);
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$observationname = "[" . $rowA['instrument_name'] . "] - " . $rowA['observation_name'];
-					$observationvalue = $rowA['observation_value'];
-					
-					//if ($rowA['observation_type'] == 's') {	$observationvalue = $rowA['observation_valuestring']; }
-					//else { $observationvalue = $rowA['observation_valuenum']; }
-					if ($seriesaltdesc != "") {
-						$seriesdescs[$uid]['observations'][$observationname] = $observationvalue;
-						$uniqueseries['observations'][$observationname]++;
-					}
-				}
-			}
-		}
-		
-		?>
-		<script>
-			$(document).ready(function() 
-				{ 
-					$("#thetable").tablesorter(); 
-				} 
-			);		
-		</script>
-		<table id="thetable" class="tablesorter">
-			<thead>
-				<tr>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<th></th>
-					<?
-						foreach ($uniqueseries as $modality => $series) {
-							$count = count($series);
-							echo "<th colspan='$count'>$modality</th>";
-						}
-					?>
-				</tr>
-				<tr>
-					<th>UID</th>
-					<th>Subject ID</th>
-					<th>Age</th>
-					<th>DOB</th>
-					<th>Project</th>
-					<?
-						foreach ($uniqueseries as $modality => $series) {
-							foreach ($series as $ser => $count) {
-								echo "<th>$ser ($count)</th>";
-							}
-						}
-					?>
-				</tr>
-			</thead>
-		<?
-
-		/* sort the list by altuid */
-		//function compareByName($a, $b) {
-		//	return strcmp($a["altuid"], $b["altuid"]);
-		//}
-		//usort($seriesdescs, 'compareByName');
-
-		foreach ($seriesdescs as $uid => $modalities) {
-			$age = $seriesdescs[$uid]['age'];
-			$dob = $seriesdescs[$uid]['dob'];
-			$altuid = $seriesdescs[$uid]['altuid'];
-			$subjectid = $seriesdescs[$uid]['subjectid'];
-			$project = $seriesdescs[$uid]['project'];
-			?>
-			<tr>
-				<td><a href="subjects.php?id=<?=$subjectid?>"><?=$uid?></a></td>
-				<td><?=$altuid?></td>
-				<td><?=$age?></td>
-				<td><?=$dob?></td>
-				<td><?=$project?></td>
-				<?
-				foreach ($uniqueseries as $modality => $series) {
-					foreach ($series as $ser => $count) {
-						$localcount = $seriesdescs[$uid][$modality][$ser];
-						if ($localcount > 0) { $bgcolor = "#CAFFC4"; } else { $bgcolor = ""; $localcount = "-"; }
-						#if ($localcount > 0) { $bgcolor = "green"; } else { $bgcolor = "";}
-						?>
-							<td style="background-color: <?=$bgcolor?>"><?=$localcount?></td>
-						<?
-					}
-				}
-				?>
-			</tr><?
-		}
-		?>
-		</table>
-
-		<?
-	}
-
-
-	/* -------------------------------------------- */
 	/* ------- DisplayProjects -------------------- */
 	/* -------------------------------------------- */
 	function DisplayProjects($viewtype) {
@@ -3406,10 +2751,10 @@
 			
 			<?
 				if ($viewtype == "groupbypi") {
-					DisplayProjectsByPI();
+					DisplayProjectsGrouped('pi');
 				}
 				elseif ($viewtype == "groupbyadmin") {
-					DisplayProjectsByAdmin();
+					DisplayProjectsGrouped('admin');
 				}
 				else {
 					DisplayProjectList();
@@ -3420,39 +2765,119 @@
 		
 	}
 
+
+	/* -------------------------------------------- */
+	/* ------- GetProjectListData ----------------- */
+	/* -------------------------------------------- */
+	/* the active projects in the current instance, with the user's access, favorite flag and study
+	   counts (counts only for projects the user can view data in). Values are HTML-escaped for display.
+	   $orderby is a literal from this file */
+	function GetProjectListData($orderby = "a.project_name") {
+		$instanceid = (int)$_SESSION['instanceid'];
+		$userid = (int)$_SESSION['userid'];
+
+		$sqlstring = "select a.project_id, a.project_name, a.project_uid, a.project_costcenter, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname', d.favorite from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id left join user_project d on d.project_id = a.project_id and d.user_id = ? where a.project_status = 'active' and a.instance_id = ? order by $orderby";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $userid, $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $instanceid]);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$rows[] = $row;
+		}
+		mysqli_stmt_close($stmt);
+
+		/* the user's permissions on these projects (admins have all) */
+		$perms = GetCurrentUserProjectPermissions(array_map(function($r) { return (int)$r['project_id']; }, $rows));
+
+		$h = function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); };
+		$projects = array();
+		foreach ($rows as $row) {
+			$id = (int)$row['project_id'];
+			$viewdata = (bool)GetPerm($perms, 'viewdata', $id);
+			$hasaccess = $viewdata || GetPerm($perms, 'viewphi', $id);
+			$favorite = (int)($row['favorite'] ?? 0);
+
+			/* study counts by modality */
+			$totalstudies = 0;
+			$studydetail = "";
+			if ($viewdata) {
+				$sqlstring = "select a.study_modality, count(*) 'count' from studies a join enrollment b on a.enrollment_id = b.enrollment_id join subjects c on b.subject_id = c.subject_id where b.project_id = ? and c.isactive = 1 group by a.study_modality";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $id);
+				$result2 = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+				while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
+					$modality = ($row2['study_modality'] == "") ? "(blank)" : $row2['study_modality'];
+					$totalstudies += (int)$row2['count'];
+					$studydetail .= "<li><b>" . $h($modality) . "</b> - " . (int)$row2['count'];
+				}
+				mysqli_stmt_close($stmt);
+				$studydetail = "<ul>$studydetail</ul>";
+			}
+
+			/* count of active subjects (only needed for the favorites list) */
+			$subjectcount = 0;
+			if ($favorite && $hasaccess) {
+				$sqlstring = "select count(distinct c.subject_id) 'numsubj' from enrollment b join subjects c on b.subject_id = c.subject_id where b.project_id = ? and c.isactive = 1";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $id);
+				$resultF = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+				$rowF = mysqli_fetch_array($resultF, MYSQLI_ASSOC);
+				mysqli_stmt_close($stmt);
+				$subjectcount = (int)($rowF['numsubj'] ?? 0);
+			}
+
+			/* searchable text: accessible rows expose all columns, no-access rows expose the name only (all that's shown) */
+			if ($hasaccess)
+				$search = strtolower(trim($row['project_name'] . " " . $row['project_uid'] . " " . $row['project_costcenter'] . " " . $row['adminfullname'] . " " . $row['pifullname']));
+			else
+				$search = strtolower(trim($row['project_name'] ?? ''));
+
+			$projects[] = array(
+				'id' => $id,
+				'name' => $h($row['project_name']),
+				'projectuid' => $h($row['project_uid']),
+				'costcenter' => $h($row['project_costcenter']),
+				'adminusername' => $h($row['adminusername']),
+				'adminfullname' => $h($row['adminfullname']),
+				'piusername' => $h($row['piusername']),
+				'pifullname' => $h($row['pifullname']),
+				'favorite' => $favorite,
+				'hasaccess' => $hasaccess,
+				'totalstudies' => $totalstudies,
+				'studydetail' => $h($studydetail),
+				'subjectcount' => $subjectcount,
+				'search' => $h($search),
+			);
+		}
+		return $projects;
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- RenderProjectRow ------------------- */
 	/* -------------------------------------------- */
-	/* renders a single project's <tr> for the project list tables */
-	function RenderProjectRow($p) {
+	/* renders a single project's <tr> for the project list tables. $columns are the optional columns
+	   to show ('uid', 'costcenter', 'admin', 'pi', 'studies') */
+	function RenderProjectRow($p, $columns = array('uid', 'costcenter', 'admin', 'pi', 'studies'), $viewtype = "") {
 		if ($p['hasaccess']) {
 			?>
 			<tr valign="top" data-search="<?=$p['search']?>">
 				<td>
 					<b><a href="projects.php?id=<?=$p['id']?>"><?=$p['name']?></a></b>
-					<? if ($p['favorite']) { ?>
-					<a href="projects.php?action=unsetfavorite&id=<?=$p['id']?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-					<? } else { ?>
-					<a href="projects.php?action=setfavorite&id=<?=$p['id']?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-					<? } ?>
+					<? FavoriteToggle($p['id'], $p['favorite'], "list", $viewtype); ?>
 				</td>
-				<td><?=$p['projectuid']?></td>
-				<td><?=$p['costcenter']?></td>
-				<td><?=$p['adminfullname']?></td>
-				<td><?=$p['pifullname']?></td>
-				<td align="left" title="<?=$p['studydetail']?>"><?=$p['totalstudies']?></td>
+				<? if (in_array('uid', $columns)) { ?><td><?=$p['projectuid']?></td><? } ?>
+				<? if (in_array('costcenter', $columns)) { ?><td><?=$p['costcenter']?></td><? } ?>
+				<? if (in_array('admin', $columns)) { ?><td><?=$p['adminfullname']?></td><? } ?>
+				<? if (in_array('pi', $columns)) { ?><td><?=$p['pifullname']?></td><? } ?>
+				<? if (in_array('studies', $columns)) { ?><td align="left" title="<?=$p['studydetail']?>"><?=$p['totalstudies']?></td><? } ?>
 			</tr>
 			<?
 		}
 		else {
 			?>
 			<tr data-search="<?=$p['search']?>">
-				<td style="color: #999; padding-left: 20px">No access to <b><?=$p['name']?></b></td>
-				<td></td>
-				<td></td>
-				<td></td>
-				<td></td>
-				<td></td>
+				<td style="color: #999; padding-left: 20px" colspan="<?=count($columns) + 1?>">No access to <b><?=$p['name']?></b></td>
 			</tr>
 			<?
 		}
@@ -3464,81 +2889,7 @@
 	function DisplayProjectList() {
 
 		/* gather all active projects for this instance once, then render into two tabs */
-		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_name";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$projects = array();
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$id = $row['project_id'];
-			$name = $row['project_name'];
-			$adminfullname = $row['adminfullname'];
-			$pifullname = $row['pifullname'];
-			$projectuid = $row['project_uid'];
-			$costcenter = $row['project_costcenter'];
-
-			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$view_data = $rowA['view_data'] ?? '';
-			$favorite = $rowA['favorite'] ?? '';
-
-			$totalstudies = 0;
-			$totalsize = 0.0;
-			$studydetail = "";
-			if ($view_data) {
-				$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-				$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-					$modality = $row2['study_modality'];
-					$count = $row2['count'];
-
-					$projectModalitySize = 0;
-					if (IsNiDBModality($modality)) {
-						if ($modality != "") {
-							$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-							$projectModalitySize = $row3['modalitysize'] ?? 0;
-						}
-					}
-
-					$totalstudies += $count;
-					$totalsize += $projectModalitySize;
-
-					if ($modality == "") { $modality = "(blank)"; }
-
-					$studydetail .= "<li><b>$modality</b> - $count";
-				}
-				$studydetail = "<ul>$studydetail<ul>";
-			}
-
-			/* count of active subjects (only needed for the favorites list) */
-			$subjectcount = 0;
-			if ($favorite) {
-				$sqlstringF = "select count(distinct c.subject_id) 'numsubj' from enrollment b left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1";
-				$resultF = MySQLiQuery($sqlstringF, __FILE__, __LINE__);
-				$rowF = mysqli_fetch_array($resultF, MYSQLI_ASSOC);
-				$subjectcount = $rowF['numsubj'] ?? 0;
-			}
-
-			/* searchable text: accessible rows expose all columns, no-access rows expose the name only (all that's shown) */
-			if ($view_data)
-				$search = htmlspecialchars(strtolower(trim("$name $projectuid $costcenter $adminfullname $pifullname")));
-			else
-				$search = htmlspecialchars(strtolower(trim($name)));
-
-			$projects[] = array(
-				'id' => $id,
-				'name' => $name,
-				'projectuid' => $projectuid,
-				'costcenter' => $costcenter,
-				'adminfullname' => $adminfullname,
-				'pifullname' => $pifullname,
-				'favorite' => $favorite,
-				'hasaccess' => (bool)$view_data,
-				'totalstudies' => $totalstudies,
-				'studydetail' => $studydetail,
-				'subjectcount' => $subjectcount,
-				'search' => $search,
-			);
-		}
+		$projects = GetProjectListData();
 
 		$countMine = 0;
 		foreach ($projects as $p) { if ($p['hasaccess']) $countMine++; }
@@ -3586,7 +2937,7 @@
 		<?
 			/* favorite projects list */
 			$favorites = array();
-			foreach ($projects as $p) { if ($p['favorite']) $favorites[] = $p; }
+			foreach ($projects as $p) { if ($p['favorite'] && $p['hasaccess']) $favorites[] = $p; }
 			if (count($favorites) > 0) {
 		?>
 		<div class="ui segment" style="margin-bottom:16px">
@@ -3666,247 +3017,53 @@
 		<?
 	}
 
+
 	/* -------------------------------------------- */
-	/* ------- DisplayProjectsByPI ---------------- */
+	/* ------- DisplayProjectsGrouped ------------- */
 	/* -------------------------------------------- */
-	function DisplayProjectsByPI() {
-		
-		/* get project list, sort by pi */
-		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_pi, a.project_name";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$lastprojectpi = "";
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$id = $row['project_id'];
-			$name = $row['project_name'];
-			$adminusername = $row['adminusername'];
-			$adminfullname = $row['adminfullname'];
-			$piusername = $row['piusername'];
-			$pifullname = $row['pifullname'];
-			$projectuid = $row['project_uid'];
-			$costcenter = $row['project_costcenter'];
-			
-			if ($piusername == "")
-				$piusername = "(blank)";
-			
-			/* start a new block for this PI */
-			if ($lastprojectpi != $piusername) {
-				
-				/* terminate the previous block if there was one */
-				if ($lastprojectpi != "") {
-					?>
-						</table>
-					</div><?
+	/* the project list grouped by PI ($by 'pi') or by admin ($by 'admin') */
+	function DisplayProjectsGrouped($by) {
+		$projects = GetProjectListData(($by == "pi") ? "a.project_pi, a.project_name" : "a.project_admin, a.project_name");
+		$viewtype = ($by == "pi") ? "groupbypi" : "groupbyadmin";
+		/* the other person is shown as a column */
+		$columns = ($by == "pi") ? array('uid', 'costcenter', 'admin', 'studies') : array('uid', 'costcenter', 'pi', 'studies');
+
+		$lastgroup = null;
+		foreach ($projects as $p) {
+			$groupuser = ($by == "pi") ? $p['piusername'] : $p['adminusername'];
+			$groupname = ($by == "pi") ? $p['pifullname'] : $p['adminfullname'];
+			if ($groupuser == "") $groupuser = "(blank)";
+
+			/* start a new block for this person */
+			if ($lastgroup !== $groupuser) {
+				if ($lastgroup !== null) {
+					?></table></div><?
 				}
-					
 				?>
 				<div class="ui styled segment">
 					<h2 class="ui header">
 						<i class="blue user icon"></i>
-						<?=$pifullname?>
-						<div class="sub header"><?=$piusername?></div>
+						<?=$groupname?>
+						<div class="sub header"><?=$groupuser?></div>
 					</h2>
 					<table class="ui scrolling table">
 						<thead>
 							<th>Project</th>
 							<th>UID</th>
 							<th>Cost center</th>
-							<th>Admin</th>
+							<th><?=($by == "pi") ? "Admin" : "PI"?></th>
 							<th>Studies</th>
 						</thead>
 				<?
+				$lastgroup = $groupuser;
 			}
-			$lastprojectpi = $piusername;
-
-			/* display the project list for this PI */
-			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$view_data = $rowA['view_data'];
-			$view_phi = $rowA['view_phi'];
-			$favorite = $rowA['favorite'];
-			
-			if ($view_data) {
-				?>
-				<tr valign="top">
-					<td>
-						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
-						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-						<? } ?>
-					</td>
-					<td><?=$projectuid?></td>
-					<td><?=$costcenter?></td>
-					<td><?=$adminfullname?></td>
-					<?
-					$totalstudies = 0;
-					$totalsize = 0.0;
-					$studydetail = "";
-					$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-					$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-						$modality = $row2['study_modality'];
-						$count = $row2['count'];
-						
-						$projectModalitySize = 0;
-						if (IsNiDBModality($modality)) {
-							if ($modality != "") {
-								$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-								$projectModalitySize = $row3['modalitysize'];
-							}
-						}
-						
-						$totalstudies += $count;
-						$totalsize += $projectModalitySize;
-						
-						if ($modality == "") { $modality = "(blank)"; }
-						
-						$studydetail .= "<li><b>$modality</b> - $count";
-					}
-					$studydetail = "<ul>$studydetail<ul>";
-					?>
-					<td align="left" title="<?=$studydetail?>">
-						<?=$totalstudies?>
-					</td>
-				</tr>
-				<?
-			}
-			else {
-			?>
-				<tr>
-					<td colspan="5">No access to <b><?=$name?></b></td>
-				</tr>
-			<?
-			}
+			RenderProjectRow($p, $columns, $viewtype);
 		}
-		if ($lastprojectpi != "") {
-			?>
-				</table>
-			</div>
-			<?
-		}
-	}
-
-
-	/* -------------------------------------------- */
-	/* ------- DisplayProjectsByAdmin ------------- */
-	/* -------------------------------------------- */
-	function DisplayProjectsByAdmin() {
-		
-		/* get project list, sort by pi */
-		$sqlstring = "select a.*, b.username 'adminusername', b.user_fullname 'adminfullname', c.username 'piusername', c.user_fullname 'pifullname' from projects a left join users b on a.project_admin = b.user_id left join users c on a.project_pi = c.user_id where a.project_status = 'active' and a.instance_id = '" . $_SESSION['instanceid'] . "' order by a.project_admin, a.project_name";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$lastprojectadmin = "";
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$id = $row['project_id'];
-			$name = $row['project_name'];
-			$adminusername = $row['adminusername'];
-			$adminfullname = $row['adminfullname'];
-			$piusername = $row['piusername'];
-			$pifullname = $row['pifullname'];
-			$projectuid = $row['project_uid'];
-			$costcenter = $row['project_costcenter'];
-
-			if ($adminusername == "")
-				$adminusername = "(blank)";
-			
-			/* start a new block for this PI */
-			if ($lastprojectadmin != $adminusername) {
-				
-				/* terminate the previous block if there was one */
-				if ($lastprojectadmin != "") {
-					?></table>
-					</div><?
-				}
-					
-				?>
-				<div class="ui styled segment">
-					<h2 class="ui header">
-						<i class="blue user icon"></i>
-						<?=$adminfullname?>
-						<div class="sub header"><?=$adminusername?></div>
-					</h2>
-					<table class="ui scrolling table">
-						<thead>
-							<th>Project</th>
-							<th>UID</th>
-							<th>Cost center</th>
-							<th>PI</th>
-							<th>Studies</th>
-						</thead>
-				<?
-			}
-			$lastprojectadmin = $adminusername;
-
-			/* display the project list for this PI */
-			$sqlstringA = "select * from user_project where user_id in (select user_id from users where username = '" . $GLOBALS['username'] . "') and project_id = $id";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$view_data = $rowA['view_data'];
-			$view_phi = $rowA['view_phi'];
-			$favorite = $rowA['favorite'];
-			
-			if ($view_data) {
-				?>
-				<tr valign="top">
-					<td>
-						<b><a href="projects.php?id=<?=$id?>"><?=$name?></b>
-						<? if ($favorite) { ?>
-						<a href="projects.php?action=unsetfavorite&id=<?=$id?>"><i class="yellow star icon" title="Click to remove this project from your favorites"></i></a>
-						<? } else { ?>
-						<a href="projects.php?action=setfavorite&id=<?=$id?>"><i class="grey star outline icon" title="Click to add this project to your favorites"></i></a><br>
-						<? } ?>
-					</td>
-					<td><?=$projectuid?></td>
-					<td><?=$costcenter?></td>
-					<td><?=$pifullname?></td>
-					<?
-					$totalstudies = 0;
-					$totalsize = 0.0;
-					$studydetail = "";
-					$sqlstring = "SELECT a.study_modality, b.project_id, count(b.project_id) 'count' FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 group by b.project_id,a.study_modality";
-					$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-					while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
-						$modality = $row2['study_modality'];
-						$count = $row2['count'];
-						
-						$projectModalitySize = 0;
-						if (IsNiDBModality($modality)) {
-							if ($modality != "") {
-								$sqlstring3 = "select sum(series_size) 'modalitysize' from " . strtolower($modality) ."_series where study_id in (SELECT a.study_id FROM `studies` a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where b.project_id = $id and c.isactive = 1 and a.study_modality = '$modality')";
-								$projectModalitySize = $row3['modalitysize'];
-							}
-						}
-						
-						$totalstudies += $count;
-						$totalsize += $projectModalitySize;
-						
-						if ($modality == "") { $modality = "(blank)"; }
-						
-						$studydetail .= "<li><b>$modality</b> - $count";
-					}
-					$studydetail = "<ul>$studydetail<ul>";
-					?>
-					<td align="left" title="<?=$studydetail?>">
-						<?=$totalstudies?>
-					</td>
-				</tr>
-				<?
-			}
-			else {
-			?>
-				<tr>
-					<td colspan="5">No access to <b><?=$name?></b></td>
-				</tr>
-			<?
-			}
-		}
-		if ($lastprojectadmin != "") {
+		if ($lastgroup !== null) {
 			?></table></div><?
 		}
 	}
-	
+
 ?>
 
 <br><br><br><br>

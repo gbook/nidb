@@ -54,7 +54,7 @@ for the reference implementation.
 | `interventions.php` | 1 | ⬜ |
 | `login.php` | 1 | ⬜ |
 | `managefiles.php` | 2 | ✅ |
-| `menu.php` | 1 | ⬜ |
+| `menu.php` | 3 | ⬜ |
 | `merge.php` | 2 | ✅ |
 | `minipipeline.php` | 3 | ✅ |
 | `mrqcchecklist.php` | 2 | ⬜ |
@@ -66,21 +66,21 @@ for the reference implementation.
 | `pipelinecontainers.php` | 2 | ✅ |
 | `pipelines.php` | 4 | ✅ |
 | `projectchecklist.php` | 1 | ⬜ |
-| `projects.php` | 8 | ⬜ |
+| `projects.php` | 8 | ✅ |
 | `ratings.php` | 2 | ✅ |
 | `remoteconnections.php` | 2 | ✅ |
 | `remoteimportmapping.php` | 2 | ⬜ |
-| `search.php` | 5 | ⬜ |
+| `search.php` | 5 | ✅ |
 | `settings.php` | 1 | ✅ |
 | `setup.php` | 1 | ✅ |
 | `signup.php` | 3 | ✅ |
 | `status.php` | 1 | ✅ |
-| `studies.php` | 16 | ⬜ |
+| `studies.php` | 14 | ✅ |
 | `subjects.php` | 11 | ✅ |
 | `system.php` | 1 | ⬜ |
 | `templates.php` | 4 | ⬜ |
 | `timeline.php` | 1 | ⬜ |
-| `users.php` | 2 | ⬜ |
+| `users.php` | 3 | ✅ |
 | `visualization.php` | 1 | ⬜ |
 
 _Regenerated 2026-11-09 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
