@@ -25,6 +25,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so the redirects below (PRG, login, logout) work despite the HTML rendered first */
 	
 	$nologin = true;
  	require "functions.php";
@@ -75,9 +76,11 @@ window.onload = AreCookiesEnabled;
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 
-	/* edit variables */
-	$username = GetVariable("username");
-	$password = GetVariable("password");
+	/* credentials are only read from POST, never from the query string (which ends up in access logs) */
+	$username = $_POST['username'] ?? '';
+	$password = $_POST['password'] ?? '';
+	if (!is_string($username)) $username = '';
+	if (!is_string($password)) $password = '';
 
 	/* database connection */
 	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']) or die ("Could not connect. Error [" . mysqli_error() . "]  File [" . __FILE__ . "] Line [ " . __LINE__ . "]");
@@ -87,19 +90,38 @@ window.onload = AreCookiesEnabled;
 		phpCAS::client(CAS_VERSION_2_0, $GLOBALS['cfg']['casserver'], intval($GLOBALS['cfg']['casport']), $GLOBALS['cfg']['cascontext']);
 	}
 	
+	/* login and logout must be POSTed from this site's own forms with the session's CSRF token:
+	   this blocks login CSRF (signing a user in to someone else's account) and forced logout */
+	$verified = false;
+	if (($action == "login") || ($action == "logout")) {
+		$verified = ((($_SERVER['REQUEST_METHOD'] ?? '') === 'POST') && VerifyCSRFToken(false));
+	}
+
 	/* ----- determine which action to take ----- */
+	/* Post/Redirect/GET: every POST ends in a redirect, so a refresh never re-submits the password */
 	if ($action == "login") {
+		if (!$verified) {
+			$_SESSION['loginmessage'] = "Your login could not be verified (the page may have expired). Please try again.";
+			RedirectTo("login.php");
+		}
 		if (!CheckLogin($username, $password)) {
-			DisplayLogin("Incorrect login. Make sure Caps Lock is not on");
+			$_SESSION['loginmessage'] = $GLOBALS['loginerror'] ?? "Incorrect login. Make sure Caps Lock is not on";
+			RedirectTo("login.php");
 		}
-		else {
-			header("Location: index.php");
-		}
+		RedirectTo("index.php");
 	}
 	elseif ($action =="logout") {
+		if (!$verified) {
+			$_SESSION['loginmessage'] = "To log out, use the Logout button in the menu.";
+			RedirectTo("login.php");
+		}
 		DoLogout();
 	}
 	else {
+		/* message stashed by a redirect above */
+		$loginmessage = $_SESSION['loginmessage'] ?? '';
+		unset($_SESSION['loginmessage']);
+
 		if ($GLOBALS['cfg']['enablecas']){
 			$username = AuthenticateCASUser();
 			if ($username == "") {
@@ -110,17 +132,19 @@ window.onload = AreCookiesEnabled;
 				phpCAS::setNoCasServerValidation();
 				if (phpCAS::checkAuthentication()) {
 					$username = phpCAS::getUser();
-					echo "Username [$username]";
+					echo "Username [" . htmlspecialchars($username ?? '') . "]";
 				}
 				else {
 					phpCAS::forceAuthentication();
 				}
-				DoLogin($username);
-				header("Location: index.php");
+				if (DoLogin($username))
+					header("Location: index.php");
+				else
+					DisplayLogin($GLOBALS['loginerror'] ?? "Invalid CAS login");
 			}
 		}
 		else {
-			DisplayLogin("");
+			DisplayLogin($loginmessage);
 		}
 	}
 
@@ -145,8 +169,7 @@ window.onload = AreCookiesEnabled;
 		}
 		
 		if ($validlogin) {
-			DoLogin($username);
-			return true;
+			return DoLogin($username);
 		}
 	}
 
@@ -154,9 +177,13 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	/* ------- DoLogin ---------------------------- */
 	/* -------------------------------------------- */
+	/* returns true once the session is logged in. Returns false (and sets $GLOBALS['loginerror'])
+	   if a first NIS/CAS login would create an account with an invalid username (N51) */
 	function DoLogin($username) {
-		/* regenerate the session id on successful login to prevent session fixation */
+		/* regenerate the session id on successful login to prevent session fixation, and issue a
+		   fresh CSRF token so a token seen before login is not valid afterwards */
 		session_regenerate_id(true);
+		$_SESSION['csrftoken'] = bin2hex(random_bytes(32));
 
 		/* check if they are an admin */
 		$sqlstring = "select user_isadmin, user_id from users where username = ?";
@@ -178,6 +205,11 @@ window.onload = AreCookiesEnabled;
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
 		}
 		else {
+			/* first NIS/CAS login: the account is created from the external username, so it must be a valid one */
+			if (!IsValidUsername($username)) {
+				$GLOBALS['loginerror'] = "This username cannot be used in NiDB (allowed: letters, numbers, and . _ @ + -, up to 45 characters). Contact the NiDB administrator.";
+				return false;
+			}
 			$sqlstring = "insert into users (username, login_type, user_lastlogin, user_logincount, user_enabled) values (?, 'NIS', now(), 1, 1)";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, "s", $username);
@@ -217,12 +249,15 @@ window.onload = AreCookiesEnabled;
 
 		$_SESSION['instanceid'] = $instanceid;
 		$_SESSION['instancename'] = $instancename;
+
+		return true;
 	}
 
 	/* -------------------------------------------- */
 	/* ------- DoLogout --------------------------- */
 	/* -------------------------------------------- */
 	function DoLogout() {
+		$_SESSION = array(); /* session_destroy() leaves $_SESSION populated for the rest of the request */
 		session_destroy();
 		setcookie('MOD_AUTH_CAS', '', time()-1000, '/');
 		
@@ -231,7 +266,11 @@ window.onload = AreCookiesEnabled;
 			echo "You have been logged out of NiDB through CAS. <a href='login.php'>Login</a> again.";
 		}
 		else {
-			DisplayLogin("You have been logged out");
+			/* start a fresh, empty session just to carry the message across the redirect (PRG) */
+			session_start();
+			session_regenerate_id(true);
+			$_SESSION['loginmessage'] = "You have been logged out";
+			RedirectTo("login.php");
 		}
 	}
 
@@ -241,20 +280,18 @@ window.onload = AreCookiesEnabled;
 	/* -------------------------------------------- */
 	function AuthenticateStandardUser($username, $password) {
 		/* attempt to authenticate a standard user */
-		$username = mysqli_real_escape_string($GLOBALS['linki'], $username);
-		$password = mysqli_real_escape_string($GLOBALS['linki'], $password);
-		
 		if ((trim($username) == "") || (trim($password) == ""))
 			return false;
 			
-		$sqlstring = "select user_id from users where username = '$username' and password = sha1('$password') and user_enabled = 1";
-		/* do NOT log $sqlstring here: it contains the user's plaintext password */
+		/* bound (N51). The password is never passed to the query log: MySQLiBoundQuery gets a placeholder */
+		$sqlstring = "select user_id from users where username = ? and password = sha1(?) and user_enabled = 1";
 		Debug(__FILE__, __LINE__,"In AuthenticateStandardUser() for user [$username]");
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0)
-			return true;
-		else
-			return false;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $username, $password);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username, '[password]']);
+		$found = (($result) && (mysqli_num_rows($result) > 0));
+		mysqli_stmt_close($stmt);
+		return $found;
 	}
 	
 	
@@ -350,11 +387,12 @@ window.onload = AreCookiesEnabled;
 		<div class="center-screen">
 			<form method="post" action="login.php" class="ui form">
 				<input type="hidden" name="action" value="login">
+				<?=CSRFTokenField()?>
 
 				<div class="ui raised compact segment">
 					<? if ($message != "") { ?>
 					<div class="ui center aligned inverted tertiary red segment">
-						<?=$message?>
+						<?=htmlspecialchars($message ?? '')?>
 					</div>
 					<? } ?>
 						<img class="ui medium centered image" src="images/NIDB_logo.png">
@@ -434,7 +472,7 @@ window.onload = AreCookiesEnabled;
 			<table width="100%" cellspacing="0" cellpadding="6">
 				<tr>
 					<td align="left" style="font-size:8pt; color: #555">
-						NiDB v<?=$GLOBALS['cfg']['version']?> on <?=$_SERVER['HTTP_HOST']?>
+						NiDB v<?=htmlspecialchars($GLOBALS['cfg']['version'] ?? '')?> on <?=htmlspecialchars($_SERVER['HTTP_HOST'] ?? '')?>
 					</td>
 				</tr>
 			</table>

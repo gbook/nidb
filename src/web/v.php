@@ -143,6 +143,11 @@
 			return 0;
 		}
 
+		/* signups made before usernames were restricted may hold an address that is not a valid username (N51) */
+		if (!IsValidUsername($username)) {
+			return 0;
+		}
+
 		/* the address may have been registered another way since the signup (e.g. by an admin) */
 		$sqlstring = "select count(*) 'count' from users where username = ? or user_email = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);

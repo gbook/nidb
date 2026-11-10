@@ -658,17 +658,31 @@
 	
 	
 	/* -------------------------------------------- */
+	/* ------- IsValidUsername -------------------- */
+	/* -------------------------------------------- */
+	/* returns true if $username may be used for a new or renamed account: 1-45 characters
+	   (users.username is varchar(45)) of letters, digits and . _ @ + -  This covers ordinary
+	   email addresses (the signup username) and NIS/CAS IDs, and keeps quotes, #, spaces and
+	   other SQL/HTML metacharacters out of usernames (N51). Checked wherever a username is
+	   created or changed; existing accounts are not re-checked at login. */
+	function IsValidUsername($username) {
+		return (is_string($username) && (preg_match('/^[A-Za-z0-9._@+-]{1,45}\z/', $username) === 1));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- isAdmin ---------------------------- */
 	/* -------------------------------------------- */
 	function isAdmin() {
-		$username = $GLOBALS['username'];
-		$sqlstring = "select user_isadmin from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		if ($row['user_isadmin'] == "1")
-			return true;
-		else
-			return false;
+		$username = (string)($GLOBALS['username'] ?? '');
+		/* bound: usernames are email addresses, which may legally contain quotes (N51) */
+		$sqlstring = "select user_isadmin from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return (($row['user_isadmin'] ?? '') == "1");
 	}
 
 
@@ -676,14 +690,15 @@
 	/* ------- isSiteAdmin ------------------------ */
 	/* -------------------------------------------- */
 	function isSiteAdmin() {
-		$username = $GLOBALS['username'];
-		$sqlstring = "select user_issiteadmin from users where username = '$username'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		if ($row['user_issiteadmin'] == "1")
-			return true;
-		else
-			return false;
+		$username = (string)($GLOBALS['username'] ?? '');
+		/* bound: usernames are email addresses, which may legally contain quotes (N51) */
+		$sqlstring = "select user_issiteadmin from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return (($row['user_issiteadmin'] ?? '') == "1");
 	}
 
 
@@ -691,11 +706,15 @@
 	/* ------- GetInstanceID ---------------------- */
 	/* -------------------------------------------- */
 	function GetInstanceID() {
-		$sqlstring = "select user_instanceid from users where username = '" . $GLOBALS['username'] . "'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$instanceid = $row['user_instanceid'];
-		return $instanceid;
+		$username = (string)($GLOBALS['username'] ?? '');
+		/* bound: usernames are email addresses, which may legally contain quotes (N51) */
+		$sqlstring = "select user_instanceid from users where username = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $username);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return $row['user_instanceid'] ?? '';
 	}
 	
 	
@@ -916,19 +935,26 @@
 	/* -------------------------------------------- */
 	function GetEnrollmentInfo($id) {
 		if ($id != "") {
-			$sqlstring = "select * from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = $id";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$uid = $row['uid'];
-			$subjectid = $row['subject_id'];
-			$projectname = $row['project_name'];
-			$projectid = $row['project_id'];
+			$id = (int)$id;
+			$sqlstring = "select b.uid, a.subject_id, c.project_name, a.project_id from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.enrollment_id = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+			$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+			mysqli_stmt_close($stmt);
+			$uid = $row['uid'] ?? '';
+			$subjectid = (int)($row['subject_id'] ?? 0);
+			$projectname = $row['project_name'] ?? '';
+			$projectid = $row['project_id'] ?? '';
 
 			/* get primary alternate ID */
-			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $id and isprimary = 1";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$altuid = trim($row['altuid']);
+			$sqlstring = "select altuid from subject_altuid where subject_id = ? and enrollment_id = ? and isprimary = 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectid, $id]);
+			$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+			mysqli_stmt_close($stmt);
+			$altuid = trim($row['altuid'] ?? '');
 			//if ($altuid == "")
 			//	$altuid = $uid;
 			//echo "Primary alternate UID for [$uid] is [$altuid]<br>";
@@ -1140,21 +1166,30 @@
 		<select name="<?=$varname?>" class="<?=$classname?>" style="width:<?=$width?>px;height:<?=$height?>px" <? if ($multiselect) { echo "multiple"; } ?> <?=$required?>>
 			<option value="0" <?=$selected?>>All Projects</option>
 			<?
+				/* bound: usernames are email addresses, which may legally contain quotes (N51) */
+				$sessusername = (string)($_SESSION['username'] ?? '');
 				if ($currentinstanceonly) {
-					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
+					$sessinstanceid = (int)($_SESSION['instanceid'] ?? 0);
+					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) and a.instance_id = ? order by project_name";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'si', $sessusername, $sessinstanceid);
+					$params = [$sessusername, $sessinstanceid];
 				}
 				else {
-					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') order by project_name";
+					$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) order by project_name";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 's', $sessusername);
+					$params = [$sessusername];
 				}
 				
-				$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 					$project_id = $row['project_id'];
 					$project_name = $row['project_name'];
 					$project_costcenter = $row['project_costcenter'];
 					if (in_array($project_id, $selectedids)) { $selected = "selected"; } else { $selected = ""; }
 					?>
-					<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+					<option value="<?=(int)$project_id?>" <?=$selected?>><?=htmlspecialchars($project_name ?? '')?> (<?=htmlspecialchars($project_costcenter ?? '')?>)</option>
 					<?
 				}
 			?>
@@ -2748,15 +2783,20 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	/* ------- GetSubjectRowIDByProject ----------- */
 	/* -------------------------------------------- */
+	/* returns [subject_id, uid] of the active subject enrolled in $projectid whose UID or one of whose
+	   alternate IDs is $id, or [null, null]. Bound ($id comes from uploaded CSVs). Starts from subjects,
+	   so a subject with no alternate IDs is still found by UID */
 	function GetSubjectRowIDByProject($id, $projectid) {
-		$sqlstring = "select b.* from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where c.project_id = $projectid and (a.altuid = '$id' or b.uid = '$id') and b.isactive = 1";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$uid = $row['uid'];
-		$subjectid = $row['subject_id'];
+		$id = (string)$id;
+		$projectid = (int)$projectid;
+		$sqlstring = "select b.subject_id, b.uid from subjects b join enrollment c on b.subject_id = c.subject_id left join subject_altuid a on a.subject_id = b.subject_id where c.project_id = ? and (b.uid = ? or a.altuid = ?) and b.isactive = 1 limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iss', $projectid, $id, $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $id, $id]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
 		
-		return array($subjectid, $uid);
+		return array($row['subject_id'] ?? null, $row['uid'] ?? null);
 	}
 	
 
@@ -3537,6 +3577,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 					<? } elseif ($returnpage == "setup") { ?>
 					<form name="configform" method="post" action="setup.php" class="ui form">
 					<input type="hidden" name="step" value="setupcomplete">
+					<?=CSRFTokenField()?>
 					<? } ?>
 					<input type="hidden" name="action" value="updateconfig">
 					<table class="ui very compact top attached celled table">

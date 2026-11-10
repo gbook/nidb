@@ -24,12 +24,13 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET works despite the menu rendered before the action runs */
 ?>
 
 <html>
 	<head>
 		<link rel="icon" type="image/png" href="images/squirrel.png">
-		<title><?=$_SERVER['HTTP_HOST']?> - NiDB</title>
+		<title><?=htmlspecialchars($_SERVER['HTTP_HOST'] ?? '')?> - NiDB</title>
 	</head>
 
 <body>
@@ -41,13 +42,20 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$vars['action'] = GetVariable("action");
+	/* switching instance changes session state: POST + CSRF token (the menu's instance switcher) */
+	$vars['action'] = GetSafeAction(array("switchinstance"));
 	$vars['instanceid'] = GetVariable("instanceid");
 
 	switch ($vars['action']) {
 		case 'switchinstance':
+			/* Post/Redirect/GET, so the menu is re-rendered with the new instance */
+			ob_start();
 			SwitchInstance($vars['instanceid']);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("index.php");
 			break;
+		default:
+			ShowFlashMessage();
 	}
 	
 	/* put this here so that the instance ID can be changed before displaying things */
@@ -56,13 +64,31 @@
 	/* -------------------------------------------- */
 	/* ------- SwitchInstance --------------------- */
 	/* -------------------------------------------- */
+	/* switch to an instance the user is a member of (a pending join request is not membership).
+	   Admins and site admins may switch to any instance */
 	function SwitchInstance($id) {
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select instance_name from instance where instance_id = ?");
+		$id = (int)$id;
+
+		$sqlstring = "select instance_name from instance where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $id);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		if (!$row) { Error("Instance not found"); return; }
 		$instancename = $row['instance_name'];
-		
+
+		if (!IsAdminUser()) {
+			$userid = (int)($GLOBALS['userid'] ?? 0);
+			$sqlstring = "select userinstance_id from user_instance where user_id = ? and instance_id = ? and (instance_joinrequest is null or instance_joinrequest = 0)";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $userid, $id);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid, $id]);
+			$ismember = (($result) && (mysqli_num_rows($result) > 0));
+			mysqli_stmt_close($stmt);
+			if (!$ismember) { Error("You are not a member of that instance"); return; }
+		}
+
 		$_SESSION['instanceid'] = $id;
 		$_SESSION['instancename'] = $instancename;
 	}
@@ -153,13 +179,13 @@
 			</div>
 			<table class="ui small celled selectable grey very compact table">
 				<thead>
-					<th class="subheader">Subject UID</th>
+					<th class="subheader">UID</th>
 					<th class="subheader">Study #</th>
 					<th class="subheader">Date</th>
 					<th class="subheader">Modality</th>
 					<th class="subheader">Site</th>
 					<th class="subheader">Study Desc</th>
-					<th class="subheader"># of Series</th>
+					<th class="subheader"># Series</th>
 					<th class="subheader">Project</th>
 				</thead>
 			<?
@@ -182,8 +208,6 @@
 					$familyuid = $row['family_uid'];
 					
 					$perms = GetCurrentUserProjectPermissions(array($projectid));
-					//PrintVariable($projectid);
-					//PrintVariable($perms);
 					if (GetPerm($perms, 'viewdata', $projectid)) {
 						$seriestable = GetSeriesTableName($modality);
 						if ($seriestable == '') {
@@ -356,10 +380,6 @@
 					</tr>
 				</thead>
 				<?
-				//$q = mysqli_stmt_init($GLOBALS['linki']);
-				//mysqli_stmt_prepare($q, "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
-				//mysqli_stmt_bind_param($q, 'ss', $username, $_SESSION['instanceid']);
-				//$result = MySQLiBoundQuery($q, __FILE__, __LINE__);
 				$stmt = mysqli_prepare($GLOBALS['linki'], "select a.mostrecent_date, a.study_id, b.*, d.uid from mostrecent a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on d.subject_id = c.subject_id where a.user_id in (select user_id from users where username = ?) and a.study_id is not null and c.project_id in (select project_id from projects where instance_id = ?) order by a.mostrecent_date desc");
 				mysqli_stmt_bind_param($stmt, 'si', $GLOBALS['username'], $_SESSION['instanceid']);
 				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);

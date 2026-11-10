@@ -191,6 +191,9 @@
 		if (strlen($email) > 45) {
 			return "Email address is too long (maximum 45 characters)";
 		}
+		if (!IsValidUsername($email)) {
+			return "Email address can only contain letters, numbers, and the characters . _ @ + -";
+		}
 		if (($firstname == "") && ($lastname == "")) {
 			return "Name was blank";
 		}

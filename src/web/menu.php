@@ -31,8 +31,8 @@
 
 <!-- ****************** top menu ****************** -->
 <div class="ui attached inverted menu" style="!important; overflow: auto">
-	<div class="item" style="background-color: <?=$GLOBALS['cfg']['sitecolor']?>">
-		<?=$GLOBALS['cfg']['sitename']?>
+	<div class="item" style="background-color: <?=htmlspecialchars($GLOBALS['cfg']['sitecolor'] ?? '')?>">
+		<?=htmlspecialchars($GLOBALS['cfg']['sitename'] ?? '')?>
 	</div>
 	<?
 		/* home */
@@ -58,35 +58,51 @@
 	?>
 	<div class="right menu">
 		<?
-			/* admin */
-			if ($GLOBALS['isadmin']) {
+			/* admin: admins and site admins (the same check admin.php makes) */
+			if (IsAdminUser()) {
 				?><a href="admin.php" class="<? if ((substr($page,0,5) == "admin") || ($page == "settings.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php")) { echo "active"; } ?> item"><i class="cog <? if (file_exists("/nidb/setup/dbupgrade")) { echo "yellow loading"; } ?> icon"></i>Admin</a><?
 			}
 			/* user options */
-			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><?=$GLOBALS['username']?></div></a><?
+			?><a href="users.php" class="<? if ($page=="users.php" || $page=="remoteconnections.php") { echo "active"; } ?> item">My Account <div class="ui mini label"><?=htmlspecialchars($GLOBALS['username'] ?? '')?></div></a><?
 		?>
-		<a href="login.php?action=logout" class="item">Logout <i class="sign out alternate icon inverted"></i></a>
+		<!-- logout is a POST with the CSRF token (login.php refuses a GET), so another site can't log the user out -->
+		<a href="#" class="item" onclick="document.getElementById('logoutform').submit(); return false;">Logout <i class="sign out alternate icon inverted"></i></a>
+		<form id="logoutform" method="post" action="login.php" style="display: none">
+			<input type="hidden" name="action" value="logout">
+			<?=CSRFTokenField()?>
+		</form>
 	</div>	
 </div>
 
 <!-- ****************** bottom menu ****************** -->
 <div class="ui bottom attached grey inverted menu">
 	<div class="ui dropdown item">
-		<span title="Switch instance..."><?=$_SESSION['instancename']?></span>
+		<span title="Switch instance..."><?=htmlspecialchars($_SESSION['instancename'] ?? '')?></span>
 		<i class="dropdown icon"></i>
 		<div class="menu">
 			<?
-				$sqlstring = "select * from instance where instance_id in (select instance_id from user_instance where user_id = (select user_id from users where username = '" . $GLOBALS['username'] . "')) order by instance_name";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-					$instance_id = $row['instance_id'];
+				/* instances the user is a member of (a pending join request is not membership). Bound: N51 */
+				$menuusername = (string)($GLOBALS['username'] ?? '');
+				$sqlstring = "select instance_id, instance_name from instance where instance_id in (select instance_id from user_instance where (instance_joinrequest is null or instance_joinrequest = 0) and user_id = (select user_id from users where username = ?)) order by instance_name";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 's', $menuusername);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$menuusername]);
+				mysqli_stmt_close($stmt);
+				while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+					$instance_id = (int)$row['instance_id'];
 					$instance_name = $row['instance_name'];
+					/* switching changes session state, so it is a POST with the CSRF token (index.php) */
 					?>
-					<a class="item" href="index.php?action=switchinstance&instanceid=<?=$instance_id?>"><?=$instance_name?></a>
+					<a class="item" href="#" onclick="var f = document.getElementById('switchinstanceform'); f.instanceid.value = '<?=$instance_id?>'; f.submit(); return false;"><?=htmlspecialchars($instance_name ?? '')?></a>
 					<?
 				}
 			?>
 		</div>
+		<form id="switchinstanceform" method="post" action="index.php" style="display: none">
+			<input type="hidden" name="action" value="switchinstance">
+			<input type="hidden" name="instanceid" value="">
+			<?=CSRFTokenField()?>
+		</form>
 	</div>
 	<?
 		/* home sub-menu */
@@ -126,24 +142,24 @@
 			if (($seriesid != 0) && ($modality != "")) {
 				list($path1, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
-				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<?=(int)$projectid?>" class="item"><?=htmlspecialchars($projectname ?? '')?></a>
+				<a href="subjects.php?id=<?=(int)$subjectid?>" class="item"><?=htmlspecialchars($uid ?? '')?></a>
+				<a href="studies.php?id=<?=(int)$studyid?>" class="active item">Study <?=htmlspecialchars($studynum ?? '')?></a>
 				<?
 			}
 			elseif ($studyid != 0) {
 				list($path1, $uid, $studynum, $studyid, $subjectid, $modality1, $studytype1, $studydatetime1, $enrollmentid1, $projectname, $projectid) = GetStudyInfo($studyid);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
-				<a href="studies.php?id=<?=$studyid?>" class="active item">Study <?=$studynum?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<?=(int)$projectid?>" class="item"><?=htmlspecialchars($projectname ?? '')?></a>
+				<a href="subjects.php?id=<?=(int)$subjectid?>" class="item"><?=htmlspecialchars($uid ?? '')?></a>
+				<a href="studies.php?id=<?=(int)$studyid?>" class="active item">Study <?=htmlspecialchars($studynum ?? '')?></a>
 				<?
 			}
 			elseif (($enrollmentid != 0) && (($page == "observations.php") || ($page == "interventions.php") || ($page == "enrollment.php") || ($page == "diagnosis.php") || ($page == "timeline.php"))) {
 				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="item"><?=$projectname?></a>
-				<a href="subjects.php?id=<?=$subjectid?>" class="item"><?=$uid?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<?=(int)$projectid?>" class="item"><?=htmlspecialchars($projectname ?? '')?></a>
+				<a href="subjects.php?id=<?=(int)$subjectid?>" class="item"><?=htmlspecialchars($uid ?? '')?></a>
 				<?
 			}
 		}
@@ -158,13 +174,19 @@
 				?><!--<a href="projects.php" style="background-color:#273f70" class="item">Project List</a>--><?
 			} 
 			else {
-				$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-				$sqlstring = "select * from projects where project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-				$name = $row['project_name'];
+				$sqlstring = "select project_name from projects where project_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 'i', $projectid);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+				$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+				mysqli_stmt_close($stmt);
+				$name = $row['project_name'] ?? '';
+
+				/* the project Admin items are for admins/site admins and this project's project admins */
+				$menuperms = GetCurrentUserProjectPermissions(array($projectid));
+				$menuprojectadmin = (IsAdminUser() || GetPerm($menuperms, 'projectadmin', $projectid));
 				?>
-				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="active blue item"><?=$name?></a>
+				<a href="projects.php?action=displayprojectinfo&id=<?=$projectid?>" class="active blue item"><?=htmlspecialchars($name)?></a>
 				<div class="ui dropdown item">
 					<div class="text">View Data</div>
 					<i class="dropdown icon"></i>
@@ -206,16 +228,15 @@
 					<div class="text">Admin</div>
 					<i class="dropdown icon"></i>
 					<div class="menu">
-						<? if ($GLOBALS['isadmin']) { ?>
+						<? if ($menuprojectadmin) { ?>
 							<? /* these reset QC for the whole project, so they are POST forms with the CSRF token */ ?>
 							<form method="post" action="projects.php" class="item" style="margin: 0" onsubmit="return confirm('Reset basic QA for every MR series in this project?')"><input type="hidden" name="action" value="resetqa"><input type="hidden" name="id" value="<?=(int)$projectid?>"><?=CSRFTokenField()?><button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit"><i class="red sync icon"></i> Reset basic QA</button></form>
 							<form method="post" action="projects.php" class="item" style="margin: 0" onsubmit="return confirm('Reset advanced mriqc for every MR series in this project?')"><input type="hidden" name="action" value="resetmriqc"><input type="hidden" name="id" value="<?=(int)$projectid?>"><?=CSRFTokenField()?><button type="submit" style="background: none; border: none; padding: 0; cursor: pointer; color: inherit; font: inherit"><i class="red sync icon"></i> Reset advanced mriqc</button></form>
 							<a class="item" class="item" href="importremote.php?action=viewimports&projectid=<?=$projectid?>"><i class="cloud download alternate icon"></i> Remote import sources</a>
 						<? } ?>
 						<div class="item"><b>Remote connection params</b><br>
-							Project ID: <?=$projectid?><br>
-							Instance ID: <?=$instanceid?><br>
-							Site IDs: <?=implode2(",",$siteids)?><br>
+							Project ID: <?=(int)$projectid?><br>
+							Instance ID: <?=(int)($_SESSION['instanceid'] ?? 0)?><br>
 						</div>
 					</div>
 				</div>
@@ -233,14 +254,17 @@
 					?><a href="cluster.php" class="<? if ($page == "cluster.php") { echo "active"; } ?> item">Cluster</a><?
 				} 
 				else {
-					$sqlstring = "select a.*, b.username from pipelines a left join users b on a.pipeline_admin = b.user_id where a.pipeline_id = $pipelineid";
-					$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$name = $row['pipeline_name'];
+					$sqlstring = "select pipeline_name from pipelines where pipeline_id = ?";
+					$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+					mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+					$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+					$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+					mysqli_stmt_close($stmt);
+					$name = $row['pipeline_name'] ?? '';
 
 					?><a href="pipelines.php" class="item">Pipelines</a><?
 					
-					?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><?=$name?></a><?
+					?><a href="pipelines.php?action=editpipeline&id=<?=$pipelineid?>" class="<? if (($page=="pipelines.php") && ($action == "editpipeline")) { echo "active"; } ?> item"><?=htmlspecialchars($name)?></a><?
 
 					?><a href="analysis.php?action=viewanalyses&id=<?=$pipelineid?>" class="<? if ($page=="analysis.php"){ echo "active"; } ?> item">Analyses</a><?
 				}
@@ -270,7 +294,7 @@
 			if ($GLOBALS['cfg']['enablecalendar']) {
 				?><a href="calendar.php" class="<? if ($page=="calendar.php") { echo "active"; } ?> item">Calendar</a><?
 				
-				if ($GLOBALS['isadmin']) {
+				if (IsAdminUser()) {
 					?><a href="calendar_calendars.php" class="<? if ($page=="calendar_calendars.php") { echo "active"; } ?> item">Manage</a><?
 				}
 			}
@@ -279,8 +303,11 @@
 		/* admin sub-menu. any pages starting with 'admin' */
 		elseif ((substr($page,0,5) == "admin") || ($page == "settings.php") || ($page == "status.php") || ($page == "reports.php") || ($page == "cleanup.php") || ($page == "stats.php") || ($page == "status.php") || ($page == "longqc.php") || ($page == "backup.php") || ($page == "pipelinesettings.php")) {
 			?><a href="admin.php" class="<? if ($page=="admin.php") { echo "active"; } ?> item"><i class="cog icon"></i> Admin</a><?
-			?><a href="adminmodules.php" class="<? if ($page=="adminmodules.php") { echo "active"; } ?> item">Modules</a><?
-			?><a href="settings.php" class="<? if ($page=="settings.php") { echo "active"; } ?> item">Settings...</a><?
+			/* Modules and Settings are site-admin-only pages */
+			if ($GLOBALS['issiteadmin'] ?? false) {
+				?><a href="adminmodules.php" class="<? if ($page=="adminmodules.php") { echo "active"; } ?> item">Modules</a><?
+				?><a href="settings.php" class="<? if ($page=="settings.php") { echo "active"; } ?> item">Settings...</a><?
+			}
 		}
 		
 		/* user options sub-menu */
@@ -350,7 +377,8 @@
 			$message = $row['message'];
 			$message_date = $row['message_date'];
 		?>
-		<li><?=$message_date?> - <?=$message?>
+		<? /* the message itself is HTML by design: site admins write it in settings.php */ ?>
+		<li><?=htmlspecialchars($message_date ?? '')?> - <?=$message?>
 		<? } ?>
 		</ul>
 	</div>
@@ -365,7 +393,7 @@
 		Contact your server administrator or increase the <code>max_input_vars</code> PHP variable.");
 	}
 	
-	if ($_SESSION['username'] == "") {
+	if (($_SESSION['username'] ?? '') == "") {
 		Error("Username was blank. You do not appear to be logged in. Please login with your username to access NiDB");
 	}
 	

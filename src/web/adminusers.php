@@ -143,6 +143,18 @@
 		$isadmin = GetMySQLTinyInt($isadmin);
 		$enabled = GetMySQLTinyInt($enabled);
 
+		/* a renamed account must have a valid username (N51). An unchanged existing name is not re-checked */
+		$sqlstring = "select username from users where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		if ((($row['username'] ?? null) !== $username) && (!IsValidUsername($username))) {
+			Error("Username can only contain letters, numbers, and the characters . _ @ + - (maximum 45 characters). The user was not updated.");
+			return;
+		}
+
 		/* start a transaction */
 		$result = MySQLiQuery("start transaction", __FILE__, __LINE__);
 
@@ -331,6 +343,11 @@
 		$isadmin = GetMySQLTinyInt($isadmin);
 		$logintype = "Standard";
 		$sessioninstanceid = (int)$_SESSION['instanceid'];
+
+		if (!IsValidUsername($username)) {
+			Error("Username can only contain letters, numbers, and the characters . _ @ + - (maximum 45 characters). The user was not added.");
+			return;
+		}
 
 		/* insert the new user (a new user is always created enabled; the empty '' columns are literals) */
 		$sqlstring = "insert into users (username, password, login_type, user_instanceid, user_fullname, user_firstname, user_midname, user_lastname, user_institution, user_country, user_email, user_email2, user_address1, user_address2, user_city, user_state, user_zip, user_phone1, user_phone2, user_website, user_dept, user_lastlogin, user_logincount, user_enabled, user_isadmin, sendmail_dailysummary) values (?, sha1(?), ?, ?, ?, '', '', '', '', '', ?, '', '', '', '', '', '', '', '', '', '', now(), 0, 1, ?, 0)";

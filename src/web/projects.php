@@ -775,8 +775,9 @@
 	/* reset basic QC ($type 'basic') or mriqc ('mriqc') for every MR series in the project. Offered
 	   to admins only (menu.php) */
 	function ResetProjectQC($projectid, $type) {
-		if (!IsAdminUser()) { Error("Only administrators can reset QC for a whole project"); return; }
 		$projectid = (int)$projectid;
+		/* admins/site admins, or a project admin of this project */
+		if (!IsAdminUser() && !GetPerm(GetCurrentUserProjectPermissions(array($projectid)), 'projectadmin', $projectid)) { Error("Only administrators and project admins can reset QC for a whole project"); return; }
 		if (GetProjectRow($projectid) === null) { Error("Project not found"); return; }
 
 		$sqlstring = "select a.mrseries_id from mr_series a join studies b on a.study_id = b.study_id join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ?";

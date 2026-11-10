@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET works despite the HTML rendered before the action runs */
 ?>
 
 <html>
@@ -44,10 +45,11 @@
 	require "redcap_import.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$importid = GetVariable("importid");
-	$projectid = GetVariable("projectid");
-	$batchid = GetVariable("batchid");
+	/* every action that changes something (or uses a stored API token) must be a POST with the CSRF token */
+	$action = GetSafeAction(array("runimport", "resetbatch", "cancelbatch", "enable", "disable", "deleteimport", "testconnection", "redcappreview", "redcapimport", "updateimport", "addimport"));
+	$importid = (int)GetVariable("importid");
+	$projectid = (int)GetVariable("projectid");
+	$batchid = (int)GetVariable("batchid");
 	$importname = GetVariable("importname");
 	$remote_type = GetVariable("remote_type");
 	$remote_url = GetVariable("remote_url");
@@ -82,71 +84,90 @@
 			<td valign="top" style="padding-left: 20px">
 	<?php
 
+	/* Permissions (decision 2026-11-10): any member of the project may view its remote imports, batches
+	   and batch logs; the observations a batch imported need View Data; running imports (run, upload &
+	   run, REDCap preview/import, reset/cancel batch) needs Edit Data; managing import definitions (add,
+	   edit, delete, enable/disable, test connection; they hold the API URL and token) needs admin or
+	   project admin. For actions on an import or batch, the project is taken from that row, never from
+	   the request */
+	$importproject = ($importid > 0) ? GetRemoteImportProjectID($importid) : 0;
+	$batchproject = ($batchid > 0) ? GetRemoteImportBatchProjectID($batchid) : 0;
+
+	/* mutating actions: check, act, stash the messages, redirect to a GET (PRG) */
+	$mutating = array("runimport", "resetbatch", "cancelbatch", "enable", "disable", "deleteimport", "testconnection", "redcappreview", "redcapimport", "updateimport", "addimport");
+	if (in_array($action, $mutating, true)) {
+		ob_start();
+		$returnto = "viewimports";
+		$p = 0;
+		switch ($action) {
+			case 'runimport':
+				$p = $importproject; $returnto = "viewbatchimportlist";
+				if (RemoteImportPerm($p, 'run')) RunRemoteImport($importid);
+				break;
+			case 'resetbatch':
+				$p = $batchproject; $returnto = "viewbatchimportlist";
+				if (RemoteImportPerm($p, 'run')) ResetBatch($batchid, $p);
+				break;
+			case 'cancelbatch':
+				$p = $batchproject; $returnto = "viewbatchimportlist";
+				if (RemoteImportPerm($p, 'run')) CancelBatch($batchid);
+				break;
+			case 'enable':
+			case 'disable':
+				$p = $importproject;
+				if (RemoteImportPerm($p, 'manage')) SetRemoteImportEnabled($importid, ($action == 'enable') ? 1 : 0);
+				break;
+			case 'deleteimport':
+				$p = $importproject;
+				if (RemoteImportPerm($p, 'manage')) DeleteRemoteImport($importid);
+				break;
+			case 'testconnection':
+				$p = $importproject;
+				if (RemoteImportPerm($p, 'manage')) TestRemoteImportConnection($importid, $p);
+				break;
+			case 'redcappreview':
+			case 'redcapimport':
+				$p = $importproject;
+				if (RemoteImportPerm($p, 'run')) DisplayRedCapImportResult($importid, $p, ($action == 'redcappreview'));
+				break;
+			case 'updateimport':
+				/* an import stays in its project: the projectid in the form is ignored */
+				$p = $importproject;
+				if (RemoteImportPerm($p, 'manage')) UpdateRemoteImport($importid, $importname, $p, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
+				break;
+			case 'addimport':
+				$p = $projectid;
+				if (RemoteImportPerm($p, 'manage')) AddRemoteImport($importname, $p, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
+				break;
+		}
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo("importremote.php?action=$returnto&projectid=" . (int)$p);
+	}
+
+	ShowFlashMessage();
+
 	switch ($action) {
 		case 'viewbatchlog':
-			DisplayBatchLog($batchid);
+			if (RemoteImportPerm($batchproject, 'view')) DisplayBatchLog($batchid);
 			break;
 		case 'viewbatchimports':
-			DisplayBatchImports($batchid);
-			break;
-		case 'viewimports':
-			DisplayRemoteImportList($projectid);
+			if (RemoteImportPerm($batchproject, 'viewdata')) DisplayBatchImports($batchid);
 			break;
 		case 'viewbatchimportlist':
-			DisplayRemoteImportBatchList($projectid);
-			break;
-		case 'runimport':
-			RunRemoteImport($importid);
-			DisplayRemoteImportBatchList($projectid);
-			break;
-		case 'resetbatch':
-			ResetBatch($batchid, $projectid);
-			DisplayRemoteImportBatchList($projectid);
-			break;
-		case 'cancelbatch':
-			CancelBatch($batchid);
-			DisplayRemoteImportBatchList($projectid);
-			break;
-		case 'enable':
-			SetRemoteImportEnabled($importid, 1);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'disable':
-			SetRemoteImportEnabled($importid, 0);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'deleteimport':
-			DeleteRemoteImport($importid);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'testconnection':
-			TestRemoteImportConnection($importid, $projectid);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'redcappreview':
-			DisplayRedCapImportResult($importid, $projectid, true);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'redcapimport':
-			DisplayRedCapImportResult($importid, $projectid, false);
-			DisplayRemoteImportList($projectid);
+			if (RemoteImportPerm($projectid, 'view')) DisplayRemoteImportBatchList($projectid);
 			break;
 		case 'editimportform':
-			DisplayRemoteImportForm("edit", $importid, $projectid);
+			if (RemoteImportPerm($importproject, 'manage')) DisplayRemoteImportForm("edit", $importid, $importproject);
 			break;
 		case 'addimportform':
-			DisplayRemoteImportForm("add", "", $projectid);
+			if (RemoteImportPerm($projectid, 'manage')) DisplayRemoteImportForm("add", "", $projectid);
 			break;
-		case 'updateimport':
-			UpdateRemoteImport($importid, $importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
-			DisplayRemoteImportList($projectid);
-			break;
-		case 'addimport':
-			AddRemoteImport($importname, $projectid, $remote_type, $remote_url, $remote_token, $remote_username, $remote_projectid, $remote_surveyid, $remote_datasource, $flag_import_unmapped, $import_schedule, $import_time, $import_dayofmonth, $import_days, $redcap_subjectid_field, $redcap_raw_or_label, $redcap_require_complete);
-			DisplayRemoteImportList($projectid);
-			break;
+		case 'viewimports':
 		default:
-			DisplayRemoteImportList($projectid);
+			if ($projectid < 1)
+				DisplayRemoteImportProjectChooser();
+			elseif (RemoteImportPerm($projectid, 'view'))
+				DisplayRemoteImportList($projectid);
 	}
 	?>
 		</td>
@@ -159,6 +180,147 @@
 
 
 	/* ------------------------------------ functions ------------------------------------ */
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoteImportPerm ------------------- */
+	/* -------------------------------------------- */
+	/* $level: 'view' (any permission on the project), 'viewdata' (View Data), 'run' (Edit Data) or
+	   'manage' (admin or project admin). Displays an error and returns false when not allowed */
+	function RemoteImportPerm($projectid, $level, $showerror = true) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1) {
+			if ($showerror) Error("Project or remote import not found");
+			return false;
+		}
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		switch ($level) {
+			case 'view': $ok = IsProjectMember($perms, $projectid); break;
+			case 'viewdata': $ok = (GetPerm($perms, 'viewdata', $projectid) == 1); break;
+			case 'run': $ok = (GetPerm($perms, 'modifydata', $projectid) == 1); break;
+			case 'manage': $ok = (IsAdminUser() || (GetPerm($perms, 'projectadmin', $projectid) == 1)); break;
+			default: $ok = false;
+		}
+		if (!$ok && $showerror) {
+			$msg = array('view' => "You do not have permission to view this project's remote imports",
+			             'viewdata' => "You need View Data permission on this project to view imported data",
+			             'run' => "You need Edit Data permission on this project to run remote imports",
+			             'manage' => "Only admins and project admins can manage this project's remote imports");
+			Error($msg[$level] ?? "Permission denied");
+		}
+		return $ok;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplayRemoteImportProjectChooser -- */
+	/* -------------------------------------------- */
+	/* remote imports belong to a project; with no project in the request (eg the Data page's
+	   'Import remote' tile), list the projects in this instance the user is a member of */
+	function DisplayRemoteImportProjectChooser() {
+		$instanceid = (int)($_SESSION['instanceid'] ?? 0);
+		$projects = array();
+		$sqlstring = "select project_id, project_name from projects where instance_id = ? order by project_name";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceid]);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$projects[(int)$row['project_id']] = $row['project_name'];
+		}
+		mysqli_stmt_close($stmt);
+		$perms = GetCurrentUserProjectPermissions(array_keys($projects));
+		?>
+		<h1 class="ui header">Remote Imports</h1>
+		<p>Remote imports are set up per project. Choose a project:</p>
+		<div class="ui relaxed list">
+		<?
+		$n = 0;
+		foreach ($projects as $pid => $name) {
+			if (!IsProjectMember($perms, $pid)) continue;
+			$n++;
+			?><a class="item" href="importremote.php?action=viewimports&projectid=<?=$pid?>"><i class="folder icon"></i> <?=htmlspecialchars($name ?? '')?></a><?
+		}
+		if ($n == 0) { ?><div class="item">You are not a member of any project in this instance</div><? }
+		?>
+		</div>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetRemoteImportProjectID ----------- */
+	/* -------------------------------------------- */
+	function GetRemoteImportProjectID($importid) {
+		$importid = (int)$importid;
+		$sqlstring = "select project_id from remote_imports where remoteimport_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $importid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$importid]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return (int)($row['project_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetRemoteImportBatchProjectID ------ */
+	/* -------------------------------------------- */
+	function GetRemoteImportBatchProjectID($batchid) {
+		$batchid = (int)$batchid;
+		$sqlstring = "select b.project_id from remoteimport_batch a join remote_imports b on a.remoteimport_id = b.remoteimport_id where a.remoteimportbatch_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $batchid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$batchid]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return (int)($row['project_id'] ?? 0);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoteImportActionForm ------------- */
+	/* -------------------------------------------- */
+	/* one hidden POST form (with the CSRF token) used by every action link on a page:
+	   RemoteImportAction('enable', {importid: 5}, 'Are you sure?') */
+	function RemoteImportActionForm() {
+		?>
+		<form id="remoteimportactionform" method="post" action="importremote.php" style="display:none">
+			<?=CSRFTokenField()?>
+			<input type="hidden" name="action" value="">
+			<input type="hidden" name="importid" value="">
+			<input type="hidden" name="batchid" value="">
+			<input type="hidden" name="projectid" value="">
+		</form>
+		<script>
+			function RemoteImportAction(action, ids, confirmmsg) {
+				if (confirmmsg && !confirm(confirmmsg)) return false;
+				var f = document.getElementById('remoteimportactionform');
+				f.elements['action'].value = action;
+				f.elements['importid'].value = (ids && ids.importid) ? ids.importid : '';
+				f.elements['batchid'].value = (ids && ids.batchid) ? ids.batchid : '';
+				f.elements['projectid'].value = (ids && ids.projectid) ? ids.projectid : '';
+				f.submit();
+				return false;
+			}
+		</script>
+		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- RemoteImportTypeLabels ------------- */
+	/* -------------------------------------------- */
+	function RemoteImportTypeLabels() {
+		return array(
+			'avicenna_api_survey'     => 'Avicenna API Survey',
+			'avicenna_api_datasource' => 'Avicenna API Datasource',
+			'avicenna_csv_survey'     => 'Avicenna CSV Survey',
+			'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
+			'nidb'   => 'NiDB',
+			'redcap' => 'REDCap',
+			'url'    => 'URL',
+		);
+	}
 
 
 	/* -------------------------------------------- */
@@ -210,16 +372,16 @@
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
-		Notice("Remote import " . $row['import_name'] . " queued");
+		Notice("Remote import " . htmlspecialchars($row['import_name'] ?? '') . " queued");
 
 		$surveyid = trim($row['remote_surveyid']);
 		if ($surveyid !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $surveyid)) {
-			Warning("Survey ID \"$surveyid\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
+			Warning("Survey ID \"" . htmlspecialchars($surveyid) . "\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
 		}
 
 		$datasource = trim($row['remote_datasource'] ?? '');
 		if ($datasource !== '' && $uploadedFilename !== null && !FilenameContainsToken($uploadedFilename, $datasource)) {
-			Warning("Datasource \"$datasource\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
+			Warning("Datasource \"" . htmlspecialchars($datasource) . "\" was not found in the uploaded filename \"" . htmlspecialchars($uploadedFilename) . "\" — verify you uploaded the correct file");
 		}
 	}
 
@@ -358,6 +520,7 @@
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
 		$import_days = NormalizeImportDays($import_days);
+		if (!ValidRemoteImportSettings($importname, $remote_type, $import_schedule, $import_time, $import_dayofmonth)) return;
 
 		/* if the incoming token field is blank then we leave it alone, otherwise update it */
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select remote_token from remote_imports where remoteimport_id = ?");
@@ -389,7 +552,7 @@
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
-		Notice("Remote import $importname updated");
+		Notice("Remote import " . htmlspecialchars($importname) . " updated");
 	}
 
 
@@ -413,6 +576,7 @@
 		$import_time = (int)$import_time;
 		$import_dayofmonth = (int)$import_dayofmonth;
 		$import_days = NormalizeImportDays($import_days);
+		if (!ValidRemoteImportSettings($importname, $remote_type, $import_schedule, $import_time, $import_dayofmonth)) return;
 
 		$remote_url_db       = ($remote_url       == "") ? null : $remote_url;
 		$remote_token_db     = ($remote_token      == "") ? null : $remote_token;
@@ -430,7 +594,22 @@
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		mysqli_stmt_close($stmt);
 
-		Notice("Remote import $importname added");
+		Notice("Remote import " . htmlspecialchars($importname) . " added");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ValidRemoteImportSettings ---------- */
+	/* -------------------------------------------- */
+	/* the type and schedule must be one of the form's choices (the C++ module and this page switch on
+	   them, and they are displayed) */
+	function ValidRemoteImportSettings($importname, $remote_type, $import_schedule, $import_time, $import_dayofmonth) {
+		if (trim($importname) == "") { Error("Import name is blank"); return false; }
+		if (!array_key_exists($remote_type, RemoteImportTypeLabels())) { Error("Invalid remote source type"); return false; }
+		if (!in_array($import_schedule, array("ondemand", "hourly", "daily", "weekly", "monthly"), true)) { Error("Invalid import schedule"); return false; }
+		if (($import_time < 0) || ($import_time > 23)) { Error("Invalid import time"); return false; }
+		if (($import_dayofmonth < 0) || ($import_dayofmonth > 31)) { Error("Invalid day of month"); return false; }
+		return true;
 	}
 
 
@@ -579,7 +758,7 @@
 			$import_days = explode(",", $row['import_days']);
 
 			$formaction = "updateimport";
-			$formtitle = "Updating remote import <b>$importname</b>";
+			$formtitle = "Updating remote import <b>" . htmlspecialchars($importname ?? '') . "</b>";
 			$submitbuttonlabel = "Update";
 		}
 		else {
@@ -629,17 +808,18 @@
 	?>
 		<div style="max-width:800px">
 			<div class="ui attached visible message">
-				<div class="header"><?=$formtitle?></div>
+				<div class="header"><?=$formtitle /* built with the escaped import name */?></div>
 			</div>
 
 			<form method="post" action="importremote.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
-				<input type="hidden" name="importid" value="<?=$importid?>">
-				<input type="hidden" name="projectid" value="<?=$projectid?>">
+				<?=CSRFTokenField()?>
+				<input type="hidden" name="importid" value="<?=(int)$importid?>">
+				<input type="hidden" name="projectid" value="<?=(int)$projectid?>">
 
 				<div class="field">
 					<label>Import Name</label>
-					<input type="text" name="importname" value="<?=$importname?>" maxlength="255" required autofocus="autofocus" autocomplete="off">
+					<input type="text" name="importname" value="<?=htmlspecialchars($importname ?? '')?>" maxlength="255" required autofocus="autofocus" autocomplete="off">
 				</div>
 
 				<div class="two fields">
@@ -658,13 +838,13 @@
 					</div>
 					<div class="field" id="remote_url_group">
 						<label>Remote URL</label>
-						<input type="text" name="remote_url" id="remote_url" value="<?=$remote_url?>" placeholder="https://...">
+						<input type="text" name="remote_url" id="remote_url" value="<?=htmlspecialchars($remote_url ?? '')?>" placeholder="https://...">
 					</div>
 				</div>
 
 				<div class="field" id="remote_token_group">
 					<label>Remote Token</label>
-					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token" autocomplete="new-password">
+					<input type="password" name="remote_token" value="" placeholder="Leave blank to keep current token" autocomplete="new-password">
 				</div>
 
 				<div class="two fields" id="avicenna_credentials_group">
@@ -785,15 +965,16 @@
 				<div class="ui two column grid">
 					<div class="column">
 						<? if ($type == "edit") { ?>
-						<a href="importremote.php?action=deleteimport&projectid=<?=$projectid?>&importid=<?=$importid?>" class="ui red button" onclick="return confirm('Are you sure you want to delete this remote import?')">Delete</a>
+						<button type="button" class="ui red button" onclick="return RemoteImportAction('deleteimport', {importid: <?=(int)$importid?>}, 'Are you sure you want to delete this remote import?')">Delete</button>
 						<? } ?>
 					</div>
 					<div class="right aligned column">
-						<button class="ui button" onClick="window.location.href='importremote.php?projectid=<?=$projectid?>'; return false;">Cancel</button>
+						<button class="ui button" onClick="window.location.href='importremote.php?projectid=<?=(int)$projectid?>'; return false;">Cancel</button>
 						<input type="submit" class="ui primary button" value="<?=$submitbuttonlabel?>">
 					</div>
 				</div>
 			</form>
+			<? RemoteImportActionForm(); ?>
 		</div>
 		<script type="text/javascript">
 			function updateRemoteTypeFields() {
@@ -849,6 +1030,9 @@
 	/* -------------------------------------------- */
 	function DisplayRemoteImportList($projectid) {
 		$projectid = (int)$projectid;
+		$canmanage = RemoteImportPerm($projectid, 'manage', false);
+		$canrun = RemoteImportPerm($projectid, 'run', false);
+		RemoteImportActionForm();
 	?>
 		<div>
 			<div class="ui two column grid">
@@ -857,7 +1041,7 @@
 				</div>
 				<div class="right aligned column">
 					<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" class="ui button">View Batch Imports</a>
-					<a href="importremote.php?action=addimportform&projectid=<?=$GLOBALS['projectid']?>" class="ui primary button"><i class="plus square icon"></i>New Import</a>
+					<? if ($canmanage) { ?><a href="importremote.php?action=addimportform&projectid=<?=$projectid?>" class="ui primary button"><i class="plus square icon"></i>New Import</a><? } ?>
 				</div>
 			</div>
 			<table class="ui very compact selectable celled grey table">
@@ -876,12 +1060,15 @@
 				</thead>
 				<tbody>
 					<?
-						$sqlstring = "select * from remote_imports where project_id = $projectid order by import_name";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "select * from remote_imports where project_id = ? order by import_name";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $projectid);
+						$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
 						$imports = [];
-						while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+						while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 							$imports[] = $row;
 						}
+						mysqli_stmt_close($stmt);
 						foreach ($imports as $row) {
 							$importid = $row['remoteimport_id'];
 							$importname = $row['import_name'];
@@ -907,31 +1094,23 @@
 							/* REDCap imports run here in PHP, so they get their own
 							   actions rather than the queue-a-batch "Run now" path
 							   that the C++ module services. */
-							$canRunNow = (($import_schedule === 'ondemand') && !$isRedcap);
-							$canTestConnection = $isRedcap;
-							$hasActions = $canRunNow || $canTestConnection;
+							$canRunNow = (($import_schedule === 'ondemand') && !$isRedcap && $canrun);
+							$canTestConnection = ($isRedcap && $canmanage);
+							$hasActions = $canRunNow || ($isRedcap && ($canrun || $canmanage));
+							$importid = (int)$importid;
 					?>
 					<tr>
-						<td><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=$importname?></a></td>
+						<td><? if ($canmanage) { ?><a href="importremote.php?action=editimportform&projectid=<?=$projectid?>&importid=<?=$importid?>"><?=htmlspecialchars($importname ?? '')?></a><? } else { ?><?=htmlspecialchars($importname ?? '')?><? } ?></td>
 						<?php
-							$typeLabels = [
-								'avicenna_api_survey'     => 'Avicenna API Survey',
-								'avicenna_api_datasource' => 'Avicenna API Datasource',
-								'avicenna_csv_survey'     => 'Avicenna CSV Survey',
-								'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
-								'nidb'   => 'NiDB',
-								'redcap' => 'REDCap',
-								'url'    => 'URL',
-							];
-							$typeLabel = isset($typeLabels[$remote_type]) ? $typeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
+							$typeLabels = RemoteImportTypeLabels();
+							$typeLabel = htmlspecialchars(isset($typeLabels[$remote_type]) ? $typeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type ?? '')));
 						?>
 						<td><?= !empty($remote_surveyid) ? htmlspecialchars($remote_surveyid) : '-' ?></td>
 						<td><?= !empty($remote_datasource) ? htmlspecialchars($remote_datasource) : '-' ?></td>
 						<td><?= $typeLabel ?></td>
-						<!--<td><?=$remote_url_display?></td>-->
-						<td><?=$scheduletext?></td>
+						<td><?=htmlspecialchars($scheduletext)?></td>
 						<td style="text-align:center; min-width:170px; padding: 0px 5px">
-							<? if (($import_schedule === 'ondemand') && in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
+							<? if ($canrun && ($import_schedule === 'ondemand') && in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
 								<div id="remoteDropzone_<?=$importid?>" class="remoteupload-dz" data-importid="<?=$importid?>">
 									<i class="upload icon"></i> Drop .csv/.zip
 								</div>
@@ -947,14 +1126,18 @@
 										<? if ($isCsvUpload): ?>
 											<a class="item" href="#" onclick="document.getElementById('datafile_upload_<?=$importid?>').click(); return false;"><i class="upload icon"></i>Upload &amp; Run</a>
 										<? else: ?>
-											<a class="item" href="importremote.php?action=runimport&projectid=<?=$projectid?>&importid=<?=$importid?>"><i class="play icon"></i>Run now</a>
+											<a class="item" href="#" onclick="return RemoteImportAction('runimport', {importid: <?=$importid?>})"><i class="play icon"></i>Run now</a>
 										<? endif; ?>
 									<? endif; ?>
 									<? if ($isRedcap): ?>
-										<a class="item" href="importremote.php?action=testconnection&projectid=<?=$projectid?>&importid=<?=$importid?>" title="Check that the REDCap API URL and token for this import work"><i class="plug icon"></i>Test connection</a>
+										<? if ($canmanage): ?>
+										<a class="item" href="#" onclick="return RemoteImportAction('testconnection', {importid: <?=$importid?>})" title="Check that the REDCap API URL and token for this import work"><i class="plug icon"></i>Test connection</a>
+										<? endif; ?>
 										<a class="item" href="remoteimportmapping.php?projectid=<?=$projectid?>&importid=<?=$importid?>" title="Browse this REDCap project and map its fields"><i class="sitemap icon"></i>Map fields</a>
-										<a class="item" href="importremote.php?action=redcappreview&projectid=<?=$projectid?>&importid=<?=$importid?>" title="Show what would be imported without writing anything"><i class="eye icon"></i>Preview import</a>
-										<a class="item" href="importremote.php?action=redcapimport&projectid=<?=$projectid?>&importid=<?=$importid?>" onclick="return confirm('Import REDCap data into this project now?')"><i class="download icon"></i>Import now</a>
+										<? if ($canrun): ?>
+										<a class="item" href="#" onclick="return RemoteImportAction('redcappreview', {importid: <?=$importid?>})" title="Show what would be imported without writing anything"><i class="eye icon"></i>Preview import</a>
+										<a class="item" href="#" onclick="return RemoteImportAction('redcapimport', {importid: <?=$importid?>}, 'Import REDCap data into this project now?')"><i class="download icon"></i>Import now</a>
+										<? endif; ?>
 									<? endif; ?>
 									<? if (!$hasActions): ?>
 										<div class="disabled item"><i class="info circle icon"></i>No actions available</div>
@@ -964,11 +1147,14 @@
 						</td>
 						<td>
 							<?
-								if ($enabled) {
-									?><a href="importremote.php?action=disable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								if (!$canmanage) {
+									?><i class="big <?=($enabled) ? "green" : "grey horizontally flipped"?> toggle on icon" title="<?=($enabled) ? "Enabled" : "Disabled"?>"></i><?
+								}
+								elseif ($enabled) {
+									?><a href="#" onclick="return RemoteImportAction('disable', {importid: <?=$importid?>})" title="Enabled. Click to disable"><i class="big green toggle on icon"></i></a><?
 								}
 								else {
-									?><a href="importremote.php?action=enable&projectid=<?=$projectid?>&importid=<?=$importid?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+									?><a href="#" onclick="return RemoteImportAction('enable', {importid: <?=$importid?>})" title="Disabled. Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 								}
 							?>
 						</td>
@@ -982,11 +1168,12 @@
 			<?
 				/* Hidden upload forms for CSV imports — must live outside the table */
 				foreach ($imports as $row) {
-					if (in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
-						$importid = $row['remoteimport_id'];
+					if ($canrun && in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
+						$importid = (int)$row['remoteimport_id'];
 						?>
 						<form id="datafileUploadForm_<?=$importid?>" method="post" action="importremote.php" enctype="multipart/form-data" style="display:none">
 							<input type="hidden" name="action" value="runimport">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="importid" value="<?=$importid?>">
 							<input type="hidden" name="projectid" value="<?=$projectid?>">
 							<input type="file" name="datafile" id="datafile_upload_<?=$importid?>" accept=".csv,.zip"
@@ -1004,7 +1191,7 @@
 				   server-side RunRemoteImport flow (and its messages) is unchanged. */
 				$csvImportIds = [];
 				foreach ($imports as $row) {
-					if (($row['import_schedule'] === 'ondemand') && in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource']))
+					if ($canrun && ($row['import_schedule'] === 'ondemand') && in_array($row['remote_type'], ['avicenna_csv_survey', 'avicenna_csv_datasource']))
 						$csvImportIds[] = (int)$row['remoteimport_id'];
 				}
 				if (!empty($csvImportIds)):
@@ -1070,6 +1257,9 @@
 	/* -------------------------------------------- */
 	function DisplayRemoteImportBatchList($projectid) {
 		$projectid = (int)$projectid;
+		$canrun = RemoteImportPerm($projectid, 'run', false);
+		$canviewdata = RemoteImportPerm($projectid, 'viewdata', false);
+		RemoteImportActionForm();
 	?>
 		<div>
 			<div class="ui two column grid">
@@ -1109,16 +1299,10 @@
 					$status_display = ($status == "") ? "-" : ucfirst($status);
 					$nextstate_display = ($nextstate == "") ? "-" : ucfirst($nextstate);
 
-					$typeLabels = [
-						'avicenna_api_survey'     => 'Avicenna API Survey',
-						'avicenna_api_datasource' => 'Avicenna API Datasource',
-						'avicenna_csv_survey'     => 'Avicenna CSV Survey',
-						'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
-						'nidb'   => 'NiDB',
-						'redcap' => 'REDCap',
-						'url'    => 'URL',
-					];
-					$typeLabel = isset($typeLabels[$remoteType]) ? $typeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType));
+					$typeLabels = RemoteImportTypeLabels();
+					/* source_html is rendered as HTML by the grid, so the label is escaped (source_text is plain) */
+					$typeLabelRaw = isset($typeLabels[$remoteType]) ? $typeLabels[$remoteType] : ucfirst(str_replace('_', ' ', $remoteType ?? ''));
+					$typeLabel = htmlspecialchars($typeLabelRaw);
 					if (in_array($remoteType, ['avicenna_csv_survey', 'avicenna_csv_datasource'])) {
 						if (file_exists($datafilepath)) {
 							$filesize = HumanReadableFilesize(filesize($datafilepath));
@@ -1135,11 +1319,12 @@
 					/* actions: Reset (ondemand only) and Cancel (only while active). Rendered as
 					   inline links with a confirm(), replacing the per-row Fomantic dropdown which
 					   would not initialize reliably inside a virtualized grid */
+					/* reset/cancel are POSTs (RemoteImportAction) and need Edit Data */
 					$actionparts = array();
-					if ($importschedule === 'ondemand')
-						$actionparts[] = '<a href="importremote.php?action=resetbatch&batchid=' . $batchRowID . '&projectid=' . $projectid . '" onclick="return confirm(\'Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.\')"><i class="redo icon"></i>Reset</a>';
-					if (in_array($status, ['started', 'running', 'waiting', 'pending']))
-						$actionparts[] = '<a href="importremote.php?action=cancelbatch&batchid=' . $batchRowID . '&projectid=' . $projectid . '" onclick="return confirm(\'Are you sure you want to cancel this batch?\')"><i class="times circle icon"></i>Cancel</a>';
+					if ($canrun && ($importschedule === 'ondemand'))
+						$actionparts[] = '<a href="#" onclick="return RemoteImportAction(\'resetbatch\', {batchid: ' . $batchRowID . '}, \'Are you sure you want to reset this batch? Log entries will be deleted and the batch will be re-queued. Previously imported records will NOT be deleted.\')"><i class="redo icon"></i>Reset</a>';
+					if ($canrun && in_array($status, ['started', 'running', 'waiting', 'pending']))
+						$actionparts[] = '<a href="#" onclick="return RemoteImportAction(\'cancelbatch\', {batchid: ' . $batchRowID . '}, \'Are you sure you want to cancel this batch?\')"><i class="times circle icon"></i>Cancel</a>';
 					$actions_html = count($actionparts) ? implode(' &nbsp; ', $actionparts) : '<span style="color:#999">-</span>';
 
 					/* logs */
@@ -1148,8 +1333,10 @@
 						$logs_html .= ' <i class="red exclamation triangle icon" title="' . $error_count . ' error' . ($error_count != 1 ? 's' : '') . '"></i>';
 
 					/* imports */
-					if ($obs_count > 0)
+					if (($obs_count > 0) && $canviewdata)
 						$imports_html = '<a href="importremote.php?action=viewbatchimports&batchid=' . $batchRowID . '&projectid=' . $projectid . '">' . $obs_count . ' observation' . ($obs_count != 1 ? 's' : '') . '</a>';
+					elseif ($obs_count > 0)
+						$imports_html = $obs_count . ' observation' . ($obs_count != 1 ? 's' : '');
 					else
 						$imports_html = '-';
 
@@ -1162,7 +1349,7 @@
 						'importname'   => $importname_display,
 						'enabled'      => $enabled,
 						'enabled_html' => $enabled_html,
-						'source_text'  => $typeLabel,
+						'source_text'  => $typeLabelRaw,
 						'source_html'  => $source_display,
 						'startdate'    => $startdate_display,
 						'enddate'      => $enddate_display,
@@ -1280,23 +1467,15 @@
 			</div>
 
 			<table class="ui very compact definition table" style="margin-bottom:1.5em">
-				<tr><td>Import</td><td><?=$importname?></td></tr>
+				<tr><td>Import</td><td><?=htmlspecialchars($importname)?></td></tr>
 				<?php
-				$logTypeLabels = [
-					'avicenna_api_survey'     => 'Avicenna API Survey',
-					'avicenna_api_datasource' => 'Avicenna API Datasource',
-					'avicenna_csv_survey'     => 'Avicenna CSV Survey',
-					'avicenna_csv_datasource' => 'Avicenna CSV Datasource',
-					'nidb'   => 'NiDB',
-					'redcap' => 'REDCap',
-					'url'    => 'URL',
-				];
-				$logTypeLabel = isset($logTypeLabels[$remote_type]) ? $logTypeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type));
+				$logTypeLabels = RemoteImportTypeLabels();
+				$logTypeLabel = isset($logTypeLabels[$remote_type]) ? $logTypeLabels[$remote_type] : ucfirst(str_replace('_', ' ', $remote_type ?? ''));
 			?>
-			<tr><td>Type</td><td><?= $logTypeLabel ?></td></tr>
-				<tr><td>Status</td><td><?=ucfirst($status)?></td></tr>
-				<tr><td>Start</td><td><?=$startdate?></td></tr>
-				<tr><td>End</td><td><?=$enddate?></td></tr>
+			<tr><td>Type</td><td><?=htmlspecialchars($logTypeLabel)?></td></tr>
+				<tr><td>Status</td><td><?=htmlspecialchars(ucfirst($status))?></td></tr>
+				<tr><td>Start</td><td><?=htmlspecialchars($startdate)?></td></tr>
+				<tr><td>End</td><td><?=htmlspecialchars($enddate)?></td></tr>
 				<? if (in_array($remote_type, ['avicenna_csv_survey', 'avicenna_csv_datasource'])): ?>
 				<tr>
 					<td>CSV File</td>
@@ -1304,9 +1483,9 @@
 						<? if (!$datafilepath): ?>
 							<span class="ui grey text">No file associated</span>
 						<? elseif (!file_exists($datafilepath)): ?>
-							<tt><?=$datafilepath?></tt> &nbsp; <span class="ui red text"><i class="times circle icon"></i> File not found</span>
+							<tt><?=htmlspecialchars($datafilepath)?></tt> &nbsp; <span class="ui red text"><i class="times circle icon"></i> File not found</span>
 						<? else: ?>
-							<tt><?=$datafilepath?></tt> &nbsp; <span class="ui green text"><i class="check circle icon"></i> Exists</span> <div class="ui small label"><?=HumanReadableFilesize(filesize($datafilepath))?></div>
+							<tt><?=htmlspecialchars($datafilepath)?></tt> &nbsp; <span class="ui green text"><i class="check circle icon"></i> Exists</span> <div class="ui small label"><?=HumanReadableFilesize(filesize($datafilepath))?></div>
 						<? endif; ?>
 					</td>
 				</tr>
@@ -1350,10 +1529,10 @@
 							$cls = isset($resultClasses[$log['result']]) ? $resultClasses[$log['result']] : '';
 						?>
 						<tr class="<?=$cls?>">
-							<td><?=$log['event_date']?></td>
-							<td><?=$log['event']?></td>
-							<td><?=$log['result']?></td>
-							<td><?=htmlspecialchars($log['message'])?></td>
+							<td><?=htmlspecialchars($log['event_date'] ?? '')?></td>
+							<td><?=htmlspecialchars($log['event'] ?? '')?></td>
+							<td><?=htmlspecialchars($log['result'] ?? '')?></td>
+							<td><?=htmlspecialchars($log['message'] ?? '')?></td>
 						</tr>
 						<? endforeach; ?>
 					</tbody>
@@ -1424,7 +1603,7 @@
 			<div class="ui two column grid">
 				<div class="column">
 					<h1 class="ui header">Imported Observations <span class="ui grey label"><?=count($rows)?></span></h1>
-					<div class="ui sub header">Batch #<?=$batchid?> &mdash; <?=$importname?> &mdash; <?=ucfirst($status)?> &mdash; <?=$startdate?></div>
+					<div class="ui sub header">Batch #<?=$batchid?> &mdash; <?=htmlspecialchars($importname)?> &mdash; <?=htmlspecialchars(ucfirst($status))?> &mdash; <?=htmlspecialchars($startdate)?></div>
 				</div>
 				<div class="right aligned column" style="padding-top:1.5em">
 					<a href="importremote.php?action=viewbatchimportlist&projectid=<?=$projectid?>" class="ui button"><i class="arrow left icon"></i>Back to Batches</a>
@@ -1538,19 +1717,19 @@
 	/* -------------------------------------------- */
 	/* ------- NormalizeImportDays ---------------- */
 	/* -------------------------------------------- */
+	/* keeps only the day names the form offers (they are stored, and displayed in the import list) */
 	function NormalizeImportDays($import_days) {
-		if (is_array($import_days)) {
-			$days = array();
-			foreach ($import_days as $day) {
-				$day = trim($day);
-				if ($day != "") {
-					$days[] = $day;
-				}
+		$valid = array("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat");
+		if (!is_array($import_days))
+			$import_days = explode(",", (string)$import_days);
+		$days = array();
+		foreach ($import_days as $day) {
+			$day = trim((string)$day);
+			if (in_array($day, $valid, true)) {
+				$days[] = $day;
 			}
-			return implode(",", $days);
 		}
-
-		return trim($import_days);
+		return implode(",", array_unique($days));
 	}
 
 

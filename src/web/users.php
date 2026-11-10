@@ -903,13 +903,9 @@
 				while ($irow = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$instanceid = (int)$irow['instance_id'];
 					$name = $h($irow['instance_name']);
-					$owner = $irow['instance_ownerid'];
 					
-					if ($owner == $userid) {
-						?><tr><td><a href="instance.php?instanceid=<?=$instanceid?>"><?=$name?></a></td><?
-					} else {
-						?><tr><td><?=$name?></td><?
-					}
+					/* the owner's instance.php management page was retired (its contacts/pricing/usage tables were removed) */
+					?><tr><td><?=$name?></td><?
 					
 					if ($irow['member'] !== null) {
 						if ($irow['instance_joinrequest']) {

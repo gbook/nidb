@@ -46,6 +46,10 @@
 	require "functions.php";
 	require "includes_html.php";
 
+	/* CSRF token for the setup forms (setup.php doesn't load includes_php.php, which mints it elsewhere) */
+	if (empty($_SESSION['csrftoken']))
+		$_SESSION['csrftoken'] = bin2hex(random_bytes(32));
+
 	/* check if the .cfg file exists, and what type of installation this is: setup/upgrade */
 	/* LoadConfig searches the same locations the rest of the site uses; quiet=true returns null if none found */
 	$cfgexists = false;
@@ -251,7 +255,9 @@
 		case 'database2':
 			if ($ispost) {
 				ob_start();
-				SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans);
+				/* the schema install/upgrade must come from this site's own form (CSRF token) */
+				if (VerifyCSRFToken())
+					SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("setup.php?step=database2");
 			}
@@ -266,7 +272,9 @@
 		case 'setupcomplete':
 			if ($ispost) {
 				ob_start();
-				WriteConfig($c);
+				/* writing nidb.cfg must come from this site's own form (CSRF token) */
+				if (VerifyCSRFToken())
+					WriteConfig($c);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("setup.php?step=setupcomplete");
 			}
@@ -552,6 +560,7 @@
 				<br>
 				<form method="post" action="setup.php" name="theform">
 				<input type="hidden" name="step" value="database2">
+				<?=CSRFTokenField()?>
 				<table class="t">
 					<tr>
 						<td>MariaDB server</td>

@@ -407,6 +407,7 @@ DEPRECATED_WEB_FILES=(
     "visualization.php"
     "ndarequests.php"
     "system.php"
+    "instance.php"
     "vitals.php"
     "register.php"
     "scripts/securimage/example_form.php"

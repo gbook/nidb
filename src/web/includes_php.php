@@ -107,15 +107,20 @@
 	$instanceid = $_SESSION['instanceid'];
 	
 	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
-	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta, user_id from users where username = '$username'";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$userid = $row['user_id'];
-	$isadmin = $row['user_isadmin'];
-	$issiteadmin = $row['user_issiteadmin'];
-	$enablebeta = $row['user_enablebeta'];
+	/* bound: usernames are email addresses, which may legally contain quotes (N51) */
+	$username = (string)($username ?? '');
+	$sqlstring = "select user_isadmin, user_issiteadmin, login_type, user_enablebeta, user_id from users where username = ?";
+	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+	mysqli_stmt_bind_param($stmt, 's', $username);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+	$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+	mysqli_stmt_close($stmt);
+	$userid = $row['user_id'] ?? '';
+	$isadmin = $row['user_isadmin'] ?? 0;
+	$issiteadmin = $row['user_issiteadmin'] ?? 0;
+	$enablebeta = $row['user_enablebeta'] ?? 0;
 	$_SESSION['enablebeta'] = $enablebeta;
-	if (strtolower($row['login_type']) == "guest") {
+	if (strtolower($row['login_type'] ?? '') == "guest") {
 		$isguest = 1;
 	}
 	else {
@@ -123,9 +128,12 @@
 	}
 	
 	/* each user can only be associated with 1 instance, so display that instance name at the top of the page */
-	$sqlstring = "select instance_name from instance where instance_id in (select instance_id from users where username = '$username')";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$instancename = $row['instance_name'];
+	$sqlstring = "select instance_name from instance where instance_id in (select instance_id from users where username = ?)";
+	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+	mysqli_stmt_bind_param($stmt, 's', $username);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+	$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+	mysqli_stmt_close($stmt);
+	$instancename = $row['instance_name'] ?? '';
 
 ?>

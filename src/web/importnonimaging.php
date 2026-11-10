@@ -27,6 +27,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output so POST/Redirect/GET works despite the menu rendered first */
 ?>
 
 <html>
@@ -50,33 +51,41 @@
 	
 	$username = $_SESSION['username'];
 	$instanceid = $_SESSION['instanceid'];
-	session_write_close();
-	
+
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* the preview and the import are POSTs carrying the CSRF token */
+	$action = GetSafeAction(array("newimport", "submitnewimport"));
+
 	$projectid = (int)GetVariable("projectid");
 	$csv = GetVariable("csv");
 	$skipblankvalue = GetVariable("skipblankvalue");
 	$createmissingsubject = GetVariable("createmissingsubject");
+	$displayall = GetVariable("displayall");
 	
 	/* determine action */
 	switch ($action) {
 		case 'newimportform':
-			DisplayNewImportForm($username, $instanceid);
+			DisplayNewImportForm($instanceid);
 			break;
 		case 'newimport':
+			/* review step: shows the parsed data and changes nothing, so no redirect.
+			   Release the session lock so parsing a large CSV doesn't block the user's other requests */
+			session_write_close();
 			NewImportCheck($csv, $projectid, $skipblankvalue, $createmissingsubject);
 			break;
 		case 'submitnewimport':
+			/* Post/Redirect/GET: run the import, keep its results as the flash message, then show the list.
+			   The session lock is released during the (possibly long) import and re-opened for the flash */
+			session_write_close();
+			ob_start();
 			SubmitNewImport($csv, $projectid, $skipblankvalue, $createmissingsubject);
-			break;
-		case 'displayimportlist':
-			DisplayImportList($displayall);
-			break;
-		case 'displayimport':
-			DisplayImport($uploadid);
+			$flash = ob_get_clean();
+			session_start();
+			$_SESSION['flash'] = $flash;
+			RedirectTo("importnonimaging.php");
 			break;
 		default:
+			ShowFlashMessage();
 			DisplayImportList($displayall);
 	}
 
@@ -85,9 +94,35 @@
 
 	
 	/* -------------------------------------------- */
+	/* ------- CanImportToProject ----------------- */
+	/* -------------------------------------------- */
+	/* non-imaging import needs Edit Data on the destination project (admins have it everywhere) */
+	function CanImportToProject($projectid) {
+		$projectid = (int)$projectid;
+		if ($projectid <= 0) return false;
+		return (GetPerm(GetCurrentUserProjectPermissions(array($projectid)), 'modifydata', $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DisplayNewImportForm --------------- */
 	/* -------------------------------------------- */
-	function DisplayNewImportForm($username, $instanceid) {
+	function DisplayNewImportForm($instanceid) {
+		/* destination projects: projects in the current instance where the user has Edit Data */
+		$instanceid = (int)$instanceid;
+		$projects = array();
+		$sqlstring = "select project_id, project_name, project_costcenter from projects where instance_id = ? order by project_name";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $instanceid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instanceid]);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$projects[(int)$row['project_id']] = $row;
+		}
+		mysqli_stmt_close($stmt);
+		$perms = GetCurrentUserProjectPermissions(array_keys($projects));
+		foreach (array_keys($projects) as $pid) {
+			if (GetPerm($perms, 'modifydata', $pid) != 1) unset($projects[$pid]);
+		}
 		?>
 		<div class="ui container">
 			<div class="ui top attached grey segment">
@@ -95,6 +130,7 @@
 			</div>
 			<form method="post" action="importnonimaging.php" name="importform" enctype="multipart/form-data" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="newimport">
+				<?=CSRFTokenField()?>
 				<div class="ui grid">
 
 					<div class="three wide column"><h3 class="ui grey right aligned header">CSV file(s)</h3></div>
@@ -135,21 +171,17 @@
 						<select name="projectid" required>
 							<option value="">Select project...</option>
 							<?
-								$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '$username') and a.instance_id = '$instanceid' order by project_name";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-									$project_id = $row['project_id'];
-									$project_name = $row['project_name'];
-									$project_costcenter = $row['project_costcenter'];
+								foreach ($projects as $pid => $row) {
 									?>
-									<option value="<?=$project_id?>"><?=$project_name?> (<?=$project_costcenter?>)</option>
+									<option value="<?=(int)$pid?>"><?=htmlspecialchars($row['project_name'] ?? '')?> (<?=htmlspecialchars($row['project_costcenter'] ?? '')?>)</option>
 									<?
 								}
 							?>
 						</select>
+						<? if (count($projects) == 0) { ?><div class="ui small warning message">You don't have Edit Data permission on any project in this instance</div><? } ?>
 					</div>
 					
-					<div class="three wide column"><h3 class="ui grey right aligned header">Options</h3></div>
+				<div class="three wide column"><h3 class="ui grey right aligned header">Options</h3></div>
 					<div class="thirteen wide column">
 						<div class="ui checkbox">
 							<input type="checkbox" name="skipblankvalue" value="1">
@@ -180,37 +212,45 @@
 	/* -------------------------------------------- */
 	function NewImportCheck($csv, $projectid, $skipblankvalue, $createmissingsubject) {
 		
-		/* prepare fields for SQL */
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$skipblankvalue = mysqli_real_escape_string($GLOBALS['linki'], $skipblankvalue);
-		$createmissingsubject = mysqli_real_escape_string($GLOBALS['linki'], $createmissingsubject);
-
+		$projectid = (int)$projectid;
 		if ($projectid == 0) {
 			Error("Project was blank. Please go back and select a project");
 			return;
 		}
+		if (!CanImportToProject($projectid)) {
+			Error("You need Edit Data permission on the destination project to import into it");
+			return;
+		}
 		
-		if ($skipblankvalue == 1) { $skipblankvalue = true; } else { $skipblankvalue = false; }
-		if ($createmissingsubject == 1) { $createmissingsubject = true; } else { $createmissingsubject = false; }
+		$skipblankvalue = ($skipblankvalue == 1);
+		$createmissingsubject = ($createmissingsubject == 1);
 		
 		$csvs = array();
 		if ($csv != "") {
 			$csvs['Pasted'] = $csv;
 		}
-		foreach ($_FILES['files']['name'] as $i => $name) {
-			$csvs[$name] = file_get_contents($_FILES['files']['tmp_name'][$i]);
+		if (isset($_FILES['files']['name']) && is_array($_FILES['files']['name'])) {
+			foreach ($_FILES['files']['name'] as $i => $name) {
+				if (($_FILES['files']['error'][$i] ?? UPLOAD_ERR_NO_FILE) != UPLOAD_ERR_OK) continue;
+				$csvs[$name] = file_get_contents($_FILES['files']['tmp_name'][$i]);
+			}
+		}
+		if (count($csvs) == 0) {
+			Error("No CSV file or CSV text was provided");
+			return;
 		}
 		
+		$data = array();
 		/* run through all of the CSV files and CSV pasted text */
 		foreach ($csvs as $name => $csv) {
 			
 			$csvdata = ParseCSV(trim($csv));
 			$rows = count($csvdata);
-			$cols = count(array_keys($csvdata[0]));
+			$cols = ($rows > 0) ? count(array_keys($csvdata[0])) : 0;
 			$cells = count($csvdata, COUNT_RECURSIVE);
 			?>
 			<div class="ui segment">
-				<p>CSV [<?=$name?>] contains <?=$rows?> rows x <?=$cols?> columns = <?=$cells?> cells</p>
+				<p>CSV [<?=htmlspecialchars($name)?>] contains <?=$rows?> rows x <?=$cols?> columns = <?=$cells?> cells</p>
 			<?
 			$colsAsVariables = false;
 			
@@ -283,7 +323,7 @@
 						}
 					}
 					else {
-						$data[$id][$type][$name][$startdate]['value'] = $val;
+						$data[$id][$type][$name][$startdate]['value'] = $value;
 						$data[$id][$type][$name][$startdate]['instrument'] = $instrument;
 						$data[$id][$type][$name][$startdate]['notes'] = $notes;
 						$data[$id][$type][$name][$startdate]['description'] = $description;
@@ -347,7 +387,7 @@
 				/* try to find the subject by ID */
 				list ($subjectRowID, $uid) = GetSubjectRowIDByProject($id, $projectid);
 				$ids[$id]['subjectRowID'] = $subjectRowID;
-				$ids[$id]['uid'] = $subjectRowID;
+				$ids[$id]['uid'] = $uid;
 			}
 			
 			foreach ($data1 as $type => $data2) {
@@ -367,16 +407,14 @@
 						$createdate = $val['createdate'];
 						$modifydate = $val['modifydate'];
 						
-						$rowdata[] = "{ subjectrowid: \"$subjectRowID\", id: \"$id\", uid: \"$uid\", type: \"$type\", variable: \"$variable\", startdate: \"$startdate\", value: \"$value\", instrument: \"$instrument\", notes: \"$notes\", description: \"$description\", rater: \"$rater\", enddate: \"$enddate\", duration: \"$duration\", entrydate: \"$entrydate\", createdate: \"$createdate\", modifydate: \"$modifydate\" }";
+						$rowdata[] = array('subjectrowid' => (string)$subjectRowID, 'id' => (string)$id, 'uid' => (string)$uid, 'type' => (string)$type, 'variable' => (string)$variable, 'startdate' => (string)$startdate, 'value' => (string)$value, 'instrument' => (string)$instrument, 'notes' => (string)$notes, 'description' => (string)$description, 'rater' => (string)$rater, 'enddate' => (string)$enddate, 'duration' => (string)$duration, 'entrydate' => (string)$entrydate, 'createdate' => (string)$createdate, 'modifydate' => (string)$modifydate);
 					}
 				}
 			}
 		}
-		$datatable = "";
 		$totalrows = count($rowdata);
-		if ($totalrows > 0) {
-			$datatable = implode(",", $rowdata);
-		}
+		/* the grid data is passed as JSON; JSON_HEX_* keep CSV values from breaking out of the <script> */
+		$datatable = json_encode($rowdata, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_INVALID_UTF8_SUBSTITUTE);
 		?>
 		<p>Found <?=$totalrows?> <i>unique</i> data items to be imported.<br>Review data and click <b>Submit</b></p>
 		
@@ -423,7 +461,7 @@
 					{ headerName: "ModifyDate", field: "modifydate", cellDataType: 'dateTimeString' }
 				],
 
-				rowData: [ <?=$datatable?> ],
+				rowData: <?=$datatable?>,
 				
 				// default col def properties get applied to all columns
 				defaultColDef: {sortable: true, filter: true, resizable: true, editable: false},
@@ -450,7 +488,8 @@
 				<div class="two wide column">
 					<form method="post" action="importnonimaging.php" name="importform" enctype="multipart/form-data">
 						<input type="hidden" name="action" value="submitnewimport">
-						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<?=CSRFTokenField()?>
+						<input type="hidden" name="projectid" value="<?=(int)$projectid?>">
 						<input type="hidden" name="skipblankvalue" value="<?=(int)$skipblankvalue?>">
 						<input type="hidden" name="createmissingsubject" value="<?=(int)$createmissingsubject?>">
 						<input type="hidden" name="csv" value="">
@@ -483,13 +522,14 @@
 
 		$startTime = microtime(true);
 		
-		/* prepare fields for SQL */
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
-		$skipblankvalue = mysqli_real_escape_string($GLOBALS['linki'], $skipblankvalue);
-		$createmissingsubject = mysqli_real_escape_string($GLOBALS['linki'], $createmissingsubject);
+		$projectid = (int)$projectid;
+		if (!CanImportToProject($projectid)) {
+			Error("You need Edit Data permission on the destination project to import into it");
+			return;
+		}
 		
-		if ($skipblankvalue == 1) { $skipblankvalue = true; } else { $skipblankvalue = false; }
-		if ($createmissingsubject == 1) { $createmissingsubject = true; } else { $createmissingsubject = false; }
+		$skipblankvalue = ($skipblankvalue == 1);
+		$createmissingsubject = ($createmissingsubject == 1);
 		
 		?>
 		<div class="ui segment">
@@ -518,6 +558,10 @@
 		$csvdata = ParseCSV(trim($csv));
 		//PrintVariable($csvdata);
 		$rows = count($csvdata);
+		if ($rows == 0) {
+			Error("The submitted data was empty");
+			return;
+		}
 		$cols = count(array_keys($csvdata[0]));
 		/* avoid COUNT_RECURSIVE which iterates every cell of a potentially huge array */
 		$cells = $rows * $cols;
@@ -539,14 +583,17 @@
 		/* build instrument and item lookup caches for this project */
 		$instrumentIdCache   = array();
 		$instrumentItemCache = array();
-		$sqlstring = "select instrument_id, instrument_name from instruments where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+		$sqlstring = "select instrument_id, instrument_name from instruments where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
 			$instrumentIdCache[strtolower(trim($row['instrument_name']))] = (int)$row['instrument_id'];
 		}
+		mysqli_stmt_close($stmt);
 		if (count($instrumentIdCache) > 0) {
 			$iids = implode(',', array_values($instrumentIdCache));
-			/* store instrumentitem_id (not just true) so it can be used directly in the INSERT */
+			/* store instrumentitem_id (not just true) so it can be used directly in the INSERT. $iids are integers from the database */
 			$sqlstring = "select instrument_id, instrumentitem_id, item_name from instrument_items where instrument_id in ($iids)";
 			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -556,11 +603,14 @@
 
 		/* pre-load all enrollment IDs for this project in one query;
 		   eliminates a per-subject DB lookup for every row in the loop */
-		$sqlstring = "select enrollment_id, subject_id from enrollment where project_id = $projectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentRowIDCache[$row['subject_id']] = $row['enrollment_id'];
+		$sqlstring = "select enrollment_id, subject_id from enrollment where project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		while ($result && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+			$enrollmentRowIDCache[(int)$row['subject_id']] = (int)$row['enrollment_id'];
 		}
+		mysqli_stmt_close($stmt);
 
 		/* PASS 1: resolve all subjects/enrollments and collect formatted observation insert strings.
 		   Keeping subject resolution separate from the insert phase allows PASS 2 to hold a
@@ -568,61 +618,44 @@
 		$observationRows = array();
 
 		foreach ($csvdata as $line) {
-			/* reset all variables for this row */
-			$subjectRowID = $line['subjectRowID'];
-			$uid = $line['UID'];
-			$id = $line['ID'];
-			$variablename = $line['Variable'];
-			$value = $line['Value'];
-			$type = $line['Type'];
-			$instrument = $line['Instrument'];
-			$notes = $line['Notes'];
-			$description = $line['Description'];
-			$rater = $line['Rater'];
-			$startdate = $line['StartDate'];
-			$enddate = $line['EndDate'];
-			$duration = $line['Duration'];
-			$entrydate = $line['EntryDate'];
-			$createdate = $line['CreateDate'];
-			$modifydate = $line['ModifyDate'];
-			
-			if ($subjectRowID == "") {
-				//echo "A) subjectRowID was blank for [$id]\n";
-				
-				/* check the cache for a subjectRowID */
-				if (isset($subjectRowIDCache[$id])) {
-					$subjectRowID = $subjectRowIDCache[$id];
-					//echo "B) subjectRowID exists in cache. ID [$id] = subjectRowID [$subjectRowID]\n";
-				}
-				else {
-					//echo "C) subjectRowID for ID [$id] did not exist in cache\n";
-					/* try to get the subjectRowID by searching for the ID */
-					list ($subjectRowID, $uid) = GetSubjectRowIDByProject($id, $projectid);
+			/* reset all variables for this row. ParseCSV() drops empty cells, hence the ?? '' */
+			$id = trim($line['ID'] ?? '');
+			$variablename = $line['Variable'] ?? '';
+			$value = $line['Value'] ?? '';
+			$type = strtolower(trim($line['Type'] ?? ''));
+			$instrument = $line['Instrument'] ?? '';
+			$rater = $line['Rater'] ?? '';
+			$startdate = $line['StartDate'] ?? '';
+			$enddate = $line['EndDate'] ?? '';
+			if ($type == "") $type = "observation";
+
+			if ($id == "") continue;
+
+			/* the subjectRowID/UID columns in the submitted grid come from the browser and are NOT trusted:
+			   every ID is looked up again here, and only subjects enrolled in this project are found */
+			if (isset($subjectRowIDCache[$id])) {
+				$subjectRowID = $subjectRowIDCache[$id];
+			}
+			else {
+				list ($subjectRowID, $uid) = GetSubjectRowIDByProject($id, $projectid);
+				$subjectRowID = (int)$subjectRowID;
+				$subjectRowIDCache[$id] = $subjectRowID;
+			}
+
+			if ($subjectRowID == 0) {
+				if ($createmissingsubject) {
+					/* create a subject (placeholder demographics; the name field gets the CSV ID) */
+					list($subjectRowID, $uid) = AddSubject($id, '1900-01-01', 'U', $id);
+					$subjectRowID = (int)$subjectRowID;
 					$subjectRowIDCache[$id] = $subjectRowID;
-					//echo "D) subjectRowID now exists in cache. ID $id = subjectRowID $subjectRowID\n";
-				}
-				
-				if ($createmissingsubject == 1) {
-					if ($subjectRowID == "") {
-						//echo "E) subjectRowID for [$id] is still blank, creating subject...\n";
-						
-						/* create a subject */
-						list($subjectRowID, $uid) = AddSubject($id, '1900-01-01', 'U', $id);
-						$subjectRowIDCache[$id] = $subjectRowID;
 
-						//echo "F) Created subject [$subjectRowID] for ID [$id]\n";
-						
-						/* enroll the subject in this project */
-						$enrollmentRowID = EnrollSubject($subjectRowID, $projectid);
-						$enrollmentRowIDCache[$subjectRowID] = $enrollmentRowID;
+					/* enroll the subject in this project */
+					$enrollmentRowID = EnrollSubject($subjectRowID, $projectid);
+					$enrollmentRowIDCache[$subjectRowID] = $enrollmentRowID;
 
-						//echo "G) Created enrollment [$enrollmentRowID] for subject [$subjectRowID] in project [$projectid]\n";
-						
-						$subjectsCreated[$id] = 1;
-					}
+					$subjectsCreated[$id] = 1;
 				}
 				else {
-					//echo "createmissingsubject [$createmissingsubject] , subjectRowID [$subjectRowID]\n";
 					$subjectsNotFound[$id] = 1;
 				
 					if ($type == "observation") {
@@ -634,38 +667,22 @@
 					continue;
 				}
 			}
-			else {
-				//echo "H) subjectRowID [$subjectRowID] was already in the csv\n";
-			}
 
-			/* get the enrollmentRowID (check the cache first) */
+			/* get the enrollmentRowID. A found subject is always enrolled in this project (the lookup requires it) */
 			if (isset($enrollmentRowIDCache[$subjectRowID])) {
 				$enrollmentRowID = $enrollmentRowIDCache[$subjectRowID];
 			}
 			else {
-				$sqlstring = "select enrollment_id from enrollment where subject_id = $subjectRowID and project_id = $projectid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-				if (mysqli_num_rows($result) > 0) {
-					/* add the enrollmentRowID to the cache */
-					$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-					$enrollmentRowID = $row['enrollment_id'];
-					$enrollmentRowIDCache[$subjectRowID] = $enrollmentRowID;
-				}
-				else {
-					/* enroll the subject in this project (and add the enrollmentRowID to the cache) */
-					$enrollmentRowID = EnrollSubject($subjectRowID, $projectid);
-					$enrollmentRowIDCache[$subjectRowID] = $enrollmentRowID;
-					$subjectsCreated[$id] = 1;
-				}
+				$enrollmentRowID = EnrollSubject($subjectRowID, $projectid);
+				$enrollmentRowIDCache[$subjectRowID] = $enrollmentRowID;
 			}
 
 			if ($type == "observation") {
-				/* fix any missing fields */
-				if (trim($rater) == "") $rater = "null";
-				else $rater = "'" . trim($rater) . "'";
+				/* fix any missing fields (null = SQL NULL; the values are bound in the insert below) */
+				$rater = (trim($rater) == "") ? null : trim($rater);
 
 				/* resolve instrumentitem_id if instrument name and variable name both match existing DB records */
-				$resolvedItemId = "null";
+				$resolvedItemId = null;
 				$rawInstrument = trim($instrument);
 				if ($rawInstrument != "") {
 					$instrKey = strtolower($rawInstrument);
@@ -677,18 +694,14 @@
 						}
 					}
 				}
+				$instrument = ($rawInstrument == "") ? null : $rawInstrument;
 
-				if ($rawInstrument == "") $instrument = "null";
-				else $instrument = "'" . mysqli_real_escape_string($GLOBALS['linki'], $rawInstrument) . "'";
+				/* dates come from the browser: keep only values that parse, normalized to a datetime */
+				$startdate = (trim($startdate) == "" || strtotime(trim($startdate)) === false) ? null : date('Y-m-d H:i:s', strtotime(trim($startdate)));
+				$enddate = (trim($enddate) == "" || strtotime(trim($enddate)) === false) ? null : date('Y-m-d H:i:s', strtotime(trim($enddate)));
 
-				if (trim($enddate) == "") $enddate = "null";
-				else $enddate = "'" . trim($enddate) . "'";
-
-				if (trim($startdate) == "") $startdate = "null";
-				else $startdate = "'" . trim($startdate) . "'";
-
-				/* collect the formatted row for the bulk insert pass */
-				$observationRows[] = "($enrollmentRowID, now(), '$variablename', '$value', $rater, $instrument, $startdate, $enddate, $resolvedItemId)";
+				/* collect the row for the bulk insert pass */
+				$observationRows[] = array((int)$enrollmentRowID, (string)$variablename, (string)$value, $rater, $instrument, $startdate, $enddate, $resolvedItemId);
 				$numObservationsAdded++;
 			}
 			
@@ -712,8 +725,14 @@
 
 			/* batch size of 1000 reduces round trips by 10x vs the previous 100-row batches */
 			foreach (array_chunk($observationRows, 1000) as $batch) {
-				$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrumentitem_id) values " . implode(",", $batch);
-				MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* bound multi-row insert: 8 parameters per row (observation_entrydate is now()) */
+				$sqlstring = "insert ignore into observations (enrollment_id, observation_entrydate, observation_name, observation_value, observation_rater, observation_instrument, observation_startdate, observation_enddate, instrumentitem_id) values " . implode(",", array_fill(0, count($batch), "(?, now(), ?, ?, ?, ?, ?, ?, ?)"));
+				$params = array();
+				foreach ($batch as $r) { foreach ($r as $v) { $params[] = $v; } }
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, str_repeat('issssssi', count($batch)), ...$params);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+				mysqli_stmt_close($stmt);
 			}
 
 			MySQLiQuery("UNLOCK TABLES", __FILE__, __LINE__);
@@ -737,8 +756,12 @@
 		$flagCreateMissingSubjects = (int)$createmissingsubject;
 		$importMessage = "Import complete";
 
-		$sqlstring = "insert into nonimagingimports (project_id, importDatetime, numObservationsImported, numObservationsSkipped, numInterventionsImported, numInterventionsSkipped, flagIgnoreEmptyCells, flagCreateMissingSubjects, numSubjectsCreated, numSubjectsNotFound, numUniqueObservationVariables, numUniqueInterventionVariables, importMessage) values ($projectid, now(), $numObservationsAdded, $numObservationsIgnored, $numInterventionsAdded, $numInterventionsIgnored, $flagIgnoreEmptyCells, $flagCreateMissingSubjects, $numSubjectsCreated, $numSubjectsNotFound, $numUniqueObservationVariables, $numUniqueInterventionVariables, '$importMessage')";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into nonimagingimports (project_id, importDatetime, numObservationsImported, numObservationsSkipped, numInterventionsImported, numInterventionsSkipped, flagIgnoreEmptyCells, flagCreateMissingSubjects, numSubjectsCreated, numSubjectsNotFound, numUniqueObservationVariables, numUniqueInterventionVariables, importMessage) values (?, now(), ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+		$params = [$projectid, $numObservationsAdded, $numObservationsIgnored, $numInterventionsAdded, $numInterventionsIgnored, $flagIgnoreEmptyCells, $flagCreateMissingSubjects, $numSubjectsCreated, $numSubjectsNotFound, $numUniqueObservationVariables, $numUniqueInterventionVariables, $importMessage];
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'iiiiiiiiiiis', ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		
 		?>
 		<!--</pre>
@@ -770,49 +793,61 @@
 	/* ------- AddSubject ------------------------- */
 	/* -------------------------------------------- */
 	function AddSubject($name, $dob, $sex, $altuid) {
-	
-		/* perform data checks */
-		$name = mysqli_real_escape_string($GLOBALS['linki'], $name);
-		$dob = mysqli_real_escape_string($GLOBALS['linki'], $dob);
-		$sex = mysqli_real_escape_string($GLOBALS['linki'], $sex);
-		$altuid = mysqli_real_escape_string($GLOBALS['linki'], $altuid);
-		//$altuids = explode(',',$altuid);
+		$name = (string)$name;
+		$dob = (string)$dob;
+		$sex = (string)$sex;
+		$altuid = trim((string)$altuid);
 
 		# create a new uid
 		do {
 			$uid = NIDB\CreateUID('S',3);
-			$sqlstring = "SELECT * FROM `subjects` WHERE uid = '$uid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select subject_id from subjects where uid = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $uid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$uid]);
 			$count = mysqli_num_rows($result);
+			mysqli_stmt_close($stmt);
 		} while ($count > 0);
 		
 		# create a new family uid
 		do {
 			$familyuid = NIDB\CreateUID('F');
-			$sqlstring = "SELECT * FROM `families` WHERE family_uid = '$familyuid'";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select family_id from families where family_uid = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $familyuid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$familyuid]);
 			$count = mysqli_num_rows($result);
+			mysqli_stmt_close($stmt);
 		} while ($count > 0);
 		
 		/* insert the new subject */
-		$sqlstring = "insert into subjects (name, birthdate, sex, uid, uuid) values ('$name', '$dob', '$sex', '$uid', uuid())";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "insert into subjects (name, birthdate, sex, uid, uuid) values (?, ?, ?, ?, uuid())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ssss', $name, $dob, $sex, $uid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, ['[name]', '[dob]', $sex, $uid]);
 		$subjectRowID = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 		
 		# create familyRowID if it doesn't exist
-		$sqlstring2 = "insert into families (family_uid, family_createdate, family_name) values ('$familyuid', now(), 'Proband-$uid')";
-		$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+		$familyname = "Proband-$uid";
+		$sqlstring = "insert into families (family_uid, family_createdate, family_name) values (?, now(), ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ss', $familyuid, $familyname);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$familyuid, $familyname]);
 		$familyRowID = mysqli_insert_id($GLOBALS['linki']);
+		mysqli_stmt_close($stmt);
 	
-		$sqlstring3 = "insert into family_members (family_id, subject_id, fm_createdate) values ($familyRowID, $subjectRowID, now())";
-		$result3 = MySQLiQuery($sqlstring3,__FILE__,__LINE__);
+		$sqlstring = "insert into family_members (family_id, subject_id, fm_createdate) values (?, ?, now())";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $familyRowID, $subjectRowID);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$familyRowID, $subjectRowID]);
+		mysqli_stmt_close($stmt);
 		
-		$altuid = trim($altuid);
-		$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values ($subjectRowID, '$altuid')";
-		if ($GLOBALS['debug']) { PrintSQL($sqlstring); }
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		//echo "Added subject $uid\n";
+		$sqlstring = "insert ignore into subject_altuid (subject_id, altuid) values (?, ?)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'is', $subjectRowID, $altuid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$subjectRowID, $altuid]);
+		mysqli_stmt_close($stmt);
 		
 		return array($subjectRowID, $uid);
 	}
@@ -828,19 +863,25 @@
 		}
 
 		$enrollmentRowID = null;
+		$projectid = (int)$projectid;
+		$subjectRowID = (int)$subjectRowID;
 		
-		$sqlstring = "select enrollment_id from enrollment where project_id = $projectid and subject_id = $subjectRowID";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) < 1) {
-			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values ($projectid, $subjectRowID, now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select enrollment_id from enrollment where project_id = ? and subject_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $projectid, $subjectRowID);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $subjectRowID]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			$sqlstring = "insert into enrollment (project_id, subject_id, enroll_startdate) values (?, ?, now())";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $projectid, $subjectRowID);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid, $subjectRowID]);
 			$enrollmentRowID = mysqli_insert_id($GLOBALS['linki']);
-			
-			//echo "Subject now enrolled in $projectname<br>";
+			mysqli_stmt_close($stmt);
 		}
 		else {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$enrollmentRowID = $row['enrollment_id'];
+			$enrollmentRowID = (int)$row['enrollment_id'];
 			
 			//$sqlstring = "update enrollment set enroll_enddate = '0000-00-00 00:00:00' where enrollment_id = '$enrollmentRowID'";
 			//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -926,8 +967,9 @@
 				$numUniqueInterventionVariables = $row['numUniqueInterventionVariables'];
 				$importMessage = $row['importMessage'];
 				
-				if ($row['flagIgnoreEmptyCells']) { $flagIgnoreEmptyCells = "<i class='green large check icon'></i>"; }
-				if ($row['flagCreateMissingSubjects']) { $flagCreateMissingSubjects = "<i class='green large check icon'></i>"; }
+				/* reset per row (they used to carry over from the previous row) */
+				$flagIgnoreEmptyCells = ($row['flagIgnoreEmptyCells']) ? "<i class='green large check icon'></i>" : "";
+				$flagCreateMissingSubjects = ($row['flagCreateMissingSubjects']) ? "<i class='green large check icon'></i>" : "";
 
 				if ($numObservationsImported == 0) { $numObservationsImported = "-"; } else { $numObservationsImported = number_format($numObservationsImported); }
 				if ($numObservationsSkipped == 0) { $numObservationsSkipped = "-"; } else { $numObservationsSkipped = number_format($numObservationsSkipped); }
@@ -942,8 +984,8 @@
 				
 				?>
 				<tr>
-					<td><?=$importdate?></td>
-					<td><?=$projectname?></td>
+					<td><?=htmlspecialchars($importdate ?? '')?></td>
+					<td><?=htmlspecialchars($projectname ?? '')?></td>
 					
 					<td class="ui center aligned text"><?=$flagIgnoreEmptyCells?></td>
 					<td class="ui center aligned text"><?=$flagCreateMissingSubjects?></td>
@@ -959,7 +1001,7 @@
 					<td class="right aligned text"><?=$numSubjectsCreated?></td>
 					<td class="right aligned text"><?=$numSubjectsNotFound?></td>
 					
-					<td><?=$importMessage?></td>
+					<td><?=htmlspecialchars($importMessage ?? '')?></td>
 				</tr>
 				<?
 			}

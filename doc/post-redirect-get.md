@@ -41,20 +41,19 @@ for the reference implementation.
 | `diagnosis.php` | 2 | ✅ |
 | `enrollment.php` | 3 | ✅ |
 | `experiment.php` | 2 | ✅ |
-| `functions.php` | 4 | ⬜ |
+| `functions.php` | 4 | ✅ |
 | `groups.php` | 6 | ✅ |
-| `import.php` | 6 | ⬜ |
+| `import.php` | 1 | ✅ |
 | `importimaging.php` | 5 | ✅ |
-| `importnonimaging.php` | 2 | ⬜ |
-| `importremote.php` | 2 | ⬜ |
+| `importnonimaging.php` | 2 | ✅ |
+| `importremote.php` | 3 | ✅ |
 | `importupload_functions.php` | 1 | ✅ |
 | `importwizard.php` | 1 | ✅ |
-| `instance.php` | 1 | ⬜ |
 | `instruments.php` | 6 | ✅ |
 | `interventions.php` | 2 | ✅ |
-| `login.php` | 1 | ⬜ |
+| `login.php` | 1 | ✅ |
 | `managefiles.php` | 2 | ✅ |
-| `menu.php` | 3 | ⬜ |
+| `menu.php` | 5 | ✅ |
 | `merge.php` | 2 | ✅ |
 | `minipipeline.php` | 3 | ✅ |
 | `mrqcchecklist.php` | 3 | ✅ |
@@ -79,4 +78,4 @@ for the reference implementation.
 | `templates.php` | 6 | ✅ |
 | `users.php` | 3 | ✅ |
 
-_Regenerated 2026-11-09 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
+_Regenerated 2026-11-10 by `tools/track-php-conventions.sh`. Counts are a guide; the ✅/⬜ status is preserved across runs._
