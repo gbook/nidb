@@ -47,16 +47,16 @@
 					<h1 class="ui inverted header">
 						<div class="content">
 							Publicly Available Datasets
-							<div class="sub header">Datasets available from <?=$GLOBALS['cfg']['sitename']?></div>
+							<div class="sub header">Datasets available from <?=htmlspecialchars($GLOBALS['cfg']['sitename'] ?? '')?></div>
 						</div>
 					</h1>
 				</div>
 				<div class="ui eight wide right aligned column">
 					<div class="ui styled green compact segment">
-						<? if ($_SESSION['username'] == "") { ?>
+						<? if (($_SESSION['username'] ?? '') == "") { ?>
 						<a href="signup.php">Create</a> an account | <a href="login.php">Sign in</a>
 						<? } else {?>
-						You are logged into NiDB as <?=$_SESSION['username'];?><br>
+						You are logged into NiDB as <?=htmlspecialchars($_SESSION['username'])?><br>
 						<? } ?>
 					</div>
 				</div>
@@ -74,20 +74,8 @@
 
 <?
 
-	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$id = GetVariable("id");
-	
-	/* determine action */
-	if ($action == "changepassword") {
-		ChangePassword($id);
-	}
-	elseif ($action == "delete") {
-		DeleteDownload($id);
-	}
-	else {
-		DisplayDatasetList();
-	}
+	/* read-only page: just the dataset list */
+	DisplayDatasetList();
 
 	
 	/* ------------------------------------ functions ------------------------------------ */
@@ -103,15 +91,19 @@
 
 		<div class="ui divided items">
 		<?
-			$sqlstring = "select * from public_datasets where publicdataset_createdby = '" . $_SESSION['username'] . "' order by publicdataset_createdate desc";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$createdby = $_SESSION['username'] ?? '';
+			$sqlstring = "select * from public_datasets where publicdataset_createdby = ? order by publicdataset_createdate desc";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $createdby);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($createdby));
+			mysqli_stmt_close($stmt);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$id = $row['publicdataset_id'];
+				$id = (int)$row['publicdataset_id'];
 				$name = $row['publicdataset_name'];
 				$desc = $row['publicdataset_desc'];
 				$startdate = $row['publicdataset_startdate'];
 				$enddate = $row['publicdataset_enddate'];
-				$flags = explode(",", $row['publicdataset_flags']);
+				$flags = explode(",", $row['publicdataset_flags'] ?? '');
 				$createdate = $row['publicdataset_createdate'];
 				$createdby = $row['publicdataset_createdby'];
 				?>
@@ -119,12 +111,12 @@
 						<div class="ui content">
 							<div class="ui two column grid">
 								<div class="ui column">
-									<a class="ui header"><?=$name?></a>
+									<a class="ui header"><?=htmlspecialchars($name ?? '')?></a>
 									<div class="meta">
-										<span class="cinema">Created <?=$createdate?></span>
+										<span class="cinema">Created <?=htmlspecialchars($createdate ?? '')?></span>
 									</div>
 									<div class="description">
-										<p><?=$desc?></p>
+										<p><?=nl2br(htmlspecialchars($desc ?? ''))?></p>
 									</div>
 									<div class="extra">
 										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui basic orange label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>

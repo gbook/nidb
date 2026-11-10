@@ -64,7 +64,7 @@
 	/* CSRF token. One token per session: per-request tokens break the back button and multiple
 	   tabs, and buy nothing against this threat. Pages that change state should emit it with
 	   CSRFTokenField() and verify it with VerifyCSRFToken(). Guarded on session_status() because
-	   a few endpoints (api.php, api2.php, audit.php, bsnip.php, v.php) include this file without
+	   a few endpoints (api.php, api2.php, bsnip.php, v.php) include this file without
 	   ever starting a session. Minting the token does not by itself enforce anything. */
 	if (session_status() === PHP_SESSION_ACTIVE) {
 		if (empty($_SESSION['csrftoken']))

@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -41,17 +42,22 @@
 	require "menu.php";
 
 	/* get variables */
-	$action = GetVariable("action");
+	$action = GetSafeAction(array("cancelfileio", "deletefileio")); /* mutating actions require POST + CSRF token */
 	$fileioid = (int)GetVariable("fileioid");
 
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 	switch ($action) {
 		case 'cancelfileio':
+			ob_start();
 			CancelFileIO($fileioid);
-			ShowList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("filesio.php");
 			break;
 		case 'deletefileio':
+			ob_start();
 			DeleteFileIO($fileioid);
-			ShowList();
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("filesio.php");
 			break;
 		default:
 			ShowList();
@@ -62,18 +68,46 @@
 	/* ------- CancelFileIO ------------------------------ */
 	/* --------------------------------------------------- */
 	function CancelFileIO($fileioid) {
-		$sqlstring = "update fileio_requests set request_status = 'cancelled' where fileiorequest_id = $fileioid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		Notice("File I/O $fileioid has been cancelled");
+		if (RunOwnedFileIOQuery("update fileio_requests set request_status = 'cancelled' where fileiorequest_id = ?", $fileioid) > 0)
+			Notice("File I/O $fileioid has been cancelled");
+		else
+			Error("File I/O $fileioid was not found, or is not your request");
 	}
 
 	/* --------------------------------------------------- */
 	/* ------- DeleteFileIO ------------------------------ */
 	/* --------------------------------------------------- */
 	function DeleteFileIO($fileioid) {
-		$sqlstring = "delete from fileio_requests where fileiorequest_id = $fileioid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		Notice("File I/O $fileioid has been deleted");
+		if (RunOwnedFileIOQuery("delete from fileio_requests where fileiorequest_id = ?", $fileioid) > 0)
+			Notice("File I/O $fileioid has been deleted");
+		else
+			Error("File I/O $fileioid was not found, or is not your request");
+	}
+
+
+	/* --------------------------------------------------- */
+	/* ------- RunOwnedFileIOQuery ----------------------- */
+	/* --------------------------------------------------- */
+	/* runs an update/delete on one fileio_requests row ($sqlstring ends in "where fileiorequest_id = ?").
+	   Same rule as the list (GetFileIORequests): site admins can act on any request, everyone else
+	   only on requests they made. Returns the number of rows affected (0 = not found or not theirs) */
+	function RunOwnedFileIOQuery($sqlstring, $fileioid) {
+		$fileioid = (int)$fileioid;
+		if ($GLOBALS['issiteadmin']) {
+			$params = array($fileioid);
+			$types = 'i';
+		}
+		else {
+			$sqlstring .= " and username = ?";
+			$params = array($fileioid, (string)($GLOBALS['username'] ?? ''));
+			$types = 'is';
+		}
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, $types, ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$affected = mysqli_stmt_affected_rows($stmt);
+		mysqli_stmt_close($stmt);
+		return $affected;
 	}
 
 
@@ -81,6 +115,7 @@
 	/* ------- ShowList ---------------------------------- */
 	/* --------------------------------------------------- */
 	function ShowList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		list($rows, $pendingCount) = GetFileIORequests();
 		?>
 		<link rel="stylesheet" href="//cdn.jsdelivr.net/npm/ag-grid-community@31/styles/ag-grid.css">
@@ -96,6 +131,29 @@
 		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@31/dist/ag-grid-community.min.js"></script>
 		<script>
 		const rowData = <?= json_encode($rows) ?>;
+		const csrfToken = <?= json_encode($_SESSION['csrftoken'] ?? '') ?>;
+
+		/* a one-button POST form (with CSRF token) for the cancel/remove actions */
+		function ActionButton(action, fileioid, label) {
+			const form = document.createElement('form');
+			form.method = 'post';
+			form.action = 'filesio.php';
+			form.style.display = 'inline';
+			for (const [name, value] of [['action', action], ['fileioid', fileioid], ['csrftoken', csrfToken]]) {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = name;
+				input.value = value;
+				form.appendChild(input);
+			}
+			const btn = document.createElement('button');
+			btn.type = 'submit';
+			btn.className = 'ui small compact red button';
+			btn.textContent = label;
+			form.appendChild(btn);
+			form.onsubmit = e => { if (!confirm('Are you sure?')) e.preventDefault(); };
+			return form;
+		}
 
 		const opIcons = {
 			'copy':                   'copy',
@@ -150,19 +208,9 @@
 					const div = document.createElement('div');
 					div.style.paddingTop = '3px';
 					if (request_status === 'pending') {
-						const btn = document.createElement('a');
-						btn.href = `filesio.php?action=cancelfileio&fileioid=${fileiorequest_id}`;
-						btn.className = 'ui small compact red button';
-						btn.textContent = 'Cancel';
-						btn.onclick = e => { if (!confirm('Are you sure?')) e.preventDefault(); };
-						div.appendChild(btn);
+						div.appendChild(ActionButton('cancelfileio', fileiorequest_id, 'Cancel'));
 					} else if (request_status === 'error' || request_status === 'cancelled') {
-						const btn = document.createElement('a');
-						btn.href = `filesio.php?action=deletefileio&fileioid=${fileiorequest_id}`;
-						btn.className = 'ui small compact red button';
-						btn.textContent = 'Remove';
-						btn.onclick = e => { if (!confirm('Are you sure?')) e.preventDefault(); };
-						div.appendChild(btn);
+						div.appendChild(ActionButton('deletefileio', fileiorequest_id, 'Remove'));
 					}
 					return div;
 				}

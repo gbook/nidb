@@ -24,6 +24,7 @@
 	define("LEGIT_REQUEST", true);
 	
 	session_start();
+	ob_start(); /* buffer output for POST/Redirect/GET (see functions.php RedirectTo/ShowFlashMessage) */
 ?>
 
 <html>
@@ -47,22 +48,19 @@
 	}
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$backupid = GetVariable("backupid");
+	$action = GetSafeAction(array("marktapeAinserted", "marktapeBinserted", "marktapeCinserted")); /* mutating actions require POST + CSRF token */
+	$backupid = (int)GetVariable("backupid");
 	
 	/* determine action */
+	/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 	switch($action) {
 		case "marktapeAinserted":
-			MarkTapeInserted($backupid,'A');
-			DisplayBackupList();
-			break;
 		case "marktapeBinserted":
-			MarkTapeInserted($backupid,'B');
-			DisplayBackupList();
-			break;
 		case "marktapeCinserted":
-			MarkTapeInserted($backupid,'C');
-			DisplayBackupList();
+			ob_start();
+			MarkTapeInserted($backupid, substr($action, 8, 1)); /* 'marktape' + A/B/C */
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("backup.php");
 			break;
 		default:
 			DisplayBackupList();
@@ -77,22 +75,37 @@
 	/* ------- MarkTapeInserted ------------------- */
 	/* -------------------------------------------- */
 	function MarkTapeInserted($backupid, $tapeletter) {
-		$backupid = mysqli_real_escape_string($GLOBALS['linki'], $backupid);
+		$backupid = (int)$backupid;
 
-		switch ($tapeletter) {
-			case 'A':
-				$sqlstring = "update backups set backup_tapestatus = 'readyToWriteTapeA' where backup_id = $backupid";
-				break;
-			case 'B':
-				$sqlstring = "update backups set backup_tapestatus = 'readyToWriteTapeB' where backup_id = $backupid";
-				break;
-			case 'C':
-				$sqlstring = "update backups set backup_tapestatus = 'readyToWriteTapeC' where backup_id = $backupid";
-				break;
+		if (!in_array($tapeletter, array('A', 'B', 'C'), true)) {
+			Error("Invalid tape letter");
+			return;
 		}
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+
+		$status = "readyToWriteTape$tapeletter";
+		$sqlstring = "update backups set backup_tapestatus = ? where backup_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'si', $status, $backupid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($status, $backupid));
+		mysqli_stmt_close($stmt);
 		
 		Notice("Tape $tapeletter marked as inserted");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- TapeActionButton ------------------- */
+	/* -------------------------------------------- */
+	/* a one-button POST form (with CSRF token) that marks tape $tapeletter of $backupid as inserted */
+	function TapeActionButton($backupid, $tapeletter, $label, $title) {
+		?>
+		<form method="post" action="backup.php" style="display: inline">
+			<input type="hidden" name="action" value="marktape<?=$tapeletter?>inserted">
+			<input type="hidden" name="backupid" value="<?=(int)$backupid?>">
+			<?=CSRFTokenField()?>
+			<button type="submit" class="ui small orange button" title="<?=htmlspecialchars($title)?>"><?=htmlspecialchars($label)?></button>
+		</form>
+		<?
 	}
 
 	
@@ -100,6 +113,7 @@
 	/* ------- DisplayBackupList ------------------ */
 	/* -------------------------------------------- */
 	function DisplayBackupList() {
+		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
 		?>
 		<h2 class="ui header">Tape Backups</h2>
 		
@@ -138,7 +152,7 @@
 								<td><?=$status?></td>
 								<td></td>
 								<td>Backup staging size<br><?=$tapesizeA?></td>
-								<td><?=$enddate?></td>
+								<td><?=$enddateC?></td>
 							</tr>
 							<?
 						}
@@ -154,7 +168,6 @@
 				$backupid = $row['backup_id'];
 				$tapenum = $row['backup_tapenumber'];
 				$tapenumber = sprintf('%04d', $row['backup_tapenumber']);
-				$tapeletter = $row['backup_tapeletter'];
 				$status = $row['backup_tapestatus'];
 				$errormsg = $row['backup_errormsg'];
 				$startdateA = $row['backup_startdateA'];
@@ -177,34 +190,22 @@
 					<td class="top aligned">
 						<?
 							if ($action == "marktapeAinserted") {
-								?>
-								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape A<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape A<?=$tapenumber?> as Inserted</a>
-								<?
+								TapeActionButton($backupid, 'A', "Mark Tape A" . $tapenumber . " as Inserted", "Insert tape A" . $tapenumber . " in the tape drive, then mark as inserted here");
 							}
 							elseif ($action == "marktapeBinserted") {
-								?>
-								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape B<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape B<?=$tapenumber?> as Inserted</a>
-								<?
+								TapeActionButton($backupid, 'B', "Mark Tape B" . $tapenumber . " as Inserted", "Insert tape B" . $tapenumber . " in the tape drive, then mark as inserted here");
 							}
 							elseif ($action == "marktapeCinserted") {
-								?>
-								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Insert tape C<?=$tapenumber?> in the tape drive, then mark as inserted here">Mark Tape C<?=$tapenumber?> as Inserted</a>
-								<?
+								TapeActionButton($backupid, 'C', "Mark Tape C" . $tapenumber . " as Inserted", "Insert tape C" . $tapenumber . " in the tape drive, then mark as inserted here");
 							}
 							elseif ($status == "errorTapeA") {
-								?>
-								<a href="backup.php?action=marktapeAinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape A<?=$tapenumber?>">Reset Tape A<?=$tapenumber?></a>
-								<?
+								TapeActionButton($backupid, 'A', "Reset Tape A" . $tapenumber, "Reset tape A" . $tapenumber);
 							}
 							elseif ($status == "errorTapeB") {
-								?>
-								<a href="backup.php?action=marktapeBinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape B<?=$tapenumber?>">Reset Tape B<?=$tapenumber?></a>
-								<?
+								TapeActionButton($backupid, 'B', "Reset Tape B" . $tapenumber, "Reset tape B" . $tapenumber);
 							}
 							elseif ($status == "errorTapeC") {
-								?>
-								<a href="backup.php?action=marktapeCinserted&backupid=<?=$backupid?>" class="ui small orange button" title="Reset tape C<?=$tapenumber?>">Reset Tape C<?=$tapenumber?></a>
-								<?
+								TapeActionButton($backupid, 'C', "Reset Tape C" . $tapenumber, "Reset tape C" . $tapenumber);
 							}
 						?>
 					</td>

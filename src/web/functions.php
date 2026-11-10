@@ -649,10 +649,14 @@
 	/* ------- GetUsernameFromID ------------------ */
 	/* -------------------------------------------- */
 	function GetUsernameFromID($id) {
-		$sqlstring = "select username from users where user_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select username from users where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$name = $row['username'];
+		mysqli_stmt_close($stmt);
+		$name = $row['username'] ?? '';
 		return $name;
 	}
 	
@@ -722,10 +726,14 @@
 	/* ------- GetInstanceName -------------------- */
 	/* -------------------------------------------- */
 	function GetInstanceName($id) {
-		$sqlstring = "select instance_name from instance where instance_id = '$id'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "select instance_name from instance where instance_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$n = $row['instance_name'];
+		mysqli_stmt_close($stmt);
+		$n = $row['instance_name'] ?? '';
 		return $n;
 	}
 
@@ -1021,16 +1029,19 @@
 		}
 	
 		/* need the type equality too because '' evaluates to 0... */
+		/* values are bound as strings, matching the quoted literals this used to build */
 		if ($enrollmentid === '') {
-			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' order by altuid";
-			//echo "<br><br>Point A<br><br>";
+			$sqlstring = "select * from subject_altuid where subject_id = ? order by altuid";
+			$params = array((string)$subjectid);
 		}
 		else {
-			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = '$enrollmentid' order by altuid";
-			//echo "<br><br>Point B<br><br>";
+			$sqlstring = "select * from subject_altuid where subject_id = ? and enrollment_id = ? order by altuid";
+			$params = array((string)$subjectid, (string)$enrollmentid);
 		}
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$altuid = trim($row['altuid']);
 			
@@ -1062,8 +1073,13 @@
 		//	return "";
 		//}
 		
-		$sqlstring = "select a.enrollment_id, b.uid, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.subject_id = $subjectid and a.project_id = $projectid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$subjectid = (int)$subjectid;
+		$projectid = (int)$projectid;
+		$sqlstring = "select a.enrollment_id, b.uid, c.project_name from enrollment a left join subjects b on a.subject_id = b.subject_id left join projects c on a.project_id = c.project_id where a.subject_id = ? and a.project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($subjectid, $projectid));
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		$enrollmentid = $row['enrollment_id'];
 		$uid = $row['uid'];
@@ -1072,9 +1088,12 @@
 			Notice("Subject [$uid] has more than one enrollment in the same project [$projectname]. Using the first enrollment to get the primary ID.");
 		}
 		elseif (mysqli_num_rows($result) == 1) {
-			$sqlstring = "select * from subject_altuid where subject_id = '$subjectid' and enrollment_id = $enrollmentid order by isprimary desc limit 1";
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-			//PrintSQL($sqlstring);
+			$enrollmentid = (int)$enrollmentid;
+			$sqlstring = "select * from subject_altuid where subject_id = ? and enrollment_id = ? order by isprimary desc limit 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'ii', $subjectid, $enrollmentid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($subjectid, $enrollmentid));
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			return $row['altuid'];
 		}
@@ -1123,20 +1142,28 @@
 	/* ------- IsNiDBModality --------------------- */
 	/* -------------------------------------------- */
 	function IsNiDBModality($modality) {
-		$modality = mysqli_real_escape_string($GLOBALS['linki'], $modality);
+		$modality = (string)$modality;
 
 		$valid = false;
 		
-		$sqlstring = "select * from modalities where mod_code = '$modality'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$sqlstringA = "show tables from " . $GLOBALS['cfg']['mysqldatabase'] . " like '" . strtolower($modality) . "%'";
-			//PrintSQL($sqlstringA);
-			$result = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+		$sqlstring = "select * from modalities where mod_code = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $modality);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($modality));
+		$found = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if ($found) {
+			/* information_schema instead of SHOW TABLES, which can't be prepared on all MariaDB versions */
+			$like = strtolower($modality) . "%";
+			$sqlstringA = "select table_name from information_schema.tables where table_schema = ? and table_name like ?";
+			$db = (string)$GLOBALS['cfg']['mysqldatabase'];
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmt, 'ss', $db, $like);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstringA, array($db, $like));
 			if (mysqli_num_rows($result) > 0) {
 				$valid = true;
 			}
+			mysqli_stmt_close($stmt);
 		}
 			
 		return $valid;
@@ -1278,9 +1305,13 @@
 		
 		foreach ($seriesids as $seriesid) {
 			if ((is_numeric($seriesid)) && ($seriesid != "")) {
-				/* delete from the mr_qa table */
-				$sqlstring = "delete from mr_qa where mrseries_id = $seriesid";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* delete from the mr_qa table (bound as a string, matching the numeric literal this used to build) */
+				$seriesid = (string)$seriesid;
+				$sqlstring = "delete from mr_qa where mrseries_id = ?";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 's', $seriesid);
+				MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($seriesid));
+				mysqli_stmt_close($stmt);
 			}
 			else {
 				$errormsgs[] = "Invalid MR series ID";
@@ -1326,18 +1357,24 @@
 			if ((is_numeric($seriesid)) && ($seriesid != "")) {
 				
 				/* delete from the qc* tables */
-				$sqlstring = "select * from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = $seriesid and a.modality = 'mr'";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$seriesidstr = (string)$seriesid;
+				$sqlstring = "select * from qc_moduleseries a left join qc_modules b on a.qcmodule_id = b.qcmodule_id where a.series_id = ? and a.modality = 'mr'";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, 's', $seriesidstr);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($seriesidstr));
+				mysqli_stmt_close($stmt);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$qcmoduleseriesid = $row['qcmoduleseries_id'];
 					$modulename = $row['module_name'];
 
 					if ($qcmoduleseriesid != "") {
-						$sqlstringA = "delete from qc_results where qcmoduleseries_id = $qcmoduleseriesid";
-						$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-						
-						$sqlstringB = "delete from qc_moduleseries where qcmoduleseries_id = $qcmoduleseriesid";
-						$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+						$qcmsid = (int)$qcmoduleseriesid;
+						foreach (array("delete from qc_results where qcmoduleseries_id = ?", "delete from qc_moduleseries where qcmoduleseries_id = ?") as $sqlstringA) {
+							$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+							mysqli_stmt_bind_param($stmtA, 'i', $qcmsid);
+							MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, array($qcmsid));
+							mysqli_stmt_close($stmtA);
+						}
 						
 						/* delete the qa directory */
 						list($path, $seriespath, $qapath, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid,'mr');
@@ -2077,24 +2114,26 @@
 	/* -------------------------------------------- */
 	function GetTags($idtype, $id, $modality='') {
 		
-		$sqlstring = "";
 		$tags = array();
-		
-		switch ($idtype) {
-			case 'series': $sqlstring = "select tag from tags where series_id = '$id' and modality = '$modality'"; break;
-			case 'study': $sqlstring = "select tag from tags where study_id = '$id'"; break;
-			case 'enrollment': $sqlstring = "select tag from tags where enrollment_id = '$id'"; break;
-			case 'subject': $sqlstring = "select tag from tags where subject_id = '$id'"; break;
-			case 'analysis': $sqlstring = "select tag from tags where analysis_id = '$id'"; break;
-			case 'pipeline': $sqlstring = "select tag from tags where pipeline_id = '$id'"; break;
+
+		$col = TagIDColumn($idtype);
+		if ($col == "")
+			return $tags;
+
+		/* ids are bound as strings, matching the quoted literals this used to build */
+		$sqlstring = "select tag from tags where $col = ?";
+		$params = array((string)$id);
+		if ($idtype == 'series') {
+			$sqlstring .= " and modality = ?";
+			$params[] = (string)$modality;
 		}
-		
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQLTable($result);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$tags[] = $row['tag'];
 		}
+		mysqli_stmt_close($stmt);
 		
 		return array_unique($tags);
 	}
@@ -2115,34 +2154,41 @@
 		$tags = array_unique($tags, SORT_STRING);
 		$tags = array_filter($tags, 'strlen');
 		
+		$col = TagIDColumn($idtype);
+		if ($col == "")
+			return;
+		$id = (string)$id;
+		$modality = (string)$modality;
+
 		/* start a transaction */
 		$sqlstring = "start transaction";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		/* delete any old tags */
-		switch ($idtype) {
-			case 'series': $sqlstring = "delete from tags where series_id = '$id' and modality = '$modality'"; break;
-			case 'study': $sqlstring = "delete from tags where study_id = '$id'"; break;
-			case 'enrollment': $sqlstring = "delete from tags where enrollment_id = '$id'"; break;
-			case 'subject': $sqlstring = "delete from tags where subject_id = '$id'"; break;
-			case 'analysis': $sqlstring = "delete from tags where analysis_id = '$id'"; break;
-			case 'pipeline': $sqlstring = "delete from tags where pipeline_id = '$id'"; break;
+		if ($idtype == 'series') {
+			$sqlstring = "delete from tags where series_id = ? and modality = ?";
+			$params = array($id, $modality);
 		}
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		else {
+			$sqlstring = "delete from tags where $col = ?";
+			$params = array($id);
+		}
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
 
+		/* insert the new tags (ids bound as strings, matching the quoted literals this used to build) */
+		if ($idtype == 'series')
+			$sqlstring = "insert ignore into tags (series_id, modality, tag) values (?, ?, ?)";
+		else
+			$sqlstring = "insert ignore into tags ($col, tag) values (?, ?)";
 		foreach ($tags as $tag) {
-			$tag = mysqli_real_escape_string($GLOBALS['linki'], $tag);
-			switch ($idtype) {
-				case 'series': $sqlstring = "insert ignore into tags (series_id, modality, tag) values ('$id', '$modality', '$tag')"; break;
-				case 'study': $sqlstring = "insert ignore into tags (study_id, tag) values ('$id', '$tag')"; break;
-				case 'enrollment': $sqlstring = "insert ignore into tags (enrollment_id, tag) values ('$id', '$tag')"; break;
-				case 'subject': $sqlstring = "insert ignore into tags (subject_id, tag) values ('$id', '$tag')"; break;
-				case 'analysis': $sqlstring = "insert ignore into tags (analysis_id, tag) values ('$id', '$tag')"; break;
-				case 'pipeline': $sqlstring = "insert ignore into tags (pipeline_id, tag) values ('$id', '$tag')"; break;
-			}
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$params = ($idtype == 'series') ? array($id, $modality, (string)$tag) : array($id, (string)$tag);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, str_repeat('s', count($params)), ...$params);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+			mysqli_stmt_close($stmt);
 		}
 		
 		/* commit the transaction */
@@ -2151,6 +2197,16 @@
 	}
 
 	
+	/* -------------------------------------------- */
+	/* ------- TagIDColumn ------------------------ */
+	/* -------------------------------------------- */
+	/* maps a GetTags()/SetTags() idtype to its column in the tags table; "" for an unknown idtype */
+	function TagIDColumn($idtype) {
+		$cols = array('series' => 'series_id', 'study' => 'study_id', 'enrollment' => 'enrollment_id', 'subject' => 'subject_id', 'analysis' => 'analysis_id', 'pipeline' => 'pipeline_id');
+		return $cols[$idtype] ?? "";
+	}
+
+
 	/* -------------------------------------------- */
 	/* ------- DisplayTags ------------------------ */
 	/* -------------------------------------------- */
@@ -2171,10 +2227,13 @@
 		/* check for valid analysis ID */
 		if (!ValidID($analysisid,'Analysis ID')) { return; }
 		
-		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = $analysisid";
-		//echo "[$sqlstring]";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = ?";
+		$analysisid = (int)$analysisid;
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($analysisid));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$uid = $row['uid'];
 		$studynum = $row['study_num'];
 		$pipelinename = $row['pipeline_name'];
@@ -2190,127 +2249,6 @@
 		return $datapath;
 	}
 
-	
-	/* -------------------------------------------- */
-	/* ------- MoveStudyToSubject ----------------- */
-	/* -------------------------------------------- */
-	function MoveStudyToSubject($studyid, $newuid) {
-		$studyid = mysqli_real_escape_string($GLOBALS['linki'], $studyid);
-		$newuid = trim(mysqli_real_escape_string($GLOBALS['linki'], $newuid));
-	
-		echo "<ol>";
-		echo "<li>Inside MoveStudyToSubject($studyid, $newuid)</li>";
-		
-		/* get the enrollment_id, subject_id, project_id, and uid from the current subject/study */
-		$sqlstring = "select a.uid, a.subject_id, b.enrollment_id, b.project_id, c.study_num, c.study_datetime from subjects a left join enrollment b on a.subject_id = b.subject_id left join studies c on b.enrollment_id = c.enrollment_id where c.study_id = $studyid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$olduid = $row['uid'];
-		$oldenrollmentid = $row['enrollment_id'];
-		$oldsubjectid = $row['subject_id'];
-		$oldprojectid = $row['project_id'];
-		$oldstudynum = $row['study_num'];
-		$oldstudydatetime = $row['study_datetime'];
-		
-		$now = time();
-		$studytime = strtotime($oldstudydatetime);
-		
-		if (($now - $studytime) < 86400) {
-			?>
-			<li><b style="color: red">This study was collected in the past 24 hours<br>The study may not be completely archived, so no changes can be made until 1 day after the study's start time</b>
-			<?
-			return;
-		}
-		
-		echo "<li>Got rowIDs from current subject/study: [$sqlstring]<br>";
-		
-		//PrintVariable($row);
-	
-		/* get subjectid from UID */
-		$sqlstring = "select subject_id from subjects where uid = '$newuid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newsubjectid = $row['subject_id'];
-		
-		if ($newsubjectid == '') {
-			?><li><b style="color: red">The destination UID [<?=$newuid?>] was not found</b><?
-			return;
-		}
-		
-		echo "<li>Got new subjectid: $newsubjectid [$sqlstring]<br>";
-		
-		/* check if the new subject is enrolled in the project, if not, enroll them */
-		$sqlstring = "select * from enrollment where subject_id = $newsubjectid and project_id = '$oldprojectid'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		if (mysqli_num_rows($result) > 0) {
-			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$newenrollmentid = $row['enrollment_id'];
-			$enrollgroup = $row['enroll_subgroup'];
-			echo "<li>Selected existing row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
-		}
-		else {
-			$sqlstring = "insert into enrollment (subject_id, project_id, enroll_startdate) values ($newsubjectid, $oldprojectid, now())";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-			$newenrollmentid = mysqli_insert_id($GLOBALS['linki']);
-			echo "<li>Inserted row to get new enrollment id: $newenrollmentid [$sqlstring]<br>";
-		}
-		
-		/* get the next study number for the new subject */
-		$sqlstring = "SELECT max(a.study_num) 'maxstudynum' FROM studies a left join enrollment b on a.enrollment_id = b.enrollment_id  WHERE b.subject_id = $newsubjectid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$newstudynum = $row['maxstudynum'] + 1;
-		//$newstudynum = mysqli_num_rows($result) + 1;
-		echo "<li>Got new study number: $newstudynum [$sqlstring]<br>";
-		
-		/* change the enrollment_id associated with the studyid */
-		$sqlstring = "update studies set enrollment_id = $newenrollmentid, study_num = $newstudynum where study_id = $studyid";
-		echo "<li>Change enrollment ID of the study [$sqlstring]<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* move the alternate IDs from the old to new enrollment */
-		//$sqlstring = "update ignore subject_altuid set enrollment_id = $newenrollmentid, subject_id = $newsubjectid where enrollment_id = $oldenrollmentid and subject_id = $oldsubjectid";
-		//echo "<li>Move alternate IDs from old to new enrollment [$sqlstring]<br>";
-		//$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* copy the data, don't move in case there is a problem */
-		$oldpath = $GLOBALS['cfg']['archivedir'] . "/$olduid/$oldstudynum";
-		$newpath = $GLOBALS['cfg']['archivedir'] . "/$newuid/$newstudynum";
-		
-		$systemstring = "mkdir -pv $newpath 2>&1";
-		$copyresults = "[$systemstring] " . shell_exec($systemstring) . "\n";
-		
-		$systemstring = "mkdir -pv $oldpath 2>&1";
-		$copyresults .= "[$systemstring] " . shell_exec($systemstring) . "\n";
-		
-		if (!file_exists($oldpath)) {
-			?><li><b style="color: red">The original path [<?=$oldpath?>] does not exist</b><?
-		}
-		if (!file_exists($newpath)) {
-			?><li><b style="color: red">The new path [<?=$newpath?>] does not exist</b><?
-		}
-		
-		//$systemstring = "mv -vuf $oldpath/* $newpath/ 2>&1";
-		echo "<li>Moving data within archive directory (may take a while): <tt>$systemstring</tt>";
-		$systemstring = "rsync -rtuv $oldpath/* $newpath 2>&1";
-		$copyresults .= "[Running $systemstring] " . shell_exec($systemstring) . "\n";
-		$systemstring = "rsync -rtuv $newpath/* $oldpath 2>&1";
-		$copyresults .= "[Running $systemstring] " . shell_exec($systemstring) . "\n";
-		echo "<pre><tt>$copyresults</tt></pre>";
-
-		$copyresults = mysqli_real_escape_string($GLOBALS['linki'], $copyresults);
-		/* insert a changelog */
-		$instanceid = $GLOBALS['instanceid'];
-		$userid = $GLOBALS['userid'];
-		$sqlstring = "insert into changelog (performing_userid, affected_userid, affected_instanceid1, affected_instanceid2, affected_siteid1, affected_siteid2, affected_projectid1, affected_projectid2, affected_subjectid1, affected_subjectid2, affected_enrollmentid1, affected_enrollmentid2, affected_studyid1, affected_studyid2, affected_seriesid1, affected_seriesid2, change_datetime, change_event, change_desc) values ('$userid', '', '$instanceid', '', '', '', '$oldprojectid', '$oldprojectid', '$oldsubjectid', '$newsubjectid', '$oldenrollmentid', '$newenrollmentid', '$studyid', '$studyid', '', '', now(), 'MoveStudyFromSubject1toSubject2', 'Moved study [$olduid$oldstudynum] to [$newuid$newstudynum]. Results [$copyresults]')";
-		echo "<li>Insert changelog [$sqlstring]<br>";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		echo "<li><b style='color: red'>Study [$olduid$oldstudynum] moved to subject [$newuid]</b>";
-		
-		echo "</ol>";
-	}
-	
 	
 	/* -------------------------------------------- */
 	/* ------- between ---------------------------- */
@@ -2993,34 +2931,48 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* newvals is an associative array with fields to be changed, and their new values */
 	function DuplicateSQLRow($table, $pk, $id, $newvals) {
 		/* setup: $newvals['column'] = newval */
+
+		/* table and column names can't be bound, so they must be plain identifiers */
+		$ident = '/^[A-Za-z0-9_]+$/';
+		if (!preg_match($ident, $table) || !preg_match($ident, $pk)) {
+			Error("DuplicateSQLRow: invalid table or key name");
+			return 0;
+		}
+		foreach ($newvals as $col => $val) {
+			if (!preg_match($ident, $col)) {
+				Error("DuplicateSQLRow: invalid column name");
+				return 0;
+			}
+		}
 		
 		$tmptable = GenerateRandomString(10);
 		StartSQLTransaction();
 
-		$sqlstring = "create temporary table $tmptable select * from $table where $pk = $id";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$id = (int)$id;
+		$sqlstring = "create temporary table `$tmptable` select * from `$table` where `$pk` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($id));
+		mysqli_stmt_close($stmt);
 		
-		$sqlstring = "update $tmptable set $pk = NULL";
-		//PrintSQL($sqlstring);
+		$sqlstring = "update `$tmptable` set `$pk` = NULL";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		foreach ($newvals as $col => $val) {
-			$sqlstring = "update $tmptable set $col = $val";
-			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "update `$tmptable` set `$col` = ?";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			$type = is_int($val) ? 'i' : 's';
+			mysqli_stmt_bind_param($stmt, $type, $val);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($val));
+			mysqli_stmt_close($stmt);
 		}
 		
-		$sqlstring = "select * from $tmptable";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//PrintSQLTable($result,$url,$orderby,$size,$text=false);
-		
-		$sqlstring = "insert ignore into $table select * from $tmptable";
+		$sqlstring = "insert ignore into `$table` select * from `$tmptable`";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		$rowid = mysqli_insert_id($GLOBALS['linki']);
 		
-		$sqlstring = "drop temporary table if exists $tmptable";
+		$sqlstring = "drop temporary table if exists `$tmptable`";
 		//PrintSQL($sqlstring);
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 
@@ -3467,11 +3419,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* -------------------------------------------- */
 	function GetFileFromSQL($fileid) {
 		$fileid = (int)$fileid;
-		$sqlstring = "select * from files where file_id = $fileid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		//echo "Checkpoint A";
+		$sqlstring = "select * from files where file_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $fileid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, array($fileid));
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
 		$filename = $row['file_name'];
 		$filecontenttype = $row['file_contenttype'];
 		$fileblob = base64_decode($row['file_blob']);
@@ -4884,6 +4837,15 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	   int before use. Returns an empty string when there is nothing to show. */
 	function FileIODetails($operation, $datatype, $dataid, $mergeid, $mergeids, $modality) {
 
+		/* run a select whose parameters are all ints; returns the result set */
+		$q = function($sqlstring, $ids) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+			mysqli_stmt_close($stmt);
+			return $result;
+		};
+
 		/* a merge shows the list of subject UIDs being merged together */
 		if ($operation === 'merge') {
 			$ids = array();
@@ -4895,8 +4857,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			$ids = array_values(array_unique($ids));
 			if (count($ids) < 1) return '';
 			$uids = array();
-			$sqlstring = "select uid from subjects where subject_id in (" . implode(',', $ids) . ") order by uid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$result = $q("select uid from subjects where subject_id in (" . implode(',', array_fill(0, count($ids), '?')) . ") order by uid", $ids);
 			while ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) $uids[] = $r['uid'];
 			return implode(', ', $uids);
 		}
@@ -4905,13 +4866,12 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 		if ($dataid < 1) return '';
 
 		if ($datatype === 'subject') {
-			$sqlstring = "select uid from subjects where subject_id = $dataid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$result = $q("select uid from subjects where subject_id = ?", array($dataid));
 			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'];
 		}
 		elseif ($datatype === 'study') {
-			$sqlstring = "select b.uid, a.study_num from studies a left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects b on c.subject_id = b.subject_id where a.study_id = $dataid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select b.uid, a.study_num from studies a left join enrollment c on a.enrollment_id = c.enrollment_id left join subjects b on c.subject_id = b.subject_id where a.study_id = ?";
+			$result = $q($sqlstring, array($dataid));
 			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'] . $r['study_num'];
 		}
 		elseif ($datatype === 'series') {
@@ -4931,13 +4891,13 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			$tbl = $mod . '_series';
 			$idcol = $mod . 'series_id';
 			if (!isset($seriestables[$tbl])) return '';
-			$sqlstring = "select d.uid, b.study_num, a.series_num from $tbl a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$idcol = $dataid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select d.uid, b.study_num, a.series_num from $tbl a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$idcol = ?";
+			$result = $q($sqlstring, array($dataid));
 			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['uid'] . $r['study_num'] . '-' . $r['series_num'];
 		}
 		elseif ($datatype === 'analysis') {
-			$sqlstring = "select p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_id = $dataid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$sqlstring = "select p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_id = ?";
+			$result = $q($sqlstring, array($dataid));
 			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$parts = array();
 				if (trim((string)$r['pipeline_name']) !== '') $parts[] = $r['pipeline_name'];
@@ -4946,8 +4906,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			}
 		}
 		elseif ($datatype === 'pipeline') {
-			$sqlstring = "select pipeline_name from pipelines where pipeline_id = $dataid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$result = $q("select pipeline_name from pipelines where pipeline_id = ?", array($dataid));
 			if ($r = mysqli_fetch_array($result, MYSQLI_ASSOC)) return $r['pipeline_name'];
 		}
 

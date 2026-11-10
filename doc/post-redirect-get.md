@@ -29,6 +29,7 @@ for the reference implementation.
 | `adminusers.php` | 2 | ✅ |
 | `analysis.php` | 3 | ✅ |
 | `analysisbuilder.php` | 2 | ✅ |
+| `backup.php` | 1 | ✅ |
 | `batchupload.php` | 1 | ✅ |
 | `calendar.php` | 2 | ✅ |
 | `calendar_appointments.php` | 3 | ✅ |
@@ -41,6 +42,7 @@ for the reference implementation.
 | `diagnosis.php` | 2 | ✅ |
 | `enrollment.php` | 3 | ✅ |
 | `experiment.php` | 2 | ✅ |
+| `filesio.php` | 1 | ✅ |
 | `functions.php` | 4 | ✅ |
 | `groups.php` | 6 | ✅ |
 | `import.php` | 1 | ✅ |

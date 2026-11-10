@@ -1159,24 +1159,31 @@
 	/* ------- DisplayDcmRcvLogs ------------------ */
 	/* -------------------------------------------- */
 	function DisplayDcmRcvLogs($datestart, $dateend, $keyword) {
-		$datestart = mysqli_real_escape_string($GLOBALS['linki'], $datestart);
-		$dateend = mysqli_real_escape_string($GLOBALS['linki'], $dateend);
-		$keyword = mysqli_real_escape_string($GLOBALS['linki'], $keyword);
+		$datestart = (string)$datestart;
+		$dateend = (string)$dateend;
+		$keyword = (string)$keyword;
 		
 		$sqlstring = "delete from upload_logs where log_date < date_sub(now(), interval 180 day)";
 		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
 		
 		$sqlstring = "select * from upload_logs where upload_id = 0";
-		if ($datestart != "")
-			$sqlstring .= " and log_date > '$datestart'";
+		$params = array();
+		if ($datestart != "") {
+			$sqlstring .= " and log_date > ?";
+			$params[] = $datestart;
+		}
 		
-		if ($dateend != "")
-			$sqlstring .= " and log_date < '$dateend'";
+		if ($dateend != "") {
+			$sqlstring .= " and log_date < ?";
+			$params[] = $dateend;
+		}
 
-		if ($keyword != "")
-			$sqlstring .= " and log_msg like '%$keyword%'";
+		if ($keyword != "") {
+			$sqlstring .= " and log_msg like ?";
+			$params[] = "%$keyword%";
+		}
 		
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$result = IIQuery($sqlstring, $params, __LINE__);
 		?>
 		<form method="post" action="importimaging.php">
 		<input type="hidden" name="action" value="viewdcmrcvlogs">
@@ -1319,8 +1326,8 @@
 							<td>
 								<details>
 								<?
-									$sqlstringA = "select * from upload_logs where upload_id = $uploadid";
-									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$sqlstringA = "select * from upload_logs where upload_id = ?";
+									$resultA = IIQuery($sqlstringA, array((int)$uploadid), __LINE__);
 								?>
 								<summary>View Log <span class="tiny"><?=mysqli_num_rows($resultA)?> entries</span></summary>
 								<tt><pre><?
@@ -1398,31 +1405,27 @@
 	/* -------------------------------------------- */
 	function QueueUploadForArchive($uploadid, $uploadseriesids) {
 		if (!ValidID($uploadid,'UploadID')) { return; }
+		$uploadid = (int)$uploadid;
+		/* no series checked -> NULL; in_array() on NULL is a TypeError on PHP 8 */
+		if (!is_array($uploadseriesids)) $uploadseriesids = array();
 		
 		/* get all series for this uploadid */
-		$sqlstring = "select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where c.upload_id = $uploadid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from upload_series a left join upload_studies b on a.uploadstudy_id = b.uploadstudy_id left join upload_subjects c on b.uploadsubject_id = c.uploadsubject_id where c.upload_id = ?";
+		$result = IIQuery($sqlstring, array($uploadid), __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$seriesid = $row['uploadseries_id'];
 				
-				if (in_array($seriesid, $uploadseriesids)) {
-					$sqlstringA = "update upload_series set uploadseries_status = 'import' where uploadseries_id = $seriesid";
-				}
-				else {
-					$sqlstringA = "update upload_series set uploadseries_status = 'ignore' where uploadseries_id = $seriesid";
-				}
-				$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+				$status = in_array($seriesid, $uploadseriesids) ? 'import' : 'ignore';
+				IIQuery("update upload_series set uploadseries_status = ? where uploadseries_id = ?", array($status, (int)$seriesid), __LINE__);
 			}
 
-			$sqlstringA = "update uploads set upload_status = 'queueforarchive' where upload_id = $uploadid";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			IIQuery("update uploads set upload_status = 'queueforarchive' where upload_id = ?", array($uploadid), __LINE__);
 			
 			Notice("Upload queued for archiving");
 		}
 		else {
-			$sqlstring = "update uploads set upload_status = 'archiveerror' where upload_id = $uploadid";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			IIQuery("update uploads set upload_status = 'archiveerror' where upload_id = ?", array($uploadid), __LINE__);
 			
 			Error("No series found for this upload");
 		}		
@@ -1433,9 +1436,9 @@
 	/* ------- DisplayImport ---------------------- */
 	/* -------------------------------------------- */
 	function DisplayImport($uploadid) {
+		$uploadid = (int)$uploadid;
 		
-		$sqlstring = "select * from uploads where upload_id = $uploadid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$result = IIQuery("select * from uploads where upload_id = ?", array($uploadid), __LINE__);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$uploadid = $row['upload_id'];
@@ -1538,8 +1541,7 @@
 						<td>
 							<div class="ui scrolling segment">						
 								<?
-									$sqlstring = "select * from upload_logs where upload_id = $uploadid";
-									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+									$result = IIQuery("select * from upload_logs where upload_id = ?", array($uploadid), __LINE__);
 								?>
 								<div class="ui accordion">
 									<div class="title">
@@ -1571,8 +1573,8 @@
 									<tt><?=implode2("<br>", $filelist)?></tt>
 								</div>
 								<?
-									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = $uploadid and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
-									$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+									$sqlstringA = "SELECT * FROM upload_subjects a LEFT JOIN upload_studies b on a.uploadsubject_id = b.uploadsubject_id LEFT JOIN upload_series c on b.uploadstudy_id = c.uploadstudy_id WHERE a.upload_id = ? and (uploadsubject_patientid = 'unreadable' or uploadsubject_patientid = 'NiDBunreadable')";
+									$resultA = IIQuery($sqlstringA, array((int)$uploadid), __LINE__);
 									$errorfiles = array();
 									while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 										$errorfiles = array_merge($errorfiles, explode(",", $rowA['uploadseries_filelist']));
@@ -1681,8 +1683,8 @@
 			<? } ?>
 			
 			<?
-			$sqlstringA = "select * from upload_subjects where upload_id = $uploadid and uploadsubject_patientid <> 'unreadable' and uploadsubject_patientid <> 'NiDBunreadable' order by uploadsubject_patientid desc";
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$sqlstringA = "select * from upload_subjects where upload_id = ? and uploadsubject_patientid <> 'unreadable' and uploadsubject_patientid <> 'NiDBunreadable' order by uploadsubject_patientid desc";
+			$resultA = IIQuery($sqlstringA, array((int)$uploadid), __LINE__);
 			$numsubjects = mysqli_num_rows($resultA);
 			if ($numsubjects < 1) { $smsg = "No subjects"; }
 			elseif ($numsubjects == 1) { $smsg = "$numsubjects subject"; }
@@ -1737,8 +1739,8 @@
 					<div class="content">
 
 				<?
-					$sqlstringB = "select * from upload_studies where uploadsubject_id = $uploadsubjectid order by uploadstudy_date desc";
-					$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
+					$sqlstringB = "select * from upload_studies where uploadsubject_id = ? order by uploadstudy_date desc";
+					$resultB = IIQuery($sqlstringB, array((int)$uploadsubjectid), __LINE__);
 					while ($rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC)) {
 						$uploadstudyid = $rowB['uploadstudy_id'];
 						$studyinstanceuid = $rowB['uploadstudy_instanceuid'];
@@ -1797,8 +1799,8 @@
 							</div>
 							<div class="content">
 						<?
-							$sqlstringC = "select * from upload_series where uploadstudy_id = $uploadstudyid order by uploadseries_num asc";
-							$resultC = MySQLiQuery($sqlstringC, __FILE__, __LINE__);
+							$sqlstringC = "select * from upload_series where uploadstudy_id = ? order by uploadseries_num asc";
+							$resultC = IIQuery($sqlstringC, array((int)$uploadstudyid), __LINE__);
 							while ($rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC)) {
 								//PrintVariable($rowC);
 								$uploadseriesid = $rowC['uploadseries_id'];
@@ -1915,12 +1917,14 @@
 	function GetMatchingSubject($subjectcriteria, $patientid, $name, $dob, $sex) {
 		
 		$i = 0;
+		$matches = array();
 		if ($subjectcriteria == "patientid") {
 			/* find existing subjects by patientid */
 			if (trim($patientid) != "") {
-				$sqlstring = "select b.subject_id, b.uid from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where (a.altuid = '$patientid' or a.altuid = sha1('$patientid') or a.altuid = sha1('$patientid ') or a.altuid = sha1(' $patientid') or a.altuid = sha1(' $patientid ') or a.altuid = sha1(upper('$patientid')) or a.altuid = sha1(lower('$patientid')))";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* patient IDs come from uploaded DICOM headers, so they are bound */
+				$p = (string)$patientid;
+				$sqlstring = "select b.subject_id, b.uid from subject_altuid a left join subjects b on a.subject_id = b.subject_id left join enrollment c on b.subject_id = c.subject_id where (a.altuid = ? or a.altuid = sha1(?) or a.altuid = sha1(?) or a.altuid = sha1(?) or a.altuid = sha1(?) or a.altuid = sha1(upper(?)) or a.altuid = sha1(lower(?)))";
+				$result = IIQuery($sqlstring, array($p, $p, "$p ", " $p", " $p ", $p, $p), __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$matches[$i]['subjectid'] = $row['subject_id'];
 					$matches[$i]['uid'] = $row['uid'];
@@ -1932,9 +1936,8 @@
 		elseif ($subjectcriteria == "namesexdob") {
 			/* find existing subjects by name/sex/dob */
 			if ( (trim($name) != "") && (trim($dob) != "") && (trim($sex) != "") ) {
-				$sqlstring = "select * from subjects where name = '$name' and birthdate = '$dob' and gender = '$sex'";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from subjects where name = ? and birthdate = ? and gender = ?";
+				$result = IIQuery($sqlstring, array((string)$name, (string)$dob, (string)$sex), __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$matches[$i]['subjectid'] = $row['subject_id'];
 					$matches[$i]['uid'] = $row['uid'];
@@ -1954,20 +1957,20 @@
 	function GetMatchingStudies($studycriteria, $subjectid, $modality, $studydate, $studyuid, $projectid) {
 		//echo "GetMatchingStudies($studycriteria, $subjectid, $modality, $studydate, $studyuid, $projectid)<br>";
 
+		$matches = array();
 		if ($subjectid == "") {
-			return;
+			return $matches;
 		}
 		if (!IsNiDBModality($modality)) {
-			return;
+			return $matches;
 		}
 		
 		$i = 0;
 		if ($studycriteria == "modalitystudydate") {
 			/* find existing studies by modality/studydate */
 			if ( (trim($studydate) != "") && (trim($modality) != "") ) {
-				$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = $subjectid and a.study_modality = '$modality' and (study_datetime between date_sub('$studydate', interval 30 second) and date_add('$studydate', interval 30 second))";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = ? and a.study_modality = ? and (study_datetime between date_sub(?, interval 30 second) and date_add(?, interval 30 second))";
+				$result = IIQuery($sqlstring, array((int)$subjectid, (string)$modality, (string)$studydate, (string)$studydate), __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$matches[$i]['subjectid'] = $row['subject_id'];
 					$matches[$i]['studyid'] = $row['study_id'];
@@ -1981,9 +1984,8 @@
 		elseif ($studycriteria == "studyuid") {
 			/* find existing studies by studyuid (rare that someone would ever do this) */
 			if (trim($studyuid) != "") {
-				$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = $subjectid and a.study_uid = '$studyuid'";
-				//PrintSQL($sqlstring);
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				$sqlstring = "select * from studies a left join enrollment b on a.enrollment_id = b.enrollment_id left join subjects c on b.subject_id = c.subject_id where c.subject_id = ? and a.study_uid = ?";
+				$result = IIQuery($sqlstring, array((int)$subjectid, (string)$studyuid), __LINE__);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$matches[$i]['subjectid'] = $row['subject_id'];
 					$matches[$i]['studyid'] = $row['study_id'];
@@ -2078,8 +2080,7 @@
 	/* ---------------------------------------------------------- */
 	function CancelUpload($uploadid) {
 		if (!ValidID($uploadid,'UploadID')) { return; }
-		$sqlstring = "update uploads set upload_status = 'cancelled' where upload_id = $uploadid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		IIQuery("update uploads set upload_status = 'cancelled' where upload_id = ?", array((int)$uploadid), __LINE__);
 		
 		Notice("Upload cancelled. The upload module may take a few minutes to stop");
 	}
@@ -2090,11 +2091,27 @@
 	/* ---------------------------------------------------------- */
 	function AppendUploadLog($uploadid, $m) {
 		if (($uploadid >= 0) && (trim($m) != "")) {
-			$str = "ImportImaging.php  " . mysqli_real_escape_string($GLOBALS['linki'], $m);
-
-			$sqlstring = "insert ignore into upload_logs (upload_id, log_date, log_msg) values ($uploadid, now(), '$str')";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$str = "ImportImaging.php  " . $m;
+			IIQuery("insert ignore into upload_logs (upload_id, log_date, log_msg) values (?, now(), ?)", array((int)$uploadid, $str), __LINE__);
 		}
+	}
+
+
+	/* ---------------------------------------------------------- */
+	/* --------- IIQuery ---------------------------------------- */
+	/* ---------------------------------------------------------- */
+	/* prepare + bind + run a query. ints bind as 'i', null as NULL, everything else as 's' */
+	function IIQuery($sqlstring, $params, $line) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if (count($params) > 0) {
+			$types = "";
+			foreach ($params as $p)
+				$types .= is_int($p) ? 'i' : 's';
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		}
+		$result = MySQLiBoundQuery($stmt, __FILE__, $line, $sqlstring, $params);
+		mysqli_stmt_close($stmt);
+		return $result;
 	}
 
 

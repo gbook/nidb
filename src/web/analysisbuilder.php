@@ -71,7 +71,6 @@
     $a['includeduration'] = GetVariable("includeduration");
     $a['includeenddate'] = GetVariable("includeenddate");
     $a['includeheightweight'] = GetVariable("includeheightweight");
-    $a['includedob'] = GetVariable("includedob");
     $a['reportformat'] = GetVariable("reportformat");
     $a['outputformat'] = GetVariable("outputformat");
 	$a['collapsevariables'] = GetVariable("collapsevariables");
@@ -171,6 +170,8 @@
 
 		/* blank flag/checkbox values map to SQL NULL in these (unquoted) columns */
 		$nn = function($v) { return (($v === "") || ($v === null)) ? null : $v; };
+		/* multi-select fields arrive as arrays; store them comma-joined like the protocol lists */
+		$join = function($v) { return is_array($v) ? implode2(",", $v) : $v; };
 
 		/* shared value list, in the same column order used by both the UPDATE and
 		   INSERT below (from search_mrincludeprotocolparams .. search_outputformat) */
@@ -181,16 +182,16 @@
 			$MRprotocols,
 			$EEGprotocols,
 			$ETprotocols,
-			$nn($a['pipelineid']),
+			$nn($join($a['pipelineid'])),
 			$a['pipelineresultname'],
 			$a['pipelineseriesdatetime'],
-			$a['observationname'],
+			$join($a['observationname']),
 			$nn($a['includeallobservations']),
-			$a['interventionname'],
+			$join($a['interventionname']),
 			$nn($a['includeallinterventions']),
 			$nn($a['includeinterventiondetails']),
 			$nn($a['includetimesincedose']),
-			$a['dosevariable'],
+			$join($a['dosevariable']),
 			$a['dosetimerange'],
 			$a['dosedisplaytime'],
 			$a['groupbydate'],
@@ -202,7 +203,7 @@
 			$nn($a['includeduration']),
 			$nn($a['includeenddate']),
 			$nn($a['includeheightweight']),
-			$nn($a['includedob']),
+			null, /* search_includedob: DOB is no longer offered in reports */
 			$a['reportformat'],
 			$a['outputformat'],
 		);
@@ -286,6 +287,19 @@
 
 		$a = array();
 
+		/* split a stored comma-joined multi-select back into an array. searches saved before
+		   this was fixed hold the literal string 'Array', which is dropped */
+		$split = function($v) {
+			$out = array();
+			foreach (explode(",", $v ?? '') as $item) {
+				$item = trim($item);
+				if (($item != "") && ($item != "Array"))
+					$out[] = $item;
+			}
+			/* empty -> "" so the report's ($a[...] != "") checks treat it as not selected */
+			return (count($out) > 0) ? $out : "";
+		};
+
 		if ($savedsearchid != 0) {
 			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from saved_search where savedsearch_id = ?");
 			mysqli_stmt_bind_param($stmt, 'i', $savedsearchid);
@@ -297,19 +311,19 @@
 			$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
 			$a['eeg_protocols'] = explode(",", $row['search_eegprotocol']);
 			$a['et_protocols'] = explode(",", $row['search_etprotocol']);
-			$a['pipelineid'] = $row['search_pipelineid'];
+			$a['pipelineid'] = $split($row['search_pipelineid']);
 			$a['pipelineresultname'] = $row['search_pipelineresultname'];
 			$a['pipelineseriesdatetime'] = $row['search_pipelineseries'];
 			$a['includeprotocolparms'] = $row['search_mrincludeprotocolparams'];
 			$a['includemrqa'] = $row['search_mrincludeqa'];
 			$a['groupmrbyvisittype'] = $row['search_groupmrbyvisittype'];
 			$a['includeallobservations'] = $row['search_includeallobservations'];
-			$a['observationname'] = $row['search_observationname'];
+			$a['observationname'] = $split($row['search_observationname']);
 			$a['includeallinterventions'] = $row['search_includeallinterventions'];
 			$a['includeinterventiondetails'] = $row['search_includeinterventiondetails'];
-			$a['interventionname'] = $row['search_interventionname'];
+			$a['interventionname'] = $split($row['search_interventionname']);
 			$a['includetimesincedose'] = $row['search_includetimesincedose'];
-			$a['dosevariable'] = $row['search_dosevariable'];
+			$a['dosevariable'] = $split($row['search_dosevariable']);
 			$a['dosetimerange'] = $row['search_groupdosetime'];
 			$a['dosedisplaytime'] = $row['search_displaytime'];
 			$a['groupbydate'] = $row['search_groupbyeventdate'];
@@ -325,7 +339,6 @@
 			$a['includeduration'] = $row['search_includeeventduration'];
 			$a['includeenddate'] = $row['search_includeendate'];
 			$a['includeheightweight'] = $row['search_includeheightweight'];
-			$a['includedob'] = $row['search_includedob'];
 		}
 		
 		return $a;
@@ -444,8 +457,7 @@
 							<select name="savedsearchid" class="ui fluid dropdown" required>
 								<option value="">Select saved search...
 								<?
-								$sqlstring = "select * from saved_search where user_id = " . $_SESSION['userid'];
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$result = ABQuery("select * from saved_search where user_id = ?", array((int)$_SESSION['userid']), __LINE__);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$savedsearchid = $row['savedsearch_id'];
 									$savedname = $row['saved_name'];
@@ -490,9 +502,8 @@
 								<option value="">Select Project...</option>
 								<option value="0">All Projects</option>
 								<?
-									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = '" . $_SESSION['username'] . "') and a.instance_id = '" . $_SESSION['instanceid'] . "' order by project_name";
-									
-									$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) and a.instance_id = ? order by project_name";
+									$result = ABQuery($sqlstring, array($_SESSION['username'], $_SESSION['instanceid']), __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 										$project_id = $row['project_id'];
 										$project_name = $row['project_name'];
@@ -540,8 +551,8 @@
 										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
-											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = trim($row['series_desc']);
 											
@@ -573,9 +584,9 @@
 										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
-											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 											
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
 											
@@ -607,9 +618,9 @@
 										if ($projectid == 0)
 											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 										else
-											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 											
-										$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
 											
@@ -637,9 +648,9 @@
 										if ($projectid == 0)
 											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id group by a.pipeline_id) order by pipeline_name";
 										else
-											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = $projectid group by a.pipeline_id) order by pipeline_name";
+											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? group by a.pipeline_id) order by pipeline_name";
 											
-										$result2 = MySQLiQuery($sqlstring2,__FILE__,__LINE__);
+										$result2 = ABQuery($sqlstring2, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 											$pipelineid = $row2['pipeline_id'];
 											$pipelinename = $row2['pipeline_name'];
@@ -648,7 +659,7 @@
 											if (is_array($a['pipelineid']))
 												if (in_array($pipelineid, $a['pipelineid']))
 													$selected = "selected";
-											if (trim($pipelineid) == trim($a['pipelineid']))
+											if (!is_array($a['pipelineid']) && (trim($pipelineid) == trim($a['pipelineid'] ?? '')))
 												$selected = "selected";
 											?>
 											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
@@ -677,9 +688,9 @@
 										if ($projectid == 0)
 											$sqlstringA = "SELECT distinct(observation_name) from observations order by observation_name";
 										else
-											$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.observation_name";
+											$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.observation_name";
 											
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$observationname = $rowA['observation_name'];
 											if (trim($observationname) != "") {
@@ -687,7 +698,7 @@
 												if (is_array($a['observationname']))
 													if (in_array($observationname, $a['observationname']))
 														$selected = "selected";
-												if (trim($observationname) == trim($a['observationname']))
+												if (!is_array($a['observationname']) && (trim($observationname) == trim($a['observationname'] ?? '')))
 													$selected = "selected";
 												?><option value="<?=$observationname?>" <?=$selected?>><?=$observationname?><?
 											}
@@ -712,16 +723,16 @@
 										if ($projectid == 0)
 											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id order by a.intervention_name";
 										else
-											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
+											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
 											
-										$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+										$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$interventionname = $rowA['intervention_name'];
 											$selected = "";
 											if (is_array($a['interventionname']))
 												if (in_array($interventionname, $a['interventionname']))
 													$selected = "selected";
-											if (trim($interventionname) == trim($a['interventionname']))
+											if (!is_array($a['interventionname']) && (trim($interventionname) == trim($a['interventionname'] ?? '')))
 												$selected = "selected";
 											?><option value="<?=$interventionname?>" <?=$selected?>><?=$interventionname?><?
 										}
@@ -750,15 +761,15 @@
 											if ($projectid == 0)
 												$sqlstringA = "SELECT distinct(intervention_name) FROM interventions order by intervention_name";
 											else
-												$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = $projectid order by a.intervention_name";
-											$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+												$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
+											$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$interventionname = $rowA['intervention_name'];
 												$selected = "";
 												if (is_array($a['dosevariable']))
 													if (in_array($interventionname, $a['dosevariable']))
 														$selected = "selected";
-												if (trim($interventionname) == trim($a['dosevariable']))
+												if (!is_array($a['dosevariable']) && (trim($interventionname) == trim($a['dosevariable'] ?? '')))
 													$selected = "selected";
 												?><option value="<?=$interventionname?>" <?=$selected?>><?=$interventionname?><?
 											}
@@ -840,11 +851,6 @@
 						<div class="ui checkbox">
 							<input type="checkbox" name="includeheightweight" value="1" <? if ($a['includeheightweight']) echo "checked"; ?>>
 							<label>Include subject heigh/weight <i class="small blue question circle outline icon" title="Include the subject's height and weight in the output"></i></label>
-						</div>
-						<br>
-						<div class="ui checkbox">
-							<input type="checkbox" name="includedob" value="1" <? if ($a['includedob']) echo "checked"; ?>>
-							<label>Include subject date of birth <i class="small blue question circle outline icon" title="Include the subject's date of birth in the output"></i></label>
 						</div>
 						<br>
 						<table>
@@ -930,7 +936,6 @@
 		$includeDuration = $a['includeduration'];
 		$includeEndDate = $a['includeenddate'];
 		$includeHeightWeight = $a['includeheightweight'];
-		$includeDOB = $a['includedob'];
 		$blankValuePlaceholder = $a['blankvalueplaceholder'];
 		$missingValuePlaceholder = $a['missingvalueplaceholder'];
 		$groupByDate = $a['groupbydate'];
@@ -948,9 +953,8 @@
 		}
 		
 		/* get all of the subject information */
-		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? order by a.uid";
+		$result = ABQuery($sqlstring, array((int)$projectid), __LINE__);
 		$i = 0;
 		while ($rowA = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjects[$i]['subjectid'] = $rowA['subject_id'];
@@ -985,9 +989,12 @@
 			/* get dose datetimes for this enrollment */
 			$interventiondoses = array();
 			if ($a['includetimesincedose']) {
-				if ($doseVariable != "") {
-					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("intervention_name", $a['dosevariable']) . ")";
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				$paramsA = array((int)$enrollmentid);
+				$dosestr = CreateSQLSearchString("intervention_name", $doseVariable, $paramsA);
+				/* skip when no dose variable was selected */
+				if ($dosestr != "") {
+					$sqlstringA = "select * from interventions where enrollment_id = ? and ($dosestr)";
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					$i=0;
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 						/* add the observation info to this row */
@@ -1002,17 +1009,20 @@
 			/* ---------- get all of the MR protocol info ---------- */
 			if (!empty($a['mr_protocols'])) {
 				
+				$paramsA = array((int)$enrollmentid);
 				if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) {
-					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid";
+					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = ?";
 				}
 				else {
-					$mrprotocollist = MakeSQLListFromArray($a['mr_protocols']);
-					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist)";
+					foreach ($a['mr_protocols'] as $mrprotocol)
+						$paramsA[] = trim($mrprotocol);
+					$mrprotocollist = implode(",", array_fill(0, count($a['mr_protocols']), "?"));
+					$sqlstringA = "select a.*, b.* from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = ? and a.series_desc in ($mrprotocollist)";
 					//$sqlstringA = "select a.*, b.*, count(a.series_desc) 'seriescount' from mr_series a left join studies b on a.study_id = b.study_id where b.enrollment_id = $enrollmentid and a.series_desc in ($mrprotocollist) group by a.series_desc";
 				}
 			
 				/* add in the protocols */
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 					$seriesdesc = preg_replace('/\s+/', '', $rowA['series_desc']);
 					$seriesid = $rowA['mrseries_id'];
@@ -1077,9 +1087,6 @@
 						$t[$row]['Height'] = $height;
 						$t[$row]['Weight'] = $weight;
 					}
-					if ($includeDOB) {
-						$t[$row]['DOB'] = $subj['dob'];
-					}
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 					$t[$row]['AltUIDs'] = $subj['altuids'];
 					$t[$row]['VisitType'] = $studyvisit;
@@ -1117,8 +1124,7 @@
 					}
 					
 					if ($a['includemrqa']) {
-						$sqlstringC = "select * from mr_qa where mrseries_id = $seriesid";
-						$resultC = MySQLiQuery($sqlstringC,__FILE__,__LINE__);
+						$resultC = ABQuery("select * from mr_qa where mrseries_id = ?", array((int)$seriesid), __LINE__);
 						$rowC = mysqli_fetch_array($resultC, MYSQLI_ASSOC);
 						
 						$t[$row]["$seriesdesc-io_snr"] = $rowC['io_snr'];
@@ -1149,13 +1155,14 @@
 
 			/* ---------- Observations ---------- */
 			if (($a['includeallobservations']) || ($a['observationname'] != "")) {
+				$paramsA = array((int)$enrollmentid);
 				if ($a['includeallobservations']) {
-					$sqlstringA = "select * from observations where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from observations where enrollment_id = ?";
 				}
 				else {
-					$sqlstringA = "select * from observations where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("observation_name", $a['observationname']) . ")";
+					$sqlstringA = "select * from observations where enrollment_id = ? and (" . CreateSQLSearchString("observation_name", $a['observationname'], $paramsA) . ")";
 				}
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
 					$observationname = $rowA['observation_name'];
@@ -1201,9 +1208,6 @@
 						$t[$row]['Height'] = $subj['height'];
 						$t[$row]['Weight'] = $subj['weight'];
 					}
-					if ($includeDOB) {
-						$t[$row]['DOB'] = $subj['dob'];
-					}
 					$t[$row]['AgeAtEvent'] = $age;
 					$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 					$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1236,29 +1240,30 @@
 			/* ---------- Interventions ---------- */
 			if (($a['includeallinterventions']) || ($a['interventionname'] != "") || ($a['includeinterventiondetails']) || ($a['dosevariable'] != "")) {
 				
+				$paramsA = array((int)$enrollmentid);
+				$interventionarray = array();
 				if ($a['includeallinterventions']) {
-					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from interventions where enrollment_id = ?";
 				}
 				else {
-					$interventionarray = array();
 					
 					if (is_array($a['interventionname']))
 						$interventionarray = array_merge($interventionarray, $a['interventionname']);
 					elseif (($a['interventionname'] != "") && ($a['interventionname'] != null))
 						$interventionarray[] = $a['interventionname'];
 						
-					$interventionarray = array_unique($interventionarray);
+					$interventionarray = array_unique(array_filter(array_map('trim', $interventionarray), 'strlen'));
 
-					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray);
+					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray, $paramsA);
 					if ($interventionstr == "") {
-						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
+						$sqlstringA = "select * from interventions where enrollment_id = ?";
 					}
 					else {
-						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and ($interventionstr)";
+						$sqlstringA = "select * from interventions where enrollment_id = ? and ($interventionstr)";
 					}
 				}
-				if (count($interventionarray) > 0) {
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				if (($a['includeallinterventions']) || (count($interventionarray) > 0)) {
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
 						$interventionname = $rowA['intervention_name'];
@@ -1304,9 +1309,6 @@
 							$t[$row]['Height'] = $subj['height'];
 							$t[$row]['Weight'] = $subj['weight'];
 						}
-						if ($includeDOB) {
-							$t[$row]['DOB'] = $subj['dob'];
-						}
 						$t[$row]['AgeAtEvent'] = $age;
 						$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 						$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1347,20 +1349,23 @@
 			if (($a['pipelineresultname'] != "") && ($a['pipelineid'] != "NONE")) {
 				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
 				$resultnameids = array();
-				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
-				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				$paramsX = array();
+				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname'], $paramsX);
+				$resultX = ABQuery($sqlstringX, $paramsX, __LINE__);
 				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 					$resultnameids[] = $rowX['resultname_id'];
 					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
 				}
 
 				if (count($resultnameids) > 0) {
-					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND (" . CreateSQLSearchString("a.pipeline_id", $a['pipelineid']) . ") AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = " . $subj['subjectid'] . " ORDER BY c.study_num, c.study_datetime";
+					$paramsA = array((int)$projectid);
+					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = ? AND (" . CreateSQLSearchString("a.pipeline_id", $a['pipelineid'], $paramsA) . ") AND b.result_nameid IN(" . implode(",", array_fill(0, count($resultnameids), "?")) . ") AND b.result_type = 'v' AND e.subject_id = ? ORDER BY c.study_num, c.study_datetime";
+					$paramsA = array_merge($paramsA, $resultnameids, array((int)$subj['subjectid']));
 					
 					$laststudyid = "";
 					
 					/* create a hash of series datetimes */
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					if (mysqli_num_rows($resultA) > 0) {
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 							$studyage = $rowA['ageinmonths']/12.0;
@@ -1384,9 +1389,15 @@
 							/* if we should search for a series datetime */
 							$variabledatetime = $studydatetime;
 							if ($a['pipelineseriesdatetime'] != "") {
-								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
-								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
-								if (mysqli_num_rows($resultB) > 0) {
+								$resultB = null;
+								$seriestable = GetSeriesTableName($studymodality);
+								if ($seriestable != "") {
+									$paramsB = array();
+									$sqlstringB = "select series_datetime from `$seriestable` where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime'], $paramsB) . ") and study_id = ? limit 1";
+									$paramsB[] = (int)$studyid;
+									$resultB = ABQuery($sqlstringB, $paramsB, __LINE__);
+								}
+								if ($resultB && (mysqli_num_rows($resultB) > 0)) {
 									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 									$variabledatetime = $rowB['series_datetime'];
 
@@ -1410,9 +1421,6 @@
 							if ($includeHeightWeight) {
 								$t[$row]['Height'] = $height;
 								$t[$row]['Weight'] = $weight;
-							}
-							if ($includeDOB) {
-								$t[$row]['DOB'] = $subj['dob'];
 							}
 							$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 							$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1451,9 +1459,6 @@
 				if ($includeHeightWeight) {
 					$t[$row]['Height'] = $subj['height'];
 					$t[$row]['Weight'] = $subj['weight'];
-				}
-				if ($includeDOB) {
-					$t[$row]['DOB'] = $subj['dob'];
 				}
 				$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 				$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1535,7 +1540,6 @@
 		$includeDuration = $a['includeduration'];
 		$includeEndDate = $a['includeenddate'];
 		$includeHeightWeight = $a['includeheightweight'];
-		$includeDOB = $a['includedob'];
 		$blankValuePlaceholder = $a['blankvalueplaceholder'];
 		$missingValuePlaceholder = $a['missingvalueplaceholder'];
 		$groupByDate = $a['groupbydate'];
@@ -1553,9 +1557,8 @@
 		}
 		
 		/* get all of the subject information */
-		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = $projectid order by a.uid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select a.*, b.* from subjects a left join enrollment b on a.subject_id = b.subject_id where b.project_id = ? order by a.uid";
+		$result = ABQuery($sqlstring, array((int)$projectid), __LINE__);
 		$i = 0;
 		while ($rowA = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$subjects[$i]['subjectid'] = $rowA['subject_id'];
@@ -1590,9 +1593,12 @@
 			/* get dose datetimes for this enrollment */
 			$interventiondoses = array();
 			if ($a['includetimesincedose']) {
-				if ($doseVariable != "") {
-					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and (" . CreateSQLSearchString("intervention_name", $a['dosevariable']) . ")";
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				$paramsA = array((int)$enrollmentid);
+				$dosestr = CreateSQLSearchString("intervention_name", $doseVariable, $paramsA);
+				/* skip when no dose variable was selected */
+				if ($dosestr != "") {
+					$sqlstringA = "select * from interventions where enrollment_id = ? and ($dosestr)";
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					$i=0;
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 						/* add the observation info to this row */
@@ -1609,20 +1615,23 @@
 
 				/* get the pipeline result names first (due to MySQL bug which prevents joining in this table in the main query) */
 				$resultnameids = array();
-				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname']);
-				$resultX = MySQLiQuery($sqlstringX,__FILE__,__LINE__);
+				$paramsX = array();
+				$sqlstringX = "select * from analysis_resultnames where " . CreateSQLSearchString("result_name", $a['pipelineresultname'], $paramsX);
+				$resultX = ABQuery($sqlstringX, $paramsX, __LINE__);
 				while ($rowX = mysqli_fetch_array($resultX, MYSQLI_ASSOC)) {
 					$resultnameids[] = $rowX['resultname_id'];
 					$resultnames[$rowX['resultname_id']] = $rowX['result_name'];
 				}
 
 				if (count($resultnameids) > 0) {
-					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = $projectid AND (" . CreateSQLSearchString("a.pipeline_id", $a['pipelineid']) . ") AND b.result_nameid IN(" . implode2(",", $resultnameids) . ") AND b.result_type = 'v' AND e.subject_id = " . $subj['subjectid'] . " ORDER BY c.study_num, c.study_datetime";
+					$paramsA = array((int)$projectid);
+					$sqlstringA = "SELECT c.study_datetime, c.study_height, c.study_weight, c.study_type, c.study_id, c.study_num, c.study_modality, e.birthdate, TIMESTAMPDIFF( MONTH, e.birthdate, c.study_datetime ) 'ageinmonths', b.* FROM analysis a LEFT JOIN analysis_results b ON a.analysis_id = b.analysis_id LEFT JOIN studies c ON a.study_id = c.study_id LEFT JOIN enrollment d on c.enrollment_id = d.enrollment_id LEFT JOIN subjects e ON d.subject_id = e.subject_id WHERE e.isactive = 1 AND d.project_id = ? AND (" . CreateSQLSearchString("a.pipeline_id", $a['pipelineid'], $paramsA) . ") AND b.result_nameid IN(" . implode(",", array_fill(0, count($resultnameids), "?")) . ") AND b.result_type = 'v' AND e.subject_id = ? ORDER BY c.study_num, c.study_datetime";
+					$paramsA = array_merge($paramsA, $resultnameids, array((int)$subj['subjectid']));
 					
 					$laststudyid = "";
 					
 					/* create a hash of series datetimes */
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					if (mysqli_num_rows($resultA) > 0) {
 						while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 							$studyage = $rowA['ageinmonths']/12.0;
@@ -1638,9 +1647,15 @@
 							/* if we should search for a series datetime */
 							$variabledatetime = $studydatetime;
 							if ($a['pipelineseriesdatetime'] != "") {
-								$sqlstringB = "select series_datetime from $studymodality" . "_series where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime']) . ") and study_id = $studyid limit 1";
-								$resultB = MySQLiQuery($sqlstringB,__FILE__,__LINE__);
-								if (mysqli_num_rows($resultB) > 0) {
+								$resultB = null;
+								$seriestable = GetSeriesTableName($studymodality);
+								if ($seriestable != "") {
+									$paramsB = array();
+									$sqlstringB = "select series_datetime from `$seriestable` where (" . CreateSQLSearchString("series_protocol", $a['pipelineseriesdatetime'], $paramsB) . ") and study_id = ? limit 1";
+									$paramsB[] = (int)$studyid;
+									$resultB = ABQuery($sqlstringB, $paramsB, __LINE__);
+								}
+								if ($resultB && (mysqli_num_rows($resultB) > 0)) {
 									$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
 									$variabledatetime = $rowB['series_datetime'];
 
@@ -1698,29 +1713,30 @@
 			/* ---------- Interventions ---------- */
 			if (($a['includeallinterventions']) || ($a['interventionname'] != "") || ($a['includeinterventiondetails']) || ($a['dosevariable'] != "")) {
 				
+				$paramsA = array((int)$enrollmentid);
+				$interventionarray = array();
 				if ($a['includeallinterventions']) {
-					$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
+					$sqlstringA = "select * from interventions where enrollment_id = ?";
 				}
 				else {
-					$interventionarray = array();
 					
 					if (is_array($a['interventionname']))
 						$interventionarray = array_merge($interventionarray, $a['interventionname']);
 					elseif (($a['interventionname'] != "") && ($a['interventionname'] != null))
 						$interventionarray[] = $a['interventionname'];
 						
-					$interventionarray = array_unique($interventionarray);
+					$interventionarray = array_unique(array_filter(array_map('trim', $interventionarray), 'strlen'));
 
-					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray);
+					$interventionstr = CreateSQLSearchString("intervention_name", $interventionarray, $paramsA);
 					if ($interventionstr == "") {
-						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid";
+						$sqlstringA = "select * from interventions where enrollment_id = ?";
 					}
 					else {
-						$sqlstringA = "select * from interventions where enrollment_id = $enrollmentid and ($interventionstr)";
+						$sqlstringA = "select * from interventions where enrollment_id = ? and ($interventionstr)";
 					}
 				}
-				if (count($interventionarray) > 0) {
-					$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+				if (($a['includeallinterventions']) || (count($interventionarray) > 0)) {
+					$resultA = ABQuery($sqlstringA, $paramsA, __LINE__);
 					while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 
 						$interventionname = $rowA['intervention_name'];
@@ -1766,9 +1782,6 @@
 							$t[$row]['Height'] = $subj['height'];
 							$t[$row]['Weight'] = $subj['weight'];
 						}
-						if ($includeDOB) {
-							$t[$row]['DOB'] = $subj['dob'];
-						}
 						$t[$row]['AgeAtEvent'] = $age;
 						$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 						$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1812,9 +1825,6 @@
 				if ($includeHeightWeight) {
 					$t[$row]['Height'] = $subj['height'];
 					$t[$row]['Weight'] = $subj['weight'];
-				}
-				if ($includeDOB) {
-					$t[$row]['DOB'] = $subj['dob'];
 				}
 				$t[$row]['EnrollGroup'] = $subj['enrollgroup'];
 				$t[$row]['AltUIDs'] = $subj['altuids'];
@@ -1982,13 +1992,32 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ABQuery ---------------------------- */
+	/* -------------------------------------------- */
+	/* prepare + bind + run a query with a variable number of parameters.
+	   ints bind as 'i', everything else as 's' */
+	function ABQuery($sqlstring, $params, $line) {
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		if (count($params) > 0) {
+			$types = "";
+			foreach ($params as $p)
+				$types .= is_int($p) ? 'i' : 's';
+			mysqli_stmt_bind_param($stmt, $types, ...$params);
+		}
+		return MySQLiBoundQuery($stmt, __FILE__, $line, $sqlstring, $params);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- CreateSQLSearchString -------------- */
 	/* -------------------------------------------- */
-	function CreateSQLSearchString($variable, $str) {
+	function CreateSQLSearchString($variable, $str, &$params) {
 		/* input string can be in the following format, and the output should be the adjacent format
-		   taskname				variable = 'taskname'
-		   task*				variable like 'task%'
-		   'task*'				variable = 'task*'
+		   taskname				variable = ?	(taskname)
+		   task*				variable like ?	(task%)
+		   'task*'				variable = ?	(task*)
+		   $variable must be a hardcoded column name; each value is appended to $params
+		   (in placeholder order) for binding by the caller
 		*/
 		//PrintVariable($variable);
 		//PrintVariable($str);
@@ -2006,20 +2035,18 @@
 
 			if (($s != "*") && ($s != "")) {
 				/* check if it has apostrophes at beginning and end */
-				if ( ($s[0] == "'") && (substr($s,-1)) ) {
-					$s = trim($s, "'");
-					
-					$strings[] = "($variable = '$s')";
+				if ( ($s[0] == "'") && (substr($s,-1) == "'") ) {
+					$params[] = trim($s, "'");
+					$strings[] = "($variable = ?)";
 				}
 				else {
 					if (contains($s, "*")) {
-						$s = str_replace("*", "%", $s);
-						$s = mysqli_real_escape_string($GLOBALS['linki'], $s);
-						$strings[] = "($variable like '$s')";
+						$params[] = str_replace("*", "%", $s);
+						$strings[] = "($variable like ?)";
 					}
 					else {
-						$s = mysqli_real_escape_string($GLOBALS['linki'], $s);
-						$strings[] = "($variable = '$s')";
+						$params[] = $s;
+						$strings[] = "($variable = ?)";
 					}
 				}
 			}

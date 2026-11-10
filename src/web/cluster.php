@@ -1817,9 +1817,12 @@
 		$qsubInts = array();
 		foreach ($memJobs as $j) { $q = (int)$j['jobid']; if ($q > 0) $qsubInts[$q] = true; }
 		if (count($qsubInts) > 0) {
-			$idlist = implode(',', array_keys($qsubInts));
+			$qsubids = array_keys($qsubInts);
+			$idlist = implode(',', array_fill(0, count($qsubids), '?'));
 			$sqlstring = "select a.analysis_qsubid, p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_qsubid in ($idlist)";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, str_repeat('i', count($qsubids)), ...$qsubids);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $qsubids);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$analysisByQsub[(string)$row['analysis_qsubid']] = array(
 					'pipeline' => (string)($row['pipeline_name'] ?? ''),

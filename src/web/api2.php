@@ -419,14 +419,16 @@
 		if (count($groupids) < 1)
 			APIRespond(true, "Archive status retrieved.", array("series" => array()));
 
-		/* these are integer IDs read straight from the database, so they are safe to inline */
-		$grouplist = implode(",", $groupids);
+		$grouplist = implode(",", array_fill(0, count($groupids), "?"));
 		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in ($grouplist) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$q = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($q, str_repeat('i', count($groupids)), ...$groupids);
+		$result = MySQLiBoundQuery($q, __FILE__, __LINE__, $sqlstring, $groupids);
 		$series = array();
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$series[] = $row;
 		}
+		mysqli_stmt_close($q);
 
 		APIRespond(true, "Archive status retrieved.", array("series" => $series));
 	}
