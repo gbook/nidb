@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 09, 2026 at 08:53 PM
+-- Generation Time: Nov 10, 2026 at 05:02 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -3103,7 +3103,7 @@ CREATE TABLE `saved_search` (
   `search_mrprotocol` longtext DEFAULT NULL,
   `search_eegprotocol` longtext DEFAULT NULL,
   `search_etprotocol` longtext DEFAULT NULL,
-  `search_pipelineid` int(11) DEFAULT NULL,
+  `search_pipelineid` longtext DEFAULT NULL,
   `search_pipelineresultname` longtext DEFAULT NULL,
   `search_pipelineseries` longtext DEFAULT NULL,
   `search_measurename` longtext DEFAULT NULL,
