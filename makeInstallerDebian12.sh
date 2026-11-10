@@ -11,7 +11,7 @@
 set -e
 cd "$(dirname "$0")"
 
-VERSION=2026.11.1741
+VERSION=2026.11.1754
 QTDIR=~/Qt/6.9.3/gcc_64
 BUILDDIR=${1:-bin}                                  # where build-rpm.sh put the binaries
 
