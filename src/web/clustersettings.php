@@ -899,7 +899,7 @@ ssh -o BatchMode=yes <?=htmlspecialchars($exampleuser)?>@<?=htmlspecialchars($ex
 		<a href="clustersettings.php"><i class="arrow left icon"></i>Compute clusters</a>
 		<div class="ui two column grid" style="margin-top: 4px">
 			<div class="column">
-				<h1 class="ui header">Monitored nodes<div class="sub header">Cluster <?=ClusterDisplayName($crow['cluster_name'] ?? '')?>. Load, CPU and memory are recorded every minute and shown on the <a href="cluster.php?clustertype=nodes">Nodes</a> page</div></h1>
+				<h1 class="ui header">Monitored nodes<div class="sub header">Cluster <?=ClusterDisplayName($crow['cluster_name'] ?? '')?>. Load, CPU and memory are recorded every minute and shown on the <a href="cluster.php?action=viewnodes">Nodes</a> page</div></h1>
 			</div>
 			<div class="right aligned column">
 				<a href="clustersettings.php?action=addnodeform&clusterid=<?=$clusterid?>" class="ui primary button"><i class="plus square icon"></i>Add node</a>

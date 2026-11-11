@@ -40,35 +40,44 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$clustertype = GetVariable("clustertype");
-	if (!in_array($clustertype, array('slurm', 'pipelines', 'diskusage', 'nodes'))) $clustertype = 'sge';
-
 	$action = GetVariable("action");
+	$tab = GetVariable("tab");
 
-	DisplayClusterPage($clustertype, $action);
+	/* ----- determine action ----- */
+	switch ($action) {
+		case 'viewslurm':
+		case 'viewpipelines':
+		case 'viewdiskusage':
+		case 'viewnodes':
+			break;
+		default:
+			$action = 'viewsge';
+	}
+
+	DisplayClusterPage($action, $tab);
 
 
 	/* -------------------------------------------- */
 	/* ------- DisplayClusterPage ----------------- */
 	/* -------------------------------------------- */
-	function DisplayClusterPage($clustertype, $action) {
-		$sgeactive       = ($clustertype === 'sge')       ? 'primary' : 'basic';
-		$slurmactive     = ($clustertype === 'slurm')     ? 'primary' : 'basic';
-		$pipelinesactive = ($clustertype === 'pipelines') ? 'primary' : 'basic';
-		$diskusageactive = ($clustertype === 'diskusage') ? 'primary' : 'basic';
-		$nodesactive     = ($clustertype === 'nodes')     ? 'primary' : 'basic';
+	function DisplayClusterPage($action, $tab) {
+		$sgeactive       = ($action === 'viewsge')       ? 'primary' : 'basic';
+		$slurmactive     = ($action === 'viewslurm')     ? 'primary' : 'basic';
+		$pipelinesactive = ($action === 'viewpipelines') ? 'primary' : 'basic';
+		$diskusageactive = ($action === 'viewdiskusage') ? 'primary' : 'basic';
+		$nodesactive     = ($action === 'viewnodes')     ? 'primary' : 'basic';
 		?>
 		<div class="ui container">
 			<div style="display:flex; align-items:center; gap:10px; margin-bottom:16px">
 				<h3 class="ui header" style="margin:0">Compute cluster</h3>
 				<div class="ui buttons">
-					<a href="cluster.php?clustertype=sge"   class="ui <?=$sgeactive?>   button">SGE</a>
-					<a href="cluster.php?clustertype=slurm" class="ui <?=$slurmactive?> button">Slurm</a>
+					<a href="cluster.php?action=viewsge"   class="ui <?=$sgeactive?>   button">SGE</a>
+					<a href="cluster.php?action=viewslurm" class="ui <?=$slurmactive?> button">Slurm</a>
 				</div>
 				<div class="ui buttons">
-					<a href="cluster.php?clustertype=pipelines" class="ui <?=$pipelinesactive?> button">Pipelines</a>
-					<a href="cluster.php?clustertype=diskusage" class="ui <?=$diskusageactive?> button">Disk usage</a>
-					<a href="cluster.php?clustertype=nodes" class="ui <?=$nodesactive?> button">Nodes</a>
+					<a href="cluster.php?action=viewpipelines" class="ui <?=$pipelinesactive?> button">Pipelines</a>
+					<a href="cluster.php?action=viewdiskusage" class="ui <?=$diskusageactive?> button">Disk usage</a>
+					<a href="cluster.php?action=viewnodes" class="ui <?=$nodesactive?> button">Nodes</a>
 				</div>
 
 				<div style="margin-left:auto; display:flex; align-items:center; gap:10px">
@@ -77,16 +86,16 @@
 				</div>
 			</div>
 
-			<? if ($clustertype === 'slurm') { ?>
-				<? DisplaySlurmTabs($action); ?>
-			<? } elseif ($clustertype === 'pipelines') { ?>
+			<? if ($action === 'viewslurm') { ?>
+				<? DisplaySlurmTabs($tab); ?>
+			<? } elseif ($action === 'viewpipelines') { ?>
 				<? DisplayPipelines(); ?>
-			<? } elseif ($clustertype === 'diskusage') { ?>
+			<? } elseif ($action === 'viewdiskusage') { ?>
 				<? DisplayDiskUsage(); ?>
-			<? } elseif ($clustertype === 'nodes') { ?>
+			<? } elseif ($action === 'viewnodes') { ?>
 				<? DisplayNodeMonitor(); ?>
 			<? } else { ?>
-				<? DisplaySGETabs($action); ?>
+				<? DisplaySGETabs($tab); ?>
 			<? } ?>
 		</div>
 
@@ -146,11 +155,11 @@
 		</style>
 		<div style="display:flex; align-items:center; gap:10px; margin-bottom:14px">
 			<? if ($nodeid > 0) { ?>
-				<a href="cluster.php?clustertype=nodes&range=<?=urlencode($range)?><?=$keep?>" class="ui basic button noderangelink"><i class="arrow left icon"></i> All nodes</a>
+				<a href="cluster.php?action=viewnodes&range=<?=urlencode($range)?><?=$keep?>" class="ui basic button noderangelink"><i class="arrow left icon"></i> All nodes</a>
 			<? } ?>
 			<div class="ui small buttons">
 				<? foreach ($ranges as $key => $r) { ?>
-					<a href="cluster.php?clustertype=nodes&range=<?=urlencode($key)?><?=($nodeid > 0) ? "&nodeid=$nodeid" : ""?><?=$keep?>" class="ui <?=($key == $range) ? 'primary' : 'basic'?> button noderangelink"><?=$r['label']?></a>
+					<a href="cluster.php?action=viewnodes&range=<?=urlencode($key)?><?=($nodeid > 0) ? "&nodeid=$nodeid" : ""?><?=$keep?>" class="ui <?=($key == $range) ? 'primary' : 'basic'?> button noderangelink"><?=$r['label']?></a>
 				<? } ?>
 			</div>
 			<? if (isAdmin()) { ?>
@@ -682,7 +691,7 @@
 							rows.push({
 								label: n.name,
 								title: n.hostname,
-								href: 'cluster.php?clustertype=nodes&nodeid=' + n.id + '&range=' + encodeURIComponent(d.range) + '&metric=' + encodeURIComponent(metric) + '&scale=' + (shared ? 'shared' : 'node') + '&style=' + style,
+								href: 'cluster.php?action=viewnodes&nodeid=' + n.id + '&range=' + encodeURIComponent(d.range) + '&metric=' + encodeURIComponent(metric) + '&scale=' + (shared ? 'shared' : 'node') + '&style=' + style,
 								status: n.status,
 								values: n.series[metric],
 								ref: (kind == 'load') ? n.series.cores : null,
