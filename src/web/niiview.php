@@ -40,48 +40,9 @@
 	require "menu.php";
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
-	$seriesid = (int)GetVariable("seriesid");
 	$intype = GetVariable("type");
-	$modality = GetVariable("modality");
 	$filename = GetVariable("filename");
-	
-	if ($seriesid != 0) {
-		/* get the path to the data */
-		$sqlstring = "select a.*, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = $seriesid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$series_num = $row['series_num'];
-		$study_num = $row['study_num'];
-		$uid = $row['uid'];
-		$datatype = $row['data_type'];
-
-		if ($datatype == "") {
-			$datatype = "$modality";
-		}
-		
-		$datapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$datatype";
-		
-		/* get list of files */
-		$files = array_diff(scandir($datapath), array('..', '.'));
-		$filearray = "['$datapath/" . implode("','$datapath/",$files) . "']";
-		//PrintVariable($filearray,'filearray');
-		if (stristr(strtolower($filename),'.nii') !== FALSE) { $ext = 'nii'; }
-		if (stristr(strtolower($filename),'.nii.gz') !== FALSE) { $ext = 'nii.gz'; }
-		if (stristr(strtolower($filename),'.dcm') !== FALSE) { $ext = 'dcm'; }
-	}
-	else {
-		$filearray = "['$filename']";
-		
-		if (stristr(strtolower($filename),'.nii') !== FALSE) { $ext = 'nii'; }
-		if (stristr(strtolower($filename),'.nii.gz') !== FALSE) { $ext = 'nii.gz'; }
-		if (stristr(strtolower($filename),'.inflated') !== FALSE) { $ext = 'inflated'; }
-		if (stristr(strtolower($filename),'.smoothwm') !== FALSE) { $ext = 'smoothwm'; }
-		if (stristr(strtolower($filename),'.sphere') !== FALSE) { $ext = 'sphere'; }
-		if (stristr(strtolower($filename),'.pial') !== FALSE) { $ext = 'pial'; }
-		if (stristr(strtolower($filename),'.fsm') !== FALSE) { $ext = 'fsm'; }
-		if (stristr(strtolower($filename),'.orig') !== FALSE) { $ext = 'orig'; }
-	}
+	/* the file is served by getfile.php (which does its own checks); NiiVue picks the format from the filename extension */
 ?>
 
 

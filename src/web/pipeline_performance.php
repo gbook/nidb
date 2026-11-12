@@ -47,23 +47,12 @@
 	//PrintVariable($_GET, "GET");
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
 	$pipelineid = (int)GetVariable("pipelineid");
 	$id = (int)GetVariable("id");
 	if ($pipelineid == 0)
 		$pipelineid = $id;
 		
-	/* determine action */
-	switch ($action) {
-		case 'editpipeline':
-			DisplayPipelineForm("edit", $id, $returntab);
-			break;
-		case 'viewusage':
-			DisplayPipelineUsage();
-			break;
-		default:
-			DisplayPipelinePerformance($pipelineid);
-	}
+	DisplayPipelinePerformance($pipelineid);
 	//PrintVariable($GLOBALS['t']);
 
 	/* ------------------------------------ functions ------------------------------------ */
@@ -93,58 +82,83 @@
 			MarkTime("Info Tab - A");
 			
 			/* gather statistics about the analyses */
-			$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'complete'";
+			$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'complete'";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$totaltime = $row['cluster_time'];
 			$totaltime = number_format(($totaltime/60/60),2);
 
 			MarkTime("Info Tab - B");
 			
-			$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'complete' and analysis_iscomplete = 1";
+			$sqlstring = "select sum(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'cluster_timesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'complete' and analysis_iscomplete = 1";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$totaltimesuccess = $row['cluster_timesuccess'];
 			$totaltimesuccess = number_format(($totaltimesuccess/60/60),2);
 			
 			MarkTime("Info Tab - C");
 
-			$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'complete'";
+			$sqlstring = "select count(*) 'numcomplete' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'complete'";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numcomplete = $row['numcomplete'];
 
 			MarkTime("Info Tab - D");
 
-			$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'complete' and analysis_iscomplete = 1";
+			$sqlstring = "select count(*) 'numcompletesuccess' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'complete' and analysis_iscomplete = 1";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numcompletesuccess = $row['numcompletesuccess'];
 
 			MarkTime("Info Tab - E");
 			
-			$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'processing'";
+			$sqlstring = "select count(*) 'numprocessing' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'processing'";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numprocessing = $row['numprocessing'];
 			
 			MarkTime("Info Tab - F");
 			
-			$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status = 'pending'";
+			$sqlstring = "select count(*) 'numpending' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status = 'pending'";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			$numpending = $row['numpending'];
 			
 			/* group by and count() */
-			$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid group by analysis_status";
+			$sqlstring = "select analysis_status, count(*) 'count' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? group by analysis_status";
 			$numTotal = 0;
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			/* per-status counts: start at 0 so a status with no analyses isn't an undefined variable */
+			$numComplete = $numPending = $numProcessing = $numError = $numSubmitted = $numNotCompleted = 0;
+			$numNoMatchingStudies = $numRerunResults = $numNoMatchingStudyDependency = $numIncompleteDependency = 0;
+			$numBadDependency = $numNoMatchingSeries = $numOddDependencyStatus = $numStarted = 0;
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$status = $row['analysis_status'];
 				$count = $row['count'];
@@ -168,9 +182,14 @@
 			MarkTime("Info Tab - G");
 			
 			/* get mean processing times */
-			$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = $pipelineid and analysis_status <> ''";
+			$analysistimes = array();
+			$clustertimes = array();
+			$sqlstring = "select analysis_id, timestampdiff(second, analysis_startdate, analysis_enddate) 'analysis_time', timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate) 'cluster_time' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.pipeline_id = ? and analysis_status <> ''";
 			//PrintSQL($sqlstring);
-			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+			mysqli_stmt_close($stmt);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				//$analysis_id = $row['analysis_id'];
 				$analysistimes[] = $row['analysis_time'];
@@ -215,7 +234,7 @@
 								</tr>
 								<tr>
 									<td>Error</td>
-									<td><?=$numerror?></td>
+									<td><?=$numError?></td>
 								</tr>
 							</table>
 						</div>
@@ -239,8 +258,11 @@
 									<td><b>Count</b></td>
 								</tr>
 							<?
-								$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = $pipelineid and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', hostname, count(hostname) 'count' FROM (select analysis_clusterstartdate, analysis_clusterenddate, trim(Replace(Replace(Replace(analysis_hostname,'\t',''),'\n',''),'\r','')) 'hostname' from `analysis` WHERE pipeline_id = ? and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by hostname order by hostname";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+								mysqli_stmt_close($stmt);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$cpuhrs = number_format(($row['avgcpu']/60/60),2);
 									$count = $row['count'];
@@ -265,8 +287,11 @@
 						<div class="meta">Total disk usage</div>
 						<div class="description">
 							<?
-								$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = $pipelineid";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$sqlstring = "select sum(analysis_disksize) 'disksize' from analysis where pipeline_id = ?";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+								mysqli_stmt_close($stmt);
 								$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 								$totaldiskusage = $row['disksize'];
 							?>
@@ -289,8 +314,11 @@
 								</tr>
 							<?
 								$datarows[] = "['Date', 'Setup time', 'Cluster time']";
-								$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', avg(timestampdiff(second, analysis_startdate, analysis_enddate)) 'avgsetup', date_format(analysis_clusterstartdate, '%Y-%m-%d') 'analysisdate', count(*) 'count' FROM (select analysis_startdate, analysis_enddate, analysis_clusterstartdate, analysis_clusterenddate from `analysis` WHERE pipeline_id = $pipelineid and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by date(analysis_startdate) order by date(analysis_startdate)";
-								$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+								$sqlstring = "select avg(timestampdiff(second, analysis_clusterstartdate, analysis_clusterenddate)) 'avgcpu', avg(timestampdiff(second, analysis_startdate, analysis_enddate)) 'avgsetup', date_format(analysis_clusterstartdate, '%Y-%m-%d') 'analysisdate', count(*) 'count' FROM (select analysis_startdate, analysis_enddate, analysis_clusterstartdate, analysis_clusterenddate from `analysis` WHERE pipeline_id = ? and (analysis_iscomplete = 1 or analysis_status = 'complete')) hostnames group by date(analysis_startdate) order by date(analysis_startdate)";
+								$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+								mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+								$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+								mysqli_stmt_close($stmt);
 								while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 									$cpuhrs = number_format(($row['avgcpu']/60/60),3,'.','');
 									$setuphrs = number_format(($row['avgsetup']/60/60),3,'.','');

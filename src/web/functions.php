@@ -349,17 +349,6 @@
 				$field = mysqli_fetch_field($result);
 				$fieldnames[] = $field->name;
 			}
-			/*
-			$str = implode(",",$fieldnames) . "\n";
-
-			while($row = mysqli_fetch_row($result))
-			{
-				foreach($row as $cell)
-					$cells[] = $cell;
-
-				$str .= implode(",",$cells) . "\n";
-				unset($cells);
-			}*/
 			
 			$table = array();
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
@@ -1497,6 +1486,25 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- IsAnyProjectAdmin ------------------ */
+	/* -------------------------------------------- */
+	/* true if the current user is project admin on at least one project */
+	function IsAnyProjectAdmin() {
+		$userid = (int)($_SESSION['userid'] ?? 0);
+		if ($userid <= 0)
+			return false;
+
+		$sqlstring = "select 1 from user_project where user_id = ? and project_admin = 1 limit 1";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $userid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$userid]);
+		$found = (($result) && (mysqli_num_rows($result) > 0));
+		mysqli_stmt_close($stmt);
+		return $found;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetCurrentUserProjectPermissions --- */
 	/* -------------------------------------------- */
 	/* Returns [projectid => [projectname, projectadmin, viewdata, viewphi, modifydata, modifyphi]] for
@@ -2212,8 +2220,16 @@
 	/* -------------------------------------------- */
 	function DisplayTags($tags, $idtype) {
 		$html = "";
+		if (!is_array($tags))
+			return $html;
+
+		/* tags are free text: urlencode for the link, escape for the label and title */
+		$url = "tags.php?action=displaytag&idtype=" . urlencode((string)$idtype) . "&tag=";
 		foreach ($tags as $tag) {
-			$html .= "<a href='tags.php?action=displaytag&idtype=$idtype&tag=$tag' class='ui small basic yellow label' title='Show all $idtype"."s with the <i>$tag</i> tag'>$tag</a></span>";
+			$tag = (string)$tag;
+			$label = htmlspecialchars($tag, ENT_QUOTES);
+			$title = htmlspecialchars("Show all {$idtype}s with the '$tag' tag", ENT_QUOTES);
+			$html .= "<a href='" . htmlspecialchars($url . urlencode($tag), ENT_QUOTES) . "' class='ui small basic yellow label' title='$title'>$label</a>";
 		}
 		return $html;
 	}
@@ -4591,53 +4607,7 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 			?>Config file has been written to <code><?=$GLOBALS['cfg']['cfgpath']?></code><br><?
 		}
 
-		/* write a cconfig file for when NiDB is run from a cluster. this only contains basic info, separate DB login, and no paths */
-		$str = "# NiDB cluster configuration file (for nidb running on the cluster)
-# ------------------------------------------------------------------------------
-# NIDB nidb.cfg
-# Copyright (C) 2004-$year
-# Gregory A Book (gregory.book@hhchealth.org) (gregory.a.book@gmail.com)
-# Olin Neuropsychiatry Research Center, Hartford Hospital
-# ------------------------------------------------------------------------------
-# GPLv3 License:
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see http://www.gnu.org/licenses/.
-# ------------------------------------------------------------------------------
-
-# ----- Database -----
-[mysqlhost] = $mysqlhost
-[mysqldatabase] = $mysqldatabase
-[mysqlclusteruser] = $mysqlclusteruser
-[mysqlclusterpassword] = $mysqlclusterpassword
-
-# ----- Site/server options -----
-[version] = $version
-[sitename] = $sitename
-[clusteranalysisdir] = $clusteranalysisdir
-[clusteranalysisdirb] = $clusteranalysisdirb
-";
-		$clustercfgfile = dirname($GLOBALS['cfg']['cfgpath']) . "/nidb-cluster.cfg";
-		$ret = file_put_contents($clustercfgfile, $str);
-		if (($ret === false) || ($ret === null) || ($ret == 0)) {
-			?><div class="staticmessage">Problem writing [<?=$clustercfgfile?>]. Is the file writeable to the [<?=system("whoami"); ?>] account?</div><?
-		}
-		else {
-			?>Cluster config file has been written to <code><?=$clustercfgfile?></code><?
-		}
-		
 		?></div><?
-
 	}
 
 

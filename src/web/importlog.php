@@ -245,12 +245,17 @@
 		<br>
 		<?
 		if ($useronly) {
-			$sqlstring = "select * from import_transactions where transaction_username = '" . $GLOBALS['username'] . "' order by transaction_startdate desc";
+			$username = $GLOBALS['username'] ?? '';
+			$sqlstring = "select * from import_transactions where transaction_username = ? order by transaction_startdate desc";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+			mysqli_stmt_close($stmt);
 		}
 		else {
 			$sqlstring = "select * from import_transactions order by transaction_startdate desc";
+			$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		}
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$transactionid = $row['importtrans_id'];
 			$transaction_startdate = $row['transaction_startdate'];
@@ -268,21 +273,27 @@
 			$numblank = 0;
 			$numerror = 0;
 			$numnull = 0;
-			unset($counts);
-			
+			$counts = array();
+
 			$numblocks = 0;
-			$sqlstringA = "select import_status, count(*) 'count' from import_requests where import_transactionid = '$transactionid' group by import_status";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$sqlstringA = "select import_status, count(*) 'count' from import_requests where import_transactionid = ? group by import_status";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'i', $transactionid);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$transactionid]);
+			mysqli_stmt_close($stmtA);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$counts[$rowA['import_status']] = $rowA['count'];
+				$counts[$rowA['import_status'] ?? ''] =$rowA['count'];
 				$numblocks += $rowA['count'];
 			}
 
-			$sqlstringA = "select sum(numfilesfail) 'numfail', sum(numfilestotal) 'numtotal' from import_requests where import_transactionid = '$transactionid'";
-			$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
+			$sqlstringA = "select sum(numfilesfail) 'numfail', sum(numfilestotal) 'numtotal' from import_requests where import_transactionid = ?";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'i', $transactionid);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$transactionid]);
+			mysqli_stmt_close($stmtA);
 			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$numfilesfail = $rowA['numfail'];
-			$numfilestotal = $rowA['numtotal'];
+			$numfilesfail = $rowA['numfail'] ?? 0;
+			$numfilestotal = $rowA['numtotal'] ?? 0;
 
 			if ($transaction_status == 'uploading') {
 				$status = "Receiving";
@@ -293,15 +304,15 @@
 				$status_message = "An upload transaction has been completed. Data have been received by NiDB and are being checked, but may not yet be archived or available for download";
 			}
 
-			$numuploading = (int)$counts['uploading'];
-			$numpending = (int)$counts['pending'];
-			$numreceiving = (int)$counts['receiving'];
-			$numreceived = (int)$counts['received'];
-			$numarchiving = (int)$counts['archiving'];
-			$numarchived = (int)$counts['archived'];
-			$numblank = (int)$counts[''];
-			$numerror = (int)$counts['error'];
-			$numnull = (int)$counts['null'];
+			$numuploading = (int)($counts['uploading'] ?? 0);
+			$numpending = (int)($counts['pending'] ?? 0);
+			$numreceiving = (int)($counts['receiving'] ?? 0);
+			$numreceived = (int)($counts['received'] ?? 0);
+			$numarchiving = (int)($counts['archiving'] ?? 0);
+			$numarchived = (int)($counts['archived'] ?? 0);
+			$numblank = (int)($counts[''] ?? 0);
+			$numerror = (int)($counts['error'] ?? 0);
+			$numnull = (int)($counts['null'] ?? 0);
 
 			if (($numerror > 0) || ($numfilesfail > 0)) {
 				$statusicon = "&#9940;";
@@ -382,8 +393,11 @@
 				</tr>
 			</thead>
 		<?
-		$sqlstring = "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = $transactionid order by import_datetime desc";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$sqlstring = "select a.*, b.project_name, c.site_name, d.instance_name from import_requests a left join projects b on a.import_projectid = b.project_id left join nidb_sites c on a.import_siteid = c.site_id left join instance d on a.import_instanceid = d.instance_id where a.import_transactionid = ? order by import_datetime desc";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $transactionid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$transactionid]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			$importrequestid = $row['importrequest_id'];
 			$import_datatype = $row['import_datatype'];
@@ -559,17 +573,8 @@
 	/* ------- DisplaySingleTransaction ----------- */
 	/* -------------------------------------------- */
 	function DisplaySingleTransaction($transactionid) {
-		$sqlstring = "select * from import_requests where import_transactionid = $transactionid";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$groupids[] = $row['importrequest_id'];
-		}
-		$grouplist = implode2(',',$groupids);
-		if ($grouplist == "") {
-			$grouplist = 'null';
-		}
-		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in ($grouplist) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
-		//$sqlstring = "select * from importlogs where importgroupid in ($grouplist)";
+		/* import logs for every import request (upload block) in this transaction */
+		$sqlstring = "select *, timediff(max(importstartdate), min(importstartdate)) 'importtime', date_format(max(importstartdate), '%b %e, %Y %T') 'maximportdatetime', date_format(studydatetime_orig, '%b %e, %Y %T') 'studydatetime', date_format(seriesdatetime_orig, '%b %e, %Y %T') 'seriesdatetime', count(*) 'numfiles' from importlogs where importgroupid in (select importrequest_id from import_requests where import_transactionid = ?) group by stationname_orig, studydatetime_orig, seriesnumber_orig order by studydatetime_orig desc, seriesdatetime_orig";
 		?>
 		
 <style>
@@ -626,7 +631,10 @@
 			</thead>
 			<tbody>
 		<?
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $transactionid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$transactionid]);
+		mysqli_stmt_close($stmt);
 		//PrintSQLTable($result,"importlog.php?action=displaylog",$orderby,8);
 		//PrintSQLTable($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {

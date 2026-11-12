@@ -120,13 +120,10 @@
 									</div>
 									<div class="extra">
 										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui basic orange label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
-										<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui basic red label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+										<? if (in_array("REQUIRES_APPROVAL", $flags)) { ?><div class="ui basic red label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
 									</div>
 								</div>
 								<div class="right aligned column">
-									<? if (isAdmin()) { ?>
-									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
-									<?} ?>
 									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
 								</div>
 							</div>

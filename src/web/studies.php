@@ -2929,9 +2929,6 @@
 									<a href="series.php?action=scanparams&seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><?=$series_desc?></a>&nbsp;
 									<a href="dicom.php?seriesid=<?=$mrseries_id?>&modality=<?=$modality?>"><em data-emoji=":x_ray:" class="small"></em></a>
 									<!--<span id="thumbnail<?=$series_num?>"></span>-->
-									<? //if (($bold_reps < 2) && ($GLOBALS['cfg']['allowrawdicomexport'])) { ?>
-									<!--&nbsp;<a href="viewimage.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>"><i class="cube icon"></i></a>-->
-									<? //} ?>
 									<?php $series_tooltip = "<b>Series Description</b> - $series_desc<br><b>Protocol</b> - $protocol<br><b>Sequence Description</b> - $sequence_h<br><b>TE</b> - {$series_te}ms<br><b>Magnet</b> - {$series_fieldstrength}T<br><b>Flip angle</b> - {$series_flip}&deg;<br><b>Image type</b> - $imagetype<br><b>Image comment</b> - $image_comments<br><b>Phase encoding</b> - $phase"; ?>
 					<span class="series-info-tooltip" data-html="<?=htmlspecialchars($series_tooltip, ENT_QUOTES)?>"><i class="ui info circle icon"></i></span>
 									

@@ -25,26 +25,6 @@
 	namespace NIDB;
 	
 	/* -------------------------------------------- */
-	/* ------- GetModalityList -------------------- */
-	/* -------------------------------------------- */
-	function GetModalityList($withdesc = false) {
-		$sqlstring = "select * from modalities order by mod_desc";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$modalities[] = $row['mod_code'];
-			$descriptions[] = $row['mod_code'];
-		}
-			
-		if ($withdesc) {
-			return array($modalities,$descriptions);
-		}
-		else {
-			return $modalities;
-		}
-	}
-
-	
-	/* -------------------------------------------- */
 	/* ------- CreateUID -------------------------- */
 	/* -------------------------------------------- */
 	function CreateUID($prefix, $numletters=3) {
@@ -57,6 +37,7 @@
 		
 		$badarray = array('fuck','shit','piss','tits','dick','cunt','twat','jism','jizz','arse','damn','fart','hell','wang','wank','gook','kike','kyke','spic','arse','dyke','cock','muff','pusy','butt','crap','poop','slut','dumb','snot','boob','dead','anus','clit','homo','poon','tard','kunt','tity','tit','ass','dic','dik','fuk');
 		$safe = false;
+		$C8 = ''; /* only set when $numletters == 4; initialize to avoid an undefined-variable warning on PHP 8 */
 		
 		while (!$safe) {
 			# ASCII codes 65 through 90 are upper case letters

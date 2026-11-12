@@ -199,38 +199,54 @@ class qqFileUploader {
 
 	
 /* params are stored in $_GET */
-$modality = strtolower(GetVariable("modality"));
-$studyid = (int)GetVariable("studyid");
+$modality = strtolower((string)GetVariable("modality"));
 $seriesid = (int)GetVariable("seriesid");
 
-if ($modality == "mr") {
-	$uploadpath = $GLOBALS['dicomincomingpath'] . '/';
-}
-elseif ($modality == "mrbeh") {
-	$sqlstring = "select a.series_num, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.mrseries_id = '$seriesid'";
-	
-	$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-	$study_num = $row['study_num'];
-	$uid = $row['uid'];
-	$series_num = $row['series_num'];
-	$uploadpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/beh/";
-	if (!file_exists($uploadpath)) {
-		mkdir($uploadpath,0777,true);
-	}
+/* --------------------------------------------------------------------------
+   Validate the request before touching the filesystem.
+   'mrbeh' = behavioral files attached to an MR series (stored in <series>/beh/).
+   Otherwise the modality must be a real NiDB modality: it becomes both a table
+   name and a directory name, so it is never used unvalidated.
+   -------------------------------------------------------------------------- */
+if ($modality == "mrbeh") {
+	$seriesmodality = "mr";
+	$subdir = "beh";
 }
 else {
-	$sqlstring = "select a.series_num, b.study_num, d.uid from $modality" . "_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join projects e on c.project_id = e.project_id where a.$modality" . "series_id = $seriesid";
-	//echo "$sqlstring\n";
-	$result2 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-	$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-	$study_num = $row['study_num'];
-	$uid = $row['uid'];
-	$series_num = $row['series_num'];
-	$uploadpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/" . strtolower($modality) . "/";
-	if (!file_exists($uploadpath)) {
-		mkdir($uploadpath,0777,true);
+	$seriesmodality = $modality;
+	$subdir = $modality;
+	if (($seriesmodality == "mr") || (GetSeriesTableName($seriesmodality) == '') || !IsNiDBModality($seriesmodality)) {
+		echo htmlspecialchars(json_encode(array('error' => 'Invalid modality')), ENT_NOQUOTES);
+		exit(0);
 	}
+}
+$seriestable = GetSeriesTableName($seriesmodality);
+
+$sqlstring = "select a.series_num, b.study_num, c.project_id, d.uid from `$seriestable` a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.`{$seriesmodality}series_id` = ?";
+$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+$result2 = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+mysqli_stmt_close($stmt);
+$row = mysqli_fetch_array($result2, MYSQLI_ASSOC);
+if (!$row || (($row['uid'] ?? '') == '')) {
+	echo htmlspecialchars(json_encode(array('error' => 'Series not found')), ENT_NOQUOTES);
+	exit(0);
+}
+
+/* uploading files into a series is a data change: Edit Data on the series' project */
+$projectid = (int)$row['project_id'];
+$perms = GetCurrentUserProjectPermissions(array($projectid));
+if (!GetPerm($perms, 'modifydata', $projectid)) {
+	echo htmlspecialchars(json_encode(array('error' => 'You do not have permission to upload files to this series')), ENT_NOQUOTES);
+	exit(0);
+}
+
+$study_num = (int)$row['study_num'];
+$uid = $row['uid'];
+$series_num = (int)$row['series_num'];
+$uploadpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$subdir/";
+if (!file_exists($uploadpath)) {
+	mkdir($uploadpath,0777,true);
 }
 
 // list of valid extensions, ex. array("jpeg", "xml", "bmp")
@@ -238,59 +254,26 @@ $allowedExtensions = array();
 // max file size in bytes
 $sizeLimit = $GLOBALS['cfg']['uploadsizelimit'] * 1024 * 1024;
 
-//echo "check 0 $sizeLimit\n";
-
-//echo "before creating uploader";
 $uploader = new qqFileUploader($allowedExtensions, $sizeLimit);
-//echo "done creating uploader";
 $result = $uploader->handleUpload($uploadpath);
 
-//exit(0);
+if (($result['success'] ?? false) == true) {
+	/* update the DB with the files that were uploaded */
+	$filecount = count(glob("$uploadpath*") ?: array());
+	$filesize = GetDirectorySize($uploadpath);
 
-//print_r($result);
-if ($result['success'] == 1) {
 	if ($modality == "mrbeh") {
-		/* update the DB with the files that were uploaded */
-		$filecount = count(glob("$uploadpath*"));
-		$filesize = GetDirectorySize($uploadpath);
-		
-		$sqlstring = "update mr_series set numfiles_beh = $filecount, beh_size = $filesize where mrseries_id = $seriesid";
-		//echo "$sqlstring";
-		$result3 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
-		
-		/* copy the uploaded files and directories to the backup directory */
-		$backupdir = $GLOBALS['backuppath'] . "/$uid/$study_num/$series_num";
-		if (!file_exists($backupdir)) {
-			mkdir($backupdir,0777,true);
-		}
-		$systemstring = "cp -R " . $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/* $backupdir";
-		$output = `$systemstring`;
-		$systemstring = "chmod -R 777 $backupdir";
-		$output = `$systemstring`;
-	}
-	elseif ($modality == "mr") {
-		/* if its a zip file, unzip it (without paths) */
-		chdir($uploadpath);
-		$zips = glob("$uploadpath*.zip");
-		//print_r($zips);
-		foreach ($zips as $zip) {
-			$systemstring = "unzip -j '$zip'";
-			`$systemstring`;
-			$systemstring = "rm '$zip'";
-			`$systemstring`;
-		}
+		$sqlstring = "update mr_series set numfiles_beh = ?, beh_size = ? where mrseries_id = ?";
 	}
 	else {
-		/* update the DB with the files that were uploaded */
-		$filecount = count(glob("$uploadpath*"));
-		$filesize = GetDirectorySize($uploadpath);
-		$systemstring = "chmod -R 777 $uploadpath";
+		$systemstring = "chmod -R 777 " . escapeshellarg($uploadpath);
 		$output = `$systemstring`;
-		
-		$sqlstring = "update $modality" . "_series set series_numfiles = $filecount, series_size = $filesize where $modality" . "series_id = $seriesid";
-		//echo "$sqlstring";
-		$result3 = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "update `$seriestable` set series_numfiles = ?, series_size = ? where `{$seriesmodality}series_id` = ?";
 	}
+	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+	mysqli_stmt_bind_param($stmt, 'iii', $filecount, $filesize, $seriesid);
+	MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$filecount, $filesize, $seriesid]);
+	mysqli_stmt_close($stmt);
 }
 
 // to pass data through iframe you will need to encode all html tags
@@ -299,31 +282,27 @@ echo htmlspecialchars(json_encode($result), ENT_NOQUOTES);
 
 /* functions must be at the end of the script, classes at the beginning, eh? */
 function GetDirectorySize($dirname) {
+	$folderSize = 0;
 
 	// open the directory, if the script cannot open the directory then return folderSize = 0
-	$dir_handle = opendir($dirname);
+	$dir_handle = @opendir($dirname);
 	if (!$dir_handle) return 0;
 
 	// traversal for every entry in the directory
-	while ($file = readdir($dir_handle)){
+	while (($file = readdir($dir_handle)) !== false) {
 
 		// ignore '.' and '..' directory
-		if  ($file  !=  "."  &&  $file  !=  "..")  {
-
-			// if entry is directory then go recursive !
-			if  (is_dir($dirname."/".$file)){
-					  $folderSize += GetFolderSize($dirname.'/'.$file);
-
-			// if file then accumulate the size
-			} else {
-				  $folderSize += filesize($dirname."/".$file);
+		if (($file != ".") && ($file != "..")) {
+			if (is_dir($dirname."/".$file)) {
+				$folderSize += GetDirectorySize($dirname.'/'.$file); // recurse into subdirectories
+			}
+			else {
+				$folderSize += filesize($dirname."/".$file);
 			}
 		}
 	}
-	// chose the directory
 	closedir($dir_handle);
 
-	// return $dirname folder size
 	return $folderSize;
 }
 ?>

@@ -46,30 +46,11 @@
 	/* ----- setup variables ----- */
 	$action = GetVariable("action");
 	$id = (int)GetVariable("id");
-    $name = GetVariable("name");
-    $desc = GetVariable("desc");
-    $startdate = GetVariable("startdate");
-    $enddate = GetVariable("enddate");
-    $flag_registration = GetVariable("flag_registration");
-    $flag_application = GetVariable("flag_application");
 	
 	/* determine action */
 	switch ($action) {
-		case 'delete':
-			DeleteDataset($id);
-			break;
 		case 'view':
 			ViewDataset($id);
-			break;
-		case 'form':
-			DisplayDatasetForm($id);
-			break;
-		case 'add':
-			AddDataset($name, $desc, $startdate, $enddate, $flag_registration, $flag_application);
-			DisplayDatasetList();
-			break;
-		case 'update':
-			UpdateDataset($id, $name, $desc, $startdate, $enddate, $flag_registration, $flag_application);
 			break;
 		default:
 			DisplayDatasetList();
@@ -83,17 +64,24 @@
 	/* -------------------------------------------- */
 	function ViewDataset($id) {
 
-		$publicdatasetid = mysqli_real_escape_string($GLOBALS['linki'], $id);
+		$id = (int)$id;
 		
-		$sqlstring = "select * from public_datasets where publicdataset_id = $id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from public_datasets where publicdataset_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		if (!$row) {
+			Error("Dataset not found");
+			return;
+		}
 		
 		$name = $row['publicdataset_name'];
 		$desc = $row['publicdataset_desc'];
 		$startdate = $row['publicdataset_startdate'];
 		$enddate = $row['publicdataset_enddate'];
-		$flags = explode(",", $row['publicdataset_flags']);
+		$flags = explode(",", $row['publicdataset_flags'] ?? '');
 		$createdate = $row['publicdataset_createdate'];
 		$createdby = $row['publicdataset_createdby'];
 
@@ -108,12 +96,15 @@
 			Available <?=$startdate?> to <?=$enddate?>
 			<br>
 			<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
-			<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+			<? if (in_array("REQUIRES_APPROVAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
 			<br><br>
 		<?
 		
-		$sqlstring = "select * from publicdataset_downloads where dataset_id $publicdataset_id";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from publicdataset_downloads where dataset_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		$numdownloads = mysqli_num_rows($result);
 		if ($numdownloads > 0) {
 			?>
@@ -200,9 +191,6 @@
 				<a class="ui button" href="">Show all datasets</a>
 			</div>
 			<div class="right aligned column">
-				<? if (isAdmin()) { ?>
-				<a class="ui primary button" href="publicdatasets.php?action=form"><i class="plus icon"></i> New Dataset</a>
-				<? } ?>
 			</div>
 		</div>
 		
@@ -211,15 +199,19 @@
 		
 		<div class="ui divided items">
 		<?
-			$sqlstring = "select * from public_datasets where publicdataset_createdby = '" . $_SESSION['username'] . "' order by publicdataset_createdate desc";
-			$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+			$username = $_SESSION['username'] ?? '';
+			$sqlstring = "select * from public_datasets where publicdataset_createdby = ? order by publicdataset_createdate desc";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 's', $username);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$username]);
+			mysqli_stmt_close($stmt);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$id = $row['publicdataset_id'];
 				$name = $row['publicdataset_name'];
 				$desc = $row['publicdataset_desc'];
 				$startdate = $row['publicdataset_startdate'];
 				$enddate = $row['publicdataset_enddate'];
-				$flags = explode(",", $row['publicdataset_flags']);
+				$flags = explode(",", $row['publicdataset_flags'] ?? '');
 				$createdate = $row['publicdataset_createdate'];
 				$createdby = $row['publicdataset_createdby'];
 				?>
@@ -239,13 +231,10 @@
 									</div>
 									<div class="extra">
 										<? if (in_array("REQUIRES_REGISTRATION", $flags)) { ?><div class="ui label" title="Registration on this NiDB instance is required to download this dataset">Registration required</div><? } ?>
-										<? if (in_array("REQUIRES_APPROVFAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
+										<? if (in_array("REQUIRES_APPROVAL", $flags)) { ?><div class="ui label" title="An application must be submitted and approved to access this dataset">Application required</div><? } ?>
 									</div>
 								</div>
 								<div class="right aligned column">
-									<? if (isAdmin()) { ?>
-									<a class="ui button" href="publicdatasets.php?action=form&id=<?=$id?>"><i class="pencil alternate icon"></i> Edit</a>
-									<?} ?>
 									<a class="ui button" href="publicdatasets.php?action=view&id=<?=$id?>"><i class="eye icon"></i> View Dataset</a>
 								</div>
 							</div>

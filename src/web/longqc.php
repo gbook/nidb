@@ -88,10 +88,13 @@
 					$ownerusername = $row['ownerusername'];
 					$grouptype = $row['group_type'];
 					
-					$sqlstring2 = "select count(*) 'count' from group_data where group_id = $id";
-					$result2 = MySQLiQuery($sqlstring2, __FILE__, __LINE__);
+					$sqlstring2 = "select count(*) 'count' from group_data where group_id = ?";
+					$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
+					mysqli_stmt_bind_param($stmt2, 'i', $id);
+					$result2 = MySQLiBoundQuery($stmt2, __FILE__, __LINE__, $sqlstring2, [$id]);
+					mysqli_stmt_close($stmt2);
 					$row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC);
-					$count = $row2['count'];
+					$count = $row2['count'] ?? 0;
 			?>
 			<tr>
 				<td><a href="longqc.php?action=viewprotocols&groupid=<?=$id?>"><?=$name?></a></td>
@@ -113,14 +116,19 @@
 	/* -------------------------------------------- */
 	function DisplayProtocolList($groupid) {
 		
-		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$grouptype = "";
+		$itemids = array();
+		$modalities = array();
+		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $groupid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$name = $row['group_name'];
-			$ownerusername = $row['ownerusername'];
 			$grouptype = $row['group_type'];
-			$itemids[] = "'".$row['data_id']."'";
-			$modalities[$row['modality']] = $row['modality'];
+			if ($row['data_id'] === null) continue; /* group with no members */
+			$itemids[] = (int)$row['data_id'];
+			$modalities[$row['modality'] ?? ''] = $row['modality'] ?? '';
 		}
 		?>
 		<table class="ui very small very compact celled selectable grey table">
@@ -135,11 +143,18 @@
 		<?
 		//PrintVariable($itemids);
 		//PrintVariable($modalities);
-		$studyids = implode(",",$itemids);
-		if ($grouptype == "study") {
+		if (($grouptype == "study") && (count($itemids) > 0)) {
+			$placeholders = implode(",", array_fill(0, count($itemids), "?"));
+			$types = str_repeat("i", count($itemids));
 			foreach ($modalities as $key => $value) {
-				$sqlstring = "select distinct series_desc, series_altdesc, series_protocol, series_sequencename from $key" . "_series where study_id in ($studyids)";
-				$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+				/* the modality is a table name, which can't be bound, so validate it instead */
+				$table = GetSeriesTableName($key);
+				if (($table == '') || !IsNiDBModality($key)) continue;
+				$sqlstring = "select distinct series_desc, series_altdesc, series_protocol, series_sequencename from `$table` where study_id in ($placeholders)";
+				$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+				mysqli_stmt_bind_param($stmt, $types, ...$itemids);
+				$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $itemids);
+				mysqli_stmt_close($stmt);
 				while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 					$desc = $row['series_desc'];
 					$altdesc = $row['series_altdesc'];
@@ -167,40 +182,57 @@
 	function DisplayLonitudinalQC($groupid, $protocol) {
 		
 		# this only works for study groups
-		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = $groupid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$protocol = (string)$protocol;
+		$iosnrs = array();
+		$pvsnrs = array();
+		$motionrsqs = array();
+		$moves = array();
+		$validmodalities = array();
+
+		$sqlstring = "select a.*, b.* from groups a left join group_data b on a.group_id = b.group_id where a.group_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $groupid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$groupid]);
+		mysqli_stmt_close($stmt);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$name = $row['group_name'];
-			$ownerusername = $row['ownerusername'];
-			$grouptype = $row['group_type'];
-			$studyid = $row['data_id'];
-			$modality = $row['modality'];
-			$seriesid = $row[$modality . "series_id"];
-			
-			$sqlstringA = "select *, unix_timestamp(DATE(series_datetime)) 'seriesdate' from $modality"."_series where study_id = $studyid and series_desc = '$protocol' order by seriesdate asc";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$studyid = (int)($row['data_id'] ?? 0);
+			$modality = strtolower($row['modality'] ?? '');
+
+			/* the modality is a table name, which can't be bound, so validate it instead */
+			/* cache the check per modality: IsNiDBModality() runs two queries and a group can have many studies */
+			if (!array_key_exists($modality, $validmodalities))
+				$validmodalities[$modality] = ((GetSeriesTableName($modality) != '') && IsNiDBModality($modality));
+			if (($studyid <= 0) || !$validmodalities[$modality]) continue;
+			$table = GetSeriesTableName($modality);
+
+			$sqlstringA = "select *, unix_timestamp(DATE(series_datetime)) 'seriesdate' from `$table` where study_id = ? and series_desc = ? order by seriesdate asc";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'is', $studyid, $protocol);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$studyid, $protocol]);
+			mysqli_stmt_close($stmtA);
 			while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-				$seriesid = $rowA[$modality."series_id"];
+				$seriesid = (int)$rowA[$modality."series_id"];
 				$seriesdate = $rowA['seriesdate'];
 				list($path, $seriespath, $qadir, $uid, $studynum, $studyid, $subjectid) = GetDataPathFromSeriesID($seriesid, $modality);
-				
+
 				//$qadir = "$path/qa";
 				//echo "$qadir: ";
-				
-				$sqlstringB = "select * from mr_qa where mrseries_id = $seriesid";
-				$resultB = MySQLiQuery($sqlstringB, __FILE__, __LINE__);
-				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC);
-				$iosnr = $rowB["io_snr"];
-				$pvsnr = $rowB["pv_snr"];
-				$motion_rsq = $rowB["motion_rsq"];
-				$moveminx = $rowB["move_minx"];
-				$moveminy = $rowB["move_miny"];
-				$moveminz = $rowB["move_minz"];
-				$movemaxx = $rowB["move_maxx"];
-				$movemaxy = $rowB["move_maxy"];
-				$movemaxz = $rowB["move_maxz"];
+
+				$sqlstringB = "select * from mr_qa where mrseries_id = ?";
+				$stmtB = mysqli_prepare($GLOBALS['linki'], $sqlstringB);
+				mysqli_stmt_bind_param($stmtB, 'i', $seriesid);
+				$resultB = MySQLiBoundQuery($stmtB, __FILE__, __LINE__, $sqlstringB, [$seriesid]);
+				mysqli_stmt_close($stmtB);
+				$rowB = mysqli_fetch_array($resultB, MYSQLI_ASSOC) ?? array();
+				$iosnr = $rowB["io_snr"] ?? null;
+				$pvsnr = $rowB["pv_snr"] ?? null;
+				$motion_rsq = $rowB["motion_rsq"] ?? null;
+				$moveminx = $rowB["move_minx"] ?? null;
+				$moveminy = $rowB["move_miny"] ?? null;
+				$moveminz = $rowB["move_minz"] ?? null;
+				$movemaxx = $rowB["move_maxx"] ?? null;
+				$movemaxy = $rowB["move_maxy"] ?? null;
+				$movemaxz = $rowB["move_maxz"] ?? null;
 
 				$iosnrs[$seriesdate]['studyid'] = $studyid;
 				$iosnrs[$seriesdate]['uid'] = $uid;

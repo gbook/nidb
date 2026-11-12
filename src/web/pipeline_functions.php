@@ -109,8 +109,12 @@
 	function EnablePipeline($id) {
 		if (!ValidID($id,'Pipeline ID - H')) { return; }
 		
-		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$id = (int)$id;
+		$sqlstring = "update pipelines set pipeline_enabled = 1 where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -120,8 +124,12 @@
 	function DisablePipeline($id) {
 		if (!ValidID($id,'Pipeline ID - I')) { return; }
 		
-		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$id = (int)$id;
+		$sqlstring = "update pipelines set pipeline_enabled = 0 where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -131,8 +139,12 @@
 	function EnablePipelineDebug($id) {
 		if (!ValidID($id,'Pipeline ID - H')) { return; }
 		
-		$sqlstring = "update pipelines set pipeline_debug = 1 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$id = (int)$id;
+		$sqlstring = "update pipelines set pipeline_debug = 1 where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 
@@ -142,8 +154,12 @@
 	function DisablePipelineDebug($id) {
 		if (!ValidID($id,'Pipeline ID - I')) { return; }
 		
-		$sqlstring = "update pipelines set pipeline_debug = 0 where pipeline_id = $id";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$id = (int)$id;
+		$sqlstring = "update pipelines set pipeline_debug = 0 where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 	}
 
 

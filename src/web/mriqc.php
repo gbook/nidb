@@ -61,14 +61,18 @@
 	/* ------- Viewmriqc -------------------------- */
 	/* -------------------------------------------- */
 	function Viewmriqc($projectid) {
-		$projectid = mysqli_real_escape_string($GLOBALS['linki'], $projectid);
+		$projectid = (int)$projectid;
 
 		$rowdata = array();
+		$alldata = array();
 
 		/* get list of qc metrics */
 		$resultNames = array();
-		$sqlstring = "select distinct(g.qcresult_name) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr' and g.qcresult_type = 'number'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select distinct(g.qcresult_name) from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = ? and e.modality = 'mr' and g.qcresult_type = 'number'";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0){
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$resultNames[] = $row['qcresult_name'];
@@ -83,9 +87,11 @@
 		natsort($resultNames);
 		
 		/* get list of series associated with this project - populate a template table containing all subject/study/series */
-		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where c.project_id = $projectid";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where c.project_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0){
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$seriesRowID = $row['mrseries_id'];
@@ -103,9 +109,11 @@
 			}
 		}
 		
-		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id, e.*, f.*, g.* from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = $projectid and e.modality = 'mr' and g.qcresult_type = 'number'";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select a.*, b.study_num, d.uid, d.subject_id, e.*, f.*, g.* from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join qc_moduleseries e on a.mrseries_id = e.series_id join qc_results f on e.qcmoduleseries_id = f.qcmoduleseries_id left join qc_resultnames g on f.qcresultname_id = g.qcresultname_id where c.project_id = ? and e.modality = 'mr' and g.qcresult_type = 'number'";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $projectid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$projectid]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0){
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$seriesRowID = $row['mrseries_id'];

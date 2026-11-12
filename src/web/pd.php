@@ -52,10 +52,10 @@
 					<div class="content">
 						<h2>NiDB Download</h2>
 						<div class="sub header">
-						<? if ($_SESSION['username'] == "") { ?>
+						<? if (($_SESSION['username'] ?? '') == "") { ?>
 							<a href="signup.php">Create</a> an account or <a href="login.php">Sign in</a>
 						<? } else {?>
-							You are logged into NiDB as <?=$_SESSION['username'];?><br>
+							You are logged into NiDB as <?=htmlspecialchars($_SESSION['username'])?><br>
 							Go to your <a href="index.php">home</a> page
 						<? } ?>
 						</div>
@@ -98,7 +98,7 @@
 	/* ------- DisplayDownload -------------------- */
 	/* -------------------------------------------- */
 	function DisplayDownload($k, $p) {
-		$k = mysqli_real_escape_string($GLOBALS['linki'], $k);
+		$k = (string)$k;
 
 		if (trim($k) == "") {
 			DisplayInvalidLink();
@@ -106,11 +106,14 @@
 		}
 		
 		/* check if the key exists in the users_pending table */
-		$sqlstring = "select * from public_downloads where pd_key = '$k'";
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from public_downloads where pd_key = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $k);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$k]);
+		mysqli_stmt_close($stmt);
 		if (mysqli_num_rows($result) > 0) {
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-			$id = $row['pd_id'];
+			$id = (int)$row['pd_id'];
 			$createdate = $row['pd_createdate'];
 			$expiredate = $row['pd_expiredate'];
 			$zipsize = $row['pd_zippedsize'];
@@ -147,7 +150,7 @@
 				</div>
 				<div class="middle aligned center aligned column">
 					<?
-					if (($registerrequired) && ($_SESSION['validlogin'] != true)) {
+					if (($registerrequired) && (($_SESSION['validlogin'] ?? false) != true)) {
 						?>
 						The creator of this download requires users to create an account with NiDB before downloading. Click this <a href="signup.php">link</a> to register, or ask the NiDB system admin to create an account.
 						<br>
@@ -169,8 +172,11 @@
 						</div>
 						<?
 						/* increment the numdownload for this download... i know, its not really accurate, but it'll be a ballpark figure. Chances are if they're coming to this page, they're only here to click this download link */
-						$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = $id";
-						$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+						$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = ?";
+						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+						mysqli_stmt_bind_param($stmt, 'i', $id);
+						MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+						mysqli_stmt_close($stmt);
 					}
 					?>
 				</div>

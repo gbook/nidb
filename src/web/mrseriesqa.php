@@ -50,12 +50,15 @@
 	$id = (int)GetVariable("id");
 
 	/* get the path to the QA info */
-	$sqlstring = "select a.*, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.mrseries_id = $id";
-	$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+	$sqlstring = "select a.*, b.study_num, d.uid from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.mrseries_id = ?";
+	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+	mysqli_stmt_bind_param($stmt, 'i', $id);
+	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+	mysqli_stmt_close($stmt);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-	$series_num = $row['series_num'];
-	$study_num = $row['study_num'];
-	$uid = $row['uid'];
+	$series_num = $row['series_num'] ?? '';
+	$study_num = $row['study_num'] ?? '';
+	$uid = $row['uid'] ?? '';
 	
 	$thumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.png";
 	$qapath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/qa";
@@ -613,29 +616,34 @@
 			</tr>
 		</thead>
 	<?
-		$sqlstring = "select * from qc_results a left join qc_moduleseries b on a.qcmoduleseries_id = b.qcmoduleseries_id left join qc_modules c on b.qcmodule_id = c.qcmodule_id where b.series_id = $id and b.modality = 'mr' order by b.qcmodule_id";
-		//PrintSQL($sqlstring);
-		$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
+		$sqlstring = "select * from qc_results a left join qc_moduleseries b on a.qcmoduleseries_id = b.qcmoduleseries_id left join qc_modules c on b.qcmodule_id = c.qcmodule_id where b.series_id = ? and b.modality = 'mr' order by b.qcmodule_id";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		mysqli_stmt_close($stmt);
 		$graphnum = 0;
+		$lastmoduleid = null;
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 			//PrintVariable($row,'row');
-			$number = $row['qcresults_valuenumber'];
-			$text = $row['valuetext'];
-			$file = $row['qcresults_valuefile'];
+			$number = (string)($row['qcresults_valuenumber'] ?? '');
+			$text = (string)($row['qcresults_valuetext'] ?? '');
+			$file = (string)($row['qcresults_valuefile'] ?? '');
 			$moduleid = $row['qcmodule_id'];
 			$modulename = $row['module_name'];
-			$cputime = $row['cpu_time'];
-			$resultnameid = $row['qcresultname_id'];
+			$cputime = $row['qcresults_cputime'] ?? '';
+			$resultnameid = (int)$row['qcresultname_id'];
 			
 			/* get the result name */
-			$sqlstringA = "select * from qc_resultnames where qcresultname_id = '$resultnameid'";
-			//PrintSQL($sqlstringA);
-			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
+			$sqlstringA = "select * from qc_resultnames where qcresultname_id = ?";
+			$stmtA = mysqli_prepare($GLOBALS['linki'], $sqlstringA);
+			mysqli_stmt_bind_param($stmtA, 'i', $resultnameid);
+			$resultA = MySQLiBoundQuery($stmtA, __FILE__, __LINE__, $sqlstringA, [$resultnameid]);
+			mysqli_stmt_close($stmtA);
 			$rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC);
-			$resultname = $rowA['qcresult_name'];
-			$resulttype = $rowA['qcresult_type'];
-			$units = $rowA['qcresult_units'];
-			$labels = $rowA['qcresult_labels'];
+			$resultname = $rowA['qcresult_name'] ?? '';
+			$resulttype = $rowA['qcresult_type'] ?? '';
+			$units = $rowA['qcresult_units'] ?? '';
+			$labels = $rowA['qcresult_labels'] ?? '';
 			
 			if ($resultname == "") { $resultname = $file; }
 			
@@ -699,17 +707,22 @@ function DisplayGraph($text,$resultname,$units,$label,$graphnum)	{
 		
 		$numcols = 0;
 		$j = 0;
+		$col = array();
+		$col2 = array();
+		$mins = $maxs = $stdevs = $ranges = array();
+		$opts = array();
 		foreach ($lines as $line) {
 			$line = trim($line);
 			if ($line == "") {
 				continue;
 			}
 			$parts = preg_split('/\s+/', $line);
-			$numcols = count($parts);
+			/* rows can have differing column counts, so use the widest row */
+			$numcols = max($numcols, count($parts));
 			for ($i=0;$i<count($parts);$i++) {
-				//$col[$i][] = $parts[$i];
-				$col[$i][] = "[$j, " . number_format($parts[$i],5,'.','') . "]";
-				$col2[$i][] = $parts[$i];
+				$v = (float)$parts[$i]; /* non-numeric text would be a TypeError in number_format() on PHP 8 */
+				$col[$i][] = "[$j, " . number_format($v,5,'.','') . "]";
+				$col2[$i][] = $v;
 			}
 			$j++;
 		}
@@ -717,9 +730,10 @@ function DisplayGraph($text,$resultname,$units,$label,$graphnum)	{
 		//PrintVariable($col,'Col');
 		
 		for ($i=0;$i<$numcols;$i++) {
-			$mins[$i] = min($col2[$i]);
-			$maxs[$i] = max($col2[$i]);
-			$stdevs[$i] = StdDev($col2[$i]);
+			$values = $col2[$i] ?? array();
+			$mins[$i] = (count($values) > 0) ? min($values) : 0;
+			$maxs[$i] = (count($values) > 0) ? max($values) : 0;
+			$stdevs[$i] = StdDev($values);
 			$ranges[$i] = $mins[$i] + $maxs[$i];
 		}
 		
@@ -732,9 +746,10 @@ function DisplayGraph($text,$resultname,$units,$label,$graphnum)	{
 	<script id="source" language="javascript" type="text/javascript">
 		$(function () {
 			<? for ($i=0;$i<$numcols;$i++) { ?>
-			var col<?=$i?> = [<? echo implode(', ',$col[$i]); ?>];
+			var col<?=$i?> = [<? echo implode(', ',$col[$i] ?? array()); ?>];
 			<?
-				$opts[$i] = "{ label: '$labels[$i] ($units)', data: col$i }";
+				/* json_encode the label so a quote in a label or unit can't break out of the JS string */
+				$opts[$i] = "{ label: " . json_encode(($labels[$i] ?? "col $i") . " ($units)") . ", data: col$i }";
 			} ?>
 			$.plot($("#movementgraph<?=$graphnum?>"), [ <?=implode(', ',$opts);?> ]);
 		});
@@ -757,7 +772,7 @@ function DisplayGraph($text,$resultname,$units,$label,$graphnum)	{
 					for ($i=0;$i<$numcols;$i++) {
 					?>
 					<tr>
-						<td><b><?=$labels[$i]?></b></td>
+						<td><b><?=htmlspecialchars($labels[$i] ?? "col $i")?></b></td>
 						<td style="background-color:#EFEFEF; padding: 3px 10px"><?=number_format($mins[$i],2)?> &emsp;<?=number_format($maxs[$i],2)?></td>
 						<td style="background-color:#EFEFEF; padding: 3px 10px"><b><?=number_format($ranges[$i],2)?></b> &plusmn;<?=number_format($stdevs[$i],2)?></td>
 					</tr>
@@ -783,7 +798,9 @@ function DisplayHistogram($text,$resultname,$units,$label) {
 # --------- DisplayMinMax ----------------------------------
 # ----------------------------------------------------------
 function DisplayMinMax($text,$resultname,$units,$label) {
-	list($min,$max) = preg_split('/\s+/', trim($text));
+	$parts = preg_split('/\s+/', trim($text));
+	$min = (float)($parts[0] ?? 0);
+	$max = (float)($parts[1] ?? 0);
 	?>
 		<?=number_format($min,2)?> <span class="tiny"><?=$units?></span> - <?=number_format($max,2)?> <span class="tiny"><?=$units?></span>
 	<?
@@ -801,6 +818,7 @@ function StdDev($a)
   $the_mean = 0.0;
   $the_array_sum = array_sum($a); //sum the elements
   $number_elements = count($a); //count the number of elements
+  if ($number_elements == 0) return 0.0; /* avoid DivisionByZeroError on PHP 8 */
 
   //calculate the mean
   $the_mean = $the_array_sum / $number_elements;
