@@ -48,7 +48,8 @@
 	//PrintVariable($_GET, "GET");
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("updatepipelineoptions", "update", "add", "changeowner", "delete", "copy", "reset", "resetanalyses", "disable", "enable", "disabledebug", "enabledebug", "exportpipeline", "exportanalysisresults"));
 	$id = (int)GetVariable("id");
 	
 	$viewname = GetVariable("viewname");
@@ -1921,6 +1922,7 @@
 			</div>
 			<table class="entrytable" width="100%">
 				<form method="post" action="pipelines.php">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="action" value="<?=$formaction?>">
 				<input type="hidden" name="id" value="<?=$id?>">
 				<input type="hidden" name="returntab" value="settings">
@@ -2176,6 +2178,7 @@
 		<? if ($type != "add") { ?>
 		<div class="ui bottom attached <?=$tab_threeactive?> tab raised segment" data-tab="third">
 			<form method="post" action="pipelines.php" name="stepsform" id="stepsform" class="ui form">
+			<?=CSRFTokenField()?>
 			<input type="hidden" name="action" value="updatepipelineoptions">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="returntab" value="datascripts">
@@ -3645,7 +3648,7 @@
 						<p>All studies in NiDB are 'checked' if they match criteria for this pipeline, otherwise they are flagged so they are not checked again. This will reset those flags so previously ignored studies will be checked again.</p>
 					</div>
 				</div>
-				<a class="ui primary button" href="pipelines.php?action=resetanalyses&id=<?=$id?>&returntab=operations" onclick="return confirm('Are you sure you want to reset the analyses for this pipeline?')">Reset</a>
+				<? PostActionButton("pipelines.php", array('action' => 'resetanalyses', 'id' => (int)$id, 'returntab' => 'operations'), 'Reset', 'ui primary button', 'Are you sure you want to reset the analyses for this pipeline?'); ?>
 			</div>
 			
 			<div class="raised card">
@@ -3674,6 +3677,7 @@
 						Change the owner of this pipeline
 						<p>
 							<form action="pipelines.php" method="post" name="changeOwnerForm">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="action" value="changeowner">
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="returntab" value="operations">
@@ -3715,7 +3719,7 @@
 						Export this pipeline in squirrel format as a web download
 					</div>
 				</div>
-				<a href="pipelines.php?action=exportpipeline&id=<?=$id?>&returntab=operations" class="ui primary button">Export pipeline</a>
+				<? PostActionButton("pipelines.php", array('action' => 'exportpipeline', 'id' => (int)$id, 'returntab' => 'operations'), 'Export pipeline', 'ui primary button'); ?>
 			</div>
 
 			<div class="raised card">
@@ -3783,7 +3787,7 @@
 						</table>
 					</div>
 				</div>
-				<a href="pipelines.php?action=exportanalysisresults&id=<?=$id?>&returntab=operations" class="ui primary button">Export analysis</a>
+				<? PostActionButton("pipelines.php", array('action' => 'exportanalysisresults', 'id' => (int)$id, 'returntab' => 'operations'), 'Export analysis', 'ui primary button'); ?>
 			</div>
 
 			<div class="raised card">
@@ -3823,7 +3827,7 @@
 						Delete this entire pipeline and all data
 					</div>
 				</div>
-				<a href="pipelines.php?action=delete&id=<?=$id?>&returntab=operations" class="ui red button" onclick="return confirm('Are you sure you want to delete this pipeline?')">Delete</a>
+				<? PostActionButton("pipelines.php", array('action' => 'delete', 'id' => (int)$id, 'returntab' => 'operations'), 'Delete', 'ui red button', 'Are you sure you want to delete this pipeline?'); ?>
 			</div>
 			
 		</div>
@@ -3910,6 +3914,7 @@
 				}
 			</script>
 			<form action="pipelines.php" method="post" name="copypipeline">
+			<?=CSRFTokenField()?>
 			<input type="hidden" name="action" value="copy">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="newname" id="newname" value="<?=$id?>">
@@ -4654,14 +4659,14 @@
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
 				<?
 					if ($info['isenabled']) {
-						?><a href="pipelines.php?action=disable&returnpage=home&id=<?=$info['id']?>"><i class="green toggle on icon" title="Enabled. Click to disable"></i></a><?
+						PostActionButton("pipelines.php", array('action' => 'disable', 'returnpage' => 'home', 'id' => (int)$info['id']), '<i class="green toggle on icon"></i>', '', '', 'Enabled. Click to disable');
 					}
 					else {
-						?><a href="pipelines.php?action=enable&returnpage=home&id=<?=$info['id']?>"><i class="red toggle off icon" title="Disabled. Click to enable"></i></a><?
+						PostActionButton("pipelines.php", array('action' => 'enable', 'returnpage' => 'home', 'id' => (int)$info['id']), '<i class="red toggle off icon"></i>', '', '', 'Disabled. Click to enable');
 					}
 				?>
 				<span title="<b>Last message:</b> <?=$info['message']?><br><b>Last check:</b> <?=$info['lastcheck']?>">
-				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <a href="pipelines.php?action=reset&id=<?=$info['id']?>" class="ui orange basic small button">reset</a><? } else { echo $dispstatus; }  ?>
+				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <? PostActionButton("pipelines.php", array('action' => 'reset', 'id' => (int)$info['id']), 'reset', 'ui orange basic small button'); ?><? } else { echo $dispstatus; }  ?>
 				</span>
 			</td>
 			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">

@@ -3279,7 +3279,7 @@
 							$(document).ready(function(){
 								$(".edit_inline<? echo $ctseries_id; ?>").editInPlace({
 									url: "ajaxapi.php",
-									params: "action=updateseriesdetails&modality=CT&id=<? echo $ctseries_id; ?>",
+									params: "action=updateseriesdetails&modality=CT&id=<?=(int)$ctseries_id?>&csrftoken=<?=urlencode($_SESSION['csrftoken'] ?? '')?>",
 									default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 									bg_over: "white",
 									bg_out: "lightyellow",
@@ -3576,7 +3576,7 @@
 								$(document).ready(function(){
 									$(".edit_inline<? echo $series_id; ?>").editInPlace({
 										url: "ajaxapi.php",
-										params: "action=updateseriesdetails&modality=<?=$modality?>&id=<? echo $series_id; ?>",
+										params: "action=updateseriesdetails&modality=<?=urlencode($modality)?>&id=<?=(int)$series_id?>&csrftoken=<?=urlencode($_SESSION['csrftoken'] ?? '')?>",
 										default_text: "<i style='color:#AAAAAA'>Add notes...</i>",
 										bg_over: "white",
 										bg_out: "lightyellow",

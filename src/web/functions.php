@@ -1505,6 +1505,71 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CanManagePipeline ------------------ */
+	/* -------------------------------------------- */
+	/* Pipeline-level changes (enable/disable, debug, ...) are allowed for the pipeline's owner and
+	   admins/site admins only. Decision 2026-11-12 */
+	function CanManagePipeline($pipelineid) {
+		if (IsAdminUser())
+			return true;
+
+		$pipelineid = (int)$pipelineid;
+		$userid = (int)($_SESSION['userid'] ?? 0);
+		if (($pipelineid < 1) || ($userid < 1))
+			return false;
+
+		$sqlstring = "select pipeline_admin from pipelines where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $pipelineid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$pipelineid]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+
+		return ($row && ((int)$row['pipeline_admin'] == $userid));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CheckAnalysisManagePerms ----------- */
+	/* -------------------------------------------- */
+	/* Pipelines and analyses are readable by everyone; changing an analysis (mark, rerun, delete, notes,
+	   ...) is allowed for the pipeline's owner, admins and site admins, and project admins of the
+	   analysed study's project (group analyses have no study, so only the owner or an admin). Decision
+	   2026-11-12. True only if every ID exists and is allowed, so a request with one bad ID does nothing.
+	   Used by analysis.php and ajaxapi.php (cluster.php grid) */
+	function CheckAnalysisManagePerms($ids) {
+		if (!is_array($ids) || count($ids) == 0)
+			return false;
+		if (IsAdminUser())
+			return true;
+
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select a.analysis_id, p.pipeline_admin, e.project_id from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies s on a.study_id = s.study_id left join enrollment e on s.enrollment_id = e.enrollment_id where a.analysis_id in ($placeholders)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($ids)), ...$ids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $ids);
+		$rows = array();
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$rows[] = $row;
+		mysqli_stmt_close($stmt);
+
+		if (count($rows) != count($ids))
+			return false;
+
+		$userid = (int)($_SESSION['userid'] ?? 0);
+		$perms = GetCurrentUserProjectPermissions(array_filter(array_column($rows, 'project_id')));
+		foreach ($rows as $row) {
+			if (($userid > 0) && ((int)$row['pipeline_admin'] == $userid))
+				continue;
+			if (((int)$row['project_id'] > 0) && GetPerm($perms, 'projectadmin', $row['project_id']))
+				continue;
+			return false;
+		}
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetCurrentUserProjectPermissions --- */
 	/* -------------------------------------------- */
 	/* Returns [projectid => [projectname, projectadmin, viewdata, viewphi, modifydata, modifyphi]] for
@@ -3112,6 +3177,26 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	   changes state, and verify it in the receiving page with VerifyCSRFToken() */
 	function CSRFTokenField() {
 		return '<input type="hidden" name="csrftoken" value="' . htmlspecialchars($_SESSION['csrftoken'] ?? '') . '">';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PostActionButton ------------------- */
+	/* -------------------------------------------- */
+	/* echoes a small inline POST form carrying the CSRF token, whose submit button wraps $inner (HTML,
+	   not escaped). Replaces a GET link that triggered a mutating action. $fields are the hidden
+	   name => value pairs (escaped here). With no $buttonclass the button is unstyled, so an icon or
+	   text inside looks like it did as a link. $confirm, if given, is shown in a confirm() dialog */
+	function PostActionButton($page, $fields, $inner, $buttonclass = '', $confirm = '', $title = '') {
+		$onsubmit = ($confirm != '') ? ' onsubmit="return confirm(' . htmlspecialchars(json_encode($confirm), ENT_QUOTES) . ')"' : '';
+		$style = ($buttonclass == '') ? ' style="background: none; border: none; padding: 0; margin: 0; cursor: pointer; font: inherit; color: inherit"' : '';
+		$titleattr = ($title != '') ? ' title="' . htmlspecialchars($title, ENT_QUOTES) . '"' : '';
+		echo '<form method="post" action="' . htmlspecialchars($page, ENT_QUOTES) . '" style="display: inline"' . $onsubmit . '>';
+		echo CSRFTokenField();
+		foreach ($fields as $name => $value)
+			echo '<input type="hidden" name="' . htmlspecialchars($name, ENT_QUOTES) . '" value="' . htmlspecialchars((string)$value, ENT_QUOTES) . '">';
+		echo '<button type="submit" class="' . htmlspecialchars($buttonclass, ENT_QUOTES) . '"' . $style . $titleattr . '>' . $inner . '</button>';
+		echo '</form>';
 	}
 
 

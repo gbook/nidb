@@ -52,17 +52,12 @@
 	//PrintVariable($_POST);
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token (only from the page's forms) */
+	$action = GetSafeAction(array('deactivatesubjects', 'obliteratesubjects', 'deleteenrollments', 'deletestudies'));
 	$modality = GetSeriesModality(GetVariable("modality"));
 	$studyids = GetIDList(GetVariable("studyids"));
 	$subjectids = GetIDList(GetVariable("subjectids"));
 	$enrollmentids = GetIDList(GetVariable("enrollmentids"));
-
-	/* mutating actions must come from the page's POST forms, not a GET link */
-	$mutating = array('deactivatesubjects', 'obliteratesubjects', 'deleteenrollments', 'deletestudies');
-	if (in_array($action, $mutating) && ($_SERVER['REQUEST_METHOD'] != 'POST')) {
-		$action = "";
-	}
 
 	/* determine action */
 	switch ($action) {
@@ -381,6 +376,7 @@
 		<div class="ui container">
 
 		<form action="cleanup.php" method="post" name="theform">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="action" value="deactivatesubjects">
 		Found <?=$numrows?> empty subjects
 		<table class="ui very small very compact celled selectable grey table">
@@ -454,6 +450,7 @@
 		<div class="ui container">
 		
 		<form action="cleanup.php" method="post" name="theform">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="action" value="deleteenrollments">
 		Found <?=$numrows?> empty enrollments
 		<table class="ui very small very compact celled selectable grey table">
@@ -538,6 +535,7 @@
 		
 		<div class="ui container">
 		<form action="cleanup.php" method="post" name="theform">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="action" value="deletestudies">
 		<input type="hidden" name="modality" value="<?=htmlspecialchars($modality)?>">
 		Found <?=$numrows?> empty studies
@@ -614,6 +612,7 @@
 		<div class="ui container">
 		<!--
 		<form action="cleanup.php" method="post" name="theform">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="action" value="deletestudies">
 		-->
 		Found <?=$numrows?> orphaned studies

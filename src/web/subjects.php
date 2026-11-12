@@ -48,7 +48,9 @@
 	//PrintVariable($GLOBALS);
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token. setcurrentproject only sets a session navigation
+	   preference and stays a GET link, by decision */
+	$action = GetSafeAction(array("addrelation", "changeproject", "newstudy", "newstudyfromtemplate", "newstudygroupfromtemplate", "delete", "undelete", "obliterate", "enroll", "update", "add"));
 	$id = (int)GetVariable("id");
 	$subjectid = (int)GetVariable("subjectid");
 	$selectedid = (int)GetVariable("selectedid");
@@ -1229,6 +1231,7 @@
 				
 				<div class="ui right aligned column">
 					<form method="post" action="subjects.php">
+						<?=CSRFTokenField()?>
 						<input type="hidden" name="action" value="delete">
 						<input type="hidden" name="id" value="<?=$id?>">
 						<input type="submit" class="ui red button" value="Yes, delete it">
@@ -1389,6 +1392,7 @@
 				<td align="left"><button class="ui button" OnClick="history.go(-1)">Back</button></td>
 				
 				<form method="post" action="subjects.php">
+				<?=CSRFTokenField()?>
 				<input type="hidden" name="action" value="<?=$h($type)?>">
 				<input type="hidden" name="id" value="<?=$h($id)?>">
 				<input type="hidden" name="encrypt" value="<?=$h($encrypt)?>">
@@ -1458,6 +1462,7 @@
 		$perms = GetCurrentUserProjectPermissions(array_keys($projects));
 		?>
 		<form class="ui" action="subjects.php" method="post" style="margin: 0px">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="id" value="<?=$id?>">
 		<input type="hidden" name="action" value="enroll">
 		<div class="ui labeled action input">
@@ -1765,6 +1770,7 @@
 							</table>
 							<? if ($sp['canedit']) { ?>
 								<form action="subjects.php" method="post">
+									<?=CSRFTokenField()?>
 									<input type="hidden" name="id" value="<?=$id?>">
 									<input type="hidden" name="action" value="addrelation">
 									<input type="hidden" name="makesymmetric" value="1">
@@ -1829,6 +1835,7 @@
 										</div>
 									<? } else { ?>
 										<form method="post" action="subjects.php" style="display: inline" onsubmit="return confirm('Are you sure you want to undelete this subject?')">
+											<?=CSRFTokenField()?>
 											<input type="hidden" name="action" value="undelete">
 											<input type="hidden" name="id" value="<?=$id?>">
 											<button class="ui red button" type="submit">Undelete</button>
@@ -1961,6 +1968,7 @@
 											</div>
 											<div class="content">
 												<form action="subjects.php" method="post" style="margin:0px; padding:0px; display:inline;">
+												<?=CSRFTokenField()?>
 												<input type="hidden" name="id" value="<?=$id?>">
 												<input type="hidden" name="action" value="changeproject">
 												<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
@@ -2010,6 +2018,7 @@
 													</div>
 													<div class="content">
 														<form action="subjects.php" method="post">
+														<?=CSRFTokenField()?>
 														<input type="hidden" name="id" value="<?=$id?>">
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 														<input type="hidden" name="action" value="newstudy">
@@ -2034,6 +2043,7 @@
 														</form>
 
 														<form action="subjects.php" method="post">
+														<?=CSRFTokenField()?>
 														<input type="hidden" name="id" value="<?=$id?>">
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 														<input type="hidden" name="action" value="newstudyfromtemplate">
@@ -2060,6 +2070,7 @@
 														</form>
 
 														<form action="subjects.php" method="post">
+														<?=CSRFTokenField()?>
 														<input type="hidden" name="id" value="<?=$id?>">
 														<input type="hidden" name="enrollmentid" value="<?=$enrollmentid?>">
 														<input type="hidden" name="action" value="newstudygroupfromtemplate">
@@ -2464,6 +2475,7 @@
 				<div class="header"><?=$formtitle?></div>
 			</div>
 			<form method="post" action="subjects.php" class="ui form attached fluid segment">
+			<?=CSRFTokenField()?>
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
 			<input type="hidden" name="uid" value="<?=$h($uid)?>">

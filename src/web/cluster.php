@@ -1103,6 +1103,7 @@
 		<script src="//cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
 		<script>
 		let pipelineGridApi;
+		const CSRF_TOKEN = <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
 		(function() {
 			const rowData = <?=$rowsJson?>;
 
@@ -1161,7 +1162,7 @@
 			fetch('ajaxapi.php', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				body: 'action=markanalysescomplete&analysisids=' + encodeURIComponent(JSON.stringify(ids))
+				body: 'action=markanalysescomplete&csrftoken=' + encodeURIComponent(CSRF_TOKEN) + '&analysisids=' + encodeURIComponent(JSON.stringify(ids))
 			})
 				.then(function(r) { return r.ok ? r.json() : null; })
 				.then(function(d) {
@@ -1181,7 +1182,7 @@
 			fetch('ajaxapi.php', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-				body: 'action=deleteanalyses&analysisids=' + encodeURIComponent(JSON.stringify(ids))
+				body: 'action=deleteanalyses&csrftoken=' + encodeURIComponent(CSRF_TOKEN) + '&analysisids=' + encodeURIComponent(JSON.stringify(ids))
 			})
 				.then(function(r) { return r.ok ? r.json() : null; })
 				.then(function(d) {

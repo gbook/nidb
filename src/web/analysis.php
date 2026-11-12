@@ -49,13 +49,16 @@
 	//PrintVariable($_GET, "GET");
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require POST + CSRF token */
+	$action = GetSafeAction(array("deleteanalyses", "copyanalyses", "createlinks", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess", "disable", "enable", "disabledebug", "enabledebug", "setanalysisnotes"));
 	$id = GetVariable("id");
 	$pagenum = GetVariable("pagenum");
 	$numperpage = GetVariable("numperpage");
 	
 	$analysisid = GetVariable("analysisid");
+	/* positive integer analysis IDs only (non-arrays give an empty list) */
 	$analysisids = GetVariable("analysisids");
+	$analysisids = is_array($analysisids) ? array_values(array_unique(array_filter(array_map('intval', $analysisids), function($v) { return $v > 0; }))) : array();
 	$destination = GetVariable("destination");
 	$version = GetVariable("version");
 	$completefiles = GetVariable("completefiles");
@@ -84,6 +87,36 @@
 	   redirect (302) back to the GET list view so a refresh/Back can't re-submit. The
 	   list render (DisplayAnalysisList) calls ShowFlashMessage() to print the message. */
 	$listurl = "analysis.php?action=viewanalyses&id=" . urlencode($id) . "&numperpage=" . urlencode($numperpage) . "&pagenum=" . urlencode($pagenum) . "&searchuid=" . urlencode($searchuid) . "&searchstatus=" . urlencode($searchstatus) . "&searchsuccess=" . urlencode($searchsuccess) . "&sortby=" . urlencode($sortby) . "&sortorder=" . urlencode($sortorder);
+	/* Permissions (decision 2026-11-12): pipelines and analyses are readable by everyone. Changing
+	   analyses needs the pipeline owner, an admin/siteadmin, or project admin of the study's project
+	   (CheckAnalysisManagePerms); copying/linking only reads them, so anyone may. Pipeline-level
+	   changes (enable/disable/debug) need the owner or an admin/siteadmin (CanManagePipeline) */
+	$analysisactions = array("deleteanalyses", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess");
+	$pipelineactions = array("disable", "enable", "disabledebug", "enabledebug");
+	$permerror = "";
+	if (in_array($action, array_merge($analysisactions, array("copyanalyses", "createlinks")), true) && (count($analysisids) == 0)) {
+		$permerror = "No analyses were selected";
+	}
+	elseif (in_array($action, $analysisactions, true) && !CheckAnalysisManagePerms($analysisids)) {
+		$permerror = "You can only change analyses of pipelines you own, or as an admin or project admin. Nothing was changed";
+	}
+	elseif (($action == "deleteanalyses") && !AnalysesInPipeline($analysisids, $id)) {
+		/* deleting also disables the pipeline in the request, so the analyses must belong to it */
+		$permerror = "The selected analyses do not belong to this pipeline. Nothing was changed";
+	}
+	elseif (($action == "setanalysisnotes") && !CheckAnalysisManagePerms(array((int)$analysisid))) {
+		$permerror = "You can only change notes on analyses of pipelines you own, or as an admin or project admin";
+	}
+	elseif (in_array($action, $pipelineactions, true) && !CanManagePipeline($id)) {
+		$permerror = "Only the pipeline owner or an admin can change this pipeline";
+	}
+	if ($permerror != "") {
+		ob_start();
+		Error($permerror);
+		$_SESSION['flash'] = ob_get_clean();
+		RedirectTo($listurl);
+	}
+
 	switch ($action) {
 		case 'viewjob': DisplayJob($id); break;
 		case 'viewlists': DisplayPipelineLists($id, $listtype); break;
@@ -168,6 +201,19 @@
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo($listurl);
 			break;
+		/* the shared pipeline status header (pipeline_functions.php) posts these here */
+		case 'disabledebug':
+			ob_start();
+			DisablePipelineDebug($id);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
+			break;
+		case 'enabledebug':
+			ob_start();
+			EnablePipelineDebug($id);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
+			break;
 		case 'viewlogs': DisplayLogs($id, $analysisid); break;
 		case 'setanalysisnotes':
 			ob_start();
@@ -179,6 +225,27 @@
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
+
+	/* -------------------------------------------- */
+	/* ------- AnalysesInPipeline ----------------- */
+	/* -------------------------------------------- */
+	/* true if every analysis ID in $ids belongs to pipeline $pipelineid */
+	function AnalysesInPipeline($ids, $pipelineid) {
+		$pipelineid = (int)$pipelineid;
+		if (!is_array($ids) || (count($ids) == 0) || ($pipelineid < 1))
+			return false;
+
+		$placeholders = implode(',', array_fill(0, count($ids), '?'));
+		$sqlstring = "select count(*) 'n' from analysis where pipeline_id = ? and analysis_id in ($placeholders)";
+		$params = array_merge(array($pipelineid), $ids);
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($params)), ...$params);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		return ((int)$row['n'] == count($ids));
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- SetAnalysisNotes ------------------- */
@@ -465,7 +532,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for copy to <?=$destination?></span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> queued for copy to <?=htmlspecialchars($destination ?? '')?></span><br><?
 			
 		}
 	}
@@ -490,7 +557,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> queued for link creation in <?=$destination?></span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> queued for link creation in <?=htmlspecialchars($destination ?? '')?></span><br><?
 			
 		}
 	}
@@ -691,6 +758,10 @@
 
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
+
+		/* show the change controls to users who may change at least some of these analyses (owner,
+		   admins, project admins); the handlers check each analysis */
+		$canmanage = (CanManagePipeline($id) || IsAnyProjectAdmin());
 
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -1127,7 +1198,7 @@
 						<td></td>
 						<? } ?>
 						<td class="center aligned">
-							<span onClick="GetAnalysisNotes(<?=$id?>, <?=$analysis_id?>);" title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
+							<span <? if ($canmanage) { ?>onClick="GetAnalysisNotes(<?=(int)$id?>, <?=(int)$analysis_id?>);" <? } ?>title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
 						</td>
 						<td style="font-size:9pt; white-space:nowrap">
 							<? if (strlen($analysis_statusmessage) > 50) { echo "<span title='$analysis_statusmessage'>" . substr($analysis_statusmessage, 0, 50) . "...</span>"; } else { echo $analysis_statusmessage; } ?><br>
@@ -1245,12 +1316,15 @@
 					<span class="text">With Selected...</span>
 					<div class="ui vertical menu">
 						
+						<? if ($canmanage) { ?>
 						<div class="ui item" onclick="DeleteAnalyses()" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+						<? } ?>
 						
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div>
 						
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</div>
 
+						<? if ($canmanage) { ?>
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">Re-run results script</div>
 
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">Run supplement script</div>
@@ -1266,6 +1340,7 @@
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">Mark successful</div>
 
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div>
+						<? } ?>
 						
 						<div class="ui item" onclick="AddAnalysesToPackage()"><em data-emoji=":chipmunk:"></em>&nbsp; Add to Package</div>
 					</div>
@@ -1276,13 +1351,16 @@
 		<div class="ui visble popup" id="popupmenu2">
 			<h3 class="ui header">With Selected...</h3>
 			
+			<? if ($canmanage) { ?>
 			<p><button class="ui fluid red button" type="submit" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected analyses?')" title="<b style='color:pink'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="trash icon"></i> Delete</button></p>
+			<? } ?>
 			<br>
 			
 			<p><div class="ui fluid button" type="button" name="copyanalyses" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div></p>
 			
 			<p><div class="ui fluid button" type="button" name="createlinks" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='createlinks'; GetDestination2(); return;" title="Creates a directory called 'data' which contains links to all of the selected studies"><i class="linkify icon"></i> Create links...</div></p>
 
+			<? if ($canmanage) { ?>
 			<p><div class="ui fluid button" type="button" name="rerunresults" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='rerunresults';document.studieslist.submit();" title="This will delete any existing results inserted into NiDB and re-run the results script">Re-run results script</div></p>
 
 			<p><div class="ui fluid button" name="runsupplement" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='runsupplement';document.studieslist.submit();" title="Run the script specified in the supplemental command script. This will not download new data or re-download existing data. It will only perform commands on the existing files in the analysis directory">Run supplement script</div></p>
@@ -1300,6 +1378,7 @@
 			<p><div class="ui fluid button" type="button" name="marksuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='marksuccessful'; MarkAnalysis()" title="Mark the analysis as successful">Mark successful</div></p>
 
 			<p><div class="ui fluid button" type="button" name="markunsuccessful" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='markunsuccessful'; MarkAnalysis()" title="Mark the analysis as unsuccessful">Mark unsuccessful</div></p>
+			<? } ?>
 			
 		</div>
 		
@@ -1315,6 +1394,10 @@
 
 		/* check input parameters */
 		if (!ValidID($id,'Pipeline ID')) { return; }
+
+		/* show the change controls to users who may change at least some of these analyses (owner,
+		   admins, project admins); the handlers check each analysis */
+		$canmanage = (CanManagePipeline($id) || IsAnyProjectAdmin());
 	
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipelines where pipeline_id = ?");
 		mysqli_stmt_bind_param($stmt, 'i', $id);
@@ -1467,8 +1550,10 @@
 						</table>
 					</td>
 					<td colspan="2" align="right" style="background-color: #fff; font-size: 12pt">
+					<? if ($canmanage) { ?>
 					With selected:&nbsp;<br><br>
 					<input type="submit" value="Delete" style="border: 1px solid red; background-color: pink; width:150px; margin:4px" onclick="document.studieslist.action.value='deleteanalyses';return confirm('Are you absolutely sure you want to DELETE the selected (failed) analyses?')" title="<b style='color:pink'>Pipeline will be disabled until the deletion is finished</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version">
+					<? } ?>
 					</td>
 				</tr>
 			</tbody>

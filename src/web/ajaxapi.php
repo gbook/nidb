@@ -136,8 +136,9 @@
 		case 'updateobservationdetails':
 			if (AjaxRequirePOSTToken()) UpdateObservationDetails($observationid, $column, $value, $tz_offset);
 			break;
+		/* studies.php in-place series editors: POST + CSRF token, Edit Data on the series' project */
 		case 'updateseriesdetails':
-			UpdateSeriesDetails(GetVariable("id"), GetVariable("modality"), GetVariable("element_id"), GetVariable("update_value"));
+			if (AjaxRequirePOSTToken()) UpdateSeriesDetails(GetVariable("id"), GetVariable("modality"), GetVariable("element_id"), GetVariable("update_value"));
 			break;
 		case 'checkseriesobject':
 			CheckSeriesObject(GetVariable("seriesid"), GetVariable("modality"), GetVariable("datatype"));
@@ -244,14 +245,16 @@
 		case 'fileiolist':
 			GetFileIOList();
 			break;
+		/* cluster.php pipelines grid: POST + CSRF token; pipeline owner, admins, or project admin of the
+		   analysed study's project (see CheckAnalysisManagePerms) */
 		case 'markanalysescomplete':
-			MarkAnalysesComplete(GetVariable('analysisids'));
+			if (AjaxRequirePOSTTokenJSON()) MarkAnalysesComplete(GetVariable('analysisids'));
 			break;
 		case 'deleteanalyses':
-			DeleteSelectedAnalyses(GetVariable('analysisids'));
+			if (AjaxRequirePOSTTokenJSON()) DeleteSelectedAnalyses(GetVariable('analysisids'));
 			break;
 		case 'setpipelinefavorite':
-			SetPipelineFavorite(GetVariable('pipelineid'), GetVariable('favorite'));
+			if (AjaxRequirePOSTTokenJSON()) SetPipelineFavorite(GetVariable('pipelineid'), GetVariable('favorite'));
 			break;
 		case 'checkbashsyntax':
 			CheckBashSyntax(GetVariable('script'));
@@ -1678,6 +1681,18 @@
 			return;
 		}
 
+		/* Edit Data on the series' project (admins and project admins have it) */
+		$sqlstring = "select e.project_id from `$table` s join studies st on s.study_id = st.study_id join enrollment e on st.enrollment_id = e.enrollment_id where s.`$pkColumn` = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		if (!$row) { echo "error - series not found"; return; }
+		$perms = GetCurrentUserProjectPermissions(array($row['project_id']));
+		if (!GetPerm($perms, 'modifydata', $row['project_id'])) { echo "error - you do not have permission to edit this series"; return; }
+
+		$value = (string)$value;
 		$nullableValue = (trim($value) === '') ? null : $value;
 		$stmt = mysqli_prepare($GLOBALS['linki'], "update $table set $column = ? where $pkColumn = ?");
 		mysqli_stmt_bind_param($stmt, 'si', $nullableValue, $seriesid);
@@ -1685,7 +1700,7 @@
 		mysqli_stmt_close($stmt);
 
 		/* echo the value back so the in-place editor can display it */
-		echo str_replace('\n', "<br>", ($nullableValue === null) ? ' ' : $value);
+		echo ($nullableValue === null) ? ' ' : nl2br(htmlspecialchars($value, ENT_QUOTES));
 	}
 
 
@@ -3165,6 +3180,10 @@
 			echo json_encode(array('ok' => false, 'error' => 'No valid analysis IDs'));
 			return;
 		}
+		if (!CheckAnalysisManagePerms($cleanIds)) {
+			echo json_encode(array('ok' => false, 'error' => 'You can only change analyses of pipelines you own, or as an admin or project admin. Nothing was changed'));
+			return;
+		}
 		$placeholders = implode(',', array_fill(0, count($cleanIds), '?'));
 		$sqlstring = "update analysis set analysis_status = 'complete', analysis_statusmessage = 'Marked complete by user', analysis_statusdatetime = now(), analysis_enddate = now(), analysis_iscomplete = 1 where analysis_id in ($placeholders)";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
@@ -3198,6 +3217,10 @@
 		}
 		if (count($cleanIds) === 0) {
 			echo json_encode(array('ok' => false, 'error' => 'No valid analysis IDs'));
+			return;
+		}
+		if (!CheckAnalysisManagePerms($cleanIds)) {
+			echo json_encode(array('ok' => false, 'error' => 'You can only change analyses of pipelines you own, or as an admin or project admin. Nothing was changed'));
 			return;
 		}
 

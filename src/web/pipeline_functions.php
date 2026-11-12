@@ -82,7 +82,7 @@
 				e.stopPropagation();
 				var star = $(this);
 				var favorite = (star.attr('data-favorite') == '1') ? 0 : 1;
-				$.post("ajaxapi.php", { action: "setpipelinefavorite", pipelineid: star.attr('data-pipelineid'), favorite: favorite }, null, "json")
+				$.post("ajaxapi.php", { action: "setpipelinefavorite", csrftoken: <?=json_encode($_SESSION['csrftoken'] ?? '', JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>, pipelineid: star.attr('data-pipelineid'), favorite: favorite }, null, "json")
 				.done(function(r) {
 					$('.pipelinefavorite[data-pipelineid="' + r.pipelineid + '"]').each(function() {
 						$(this).attr('data-favorite', r.favorite).removeClass('yellow grey outline');
@@ -185,16 +185,16 @@
 						</td>
 						<td align="right">
 							<? if ($isenabled) { ?>
-								Enable <a href="<?=$returnpage?>.php?action=disable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline enabled, click to disable"></i></a>
+								Enable <? PostActionButton("$returnpage.php", array('action' => 'disable', 'returnpage' => $returnpage, 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', '', 'Pipeline enabled, click to disable'); ?>
 							<? } else { ?>
 								<i class="question circle icon" title="Why is my pipeline disabled? Pipelines are automatically disabled if they have not successfully run a study in the last 60 days."></i>
-								Enable <a href="<?=$returnpage?>.php?action=enable&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline disabled, click to enable"></i></a>
+								Enable <? PostActionButton("$returnpage.php", array('action' => 'enable', 'returnpage' => $returnpage, 'id' => (int)$id), '<i class="big grey flipped toggle on icon"></i>', '', '', 'Pipeline disabled, click to enable'); ?>
 							<? } ?>
 							<br>
 							<? if ($isdebug) { ?>
-								Debug <a href="<?=$returnpage?>.php?action=disabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big green toggle on icon" title="Pipeline in debug mode, click to return to normal mode"></i></a>
+								Debug <? PostActionButton("$returnpage.php", array('action' => 'disabledebug', 'returnpage' => $returnpage, 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', '', 'Pipeline in debug mode, click to return to normal mode'); ?>
 							<? } else { ?>
-								Debug <a href="<?=$returnpage?>.php?action=enabledebug&returnpage=<?=$returnpage?>&id=<?=$id?>"><i class="big grey flipped toggle on icon" title="Pipeline in normal mode, click to enter debug mode"></i></a>
+								Debug <? PostActionButton("$returnpage.php", array('action' => 'enabledebug', 'returnpage' => $returnpage, 'id' => (int)$id), '<i class="big grey flipped toggle on icon"></i>', '', '', 'Pipeline in normal mode, click to enter debug mode'); ?>
 							<? } ?>
 						</td>
 					</tr>
@@ -213,7 +213,7 @@
 						<div class="title">Running</div>
 						<div class="description">Checked in <?=$pipeline_lastcheck?></div>
 						<?=$pipeline_statusmessage?>
-						<a href="pipelines.php?action=reset&id=<?=$id?>" class="ui orange basic small button">reset</a>
+						<? PostActionButton("pipelines.php", array('action' => 'reset', 'id' => (int)$id), 'reset', 'ui orange basic small button'); ?>
 					</div>
 				</div>
 				<div class="disabled step" style="padding: 5px">
