@@ -46,6 +46,7 @@
 	/* ----- determine action ----- */
 	switch ($action) {
 		case 'viewslurm':
+		case 'viewslurmjob':
 		case 'viewpipelines':
 		case 'viewdiskusage':
 		case 'viewnodes':
@@ -62,7 +63,7 @@
 	/* -------------------------------------------- */
 	function DisplayClusterPage($action, $tab) {
 		$sgeactive       = ($action === 'viewsge')       ? 'primary' : 'basic';
-		$slurmactive     = ($action === 'viewslurm')     ? 'primary' : 'basic';
+		$slurmactive     = ($action === 'viewslurm' || $action === 'viewslurmjob') ? 'primary' : 'basic';
 		$pipelinesactive = ($action === 'viewpipelines') ? 'primary' : 'basic';
 		$diskusageactive = ($action === 'viewdiskusage') ? 'primary' : 'basic';
 		$nodesactive     = ($action === 'viewnodes')     ? 'primary' : 'basic';
@@ -88,6 +89,8 @@
 
 			<? if ($action === 'viewslurm') { ?>
 				<? DisplaySlurmTabs($tab); ?>
+			<? } elseif ($action === 'viewslurmjob') { ?>
+				<? DisplaySlurmJobDetail(GetVariable("jobid"), $tab); ?>
 			<? } elseif ($action === 'viewpipelines') { ?>
 				<? DisplayPipelines(); ?>
 			<? } elseif ($action === 'viewdiskusage') { ?>
@@ -1578,15 +1581,295 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySlurmJobs ------------------- */
 	/* -------------------------------------------- */
+	/* the job queue as a table. squeue is asked for '|'-delimited fields with the job name last, so a '|' inside a
+	   job name can't shift the other columns. Each job id links to the job detail view (DisplaySlurmJobDetail) */
 	function DisplaySlurmJobs($cluster) {
-		$cmd = 'squeue --all';
+		$cmd = 'squeue --all --noheader --format="%i|%P|%u|%T|%M|%l|%D|%C|%m|%R|%j"';
 		DisplaySlurmCommand($cmd);
-		$output = SlurmSSH($cluster, $cmd);
+		$raw = SlurmSSH($cluster, $cmd);
+
+		$jobs = array();
+		$unparsed = array();
+		foreach (array_filter(array_map('trim', explode("\n", (string)$raw))) as $line) {
+			$f = explode('|', $line, 11);
+			if (count($f) < 11) { $unparsed[] = $line; continue; }
+			$jobs[] = array(
+				'jobid'     => trim($f[0]),
+				'partition' => trim($f[1]),
+				'user'      => trim($f[2]),
+				'state'     => trim($f[3]),
+				'time'      => trim($f[4]),
+				'timelimit' => trim($f[5]),
+				'nodes'     => trim($f[6]),
+				'cpus'      => trim($f[7]),
+				'mem'       => trim($f[8]),
+				'reason'    => trim($f[9]),
+				'name'      => trim($f[10]),
+			);
+		}
+
+		/* anything that didn't parse is most likely an ssh or slurm error; show it as-is */
+		if (count($unparsed) > 0) {
+			?>
+			<div class="ui warning message">
+				<div class="header">Unexpected output from squeue</div>
+				<pre style="white-space:pre-wrap; margin:6px 0 0 0"><?=htmlspecialchars(implode("\n", $unparsed))?></pre>
+			</div>
+			<?
+		}
+
+		if (count($jobs) === 0) {
+			if (count($unparsed) === 0) { ?><div class="ui info message">No jobs in the queue.</div><? }
+			return;
+		}
+
+		$analysisByQsub = GetAnalysesBySlurmJob(array_column($jobs, 'jobid'));
 		?>
-		<div class="ui fluid basic segment" style="padding:0">
-			<div class="ui styled segment" style="font-family:monospace; white-space:pre; overflow-x:auto"><?=htmlspecialchars($output)?></div>
-		</div>
+		<div style="margin-bottom:6px; color:#888"><?=count($jobs)?> job<?=(count($jobs) == 1 ? '' : 's')?> &middot; click a job ID for details</div>
+		<table class="ui small very compact celled grey table">
+			<thead>
+				<tr>
+					<th>Job ID</th>
+					<th>Name</th>
+					<th>User</th>
+					<th>Partition</th>
+					<th>State</th>
+					<th>Time</th>
+					<th>Time limit</th>
+					<th>Nodes</th>
+					<th>CPUs</th>
+					<th>Min memory</th>
+					<th>Node list (reason)</th>
+					<th>Pipeline</th>
+					<th>Study</th>
+				</tr>
+			</thead>
+			<tbody>
+			<? foreach ($jobs as $j) {
+				$linkid = SlurmJobIdForLink($j['jobid']);
+				$match = $analysisByQsub[(string)(int)$j['jobid']] ?? null;
+				?>
+				<tr>
+					<td>
+						<? if ($linkid !== '') { ?>
+							<a href="cluster.php?action=viewslurmjob&jobid=<?=urlencode($linkid)?>"><tt><?=htmlspecialchars($j['jobid'])?></tt></a>
+						<? } else { ?>
+							<tt><?=htmlspecialchars($j['jobid'])?></tt>
+						<? } ?>
+					</td>
+					<td><?=htmlspecialchars($j['name'])?></td>
+					<td><?=htmlspecialchars($j['user'])?></td>
+					<td><?=htmlspecialchars($j['partition'])?></td>
+					<td style="color:<?=SlurmStateColor($j['state'])?>; font-weight:bold"><?=htmlspecialchars($j['state'])?></td>
+					<td><tt><?=htmlspecialchars($j['time'])?></tt></td>
+					<td><tt><?=htmlspecialchars($j['timelimit'])?></tt></td>
+					<td><?=htmlspecialchars($j['nodes'])?></td>
+					<td><?=htmlspecialchars($j['cpus'])?></td>
+					<td><?=htmlspecialchars($j['mem'])?></td>
+					<td><?=htmlspecialchars($j['reason'])?></td>
+					<td><?=htmlspecialchars($match['pipeline'] ?? '')?></td>
+					<td><?=htmlspecialchars($match['study'] ?? '')?></td>
+				</tr>
+			<? } ?>
+			</tbody>
+		</table>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SlurmStateColor -------------------- */
+	/* -------------------------------------------- */
+	/* text color for a slurm job state (squeue %T or sacct State). The 'by USER' suffix on CANCELLED is ignored */
+	function SlurmStateColor($state) {
+		$colors = array(
+			'COMPLETED'   => '#21ba45',
+			'RUNNING'     => '#2185d0',
+			'COMPLETING'  => '#2185d0',
+			'CONFIGURING' => '#2185d0',
+			'PENDING'     => '#f2711c',
+			'SUSPENDED'   => '#f2711c',
+			'FAILED'      => '#db2828',
+			'NODE_FAIL'   => '#db2828',
+			'OUT_OF_MEMORY' => '#db2828',
+			'CANCELLED'   => '#767676',
+			'TIMEOUT'     => '#a333c8',
+		);
+		$base = explode(' ', trim((string)$state))[0];
+		return $colors[$base] ?? '#555';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- SlurmJobIdForLink ------------------ */
+	/* -------------------------------------------- */
+	/* Returns a job id safe to pass to scontrol/sacct, or '' if there isn't one. Accepted forms are a plain id
+	   (1234), an array task (1234_5) and a het-job component (1234+0). A pending array shows as e.g. 1234_[1-10%2],
+	   which links to the base id 1234 (scontrol then lists every task of the array) */
+	function SlurmJobIdForLink($jobid) {
+		$jobid = trim((string)$jobid);
+		if (preg_match('/^[0-9]+(_[0-9]+|\+[0-9]+)?$/', $jobid)) return $jobid;
+		if (preg_match('/^([0-9]+)/', $jobid, $m)) return $m[1];
+		return '';
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetAnalysesBySlurmJob -------------- */
+	/* -------------------------------------------- */
+	/* Cross-references slurm job ids against NiDB analyses (analysis.analysis_qsubid). Returns an array keyed by the
+	   integer job id (as a string) => [pipeline, study] for the ids that match an analysis. One query for all ids */
+	function GetAnalysesBySlurmJob($jobids) {
+		$analysisByQsub = array();
+		$qsubInts = array();
+		foreach ((array)$jobids as $jid) { $q = (int)$jid; if ($q > 0) $qsubInts[$q] = true; }
+		if (count($qsubInts) == 0) return $analysisByQsub;
+
+		$qsubids = array_keys($qsubInts);
+		$idlist = implode(',', array_fill(0, count($qsubids), '?'));
+		$sqlstring = "select a.analysis_qsubid, p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_qsubid in ($idlist)";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, str_repeat('i', count($qsubids)), ...$qsubids);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $qsubids);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+			$analysisByQsub[(string)$row['analysis_qsubid']] = array(
+				'pipeline' => (string)($row['pipeline_name'] ?? ''),
+				'study'    => (string)(($row['uid'] ?? '') . ($row['study_num'] ?? '')),
+			);
+		}
+		return $analysisByQsub;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- ParseScontrolJob ------------------- */
+	/* -------------------------------------------- */
+	/* Parses 'scontrol show job' output into a list of records (an array job can return several), each an ordered
+	   array of key => value. Most lines hold several space-separated Key=Value pairs, but a few keys sit on their own
+	   line and their value can contain spaces (a command line, a path), so those lines are taken whole */
+	function ParseScontrolJob($raw) {
+		$wholeline = array('Command', 'WorkDir', 'StdErr', 'StdIn', 'StdOut', 'Comment', 'AdminComment', 'SubmitLine');
+		$records = array();
+		$rec = array();
+		foreach (explode("\n", (string)$raw) as $line) {
+			$line = trim($line);
+			if ($line === '') {
+				if (count($rec) > 0) { $records[] = $rec; $rec = array(); }
+				continue;
+			}
+			$eq = strpos($line, '=');
+			if ($eq === false) continue;
+			if (in_array(substr($line, 0, $eq), $wholeline)) {
+				$rec[substr($line, 0, $eq)] = substr($line, $eq + 1);
+				continue;
+			}
+			foreach (preg_split('/\s+(?=[A-Za-z][A-Za-z0-9_\/:]*=)/', $line) as $pair) {
+				$p = strpos($pair, '=');
+				if ($p === false) continue;
+				$rec[substr($pair, 0, $p)] = substr($pair, $p + 1);
+			}
+		}
+		if (count($rec) > 0) $records[] = $rec;
+		return $records;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- DisplaySlurmJobDetail -------------- */
+	/* -------------------------------------------- */
+	/* All details of one slurm job, from 'scontrol show job'. scontrol only knows about jobs that are queued, running,
+	   or finished within the last few minutes (MinJobAge), so if it doesn't recognise the id this falls back to the
+	   accounting record from sacct */
+	function DisplaySlurmJobDetail($jobid, $fromtab = 'jobs') {
+		/* $fromtab is the Slurm tab the job was opened from, so the back link returns there */
+		if ($fromtab !== 'history') $fromtab = 'jobs';
+		$backurl = "cluster.php?action=viewslurm&tab=$fromtab";
+		$backlabel = ($fromtab === 'history') ? 'Back to recent Slurm jobs' : 'Back to Slurm jobs';
+		?>
+		<div style="margin-bottom:10px"><a href="<?=$backurl?>"><i class="arrow left icon"></i><?=$backlabel?></a></div>
+		<?
+		$cluster = GetSlurmCluster();
+		if (!$cluster) {
+			?><div class="ui warning message">No Slurm cluster configured. Slurm credentials are managed on the <a href="clustersettings.php">Cluster settings</a> page.</div><?
+			return;
+		}
+
+		$jobid = trim((string)$jobid);
+		if (!preg_match('/^[0-9]+(_[0-9]+|\+[0-9]+)?$/', $jobid)) {
+			?><div class="ui error message">Invalid job ID</div><?
+			return;
+		}
+
+		$cmd = 'scontrol show job ' . $jobid;
+		$raw = (string)SlurmSSH($cluster, $cmd);
+		$records = ParseScontrolJob($raw);
+
+		/* scontrol has forgotten the job: use the sacct accounting record (allocation line only, empty fields hidden) */
+		if (count($records) == 0) {
+			$cmdAcct = 'sacct -X -a --parsable2 --format=ALL -j ' . $jobid;
+			$rawAcct = (string)SlurmSSH($cluster, $cmdAcct);
+			$acctLines = array_values(array_filter(array_map('trim', explode("\n", $rawAcct))));
+			if (count($acctLines) >= 2) {
+				$header = explode('|', $acctLines[0]);
+				for ($i = 1; $i < count($acctLines); $i++) {
+					$vals = explode('|', $acctLines[$i]);
+					$rec = array();
+					foreach ($header as $k => $h) {
+						$v = $vals[$k] ?? '';
+						if ($v !== '') $rec[$h] = $v;
+					}
+					if (count($rec) > 0) $records[] = $rec;
+				}
+			}
+			if (count($records) > 0) {
+				DisplaySlurmCommand(array($cmd, $cmdAcct));
+				?><div class="ui tiny info message">scontrol no longer has this job; showing the accounting record from sacct (empty fields hidden).</div><?
+			}
+			else {
+				DisplaySlurmCommand(array($cmd, $cmdAcct));
+				?>
+				<div class="ui warning message">
+					<div class="header">Job <?=htmlspecialchars($jobid)?> not found</div>
+					<pre style="white-space:pre-wrap; margin:6px 0 0 0"><?=htmlspecialchars(trim($raw . "\n" . $rawAcct))?></pre>
+				</div>
+				<?
+				return;
+			}
+		}
+		else {
+			DisplaySlurmCommand($cmd);
+		}
+
+		$analysisByQsub = GetAnalysesBySlurmJob(array((int)$jobid));
+		$match = $analysisByQsub[(string)(int)$jobid] ?? null;
+
+		foreach ($records as $rec) {
+			$id    = $rec['JobId'] ?? ($rec['JobID'] ?? $jobid);
+			$name  = $rec['JobName'] ?? '';
+			$state = $rec['JobState'] ?? ($rec['State'] ?? '');
+			$user  = $rec['UserId'] ?? ($rec['User'] ?? '');
+			?>
+			<h3 class="ui header" style="margin-top:6px">
+				Job <tt><?=htmlspecialchars($id)?></tt>
+				<? if ($name !== '') { ?><span style="font-weight:normal"> &mdash; <?=htmlspecialchars($name)?></span><? } ?>
+				<div class="sub header">
+					<? if ($state !== '') { ?><span style="color:<?=SlurmStateColor($state)?>; font-weight:bold"><?=htmlspecialchars($state)?></span><? } ?>
+					<? if ($user !== '') { ?> &nbsp;&middot;&nbsp; <?=htmlspecialchars($user)?><? } ?>
+					<? if ($match) { ?> &nbsp;&middot;&nbsp; Pipeline <b><?=htmlspecialchars($match['pipeline'])?></b> &nbsp;&middot;&nbsp; Study <b><?=htmlspecialchars($match['study'])?></b><? } ?>
+				</div>
+			</h3>
+			<table class="ui small very compact celled definition table" style="margin-bottom:20px">
+				<tbody>
+				<? foreach ($rec as $key => $val) { ?>
+					<tr>
+						<td style="width:200px; white-space:nowrap"><?=htmlspecialchars($key)?></td>
+						<td style="font-family:monospace; word-break:break-all"><?=htmlspecialchars($val)?></td>
+					</tr>
+				<? } ?>
+				</tbody>
+			</table>
+			<?
+		}
 	}
 
 
@@ -1823,23 +2106,7 @@
 
 		/* Cross-reference each slurm job id against NiDB analyses (analysis.analysis_qsubid). Where a
 		   match exists, show its pipeline name and UID/study number. One query for all running ids. */
-		$analysisByQsub = array();
-		$qsubInts = array();
-		foreach ($memJobs as $j) { $q = (int)$j['jobid']; if ($q > 0) $qsubInts[$q] = true; }
-		if (count($qsubInts) > 0) {
-			$qsubids = array_keys($qsubInts);
-			$idlist = implode(',', array_fill(0, count($qsubids), '?'));
-			$sqlstring = "select a.analysis_qsubid, p.pipeline_name, s.uid, st.study_num from analysis a left join pipelines p on a.pipeline_id = p.pipeline_id left join studies st on a.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id where a.analysis_qsubid in ($idlist)";
-			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-			mysqli_stmt_bind_param($stmt, str_repeat('i', count($qsubids)), ...$qsubids);
-			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $qsubids);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$analysisByQsub[(string)$row['analysis_qsubid']] = array(
-					'pipeline' => (string)($row['pipeline_name'] ?? ''),
-					'study'    => (string)(($row['uid'] ?? '') . ($row['study_num'] ?? '')),
-				);
-			}
-		}
+		$analysisByQsub = GetAnalysesBySlurmJob(array_column($memJobs, 'jobid'));
 
 		/* tally jobs by state */
 		$jobCounts = [];
@@ -1981,14 +2248,6 @@
 		$raw   = SlurmSSH($cluster, $cmd);
 		$lines = array_filter(array_map('trim', explode("\n", $raw)));
 
-		$stateColors = [
-			'COMPLETED'  => '#21ba45',
-			'RUNNING'    => '#2185d0',
-			'PENDING'    => '#f2711c',
-			'FAILED'     => '#db2828',
-			'CANCELLED'  => '#767676',
-			'TIMEOUT'    => '#a333c8',
-		];
 		?>
 		<? if (empty($lines)) { ?>
 			<div class="ui info message">No jobs found in the past 24 hours.</div>
@@ -2011,11 +2270,17 @@
 				$f = explode('|', $line);
 				if (count($f) < 8) continue;
 				list($jobid, $jobname, $user, $partition, $state, $elapsed, $cputime, $nodelist) = $f;
-				$basestate = explode(' ', $state)[0]; /* strip "by USER" suffix on CANCELLED */
-				$color = $stateColors[$basestate] ?? '#555';
+				$color = SlurmStateColor($state);
+				$linkid = SlurmJobIdForLink($jobid);
 				?>
 				<tr>
-					<td><tt><?=htmlspecialchars($jobid)?></tt></td>
+					<td>
+						<? if ($linkid !== '') { ?>
+							<a href="cluster.php?action=viewslurmjob&jobid=<?=urlencode($linkid)?>&tab=history"><tt><?=htmlspecialchars($jobid)?></tt></a>
+						<? } else { ?>
+							<tt><?=htmlspecialchars($jobid)?></tt>
+						<? } ?>
+					</td>
 					<td><?=htmlspecialchars($jobname)?></td>
 					<td><?=htmlspecialchars($user)?></td>
 					<td><?=htmlspecialchars($partition)?></td>

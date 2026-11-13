@@ -916,7 +916,7 @@ qint64 moduleAudit::QCDuplicateStudies(qint64 auditid, int projectid, bool &ok) 
             r.studynum = q.value("study_num").toInt();
             r.projectid = q.value("project_id").toInt();
             r.subjectid = q.value("subject_id").toLongLong();
-            r.uid = q.value("uid").toString().replace('\u0000', "").trimmed();
+            r.uid = q.value("uid").toString().remove(QChar('\u0000')).trimmed();
             groups[q.value("groupkey").toString().trimmed()].append(r);
         }
 

@@ -62,7 +62,7 @@
 	function DisplayAnalysisHeader($analysisid) {
 		if ($analysisid < 1) { return; }
 
-		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = ?";
+		$sqlstring = "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure, a.analysis_hostname, a.analysis_status, a.analysis_statusmessage, a.analysis_statusdatetime, a.analysis_clusterstartdate, a.analysis_clusterenddate, timestampdiff(second, a.analysis_clusterstartdate, if(a.analysis_status in ('processing','started'), now(), a.analysis_clusterenddate)) 'walltime_sec' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 		mysqli_stmt_bind_param($stmt, 'i', $analysisid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$analysisid]);
@@ -81,18 +81,106 @@
 			$title = "$uid$studynum";
 			$clusterpath = GetAnalysisClusterPath($row['pipeline_dirstructure'] ?? '', $pipelinename, $uid, $studynum);
 		}
+
+		/* cluster node the analysis runs (or ran) on, and its status. The status message and time go in the tooltip */
+		$hostname = trim((string)($row['analysis_hostname'] ?? ''));
+		$status = trim((string)($row['analysis_status'] ?? ''));
+		$statustip = trim((string)($row['analysis_statusmessage'] ?? ''));
+		if (($row['analysis_statusdatetime'] ?? '') != '') {
+			$statustip .= ($statustip == '' ? '' : "\n") . "Updated " . $row['analysis_statusdatetime'];
+		}
+		switch ($status) {
+			case 'complete': $statuscolor = '#21ba45'; break;
+			case 'error': $statuscolor = '#db2828'; break;
+			case 'processing':
+			case 'started': $statuscolor = '#2185d0'; break;
+			case 'pending':
+			case 'submitted': $statuscolor = '#f2711c'; break;
+			default: $statuscolor = '#767676';
+		}
+		$isrunning = in_array($status, array('processing', 'started'));
+
+		/* wall time on the cluster: start to now while running, otherwise start to end. Computed in SQL against the
+		   database's now() so a PHP/MySQL timezone difference can't skew it. Blank if there's no start or end time, or
+		   if the end is before the start (an end date left over from an earlier run) */
+		$walltime = '';
+		if (($row['walltime_sec'] ?? null) !== null && (int)$row['walltime_sec'] >= 0) {
+			$walltime = FormatWallTime((int)$row['walltime_sec']);
+			$statustip .= ($statustip == '' ? '' : "\n") . "Cluster start " . $row['analysis_clusterstartdate'];
+			if (!$isrunning) $statustip .= "\nCluster end " . $row['analysis_clusterenddate'];
+		}
 		?>
 		<div class="ui container">
 			<div class="ui segment">
-				<h2 class="ui header">
-					<?=htmlspecialchars($title)?>
-					<div class="sub header"><?=htmlspecialchars($pipelinename)?></div>
-				</h2>
-				Analysis root (cluster) <code><?=htmlspecialchars($clusterpath)?></code>
+				<div style="display:flex; align-items:flex-start; gap:16px">
+					<div>
+						<h2 class="ui header">
+							<?=htmlspecialchars($title)?>
+							<div class="sub header"><?=htmlspecialchars($pipelinename)?></div>
+						</h2>
+						Analysis root (cluster) <code id="analysisrootpath"><?=htmlspecialchars($clusterpath)?></code>
+						<i class="copy outline link icon" id="analysisrootcopy" title="Copy path" onclick="CopyAnalysisRoot()"></i>
+						<script>
+							/* copy the analysis root path. navigator.clipboard only exists on https (or localhost), so on plain
+							   http fall back to selecting a hidden textarea and execCommand('copy'), which still works there */
+							function CopyAnalysisRoot() {
+								var text = document.getElementById('analysisrootpath').textContent;
+								var icon = document.getElementById('analysisrootcopy');
+								function done(ok) {
+									icon.className = (ok ? 'green check' : 'red times') + ' icon';
+									icon.title = ok ? 'Copied' : 'Copy failed';
+									setTimeout(function() { icon.className = 'copy outline link icon'; icon.title = 'Copy path'; }, 1500);
+								}
+								function fallback() {
+									var ta = document.createElement('textarea');
+									ta.value = text;
+									ta.setAttribute('readonly', '');
+									ta.style.position = 'fixed';
+									ta.style.top = '-1000px';
+									document.body.appendChild(ta);
+									ta.select();
+									var ok = false;
+									try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+									document.body.removeChild(ta);
+									done(ok);
+								}
+								if (navigator.clipboard && window.isSecureContext) {
+									navigator.clipboard.writeText(text).then(function() { done(true); }, fallback);
+								}
+								else {
+									fallback();
+								}
+							}
+						</script>
+					</div>
+					<div style="margin-left:auto; text-align:right">
+						<!-- node name in the same color as the header's sub header (Fomantic uses rgba(0,0,0,.6)) -->
+						<div style="margin-bottom:4px; color:rgba(0,0,0,.6)" title="Cluster node"><?=htmlspecialchars($hostname != '' ? $hostname : 'No node assigned')?></div>
+						<div style="color:<?=$statuscolor?>" title="<?=htmlspecialchars($statustip)?>">
+							<? if ($isrunning) { ?><i class="spinner loading icon"></i><? } ?><?=htmlspecialchars($status != '' ? $status : 'no status')?><? if ($walltime != '') { ?> (<?=$walltime?>)<? } ?>
+						</div>
+					</div>
+				</div>
 			</div>
 			<br>
 		</div>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- FormatWallTime --------------------- */
+	/* -------------------------------------------- */
+	/* seconds -> '1d 12h 13m'. Leading zero units are dropped ('3h 5m', '12m'), and anything under a minute is shown in seconds */
+	function FormatWallTime($sec) {
+		$sec = max(0, (int)$sec);
+		if ($sec < 60) return "{$sec}s";
+		$d = intdiv($sec, 86400);
+		$h = intdiv($sec % 86400, 3600);
+		$m = intdiv($sec % 3600, 60);
+		if ($d > 0) return "{$d}d {$h}h {$m}m";
+		if ($h > 0) return "{$h}h {$m}m";
+		return "{$m}m";
 	}
 
 
@@ -815,6 +903,25 @@
 	function DisplayGraph($analysisid) {
 		if (!ValidID($analysisid,'Analysis ID - DisplayGraph()')) { return; }
 
+		/* loading message, shown between the header and the table until the page finishes loading. It is flushed to
+		   the browser before the queries below run, otherwise PHP's output buffer would hold it until the page is done */
+		?>
+		<script>
+			$(document).ready(function(){
+				$('#pageloading').hide();
+			});
+		</script>
+		<div class="ui container" id="pageloading">
+			<div class="ui yellow message" align="center">
+				<h2 class="ui header">
+					<em data-emoji=":chipmunk:" class="loading"></em> Loading...
+				</h2>
+			</div>
+		</div>
+		<?
+		while (ob_get_level() > 0) { ob_end_flush(); }
+		flush();
+
 		/* get all information about this analysis, pipeline, parent/child pipelines, and groups */
 		//$sqlstring = "select * from analysis where analysis_id = $analysisid";
 		$sqlstring = "select *, a.pipeline_version 'analysis_pipelineversion' from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on e.pipeline_id = a.pipeline_id where a.analysis_id = '$analysisid'";
@@ -1256,7 +1363,7 @@
 									if (file_exists($logfile)) {
 										$fileStr = file_get_contents("$logfile");
 										$size = filesize("$logfile");
-										$filedate = date ("F d Y H:i:s", filemtime("$logfile"));
+										$filedate = date("Y-m-d H:i:s", filemtime("$logfile"));
 										$fileExists = true;
 										
 										if ($size > 100000) {
@@ -1361,7 +1468,7 @@
 						if (($logPath !== false) && is_file($logPath)) {
 							$logStr = file_get_contents($logPath);
 							$logsize = filesize($logPath);
-							$filedate = date("F d Y H:i:s", filemtime($logPath));
+							$filedate = date("Y-m-d H:i:s", filemtime($logPath));
 						}
 						else {
 							$logPath = "";

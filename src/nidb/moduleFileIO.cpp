@@ -194,6 +194,7 @@ int moduleFileIO::Run() {
             }
             else if (fileio_operation == "cancel") {
                 if (data_type == "pipelinecontainer") { found = CancelPipelineContainer(data_id, username, msg); }
+                else if (data_type == "analysis") { found = CancelAnalysis(data_id, msg); }
             }
             else if (fileio_operation == "detach") {
             }
@@ -855,6 +856,44 @@ bool moduleFileIO::DeleteAnalysis(qint64 analysisid, QString &msg) {
     }
 
     msg = QString("Analysis deleted for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename) + StoredSizeString(numfiles, bytes);
+    return true;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CancelAnalysis --------------------------------- */
+/* ---------------------------------------------------------- */
+bool moduleFileIO::CancelAnalysis(qint64 analysisid, QString &msg) {
+    n->Log("In CancelAnalysis()");
+
+    analysis a(analysisid, n); /* get the analysis info */
+    if (!a.isValid) { msg = "Analysis was not valid: [" + a.msg + "]"; return false; }
+
+    /* stop the cluster job, but only if the analysis is still active. A finished analysis's job ID may since have been
+       reused by the scheduler for someone else's job. The pipeline is only needed here (for its cluster settings) */
+    QString status = a.status.trimmed().toLower();
+    bool active = ((status == "pending") || (status == "submitted") || (status == "started") || (status == "processing"));
+    if (active && (a.jobid > 0)) {
+        pipeline p(n);
+        p.searchPipelineRowID = a.pipelineid;
+        if (!p.Load()) {
+            msg = QString("Did not delete the analysis. It is [%1] with cluster job [%2], and pipeline [%3] couldn't be loaded to stop the job [%4]").arg(status).arg(a.jobid).arg(a.pipelineid).arg(p.msg);
+            return false;
+        }
+
+        QString cancelMsg, result;
+        if (!n->CancelClusterJob(p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], a.jobid, cancelMsg, result)) {
+            /* don't delete the directory out from under a job that may still be running */
+            msg = n->Log(QString("Did not delete the analysis. Its cluster job [%1] may still be running, stop it and try again. %2").arg(a.jobid).arg(cancelMsg));
+            return false;
+        }
+        n->Log(cancelMsg);
+    }
+    else {
+        n->Log(QString("Analysis is [%1] with job ID [%2], so there's no cluster job to stop").arg(status).arg(a.jobid));
+    }
+
+    msg = QString("Analysis cancelled for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
     return true;
 }
 
