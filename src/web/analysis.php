@@ -50,7 +50,7 @@
 	
 	/* ----- setup variables ----- */
 	/* mutating actions require POST + CSRF token */
-	$action = GetSafeAction(array("deleteanalyses", "copyanalyses", "createlinks", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess", "disable", "enable", "disabledebug", "enabledebug", "setanalysisnotes"));
+	$action = GetSafeAction(array("deleteanalyses", "cancelanalyses", "copyanalyses", "createlinks", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess", "disable", "enable", "disabledebug", "enabledebug", "setanalysisnotes"));
 	$id = GetVariable("id");
 	$pagenum = GetVariable("pagenum");
 	$numperpage = GetVariable("numperpage");
@@ -91,7 +91,7 @@
 	   analyses needs the pipeline owner, an admin/siteadmin, or project admin of the study's project
 	   (CheckAnalysisManagePerms); copying/linking only reads them, so anyone may. Pipeline-level
 	   changes (enable/disable/debug) need the owner or an admin/siteadmin (CanManagePipeline) */
-	$analysisactions = array("deleteanalyses", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess");
+	$analysisactions = array("deleteanalyses", "cancelanalyses", "rerunresults", "runsupplement", "markbad", "markgood", "markcomplete", "marksuccessful", "markunsuccessful", "rechecksuccess");
 	$pipelineactions = array("disable", "enable", "disabledebug", "enabledebug");
 	$permerror = "";
 	if (in_array($action, array_merge($analysisactions, array("copyanalyses", "createlinks")), true) && (count($analysisids) == 0)) {
@@ -100,7 +100,7 @@
 	elseif (in_array($action, $analysisactions, true) && !CheckAnalysisManagePerms($analysisids)) {
 		$permerror = "You can only change analyses of pipelines you own, or as an admin or project admin. Nothing was changed";
 	}
-	elseif (($action == "deleteanalyses") && !AnalysesInPipeline($analysisids, $id)) {
+	elseif ((($action == "deleteanalyses") || ($action == "cancelanalyses")) && !AnalysesInPipeline($analysisids, $id)) {
 		/* deleting also disables the pipeline in the request, so the analyses must belong to it */
 		$permerror = "The selected analyses do not belong to this pipeline. Nothing was changed";
 	}
@@ -126,6 +126,12 @@
 		case 'deleteanalyses':
 			ob_start();
 			DeleteAnalyses($id, $analysisids);
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo($listurl);
+			break;
+		case 'cancelanalyses':
+			ob_start();
+			CancelAnalyses($id, $analysisids);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo($listurl);
 			break;
@@ -497,7 +503,7 @@
 			mysqli_stmt_close($stmt);
 			
 			if ($pipelinelevel == 1) {
-				if ($pipelinedirstructure = "b") {
+				if ($pipelinedirstructure == "b") {
 					$datapath = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum";
 				}
 				else {
@@ -510,6 +516,70 @@
 			$msg .= "<tt>$datapath</tt><br>";
 		}
 		Notice($msg, "Analyses queued for deletion");
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CancelAnalyses --------------------- */
+	/* -------------------------------------------- */
+	function CancelAnalyses($id, $analysisids) {
+
+		if (!ValidID($id,'Pipeline ID')) { return; }
+	
+		/*disable this pipeline */
+		DisablePipeline($id);
+
+		$sqlstring = "select max(group_id) 'maxgroupid' from fileio_requests";
+		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		$groupid = $row['maxgroupid'] + 1;
+		
+		$msg = "";
+		foreach ($analysisids as $analysisid) {
+			
+			/* only running analyses can be cancelled; leave the message on finished ones alone (the fileio module reports why it didn't cancel them) */
+			$stmt = mysqli_prepare($GLOBALS['linki'], "update analysis set analysis_statusmessage = 'Queued for cancellation' where analysis_id = ? and analysis_status in ('pending','submitted','started','processing')");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
+			
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select d.uid, b.study_num, e.pipeline_name, e.pipeline_level, e.pipeline_dirstructure from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id left join pipelines e on a.pipeline_id = e.pipeline_id where a.analysis_id = ?");
+			mysqli_stmt_bind_param($stmt, 'i', $analysisid);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
+			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+			$uid = $row['uid'];
+			$studynum = $row['study_num'];
+			$pipelinename = $row['pipeline_name'];
+			$pipelinelevel = $row['pipeline_level'];
+			$pipelinedirstructure = $row['pipeline_dirstructure'];
+
+			if (($pipelinelevel == 0) || ($pipelinelevel == 1)) {
+				$analysislevel = 'analysis';
+			}
+			elseif ($pipelinelevel == 2) {
+				$analysislevel = 'groupanalysis';
+			}
+			
+			$stmt = mysqli_prepare($GLOBALS['linki'], "insert into fileio_requests (fileio_operation, group_id, data_type, data_id, username, requestdate) values ('cancel', ?, ?, ?, ?, now())");
+			mysqli_stmt_bind_param($stmt, 'isis', $groupid, $analysislevel, $analysisid, $GLOBALS['username']);
+			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
+			mysqli_stmt_close($stmt);
+			
+			if ($pipelinelevel == 1) {
+				if ($pipelinedirstructure == "b") {
+					$datapath = $GLOBALS['cfg']['analysisdirb'] . "/$pipelinename/$uid/$studynum";
+				}
+				else {
+					$datapath = $GLOBALS['cfg']['analysisdir'] . "/$uid/$studynum/$pipelinename";
+				}
+			}
+			elseif ($pipelinelevel == 2) {
+				$datapath = $GLOBALS['cfg']['groupanalysisdir'] . "/$pipelinename";
+			}
+			$msg .= "<tt>$datapath</tt><br>";
+		}
+		Notice($msg, "Analyses queued for cancellation");
 	}
 
 
@@ -1012,6 +1082,7 @@
 							<option value="processing" <? if ($searchstatus == "processing") { echo "selected"; } ?>>Processing
 							<option value="error" <? if ($searchstatus == "error") { echo "selected"; } ?>>Error
 							<option value="submitted" <? if ($searchstatus == "submitted") { echo "selected"; } ?>>Submitted
+							<option value="cancelled" <? if ($searchstatus == "cancelled") { echo "selected"; } ?>>Cancelled
 							<option value="allothers" <? if ($searchstatus == "allothers") { echo "selected"; } ?>>All other status (ignored, etc)
 						</select>
 					</td>
@@ -1162,7 +1233,7 @@
 								}
 								else {
 									/* an error can happen before a job is submitted (qsubid 0), so don't report it as copying data */
-									if (($analysis_qsubid == 0) && ($analysis_status != 'complete') && ($analysis_status != 'error')) {
+									if (($analysis_qsubid == 0) && ($analysis_status != 'complete') && ($analysis_status != 'error') && ($analysis_status != 'cancelled')) {
 										echo "[$analysis_status] Copying data?";
 									}
 									else {
@@ -1176,6 +1247,9 @@
 												break;
 											case 'error':
 												$tip = "An error occurred. See the status message and analysis logs for details";
+												break;
+											case 'cancelled':
+												$tip = "The analysis was cancelled by a user. Its cluster job was stopped, or it was never submitted";
 												break;
 										}
 										$statusstyle = ($analysis_status == 'error') ? "font-weight: bold; color: darkred; " : "";
@@ -1264,6 +1338,14 @@
 					  document.studieslist.submit();
 				   }
 				}
+				function CancelAnalyses(){
+					var yes = confirm("Are you absolutely sure you want to cancel the selected analyses?");
+					if (yes){
+					  document.studieslist.action='analysis.php';
+					  $("#studieslistaction").attr("value", "cancelanalyses");
+					  document.studieslist.submit();
+				   }
+				}
 				function MarkAnalysis(){
 					document.studieslist.action='analysis.php';
 					document.studieslist.submit();
@@ -1303,13 +1385,6 @@
 				</div>
 			</div>
 			
-			<!--<div class="right menu" id="popupbutton2">
-				<a class="browse item" style="background-color: Lavender">
-					With Selected...
-					<i class="dropdown icon"></i>
-				</a>
-			</div>-->
-			
 			<div class="right menu">
 				<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
 					<i class="dropdown icon"></i>
@@ -1317,7 +1392,9 @@
 					<div class="ui vertical menu">
 						
 						<? if ($canmanage) { ?>
-						<div class="ui item" onclick="DeleteAnalyses()" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are compelte before reenabling the pipeline</b><Br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+						<div class="ui item" onclick="DeleteAnalyses()" title="<b style='color:orange'>Pipeline will be disabled. Wait until the deletions are complete before re-enabling the pipeline</b><br> This will delete the selected analyses, which will be regenerated using the latest pipeline version"><i class="red trash icon"></i> Delete</div>
+
+						<div class="ui item" onclick="CancelAnalyses()" title="<b style='color:orange'>Pipeline will be disabled. Wait until the cancellations are complete before re-enabling the pipeline</b><br> This will cancel the selected analyses"><i class="red cancel icon"></i> Cancel job</div>
 						<? } ?>
 						
 						<div class="ui item" onclick="document.studieslist.action='analysis.php';document.studieslist.action.value='copyanalyses'; GetDestination(); return;"><i class="copy icon"></i> Copy analyses to...</div>

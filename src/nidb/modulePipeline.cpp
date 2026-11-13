@@ -660,6 +660,22 @@ int modulePipeline::Run() {
 
                         SystemCommand("chmod -Rf 777 " + analysispath, true, true);
 
+                        /* the analysis may have been cancelled from the website while its data was being copied
+                           (moduleFileIO::CancelAnalysis marks it 'cancelled' when it has no job yet). If so, don't submit it */
+                        {
+                            QSqlQuery qc;
+                            qc.prepare("select analysis_status from analysis where analysis_id = :analysisid");
+                            qc.bindValue(":analysisid", analysisRowID);
+                            n->SQLQuery(qc, __FUNCTION__, __FILE__, __LINE__);
+                            if (qc.first() && (qc.value("analysis_status").toString() == "cancelled")) {
+                                m = QString("Analysis [%1] for %2%3 was cancelled while it was being set up. Not submitting it to the cluster").arg(analysisRowID).arg(s.GetUID()).arg(s.GetStudyNum());
+                                n->Log(m, __FUNCTION__);
+                                n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupSubmitToCluster, LogStatus::warning, 0, "Cancelled by user before it was submitted", "");
+                                RecordPipelineEvent(pipelineid, runnum, -1, "analysisCancelled", m);
+                                continue;
+                            }
+                        }
+
                         /* submit the cluster job file */
                         QString qm, qresult;
                         int jobid(-1);

@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 10, 2026 at 05:02 PM
+-- Generation Time: Nov 13, 2026 at 08:12 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -34,7 +34,7 @@ CREATE TABLE `analysis` (
   `pipeline_dependency` int(11) DEFAULT NULL,
   `study_id` int(11) DEFAULT NULL,
   `analysis_qsubid` bigint(20) UNSIGNED DEFAULT NULL,
-  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started') DEFAULT NULL,
+  `analysis_status` enum('complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started','cancelled') DEFAULT NULL,
   `analysis_statusmessage` varchar(255) DEFAULT NULL,
   `analysis_statusdatetime` timestamp NULL DEFAULT NULL,
   `analysis_notes` longtext DEFAULT NULL,

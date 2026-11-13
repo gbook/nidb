@@ -96,6 +96,7 @@
 			case 'started': $statuscolor = '#2185d0'; break;
 			case 'pending':
 			case 'submitted': $statuscolor = '#f2711c'; break;
+			case 'cancelled': $statuscolor = '#a5673f'; break;
 			default: $statuscolor = '#767676';
 		}
 		$isrunning = in_array($status, array('processing', 'started'));

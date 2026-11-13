@@ -194,7 +194,7 @@ int moduleFileIO::Run() {
             }
             else if (fileio_operation == "cancel") {
                 if (data_type == "pipelinecontainer") { found = CancelPipelineContainer(data_id, username, msg); }
-                else if (data_type == "analysis") { found = CancelAnalysis(data_id, msg); }
+                else if ((data_type == "analysis") || (data_type == "groupanalysis")) { found = CancelAnalysis(data_id, msg); }
             }
             else if (fileio_operation == "detach") {
             }
@@ -869,31 +869,94 @@ bool moduleFileIO::CancelAnalysis(qint64 analysisid, QString &msg) {
     analysis a(analysisid, n); /* get the analysis info */
     if (!a.isValid) { msg = "Analysis was not valid: [" + a.msg + "]"; return false; }
 
-    /* stop the cluster job, but only if the analysis is still active. A finished analysis's job ID may since have been
-       reused by the scheduler for someone else's job. The pipeline is only needed here (for its cluster settings) */
+    /* group (level 2) analyses have no subject/study */
+    QString what;
+    if (a.uid == "")
+        what = QString("group analysis for pipeline [%1]").arg(a.pipelinename);
+    else
+        what = QString("analysis for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
+
+    /* the website sets the status message to 'Queued for cancellation' when it queues this request. When the cancel
+       doesn't happen, replace that message with the reason, but only if nothing else has changed the message since */
+    auto replaceQueuedMessage = [&](QString m) {
+        QSqlQuery q;
+        q.prepare("update analysis set analysis_statusmessage = :msg, analysis_statusdatetime = now() where analysis_id = :analysisid and analysis_statusmessage = 'Queued for cancellation'");
+        q.bindValue(":msg", m.left(255));
+        q.bindValue(":analysisid", analysisid);
+        n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    };
+
+    /* only an active analysis can be cancelled. Anything else (complete, error, the various no-match states) is left
+       alone: child pipelines only use 'complete' analyses, so relabelling one would hide it from them */
     QString status = a.status.trimmed().toLower();
     bool active = ((status == "pending") || (status == "submitted") || (status == "started") || (status == "processing"));
-    if (active && (a.jobid > 0)) {
+    if (!active) {
+        msg = QString("Did not cancel %1. It is [%2], not running, so there was nothing to cancel").arg(what).arg(status == "" ? "no status" : status);
+        n->Log(msg);
+        replaceQueuedMessage(QString("Not cancelled. The analysis was [%1] when the cancel was processed").arg(status == "" ? "no status" : status));
+        return false;
+    }
+
+    /* stop the cluster job if there is one. With no job ID the analysis is still being set up (data being copied) and
+       hasn't been submitted yet. It is still marked cancelled below, and the pipeline module checks for that just
+       before it submits, so it won't be submitted. The pipeline is only needed here for its cluster settings */
+    QString cancelMsg;
+    if (a.jobid > 0) {
         pipeline p(n);
         p.searchPipelineRowID = a.pipelineid;
         if (!p.Load()) {
-            msg = QString("Did not delete the analysis. It is [%1] with cluster job [%2], and pipeline [%3] couldn't be loaded to stop the job [%4]").arg(status).arg(a.jobid).arg(a.pipelineid).arg(p.msg);
+            msg = n->Log(QString("Did not cancel %1. It is [%2] with cluster job [%3], and pipeline [%4] couldn't be loaded to stop the job [%5]").arg(what).arg(status).arg(a.jobid).arg(a.pipelineid).arg(p.msg));
+            replaceQueuedMessage("Cancel failed. The pipeline couldn't be loaded to stop the cluster job");
+            n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscancelerror", "error", msg);
             return false;
         }
 
-        QString cancelMsg, result;
+        QString result;
         if (!n->CancelClusterJob(p.clusterType, p.clusterSubmitHost, p.clusterSubmitHostUser, n->cfg["qsubpath"], a.jobid, cancelMsg, result)) {
-            /* don't delete the directory out from under a job that may still be running */
-            msg = n->Log(QString("Did not delete the analysis. Its cluster job [%1] may still be running, stop it and try again. %2").arg(a.jobid).arg(cancelMsg));
+            msg = n->Log(QString("Did not cancel %1. %2").arg(what).arg(cancelMsg));
+            replaceQueuedMessage("Cancel failed. " + cancelMsg);
+            n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscancelerror", "error", msg);
             return false;
         }
         n->Log(cancelMsg);
     }
     else {
-        n->Log(QString("Analysis is [%1] with job ID [%2], so there's no cluster job to stop").arg(status).arg(a.jobid));
+        cancelMsg = "The analysis had not been submitted to the cluster yet, so it will not be submitted";
+        n->Log(QString("Analysis is [%1] with job ID [%2]. %3").arg(status).arg(a.jobid).arg(cancelMsg));
     }
 
-    msg = QString("Analysis cancelled for %1%2 for pipeline [%3]").arg(a.uid).arg(a.studynum).arg(a.pipelinename);
+    /* mark it cancelled, but only if it is still in the state that was read above: still active, and with the same job
+       (or still no job). Otherwise the job finished, or the pipeline module submitted it, in the meantime. The cluster
+       end date is set only if the job started, so the wall time shows how long it ran before it was cancelled */
+    QSqlQuery q;
+    QString jobcondition = (a.jobid > 0) ? "analysis_qsubid = :jobid" : "(analysis_qsubid is null or analysis_qsubid < 1)";
+    q.prepare("update analysis set analysis_status = 'cancelled', analysis_statusmessage = 'Cancelled by user', analysis_statusdatetime = now(), analysis_clusterenddate = if(analysis_clusterstartdate is null, analysis_clusterenddate, now()) where analysis_id = :analysisid and analysis_status in ('pending','submitted','started','processing') and " + jobcondition);
+    q.bindValue(":analysisid", analysisid);
+    if (a.jobid > 0)
+        q.bindValue(":jobid", a.jobid);
+    bool ok = true;
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__, &ok);
+    if (!ok) {
+        msg = n->Log(QString("Cancelled the cluster job for %1, but couldn't mark the analysis cancelled (database error, see the log). %2").arg(what).arg(cancelMsg));
+        return false;
+    }
+
+    if (q.numRowsAffected() < 1) {
+        /* something changed the analysis between reading it and now */
+        analysis a2(analysisid, n);
+        QString newstatus = a2.isValid ? a2.status.trimmed().toLower() : "deleted";
+        if (a.jobid > 0)
+            msg = QString("Did not mark %1 as cancelled. It changed to [%2] while being cancelled, so its job had probably already finished. %3").arg(what).arg(newstatus).arg(cancelMsg);
+        else
+            msg = QString("Did not cancel %1. It was submitted to the cluster (job [%2]) while being cancelled. Cancel it again to stop that job").arg(what).arg(a2.jobid);
+        n->Log(msg);
+        replaceQueuedMessage(QString("Not cancelled. The analysis changed to [%1] while being cancelled").arg(newstatus));
+        n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscancelerror", "error", msg);
+        return false;
+    }
+
+    msg = QString("Cancelled %1. %2").arg(what).arg(cancelMsg);
+    n->InsertAnalysisEvent(analysisid, a.pipelineid, a.pipelineversion, a.studyid, "analysiscancelled", "success", msg);
     return true;
 }
 
