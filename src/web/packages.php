@@ -354,6 +354,26 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- SeriesTableHasColumn --------------- */
+	/* -------------------------------------------- */
+	/* true if the <modality>_series table has this column. The series tables don't all share the
+	   same columns (numfiles, for one). Every series table's columns are read in one query and cached */
+	function SeriesTableHasColumn($modality, $column) {
+		static $columns = null;
+
+		if (is_null($columns)) {
+			$columns = array();
+			$result = PkgQuery("select table_name 'tablename', column_name 'columnname' from information_schema.columns where table_schema = database() and table_name like '%\_series'", array(), __LINE__);
+			while (($result) && ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))) {
+				$columns[strtolower($row['tablename'])][strtolower($row['columnname'])] = true;
+			}
+		}
+
+		return isset($columns[strtolower($modality . "_series")][strtolower($column)]);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- FilterViewableData ----------------- */
 	/* -------------------------------------------- */
 	/* Keep only the IDs of raw data in projects where the current user has View Data. Putting data
@@ -1024,7 +1044,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectallsubjects"></th>
+							<th><input type="checkbox" id="selectallsubjects" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>UID</th>
 							<th>Sex</th>
 							<th>Enrolled project</th>
@@ -1158,7 +1178,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectallstudies"></th>
+							<th><input type="checkbox" id="selectallstudies" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>Study</th>
 							<th>Date</th>
 							<th>Visit</th>
@@ -1417,7 +1437,7 @@
 				<div class="content">
 					<table class="ui very compact collapsing table">
 						<thead>
-							<th><input type="checkbox" id="selectallexperiments"></th>
+							<th><input type="checkbox" id="selectallexperiments" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>Experiment</th>
 							<th>Date</th>
 						</thead>
@@ -1464,7 +1484,20 @@
 	function DisplayFormAnalyses($analysisids, $required) {
 
 		$analysisids = CleanIDs($analysisids);
-		$numanalysis = count($analysisids);
+
+		/* only finished analyses can be packaged. Query them first so the counts below match
+		   the rows that are listed (and posted), not every ID that was passed in */
+		$analysisrows = array();
+		if (count($analysisids) > 0) {
+			//'complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started'
+			$sqlstring = "select * from analysis where analysis_id in (" . InPlaceholders($analysisids) . ") and analysis_status in ('complete', 'error','rerunresults')";
+			$result = PkgQuery($sqlstring, $analysisids, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$analysisrows[] = $row;
+			}
+		}
+		$numanalysis = count($analysisrows);
+		$numunfinished = count($analysisids) - $numanalysis;
 
 		if ($required) {
 			$checkboxstr = " checked onClick='return false' onKeyDown='return false' ";
@@ -1481,7 +1514,7 @@
 			$numselected = 0;
 		}
 
-		if (count((array)$analysisids) > 0) {
+		if ($numanalysis > 0) {
 			?>
 			<script type="text/javascript">
 				$(function() {
@@ -1521,6 +1554,7 @@
 				</div>
 				<div class="ui ten wide column">
 					<div class="ui left pointing red label"><span id="numanalysisselected"><?=$numselected?></span> of <?=$numanalysis?> analyses <?=$labelstr?></div>
+					<? if ($numunfinished > 0) { ?> &nbsp; <span class="ui grey text"><?=$numunfinished?> unfinished or missing analyses not listed. Only complete, error, and rerunresults analyses can be packaged</span><? } ?>
 				</div>
 			</div>
 
@@ -1532,18 +1566,15 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" name="selectallanalysis" id="selectallanalysis"></th>
+							<th><input type="checkbox" name="selectallanalysis" id="selectallanalysis" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>Analysis</th>
 							<th>Date</th>
 							<th>Status</th>
 						</thead>
 						<tbody>
 						<?
-						//'complete','pending','processing','error','submitted','','notcompleted','NoMatchingStudies','rerunresults','NoMatchingStudyDependency','IncompleteDependency','BadDependency','NoMatchingSeries','OddDependencyStatus','started'
-							/* get subject info. there may be series from multiple subjects in this list */
-							$sqlstring = "select * from analysis where analysis_id in (" . InPlaceholders($analysisids) . ") and analysis_status in ('complete', 'error','rerunresults')";
-							$result = PkgQuery($sqlstring, $analysisids, __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+							/* rows were collected above */
+							foreach ($analysisrows as $row) {
 								$analysisid = $row['analysis_id'];
 								$analysisdate = $row['analysis_startdate'];
 								$analysisstatus = $row['analysis_status'];
@@ -1569,6 +1600,7 @@
 				<input type="checkbox" name="includeanalysis" value="0">
 				<label style="font-size:larger; font-weight: bold">No analyses found</label>
 			</div>
+			<? if ($numunfinished > 0) { ?> &nbsp; <span class="ui grey text"><?=$numunfinished?> selected analyses are unfinished or missing. Only complete, error, and rerunresults analyses can be packaged</span><? } ?>
 			<br>
 			<?
 		}
@@ -1649,7 +1681,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectallpipelines"></th>
+							<th><input type="checkbox" id="selectallpipelines" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>Pipeline</th>
 						</thead>
 						<tbody>
@@ -1749,10 +1781,8 @@
 		$observationData = json_encode($observationRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
 		?>
 
-		<!-- AG Grid (community): noStyle build + alpine theme CSS -->
-		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css">
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
 
 		<div class="ui grid">
 			<div class="ui six wide column">
@@ -1781,7 +1811,7 @@
 			<div class="content">
 				<!-- hidden field carrying the granular (grid) selection; populated on form submit -->
 				<input type="hidden" name="observationidstr" id="observationidstr" value="">
-				<div id="observationsFormGrid" class="ag-theme-alpine" style="height: 45vh"></div>
+				<div id="observationsFormGrid" style="height: 45vh"></div>
 			</div>
 		</div>
 
@@ -1961,7 +1991,7 @@
 				<div class="content">
 					<table class="ui very compact table">
 						<thead>
-							<th><input type="checkbox" id="selectallinterventions"></th>
+							<th><input type="checkbox" id="selectallinterventions" <?=($required ? "checked disabled title='All of these will be added'" : "")?>></th>
 							<th>UID</th>
 							<th>Intervention</th>
 							<th>Dose desc</th>
@@ -2306,30 +2336,29 @@
 		$numobjects = 0;
 		$msg = "";
 
-		/* add any enrollments */
+		/* add any enrollments. Every count below is the number of rows actually inserted. Objects
+		   already in the package are skipped by "insert ignore" and reported separately */
 		if (count($enrollmentids) > 0) {
-			foreach ($enrollmentids as $enrollmentid) {
-				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values (?, ?, ?)";
-				PkgQuery($sqlstring, array($packageid, $enrollmentid, (string)$altuid), __LINE__);
-			}
-			$numobjects += count($enrollmentids);
-			$msg .= "Added " . count($enrollmentids) . " enrollments<br>";
+			$numadded = InsertPackageEnrollments($packageid, $enrollmentids);
+			$numobjects += $numadded;
+			$msg .= AddedObjectsMsg($numadded, count($enrollmentids), "enrollments");
 		}
 
 		/* add any series, if the Series toggle was on. On the study and series add forms the toggle
 		   is forced on; on the enrollment form series are optional */
-		if (count($seriesbymodality) > 0) {
-			$numseriesadded = 0;
-			foreach ($seriesbymodality as $mod => $sids) {
-				foreach ($sids as $sid) {
-					$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values (?, ?, ?)";
-					PkgQuery($sqlstring, array($packageid, (string)$mod, (int)$sid), __LINE__);
-					$numseriesadded++;
-				}
+		$numseriessubmitted = 0;
+		$numseriesadded = 0;
+		foreach ($seriesbymodality as $mod => $sids) {
+			foreach ($sids as $sid) {
+				$sqlstring = "insert ignore into package_series (package_id, modality, series_id) values (?, ?, ?)";
+				PkgQuery($sqlstring, array($packageid, (string)$mod, (int)$sid), __LINE__, $affected);
+				$numseriesadded += $affected;
+				$numseriessubmitted++;
 			}
+		}
+		if ($numseriessubmitted > 0) {
 			$numobjects += $numseriesadded;
-			$msg .= "Added " . $numseriesadded . " series<br>";
+			$msg .= AddedObjectsMsg($numseriesadded, $numseriessubmitted, "series");
 		}
 
 		/* add any experiments, analyses, pipelines, and interventions. Each is only added if its
@@ -2343,40 +2372,15 @@
 		);
 		foreach ($objecttypes as list($ids, $include, $objecttable, $idcolumn, $label)) {
 			if ((count($ids) > 0) && ($include)) {
+				$numadded = 0;
 				foreach ($ids as $id) {
 					$sqlstring = "insert ignore into $objecttable (package_id, $idcolumn) values (?, ?)";
-					PkgQuery($sqlstring, array($packageid, $id), __LINE__);
+					PkgQuery($sqlstring, array($packageid, $id), __LINE__, $affected);
+					$numadded += $affected;
 				}
-				$numobjects += count($ids);
-				$msg .= "Added " . count($ids) . " $label<br>";
+				$numobjects += $numadded;
+				$msg .= AddedObjectsMsg($numadded, count($ids), $label);
 			}
-		}
-
-		/* an analysis belongs to a study, and so to a subject. The analysis add form doesn't add
-		   that subject, so add the enrollment here. Otherwise the subject is missing from the
-		   package's Subjects list, and removing the subject wouldn't remove its analyses. The
-		   enrollments are raw data, so only ones the user can view are added */
-		if ((count($analysisids) > 0) && ($includeanalysis)) {
-			$analysisenrollmentids = array();
-			$sqlstring = "select distinct st.enrollment_id from analysis a inner join studies st on a.study_id = st.study_id where a.analysis_id in (" . InPlaceholders($analysisids) . ")";
-			$result = PkgQuery($sqlstring, $analysisids, __LINE__);
-			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-				$enrollmentid = (int)$row['enrollment_id'];
-				/* enrollments posted with the form were already added above */
-				if (!in_array($enrollmentid, $enrollmentids))
-					$analysisenrollmentids[] = $enrollmentid;
-			}
-
-			$analysisenrollmentids = FilterViewableData("enrollment", $analysisenrollmentids, "", $numskipped);
-			$numsubjectsadded = 0;
-			foreach ($analysisenrollmentids as $enrollmentid) {
-				list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
-				$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values (?, ?, ?)";
-				PkgQuery($sqlstring, array($packageid, $enrollmentid, (string)$altuid), __LINE__, $affected);
-				$numsubjectsadded += $affected;
-			}
-			if ($numsubjectsadded > 0)
-				$msg .= "Added $numsubjectsadded subjects that the analyses belong to<br>";
 		}
 
 		/* Observations. Two mutually exclusive paths:
@@ -2385,6 +2389,7 @@
 		        it adds all observations even when the add form only listed the first N.
 		     2. otherwise, add just the granular subset the user selected in the grid (arrives as
 		        observationidstr -> $observationids). */
+		$addedallobservations = false;
 		if (($includeobservations) && (count($enrollmentids) > 0)) {
 			$observationids = array();
 			$sqlstring = "select observation_id from observations where enrollment_id in (" . InPlaceholders($enrollmentids) . ")";
@@ -2392,14 +2397,38 @@
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$observationids[] = (int)$row['observation_id'];
 			}
-			$numobsadded = InsertPackageObservations($packageid, $observationids);
-			$numobjects += $numobsadded;
-			$msg .= "Added " . $numobsadded . " observations<br>";
+			$addedallobservations = true;
 		}
-		elseif (count($observationids) > 0) {
+		if (count($observationids) > 0) {
 			$numobsadded = InsertPackageObservations($packageid, $observationids);
 			$numobjects += $numobsadded;
-			$msg .= "Added " . $numobsadded . " observations<br>";
+			$msg .= AddedObjectsMsg($numobsadded, count($observationids), "observations");
+		}
+
+		/* series, analyses, interventions, and observations each belong to a subject. A package
+		   lists its subjects through package_enrollments, and removing a subject removes its data
+		   through that row, so make sure the subject of every object added above is in the
+		   package. The form normally posts these enrollments, but the request can't be trusted to.
+		   The enrollments are raw data, so only ones the user can view are added */
+		$ownerenrollmentids = array();
+		foreach ($seriesbymodality as $mod => $sids) {
+			$ownerenrollmentids = array_merge($ownerenrollmentids, GetObjectEnrollments("select distinct st.enrollment_id from $mod" . "_series x inner join studies st on x.study_id = st.study_id where x.$mod" . "series_id in (", $sids));
+		}
+		if ($includeanalysis)
+			$ownerenrollmentids = array_merge($ownerenrollmentids, GetObjectEnrollments("select distinct st.enrollment_id from analysis a inner join studies st on a.study_id = st.study_id where a.analysis_id in (", $analysisids));
+		if ($includeinterventions)
+			$ownerenrollmentids = array_merge($ownerenrollmentids, GetObjectEnrollments("select distinct enrollment_id from interventions where intervention_id in (", $interventionids));
+		/* "add all" observations were found through $enrollmentids, so their subjects are already in */
+		if (!$addedallobservations)
+			$ownerenrollmentids = array_merge($ownerenrollmentids, GetObjectEnrollments("select distinct enrollment_id from observations where observation_id in (", $observationids));
+
+		/* enrollments posted with the form were already added above */
+		$ownerenrollmentids = array_diff(CleanIDs($ownerenrollmentids), $enrollmentids);
+		$ownerenrollmentids = FilterViewableData("enrollment", $ownerenrollmentids, "", $numskipped);
+		if (count($ownerenrollmentids) > 0) {
+			$numsubjectsadded = InsertPackageEnrollments($packageid, $ownerenrollmentids);
+			if ($numsubjectsadded > 0)
+				$msg .= "Added $numsubjectsadded subjects that the added data belongs to<br>";
 		}
 
 		if (count($skipped) > 0)
@@ -2446,11 +2475,13 @@
 	/* -------------------------------------------- */
 	/* ------- InsertPackageObservations ---------- */
 	/* -------------------------------------------- */
-	/* add observations to a package, 100 rows per insert. Returns the number of IDs submitted */
+	/* add observations to a package, 100 rows per insert. Returns the number of rows inserted,
+	   which excludes observations already in the package */
 	function InsertPackageObservations($packageid, $observationids) {
 		$packageid = (int)$packageid;
 		$observationids = CleanIDs($observationids);
 
+		$numinserted = 0;
 		foreach (array_chunk($observationids, 100) as $chunk) {
 			$rows = array();
 			$params = array();
@@ -2460,10 +2491,63 @@
 				$params[] = $observationid;
 			}
 			$sqlstring = "insert ignore into package_observations (package_id, observation_id) values " . implode(",", $rows);
-			PkgQuery($sqlstring, $params, __LINE__);
+			PkgQuery($sqlstring, $params, __LINE__, $affected);
+			$numinserted += $affected;
 		}
 
-		return count($observationids);
+		return $numinserted;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- InsertPackageEnrollments ----------- */
+	/* -------------------------------------------- */
+	/* add enrollments to a package, with each enrollment's primary alternate UID. Returns the
+	   number of rows inserted, which excludes enrollments already in the package */
+	function InsertPackageEnrollments($packageid, $enrollmentids) {
+		$packageid = (int)$packageid;
+
+		$numinserted = 0;
+		foreach (CleanIDs($enrollmentids) as $enrollmentid) {
+			list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) values (?, ?, ?)";
+			PkgQuery($sqlstring, array($packageid, $enrollmentid, (string)$altuid), __LINE__, $affected);
+			$numinserted += $affected;
+		}
+
+		return $numinserted;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetObjectEnrollments --------------- */
+	/* -------------------------------------------- */
+	/* the enrollment IDs that own these objects. $sqlprefix is a select returning enrollment_id,
+	   ending in "in (". The IDs are bound in chunks of 1000 to keep each statement small */
+	function GetObjectEnrollments($sqlprefix, $ids) {
+		$enrollmentids = array();
+		foreach (array_chunk(CleanIDs($ids), 1000) as $chunk) {
+			$result = PkgQuery($sqlprefix . InPlaceholders($chunk) . ")", $chunk, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = (int)$row['enrollment_id'];
+				if ($enrollmentid > 0)
+					$enrollmentids[$enrollmentid] = $enrollmentid;
+			}
+		}
+		return array_values($enrollmentids);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- AddedObjectsMsg -------------------- */
+	/* -------------------------------------------- */
+	/* "Added 3 series (2 were already in the package)<br>" */
+	function AddedObjectsMsg($numadded, $numsubmitted, $label) {
+		$msg = "Added " . (int)$numadded . " $label";
+		$numexisting = (int)$numsubmitted - (int)$numadded;
+		if ($numexisting > 0)
+			$msg .= " ($numexisting were already in the package)";
+		return "$msg<br>";
 	}
 
 
@@ -2645,18 +2729,26 @@
 		
 		MarkTime("Getting enrollment data");
 
+		/* Everything below is fetched with a fixed number of set-based queries. A package can hold
+		   tens of thousands of objects, and the old per-row lookups (GetSeriesInfo, GetEnrollmentInfo,
+		   GetStudyInfo) cost one to three queries per object */
+
+		/* uid => primary alternate UID, shown in the series grid */
 		$altIDMapping = array();
-		
-		/* get enrollment data */
-		$sqlstring = "select * from package_enrollments where package_id = ?";
+
+		/* every enrollment in the package, with its subject and primary alternate UID, in one query */
+		$seenenrollments = array();
+		$sqlstring = "select pe.enrollment_id, pe.package_subjectid, s.uid, sa.altuid from package_enrollments pe left join enrollment e on pe.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id left join subject_altuid sa on sa.subject_id = e.subject_id and sa.enrollment_id = pe.enrollment_id and sa.isprimary = 1 where pe.package_id = ? order by pe.packageenrollment_id";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$packageenrollmentid = $row['packageenrollment_id'];
-			$enrollmentid = $row['enrollment_id'];
-			$optionflags = $row['option_flags'];
-			$packagesubjectid = $row['package_subjectid'];
-			
-			list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
+			$enrollmentid = (int)$row['enrollment_id'];
+			/* an enrollment with more than one primary alternate UID returns more than one row; use the first */
+			if (isset($seenenrollments[$enrollmentid]))
+				continue;
+			$seenenrollments[$enrollmentid] = true;
+
+			$uid = (string)($row['uid'] ?? '');
+			$altuid = trim((string)($row['altuid'] ?? ''));
 
 			/* the subject is part of the package even if none of its series are. Its studies and
 			   series are filled in by the series loop below */
@@ -2666,54 +2758,81 @@
 			/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
 			if ($altuid != "") {
 				$altIDMapping[$uid] = $altuid;
-				if ($altuid != $packagesubjectid)
+				if ($altuid != (string)($row['package_subjectid'] ?? ''))
 					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
 			}
 		}
-		
+
 		MarkTime("Getting series data");
-		/* get series data */
+		/* get series data, one query per modality */
 		$totalbytes = 0;
 		$totalfiles = 0;
-		$sqlstring = "select * from package_series where package_id = ?";
-		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$packageseriesid = $row['packageseries_id'];
-			$modality = strtolower(trim($row['modality'] ?? ''));
-			$seriesid = (int)$row['series_id'];
+		$altuidlookup = array(); /* uid => enrollment_id, for series subjects with no alternate UID yet */
+		list($modalities, $invalidmodalities) = GetPackageSeriesModalities($packageid);
 
-			/* GetSeriesInfo() puts the modality into a table name, so skip anything that isn't a
-			   real <modality>_series table */
-			if (!IsSeriesModality($modality)) {
+		/* series whose modality has no <modality>_series table can't be looked up. They are pruned
+		   when the package is opened, so this is normally empty */
+		if (count($invalidmodalities) > 0) {
+			$sqlstring = "select packageseries_id, series_id, modality from package_series where package_id = ? and modality in (" . InPlaceholders($invalidmodalities) . ")";
+			$result = PkgQuery($sqlstring, array_merge(array($packageid), $invalidmodalities), __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$seriesid = (int)$row['series_id'];
 				$msgs[] = "Series with series_id [$seriesid] has an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]";
-				$missingSeries[] = array("id" => (int)$packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => (string)($row['modality'] ?? ''), "seriesnum" => "series_id $seriesid");
-				continue;
+				$missingSeries[] = array("id" => (int)$row['packageseries_id'], "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => (string)($row['modality'] ?? ''), "seriesnum" => "series_id $seriesid");
 			}
+		}
 
-			list($path, $uid, $studynum, $seriesnum, $seriesdesc, $imagetype, $seriessize, $numfiles, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetSeriesInfo($seriesid, $modality);
+		foreach ($modalities as $modality) {
+			/* not every series table has a numfiles column */
+			$numfilescol = (SeriesTableHasColumn($modality, "numfiles") ? "x.numfiles" : "null");
+			$sqlstring = "select ps.packageseries_id, ps.series_id, x.series_num, x.series_size, $numfilescol 'numfiles', st.study_num, st.study_datetime, st.study_modality, st.enrollment_id, s.uid, p.project_name from package_series ps left join $modality" . "_series x on ps.series_id = x.$modality" . "series_id left join studies st on x.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id left join projects p on e.project_id = p.project_id where ps.package_id = ? and ps.modality = ?";
+			$result = PkgQuery($sqlstring, array($packageid, $modality), __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$packageseriesid = (int)$row['packageseries_id'];
+				$seriesid = (int)$row['series_id'];
+				$uid = (string)($row['uid'] ?? '');
 
-			/* GetSeriesInfo() returns a blank UID if the series (or its study/subject) was deleted */
-			if ($uid == "") {
-				$modality = strtolower(trim($row['modality'] ?? ''));
-				$msgs[] = "Series with series_id [$seriesid] (" . htmlspecialchars($modality) . ") no longer exists";
-				$missingSeries[] = array("id" => (int)$packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => $modality, "seriesnum" => "series_id $seriesid");
-			}
-			else {
-				$subjects[$uid][$studynum][$modality][$seriesnum]['objectid'] = $packageseriesid;
-				$subjects[$uid][$studynum][$modality][$seriesnum]['seriesid'] = $seriesid;
-				$subjects[$uid][$studynum][$modality][$seriesnum]['studydatetime'] = $studydatetime;
-				$subjects[$uid][$studynum][$modality][$seriesnum]['projectname'] = $projectname;
-				$totalbytes += $seriessize;
-				$totalfiles += $numfiles;
-				
-				if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
-					/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-					list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-					if ($altuid != "") {
-						$altIDMapping[$uid] = $altuid;
-						BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
-					}
+				/* a blank UID means the series (or its study/subject) was deleted */
+				if ($uid == "") {
+					$msgs[] = "Series with series_id [$seriesid] (" . htmlspecialchars($modality) . ") no longer exists";
+					$missingSeries[] = array("id" => $packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => $modality, "seriesnum" => "series_id $seriesid");
+					continue;
 				}
+
+				/* the grid shows the study's modality, as it did when this used GetSeriesInfo() */
+				$studynum = $row['study_num'];
+				$studymodality = (string)($row['study_modality'] ?? '');
+				$seriesnum = $row['series_num'];
+				$subjects[$uid][$studynum][$studymodality][$seriesnum]['objectid'] = $packageseriesid;
+				$subjects[$uid][$studynum][$studymodality][$seriesnum]['seriesid'] = $seriesid;
+				$subjects[$uid][$studynum][$studymodality][$seriesnum]['studydatetime'] = $row['study_datetime'];
+				$subjects[$uid][$studynum][$studymodality][$seriesnum]['projectname'] = $row['project_name'];
+				$totalbytes += (float)($row['series_size'] ?? 0);
+				$totalfiles += (int)($row['numfiles'] ?? 0);
+
+				if ((!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) && (!isset($altuidlookup[$uid])))
+					$altuidlookup[$uid] = (int)$row['enrollment_id'];
+			}
+		}
+
+		/* subjects whose series are in the package but whose enrollment had no alternate UID above.
+		   Look up the primary alternate UID of each series' enrollment, in one query. (No backfill
+		   is needed here: BackfillPackageAltUID only updates package_enrollments rows, and every
+		   one of those was handled by the enrollment loop) */
+		$lookupenrollmentids = CleanIDs(array_values($altuidlookup));
+		if (count($lookupenrollmentids) > 0) {
+			$altuidbyenrollment = array();
+			$sqlstring = "select sa.enrollment_id, sa.altuid from subject_altuid sa inner join enrollment e on sa.enrollment_id = e.enrollment_id and sa.subject_id = e.subject_id where sa.isprimary = 1 and sa.enrollment_id in (" . InPlaceholders($lookupenrollmentids) . ")";
+			$result = PkgQuery($sqlstring, $lookupenrollmentids, __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$enrollmentid = (int)$row['enrollment_id'];
+				$altuid = trim((string)($row['altuid'] ?? ''));
+				if ((!isset($altuidbyenrollment[$enrollmentid])) && ($altuid != ""))
+					$altuidbyenrollment[$enrollmentid] = $altuid;
+			}
+			foreach ($altuidlookup as $uid => $enrollmentid) {
+				if (isset($altuidbyenrollment[$enrollmentid]))
+					$altIDMapping[$uid] = $altuidbyenrollment[$enrollmentid];
 			}
 		}
 
@@ -2741,39 +2860,18 @@
 		foreach ($observations as $uid => $objects) {
 			$numobservationslisted += count($objects);
 		}
-		//	if (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid) {
-		//		/* the alt UID backfill is handled by the enrollment and series loops above */
-		//		list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-		//		if ($altuid != "") {
-		//			$altIDMapping[$uid] = $altuid;
-		//			$sqlstringA = "update package_enrollments set package_subjectid = '$altuid' where enrollment_id = $enrollmentid";
-		//			$resultA = MySQLiQuery($sqlstringA, __FILE__, __LINE__);
-		//		}
-		//	}
-		//}
 
 		MarkTime("Getting intervention data");
-		/* get interventions */
-		$sqlstring = "select * from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = ?";
+		/* get interventions. The subject comes from the joins, so no per-row lookups are needed */
+		$sqlstring = "select a.packageintervention_id, a.intervention_id, b.intervention_name, b.startdate, e.uid from package_interventions a left join interventions b on a.intervention_id = b.intervention_id left join enrollment d on b.enrollment_id = d.enrollment_id left join subjects e on d.subject_id = e.subject_id where a.package_id = ?";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$numinterventions = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$enrollmentid = $row['enrollment_id'];
 			$uid = $row['uid'];
-			//list($uid, $subjectid, $altuid, $projectname, $projectid) = GetEnrollmentInfo($enrollmentid);
 			$objectid = $row['packageintervention_id'];
 			$interventions[$uid][$objectid]['interventionid'] = $row['intervention_id'];
 			$interventions[$uid][$objectid]['name'] = $row['intervention_name'];
 			$interventions[$uid][$objectid]['startdate'] = $row['startdate'];
-
-			if (((int)$enrollmentid > 0) && (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid)) {
-				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-				if ($altuid != "") {
-					$altIDMapping[$uid] = $altuid;
-					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
-				}
-			}
 		}
 		
 		MarkTime("Getting experiment data");
@@ -2818,26 +2916,22 @@
 		$numpipelines = count($pipelines);
 
 		MarkTime("Getting analysis data");
-		/* get analysis */
+		/* get analysis. The subject comes from the joins (formerly GetStudyInfo() per row) */
 		$totalanalysisfiles = 0;
 		$totalanalysisbytes = 0;
-		$sqlstring = "select a.*, b.analysis_startdate, b.analysis_status, b.analysis_disksize, b.analysis_numfiles, c.*, d.pipeline_name from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join pipelines d on b.pipeline_id = d.pipeline_id where a.package_id = ?";
+		$sqlstring = "select a.packageanalysis_id, a.analysis_id, b.analysis_startdate, b.analysis_status, b.analysis_disksize, b.analysis_numfiles, c.study_id, c.study_num, d.pipeline_name, s.uid 'subjectuid' from package_analyses a left join analysis b on a.analysis_id = b.analysis_id left join studies c on b.study_id = c.study_id left join pipelines d on b.pipeline_id = d.pipeline_id left join enrollment en on c.enrollment_id = en.enrollment_id left join subjects s on en.subject_id = s.subject_id where a.package_id = ?";
 		$result = PkgQuery($sqlstring, array($packageid), __LINE__);
 		$numanalysis = mysqli_num_rows($result);
 		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$studyid = $row['study_id'];
-
-			/* an analysis (or its study) that no longer exists has no subject. Reset the per-row
-			   values so it isn't listed under the previous row's subject */
+			/* an analysis (or its study) that no longer exists has no subject */
 			$exists = 1;
 			$uid = "(missing)";
-			$enrollmentid = 0;
-			if ($studyid == "")  {
+			if (($row['study_id'] ?? '') == "")  {
 				$msgs[] = "Analysis with analysis_id [" . (int)$row['analysis_id'] . "] no longer exists";
 				$exists = 0;
 			}
 			else {
-				list($path, $uid, $studynum, $studyid, $subjectid, $modality, $type, $studydatetime, $enrollmentid, $projectname, $projectid) = GetStudyInfo($studyid);
+				$uid = (string)($row['subjectuid'] ?? '');
 			}
 
 			$objectid = $row['packageanalysis_id'];
@@ -2850,17 +2944,8 @@
 			$analyses[$uid][$objectid]['numfiles'] = $row['analysis_numfiles'];
 			$analyses[$uid][$objectid]['exists'] = $exists;
 			
-			$totalanalysisfiles += $row['analysis_numfiles'];
-			$totalanalysisbytes += $row['analysis_disksize'];
-			
-			if (($exists) && (!isset($altIDMapping[$uid]) || $altIDMapping[$uid] == "" || $altIDMapping[$uid] == $uid)) {
-				/* update the package_enrollment table with the alternate UID specific to this enrollment (this fixes packages before the primary alt uid was used) */
-				list($uidA, $subjectidA, $altuid, $projectnameA, $projectidA) = GetEnrollmentInfo($enrollmentid);
-				if ($altuid != "") {
-					$altIDMapping[$uid] = $altuid;
-					BackfillPackageAltUID($packageid, $enrollmentid, $altuid);
-				}
-			}
+			$totalanalysisfiles += (int)($row['analysis_numfiles'] ?? 0);
+			$totalanalysisbytes += (float)($row['analysis_disksize'] ?? 0);
 		}
 
 		//PrintVariable($altIDMapping);
@@ -2909,12 +2994,8 @@
 		?>
 		<? MarkTime("Before including AGgrid"); ?>
 
-		<!-- Include the JS for AG Grid -->
-		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community/dist/ag-grid-community.min.noStyle.js"></script>
-		<!-- Include the core CSS, this is needed by the grid -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-grid.css"/>-->
-		<!-- Include the theme CSS, only need to import the theme you are going to use -->
-		<!--<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community/styles/ag-theme-alpine.css"/>-->
+		<!-- ag-grid v36 uses the Theming API (styles injected by the JS); no CSS import or theme class needed -->
+		<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@36/dist/ag-grid-community.min.js"></script>
 
 		<? MarkTime("After including AGgrid"); ?>
 
@@ -3119,7 +3200,7 @@
 					</div>
 				</div>
 
-				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series will be moved out of this package.')">
+				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series, and the analyses of their studies, will be moved out of this package.')">
 					<input type="hidden" name="action" value="splitmodality">
 					<input type="hidden" name="packageid" value="<?=$packageid?>">
 					<?=CSRFTokenField()?>
@@ -3320,7 +3401,7 @@
 				/* list missing series last so they can be selected and removed */
 				$seriesRowData = array_merge($seriesRowData, $missingSeries);
 				?>
-				<div id="subjectsGrid" class="ag-theme-alpine" style="height: 50vh"></div>
+				<div id="subjectsGrid" style="height: 50vh"></div>
 				<button type="submit" class="ui orange button" onClick=getSelectedSeries()><i class="trash icon"></i>Remove selected series</button>
 				<input type="hidden" id="selectedSeries" name="objectidstodelete">
 				</form>
@@ -3431,7 +3512,7 @@
 					}
 				}
 				?>
-				<div id="observationsGrid" class="ag-theme-alpine" style="height: 50vh"></div>
+				<div id="observationsGrid" style="height: 50vh"></div>
 				<button type="submit" class="ui orange button" onClick=getSelectedObservations()><i class="trash icon"></i>Remove selected observations</button>
 				<input type="hidden" id="selectedObservations" name="objectidstodelete">
 				</form>
@@ -4056,8 +4137,22 @@
 		$sqlstring = "insert into exports (username, ip, download_flags, destinationtype, filetype, submitdate, status) values (?, ?, 'DOWNLOAD_PACKAGE', 'web', 'package', now(), 'submitted')";
 		PkgQuery($sqlstring, array($username, $ip), __LINE__, $affected, $exportRowID);
 
+		/* without an export row, the exportseries row below would point at export_id 0 and the
+		   export module would never pick it up */
+		if ((int)$exportRowID < 1) {
+			Error("Unable to queue the package for export. Nothing was submitted.");
+			return;
+		}
+
 		$sqlstring = "insert into exportseries (export_id, package_id, status) values (?, ?, 'submitted')";
-		PkgQuery($sqlstring, array((int)$exportRowID, (int)$packageid), __LINE__);
+		PkgQuery($sqlstring, array((int)$exportRowID, (int)$packageid), __LINE__, $affected);
+
+		/* an export row with no exportseries row would show as queued but never run, so remove it */
+		if ((int)$affected < 1) {
+			PkgQuery("delete from exports where export_id = ?", array((int)$exportRowID), __LINE__);
+			Error("Unable to queue the package for export. Nothing was submitted.");
+			return;
+		}
 
 		Notice("Package queued for export. Status can be checked, and package can be downloaded, from this page.");
 	}
@@ -4139,6 +4234,29 @@
 			$sqlstring = "insert ignore into package_enrollments (package_id, enrollment_id, package_subjectid) select ?, pe.enrollment_id, pe.package_subjectid from package_enrollments pe where pe.package_id = ? and pe.enrollment_id in (select st.enrollment_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id inner join studies st on st.study_id = ms.study_id where ps.package_id = ? and ps.modality = ?)";
 			PkgQuery($sqlstring, array((int)$newPackageID, $packageid, $packageid, $modality), __LINE__, $numenrollmentscopied);
 
+			/* analyses belong to a study, so they go with the study's series. Find the studies of
+			   the series being moved before the series themselves move */
+			$movedstudyids = array();
+			$sqlstring = "select distinct ms.study_id from package_series ps inner join " . $modality . "_series ms on ms." . $modality . "series_id = ps.series_id where ps.package_id = ? and ps.modality = ?";
+			$result = PkgQuery($sqlstring, array($packageid, $modality), __LINE__);
+			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+				$movedstudyids[] = (int)$row['study_id'];
+			}
+			$movedstudyids = CleanIDs($movedstudyids);
+
+			/* move the analyses of those studies. As with series below, UPDATE IGNORE skips analyses
+			   the target already holds, and the delete then removes them from the source */
+			$numanalysesmoved = 0;
+			$numanalysesduplicate = 0;
+			if (count($movedstudyids) > 0) {
+				$in = InPlaceholders($movedstudyids);
+				$sqlstring = "update ignore package_analyses pa inner join analysis a on pa.analysis_id = a.analysis_id set pa.package_id = ? where pa.package_id = ? and a.study_id in ($in)";
+				PkgQuery($sqlstring, array_merge(array((int)$newPackageID, $packageid), $movedstudyids), __LINE__, $numanalysesmoved);
+
+				$sqlstring = "delete pa from package_analyses pa inner join analysis a on pa.analysis_id = a.analysis_id where pa.package_id = ? and a.study_id in ($in)";
+				PkgQuery($sqlstring, array_merge(array($packageid), $movedstudyids), __LINE__, $numanalysesduplicate);
+			}
+
 			/* move the series for this modality into the new package. The target may already exist
 			   from an earlier split and hold some of the same series, which would violate the
 			   unique key (package_id, modality, series_id) and abort a plain UPDATE part-way. So
@@ -4150,9 +4268,11 @@
 			$sqlstring = "delete from package_series where package_id = ? and modality = ?";
 			PkgQuery($sqlstring, array($packageid, $modality), __LINE__, $numseriesduplicate);
 
-			$msg = "<b>" . htmlspecialchars($newPackageName) . "</b> - moved $numseriesmoved series, copied $numenrollmentscopied enrollments";
+			$msg = "<b>" . htmlspecialchars($newPackageName) . "</b> - moved $numseriesmoved series and $numanalysesmoved analyses, copied $numenrollmentscopied enrollments";
 			if ($numseriesduplicate > 0)
 				$msg .= " ($numseriesduplicate series were already in this package, and were removed from the original)";
+			if ($numanalysesduplicate > 0)
+				$msg .= " ($numanalysesduplicate analyses were already in this package, and were removed from the original)";
 			$msgs[] = $msg;
 
 			//CommitSQLTransaction();
