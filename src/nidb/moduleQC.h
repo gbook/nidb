@@ -35,12 +35,13 @@ public:
 
     int Run();
     bool QC(int moduleid, int seriesid, QString modality);
-    bool WriteClusterJobFile(QString jobFileName, QString jobName, qint64 clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint);
 
 private:
     nidb *n;
 
-    computeCluster GetClusterInfo(qint64 clusterRowID);
+    bool SubmitToCluster(QString moduleName, qint64 clusterRowID, QString qcPath, QString entryPoint, QString uid, QString &msg);
+    bool WriteClusterJobFile(QString jobFilePath, QString jobName, const computeCluster &cluster, QString qcPath, QString entryPoint, QString uid);
+    bool GetClusterInfo(qint64 clusterRowID, computeCluster &cluster);
     bool ExportSeries(qint64 seriesRowID, QString modality, ExportFormat format, QString outputDir);
 };
 

@@ -135,7 +135,7 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     QString datatype;
     QString entryPoint;
     QString modulename;
-    qint64 clusterRowID;
+    qint64 clusterRowID(0);
 
     QSqlQuery q;
     q.prepare("select * from qc_modules where qcmodule_id = :moduleid");
@@ -199,142 +199,121 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
     }
     n->Log("Created qc path [" + qcpath + "]");
 
-    if (n->cfg["usecluster"].toInt()) {
-        /* submit this module to the cluster. first create the SGE job file */
-        n->Log("Creating SGE job file...");
-        QString localJobFilePath = QString("%1/%2.job").arg(qcpath).arg(modulename);
-        QString clusterDataPath = QString("%1").arg(n->cfg["qsubpath"]);
-        WriteClusterJobFile(localJobFilePath, modulename, clusterRowID, qcpath, clusterDataPath, entryPoint);
-        n->Log("Created SGE job file");
+    /* Cluster mode is disabled for QC modules: SubmitToCluster() can write and submit a job, but nothing
+       exports the data beforehand or reads the results back afterwards. Until that exists, always run locally.
+       (clusterRowID is kept for when SubmitToCluster() is re-enabled) */
+    Q_UNUSED(clusterRowID);
+    if (n->cfg["usecluster"].toInt())
+        n->Log(QString("[%1] Cluster mode is not supported for QC modules yet. Running locally instead").arg(modulename), __FUNCTION__);
 
-        /* submit the SGE job */
-        //QString systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(n->cfg["clustersubmithost"]).arg(n->cfg["qsubpath"]).arg(n->cfg["queueuser"]).arg(n->cfg["queuename"]).arg(localJobFilePath);
-        //n->Log("About to submit SGE job file");
-        //n->Log(SystemCommand(systemstring));
-        //n->Log("Submitted SGE job file");
+    n->Log("Running QC module locally (not on cluster)");
 
-        /* get cluster info */
-        computeCluster cluster = GetClusterInfo(clusterRowID);
-        int jobID;
-        QString qResult;
-        if (n->SubmitClusterJob(localJobFilePath, cluster.type, cluster.submitHostname, cluster.submitHostUsername, n->cfg["qsubpath"], cluster.clusterUsername, cluster.queue, m, jobID, qResult)) {
-            n->Log(QString("[%1] Successfully submitted QC job to cluster [" + qResult + "]").arg(modulename), __FUNCTION__);
-        }
-        else {
-            n->Log(QString("[%1] Error submitting job to cluster [" + qResult + "]").arg(modulename), __FUNCTION__);
-        }
-
+    if ((s.bidsMapping.bidsEntity == "unknown") || (s.bidsMapping.bidsSuffix == "unknown")) {
+        n->Log(QString("BIDS mapping not specified, not running QC module %1 on series %2-%3-%4").arg(modulename).arg(uid).arg(studynum).arg(seriesnum));
     }
     else {
-        n->Log("Running QC module locally (not on cluster)");
 
-        if ((s.bidsMapping.bidsEntity == "unknown") || (s.bidsMapping.bidsSuffix == "unknown")) {
-            n->Log(QString("BIDS mapping not specified, not running QC module %1 on series %2-%3-%4").arg(modulename).arg(uid).arg(studynum).arg(seriesnum));
+        /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
+        QString resultsJsonPath;
+        if (s.bidsMapping.bidsTask == "") {
+            resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
         }
         else {
-
-            /* example path: /nidb/data/archive/S5479BEK/12/18/qc/mriqc_docker/output/sub-S5479BEK/ses-12/anat/sub-S5479BEK_ses-12_T1w.json */
-            QString resultsJsonPath;
-            if (s.bidsMapping.bidsTask == "") {
-                resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix);
-            }
-            else {
-                resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_task-%6_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix).arg(s.bidsMapping.bidsTask);
-            }
-
-            /* check if the JSON file already exists */
-            n->Log("Checking for existing JSON file [" + resultsJsonPath + "]");
-            if (QFile::exists(resultsJsonPath)) {
-                n->Log(QString("JSON file [%1] already exists, not running mriqc again").arg(resultsJsonPath));
-            }
-            else {
-                n->Log(QString("JSON file [%1] does not exist. Running mriqc").arg(resultsJsonPath));
-                /* download the data to qcpath */
-                ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
-                MakePath(outputPath, m);
-                QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
-                n->Log("Running the QC module [" + systemstring + "]");
-                n->Log(SystemCommand(systemstring));
-                n->Log("Finished running the QC module locally");
-            }
-
-            /* parse the mriqc results */
-            QFile file(resultsJsonPath);
-            if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-                n->Log("Could not open file [" + resultsJsonPath + "]. Error: " + file.errorString());
-            }
-            else {
-                n->Log("Reading output file [" + resultsJsonPath + "]");
-            }
-            QString jsonStr = file.readAll();
-            file.close();
-
-            QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
-
-            QJsonObject json = d.object();
-            n->Log(QString("JSON file contains %1 keys").arg(json.keys().size()));
-            int numMetricsInserted(0);
-            foreach(const QString& key, json.keys()) {
-                QJsonValue value = json.value(key);
-
-                QString valType;
-                if (value.isDouble()) {
-                    valType = "number";
-                    n->Debug(QString("%1 -> %2").arg(key).arg(value.toDouble()));
-                }
-                else if (value.isString()) {
-                    valType = "text";
-                    n->Debug(QString("%1 -> %2").arg(key).arg(value.toString()));
-                }
-                else {
-                    n->Debug(QString("Unrecognized value type for %1").arg(key));
-                    continue;
-                }
-
-                /* insert qc name */
-                int qcNameRowID(-1);
-                q.prepare("select qcresultname_id from qc_resultnames where qcresult_name = :name");
-                q.bindValue(":name", key);
-                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                if (q.size() > 0) {
-                    q.first();
-                    qcNameRowID = q.value("qcresultname_id").toInt();
-                }
-                else {
-                    q.finish();
-                    q.prepare("insert ignore into qc_resultnames (qcresult_name, qcresult_type) values (:name, :type)");
-                    q.bindValue(":name", key);
-                    q.bindValue(":type", valType);
-                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    qcNameRowID = q.lastInsertId().toInt();
-                }
-
-                if (value.isDouble()) {
-                    q.finish();
-                    q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber) values (:qcmoduleseriesid, :resultnameid, :value)");
-                    q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
-                    q.bindValue(":resultnameid", qcNameRowID);
-                    q.bindValue(":value", value.toDouble());
-                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    numMetricsInserted++;
-                }
-                else {
-                    q.finish();
-                    q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext) values (:qcmoduleseriesid, :resultnameid, :value)");
-                    q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
-                    q.bindValue(":resultnameid", qcNameRowID);
-                    q.bindValue(":value", value.toString());
-                    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-                    numMetricsInserted++;
-                }
-            }
-            n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
-
-            /* remove /data directory */
-            //if (!SafeDeletePath(qcpath + "/data", n->cfg[""], m)) {
-            //    n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
-            //}
+            resultsJsonPath = QString("%1/output/sub-%2/ses-%3/%4/sub-%2_ses-%3_task-%6_%5.json").arg(qcpath).arg(uid).arg(studynum).arg(s.bidsMapping.bidsEntity).arg(s.bidsMapping.bidsSuffix).arg(s.bidsMapping.bidsTask);
         }
+
+        /* check if the JSON file already exists */
+        n->Log("Checking for existing JSON file [" + resultsJsonPath + "]");
+        if (QFile::exists(resultsJsonPath)) {
+            n->Log(QString("JSON file [%1] already exists, not running mriqc again").arg(resultsJsonPath));
+        }
+        else {
+            n->Log(QString("JSON file [%1] does not exist. Running mriqc").arg(resultsJsonPath));
+            /* download the data to qcpath */
+            ExportSeries(seriesid, modality, ExportFormat::BIDS, qcpath + "/data");
+            MakePath(outputPath, m);
+            QString systemstring = QString("%1 %2/data %3/output %4").arg(entryPoint).arg(qcpath).arg(qcpath).arg(uid);
+            n->Log("Running the QC module [" + systemstring + "]");
+            n->Log(SystemCommand(systemstring));
+            n->Log("Finished running the QC module locally");
+        }
+
+        /* parse the mriqc results */
+        QFile file(resultsJsonPath);
+        if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+            n->Log("Could not open file [" + resultsJsonPath + "]. Error: " + file.errorString());
+        }
+        else {
+            n->Log("Reading output file [" + resultsJsonPath + "]");
+        }
+        QString jsonStr = file.readAll();
+        file.close();
+
+        QJsonDocument d = QJsonDocument::fromJson(jsonStr.toUtf8());
+
+        QJsonObject json = d.object();
+        n->Log(QString("JSON file contains %1 keys").arg(json.keys().size()));
+        int numMetricsInserted(0);
+        foreach(const QString& key, json.keys()) {
+            QJsonValue value = json.value(key);
+
+            QString valType;
+            if (value.isDouble()) {
+                valType = "number";
+                n->Debug(QString("%1 -> %2").arg(key).arg(value.toDouble()));
+            }
+            else if (value.isString()) {
+                valType = "text";
+                n->Debug(QString("%1 -> %2").arg(key).arg(value.toString()));
+            }
+            else {
+                n->Debug(QString("Unrecognized value type for %1").arg(key));
+                continue;
+            }
+
+            /* insert qc name */
+            int qcNameRowID(-1);
+            q.prepare("select qcresultname_id from qc_resultnames where qcresult_name = :name");
+            q.bindValue(":name", key);
+            n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            if (q.size() > 0) {
+                q.first();
+                qcNameRowID = q.value("qcresultname_id").toInt();
+            }
+            else {
+                q.finish();
+                q.prepare("insert ignore into qc_resultnames (qcresult_name, qcresult_type) values (:name, :type)");
+                q.bindValue(":name", key);
+                q.bindValue(":type", valType);
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                qcNameRowID = q.lastInsertId().toInt();
+            }
+
+            if (value.isDouble()) {
+                q.finish();
+                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuenumber) values (:qcmoduleseriesid, :resultnameid, :value)");
+                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                q.bindValue(":resultnameid", qcNameRowID);
+                q.bindValue(":value", value.toDouble());
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                numMetricsInserted++;
+            }
+            else {
+                q.finish();
+                q.prepare("insert ignore into qc_results (qcmoduleseries_id, qcresultname_id, qcresults_valuetext) values (:qcmoduleseriesid, :resultnameid, :value)");
+                q.bindValue(":qcmoduleseriesid", qcmoduleseriesid);
+                q.bindValue(":resultnameid", qcNameRowID);
+                q.bindValue(":value", value.toString());
+                n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                numMetricsInserted++;
+            }
+        }
+        n->Log(QString("%1 metrics from JSON file inserted into database").arg(numMetricsInserted));
+
+        /* remove /data directory */
+        //if (!SafeDeletePath(qcpath + "/data", n->cfg[""], m)) {
+        //    n->Log("Error removing directory [" + qcpath + "/data]  error message [" + m + "]");
+        //}
     }
 
     /* calculate the total time running */
@@ -401,85 +380,118 @@ bool moduleQC::QC(int moduleid, int seriesid, QString modality) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- SubmitToCluster -------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Write a cluster job file for a QC module and submit it. NOT CURRENTLY CALLED: cluster mode is
+ * disabled for QC modules because nothing exports the series data before submission or reads the results
+ * back afterwards. The archive is assumed to be mounted at the same path on the cluster nodes.
+ * @param moduleName QC module name, used as the job name
+ * @param clusterRowID Database row ID of the compute_cluster configuration
+ * @param qcPath QC directory for this series/module (job file, logs, data/ and output/ live here)
+ * @param entryPoint Absolute path of the QC module's entrypoint script
+ * @param uid Subject UID, passed to the entrypoint
+ * @param msg Error message, if any
+ * @return `true` if the job was submitted, `false` otherwise
+ */
+bool moduleQC::SubmitToCluster(QString moduleName, qint64 clusterRowID, QString qcPath, QString entryPoint, QString uid, QString &msg) {
+
+    computeCluster cluster;
+    if (!GetClusterInfo(clusterRowID, cluster)) {
+        msg = QString("Compute cluster [%1] not found").arg(clusterRowID);
+        n->Log(msg, __FUNCTION__);
+        return false;
+    }
+    if (cluster.submitHostname == "") {
+        msg = QString("Compute cluster [%1] has no submit hostname").arg(cluster.name);
+        n->Log(msg, __FUNCTION__);
+        return false;
+    }
+
+    QString jobFilePath = QString("%1/%2.job").arg(qcPath).arg(moduleName);
+    if (!WriteClusterJobFile(jobFilePath, moduleName, cluster, qcPath, entryPoint, uid)) {
+        msg = "Unable to write job file [" + jobFilePath + "]";
+        return false;
+    }
+
+    int jobID(0);
+    QString qResult;
+    if (n->SubmitClusterJob(jobFilePath, cluster.type, cluster.submitHostname, cluster.submitHostUsername, n->cfg["qsubpath"], cluster.clusterUsername, cluster.queue, msg, jobID, qResult)) {
+        n->Log(QString("[%1] Successfully submitted QC job [%2] to cluster [%3]").arg(moduleName).arg(jobID).arg(qResult), __FUNCTION__);
+        return true;
+    }
+
+    n->Log(QString("[%1] Error submitting QC job to cluster [%2] message [%3]").arg(moduleName).arg(qResult).arg(msg), __FUNCTION__);
+    return false;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- WriteClusterJobFile ---------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief Build, and write to disk, the cluster job file, prior to submission to the cluster
  * @param jobFilePath The job filename
- * @param clusterRowID Database clusterRowID of the cluster configuration
- * @param localDataPath Path to the data, as seen by the local nidb program
- * @param clusterDataPath Path to the data, as seen by the cluster
- * @param entryPoint Entrypoint script that will be executed, with the datapath passed as a parameter
- * @return `true` if successfully submitted, `false` otherwise
+ * @param jobName The job name
+ * @param cluster Compute cluster configuration
+ * @param qcPath QC directory. The job cd's here, writes its logs here, and passes qcPath/data and qcPath/output to the entrypoint
+ * @param entryPoint Absolute path of the entrypoint script
+ * @param uid Subject UID, passed to the entrypoint
+ * @return `true` if the file was written, `false` otherwise
  */
-bool moduleQC::WriteClusterJobFile(QString jobFilePath, QString jobName, qint64 clusterRowID, QString localDataPath, QString clusterDataPath, QString entryPoint) {
+bool moduleQC::WriteClusterJobFile(QString jobFilePath, QString jobName, const computeCluster &cluster, QString qcPath, QString entryPoint, QString uid) {
 
     QString jobfile;
 
-    /* get cluster info */
-    computeCluster cluster = GetClusterInfo(clusterRowID);
-
-    n->Log("Cluster data path [" + clusterDataPath + "]");
-    n->Log("Local data path [" + localDataPath + "]");
+    n->Log("QC path [" + qcPath + "]", __FUNCTION__);
 
     /* check if any of the variables might be blank */
-    if (localDataPath == "") {
-        n->Log("localDataPath was blank", __FUNCTION__);
+    if (qcPath == "") {
+        n->Log("qcPath was blank", __FUNCTION__);
         return false;
     }
-    if (clusterDataPath == "") {
-        n->Log("clusterDataPath was blank", __FUNCTION__);
+    if (entryPoint == "") {
+        n->Log("entryPoint was blank", __FUNCTION__);
         return false;
     }
 
+    QString wallTime;
+    if (cluster.maxWallTime > 0)
+        wallTime = QString("%1:%2:00").arg(cluster.maxWallTime/60).arg(cluster.maxWallTime % 60, 2, 10, QChar('0'));
+
     /* different submission parameters for slurm */
-    if (cluster.type == "slurm") {
+    if (cluster.type.toLower() == "slurm") {
         jobfile += "#!/bin/bash -l\n";
         jobfile += "#SBATCH -J " + jobName + "\n";
         jobfile += "#SBATCH --nodes=1\n";
-        jobfile += "#SBATCH --partition=" + cluster.queue + "\n";
-        jobfile += "#SBATCH -o " + clusterDataPath + "/%x.o%j\n";
-        jobfile += "#SBATCH -e " + clusterDataPath + "/%x.e%j\n";
+        if (cluster.queue != "")
+            jobfile += "#SBATCH --partition=" + cluster.queue + "\n";
+        jobfile += "#SBATCH -o " + qcPath + "/%x.o%j\n";
+        jobfile += "#SBATCH -e " + qcPath + "/%x.e%j\n";
         jobfile += QString("#SBATCH --mem-per-cpu=%1G\n").arg(cluster.memory);
         jobfile += QString("#SBATCH --ntasks=1 --cpus-per-task=%1\n").arg(cluster.numCores);
-        if (cluster.maxWallTime > 0) {
-            int hours = int(floor(cluster.maxWallTime/60));
-            int min = cluster.maxWallTime % 60;
-
-            if (min < 10)
-                jobfile += QString("#SBATCH -t %1:0%2:00\n").arg(hours).arg(min);
-            else
-                jobfile += QString("#SBATCH -t %1:%2:00\n").arg(hours).arg(min);
-        }
+        if (wallTime != "")
+            jobfile += "#SBATCH -t " + wallTime + "\n";
     }
     else { /* assume SGE otherwise */
         jobfile += "#!/bin/sh\n";
         jobfile += "#$ -N " + jobName + "\n";
         jobfile += "#$ -S /bin/bash\n";
         jobfile += "#$ -j y\n";
-        jobfile += "#$ -o " + clusterDataPath + "/\n";
+        jobfile += "#$ -o " + qcPath + "/\n";
         jobfile += "#$ -V\n";
-        jobfile += "#$ -u " + n->cfg["queueuser"] + "\n";
-        if (cluster.maxWallTime > 0) {
-            int hours = int(floor(cluster.maxWallTime/60));
-            int min = cluster.maxWallTime % 60;
-
-            if (min < 10)
-                jobfile += QString("#$ -l h_rt=%1:0%2:00\n").arg(hours).arg(min);
-            else
-                jobfile += QString("#$ -l h_rt=%1:%2:00\n").arg(hours).arg(min);
-        }
-        /* add the library path SO the cluster version of the nidb executable to run, and diagnostic echos */
-        jobfile += "LD_LIBRARY_PATH=" + n->cfg["clusternidbpath"] + "/; export LD_LIBRARY_PATH;\n";
+        if (cluster.clusterUsername != "")
+            jobfile += "#$ -u " + cluster.clusterUsername + "\n";
+        if (wallTime != "")
+            jobfile += "#$ -l h_rt=" + wallTime + "\n";
     }
 
     jobfile += "echo Hostname: `hostname`\n";
     jobfile += "echo Username: `whoami`\n\n";
 
-    //jobfile += "cd " + localanalysispath + "\n";
-    jobfile += "./" + entryPoint + "/ \n";
-
-    QDir::setCurrent(localDataPath);
+    /* same command line as a local run: <entrypoint> <qcpath>/data <qcpath>/output <uid> */
+    jobfile += "cd \"" + qcPath + "\" || exit 1\n";
+    jobfile += QString("\"%1\" \"%2/data\" \"%2/output\" \"%3\"\n").arg(entryPoint).arg(qcPath).arg(uid);
 
     /* write out the file */
     QFile f(jobFilePath);
@@ -491,7 +503,7 @@ bool moduleQC::WriteClusterJobFile(QString jobFilePath, QString jobName, qint64 
         return true;
     }
     else {
-        n->Log("Could not write the file [" + jobFilePath + "]", __FUNCTION__);
+        n->Log("Could not write the file [" + jobFilePath + "] error [" + f.errorString() + "]", __FUNCTION__);
         return false;
     }
 }
@@ -500,29 +512,40 @@ bool moduleQC::WriteClusterJobFile(QString jobFilePath, QString jobName, qint64 
 /* ---------------------------------------------------------- */
 /* --------- GetClusterInfo --------------------------------- */
 /* ---------------------------------------------------------- */
-computeCluster moduleQC::GetClusterInfo(qint64 clusterRowID) {
+/**
+ * @brief Load a compute_cluster row
+ * @param clusterRowID Database row ID of the compute cluster
+ * @param cluster The cluster configuration. `queue` is the first entry of the `queues` list
+ * @return `true` if the cluster was found, `false` otherwise
+ */
+bool moduleQC::GetClusterInfo(qint64 clusterRowID, computeCluster &cluster) {
 
-    computeCluster cluster;
+    cluster = computeCluster();
+    if (clusterRowID < 1)
+        return false;
 
     QSqlQuery q;
     q.prepare("select * from compute_cluster where computecluster_id = :clusterid");
     q.bindValue(":clusterid", clusterRowID);
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
-    if (q.size() > 0) {
-        q.first();
-        cluster.name = q.value("cluster_name").toString();
-        cluster.description = q.value("cluster_desc").toString();
-        cluster.type = q.value("cluster_type").toString();
-        cluster.submitHostname = q.value("submit_hostname").toString();
-        cluster.submitHostUsername = q.value("submithost_username").toString();
-        cluster.clusterUsername = q.value("cluster_username").toString();
-        cluster.queue = q.value("cluster_name").toString();
-        cluster.maxWallTime = q.value("cluster_maxwalltime").toLongLong();
-        cluster.memory = q.value("cluster_memory").toLongLong();
-        cluster.numCores = q.value("cluster_numcores").toLongLong();
-    }
+    if (q.size() < 1)
+        return false;
 
-    return cluster;
+    q.first();
+    cluster.name = q.value("cluster_name").toString();
+    cluster.description = q.value("cluster_desc").toString();
+    cluster.type = q.value("cluster_type").toString();
+    cluster.submitHostname = q.value("submit_hostname").toString();
+    cluster.submitHostUsername = q.value("submithost_username").toString();
+    cluster.clusterUsername = q.value("cluster_username").toString();
+    /* queues is a free-text list (queues on SGE, partitions on slurm). Use the first one */
+    QStringList queues = q.value("queues").toString().split(QRegularExpression("[,;\\s]+"), Qt::SkipEmptyParts);
+    cluster.queue = queues.isEmpty() ? "" : queues.first();
+    cluster.maxWallTime = q.value("cluster_maxwalltime").toLongLong();
+    cluster.memory = q.value("cluster_memory").toLongLong();
+    cluster.numCores = q.value("cluster_numcores").toLongLong();
+
+    return true;
 }
 
 

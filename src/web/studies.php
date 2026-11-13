@@ -2995,6 +2995,19 @@
 									<a href="download.php?modality=mr&type=dicom&seriesid=<?=$mrseries_id?>" border="0"><i class="download icon" title="Download <?=$data_type_h?> data"></i></a>
 									<? 	}
 									}
+
+									/* DB reports no files or zero size; check whether any files actually exist on disk */
+									if (($modality == "mr") && (((int)$numfiles == 0) || ((float)$series_size == 0))) {
+										$diskdatatype = (($data_type ?? '') == '') ? $modality : $data_type;
+										$diskfiles = glob($GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/$diskdatatype/*");
+										$diskfiles = is_array($diskfiles) ? array_filter($diskfiles, 'is_file') : [];
+										if (count($diskfiles) == 0) {
+											?><i class="large red exclamation circle icon" title="No files on disk for this series"></i><?
+										}
+										else {
+											?><i class="large yellow exclamation triangle icon" title="Database/disk file count mismatch"></i><?
+										}
+									}
 									?>
 								</td>
 								<td nowrap bgcolor="<?=$behcolor?>" align="center">
