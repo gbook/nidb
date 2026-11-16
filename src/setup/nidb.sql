@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 13, 2026 at 08:12 PM
+-- Generation Time: Nov 16, 2026 at 04:48 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -4670,7 +4670,7 @@ ALTER TABLE `package_interventions`
 ALTER TABLE `package_observations`
   ADD PRIMARY KEY (`packageobservation_id`),
   ADD UNIQUE KEY `package_id` (`package_id`,`observation_id`),
-  ADD KEY `package_id_2` (`package_id`);
+  ADD KEY `package_id_obsid` (`package_id`,`packageobservation_id`);
 
 --
 -- Indexes for table `package_pipelines`
