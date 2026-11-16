@@ -3229,12 +3229,37 @@
 						<div class="ui segment">
 							<h3>Operations</h3>
 							
-							<form method="post" action="packages.php" style="display: inline">
-								<input type="hidden" name="action" value="export">
-								<input type="hidden" name="packageid" value="<?=$packageid?>">
-								<?=CSRFTokenField()?>
-								<button type="submit" class="ui huge green button"><i class="box open icon"></i>Export Package</button>
-							</form>
+							<!-- export on the left, package maintenance operations on the right -->
+							<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1em">
+								<form method="post" action="packages.php" style="display: inline">
+									<input type="hidden" name="action" value="export">
+									<input type="hidden" name="packageid" value="<?=$packageid?>">
+									<?=CSRFTokenField()?>
+									<button type="submit" class="ui huge green button"><i class="box open icon"></i>Export Package</button>
+								</form>
+								<div>
+									<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Remove objects from this package that no longer exist in NiDB (the object was deleted, or the subject it belongs to was deleted)? This can take a while on a large package.')">
+										<input type="hidden" name="action" value="prunepackage">
+										<input type="hidden" name="packageid" value="<?=$packageid?>">
+										<?=CSRFTokenField()?>
+										<button type="submit" class="ui basic button" title="Remove pointers to objects that were deleted from NiDB"><i class="broom icon"></i> Prune missing objects</button>
+									</form>
+
+									<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series, and the analyses of their studies, will be moved out of this package.')">
+										<input type="hidden" name="action" value="splitmodality">
+										<input type="hidden" name="packageid" value="<?=$packageid?>">
+										<?=CSRFTokenField()?>
+										<button type="submit" class="ui basic primary button"><i class="expand alternate icon"></i> Split by modality</button>
+									</form>
+
+									<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
+										<input type="hidden" name="action" value="deletepackage">
+										<input type="hidden" name="packageid" value="<?=$packageid?>">
+										<?=CSRFTokenField()?>
+										<button type="submit" class="ui basic red button"><i class="trash alternate outline icon"></i> Delete package</button>
+									</form>
+								</div>
+							</div>
 							<div class="ui accordion">
 								<div class="title">
 									<i class="dropdown icon"></i>
@@ -3275,26 +3300,6 @@
 								</div>
 							</div>
 
-							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Remove objects from this package that no longer exist in NiDB (the object was deleted, or the subject it belongs to was deleted)? This can take a while on a large package.')">
-								<input type="hidden" name="action" value="prunepackage">
-								<input type="hidden" name="packageid" value="<?=$packageid?>">
-								<?=CSRFTokenField()?>
-								<button type="submit" class="ui basic button" title="Remove pointers to objects that were deleted from NiDB"><i class="broom icon"></i> Prune missing objects</button>
-							</form>
-
-							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series, and the analyses of their studies, will be moved out of this package.')">
-								<input type="hidden" name="action" value="splitmodality">
-								<input type="hidden" name="packageid" value="<?=$packageid?>">
-								<?=CSRFTokenField()?>
-								<button type="submit" class="ui basic primary button"><i class="expand alternate icon"></i> Split by modality</button>
-							</form>
-
-							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
-								<input type="hidden" name="action" value="deletepackage">
-								<input type="hidden" name="packageid" value="<?=$packageid?>">
-								<?=CSRFTokenField()?>
-								<button type="submit" class="ui basic red button"><i class="trash alternate outline icon"></i> Delete package</button>
-							</form>
 						</div>
 					</div>
 				</div>
