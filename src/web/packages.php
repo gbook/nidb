@@ -31,6 +31,30 @@
 	session_start();
 	ob_start(); /* buffer output so POST/Redirect/GET (a header('Location') redirect) works despite the HTML rendered below */
 
+	/* JSON endpoint: per-subject observation counts for the Subjects & Data tab. Counting joins
+	   every package observation to its enrollment, which is slow on a package with ~1M
+	   observations, so the subjects grid fetches the counts after the page has loaded. Handled
+	   here, before any HTML is written. The functions it calls are defined further down this file */
+	if (($_GET['action'] ?? '') == "subjectobservationcounts") {
+		require "functions.php";
+		require "includes_php.php"; /* login check */
+
+		/* release the session lock, otherwise the user can't load any other page until the count finishes */
+		session_write_close();
+
+		ob_clean();
+		header("Content-Type: application/json");
+		$packageid = (int)($_GET['packageid'] ?? 0);
+		if (!UserOwnsPackage($packageid)) {
+			http_response_code(403);
+			echo json_encode(array("error" => "Package does not exist, or you do not have permission to access it"));
+			exit(0);
+		}
+		/* enrollment_id => count. Cast to object so an empty result is {} rather than [] */
+		echo json_encode((object)GetPackageSubjectObservationCounts($packageid));
+		exit(0);
+	}
+
 ?>
 <html>
 	<head>
@@ -60,7 +84,7 @@
 	   "displaypackage" is deliberately NOT in this list. It is a read view reached by a normal
 	   link, and requiring a token would break navigation. It does perform an idempotent alternate-
 	   UID backfill, which is a write on a read path, but not one worth forging. */
-	$mutatingactions = array("addpackage", "updatepackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export");
+	$mutatingactions = array("addpackage", "updatepackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export", "prunepackage");
 	$action = GetSafeAction($mutatingactions);
 	$packageid = (int)GetVariable("packageid");
 	$packagename = GetVariable("packagename");
@@ -170,7 +194,7 @@
 	/* Every action that operates on an existing package is checked here, in one place, so that no
 	   individual function below can be reached with another user's package id. Actions that do not
 	   reference an existing package (addform, addpackage, addobject) are not in this list */
-	$packageactions = array("editform", "updatepackage", "displaypackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export");
+	$packageactions = array("editform", "updatepackage", "displaypackage", "addobjectstopackage", "removeobject", "splitmodality", "deletepackage", "export", "prunepackage");
 
 	/* the CSRF/POST check already happened in GetSafeAction() above, so an unverified request
 	   never reaches the ownership query */
@@ -232,6 +256,12 @@
 				DeletePackage($packageid);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("packages.php");
+				break;
+			case 'prunepackage':
+				ob_start();
+				PrunePackage($packageid);
+				$_SESSION['flash'] = ob_get_clean();
+				RedirectTo("packages.php?action=displaypackage&packageid=$packageid");
 				break;
 			case 'export':
 				ob_start();
@@ -2175,7 +2205,10 @@
 	/* -------------------------------------------- */
 	/* the subjects (package_enrollments rows) in this package, with how many of each object type
 	   the package holds for each one, so the user can see what removing a subject also removes */
-	function GetPackageSubjects($packageid) {
+	/* $includeobservations = false skips the per-subject observation count, which is slow on large
+	   packages, and leaves 'observations' as null. DisplayPackage() loads it afterwards through
+	   GetPackageSubjectObservationCounts() */
+	function GetPackageSubjects($packageid, $includeobservations = true) {
 		$packageid = (int)$packageid;
 		$subjects = array();
 		$byenrollment = array();
@@ -2190,7 +2223,7 @@
 				"subjectid" => (int)($row['subject_id'] ?? 0),
 				"altuid" => (string)($row['package_subjectid'] ?? ''),
 				"projectname" => (string)($row['project_name'] ?? ''),
-				"series" => 0, "observations" => 0, "interventions" => 0, "analyses" => 0
+				"series" => 0, "observations" => ($includeobservations ? 0 : null), "interventions" => 0, "analyses" => 0
 			);
 		}
 		if (count($subjects) < 1)
@@ -2202,7 +2235,6 @@
 		foreach ($modalities as $modality) {
 			$countqueries[] = array("series", "select st.enrollment_id, count(*) 'count' from package_series ps inner join $modality" . "_series x on ps.series_id = x.$modality" . "series_id inner join studies st on x.study_id = st.study_id where ps.package_id = ? and ps.modality = ? group by st.enrollment_id", array($packageid, $modality));
 		}
-		$countqueries[] = array("observations", "select o.enrollment_id, count(*) 'count' from package_observations po inner join observations o on po.observation_id = o.observation_id where po.package_id = ? group by o.enrollment_id", array($packageid));
 		$countqueries[] = array("interventions", "select i.enrollment_id, count(*) 'count' from package_interventions pi inner join interventions i on pi.intervention_id = i.intervention_id where pi.package_id = ? group by i.enrollment_id", array($packageid));
 		$countqueries[] = array("analyses", "select st.enrollment_id, count(*) 'count' from package_analyses pa inner join analysis a on pa.analysis_id = a.analysis_id inner join studies st on a.study_id = st.study_id where pa.package_id = ? group by st.enrollment_id", array($packageid));
 
@@ -2215,7 +2247,30 @@
 			}
 		}
 
+		if ($includeobservations) {
+			foreach (GetPackageSubjectObservationCounts($packageid) as $enrollmentid => $count) {
+				if (isset($subjects[$enrollmentid]))
+					$subjects[$enrollmentid]['observations'] = $count;
+			}
+		}
+
 		return $subjects;
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetPackageSubjectObservationCounts - */
+	/* -------------------------------------------- */
+	/* number of package observations per enrollment, as enrollment_id => count. Enrollments with
+	   no observations are not returned */
+	function GetPackageSubjectObservationCounts($packageid) {
+		$counts = array();
+		$sqlstring = "select o.enrollment_id, count(*) 'count' from package_observations po inner join observations o on po.observation_id = o.observation_id where po.package_id = ? group by o.enrollment_id";
+		$result = PkgQuery($sqlstring, array((int)$packageid), __LINE__);
+		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC))
+			$counts[(int)$row['enrollment_id']] = (int)$row['count'];
+
+		return $counts;
 	}
 
 
@@ -2266,6 +2321,20 @@
 		PkgQuery($sqlstring, array($packageid), __LINE__, $removed['pipelines']);
 
 		return array_filter($removed, function($n) { return ((int)$n > 0); });
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- PrunePackage ----------------------- */
+	/* -------------------------------------------- */
+	/* user-requested prune from the Operations section. Reports what was removed, or that
+	   nothing was missing */
+	function PrunePackage($packageid) {
+		$removed = PrunePackageMissingObjects($packageid);
+		if (count($removed) < 1)
+			Notice("No missing objects found. Every object in this package still exists in NiDB.");
+		else
+			ShowPrunedObjects($removed);
 	}
 
 
@@ -2683,9 +2752,9 @@
 		if (!ValidID($packageid,'Package ID')) { return; }
 		$packageid = (int)$packageid;
 
-		/* drop pointers to objects that were deleted from NiDB, and tell the user. This is a write
-		   on a read path, but it is idempotent and only removes references that can never resolve */
-		ShowPrunedObjects(PrunePackageMissingObjects($packageid));
+		/* missing objects are not pruned here. On a large package the prune joins every package
+		   object to its subject, which made opening the package slow. The user prunes on demand
+		   from the Operations section (PrunePackage), and ExportPackage() prunes before export */
 
 		/* declare variables */
 		$subjects = array();
@@ -3038,7 +3107,7 @@
 			</div>
 
 			<!-- package overview tab -->
-			<div class="ui attached active tab raised center aligned segment" data-tab="overview">
+			<div class="ui bottom attached active tab raised segment" data-tab="overview">
 				<div class="ui grid">
 					<div class="ui five wide column">
 						<div class="ui top attached segment" style="background-color: #eee">
@@ -3099,6 +3168,10 @@
 						</table>
 					</div>
 					<div class="ui eleven wide column">
+						<div class="ui top attached segment" style="background-color: #eee">
+							<b>Package map</b>
+						</div>
+						<div class="ui bottom attached center aligned segment">
 						<script type="module">
 							import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
 						</script>
@@ -3148,73 +3221,85 @@
 								%%style package fill:#fff, stroke:#666;
 								style data fill:#fff, stroke:#666;
 						</pre>
+						</div>
+					</div>
+
+					<!-- operations -->
+					<div class="ui sixteen wide column">
+						<div class="ui segment">
+							<h3>Operations</h3>
+							
+							<form method="post" action="packages.php" style="display: inline">
+								<input type="hidden" name="action" value="export">
+								<input type="hidden" name="packageid" value="<?=$packageid?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui huge green button"><i class="box open icon"></i>Export Package</button>
+							</form>
+							<div class="ui accordion">
+								<div class="title">
+									<i class="dropdown icon"></i>
+									Previous exports
+								</div>
+								<div class="content">
+									<ul>
+									<?
+										$sqlstring = "select distinct a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = ? order by a.submitdate desc";
+										$result = PkgQuery($sqlstring, array($packageid), __LINE__);
+										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
+											$exportid = (int)$row['export_id'];
+											$startdate = $row['startdate'];
+											$submitdate = $row['submitdate'];
+											$completeddate = $row['completedate'];
+											$status = $row['status'];
+
+											/* package exports are written to [exportdir]/NiDB-Squirrel-<exportid>.sqrl and
+											   served by getfile.php, which checks package ownership */
+											$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
+											?>
+											<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=htmlspecialchars($status ?? '')?>
+											<?
+											if (($row['filetype'] == 'package') && ($status == 'complete')) {
+												if (is_file($sqrlfile)) {
+													?> - <a href="getfile.php?exportid=<?=$exportid?>" title="Download squirrel package"><i class="download icon"></i>Download .sqrl</a> <span class="ui grey text">(<?=HumanReadableFilesize(filesize($sqrlfile))?>)</span><?
+												}
+												else {
+													?> - <span class="ui grey text">export file no longer exists</span><?
+												}
+											}
+											?>
+											</li>
+											<?
+										}
+									?>
+									</ul>
+								</div>
+							</div>
+
+							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Remove objects from this package that no longer exist in NiDB (the object was deleted, or the subject it belongs to was deleted)? This can take a while on a large package.')">
+								<input type="hidden" name="action" value="prunepackage">
+								<input type="hidden" name="packageid" value="<?=$packageid?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui basic button" title="Remove pointers to objects that were deleted from NiDB"><i class="broom icon"></i> Prune missing objects</button>
+							</form>
+
+							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series, and the analyses of their studies, will be moved out of this package.')">
+								<input type="hidden" name="action" value="splitmodality">
+								<input type="hidden" name="packageid" value="<?=$packageid?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui basic primary button"><i class="expand alternate icon"></i> Split by modality</button>
+							</form>
+
+							<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
+								<input type="hidden" name="action" value="deletepackage">
+								<input type="hidden" name="packageid" value="<?=$packageid?>">
+								<?=CSRFTokenField()?>
+								<button type="submit" class="ui basic red button"><i class="trash alternate outline icon"></i> Delete package</button>
+							</form>
+						</div>
 					</div>
 				</div>
 			</div>
-			<div class="ui bottom attached raised segment">
-				<h3>Operations</h3>
-				
-				<form method="post" action="packages.php" style="display: inline">
-					<input type="hidden" name="action" value="export">
-					<input type="hidden" name="packageid" value="<?=$packageid?>">
-					<?=CSRFTokenField()?>
-					<button type="submit" class="ui huge green button"><i class="box open icon"></i>Export Package</button>
-				</form>
-				<div class="ui accordion">
-					<div class="title">
-						<i class="dropdown icon"></i>
-						Previous exports
-					</div>
-					<div class="content">
-						<ul>
-						<?
-							$sqlstring = "select distinct a.* from exports a left join exportseries b on a.export_id = b.export_id where b.package_id = ? order by a.submitdate desc";
-							$result = PkgQuery($sqlstring, array($packageid), __LINE__);
-							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-								$exportid = (int)$row['export_id'];
-								$startdate = $row['startdate'];
-								$submitdate = $row['submitdate'];
-								$completeddate = $row['completedate'];
-								$status = $row['status'];
 
-								/* package exports are written to [exportdir]/NiDB-Squirrel-<exportid>.sqrl and
-								   served by getfile.php, which checks package ownership */
-								$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
-								?>
-								<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=htmlspecialchars($status ?? '')?>
-								<?
-								if (($row['filetype'] == 'package') && ($status == 'complete')) {
-									if (is_file($sqrlfile)) {
-										?> - <a href="getfile.php?exportid=<?=$exportid?>" title="Download squirrel package"><i class="download icon"></i>Download .sqrl</a> <span class="ui grey text">(<?=HumanReadableFilesize(filesize($sqrlfile))?>)</span><?
-									}
-									else {
-										?> - <span class="ui grey text">export file no longer exists</span><?
-									}
-								}
-								?>
-								</li>
-								<?
-							}
-						?>
-						</ul>
-					</div>
-				</div>
-
-				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Split this package into one package per modality? Series, and the analyses of their studies, will be moved out of this package.')">
-					<input type="hidden" name="action" value="splitmodality">
-					<input type="hidden" name="packageid" value="<?=$packageid?>">
-					<?=CSRFTokenField()?>
-					<button type="submit" class="ui basic primary button"><i class="expand alternate icon"></i> Split by modality</button>
-				</form>
-
-				<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Permanently delete this package? The imaging data itself is not deleted, only the package that references it, and its exported .sqrl files.')">
-					<input type="hidden" name="action" value="deletepackage">
-					<input type="hidden" name="packageid" value="<?=$packageid?>">
-					<?=CSRFTokenField()?>
-					<button type="submit" class="ui basic red button"><i class="trash alternate outline icon"></i> Delete package</button>
-				</form>
-			</div>
-			
 			<!-- subjects tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="subjects">
 			
@@ -3228,58 +3313,124 @@
 					</div>				
 				</div>
 				
-				<!-- subjects list. Removing a subject also removes all of its data from the package -->
+				<!-- subjects list. Removing a subject also removes all of its data from the package. The
+				     observation counts are slow on large packages, so they are fetched (from the
+				     subjectobservationcounts endpoint at the top of this file) the first time the list is opened -->
 				<?
-					$packagesubjects = GetPackageSubjects($packageid);
+					$packagesubjects = GetPackageSubjects($packageid, false);
+					$subjectRowData = array();
+					foreach ($packagesubjects as $enrollmentid => $subj) {
+						$subjectRowData[] = array(
+							"id" => (int)$subj['objectid'], /* package_enrollments row id, which RemoveObject() deletes on */
+							"enrollmentid" => (int)$enrollmentid,
+							"subjectid" => (int)$subj['subjectid'],
+							"uid" => (string)$subj['uid'],
+							"altuid" => (string)$subj['altuid'],
+							"project" => (string)$subj['projectname'],
+							"series" => (int)$subj['series'],
+							"observations" => null,
+							"interventions" => (int)$subj['interventions'],
+							"analyses" => (int)$subj['analyses']
+						);
+					}
 				?>
 				<div class="ui accordion">
-					<div class="title">
+					<div class="title" id="packageSubjectsTitle">
 						<i class="dropdown icon"></i>
 						<b>Subjects (<?=count($packagesubjects)?>)</b> &nbsp; <span class="ui grey text">view or remove subjects</span>
 					</div>
 					<div class="content">
 					<? if (count($packagesubjects) > 0) { ?>
-						<script type="text/javascript">
-							$(function() {
-								$("#selectallpackagesubjects").click(function() {
-									var checked_status = this.checked;
-									$(".allpackagesubjects").find("input[type='checkbox']").each(function() {
-										this.checked = checked_status;
-									});
-								});
-							});
-						</script>
-						<form method="post" action="packages.php" onsubmit="return confirm('Remove the selected subjects from this package?\n\nAll of their series, observations, interventions, and analyses will also be removed from the package. Nothing is deleted from NiDB.')">
+						<form method="post" action="packages.php" onsubmit="return submitRemoveSubjects()">
 						<input type="hidden" name="action" value="removeobject">
 						<?=CSRFTokenField()?>
 						<input type="hidden" name="objecttype" value="enrollment">
 						<input type="hidden" name="packageid" value="<?=$packageid?>">
-						<table class="ui basic very compact table">
-							<thead>
-								<th><input type="checkbox" id="selectallpackagesubjects"></th>
-								<th>UID</th>
-								<th>ID</th>
-								<th>Project</th>
-								<th class="right aligned">Series</th>
-								<th class="right aligned">Observations</th>
-								<th class="right aligned">Interventions</th>
-								<th class="right aligned">Analyses</th>
-							</thead>
-							<? foreach ($packagesubjects as $enrollmentid => $subj) { ?>
-							<tr>
-								<td class="allpackagesubjects"><input type="checkbox" name="objectids[]" value="<?=(int)$subj['objectid']?>"></td>
-								<td><a href="subjects.php?id=<?=(int)$subj['subjectid']?>"><?=htmlspecialchars($subj['uid'])?></a></td>
-								<td><?=htmlspecialchars($subj['altuid'])?></td>
-								<td><?=htmlspecialchars($subj['projectname'])?></td>
-								<td class="right aligned"><?=number_format($subj['series'])?></td>
-								<td class="right aligned"><?=number_format($subj['observations'])?></td>
-								<td class="right aligned"><?=number_format($subj['interventions'])?></td>
-								<td class="right aligned"><?=number_format($subj['analyses'])?></td>
-							</tr>
-							<? } ?>
-						</table>
+						<input type="hidden" id="selectedSubjects" name="objectidstodelete">
+						<div id="packageSubjectsGrid" style="<?=(count($packagesubjects) > 20) ? 'height: 50vh' : ''?>"></div>
+						<br>
 						<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected subjects and their data</button>
 						</form>
+
+						<script type="text/javascript">
+							let gridApiSubjects;
+							let subjectObservationsRequested = false;
+
+							/* put the selected package_enrollments ids into the form, then confirm */
+							function submitRemoveSubjects() {
+								var ids = gridApiSubjects.getSelectedRows().map(function (row) { return row.id; });
+								if (ids.length < 1) {
+									alert("No subjects selected");
+									return false;
+								}
+								document.getElementById("selectedSubjects").value = ids.join(",");
+								return confirm("Remove the " + ids.length + " selected subjects from this package?\n\nAll of their series, observations, interventions, and analyses will also be removed from the package. Nothing is deleted from NiDB.");
+							}
+
+							/* fetch the per-subject observation counts once, and fill in the Observations column */
+							function loadSubjectObservationCounts() {
+								if (subjectObservationsRequested)
+									return;
+								subjectObservationsRequested = true;
+
+								fetch("packages.php?action=subjectobservationcounts&packageid=<?=(int)$packageid?>", { credentials: "same-origin" })
+									.then(function (response) {
+										if (!response.ok)
+											throw new Error("HTTP " + response.status);
+										return response.json();
+									})
+									.then(function (counts) {
+										gridApiSubjects.forEachNode(function (node) {
+											node.data.observations = counts[node.data.enrollmentid] || 0;
+										});
+										gridApiSubjects.refreshCells({ columns: ["observations"], force: true });
+									})
+									.catch(function (err) {
+										gridApiSubjects.forEachNode(function (node) { node.data.observations = "error"; });
+										gridApiSubjects.refreshCells({ columns: ["observations"], force: true });
+										console.log("Unable to load observation counts: " + err);
+									});
+							}
+
+							const numberCol = { type: "rightAligned", filter: "agNumberColumnFilter", width: 130, valueFormatter: function (p) { return (typeof p.value === "number") ? p.value.toLocaleString() : p.value; } };
+
+							const gridOptionsSubjects = {
+								columnDefs: [
+									{ field: "id", hide: true },
+									{ headerName: "UID", field: "uid", cellRenderer: function (p) {
+										/* built with the DOM so the UID is never interpreted as HTML */
+										var a = document.createElement("a");
+										a.href = "subjects.php?id=" + encodeURIComponent(p.data.subjectid);
+										a.textContent = p.value;
+										return a;
+									} },
+									{ headerName: "ID", field: "altuid" },
+									{ headerName: "Project", field: "project", flex: 1 },
+									Object.assign({ headerName: "Series", field: "series" }, numberCol),
+									Object.assign({ headerName: "Observations", field: "observations" }, numberCol, {
+										valueFormatter: function (p) {
+											if (p.value === null) return "loading...";
+											return (typeof p.value === "number") ? p.value.toLocaleString() : p.value;
+										}
+									}),
+									Object.assign({ headerName: "Interventions", field: "interventions" }, numberCol),
+									Object.assign({ headerName: "Analyses", field: "analyses" }, numberCol)
+								],
+								rowData: <?=json_encode($subjectRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>,
+								getRowId: function (p) { return String(p.data.id); },
+								defaultColDef: { sortable: true, filter: true, resizable: true },
+								rowSelection: { mode: "multiRow", checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true },
+								<?=(count($packagesubjects) > 20) ? '' : 'domLayout: "autoHeight",'?>
+								animateRows: false,
+								suppressMovableColumns: true
+							};
+
+							$(document).ready(function () {
+								gridApiSubjects = agGrid.createGrid(document.getElementById("packageSubjectsGrid"), gridOptionsSubjects);
+								/* the counts are only needed once the list is opened */
+								$("#packageSubjectsTitle").on("click", loadSubjectObservationCounts);
+							});
+						</script>
 					<? } else { ?>
 						No subjects in this package
 					<? } ?>
