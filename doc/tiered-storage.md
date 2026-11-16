@@ -108,7 +108,7 @@ The worker follows the standard module contract: `ModuleRunningCheckIn()`, `Modu
 
 Each job is a state machine that can resume from `next_state` after a crash:
 
-1. **`pending`:** claim the row. Confirm the study is idle (§6) and take an exclusive lock in `object_locks` (owner type `tiermigration`; see [`data-transfer.md`](data-transfer.md) §9.1).
+1. **`pending`:** claim the row. Confirm the study is idle (§6) and take an exclusive lock in `object_locks` (owner type `tiermigration`; see [`data-transfer-2-transport.md`](data-transfer-2-transport.md) §7.1).
 2. **`copying`:** `rsync -a {fromroot}/{UID}/{studynum}/ {toroot}/{UID}/{studynum}/`. Never use `rename()`, because tiers may be on different filesystems. Update `bytes_done` and `file_count`.
 3. **`verifying`:** compare file count and total size between source and destination, and set `verify_ok`. rsync already checksums each file during transfer, so there's no separate checksum pass. On a mismatch, go to `error`, leaving the source untouched and the destination in place for inspection.
 4. **`flipping`:** in one transaction, set `studies.study_datatier = to_tier` and `status = 'cleanup'`. This is the commit point: the resolver now returns the new location.
@@ -155,7 +155,7 @@ Phases 1–2 must be finished before migration ships. A study whose source is de
 ## 10. Open decisions
 
 1. **S3/GCS tiers.** `storage_type` allows `s3` and `gcs`, but the worker (rsync) and the resolver (filesystem paths) only work with `nfs`. Choose between restricting migration to `nfs` tiers for now and designing an object-storage path (mounted via s3fs/gcsfuse, or native API copies with reads staged locally).
-2. **How "idle" is detected (§6).** Decide whether to query each module's queue tables or rely on those modules taking `object_locks` themselves. `data-transfer.md` T20 defers lock checks in other modules.
+2. **How "idle" is detected (§6).** Decide whether to query each module's queue tables or rely on those modules taking `object_locks` themselves. `data-transfer.md` (overview) T20 defers lock checks in other modules.
 3. **Scheduled movement rules (phase 5):** which criteria, and where they are configured.
 
 ---
