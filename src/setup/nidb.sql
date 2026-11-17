@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost
--- Generation Time: Nov 17, 2026 at 08:12 PM
+-- Generation Time: Nov 17, 2026 at 08:14 PM
 -- Server version: 10.5.29-MariaDB
 -- PHP Version: 8.3.33
 
@@ -1619,7 +1619,8 @@ CREATE TABLE `instrument_items` (
   `item_name` varchar(255) NOT NULL,
   `item_order` int(11) NOT NULL DEFAULT 0,
   `item_notes` text DEFAULT NULL,
-  `item_type` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') NOT NULL DEFAULT 'string'
+  `item_type` enum('enum','int','double','string','timeseries','image','csv','json','datetime','') NOT NULL DEFAULT 'string',
+  `item_required` tinyint(1) DEFAULT NULL COMMENT 'required if true, not required if false or null'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
 
 -- --------------------------------------------------------

@@ -50,6 +50,7 @@
 	$item_name       = GetVariable("item_name");
 	$item_notes      = GetVariable("item_notes");
 	$item_type       = GetVariable("item_type");
+	$item_required   = GetVariable("item_required");
 	$item_names      = GetVariable("item_names");
 	$itemids         = GetVariable("itemids");
 
@@ -61,7 +62,7 @@
 		if ((($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST') || !VerifyCSRFToken(false))
 			echo json_encode(['status' => 'error', 'message' => 'This request could not be verified. Reload the page and try again']);
 		elseif ($action == "updateitem")
-			UpdateItem($itemid, $item_name, $item_notes, $item_type);
+			UpdateItem($itemid, $item_name, $item_notes, $item_type, $item_required);
 		else
 			ReorderItems($instrumentid, $itemids);
 		exit;
@@ -78,7 +79,7 @@
 			case 'addinstrument': $instrumentid = AddInstrument($projectid, $instrument_name, $instrument_notes); break;
 			case 'updateinstrument': UpdateInstrument($projectid, $instrumentid, $instrument_name, $instrument_notes); break;
 			case 'deleteinstrument': DeleteInstrument($projectid, $instrumentid); $instrumentid = 0; break;
-			case 'additem': AddItem($projectid, $instrumentid, $item_name, $item_notes, $item_type); break;
+			case 'additem': AddItem($projectid, $instrumentid, $item_name, $item_notes, $item_type, $item_required); break;
 			case 'bulkadditems': BulkAddItems($projectid, $instrumentid, $item_names); break;
 			case 'deleteitem': DeleteItem($projectid, $instrumentid, $itemid); break;
 		}
@@ -206,7 +207,7 @@
 	/* --------------------------------------------------- */
 	/* ------- AddItem ----------------------------------- */
 	/* --------------------------------------------------- */
-	function AddItem($projectid, $instrumentid, $name, $notes, $type) {
+	function AddItem($projectid, $instrumentid, $name, $notes, $type, $required) {
 		if ($instrumentid < 1) { Error("Invalid instrument ID"); return; }
 		if (!CheckEditInstrument($projectid, $instrumentid)) return;
 		$name = trim((string)$name);
@@ -220,10 +221,11 @@
 		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 		mysqli_stmt_close($stmt);
 		$nextorder = (int)$row['nextorder'];
-		$sqlstring = "insert into instrument_items (instrument_id, item_name, item_order, item_notes, item_type) values (?, ?, ?, ?, ?)";
+		$required = ($required == 1) ? 1 : 0;
+		$sqlstring = "insert into instrument_items (instrument_id, item_name, item_order, item_notes, item_type, item_required) values (?, ?, ?, ?, ?, ?)";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'isiss', $instrumentid, $name, $nextorder, $notes, $type);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid, $name, $nextorder, $notes, $type]);
+		mysqli_stmt_bind_param($stmt, 'isissi', $instrumentid, $name, $nextorder, $notes, $type, $required);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid, $name, $nextorder, $notes, $type, $required]);
 		mysqli_stmt_close($stmt);
 	}
 
@@ -245,16 +247,18 @@
 		$order = (int)$row['maxorder'];
 		$added = 0;
 		foreach ($lines as $line) {
-			$parts = array_map('trim', explode(',', $line, 3));
+			/* Name, Type, Required, Notes. Notes is last so it may contain commas */
+			$parts = array_map('trim', explode(',', $line, 4));
 			$name  = $parts[0];
 			if ($name == "") continue;
 			$type  = isset($parts[1]) && in_array(strtolower($parts[1]), $allowed_types, true) ? strtolower($parts[1]) : 'string';
-			$notes = $parts[2] ?? '';
+			$required = (isset($parts[2]) && in_array(strtolower($parts[2]), ['1', 'y', 'yes', 'true', 'required'], true)) ? 1 : 0;
+			$notes = $parts[3] ?? '';
 			$order++;
-			$sqlstring = "insert into instrument_items (instrument_id, item_name, item_order, item_type, item_notes) values (?, ?, ?, ?, ?)";
+			$sqlstring = "insert into instrument_items (instrument_id, item_name, item_order, item_type, item_required, item_notes) values (?, ?, ?, ?, ?, ?)";
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-			mysqli_stmt_bind_param($stmt, 'isiss', $instrumentid, $name, $order, $type, $notes);
-			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid, $name, $order, $type, $notes]);
+			mysqli_stmt_bind_param($stmt, 'isisis', $instrumentid, $name, $order, $type, $required, $notes);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$instrumentid, $name, $order, $type, $required, $notes]);
 			mysqli_stmt_close($stmt);
 			$added++;
 		}
@@ -293,7 +297,7 @@
 	/* ------- UpdateItem -------------------------------- */
 	/* --------------------------------------------------- */
 	/* AJAX (JSON) */
-	function UpdateItem($itemid, $name, $notes, $type) {
+	function UpdateItem($itemid, $name, $notes, $type, $required) {
 		if ($itemid < 1) { echo json_encode(['status' => 'error', 'message' => 'Invalid item ID']); return; }
 		$name = trim((string)$name);
 		if ($name == "") { echo json_encode(['status' => 'error', 'message' => 'Item name cannot be blank']); return; }
@@ -311,10 +315,11 @@
 
 		$allowed_types = ['enum', 'int', 'double', 'string', 'timeseries', 'image', 'csv'];
 		if (!in_array($type, $allowed_types, true)) { $type = 'string'; }
-		$sqlstring = "update instrument_items set item_name = ?, item_notes = ?, item_type = ? where instrumentitem_id = ?";
+		$required = ($required == 1) ? 1 : 0;
+		$sqlstring = "update instrument_items set item_name = ?, item_notes = ?, item_type = ?, item_required = ? where instrumentitem_id = ?";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'sssi', $name, $notes, $type, $itemid);
-		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$name, $notes, $type, $itemid]);
+		mysqli_stmt_bind_param($stmt, 'sssii', $name, $notes, $type, $required, $itemid);
+		MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$name, $notes, $type, $required, $itemid]);
 		mysqli_stmt_close($stmt);
 		echo json_encode(['status' => 'ok']);
 	}
@@ -529,8 +534,8 @@
 								<input type="hidden" name="projectid" value="<?=$projectid?>">
 								<input type="hidden" name="instrumentid" value="<?=$instrumentid?>">
 								<?=CSRFTokenField()?>
-								<div class="fields" style="margin-bottom:4px">
-									<div class="seven wide field">
+								<div class="fields" style="margin-bottom:4px; align-items:center">
+									<div class="five wide field">
 										<input type="text" name="item_name" placeholder="Item name" id="item-name-input" required>
 									</div>
 									<div class="three wide field">
@@ -547,6 +552,12 @@
 									<div class="four wide field">
 										<input type="text" name="item_notes" placeholder="Notes (optional)">
 									</div>
+									<div class="two wide field" style="white-space:nowrap">
+										<div class="ui checkbox">
+											<input type="checkbox" name="item_required" value="1" id="item-required-input">
+											<label for="item-required-input">Required</label>
+										</div>
+									</div>
 									<div class="two wide field">
 										<button class="ui small green button" type="submit"><i class="plus icon"></i> Add</button>
 									</div>
@@ -556,20 +567,29 @@
 							<!-- bulk add toggle + selection toolbar -->
 							<a class="ui mini basic button" onclick="$('#bulk-add-area').toggle()"><i class="list icon"></i> Bulk add</a>
 							<span id="itemSelectionToolbar" style="display:none;margin-left:10px">
-								<span id="itemSelectionLabel" style="font-size:0.85em;color:#555;margin-right:8px"></span>
-								<div class="ui mini action input">
-									<select id="bulkTypeSelect" class="ui dropdown">
-										<option value="string">String</option>
-										<option value="int">Int</option>
-										<option value="double">Double</option>
-										<option value="enum">Enum</option>
-										<option value="timeseries">Timeseries</option>
-										<option value="image">Image</option>
-										<option value="csv">CSV</option>
-									</select>
-									<button class="ui basic button" onclick="changeSelectedItemsType()"><i class="edit icon"></i> Change type</button>
+								<div class="ui small floating dropdown button withselecteditems" style="background-color: lavender">
+									<span class="text" id="itemSelectionLabel">With selected...</span>
+									<i class="dropdown icon"></i>
+									<div class="menu">
+										<div class="item">
+											<i class="dropdown icon"></i>
+											<span class="text"><i class="edit icon"></i> Change item type</span>
+											<div class="menu">
+												<div class="item" onclick="changeSelectedItemsType('string')">String</div>
+												<div class="item" onclick="changeSelectedItemsType('int')">Int</div>
+												<div class="item" onclick="changeSelectedItemsType('double')">Double</div>
+												<div class="item" onclick="changeSelectedItemsType('enum')">Enum</div>
+												<div class="item" onclick="changeSelectedItemsType('timeseries')">Timeseries</div>
+												<div class="item" onclick="changeSelectedItemsType('image')">Image</div>
+												<div class="item" onclick="changeSelectedItemsType('csv')">CSV</div>
+											</div>
+										</div>
+										<div class="item" onclick="setSelectedItemsRequired(true)"><i class="green check square outline icon"></i> Mark required</div>
+										<div class="item" onclick="setSelectedItemsRequired(false)"><i class="grey square outline icon"></i> Mark not required</div>
+										<div class="divider"></div>
+										<div class="item" onclick="deleteSelectedItems()"><i class="red trash icon"></i> Delete</div>
+									</div>
 								</div>
-								<button class="ui mini red basic button" onclick="deleteSelectedItems()" style="margin-left:8px"><i class="trash icon"></i> Delete</button>
 							</span>
 							<div id="bulk-add-area" style="display:none; margin-top:6px">
 								<form method="post" action="instruments.php" class="ui mini form">
@@ -578,7 +598,7 @@
 									<input type="hidden" name="instrumentid" value="<?=$instrumentid?>">
 									<?=CSRFTokenField()?>
 									<div class="field">
-										<textarea name="item_names" rows="6" placeholder="One item per line: ItemName, Type, Notes&#10;Type and Notes are optional. Type defaults to String.&#10;Example:&#10;HeartRate, int, beats per minute&#10;Label, string&#10;Temperature"></textarea>
+										<textarea name="item_names" rows="6" placeholder="One item per line: ItemName, Type, Required, Notes&#10;Type, Required and Notes are optional. Type defaults to String. Required is yes/no (default no).&#10;Example:&#10;HeartRate, int, yes, beats per minute&#10;Label, string, no&#10;Comment, string, , free text, may contain commas&#10;Temperature"></textarea>
 									</div>
 									<button class="ui small green button" type="submit"><i class="plus icon"></i> Add all</button>
 								</form>
@@ -614,6 +634,7 @@
 					'name'  => $item['item_name'],
 					'type'  => $item['item_type'] ?? 'string',
 					'notes' => $item['item_notes'] ?? '',
+					'required' => ((int)($item['item_required'] ?? 0) == 1),
 				];
 			}, $items), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP | JSON_INVALID_UTF8_SUBSTITUTE)?>;
 
@@ -649,6 +670,9 @@
 			}
 
 			$(document).ready(function() {
+				/* the 'With selected' menu runs an action; it doesn't select a value, so keep its label */
+				$('.withselecteditems.ui.dropdown').dropdown({ duration: 50, action: 'hide' });
+
 				$('#item-name-input').autocomplete({
 					minLength: 2,
 					delay: 200,
@@ -687,6 +711,7 @@
 					item_name: params.data.name,
 					item_type: params.data.type,
 					item_notes: params.data.notes,
+					item_required: params.data.required ? 1 : 0,
 				}, function(res) {
 					if (!res || res.status !== 'ok') alert('Save failed: ' + ((res && res.message) || 'unknown error'));
 				}, 'json').fail(function() { alert('Save failed: server error'); });
@@ -703,6 +728,7 @@
 					cellEditorParams: { values: ['string', 'int', 'double', 'enum', 'timeseries', 'image', 'csv'] },
 					valueFormatter: p => typeLabels[p.value] ?? p.value,
 					onCellValueChanged: saveCell },
+				{ field: 'required', headerName: 'Required', width: 100, cellDataType: 'boolean', editable: CAN_EDIT, onCellValueChanged: saveCell },
 				{ field: 'notes', headerName: 'Notes', flex: 3, editable: CAN_EDIT, onCellValueChanged: saveCell },
 				{ headerName: '', width: 50, cellStyle: { 'text-align': 'center', 'display': 'flex', 'align-items': 'center' }, cellRenderer: DeleteItemBtn, editable: false, sortable: false, filter: false, hide: !CAN_EDIT },
 			];
@@ -737,10 +763,9 @@
 					});
 			}
 
-			function changeSelectedItemsType() {
+			function changeSelectedItemsType(type) {
 				const rows = itemGrid.getSelectedRows();
 				if (rows.length === 0) return;
-				const type  = document.getElementById('bulkTypeSelect').value;
 				const label = typeLabels[type] ?? type;
 				if (!confirm('Change type of ' + rows.length + ' item' + (rows.length !== 1 ? 's' : '') + ' to "' + label + '"?')) return;
 				const ids = rows.map(r => r.id);
@@ -752,6 +777,23 @@
 							updateItemSelectionToolbar();
 						} else {
 							alert('Change type failed: ' + (res.error || 'unknown error'));
+						}
+					});
+			}
+
+			function setSelectedItemsRequired(required) {
+				const rows = itemGrid.getSelectedRows();
+				if (rows.length === 0) return;
+				if (!confirm('Mark ' + rows.length + ' item' + (rows.length !== 1 ? 's' : '') + ' as ' + (required ? 'required' : 'not required') + '?')) return;
+				const ids = rows.map(r => r.id);
+				postAjax({ action: 'bulkupdateitemrequired', ids: JSON.stringify(ids), required: required ? 1 : 0 })
+					.then(res => {
+						if (res.ok) {
+							rows.forEach(r => r.required = required);
+							itemGrid.applyTransaction({ update: rows });
+							updateItemSelectionToolbar();
+						} else {
+							alert('Update failed: ' + (res.error || 'unknown error'));
 						}
 					});
 			}
@@ -770,15 +812,15 @@
 				}
 				const rows = [];
 				itemGrid.forEachNodeAfterFilterAndSort(n => {
-					rows.push([n.data.order, n.data.name, typeLabels[n.data.type] ?? n.data.type, n.data.notes]);
+					rows.push([n.data.order, n.data.name, typeLabels[n.data.type] ?? n.data.type, n.data.required ? 'Yes' : '', n.data.notes]);
 				});
 				doc.autoTable({
 					startY: notes ? 32 : 24,
-					head: [['#', 'Item Name', 'Type', 'Notes']],
+					head: [['#', 'Item Name', 'Type', 'Required', 'Notes']],
 					body: rows,
 					styles: { fontSize: 9, cellPadding: 2 },
 					headStyles: { fillColor: [41, 128, 185] },
-					columnStyles: { 0: { cellWidth: 12 }, 2: { cellWidth: 24 } },
+					columnStyles: { 0: { cellWidth: 12 }, 2: { cellWidth: 24 }, 3: { cellWidth: 20 } },
 				});
 				doc.save(instrumentname.replace(/[^a-z0-9]/gi, '_') + '.pdf');
 			}

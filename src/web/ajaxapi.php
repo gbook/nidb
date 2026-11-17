@@ -236,6 +236,9 @@
 		case 'bulkupdateitemtype':
 			if (AjaxRequirePOSTTokenJSON()) BulkUpdateItemType(GetVariable('ids'), GetVariable('type'));
 			break;
+		case 'bulkupdateitemrequired':
+			if (AjaxRequirePOSTTokenJSON()) BulkUpdateItemRequired(GetVariable('ids'), GetVariable('required'));
+			break;
 		case 'dicomreceivercounts':
 			GetDicomReceiverCounts();
 			break;
@@ -3114,6 +3117,28 @@
 		foreach ($ids as $id) {
 			$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE instrument_items SET item_type = ? WHERE instrumentitem_id = ?");
 			mysqli_stmt_bind_param($stmt, 'si', $type, $id);
+			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+			mysqli_stmt_close($stmt);
+			$updated++;
+		}
+		echo json_encode(['ok' => true, 'updated' => $updated]);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- BulkUpdateItemRequired ------------- */
+	/* -------------------------------------------- */
+	function BulkUpdateItemRequired($idsJson, $required) {
+		JsonHeader();
+		$required = ($required == 1) ? 1 : 0;
+		$ids = json_decode((string)$idsJson, true);
+		if (!is_array($ids) || count($ids) === 0) { echo json_encode(['ok' => false, 'error' => 'No IDs provided']); return; }
+		$ids = CheckInstrumentItemEditPerms($ids);
+		if ($ids === false) { echo json_encode(['ok' => false, 'error' => 'You do not have permission to edit one or more of the selected items']); return; }
+		$updated = 0;
+		foreach ($ids as $id) {
+			$stmt = mysqli_prepare($GLOBALS['linki'], "UPDATE instrument_items SET item_required = ? WHERE instrumentitem_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $required, $id);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			mysqli_stmt_close($stmt);
 			$updated++;
