@@ -523,7 +523,7 @@
 		?>
 			<div class="ui warning message">
 				<div class="header">This table must be created manually</div>
-				Run the SQL below against the NiDB database as a database user with the CREATE privilege, for example in phpMyAdmin or the <tt>mysql</tt> command line client.
+				Run the SQL below against the NiDB database as a database user with the CREATE privilege, for example in HeidiSQL or the <tt>mysql</tt> command line client.
 				Until the table exists, series of this modality cannot be stored.
 			</div>
 

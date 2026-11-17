@@ -134,7 +134,7 @@
 			<h2 class="ui header">
 				<i class="puzzle piece icon"></i>
 				<div class="content">
-					<?=$modulename?>
+					<?=htmlspecialchars($module_name ?? '')?>
 					<div class="sub header">
 					<? if ($module_isactive) {?>
 					<a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Module is currently enabled.</b> Click to disable">Disable</a>
@@ -151,9 +151,9 @@
 				<div class="ui styled segment">
 					<div class="ui accordion">
 						<?
-						/* $modulename comes from the URL; quote the path pieces so it can't inject
-						   shell metacharacters, while leaving the *.log glob unquoted so it still expands */
-						$systemstring = "ls -t " . escapeshellarg($GLOBALS['cfg']['logdir']) . "/" . escapeshellarg($modulename) . "*.log";
+						/* use the module name from the database, not the URL. The path pieces are quoted so they
+						   can't inject shell metacharacters, leaving the *.log glob unquoted so it still expands */
+						$systemstring = "ls -t " . escapeshellarg($GLOBALS['cfg']['logdir']) . "/" . escapeshellarg($module_name) . "*.log";
 						//PrintVariable($systemstring);
 						$filelisting = shell_exec($systemstring);
 						$files = explode("\n", $filelisting);
@@ -174,7 +174,7 @@
 									<div class="ui header">
 										<div class="content">
 											<i class="dropdown icon"></i>
-											<?=$filename?>
+											<?=htmlspecialchars($filename ?? '')?>
 											<div class="sub header"><?=$filedate?> - <?=number_format($filesize,0)?> bytes</div>
 										</div>
 									</div>
@@ -185,7 +185,7 @@
 										$contents = file_get_contents($filename);
 										if ($contents === false) {
 											$error = error_get_last();
-											echo "Error getting file contents: $error<br>";
+											echo "Error getting file contents: " . htmlspecialchars($error['message'] ?? '') . "<br>";
 										}
 										else {
 											$contents = htmlspecialchars($contents, ENT_SUBSTITUTE);
@@ -212,7 +212,7 @@
 							}
 						}
 						else {
-							echo "No $modulename files found<br>";
+							echo "No " . htmlspecialchars($module_name) . " files found<br>";
 						}
 						?>
 					</div>
@@ -413,10 +413,10 @@
 						if (!$module_isactive) { $rowclass = ""; } else { $rowclass = "positive"; }
 				?>
 				<tr>
-					<td class="<?=$rowclass?>"><h3 class="header"><?=$module_name?></h3></td>
-					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=$module_name?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
+					<td class="<?=$rowclass?>"><h3 class="header"><?=htmlspecialchars($module_name ?? '')?></h3></td>
+					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=urlencode($module_name ?? '')?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
 					<td style="color: <?=$color?>">
-						<?=$module_status?> <? if (($module_status != "stopped") || ($module_numrunning != 0) || ($numlockfiles > 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
+						<?=htmlspecialchars($module_status ?? '')?> <? if (($module_status != "stopped") || ($module_numrunning != 0) || ($numlockfiles > 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
 					</td>
 					<td><?=$module_numrunning?></td>
 					<td><?=$module_laststop?></td>
@@ -473,7 +473,7 @@
 							
 							?>
 							<tr style="font-size: 9pt">
-								<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=$module_name?>:<?=$pid?></td>
+								<td colspan="4"> &nbsp; &nbsp; &nbsp;<?=htmlspecialchars($module_name ?? '')?>:<?=(int)$pid?></td>
 								<td colspan="3" style="background-color: <?=$timecolor?>">Checked in <?=$lastcheckin?> &nbsp; (<?=$timediff2?> ago)</td>
 							</tr>
 							<?

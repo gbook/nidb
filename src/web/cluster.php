@@ -1315,7 +1315,7 @@
 			<div class="ui styled segment" style="font-family: monospace; white-space: pre; overflow-x: auto;"><?
 			foreach ($statsoutput as $line) {
 				$line = trim($line);
-				echo "$line\n";
+				echo htmlspecialchars($line) . "\n";
 			}
 		?>
 			</div>
@@ -1336,7 +1336,7 @@
 			foreach ($statsoutput as $line) {
 				if (!strstr($line, '------')) {
 					$line = trim($line);
-					echo "$line\n";
+					echo htmlspecialchars($line) . "\n";
 				}
 			}
 		?>
@@ -1385,11 +1385,11 @@
 					$states = $report[$hostname]['states'];
 					?>
 					<tr>
-						<td><?=$hostname?></td>
-						<td><?=$arch?></td>
-						<td><?=$states?></td>
-						<td><?=$load?></td>
-						<td><?=$slotsavailable?></td>
+						<td><?=htmlspecialchars($hostname ?? '')?></td>
+						<td><?=htmlspecialchars($arch ?? '')?></td>
+						<td><?=htmlspecialchars($states ?? '')?></td>
+						<td><?=htmlspecialchars($load ?? '')?></td>
+						<td><?=(int)$slotsavailable?></td>
 						<td><img src="ajaxapi.php?action=horizontalchart&b=yes&w=200&h=10&v=<?=$slotsused?>,<?=($slotsavailable-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>"> &nbsp; <span class="tiny"><?=$slotsused?> of <?=$slotsavailable?></span></td>
 					</tr>
 					<?
@@ -1440,7 +1440,7 @@
 								}
 								?>
 								<tr>
-									<td><b><?=$queue?></b> &nbsp;</td>
+									<td><b><?=htmlspecialchars($queue ?? '')?></b> &nbsp;</td>
 									<td>
 										<img src="ajaxapi.php?action=horizontalchart&b=yes&w=600&h=25&v=<?=$slotsused?>,<?=($slotsunused-$slotsused)?>&c=<?=$slotsusedcolor?>,<?=$slotsunusedcolor?>">
 										<? if (($slotsused == 0) && ($slotsunused == 0)) { echo "Idle"; } else { echo "$slotsused of $slotsunused"; } ?>

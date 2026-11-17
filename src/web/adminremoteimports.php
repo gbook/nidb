@@ -242,7 +242,7 @@
 
 			<form method="post" action="adminremoteimports.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
-				<input type="hidden" name="id" value="<?=$id?>">
+				<input type="hidden" name="id" value="<?=(int)$id?>">
 
 				<div class="field">
 					<label>Import Name</label>
@@ -260,7 +260,7 @@
 								$pcost = $projectrow['project_costcenter'];
 								if ($projectid == $pid) { $selected = "selected"; } else { $selected = ""; }
 								?>
-								<option value="<?=$pid?>" <?=$selected?>><?=$pname?> (<?=$pcost?>)</option>
+								<option value="<?=(int)$pid?>" <?=$selected?>><?=htmlspecialchars($pname ?? '')?> (<?=htmlspecialchars($pcost ?? '')?>)</option>
 								<?
 							}
 						?>
@@ -433,12 +433,12 @@
 							$remote_url_display = ($remote_url == "") ? "-" : $remote_url;
 					?>
 					<tr>
-						<td><a href="adminremoteimports.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($importname)?></a></td>
+						<td><a href="adminremoteimports.php?action=editform&id=<?=(int)$id?>"><?=htmlspecialchars($importname)?></a></td>
 						<td><?=htmlspecialchars($projectname ?? '')?></td>
-						<td><?=ucfirst($remote_type)?></td>
-						<td><?=$scheduletext?></td>
+						<td><?=htmlspecialchars(ucfirst($remote_type ?? ''))?></td>
+						<td><?=htmlspecialchars($scheduletext ?? '')?></td>
 						<td><?=htmlspecialchars($remote_url_display)?></td>
-						<td class="tiny"><?=$create_date?></td>
+						<td class="tiny"><?=htmlspecialchars($create_date ?? '')?></td>
 					</tr>
 					<? 
 						}

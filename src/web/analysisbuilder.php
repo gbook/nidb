@@ -32,7 +32,8 @@
 	//PrintVariable($_SESSION);
 	
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* saving and deleting a saved search change the database, so they need POST + the CSRF token */
+	$action = GetSafeAction(array("savesearch", "deletesavedsearch"));
 	$projectid = (int)GetVariable("projectid");
 	$enrollmentid = (int)GetVariable("enrollmentid");
 
@@ -96,8 +97,17 @@
 			break;
 		case 'usesavedsearch':
 			$a = LoadSavedSearch($savedsearchid);
-			$projectid = $a['projectid'];
+			$projectid = (int)($a['projectid'] ?? 0);
 			break;
+	}
+
+	/* Permissions (decision 2026-11-17): reports contain raw data (observations, interventions, imaging
+	   protocols), so they need View Data on the selected project. The option lists are filled from the
+	   selected project only, so without View Data they are empty */
+	$projecterror = "";
+	if (($projectid > 0) && !CanReportProject($projectid)) {
+		$projecterror = "You do not have View Data permissions on the selected project";
+		$projectid = 0;
 	}
 	
 	/* perform the default operation for this page, which is to display the search criteria and results */
@@ -116,8 +126,9 @@
 			}
 		}
 		else {
-			list($h, $t, $n) = CreateWideReport($projectid, $a);
-			PrintCSV($h,$t,'wide');
+			/* only the long format is offered (there is no wide report) */
+			list($h, $t, $n) = CreateLongReport($projectid, $a);
+			PrintCSV($h,$t,'long');
 		}
 		exit(0);
 	}
@@ -136,23 +147,43 @@
 	require "includes_html.php";
 	require "menu.php";
 	ShowFlashMessage();
+	if ($projecterror != "") { Error($projecterror); }
 	DisplayAnalysisSummaryBuilder($projectid, $savedsearchid, $a);
 	
 	
 	/* ------------------------------------ functions ------------------------------------ */
 
 	/* -------------------------------------------- */
+	/* ------- CanReportProject ------------------- */
+	/* -------------------------------------------- */
+	/* true if the current user has View Data on $projectid (admins have it on every project) */
+	function CanReportProject($projectid) {
+		$projectid = (int)$projectid;
+		if ($projectid < 1)
+			return false;
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		return (GetPerm($perms, 'viewdata', $projectid) == 1);
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- DeleteSavedSearch ------------------ */
 	/* -------------------------------------------- */
+	/* deletes one of the current user's saved searches */
 	function DeleteSavedSearch($savedsearchid) {
 		$savedsearchid = (int)$savedsearchid;
+		$userid = (int)$_SESSION['userid'];
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from saved_search where savedsearch_id = ?");
-		mysqli_stmt_bind_param($stmt, 'i', $savedsearchid);
+		$stmt = mysqli_prepare($GLOBALS['linki'], "delete from saved_search where savedsearch_id = ? and user_id = ?");
+		mysqli_stmt_bind_param($stmt, 'ii', $savedsearchid, $userid);
 		MySQLiBoundQuery($stmt, __FILE__, __LINE__);
+		$deleted = mysqli_stmt_affected_rows($stmt);
 		mysqli_stmt_close($stmt);
 
-		echo "Search saved deleted [$savedsearchid]<br>";
+		if ($deleted > 0)
+			Notice("Saved search deleted");
+		else
+			Error("Saved search not found");
 	}
 	
 	
@@ -160,7 +191,12 @@
 	/* ------- SaveSearch ------------------------- */
 	/* -------------------------------------------- */
 	function SaveSearch($projectid, $savedsearchname, $a) {
-		$userid = $_SESSION['userid'];
+		$userid = (int)$_SESSION['userid'];
+		$savedsearchname = trim((string)$savedsearchname);
+		if ($savedsearchname == "") {
+			Error("Saved search name is blank");
+			return;
+		}
 
 		/* comma-joined protocol lists are stored in a single column; bound as one
 		   string each, so no per-element escaping is needed */
@@ -208,8 +244,9 @@
 			$a['outputformat'],
 		);
 
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select savedsearch_id from saved_search where saved_name = ?");
-		mysqli_stmt_bind_param($stmt, 's', $savedsearchname);
+		/* names are per user (unique key on user_id, saved_name), so only look at this user's searches */
+		$stmt = mysqli_prepare($GLOBALS['linki'], "select savedsearch_id from saved_search where saved_name = ? and user_id = ?");
+		mysqli_stmt_bind_param($stmt, 'si', $savedsearchname, $userid);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 		$exists = ($result && (mysqli_num_rows($result) > 0));
 		$row = $exists ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
@@ -252,15 +289,15 @@
 			search_includedob = ?,
 			search_reportformat = ?,
 			search_outputformat = ?
-			where savedsearch_id = ?";
-			$params = array_merge(array($userid, $projectid), $vals, array($savedsearchid));
-			$types = str_repeat('s', count($params) - 1) . 'i';
+			where savedsearch_id = ? and user_id = ?";
+			$params = array_merge(array($userid, $projectid), $vals, array($savedsearchid, $userid));
+			$types = str_repeat('s', count($params) - 2) . 'ii';
 			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
 			mysqli_stmt_bind_param($stmt, $types, ...$params);
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			mysqli_stmt_close($stmt);
 
-			Notice("Search updated <b>$savedsearchname</b>");
+			Notice("Search updated <b>" . htmlspecialchars($savedsearchname) . "</b>");
 		}
 		else {
 			$sqlstring = "insert into saved_search (
@@ -273,7 +310,7 @@
 			MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 			mysqli_stmt_close($stmt);
 
-			Notice("Search saved <b>$savedsearchname</b>");
+			Notice("Search saved <b>" . htmlspecialchars($savedsearchname) . "</b>");
 		}
 
 	}
@@ -301,11 +338,17 @@
 		};
 
 		if ($savedsearchid != 0) {
-			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from saved_search where savedsearch_id = ?");
-			mysqli_stmt_bind_param($stmt, 'i', $savedsearchid);
+			/* only the current user's own saved searches */
+			$userid = (int)$_SESSION['userid'];
+			$stmt = mysqli_prepare($GLOBALS['linki'], "select * from saved_search where savedsearch_id = ? and user_id = ?");
+			mysqli_stmt_bind_param($stmt, 'ii', $savedsearchid, $userid);
 			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
 			$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
 			mysqli_stmt_close($stmt);
+			if (!$row) {
+				Error("Saved search not found");
+				return $a;
+			}
 
 			$a['projectid'] = $row['search_projectid'];
 			$a['mr_protocols'] = explode(",", $row['search_mrprotocol']);
@@ -452,7 +495,8 @@
 				</div>
 				<div class="ui four wide right aligned column">
 					<form method="post" action="analysisbuilder.php" class="ui form">
-						<input type="hidden" name="action" value="usesavedsearch">
+						<input type="hidden" name="action" value="usesavedsearch" id="savedsearchaction">
+						<?=CSRFTokenField()?>
 						<div class="ui fluid action input">
 							<select name="savedsearchid" class="ui fluid dropdown" required>
 								<option value="">Select saved search...
@@ -468,12 +512,13 @@
 										$selected = "";
 									}
 									?>
-									<option value="<?=$savedsearchid?>" <?=$selected?>><?=$savedname?>
+									<option value="<?=(int)$savedsearchid?>" <?=$selected?>><?=htmlspecialchars($savedname ?? '', ENT_QUOTES)?></option>
 									<?
 								}
 								?>
 							</select>
 							<button class="ui button">Use saved search</button>
+							<button class="ui red basic icon button" title="Delete the selected saved search" onClick="if (!confirm('Delete the selected saved search?')) return false; document.getElementById('savedsearchaction').value = 'deletesavedsearch'; return true;"><i class="trash alternate icon"></i></button>
 						</div>
 					</form>
 				</div>
@@ -492,7 +537,8 @@
 					<div class="ui styled segment">
 						<form method="post" name="analysisbuilder" action="analysisbuilder.php" class="ui small form">
 						<input type="hidden" name="action" value="viewanalysissummary">
-						<input type="hidden" name="projectid" value="<?=$projectid?>">
+						<?=CSRFTokenField()?>
+						<input type="hidden" name="projectid" value="<?=(int)$projectid?>">
 
 						<div class="ui fluid labeled input">
 							<div class="ui label">
@@ -500,20 +546,21 @@
 							</div>
 							<select name="projectid" class="ui fluid search dropdown" required>
 								<option value="">Select Project...</option>
-								<option value="0">All Projects</option>
 								<?
-									$sqlstring = "select * from projects a left join user_project b on a.project_id = b.project_id where b.user_id = (select user_id from users where username = ?) and a.instance_id = ? order by project_name";
-									$result = ABQuery($sqlstring, array($_SESSION['username'], $_SESSION['instanceid']), __LINE__);
+									/* only projects in this instance the user has View Data on */
+									$projectrows = array();
+									$result = ABQuery("select project_id, project_name, project_costcenter from projects where instance_id = ? order by project_name", array((int)$_SESSION['instanceid']), __LINE__);
 									while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-										$project_id = $row['project_id'];
-										$project_name = $row['project_name'];
-										$project_costcenter = $row['project_costcenter'];
-										if ($projectid == $project_id)
-											$selected = "selected";
-										else
-											$selected = "";
+										$projectrows[] = $row;
+									}
+									$projectperms = GetCurrentUserProjectPermissions(array_column($projectrows, 'project_id'));
+									foreach ($projectrows as $row) {
+										$project_id = (int)$row['project_id'];
+										if (GetPerm($projectperms, 'viewdata', $project_id) != 1)
+											continue;
+										$selected = ($projectid == $project_id) ? "selected" : "";
 										?>
-										<option value="<?=$project_id?>" <?=$selected?>><?=$project_name?> (<?=$project_costcenter?>)</option>
+										<option value="<?=$project_id?>" <?=$selected?>><?=htmlspecialchars($row['project_name'] ?? '', ENT_QUOTES)?> (<?=htmlspecialchars($row['project_costcenter'] ?? '', ENT_QUOTES)?>)</option>
 										<?
 									}
 								?>
@@ -548,11 +595,9 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['mr_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of MR protocols from this project */
-										if ($projectid == 0)
-											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										else
-											$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										/* the selected project only (none selected: no options) */
+										$sqlstring = "select a.series_desc from mr_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										$result = ABQuery($sqlstring, array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = trim($row['series_desc']);
 											
@@ -560,10 +605,7 @@
 												$selected = "selected";
 											else
 												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+											?><option value="<?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?></option><?
 										}
 										?>
 									</select>
@@ -581,12 +623,10 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['eeg_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of EEG protocols from this project */
-										if ($projectid == 0)
-											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										else
-											$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										/* the selected project only (none selected: no options) */
+										$sqlstring = "select a.series_desc from eeg_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 											
-										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										$result = ABQuery($sqlstring, array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
 											
@@ -594,10 +634,7 @@
 												$selected = "selected";
 											else
 												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+											?><option value="<?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?></option><?
 										}
 										?>
 									</select>
@@ -615,12 +652,10 @@
 										<option value="ALLPROTOCOLS" <? if (in_array("ALLPROTOCOLS", $a['et_protocols'])) echo "selected"; ?>>(ALL protocols)
 										<?
 										/* get unique list of ET protocols from this project */
-										if ($projectid == 0)
-											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
-										else
-											$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
+										/* the selected project only (none selected: no options) */
+										$sqlstring = "select a.series_desc from et_series a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? and a.series_desc <> '' and a.series_desc is not null group by series_desc order by series_desc";
 											
-										$result = ABQuery($sqlstring, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										$result = ABQuery($sqlstring, array((int)$projectid), __LINE__);
 										while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 											$seriesdesc = $row['series_desc'];
 											
@@ -628,10 +663,7 @@
 												$selected = "selected";
 											else
 												$selected = "";
-											
-											$seriesdesc = str_replace("<", "&lt;", $seriesdesc);
-											$seriesdesc = str_replace(">", "&gt;", $seriesdesc);
-											?><option value="<?=$seriesdesc?>" <?=$selected?>><?=$seriesdesc?><?
+											?><option value="<?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($seriesdesc ?? '', ENT_QUOTES)?></option><?
 										}
 										?>
 									</select>
@@ -645,12 +677,10 @@
 								<div class="ui field">
 									Pipeline
 									<select class="ui search dropdown" name="pipelineid[]" id="pipelineid" onChange="CheckForPipelineCriteria()" multiple="multiple" style="width: 100%"><?
-										if ($projectid == 0)
-											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id group by a.pipeline_id) order by pipeline_name";
-										else
-											$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? group by a.pipeline_id) order by pipeline_name";
+										/* the selected project only (none selected: no options) */
+										$sqlstring2 = "select pipeline_id, pipeline_name from pipelines where pipeline_id in (select a.pipeline_id from analysis a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id where c.project_id = ? group by a.pipeline_id) order by pipeline_name";
 											
-										$result2 = ABQuery($sqlstring2, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										$result2 = ABQuery($sqlstring2, array((int)$projectid), __LINE__);
 										while ($row2 = mysqli_fetch_array($result2, MYSQLI_ASSOC)) {
 											$pipelineid = $row2['pipeline_id'];
 											$pipelinename = $row2['pipeline_name'];
@@ -662,7 +692,7 @@
 											if (!is_array($a['pipelineid']) && (trim($pipelineid) == trim($a['pipelineid'] ?? '')))
 												$selected = "selected";
 											?>
-											<option value="<?=$pipelineid?>" <?=$selected?>><?=$pipelinename?></option>
+											<option value="<?=(int)$pipelineid?>" <?=$selected?>><?=htmlspecialchars($pipelinename ?? '', ENT_QUOTES)?></option>
 											<?
 										}
 									?>
@@ -670,11 +700,11 @@
 								</div>
 								<div class="ui field">
 									Result name <i class="small blue question circle outline icon" title="For all text fields: Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
-									<input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=$a['pipelineresultname']?>" onChange="CheckForPipelineCriteria()">
+									<input type="text" name="pipelineresultname" id="pipelineresultname" value="<?=htmlspecialchars($a['pipelineresultname'] ?? '', ENT_QUOTES)?>" onChange="CheckForPipelineCriteria()">
 								</div>
 								<div class="ui field">
 									Get Datetime from Series. Enter series description <i class="small blue question circle outline icon" title="Try to obtain the date/time of the pipeline result from the series matching this value, instead of the StudyDateTime. Use * as a wildcard. Enclose strings in 'apostrophes' to search for exact match (or to match the * character). Separate multiple names with commas"></i>
-									<input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=$a['pipelineseriesdatetime']?>" onChange="CheckForPipelineCriteria()" placeholder="Series description...">
+									<input type="text" name="pipelineseriesdatetime" id="pipelineseriesdatetime" value="<?=htmlspecialchars($a['pipelineseriesdatetime'] ?? '', ENT_QUOTES)?>" onChange="CheckForPipelineCriteria()" placeholder="Series description...">
 								</div>
 							</div>
 							
@@ -685,12 +715,10 @@
 								<div class="ui field">
 									Observation name(s)
 									<select class="ui search dropdown" name="observationname[]" id="observationname" onChange="CheckForObservationCriteria()" multiple="multiple" style="width: 100%"><?
-										if ($projectid == 0)
-											$sqlstringA = "SELECT distinct(observation_name) from observations order by observation_name";
-										else
-											$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.observation_name";
+										/* the selected project only (none selected: no options) */
+										$sqlstringA = "SELECT distinct(a.observation_name) from observations a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.observation_name";
 											
-										$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										$resultA = ABQuery($sqlstringA, array((int)$projectid), __LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$observationname = $rowA['observation_name'];
 											if (trim($observationname) != "") {
@@ -700,7 +728,7 @@
 														$selected = "selected";
 												if (!is_array($a['observationname']) && (trim($observationname) == trim($a['observationname'] ?? '')))
 													$selected = "selected";
-												?><option value="<?=$observationname?>" <?=$selected?>><?=$observationname?><?
+												?><option value="<?=htmlspecialchars($observationname ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($observationname ?? '', ENT_QUOTES)?></option><?
 											}
 										}
 									?>
@@ -720,12 +748,10 @@
 									<label>Intervention variable name(s) <i class="small blue question circle outline icon" title="Find all of the following interventions and display the 'value'. Depending on where the data was imported from, 'value' may likely be blank"></i></label>
 									<select class="ui search dropdown" name="interventionname[]" id="interventionname" onChange="CheckForInterventionCriteria()" multiple="multiple" style="width: 100%">
 									<?
-										if ($projectid == 0)
-											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id order by a.intervention_name";
-										else
-											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
+										/* the selected project only (none selected: no options) */
+										$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
 											
-										$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+										$resultA = ABQuery($sqlstringA, array((int)$projectid), __LINE__);
 										while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 											$interventionname = $rowA['intervention_name'];
 											$selected = "";
@@ -734,7 +760,7 @@
 													$selected = "selected";
 											if (!is_array($a['interventionname']) && (trim($interventionname) == trim($a['interventionname'] ?? '')))
 												$selected = "selected";
-											?><option value="<?=$interventionname?>" <?=$selected?>><?=$interventionname?><?
+											?><option value="<?=htmlspecialchars($interventionname ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($interventionname ?? '', ENT_QUOTES)?></option><?
 										}
 									?>
 									</select>
@@ -758,11 +784,9 @@
 										<label>Dose variable(s)</label>
 										<select class="ui search dropdown" name="dosevariable[]" id="dosevariable" onChange="CheckForInterventionCriteria()" multiple="multiple">
 										<?
-											if ($projectid == 0)
-												$sqlstringA = "SELECT distinct(intervention_name) FROM interventions order by intervention_name";
-											else
-												$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
-											$resultA = ABQuery($sqlstringA, ($projectid == 0) ? array() : array((int)$projectid), __LINE__);
+											/* the selected project only (none selected: no options) */
+											$sqlstringA = "SELECT distinct(a.intervention_name) FROM interventions a left join enrollment b on a.enrollment_id = b.enrollment_id where b.project_id = ? order by a.intervention_name";
+											$resultA = ABQuery($sqlstringA, array((int)$projectid), __LINE__);
 											while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
 												$interventionname = $rowA['intervention_name'];
 												$selected = "";
@@ -771,7 +795,7 @@
 														$selected = "selected";
 												if (!is_array($a['dosevariable']) && (trim($interventionname) == trim($a['dosevariable'] ?? '')))
 													$selected = "selected";
-												?><option value="<?=$interventionname?>" <?=$selected?>><?=$interventionname?><?
+												?><option value="<?=htmlspecialchars($interventionname ?? '', ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($interventionname ?? '', ENT_QUOTES)?></option><?
 											}
 										?>
 										</select>
@@ -804,11 +828,11 @@
 						<h4 class="ui dividing blue header">Timeline Correlation</h4>
 						<div class="ui field">
 							<label>Pinned variable <i class="small blue question circle outline icon" title="From the selected variables above, this is the variable from which distance-in-time to all other selected variables will be calculated"></i></label>
-							<input name="pinnedvariable" value="<?=$a['pinnedvariable']?>">
+							<input name="pinnedvariable" value="<?=htmlspecialchars($a['pinnedvariable'] ?? '', ENT_QUOTES)?>">
 						</div>
 						<div class="ui field">
 							<label>Distance variable <i class="small blue question circle outline icon" title="From the selected variables above, this is the variable to which distance-in-time from the pinned variable will be calculated"></i></label>
-							<input name="distancevariable" value="<?=$a['distancevariable']?>">
+							<input name="distancevariable" value="<?=htmlspecialchars($a['distancevariable'] ?? '', ENT_QUOTES)?>">
 						</div>
 						
 						<h4 class="ui dividing blue header">Grouping Options</h4>
@@ -821,7 +845,7 @@
 								<input type="checkbox" name="collapsevariables" value="1" <? if ($a['collapsevariables']) echo "checked"; ?>>
 								<label>Collapse variables <i class="small blue question circle outline icon" title="Expression to match a grouping, <i>by day</i>. For example, to collapse <tt>var1_xyz</tt>, <tt>var1_abc</tt>, <tt>var1_a</tt>, into 1 row and 3 columns, use <code style='color: #000'>var#_*</code>. <tt>#</tt> represents any integer number, and <tt>*</tt> represents any string."></i></label>
 							</div>
-							<input type="text" name="collapsebyexpression" value="<?=$a['collapsebyexpression']?>" placeholder="Collapse by expression...">
+							<input type="text" name="collapsebyexpression" value="<?=htmlspecialchars($a['collapsebyexpression'] ?? '', ENT_QUOTES)?>" placeholder="Collapse by expression...">
 						</div>
 
 						<h4 class="ui dividing blue header">Output Options</h4>
@@ -832,11 +856,11 @@
 						<br>
 						<div class="ui field">
 							<label>Blank value string <i class="small blue question circle outline icon" title="If a value exists, but the value is blank, display this string instead"></i></label>
-							<input name="blankvalueplaceholder" value="<?=$a['blankvalueplaceholder']?>" required>
+							<input name="blankvalueplaceholder" value="<?=htmlspecialchars($a['blankvalueplaceholder'] ?? '', ENT_QUOTES)?>" required>
 						</div>
 						<div class="ui field">
 							<label>Missing value string <i class="small blue question circle outline icon" title="If a value is missing, display this string instead"></i></label>
-							<input name="missingvalueplaceholder" value="<?=$a['missingvalueplaceholder']?>" placeholder="Missing value placeholder...">
+							<input name="missingvalueplaceholder" value="<?=htmlspecialchars($a['missingvalueplaceholder'] ?? '', ENT_QUOTES)?>" placeholder="Missing value placeholder...">
 						</div>
 						<div class="ui checkbox">
 							<input type="checkbox" name="includeduration" value="1" <? if ($a['includeduration']) echo "checked"; ?>>
@@ -881,7 +905,7 @@
 						<button class="ui fluid primary button" onClick="document.analysisbuilder.action.value='viewanalysissummary'; return;"><i class="search icon"></i>Update Summary</button>
 						<br><br>
 						<div class="ui fluid action input">
-							<input type="text" name="savedsearchname" placeholder="Saved search name..." value="<?=$a['savedsearchname']?>">
+							<input type="text" name="savedsearchname" placeholder="Saved search name..." value="<?=htmlspecialchars($a['savedsearchname'] ?? '', ENT_QUOTES)?>">
 							<button class="ui basic compact button" onClick="document.analysisbuilder.action.value='savesearch'; return;"><i class="save icon"></i> Save search</button>
 						</div>
 						</form>
@@ -909,7 +933,7 @@
 									<i class="dropdown icon"></i>Debug notes
 								</div>
 								<div class="content">
-									<pre class="tt" style="font-size: smaller"><?=$n?></pre>
+									<pre class="tt" style="font-size: smaller"><?=htmlspecialchars($n ?? '', ENT_QUOTES)?></pre>
 								</div>
 							</div>
 							<?
@@ -1902,7 +1926,7 @@
 				<tr>
 				<?
 				foreach ($h as $col) {
-					?><th><?=$col?></th><?
+					?><th><?=htmlspecialchars($col ?? '', ENT_QUOTES)?></th><?
 				}
 				?>
 				</tr>
@@ -1921,7 +1945,7 @@
 									$disp = $a['missingvalueplaceholder'];
 								else
 									$disp = $t[$id][$col];
-							?><td><?=$disp?></td><?
+							?><td><?=htmlspecialchars($disp ?? '', ENT_QUOTES)?></td><?
 						}
 					?>
 					</tr>

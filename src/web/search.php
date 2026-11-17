@@ -3990,14 +3990,10 @@
 								$studynums[$i] = $val['studynum'];
 								$i++;
 							}
-							$x = implode(',', $xs);
-							$y = implode(',', $ys);
-							
 							?>
 							<td valign="top">
-							<img src='xygraph.php?h=200&w=420&t=<?=urlencode(html_entity_decode($chartname, ENT_QUOTES))?>&x=<?=urlencode($x)?>&y=<?=urlencode($y)?>&xtype=dat&ytype=lin'>
 							<details>
-							<summary>Data</summary>
+							<summary><b><?=htmlspecialchars(html_entity_decode($chartname, ENT_QUOTES))?></b> data</summary>
 							<table class="ui very compact small celled table">
 								<tr>
 									<th>Study</th>
@@ -4008,9 +4004,9 @@
 								foreach ($xs as $i => $blah) {
 									?>
 									<tr>
-										<td><a href="studies.php?id=<?=$studyids[$i]?>"><?=$studynums[$i]?></a></td>
-										<td><?=$xs[$i]?></td>
-										<td><?=$ys[$i]?></td>
+										<td><a href="studies.php?id=<?=(int)$studyids[$i]?>"><?=htmlspecialchars($studynums[$i] ?? '')?></a></td>
+										<td><?=htmlspecialchars($xs[$i] ?? '')?></td>
+										<td><?=htmlspecialchars($ys[$i] ?? '')?></td>
 									</tr>
 									<?
 								}
@@ -4020,8 +4016,6 @@
 							</td>
 							<?
 							
-							$x = "";
-							$y = "";
 							unset($xs);
 							unset($ys);
 							unset($studyids);

@@ -36,7 +36,7 @@
 	date_default_timezone_set("America/New_York");
 
 	/* check if this server is supposed to be up or not */
-	if ($cfg['offline'] == 1) {
+	if (($cfg['offline'] ?? 0) == 1) {
 		?>
 		<table style="width: 100%; height: 100%;">
 			<tr>
@@ -79,7 +79,7 @@
 	
 	/* database connection */
 	$linki = mysqli_connect($GLOBALS['cfg']['mysqlhost'], $GLOBALS['cfg']['mysqluser'], $GLOBALS['cfg']['mysqlpassword'], $GLOBALS['cfg']['mysqldatabase']);
-	$sitename = $cfg['sitename'];
+	$sitename = $cfg['sitename'] ?? '';
 
 	/* check if DB connection was successful */
 	if (mysqli_connect_errno()) {
@@ -88,10 +88,10 @@
 	}
 
 	/* disable the login checking, if its the signup page or if authentication is done in the page (such as api.php) */
-	if (!$nologin) {
+	if (empty($nologin)) {
 		/* cookie info */
-		$username = $_SESSION['username'];
-		if (($_SESSION['validlogin'] != "true") || ($_SESSION['userid'] == '') ) {
+		$username = $_SESSION['username'] ?? '';
+		if ((($_SESSION['validlogin'] ?? '') != "true") || (($_SESSION['userid'] ?? '') == '') ) {
 			header("Location: login.php");
 			exit(0);
 		}
@@ -104,7 +104,7 @@
 		/* no login checking */
 	}
 	
-	$instanceid = $_SESSION['instanceid'];
+	$instanceid = $_SESSION['instanceid'] ?? '';
 	
 	/* get info if they are an admin (wouldn't want to store this in a cookie... if they're logged in for 3 months, they may no longer be an admin during that time */
 	/* bound: usernames are email addresses, which may legally contain quotes (N51) */

@@ -282,8 +282,8 @@ if command -v a2enmod >/dev/null 2>&1; then
 fi
 
 # ----- Apache hardening for the NiDB docroot -----
-# Rewritten on every install/upgrade. For local changes (e.g. allowing phpMyAdmin from an admin
-# subnet) create a separate file that loads after this one rather than editing this file.
+# Rewritten on every install/upgrade. For local changes create a separate file that loads after
+# this one rather than editing this file.
 echo 'Writing Apache settings for NiDB (/etc/apache2/conf-available/nidb.conf)...'
 mkdir -p "$(dirname /etc/apache2/conf-available/nidb.conf)"
 cat > /etc/apache2/conf-available/nidb.conf <<'EOF'
@@ -296,10 +296,10 @@ cat > /etc/apache2/conf-available/nidb.conf <<'EOF'
     Options -Indexes +FollowSymLinks
 </Directory>
 
-# phpMyAdmin is not part of NiDB. If it is installed under the docroot, only allow it from this server.
-# To allow an admin subnet, override in a later file with e.g. "Require ip 10.0.5.0/24".
+# phpMyAdmin is not supported. Any copy left under the docroot is blocked; manage the database
+# with a desktop client such as HeidiSQL (over an SSH tunnel) or the mysql command line instead.
 <LocationMatch "(?i)^/phpmyadmin">
-    Require local
+    Require all denied
 </LocationMatch>
 EOF
 command -v a2enconf >/dev/null 2>&1 && a2enconf nidb >/dev/null 2>&1
@@ -454,6 +454,7 @@ DEPRECATED_WEB_FILES=(
     "register.php"
     "scripts/securimage/example_form.php"
     "scripts/securimage/example_form.ajax.php"
+    "xygraph.php"
 )
 for f in "${DEPRECATED_WEB_FILES[@]}"; do
     rm -f "/var/www/html/$f"

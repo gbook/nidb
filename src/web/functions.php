@@ -75,7 +75,9 @@
 		$lines = file($file);
 		foreach ($lines as $line) {
 			if ((substr($line,0,1) != '#') && (trim($line) != "")) {
-				list($var, $value) = explode(' = ', trim($line));
+				$parts = explode(' = ', trim($line), 2);
+				if (count($parts) < 2) continue; /* malformed or valueless line */
+				list($var, $value) = $parts;
 				$var = str_replace(array('[',']'),'',$var);
 				$cfg[$var] = $value;
 			}
@@ -165,7 +167,7 @@
 	/* ------- Debug ------------------------------ */
 	/* -------------------------------------------- */
 	function Debug($F, $L, $msg) {
-		if ($GLOBALS['cfg']['debug'] == 1) {
+		if (($GLOBALS['cfg']['debug'] ?? 0) == 1) {
 		?>
 		<tt style="color:#444; font-size:8pt"><b>[<?=$F?> @ line <?=$L?>]</b> <?=$msg?></tt><br>
 		<?
@@ -2562,90 +2564,35 @@
 		return $new_array;
 	}	
 
-	/**
-	 * Error handler, passes flow over the exception logger with new ErrorException.
-	 */
-	function log_error( $num, $str, $file, $line, $context = null )
-	{
-		log_exception( new ErrorException( $str, 0, $num, $file, $line ) );
-	}
-
-	/**
-	 * Uncaught exception handler.
-	 */
-	function log_exception( Exception $e )
-	{
-		//global $config;
-		
-		//if ( $config["debug"] == true )
-		//{
-			print "<div style='text-align: center;'>";
-			print "<h2 style='color: rgb(190, 50, 50);'>Exception Occured:</h2>";
-			print "<table style='width: 800px; display: inline-block;'>";
-			print "<tr style='background-color:rgb(230,230,230);'><th style='width: 80px;'>Type</th><td>" . get_class( $e ) . "</td></tr>";
-			print "<tr style='background-color:rgb(240,240,240);'><th>Message</th><td>{$e->getMessage()}</td></tr>";
-			print "<tr style='background-color:rgb(230,230,230);'><th>File</th><td>{$e->getFile()}</td></tr>";
-			print "<tr style='background-color:rgb(240,240,240);'><th>Line</th><td>{$e->getLine()}</td></tr>";
-			print "</table></div>";
-		//}
-		//else
-		//{
-			//$message = "Type: " . get_class( $e ) . "; Message: {$e->getMessage()}; File: {$e->getFile()}; Line: {$e->getLine()};";
-			//file_put_contents( $config["app_dir"] . "/tmp/logs/exceptions.log", $message . PHP_EOL, FILE_APPEND );
-			//header( "Location: {$config["error_page"]}" );
-		//}
-		
-		//exit();
-	}
-	
-function myErrorHandler($errno, $errstr, $errfile, $errline)
-{
-    if (!(error_reporting() & $errno)) {
-        // This error code is not included in error_reporting
-        return;
-    }
-
-    switch ($errno) {
-    case E_USER_ERROR:
-        echo "<b>My ERROR</b> [$errno] $errstr<br />\n";
-        echo "  Fatal error on line $errline in file $errfile";
-        echo ", PHP " . PHP_VERSION . " (" . PHP_OS . ")<br />\n";
-        echo "Aborting...<br />\n";
-        exit(1);
-        break;
-
-    case E_USER_WARNING:
-        echo "<b>My WARNING</b> [$errno] $errstr<br />\n";
-        break;
-
-    case E_USER_NOTICE:
-        echo "<b>My NOTICE</b> [$errno] $errstr<br />\n";
-        break;
-
-    //default:
-    //   echo "Unknown error type: [$errno] $errstr<br />\n";
-    //    break;
-    }
-
-    /* Don't execute PHP internal error handler */
-    return true;
-}
-
-	/**
-	 * Checks for a fatal error, work around for set_error_handler not working on fatal errors.
-	 */
-	function check_for_fatal()
-	{
+	/* -------------------------------------------- */
+	/* ------- check_for_fatal -------------------- */
+	/* -------------------------------------------- */
+	/* Shutdown handler for fatal errors (including PHP 8's uncaught TypeError/ValueError). PHP has
+	   already written the error to its error log (log_errors), so this only tells the user something
+	   went wrong. The message, file and line are shown only when display_errors is on (dev); production
+	   shows a generic message so paths and code details aren't disclosed. Warnings, notices and
+	   deprecations use PHP's normal handling: logged, and displayed only when display_errors is on */
+	function check_for_fatal() {
 		$error = error_get_last();
-		if ( $error["type"] == E_ERROR )
-			log_error( $error["type"], $error["message"], $error["file"], $error["line"] );
+		if (($error === null) || !in_array($error['type'], array(E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR), true))
+			return;
+
+		$display = filter_var(ini_get('display_errors'), FILTER_VALIDATE_BOOLEAN) || (ini_get('display_errors') === 'stderr');
+		?>
+		<div class="ui text container" style="margin-top: 15px">
+			<div class="ui negative message">
+				<div class="header">An internal error occurred</div>
+				<p>The details have been written to the server's error log.</p>
+				<? if ($display) { ?>
+				<p><tt><?=htmlspecialchars($error['message'] ?? '')?></tt><br>
+				<?=htmlspecialchars($error['file'] ?? '')?> line <?=(int)($error['line'] ?? 0)?></p>
+				<? } ?>
+			</div>
+		</div>
+		<?
 	}
 
-	register_shutdown_function( "check_for_fatal" );
-	set_error_handler( "myErrorHandler" );
-	//set_exception_handler( "log_exception" );
-	//ini_set( "display_errors", "off" );
-	//error_reporting( E_ALL );	
+	register_shutdown_function("check_for_fatal");
 	
 	
 	/* -------------------------------------------- */

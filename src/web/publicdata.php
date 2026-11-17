@@ -62,7 +62,7 @@
 
 			// Adding file to the correesponding group
 			if (!isset($groups[$groupName])) {
-				$groups[$gorupName] = [];
+				$groups[$groupName] = [];
 			}
 
 			$groups[$groupName][]= $file;
@@ -85,14 +85,14 @@
 	foreach ($groups as $groupName => $files) {
 	  if (!empty($files)){		// Ensures the groups are not Empty
 ?>		<tr>
-		<td><?=$groupName?></td>
+		<td><?=htmlspecialchars($groupName ?? '')?></td>
 		<td>
 		<div class="ui list">
 <?
 		// Display Files for each group
 		foreach ($files as $file) {
 ?>			
-			<div class='item'><a href="<?=$datapath?><?=$file?>" download><?=$file?></a></div>
+			<div class='item'><a href="<?=htmlspecialchars($datapath . rawurlencode($file), ENT_QUOTES)?>" download><?=htmlspecialchars($file ?? '')?></a></div>
 <?		}
 ?>
 		</div>

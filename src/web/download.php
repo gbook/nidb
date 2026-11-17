@@ -116,15 +116,15 @@
 			$junk = exec($systemstring);
 			
 			if (!file_exists($datapath)) {
-				Error("The archive path [$datapath] for this data does not exist. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
+				Error("The archive path [" . htmlspecialchars($datapath) . "] for this data does not exist");
 			}
 			else {
 				if (!file_exists($zipfilepath)) {
-					Error("The archive path [$datapath] exists, but the server was unable to create a zip file [$zipfilepath]. Zip command [$systemstring] output [$junk]. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
+					Error("The archive path [" . htmlspecialchars($datapath) . "] exists, but the server was unable to create a zip file [" . htmlspecialchars($zipfilepath) . "]. Zip command [" . htmlspecialchars($systemstring) . "] output [" . htmlspecialchars((string)$junk) . "]");
 				}
 				else {
 					if (filesize($zipfilepath) == 0) {
-						Error("The archive path [$datapath] exists and a zip file was created [$zipfilepath] but the file is empty. Go <a href='" . $_SERVER["HTTP_REFERER"] . "'>back</a> to referring page");
+						Error("The archive path [" . htmlspecialchars($datapath) . "] exists and a zip file was created [" . htmlspecialchars($zipfilepath) . "] but the file is empty");
 					}
 					else {
 						header("Content-Description: File Transfer");

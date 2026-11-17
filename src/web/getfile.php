@@ -152,50 +152,30 @@ if ($file != "") {
 			}
 			else {
 				$pathparts = pathinfo($file);
-				$ext = strtolower($pathparts['extension']);
+				$ext = strtolower($pathparts['extension'] ?? '');
 				
-				switch ($ext) {
-					case "png":
-						$im = imagecreatefrompng($file);
-						header('Content-type: image/png');
-						imagepng($im);
-						imagedestroy($im);
-						break;
-					case "gif":
-						$im = imagecreatefromgif($file);
-						header('Content-type: image/gif');
-						imagegif($im);
-						echo file_get_contents($image);
-						imagedestroy($im);
-						break;
-					case "jpg":
-						$im = imagecreatefromjpg($file);
-						header('Content-type: image/jpg');
-						imagejpg($im);
-						imagedestroy($im);
-						break;
-					case "wmv":
-						header('Content-type: video/x-ms-wmv');
-						readfile($file);
-						break;
-					case "ogv":
-						header('Content-type: video/ogg');
-						readfile($file);
-						break;
-					case "ogg":
-						header('Content-type: video/ogg');
-						readfile($file);
-						break;
-					case "mp4":
-						header('Content-type: video/mp4');
-						readfile($file);
-						break;
-					case "flv":
-						header('Content-type: video/x-flv');
-						readfile($file);
-						break;
-					default:
-						echo "no match for [$ext] extension";
+				/* inline display (images, and video used by managefiles.php). The file is sent as-is
+				   with a fixed content type for each allowed extension */
+				$inlinetypes = array(
+					'png' => 'image/png',
+					'gif' => 'image/gif',
+					'jpg' => 'image/jpeg',
+					'jpeg' => 'image/jpeg',
+					'wmv' => 'video/x-ms-wmv',
+					'ogv' => 'video/ogg',
+					'ogg' => 'video/ogg',
+					'mp4' => 'video/mp4',
+					'flv' => 'video/x-flv');
+				if (isset($inlinetypes[$ext])) {
+					/* discard any buffered output so it isn't prepended to the file */
+					while (ob_get_level() > 0) { ob_end_clean(); }
+					header('Content-Type: ' . $inlinetypes[$ext]);
+					header('X-Content-Type-Options: nosniff');
+					header('Content-Length: ' . filesize($file));
+					readfile($file);
+				}
+				else {
+					echo "no match for [" . htmlspecialchars($ext) . "] extension";
 				}
 			}
 		}

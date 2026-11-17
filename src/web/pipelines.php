@@ -4486,9 +4486,9 @@
 				<tbody>
 					<? foreach ($favorites as $p) { ?>
 					<tr>
-						<td><a href="pipelines.php?action=editpipeline&id=<?=$p['id']?>"><?=$p['title']?></a> <span class="tiny">v<?=$p['version']?></span></td>
+						<td><a href="pipelines.php?action=editpipeline&id=<?=(int)$p['id']?>"><?=htmlspecialchars($p['title'] ?? '')?></a> <span class="tiny">v<?=(int)$p['version']?></span></td>
 						<td><?=htmlspecialchars($p['creatorusername'] ?? '')?></td>
-						<td><?=PipelineDisplayStatus($p)?></td>
+						<td><?=htmlspecialchars(PipelineDisplayStatus($p) ?? '')?></td>
 					</tr>
 					<? } ?>
 				</tbody>
@@ -4720,10 +4720,10 @@
 			<? if (($info['pipelinegroup'] == '') || ($level > 1)) { ?>
 			<td valign="top" align="left" class="<?=$class?>">&nbsp;</td>
 			<? } else { ?>
-			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=$imgdata[$info['pipelinegroup']] ?? ''?>'>"><?=$info['pipelinegroup']?></td>
+			<td valign="top" align="left" class="<?=$class?>" title="<img border=1 src='data:image/png;base64,<?=htmlspecialchars($imgdata[$info['pipelinegroup']] ?? '', ENT_QUOTES)?>'>"><?=htmlspecialchars($info['pipelinegroup'] ?? '')?></td>
 			<? } ?>
-			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=$info['version']?></span><? if ($showerrors && ($info['adminid'] == (int)$GLOBALS['userid']) && (($info['numerror'] ?? 0) > 0)) { ?> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=(int)$info['id']?>&searchstatus=error" class="ui mini red label" title="View analyses in the error state"><i class="exclamation circle icon"></i><?=$info['numerror']?> error<?=($info['numerror'] == 1 ? '' : 's')?></a><? } ?></td>
-			<td valign="top" align="right"><?=$info['level']?></td>
+			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=htmlspecialchars($info['title'] ?? '', ENT_QUOTES)?></b> &nbsp; <?=htmlspecialchars($info['desc'] ?? '', ENT_QUOTES)?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=(int)$info['id']?>" style="font-size:11pt"><?=htmlspecialchars($info['title'] ?? '')?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=(int)$info['version']?></span><? if ($showerrors && ($info['adminid'] == (int)$GLOBALS['userid']) && (($info['numerror'] ?? 0) > 0)) { ?> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=(int)$info['id']?>&searchstatus=error" class="ui mini red label" title="View analyses in the error state"><i class="exclamation circle icon"></i><?=(int)$info['numerror']?> error<?=($info['numerror'] == 1 ? '' : 's')?></a><? } ?></td>
+			<td valign="top" align="right"><?=(int)$info['level']?></td>
 			<td valign="top"><?=htmlspecialchars($info['creatorusername'] ?? '')?></td>
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
 				<?
@@ -4734,26 +4734,10 @@
 						PostActionButton("pipelines.php", array('action' => 'enable', 'returnpage' => 'home', 'id' => (int)$info['id']), '<i class="red toggle off icon"></i>', '', '', 'Disabled. Click to enable');
 					}
 				?>
-				<span title="<b>Last message:</b> <?=$info['message']?><br><b>Last check:</b> <?=$info['lastcheck']?>">
-				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <? PostActionButton("pipelines.php", array('action' => 'reset', 'id' => (int)$info['id']), 'reset', 'ui orange basic small button'); ?><? } else { echo $dispstatus; }  ?>
+				<span title="<b>Last message:</b> <?=htmlspecialchars($info['message'] ?? '', ENT_QUOTES)?><br><b>Last check:</b> <?=htmlspecialchars($info['lastcheck'] ?? '', ENT_QUOTES)?>">
+				<? if ($info['status'] == 'running') { ?><b>Running</b> &nbsp; <? PostActionButton("pipelines.php", array('action' => 'reset', 'id' => (int)$info['id']), 'reset', 'ui orange basic small button'); ?><? } else { echo htmlspecialchars($dispstatus ?? ''); }  ?>
 				</span>
 			</td>
-			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
-				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
-			</td>
-			<td valign="top" align="right" style="font-size:8pt"><? if ($info['disksize'] > 0) { echo number_format(($info['disksize']/1024/1024/1024),1) . '&nbsp;GB'; } ?></td>
-			<? if (strlen($info['directory']) > 40) {
-				?><td valign="top" align="left" title="<?=$info['directory']?>" style="font-size:8pt"><tt><?
-				echo substr($info['directory'],0,40) . "...";
-				?></tt></td><?
-			}
-			else {
-				?><td valign="top" align="left" style="font-size:8pt"><tt><?
-				echo $info['directory'];
-				?></tt></td><?
-			}
-			?>
-			<td valign="top"><?=$info['queue']?></td>-->
 		</tr>
 		<?
 		return $rowkey;
@@ -4810,13 +4794,9 @@
 		
 		?>
 		<tr style="color: <?=$fontcolor?>">
-			<td valign="top" style="padding-left: <?=($level-1)*20?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
+			<td valign="top" style="padding-left: <?=($level-1)*20?>;" class="<?=$class?>" title="<b><?=htmlspecialchars($info['title'] ?? '', ENT_QUOTES)?></b> &nbsp; <?=htmlspecialchars($info['desc'] ?? '', ENT_QUOTES)?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=(int)$info['id']?>" style="font-size:11pt"><?=htmlspecialchars($info['title'] ?? '')?></a> &nbsp; <span class="tiny">v<?=(int)$info['version']?></span></td>
 			<td valign="top"><?=htmlspecialchars($info['creatorusername'] ?? '')?>
-			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
-				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
-			</td>-->
 			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$usagecolor?>"><?=$usage_f?></td>
-			<!--<td valign="top" align="right" style="font-size:8pt; background-color: <?=$parentcolor?>"><?=$parentusage_f?></td>-->
 			<td valign="top" align="right" style="font-size:8pt; background-color: <?=$netcolor?>; border: 1px solid #666"><?=$netusage_f?></td>
 		</tr>
 		<?

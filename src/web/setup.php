@@ -900,7 +900,7 @@
 			?>
 			<br>
 			<b>Ignored tables</b><br>
-			The following tables were not updated because they have too many rows. They must be upgraded manually via phpMyAdmin.<br>
+			The following tables were not updated because they have too many rows. They must be upgraded manually, for example in HeidiSQL or the <tt>mysql</tt> command line client.<br>
 			<?
 			echo implode2("<br>", $ignoredtables);
 		}

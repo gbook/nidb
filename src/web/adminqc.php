@@ -186,11 +186,11 @@
 	<div class="ui text container">
 		<form method="post" action="adminqc.php">
 		<input type="hidden" name="action" value="<?=$formaction?>">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<?=(int)$id?>">
 		<table class="ui top attached table" width="100%">
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><?=htmlspecialchars($formtitle ?? '')?></b>
 				</td>
 			</tr>
 			<tr>
@@ -208,7 +208,7 @@
 					<?
 						$modalities = GetModalityList();
 						foreach ($modalities as $mod) {
-							?><option value="<?=$mod?>" <? if ($mod == $modality) { echo "selected"; } ?>><?=$mod?></option><?
+							?><option value="<?=htmlspecialchars($mod ?? '', ENT_QUOTES)?>" <? if ($mod == $modality) { echo "selected"; } ?>><?=htmlspecialchars($mod ?? '')?></option><?
 						}
 					?>
 					</select>
@@ -222,7 +222,7 @@
 						list ($clusterids, $names, $descs) = GetClusterList();
 						$i = 0;
 						foreach ($clusterids as $cluster_id) {
-							?><option value="<?=$cluster_id?>" <? if ($cluster_id == $clusterid) { echo "selected"; } ?>><?=$names[$i]?> - <?=$descs[$i]?></option><?
+							?><option value="<?=(int)$cluster_id?>" <? if ($cluster_id == $clusterid) { echo "selected"; } ?>><?=htmlspecialchars($names[$i] ?? '')?> - <?=htmlspecialchars($descs[$i] ?? '')?></option><?
 							$i++;
 						}
 					?>
@@ -296,7 +296,7 @@
 						<?
 							$modalities = GetModalityList();
 							foreach ($modalities as $modality) {
-								?><option value="<?=$modality?>"><?=$modality?></option><?
+								?><option value="<?=htmlspecialchars($modality ?? '', ENT_QUOTES)?>"><?=htmlspecialchars($modality ?? '')?></option><?
 							}
 						?>
 						</select>
@@ -319,15 +319,15 @@
 
 						?>
 						<tr style="color: <?=$color?>">
-							<td><a href="adminqc.php?action=editmodule&id=<?=$id?>"><?=$name?></a></td>
-							<td><?=$modality?></td>
+							<td><a href="adminqc.php?action=editmodule&id=<?=(int)$id?>"><?=htmlspecialchars($name ?? '')?></a></td>
+							<td><?=htmlspecialchars($modality ?? '')?></td>
 							<td>
 								<?
 									if ($enabled) {
-										?><a href="adminqc.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+										?><a href="adminqc.php?action=disable&id=<?=(int)$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
 									}
 									else {
-										?><a href="adminqc.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+										?><a href="adminqc.php?action=enable&id=<?=(int)$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
 									}
 								?>
 							</td>
