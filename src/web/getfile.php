@@ -39,7 +39,7 @@ if ($exportid > 0) {
 	   UserOwnsPackage() check in packages.php */
 	$sqlstring = "select p.package_name from exportseries b join packages p on b.package_id = p.package_id join exports a on a.export_id = b.export_id where b.export_id = ? and a.filetype = 'package' and (p.user_id = ? or ? = 1) limit 1";
 	$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-	$params = array($exportid, (int)$_SESSION['userid'], ($_SESSION['isadmin'] ? 1 : 0));
+	$params = array($exportid, (int)$_SESSION['userid'], (IsAdminUser() ? 1 : 0)); /* not $_SESSION['isadmin'], which was always truthy (N69) */
 	mysqli_stmt_bind_param($stmt, 'iii', ...$params);
 	$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 	$row = mysqli_fetch_array($result, MYSQLI_ASSOC);

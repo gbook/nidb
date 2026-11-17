@@ -283,7 +283,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing log files from <b><?=$path?></b>
+			Showing log files from <b><?=htmlspecialchars($path ?? '')?></b>
 			<br><br>
 			<?
 			$files = scandir($path);
@@ -306,16 +306,16 @@
 
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=htmlspecialchars($command)?></tt></div> <div class="ui green label"><?=htmlspecialchars($desc)?></div></summary>
+					<summary><b><?=htmlspecialchars($log)?></b> <span class="tiny"><?=number_format((int)$size)?> bytes - <?=$filedate?></span> &nbsp; <div class="ui basic label"><tt><?=htmlspecialchars($command)?></tt></div> <div class="ui green label"><?=htmlspecialchars($desc)?></div></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE; padding: 6px">
-<?=$file?>
+<?=htmlspecialchars((string)$file, ENT_QUOTES | ENT_SUBSTITUTE)?>
 					</pre>
 				</details>
 				<?
 			}
 		}
 		else {
-			echo "<b>$path does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline module?<br>";
+			echo "<b>" . htmlspecialchars($path) . " does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline module?<br>";
 		}
 	}
 
@@ -365,7 +365,7 @@
 		if ((!file_exists($origfileslog)) || ($fileviewtype == "filesystem")) {
 			$files = find_all_files($path);
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
+			Showing files from <b><?=htmlspecialchars($path ?? '')?></b> (<?=count($files)?> files) <span class="tiny">Reading from filesystem</span>
 			<br><br>
 			<table class="ui very compact celled sortable table analysisfiles">
 				<thead>
@@ -438,7 +438,8 @@
 				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
-				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
+				/* the name is escaped; only the <b> around the file name is markup */
+				$displayfile = htmlspecialchars(substr($displayfile,0,$lastslash)) . '<b>' . htmlspecialchars(substr($displayfile,$lastslash)) . '</b>';
 				
 				$displayperms = '';
 				for ($i=1;$i<=3;$i++) {
@@ -460,7 +461,7 @@
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?="$file"?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<?=urlencode($file)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
@@ -471,7 +472,7 @@
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="niiview.php?type=<?=$filetype?>&filename=<?=urlencode($file)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="niiview.php?type=<?=urlencode($filetype)?>&filename=<?=urlencode($file)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:
@@ -487,7 +488,7 @@
 								}
 						} ?>
 					</td>
-					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD" data-sort-value="<?=(is_numeric($timestamp2) ? (int)$timestamp2 : 0)?>"><?=(is_numeric($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : $timestamp2)?></span></td>
+					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD" data-sort-value="<?=(is_numeric($timestamp2) ? (int)$timestamp2 : 0)?>"><?=(is_numeric($timestamp2) ? date("M j, Y H:i:s",$timestamp2) : htmlspecialchars((string)$timestamp2))?></td>
 					<td style="font-size:10pt; border-bottom: solid 1px #DDDDDD"><?=$displayperms?></td>
 					<td class="tt" style="font-size:10pt; border-bottom: solid 1px #DDDDDD; text-align: right" data-sort-value="<?=(int)$size2?>"><?=number_format($size2)?></td>
 				</tr>
@@ -503,7 +504,7 @@
 			
 			$files = explode("\n",trim($origfiles));
 			?>
-			Showing files from <b><?=$path?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
+			Showing files from <b><?=htmlspecialchars($path ?? '')?></b> (<?=count($files)?> files) <span class="tiny">Reading from origfiles.log</span> Read from <a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>&fileviewtype=filesystem">filesystem</a>
 			<br><br>
 			<table class="ui very compact celled sortable table analysisfiles">
 				<thead>
@@ -560,7 +561,8 @@
 				$clusterpath = str_replace($GLOBALS['cfg']['mountdir'],'',$path);
 				$displayfile = str_replace($clusterpath,'',$file);
 				$lastslash = strrpos($displayfile,'/');
-				$displayfile = substr($displayfile,0,$lastslash) . '<b>' . substr($displayfile,$lastslash) . '</b>';
+				/* the name is escaped; only the <b> around the file name is markup */
+				$displayfile = htmlspecialchars(substr($displayfile,0,$lastslash)) . '<b>' . htmlspecialchars(substr($displayfile,$lastslash)) . '</b>';
 				
 				$displayperms1 = '';
 				for ($i=1;$i<=3;$i++) {
@@ -583,7 +585,7 @@
 						switch ($filetype) {
 							case 'text':
 					?>
-					<a href="viewfile.php?file=<?=$fullpath?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="viewfile.php?file=<?=urlencode($fullpath)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							case 'image':
@@ -594,7 +596,7 @@
 							case 'nifti':
 							case 'mesh':
 					?>
-					<a href="niiview.php?type=<?=$filetype?>&filename=<?=urlencode($fullpath)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
+					<a href="niiview.php?type=<?=urlencode($filetype)?>&filename=<?=urlencode($fullpath)?>"><span style="color:<?=$filecolor?>; font-weight: <?=$fileweight?>"><?=$displayfile?></span></a>
 					<?
 								break;
 							default:
@@ -655,7 +657,7 @@
 		<div class="ui top attached raised segment">
 			<div class="ui two column grid">
 				<div class="ui column">
-					<b>Results for</b> <code><?=$analysispath?></code>
+					<b>Results for</b> <code><?=htmlspecialchars($analysispath ?? '')?></code>
 				</div>
 
 				<div class="ui column">
@@ -715,6 +717,8 @@
 				$lastupdate = $row2['result_lastupdate'];
 				
 				if (!file_exists($filename)) { $filename = $GLOBALS['cfg']['mountdir'] . "/$filename"; }
+				/* escape, then turn the '^' into a superscript */
+				$units = htmlspecialchars((string)($units ?? ''));
 				if (strpos($units,'^') !== false) {
 					$units = str_replace('^','<sup>',$units);
 					$units .= '</sup>';
@@ -722,34 +726,33 @@
 				if ($important) { $bold = 'bold'; } else { $bold = 'normal'; }
 				?>
 				<tr style="font-weight: <?=$bold?>">
-					<td><?=$name?></td>
+					<td><?=htmlspecialchars($name ?? '')?></td>
 					<td align="right">
 						<?
 							switch($type) {
 								case "v":
-									echo "$value";
+									echo htmlspecialchars((string)($value ?? ''));
 									break;
 								case "f":
-									echo $filename;
+									echo htmlspecialchars((string)($filename ?? ''));
 									break;
 								case "t":
-									echo $text;
+									echo htmlspecialchars((string)($text ?? ''));
 									break;
 								case "h":
-									echo $filename;
+									echo htmlspecialchars((string)($filename ?? ''));
 									break;
 								case "i":
 									?>
-									<img src="preview.php?image=<?=$filename?>" style="max-width:400px">
+									<img src="preview.php?image=<?=urlencode($filename)?>" style="max-width:400px">
 									<?
 									break;
 							}
 						?>
 					</td>
 					<td style="padding-left:0px"><?=$units?></td>
-					<!--<td><?=$size?></td>-->
-					<td><?=$swversion?></td>
-					<td nowrap><?=$lastupdate?></td>
+										<td><?=htmlspecialchars($swversion ?? '')?></td>
+					<td nowrap><?=htmlspecialchars($lastupdate ?? '')?></td>
 				</tr>
 				<?
 			}
@@ -758,7 +761,7 @@
 			</table>
 		</div>
 		<div class="ui bottom attached inverted vertically fitted raised segment">
-			Found <?=$numresults?> results
+			Found <?=(int)$numresults?> results
 		</div>
 		<?
 	}	
@@ -796,11 +799,11 @@
 		?>
 		<tr>
 			<td>0</td>
-			<td nowrap><?=$event_datetime?></td>
-			<td><?=$pipeline_version?></td>
-			<td><?=$analysis_hostname?></td>
-			<td><?=$analysis_event?></td>
-			<td><?=$event_message?></td>
+			<td nowrap><?=htmlspecialchars($event_datetime ?? '')?></td>
+			<td><?=htmlspecialchars($pipeline_version ?? '')?></td>
+			<td><?=htmlspecialchars($analysis_hostname ?? '')?></td>
+			<td><?=htmlspecialchars($analysis_event ?? '')?></td>
+			<td><?=htmlspecialchars($event_message ?? '')?></td>
 		</tr>
 		<?
 		/* continue on with the rest of the events */
@@ -815,16 +818,25 @@
 			<tr>
 				<td><?=$cumtime?></td>
 				<td nowrap><?=date('D, Y-m-d H:i:s',$event_datetime)?></td>
-				<td><?=$pipeline_version?></td>
-				<td><?=$analysis_hostname?></td>
-				<td><?=$analysis_event?></td>
-				<td><?=$event_message?></td>
+				<td><?=htmlspecialchars($pipeline_version ?? '')?></td>
+				<td><?=htmlspecialchars($analysis_hostname ?? '')?></td>
+				<td><?=htmlspecialchars($analysis_event ?? '')?></td>
+				<td><?=htmlspecialchars($event_message ?? '')?></td>
 			</tr>
 			<?
 		}
 		?>
 		</table>
 		<?
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- LogField --------------------------- */
+	/* -------------------------------------------- */
+	/* one field of the first analysis_log entry for a step, escaped for HTML. '' if the step hasn't logged */
+	function LogField($logs, $key, $field) {
+		return htmlspecialchars((string)($logs[$key][0][$field] ?? ''));
 	}
 
 
@@ -1086,34 +1098,34 @@
 				<tr>
 					<td rowspan="11" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Setup</td>
 					<td<?=StepLabelClass([$logs['setup_createAnalysis'][0] ?? null])?>>Analysis created <!--<i class="question circle icon" title="Create and registere a unique analysis in the database"></i>--></td>
-					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'])?></td>
-					<td><?=$logs['setup_createAnalysis'][0]['message']?></td>
-					<td><?=$logs['setup_createAnalysis'][0]['hostname']?></td>
-					<td><?=$logs['setup_createAnalysis'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_createAnalysis'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_createAnalysis', 'message')?></td>
+					<td><?=LogField($logs, 'setup_createAnalysis', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_createAnalysis', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_createDirectory'][0] ?? null])?>>Create analysis directory <!--<i class="question circle icon" title="Create analysis directory on disk"></i>--></td>
-					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'])?></td>
-					<td><?=$logs['setup_createDirectory'][0]['message']?></td>
-					<td><?=$logs['setup_createDirectory'][0]['hostname']?></td>
-					<td><?=$logs['setup_createDirectory'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_createDirectory'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_createDirectory', 'message')?></td>
+					<td><?=LogField($logs, 'setup_createDirectory', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_createDirectory', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_dependencyCheck'][0] ?? null])?>>Dependency check <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
-					<td><?=GetStatusIcon($logs['setup_dependencyCheck'][0]['status'])?></td>
-					<td><?=$logs['setup_dependencyCheck'][0]['message']?></td>
-					<td><?=$logs['setup_dependencyCheck'][0]['hostname']?></td>
-					<td><?=$logs['setup_dependencyCheck'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_dependencyCheck'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCheck', 'message')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCheck', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCheck', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_dependencyCopy'][0] ?? null])?>>Dependency copy <!--<i class="question circle icon" title="Copy pipeline dependency"></i>--></td>
-					<td><?=GetStatusIcon($logs['setup_dependencyCopy'][0]['status'])?></td>
-					<td><?=$logs['setup_dependencyCopy'][0]['message']?></td>
-					<td><?=$logs['setup_dependencyCopy'][0]['hostname']?></td>
-					<td><?=$logs['setup_dependencyCopy'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_dependencyCopy'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCopy', 'message')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCopy', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_dependencyCopy', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
@@ -1196,10 +1208,10 @@
 									?>
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
-									<td><?=$step['stepNumber']?></td>
+									<td><?=htmlspecialchars($step['stepNumber'] ?? '')?></td>
 									<td><tt><?=$protocolShort?></tt></td>
 									<td><a class="ui compact basic label showModalButton" data-modal="<?=$modalID?>">Details</a></td>
-									<td><?=$step['message']?></td>
+									<td><?=htmlspecialchars($step['message'] ?? '')?></td>
 									</tr>
 									<?
 								}
@@ -1212,10 +1224,10 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_dataCheckSummary'][0] ?? null])?>>Data check summary</td>
-					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'])?></td>
-					<td><?=$logs['setup_dataCheckSummary'][0]['message']?></td>
-					<td><?=$logs['setup_dataCheckSummary'][0]['hostname']?></td>
-					<td><?=$logs['setup_dataCheckSummary'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_dataCheckSummary'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_dataCheckSummary', 'message')?></td>
+					<td><?=LogField($logs, 'setup_dataCheckSummary', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_dataCheckSummary', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
@@ -1250,10 +1262,10 @@
 									?>
 									<tr>
 									<td><?=GetStatusIcon($step['status'])?></td>
-									<td><?=$step['stepNumber']?></td>
-									<td><?=$step['message']?></td>
+									<td><?=htmlspecialchars($step['stepNumber'] ?? '')?></td>
+									<td><?=htmlspecialchars($step['message'] ?? '')?></td>
 									<td><tt><?=$protocol?></tt></td>
-									<td><?=$step['datetime']?></td>
+									<td><?=htmlspecialchars($step['datetime'] ?? '')?></td>
 									</tr>
 									<?
 								}
@@ -1265,42 +1277,42 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_dataDownloadSummary'][0] ?? null])?>>Data download summary</td>
-					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'])?></td>
-					<td><?=$logs['setup_dataDownloadSummary'][0]['message']?></td>
-					<td><?=$logs['setup_dataDownloadSummary'][0]['hostname']?></td>
-					<td><?=$logs['setup_dataDownloadSummary'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_dataDownloadSummary'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_dataDownloadSummary', 'message')?></td>
+					<td><?=LogField($logs, 'setup_dataDownloadSummary', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_dataDownloadSummary', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_checkIfOkToRun'][0] ?? null])?>>Check if Ok to run <!--<i class="question circle icon" title="Check if all criteria are met to submit this analysis to the cluster"></i>--></td>
-					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'])?></td>
-					<td><?=$logs['setup_checkIfOkToRun'][0]['message']?></td>
-					<td><?=$logs['setup_checkIfOkToRun'][0]['hostname']?></td>
-					<td><?=$logs['setup_checkIfOkToRun'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_checkIfOkToRun'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_checkIfOkToRun', 'message')?></td>
+					<td><?=LogField($logs, 'setup_checkIfOkToRun', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_checkIfOkToRun', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_submitToCluster'][0] ?? null])?>>Submit to cluster</td>
-					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'])?></td>
-					<td><?=$logs['setup_submitToCluster'][0]['message']?></td>
-					<td><?=$logs['setup_submitToCluster'][0]['hostname']?></td>
-					<td><?=$logs['setup_submitToCluster'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_submitToCluster'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_submitToCluster', 'message')?></td>
+					<td><?=LogField($logs, 'setup_submitToCluster', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_submitToCluster', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['setup_summary'][0] ?? null])?>>Setup summary</td>
-					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'])?></td>
-					<td><?=$logs['setup_summary'][0]['message']?></td>
-					<td><?=$logs['setup_summary'][0]['hostname']?></td>
-					<td><?=$logs['setup_summary'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['setup_summary'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'setup_summary', 'message')?></td>
+					<td><?=LogField($logs, 'setup_summary', 'hostname')?></td>
+					<td><?=LogField($logs, 'setup_summary', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td rowspan="8" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Cluster</td>
 					<td<?=StepLabelClass([$logs['status_analysisStarted'][0] ?? null])?>>Analysis started <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
-					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'])?></td>
-					<td><?=$logs['status_analysisStarted'][0]['message']?></td>
-					<td><?=$logs['status_analysisStarted'][0]['hostname']?></td>
-					<td><?=$logs['status_analysisStarted'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_analysisStarted'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_analysisStarted', 'message')?></td>
+					<td><?=LogField($logs, 'status_analysisStarted', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_analysisStarted', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
@@ -1397,7 +1409,7 @@
 											<p>
 												<b>Log file path</b>
 												<br>
-												<tt><?=$logfile?></tt>
+												<tt><?=htmlspecialchars($logfile ?? '')?></tt>
 											</p>
 											<p>
 												<b>Command output</b>
@@ -1418,11 +1430,11 @@
 									?>
 									<tr>
 										<td><?=GetStatusIcon($step['status'])?></td>
-										<td><?=$step['stepNumber']?></td>
-										<td><?=$step['message']?></td>
+										<td><?=htmlspecialchars($step['stepNumber'] ?? '')?></td>
+										<td><?=htmlspecialchars($step['message'] ?? '')?></td>
 										<td><div class="ui compact small button showModalButton" data-modal="<?=$modalID?>">Details</div> <? if ($size > 0) { echo "<span class='ui small text'>Log size " . HumanReadableFilesize($size) . "</span>"; } ?></td>
-										<td><?=$step['hostname']?></td>
-										<td><?=($step['datetime'] != '' ? $step['datetime'] : $filedate)?></td>
+										<td><?=htmlspecialchars($step['hostname'] ?? '')?></td>
+										<td><?=htmlspecialchars(($step['datetime'] != '' ? $step['datetime'] : $filedate) ?? '')?></td>
 									</tr>
 									<?
 								}
@@ -1435,26 +1447,26 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_resultScript'][0] ?? null])?>>Run result script</td>
-					<td><?=GetStatusIcon($logs['status_resultScript'][0]['status'])?></td>
-					<td><?=$logs['status_resultScript'][0]['message']?></td>
-					<td><?=$logs['status_resultScript'][0]['hostname']?></td>
-					<td><?=$logs['status_resultScript'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_resultScript'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_resultScript', 'message')?></td>
+					<td><?=LogField($logs, 'status_resultScript', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_resultScript', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_updateFileList'][0] ?? null])?>>Update file list</td>
-					<td><?=GetStatusIcon($logs['status_updateFileList'][0]['status'])?></td>
-					<td><?=$logs['status_updateFileList'][0]['message']?></td>
-					<td><?=$logs['status_updateFileList'][0]['hostname']?></td>
-					<td><?=$logs['status_updateFileList'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_updateFileList'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_updateFileList', 'message')?></td>
+					<td><?=LogField($logs, 'status_updateFileList', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_updateFileList', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_checkSuccessFiles'][0] ?? null])?>>Check for successful file(s)</td>
-					<td><?=GetStatusIcon($logs['status_checkSuccessFiles'][0]['status'])?></td>
-					<td><?=$logs['status_checkSuccessFiles'][0]['message']?></td>
-					<td><?=$logs['status_checkSuccessFiles'][0]['hostname']?></td>
-					<td><?=$logs['status_checkSuccessFiles'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_checkSuccessFiles'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_checkSuccessFiles', 'message')?></td>
+					<td><?=LogField($logs, 'status_checkSuccessFiles', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_checkSuccessFiles', 'datetime')?></td>
 				</tr>
 				<?
 					/* cluster output (.o) and error (.e) logs. Modals are printed after the table */
@@ -1485,7 +1497,7 @@
 							<div class="header">Cluster <?=strtolower($logType)?> log</div>
 							<div class="scrolling content">
 								<p>
-									<code><?=$logPath?></code>
+									<code><?=htmlspecialchars($logPath ?? '')?></code>
 								</p>
 								<tt><pre><?=htmlspecialchars($logStr, ENT_QUOTES | ENT_SUBSTITUTE)?></pre></tt>
 							</div>
@@ -1507,7 +1519,7 @@
 								<span class='ui small grey text'>No log file found</span>
 								<? } ?>
 							</td>
-							<td><?=$analysisHostname?></td>
+							<td><?=htmlspecialchars($analysisHostname ?? '')?></td>
 							<td><?=$filedate?></td>
 						</tr>
 						<?
@@ -1516,34 +1528,34 @@
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_analysisComplete'][0] ?? null])?>>Analysis complete <!--<i class="question circle icon" title="Analysis running on the cluster"></i>--></td>
-					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'])?></td>
-					<td><?=$logs['status_analysisComplete'][0]['message']?></td>
-					<td><?=$logs['status_analysisComplete'][0]['hostname']?></td>
-					<td><?=$logs['status_analysisComplete'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_analysisComplete'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_analysisComplete', 'message')?></td>
+					<td><?=LogField($logs, 'status_analysisComplete', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_analysisComplete', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td rowspan="3" class="top aligned" style="font-weight: bold; font-size:larger; border-top: 1px solid #666">Summary</td>
 					<td<?=StepLabelClass([$logs['status_diskSize'][0] ?? null])?>>File count</td>
-					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
+					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'] ?? '')?></td>
 					<td><a href="viewanalysis.php?action=viewfiles&analysisid=<?=$analysisid?>" target="_viewfiles">View all files</a></td>
-					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
-					<td><?=$logs['status_diskSize'][0]['datetime']?></td>
+					<td><?=LogField($logs, 'status_diskSize', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_diskSize', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_diskSize'][0] ?? null])?>>Disk size</td>
-					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'])?></td>
-					<td><?=$logs['status_diskSize'][0]['message']?></td>
-					<td><?=$logs['status_diskSize'][0]['hostname']?></td>
-					<td><?=$logs['status_diskSize'][0]['datetime']?></td>
+					<td><?=GetStatusIcon($logs['status_diskSize'][0]['status'] ?? '')?></td>
+					<td><?=LogField($logs, 'status_diskSize', 'message')?></td>
+					<td><?=LogField($logs, 'status_diskSize', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_diskSize', 'datetime')?></td>
 				</tr>
 				<tr>
 					<td class="rowspanned"></td>
 					<td<?=StepLabelClass([$logs['status_resultCount'][0] ?? null])?>>Results</td>
-					<td><?=GetStatusIcon($logs['status_resultCount'][0]['status'])?></td>
+					<td><?=GetStatusIcon($logs['status_resultCount'][0]['status'] ?? '')?></td>
 					<td><a href="viewanalysis.php?action=viewresults&analysisid=<?=$analysisid?>&studyid=<?=$studyid?>" target="_viewresults">View <?=$resultCount?> results</a></td>
-					<td><?=$logs['status_resultCount'][0]['hostname']?></td>
-					<td><?=$logs['status_resultCount'][0]['datetime']?></td>
+					<td><?=LogField($logs, 'status_resultCount', 'hostname')?></td>
+					<td><?=LogField($logs, 'status_resultCount', 'datetime')?></td>
 				</tr>
 			</table>
 			<?=$clusterModals?>
@@ -1882,94 +1894,6 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- CreateGraphFromAnalysisID ---------- */
-	/* -------------------------------------------- */
-	function CreateGraphFromAnalysisID($analysisid) {
-		$analysisid = (int)$analysisid;
-
-		$dotfile = tempnam("/tmp",'DOTDOT');
-		$pngfile = tempnam("/tmp",'DOTPNG');
-		
-		$d = "digraph G {
-		
-		rankdir	= LR
-		node [shape = plaintext];
-		
-		";
-
-		list($uid, $studynum, $pipelinename, $pipelineversion) = GetInfoFromAnalysisID($analysisid);
-		/* get current analysis info */
-		//$sqlstring = "select b.pipeline_name, a.pipeline_version, c.study_num from analysis a left join pipelines b on a.pipeline_id = b.pipeline_id left join studies c on a.study_id = c.study_id where a.analysis_id = '$analysisid'";
-		//$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		//$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		//$pipelinename = $row['pipeline_name'];
-		//$pipelineversion = $row['pipeline_version'];
-		//$studyid = $row['study_id'];
-
-		/* get parent analysis info, if any */
-		$sqlstring = "select event_message from analysis_history where analysis_event = 'analysisdependencyid' and analysis_id = '$analysisid'";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-		$parentanalysisid = $row['event_message'];
-
-		if ($parentanalysisid == "") {
-			$d .= "\"$pipelinename\";\n";
-			$d .= "node [shape = box, label=\"$uid$studynum\"] { rank=same; \"$pipelinename\" analysis; }\n";
-		}
-		else {
-			list($parentuid, $parentstudynum, $parentpipelinename, $parentpipelineversion) = GetInfoFromAnalysisID($parentanalysisid);
-			
-			$d .= "\"$parentpipelinename\" -> \"$pipelinename\";\n";
-			$d .= "node [shape = box, label=\"$uid$studynum\"] { rank=same; \"$pipelinename\" analysis; }\n";
-			$d .= "node [shape = box, label=\"$parentuid$parentstudynum\"] { rank=same; \"$parentpipelinename\" parentanalysis; }\n";
-			$d .= "parentanalysis -> analysis\n";
-		}
-		
-		/*
-		$sqlstring = "select * from pipelines where pipeline_id in (select pipeline_id from analysis where analysis_id = $analysisid)";
-		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$pipelinename = $row['pipeline_name'];
-			$deps = $row['pipeline_dependency'];
-			$groupids = $row['pipeline_groupid'];
-			
-			if ($deps != '') {
-				$sqlstringA = "select * from pipelines where pipeline_id in ($deps)";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$depname = $rowA['pipeline_name'];
-					$d[] = " \"$depname\" -> \"$pipelinename\";";
-				}
-			}
-			
-			if ($groupids != '') {
-				$sqlstringA = "select * from groups where group_id in ($groupids)";
-				$resultA = MySQLiQuery($sqlstringA,__FILE__,__LINE__);
-				while ($rowA = mysqli_fetch_array($resultA, MYSQLI_ASSOC)) {
-					$groupname = $rowA['group_name'];
-					$d[] = " \"$groupname\" -> \"$pipelinename\";";
-					$d[] = " \"$groupname\" [shape=box,style=filled,color=\"lightblue\"];";
-				}
-			}
-		} */
-		
-		$d .= "}";
-		//$d = array_unique($d);
-		//$dot = implode("\n",$d);
-		$dot = $d;
-		//echo "<pre>$dot</pre>";
-		file_put_contents($dotfile,$dot);
-		$systemstring = "dot -Tpng $dotfile -o $pngfile";
-		exec($systemstring);
-		//echo $dot;
-		$imdata = base64_encode(file_get_contents($pngfile));
-		unlink($dotfile);
-		unlink($pngfile);
-		return $imdata;
-	}
-	
-	
-	/* -------------------------------------------- */
 	/* ------- GetInfoFromAnalysisID -------------- */
 	/* -------------------------------------------- */
 	function GetInfoFromAnalysisID($analysisid) {
@@ -2057,10 +1981,10 @@
 			
 			?>
 			<tr>
-				<td><?=$seriesnum?></td>
-				<td><?=$protocol?></td>
-				<td><?=$imagetype?></td>
-				<td><?=$boldreps?></td>
+				<td><?=htmlspecialchars($seriesnum ?? '')?></td>
+				<td><?=htmlspecialchars($protocol ?? '')?></td>
+				<td><?=htmlspecialchars($imagetype ?? '')?></td>
+				<td><?=htmlspecialchars($boldreps ?? '')?></td>
 			<?
 			$displayed = false;
 			foreach ($dd as $order => $val) {
@@ -2073,8 +1997,8 @@
 					?>
 					<td><? if ($checked) echo "&#10004;"; ?></td>
 					<td><? if ($found) echo "&#10004;"; ?></td>
-					<td><?=$path?></td>
-					<td><?=$msg?></td>
+					<td><?=htmlspecialchars($path ?? '')?></td>
+					<td><?=htmlspecialchars($msg ?? '')?></td>
 					<?
 					$displayed = true;
 				}

@@ -254,29 +254,29 @@
 		
 	?>
 	<div class="ui container">
-		<h1 class="ui header"><?=$formtitle?></h1>
+		<h1 class="ui header"><?=htmlspecialchars($formtitle ?? '')?></h1>
 		<div align="center">
 		<table class="entrytable">
 			<form method="post" action="admininstances.php">
 			<input type="hidden" name="action" value="<?=$formaction?>">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="id" value="<?=(int)$id?>">
 			<tr>
 				<td colspan="2" align="center">
-					<b><?=$formtitle?></b>
+					<b><?=htmlspecialchars($formtitle ?? '')?></b>
 				</td>
 			</tr>
 			<tr>
 				<td>Name</td>
 				<td>
 					<div class="ui input">
-						<input type="text" name="instancename" maxlength="50" size="35" value="<?=$name?>">
+						<input type="text" name="instancename" maxlength="50" size="35" value="<?=htmlspecialchars($name ?? '', ENT_QUOTES)?>">
 					</div>
 				</td>
 			</tr>
 			<? if ($type == 'edit') { ?>
 			<tr>
 				<td>Instance UID</td>
-				<td class="tiny"><?=strtoupper($uid)?></td>
+				<td class="tiny"><?=htmlspecialchars(strtoupper($uid ?? ''))?></td>
 			</tr>
 			<tr>
 				<script type="text/javascript">
@@ -328,8 +328,8 @@
 							}
 							?>
 							<tr style="color: darkblue; font-size:11pt; /*background-color: <?=$bgcolor?>*/">
-								<td class="users"><input type="checkbox" name="users[]" value="<?=$user_id?>" <?=$checked?>>
-								<td><tt><?=$username?></tt> - <?=$user_fullname?></td>
+								<td class="users"><input type="checkbox" name="users[]" value="<?=(int)$user_id?>" <?=$checked?>>
+								<td><tt><?=htmlspecialchars($username ?? '')?></tt> - <?=htmlspecialchars($user_fullname ?? '')?></td>
 							</tr>
 							<?
 							if ($bgcolor == "#EEFFEE") { $bgcolor = "#FFFFFF"; }
@@ -395,10 +395,10 @@
 					if ($default) { $checked = "checked"; } else { $checked = ""; }
 			?>
 			<tr>
-				<td><?=$uid?></td>
-				<td><a href="admininstances.php?action=editform&id=<?=$id?>"><?=$name?></td>
-				<td><a href="adminusers.php?action=editform&id=<?=$owner?>"><?=$ownername?></a></td>
-				<td><input type="radio" name="defaultinstanceid" value="<?=$id?>" <?=$checked?>></td>
+				<td><?=htmlspecialchars($uid ?? '')?></td>
+				<td><a href="admininstances.php?action=editform&id=<?=(int)$id?>"><?=htmlspecialchars($name ?? '')?></a></td>
+				<td><a href="adminusers.php?action=editform&id=<?=(int)$owner?>"><?=htmlspecialchars($ownername ?? '')?></a></td>
+				<td><input type="radio" name="defaultinstanceid" value="<?=(int)$id?>" <?=$checked?>></td>
 			</tr>
 			<? 
 				}
@@ -436,10 +436,10 @@
 					if ($default) { $checked = "checked"; } else { $checked = ""; }
 			?>
 			<tr>
-				<td><?=$name?></td>
-				<td><?=$userfullname?> &lt;<?=$useremail?>&gt;</td>
-				<td><a href="admininstances.php?action=acceptjoin&userinstanceid=<?=$id?>">Accept</td>
-				<td><a href="admininstances.php?action=rejectjoin&userinstanceid=<?=$id?>">Reject</td>
+				<td><?=htmlspecialchars($name ?? '')?></td>
+				<td><?=htmlspecialchars($userfullname ?? '')?> &lt;<?=htmlspecialchars($useremail ?? '')?>&gt;</td>
+				<td><a href="admininstances.php?action=acceptjoin&userinstanceid=<?=(int)$id?>">Accept</a></td>
+				<td><a href="admininstances.php?action=rejectjoin&userinstanceid=<?=(int)$id?>">Reject</a></td>
 			</tr>
 			<? 
 				}

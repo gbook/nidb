@@ -289,7 +289,8 @@
 		if ($packageid < 1)
 			return false;
 
-		if ($_SESSION['isadmin'])
+		/* not $_SESSION['isadmin']: login stored it as the string "true"/"false", and both are truthy (N69) */
+		if (IsAdminUser())
 			return true;
 
 		$sqlstring = "select package_id from packages where package_id = ? and user_id = ?";
@@ -3235,7 +3236,7 @@
 									<input type="hidden" name="action" value="export">
 									<input type="hidden" name="packageid" value="<?=$packageid?>">
 									<?=CSRFTokenField()?>
-									<button type="submit" class="ui huge green button"><i class="box open icon"></i>Export Package</button>
+									<button type="submit" class="ui green button"><i class="box open icon"></i>Export Package</button>
 								</form>
 								<div>
 									<form method="post" action="packages.php" style="display: inline" onsubmit="return confirm('Remove objects from this package that no longer exist in NiDB (the object was deleted, or the subject it belongs to was deleted)? This can take a while on a large package.')">
@@ -4205,7 +4206,7 @@
 				</thead>
 				<tbody>
 					<?
-						if ($_SESSION['isadmin']) {
+						if (IsAdminUser()) {
 							$sqlstring = "select * from packages order by package_name";
 							$params = array();
 						}

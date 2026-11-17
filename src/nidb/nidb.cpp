@@ -1053,6 +1053,51 @@ bool nidb::isValidNiDBModality(QString m) {
 /* ---------------------------------------------------------- */
 /* --------- SubmitClusterJob ------------------------------- */
 /* ---------------------------------------------------------- */
+/* --------- ValidateClusterSSHArgs ------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check the values SubmitClusterJob() and CancelClusterJob() put on the ssh command line. ssh joins
+ * the remote command's arguments and the remote shell parses them again, so quoting alone isn't enough: the
+ * host, usernames and queue are limited to the characters they need (the same rules as
+ * ValidatePipelineClusterFields() in functions.php). None may start with '-', so they can't be read as options
+ * @param submitHost Submit hostname (required)
+ * @param submitUser Submit host username (may be blank)
+ * @param clusterUser Cluster username (may be blank)
+ * @param clusterQueue Queue list (may be blank)
+ * @return Empty string if all are valid, otherwise an error message
+ */
+static QString ValidateClusterSSHArgs(QString submitHost, QString submitUser, QString clusterUser, QString clusterQueue) {
+    static const QRegularExpression hostRE("^[A-Za-z0-9][A-Za-z0-9.\\-]*$");
+    static const QRegularExpression userRE("^[A-Za-z0-9_][A-Za-z0-9_.\\-]*$");
+    static const QRegularExpression queueRE("^[A-Za-z0-9_][A-Za-z0-9_.,@\\-]*$");
+
+    if ((submitHost == "") || (submitHost.length() > 255) || !hostRE.match(submitHost).hasMatch())
+        return "Invalid cluster submit host [" + submitHost + "]";
+    if ((submitUser != "") && ((submitUser.length() > 64) || !userRE.match(submitUser).hasMatch()))
+        return "Invalid cluster submit host username [" + submitUser + "]";
+    if ((clusterUser != "") && ((clusterUser.length() > 64) || !userRE.match(clusterUser).hasMatch()))
+        return "Invalid cluster username [" + clusterUser + "]";
+    if ((clusterQueue != "") && !queueRE.match(clusterQueue).hasMatch())
+        return "Invalid cluster queue [" + clusterQueue + "]";
+    return "";
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- RemoteShellArg --------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Quote a value for a command that ssh runs through the remote shell: quoted once for the remote shell,
+ * and that result quoted again for the local shell, so it arrives at the remote command as a single argument
+ * @param s The value
+ * @return The double-quoted value
+ */
+static QString RemoteShellArg(QString s) {
+    return ShellQuote(ShellQuote(s));
+}
+
+
+/* ---------------------------------------------------------- */
 /**
  * @brief Submit a pipeline analysis job to a cluster
  * @param jobFilePath Path to the job file
@@ -1082,13 +1127,22 @@ bool nidb::SubmitClusterJob(QString jobFilePath, QString clusterType, QString su
     if (clusterUser == "")
         clusterUser = cfg["clusteruser"];
 
+    /* these values go on a shell command line (see ValidateClusterSSHArgs()) */
+    jobid = -1;
+    result = "";
+    QString err = ValidateClusterSSHArgs(submitHost, submitUser, clusterUser, clusterQueue);
+    if (err != "") {
+        msg = err;
+        return false;
+    }
+
     QString systemstring;
     if (clusterType == "slurm")
-        systemstring = QString("ssh %1@%2 sbatch \"%3\"").arg(submitUser).arg(submitHost).arg(jobFilePath);
+        systemstring = QString("ssh %1@%2 sbatch %3").arg(submitUser).arg(submitHost).arg(RemoteShellArg(jobFilePath));
     else
         /* submit the job to the cluster. Command will be in the format:
-         * ssh <submithost> qsub -u <username> -q <queuelist> "/full/path/to/sge.job" */
-        systemstring = QString("ssh %1 %2 -u %3 -q %4 \"%5\"").arg(submitHost).arg(qsub).arg(clusterUser).arg(clusterQueue).arg(jobFilePath);
+         * ssh <submithost> qsub -u <username> -q <queuelist> '/full/path/to/sge.job' */
+        systemstring = QString("ssh %1 %2 -u %3 -q %4 %5").arg(submitHost).arg(RemoteShellArg(qsub)).arg(clusterUser).arg(clusterQueue).arg(RemoteShellArg(jobFilePath));
 
     /* SystemCommand() only captures stdout, and qsub/sbatch/ssh report errors on stderr */
     systemstring += " 2>&1";
@@ -1185,6 +1239,14 @@ bool nidb::CancelClusterJob(QString clusterType, QString submitHost, QString sub
     if (submitUser == "")
         submitUser = cfg["clustersubmituser"];
 
+    /* these values go on a shell command line (see ValidateClusterSSHArgs()) */
+    result = "";
+    QString err = ValidateClusterSSHArgs(submitHost, submitUser, "", "");
+    if (err != "") {
+        msg = err;
+        return false;
+    }
+
     QString systemstring;
     if (clusterType == "slurm")
         systemstring = QString("ssh %1@%2 scancel %3").arg(submitUser).arg(submitHost).arg(jobid);
@@ -1193,7 +1255,7 @@ bool nidb::CancelClusterJob(QString clusterType, QString submitHost, QString sub
         QString qdel = "qdel";
         if (qsub.contains("/"))
             qdel = QFileInfo(qsub).path() + "/qdel";
-        systemstring = QString("ssh %1 %2 %3").arg(submitHost).arg(qdel).arg(jobid);
+        systemstring = QString("ssh %1 %2 %3").arg(submitHost).arg(RemoteShellArg(qdel)).arg(jobid);
     }
 
     /* SystemCommand() doesn't return the exit code, so it's echoed. ssh exits with the remote command's code, or 255 */

@@ -328,6 +328,14 @@ bool moduleImport::ArchiveLocal() {
     q.prepare("delete from dicom_monitor where lastupdate < date_sub(now(), interval 14 day)");
     n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
 
+    /* upload transactions older than 21 days, and the import requests (upload blocks) left without a transaction.
+       This used to run in importlog.php every time the page was viewed */
+    q.prepare("delete from import_transactions where transaction_startdate < date_sub(now(), interval 21 day)");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+    q.prepare("delete from import_requests where import_transactionid not in (select importtrans_id from import_transactions)");
+    n->SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
     io->SetUploadID(0);
     /* ----- Step 1 - archive all files in the main directory ----- */
     if (ParseDirectory(n->cfg["incomingdir"], 0))

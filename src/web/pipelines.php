@@ -246,6 +246,36 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- IsValidPipelineDirectory ----------- */
+	/* -------------------------------------------- */
+	/* a pipeline's directory is appended to [mountdir] by the pipeline module and the analysis
+	   pages, so it must stay below it: blank (use the default analysis directory), or a path made
+	   of ordinary characters with no '.' or '..' components. The directory may not exist yet, so
+	   this is a check of the text, plus a realpath() check when it does exist (N68) */
+	function IsValidPipelineDirectory($dir) {
+		$dir = trim((string)$dir);
+		if ($dir == '')
+			return true;
+
+		if ((strlen($dir) > 255) || !preg_match('/^[A-Za-z0-9._\/ -]+$/', $dir))
+			return false;
+
+		foreach (explode('/', $dir) as $part) {
+			if (($part == '.') || ($part == '..'))
+				return false;
+		}
+
+		/* if it exists, it must resolve (through any symlinks) to somewhere inside [mountdir] */
+		$mountdir = realpath(trim($GLOBALS['cfg']['mountdir'] ?? ''));
+		$real = realpath(trim($GLOBALS['cfg']['mountdir'] ?? '') . '/' . $dir);
+		if (($real !== false) && (($mountdir === false) || ($mountdir == '/') || (substr($real . '/', 0, strlen($mountdir) + 1) !== $mountdir . '/')))
+			return false;
+
+		return true;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- UpdatePipeline --------------------- */
 	/* -------------------------------------------- */
 	/* this function does NOT CHANGE the version    */
@@ -254,7 +284,25 @@
 	function UpdatePipeline($id, $pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelineclustertype, $pipelineclusteruser, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $username, $level, $ishidden) {
 		
 		if (!ValidID($id,'Pipeline ID - A')) { return; }
-		
+
+		$pipelinedirectory = trim($pipelinedirectory ?? '');
+		$pipelineclusteruser = trim($pipelineclusteruser ?? '');
+		$pipelinesubmithost = trim($pipelinesubmithost ?? '');
+		$pipelinesubmithostuser = trim($pipelinesubmithostuser ?? '');
+		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue ?? ''));
+
+		/* the submit host, users and queue are put on an ssh command line by the backend */
+		$msg = ValidatePipelineClusterFields($pipelinesubmithost, $pipelinesubmithostuser, $pipelineclusteruser, $pipelinequeue);
+		if ($msg != "") {
+			Error("Pipeline not updated. " . htmlspecialchars($msg));
+			return;
+		}
+
+		if (!IsValidPipelineDirectory($pipelinedirectory)) {
+			Error("Pipeline not updated. The pipeline directory is a path below <tt>" . htmlspecialchars($GLOBALS['cfg']['mountdir'] ?? '') . "</tt>, and can't contain <tt>..</tt>");
+			return;
+		}
+
 		/* perform data checks */
 		$pipelinenumproc = (int)$pipelinenumproc;
 		$pipelinemaxwalltime = (int)$pipelinemaxwalltime;
@@ -262,17 +310,25 @@
 		$pipelineremovedata = (int)$pipelineremovedata;
 		$pipelineusetmpdir = (int)$pipelineusetmpdir;
 		$ishidden = GetMySQLTinyInt($ishidden);
-		$pipelinequeue = preg_replace('/\s+/', '', trim($pipelinequeue));
 		
-		/* update the pipeline */
-		$sqlstring = "update pipelines set pipeline_name = ?, pipeline_desc = ?, pipeline_group = ?, pipeline_numproc = ?, pipeline_submithost = ?, pipeline_submithostuser = ?, pipeline_maxwalltime = ?, pipeline_submitdelay = ?, pipeline_datacopymethod = ?, pipeline_queue = ?, pipeline_numcores = ?, pipeline_memory = ?, pipeline_clustertype = ?, pipeline_clusteruser = ?, pipeline_removedata = ?, pipeline_directory = ?, pipeline_dirstructure = ?, pipeline_usetmpdir = ?, pipeline_tmpdir = ?, pipeline_notes = ?, pipeline_ishidden = ? where pipeline_id = ?";
-		$params = [$pipelinetitle, $pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineclustertype, $pipelineclusteruser, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $ishidden, $id];
+		/* update the pipeline. The name can't be changed: it is a directory component of every
+		   analysis path, and the edit form shows it read-only */
+		$sqlstring = "update pipelines set pipeline_desc = ?, pipeline_group = ?, pipeline_numproc = ?, pipeline_submithost = ?, pipeline_submithostuser = ?, pipeline_maxwalltime = ?, pipeline_submitdelay = ?, pipeline_datacopymethod = ?, pipeline_queue = ?, pipeline_numcores = ?, pipeline_memory = ?, pipeline_clustertype = ?, pipeline_clusteruser = ?, pipeline_removedata = ?, pipeline_directory = ?, pipeline_dirstructure = ?, pipeline_usetmpdir = ?, pipeline_tmpdir = ?, pipeline_notes = ?, pipeline_ishidden = ? where pipeline_id = ?";
+		$params = [$pipelinedesc, $pipelinegroup, $pipelinenumproc, $pipelinesubmithost, $pipelinesubmithostuser, $pipelinemaxwalltime, $pipelinesubmitdelay, $pipelinedatacopymethod, $pipelinequeue, $pipelinenumcores, $pipelinememory, $pipelineclustertype, $pipelineclusteruser, $pipelineremovedata, $pipelinedirectory, $pipelinedirstructure, $pipelineusetmpdir, $pipelinetmpdir, $pipelinenotes, $ishidden, $id];
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-		mysqli_stmt_bind_param($stmt, 'sssissiissssssississii', ...$params);
+		mysqli_stmt_bind_param($stmt, 'ssissiissssssississii', ...$params);
 		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, $params);
 		mysqli_stmt_close($stmt);
 
-		Notice("Pipeline info for <b>$pipelinetitle</b> updated");
+		/* the name isn't saved, so show the stored one */
+		$sqlstring = "select pipeline_name from pipelines where pipeline_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+
+		Notice("Pipeline info for <b>" . htmlspecialchars($row['pipeline_name'] ?? '') . "</b> updated");
 	}
 
 	
@@ -629,6 +685,19 @@
 
 		if (!ctype_alnum($pipelinetitle)) {
 			Error("Error creating pipeline. Pipeline name can only contain numbers and letters, no spaces or special characters");
+			return -1;
+		}
+
+		/* the submit host, users and queue are put on an ssh command line by the backend */
+		$pipelinequeue = preg_replace('/\s+/', '', $pipelinequeue);
+		$msg = ValidatePipelineClusterFields($pipelinesubmithost, $pipelinesubmithostuser, $pipelineclusteruser, $pipelinequeue);
+		if ($msg != "") {
+			Error("Error creating pipeline. " . htmlspecialchars($msg));
+			return -1;
+		}
+
+		if (!IsValidPipelineDirectory($pipelinedirectory)) {
+			Error("Error creating pipeline. The pipeline directory is a path below <tt>" . htmlspecialchars($GLOBALS['cfg']['mountdir'] ?? '') . "</tt>, and can't contain <tt>..</tt>");
 			return -1;
 		}
 		
@@ -1679,7 +1748,7 @@
 
 							<div class="four wide column"></div>
 							<div class="twelve wide center aligned column">
-								<span class="ui big red text"><?=$title?></span>
+								<span class="ui big red text"><?=htmlspecialchars($title ?? '')?></span>
 							</div>
 
 							<div class="four wide column">&nbsp;</div>
@@ -3375,7 +3444,7 @@
 							<tr><td class="pipelinevariable" onclick="insertText('{subjectuid}');" title="Example: S1234ABC">{subjectuid}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studynum}');" title="Example: 1">{studynum}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{uidstudynum}');" title="Example: S1234ABC1">{uidstudynum}</td></tr>
-							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=$title?>">{pipelinename}</td></tr>
+							<tr><td class="pipelinevariable" onclick="insertText('{pipelinename}');" title="<?=htmlspecialchars($title ?? '', ENT_QUOTES)?>">{pipelinename}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{studydatetime}');" title="YYYYMMDDHHMMSS">{studydatetime}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{workingdir}');" title="Not dynamic, not changed at run-time">{workingdir}</td></tr>
 							<tr><td class="pipelinevariable" onclick="insertText('{description}');" title="The description (comment)">{description}</td></tr>
@@ -3694,7 +3763,7 @@
 										if ($userfullname != "") {
 											$userfullname = "[$userfullname]";
 										}
-										?><option value="<?=$userid?>"><?=$username?> <?=$userfullname?></option><?
+										?><option value="<?=(int)$userid?>"><?=htmlspecialchars($username ?? '')?> <?=htmlspecialchars($userfullname ?? '')?></option><?
 									}
 								}
 							?>
@@ -3906,7 +3975,7 @@
 		<? if ($formaction == "update") { ?>
 			<script>
 				function GetNewPipelineName(){
-					var newname = prompt("Please enter a name for the new pipeline","<?=$title?>");
+					var newname = prompt("Please enter a name for the new pipeline",<?=json_encode((string)($title ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>);
 					if (newname != null){
 					  $("#newname").attr("value", newname);
 					  document.copypipeline.submit();
@@ -4418,7 +4487,7 @@
 					<? foreach ($favorites as $p) { ?>
 					<tr>
 						<td><a href="pipelines.php?action=editpipeline&id=<?=$p['id']?>"><?=$p['title']?></a> <span class="tiny">v<?=$p['version']?></span></td>
-						<td><?=$p['creatorusername']?></td>
+						<td><?=htmlspecialchars($p['creatorusername'] ?? '')?></td>
 						<td><?=PipelineDisplayStatus($p)?></td>
 					</tr>
 					<? } ?>
@@ -4655,7 +4724,7 @@
 			<? } ?>
 			<td valign="top" style="padding-left: <?=($level-1)*10?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "<i class='clockwise rotated grey level up alternate icon'></i>"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> <? PipelineFavoriteStar($info['id'], $info['favorite'] ?? false); ?> &nbsp; <span class="tiny">v<?=$info['version']?></span><? if ($showerrors && ($info['adminid'] == (int)$GLOBALS['userid']) && (($info['numerror'] ?? 0) > 0)) { ?> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=(int)$info['id']?>&searchstatus=error" class="ui mini red label" title="View analyses in the error state"><i class="exclamation circle icon"></i><?=$info['numerror']?> error<?=($info['numerror'] == 1 ? '' : 's')?></a><? } ?></td>
 			<td valign="top" align="right"><?=$info['level']?></td>
-			<td valign="top"><?=$info['creatorusername']?></td>
+			<td valign="top"><?=htmlspecialchars($info['creatorusername'] ?? '')?></td>
 			<td valign="top" align="left" style="background-color: <?=$bgcolor?>; <? if (!$info['isenabled']) echo "color: gray"; ?>">
 				<?
 					if ($info['isenabled']) {
@@ -4742,7 +4811,7 @@
 		?>
 		<tr style="color: <?=$fontcolor?>">
 			<td valign="top" style="padding-left: <?=($level-1)*20?>;" class="<?=$class?>" title="<b><?=$info['title']?></b> &nbsp; <?=$info['desc']?>"><? if ($level > 1) { echo "&#9495;&nbsp;"; } ?><a href="pipelines.php?action=editpipeline&id=<?=$info['id']?>" style="font-size:11pt"><?=$info['title']?></a> &nbsp; <span class="tiny">v<?=$info['version']?></span></td>
-			<td valign="top"><?=$info['creatorusername']?>
+			<td valign="top"><?=htmlspecialchars($info['creatorusername'] ?? '')?>
 			<!--<td valign="top" align="right" style="font-size: 8pt; white-space:nowrap;" title="processing / complete">
 				<?=$info['numprocessing']?> / <b><?=$info['numcomplete']?></b> &nbsp; <a href="analysis.php?action=viewanalyses&id=<?=$info['id']?>"><img src="images/preview.gif" title="View analysis list"></a>
 			</td>-->

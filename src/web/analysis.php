@@ -79,6 +79,17 @@
 	$searchsuccess = GetVariable("searchsuccess");
 	$sortby = GetVariable("sortby");
 	$sortorder = GetVariable("sortorder");
+
+	/* the list options are written back into the page and URLs, so keep only known values. searchuid and
+	   searchstatus are free text (bound in the SQL, escaped on output) */
+	$sortcolumns = array('studynum', 'visit', 'pipelineversion', 'studydate', 'numseries', 'status', 'successful', 'message', 'size', 'hostname', 'setuptime', 'setupcompletedate', 'clustertime', 'clustercompletedate');
+	if (!in_array($sortby, $sortcolumns, true)) { $sortby = ""; }
+	if (!in_array($sortorder, array('asc', 'desc'), true)) { $sortorder = ""; }
+	if (!in_array((string)$searchsuccess, array('1', '2'), true)) { $searchsuccess = ""; }
+	$searchuid = (string)($searchuid ?? '');
+	$searchstatus = (string)($searchstatus ?? '');
+	$numperpage = (int)$numperpage;
+	$pagenum = (int)$pagenum;
 	
 	$returnpage = GetVariable("returnpage");
 	
@@ -266,7 +277,7 @@
 		mysqli_stmt_close($stmt);
 		//PrintSQL($sqlstring);
 		
-		?><div align="center"><span class="message">Analysis [<?=$id?>] notes updated</span></div><?
+		?><div align="center"><span class="message">Analysis [<?=(int)$id?>] notes updated</span></div><?
 	}
 	
 
@@ -647,7 +658,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> results queued to be rerun</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> results queued to be rerun</span><br><?
 		}
 	}
 
@@ -666,7 +677,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> analysis queued for supplement run</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> analysis queued for supplement run</span><br><?
 		}
 	}
 	
@@ -693,7 +704,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as <?=$mark?></span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> marked as <?=$mark?></span><br><?
 		}
 	}
 
@@ -712,7 +723,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as complete</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> marked as complete</span><br><?
 		}
 	}
 
@@ -731,7 +742,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as successful</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> marked as successful</span><br><?
 		}
 	}
 
@@ -750,7 +761,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> marked as unsuccessful</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> marked as unsuccessful</span><br><?
 		}
 	}
 	
@@ -774,7 +785,7 @@
 			$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
 			mysqli_stmt_close($stmt);
 			
-			?><span class="codelisting"><?=GetAnalysisPath($analysisid)?> to be rechecked for successful file(s)</span><br><?
+			?><span class="codelisting"><?=htmlspecialchars(GetAnalysisPath($analysisid) ?? '')?> to be rechecked for successful file(s)</span><br><?
 		}
 	}
 
@@ -815,7 +826,7 @@
 			$studydatetime = $row['study_datetime'];
 			$week = $row['week'];
 			$projectid = $row['project_id'];
-			echo "mkdir -m 777 -p /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week; ln -s /home/pipeline/onrc/data/pipeline/$uid/$studynum/$pipelinename /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week/$uid$studynum\n";
+			echo htmlspecialchars("mkdir -m 777 -p /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week; ln -s /home/pipeline/onrc/data/pipeline/$uid/$studynum/$pipelinename /home/".$GLOBALS['username']."/onrc/data/defaultmode/week$week/$uid$studynum") . "\n";
 		}
 		echo "</textarea>";
 	}
@@ -976,7 +987,7 @@
 			<tr>
 				<td class="label"><?=$numrows?> analyses <? if (($searchuid != "") || ($searchstatus != "") || ($searchsuccess != "")) { echo "found"; } ?></td>
 				<td style="text-align: right">
-					<a class="ui basic green button" href="analysis.php?action=exportanalysiscsv&id=<?=$id?>&searchuid=<?=urlencode($searchuid)?>&searchstatus=<?=urlencode($searchstatus)?>&searchsuccess=<?=urlencode($searchsuccess)?>&sortby=<?=urlencode($sortby)?>&sortorder=<?=urlencode($sortorder)?>" title="Export the entire list of analyses as a .csv">Export CSV</a>
+					<a class="ui basic green button" href="analysis.php?action=exportanalysiscsv&id=<?=(int)$id?>&searchuid=<?=urlencode($searchuid)?>&searchstatus=<?=urlencode($searchstatus)?>&searchsuccess=<?=urlencode($searchsuccess)?>&sortby=<?=urlencode($sortby)?>&sortorder=<?=urlencode($sortorder)?>" title="Export the entire list of analyses as a .csv">Export CSV</a>
 				</td>
 			</tr>
 		</table>
@@ -999,6 +1010,13 @@
 			.analysislist thead { position: sticky; top: 0; z-index: 2; }
 			.analysislist thead tr.filterrow td { background-color: #fff; }
 			.analysisactions.ui.bottom.attached.menu { position: sticky; bottom: 0; z-index: 3; background-color: #fff; }
+			/* the sticky header and bottom bar each form their own stacking layer, so an open dropdown in one is
+			   drawn under the other. Raise whichever one has the open dropdown */
+			.analysislist thead:has(.ui.dropdown.active), .analysisactions.ui.bottom.attached.menu:has(.ui.dropdown.active) { z-index: 5; }
+			/* 'With Selected' opens up or down, whichever has room (direction 'auto'), and scrolls if neither does. It is
+			   aligned to the button's right edge so it can't run off the right of the window. (Not the 'left menu' class:
+			   inside a menu bar that is a layout rule that forces the menu to display) */
+			.analysisactions .withselected.ui.dropdown > .menu { max-height: 70vh; overflow-y: auto; left: auto; right: 0; }
 			/* the whole checkbox cell is clickable/draggable */
 			#analysistable td.allstudies, #analysistable td.allanalyses { cursor: pointer; }
 			#analysistable td.allstudies:hover, #analysistable td.allanalyses:hover { box-shadow: inset 0 0 0 2px #2185d0; }
@@ -1007,37 +1025,37 @@
 		<table id="analysistable" class="ui very compact small celled grey selectable top attached table">
 			<form method="post" name="filteranalysis" id="filteranalysis" action="analysis.php" class="ui form">
 			<input type="hidden" name="action" value="viewanalyses">
-			<input type="hidden" name="id" value="<?=$id?>">
-			<input type="hidden" name="searchuid" value="<?=$searchuid?>">
-			<input type="hidden" name="searchstatus" value="<?=$searchstatus?>">
-			<input type="hidden" name="searchsuccess" value="<?=$searchsuccess?>">
-			<input type="hidden" name="sortby" value="<?=$sortby?>">
-			<input type="hidden" name="sortorder" value="<?=$sortorder?>">
+			<input type="hidden" name="id" value="<?=(int)$id?>">
+			<input type="hidden" name="searchuid" value="<?=htmlspecialchars($searchuid ?? '', ENT_QUOTES)?>">
+			<input type="hidden" name="searchstatus" value="<?=htmlspecialchars($searchstatus ?? '', ENT_QUOTES)?>">
+			<input type="hidden" name="searchsuccess" value="<?=htmlspecialchars($searchsuccess ?? '', ENT_QUOTES)?>">
+			<input type="hidden" name="sortby" value="<?=htmlspecialchars($sortby ?? '', ENT_QUOTES)?>">
+			<input type="hidden" name="sortorder" value="<?=htmlspecialchars($sortorder ?? '', ENT_QUOTES)?>">
 			<thead>
 				<tr>
 					<th align="left" <? if ($sortby == "studynum") { echo "style='background-color: #fff'"; } ?>>
 						<input type="checkbox" id="studiesall">
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studynum&sortorder=<?=$newsortorder?>">Study</a> <? if ($sortby == "studynum") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=studynum&sortorder=<?=$newsortorder?>">Study</a> <? if ($sortby == "studynum") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "visit") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=visit&sortorder=<?=$newsortorder?>">Visit</a> <? if ($sortby == "visit") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=visit&sortorder=<?=$newsortorder?>">Visit</a> <? if ($sortby == "visit") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "pipelineversion") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=pipelineversion&sortorder=<?=$newsortorder?>">Pipeline<br>version</a>  <? if ($sortby == "pipelineversion") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=pipelineversion&sortorder=<?=$newsortorder?>">Pipeline<br>version</a>  <? if ($sortby == "pipelineversion") { echo $sortarrow; } ?>
 					</th>
 					<? if ($pipeline_level == 1) { ?>
 					<th align="left" <? if ($sortby == "studydate") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=studydate&sortorder=<?=$newsortorder?>">Study date</a> <? if ($sortby == "studydate") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=studydate&sortorder=<?=$newsortorder?>">Study date</a> <? if ($sortby == "studydate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "numseries") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=numseries&sortorder=<?=$newsortorder?>"># series</a> <? if ($sortby == "numseries") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=numseries&sortorder=<?=$newsortorder?>"># series</a> <? if ($sortby == "numseries") { echo $sortarrow; } ?>
 					</th>
 					<? } ?>
 					<th align="left" <? if ($sortby == "status") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=status&sortorder=<?=$newsortorder?>">Status</a> <? if ($sortby == "status") { echo $sortarrow; } ?><br><span class="tiny">flags</span>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=status&sortorder=<?=$newsortorder?>">Status</a> <? if ($sortby == "status") { echo $sortarrow; } ?><br><span class="tiny">flags</span>
 					</th>
 					<th align="left" <? if ($sortby == "successful") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=successful&sortorder=<?=$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=successful&sortorder=<?=$newsortorder?>">Successful</a> <? if ($sortby == "successful") { echo $sortarrow; } ?>
 					</th>
 					<th align="left">Details</th>
 					<!--<th align="left">Logs</th>
@@ -1046,28 +1064,28 @@
 					<th align="left">Results</th>-->
 					<th align="left">Notes</th>
 					<th align="left" <? if ($sortby == "message") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=message&sortorder=<?=$newsortorder?>">Message</a> <? if ($sortby == "message") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if ($sortby == "size") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=size&sortorder=<?=$newsortorder?>">Size</a> <? if ($sortby == "size") { echo $sortarrow; } ?><br><span class="tiny">bytes</span>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=size&sortorder=<?=$newsortorder?>">Size</a> <? if ($sortby == "size") { echo $sortarrow; } ?><br><span class="tiny">bytes</span>
 					</th>
 					<th align="left" <? if ($sortby == "hostname") { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=hostname&sortorder=<?=$newsortorder?>">Hostname</a> <? if ($sortby == "hostname") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=hostname&sortorder=<?=$newsortorder?>">Hostname</a> <? if ($sortby == "hostname") { echo $sortarrow; } ?>
 					</th>
-					<th align="left" <? if (($sortby == "setuptime") || ($sorty == "setupcompletedate")) { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setuptime&sortorder=<?=$newsortorder?>">Setup time</a> <? if ($sortby == "setuptime") { echo $sortarrow; } ?><br>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=setupcompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "setupcompletedate") { echo $sortarrow; } ?>
+					<th align="left" <? if (($sortby == "setuptime") || ($sortby == "setupcompletedate")) { echo "style='background-color: #fff'"; } ?>>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=setuptime&sortorder=<?=$newsortorder?>">Setup time</a> <? if ($sortby == "setuptime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=setupcompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "setupcompletedate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" <? if (($sortby == "clustertime") || ($sortby == "clustercompletedate")) { echo "style='background-color: #fff'"; } ?>>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustertime&sortorder=<?=$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
-						<a href="analysis.php?action=viewanalyses&id=<?=$id?>&sortby=clustercompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=clustertime&sortorder=<?=$newsortorder?>">Cluster time</a> <? if ($sortby == "clustertime") { echo $sortarrow; } ?><br>
+						<a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&sortby=clustercompletedate&sortorder=<?=$newsortorder?>"><span class="tiny">completed date</span></a> <? if ($sortby == "clustercompletedate") { echo $sortarrow; } ?>
 					</th>
 					<th align="left" style="background-color: Lavender">Operations<br><input type="checkbox" id="analysesall"><span class="tiny">Select All</span></th>
 				</tr>
 				<tr class="filterrow">
 					<td align="left">
 						<div class="ui input">
-							<input type="text" name="searchuid" placeholder="UID..." value="<?=$searchuid?>">
+							<input type="text" name="searchuid" placeholder="UID..." value="<?=htmlspecialchars($searchuid ?? '', ENT_QUOTES)?>">
 						</div>
 					</td>
 					<td></td>
@@ -1108,7 +1126,7 @@
 			<input type="hidden" name="destination" value="" id="studieslistdestination">
 			<input type="hidden" name="analysisnotes" value="">
 			<input type="hidden" name="analysisid" id="analysisid" value="">
-			<input type="hidden" name="id" value="<?=$id?>">
+			<input type="hidden" name="id" value="<?=(int)$id?>">
 			<input type="hidden" name="objecttype" value="analysis"> <!-- only read by packages.php (Add to Package) -->
 			<script>
 				/* post the checked analyses to the packages.php add form. The form has an input named
@@ -1216,25 +1234,25 @@
 							else { $sizecolor = "#fff"; }
 					?>
 					<tr bgcolor="<?=$rowcolor?>">
-						<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>">
-							<a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
-						<td><?=$visittype?></td>
-						<td><?=$pipeline_version?></td>
+						<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=(int)$study_id?>">
+							<a href="studies.php?id=<?=(int)$study_id?>"><?=htmlspecialchars($uid ?? '', ENT_QUOTES)?><?=htmlspecialchars($study_num ?? '', ENT_QUOTES)?></a></td>
+						<td><?=htmlspecialchars($visittype ?? '', ENT_QUOTES)?></td>
+						<td><?=htmlspecialchars($pipeline_version ?? '', ENT_QUOTES)?></td>
 						<? if ($pipeline_level == 1) { ?>
-						<td class="tiny"><?=$study_datetime?></td>
-						<td><?=$analysis_numseries?></td>
+						<td class="tiny"><?=htmlspecialchars($study_datetime ?? '', ENT_QUOTES)?></td>
+						<td><?=htmlspecialchars($analysis_numseries ?? '', ENT_QUOTES)?></td>
 						<? } ?>
 						<td>
 							<?
 								if (($analysis_status == 'processing') && ($analysis_qsubid != 0)) {
 									?>
-									<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=$analysis_qsubid?>" title="Click to view SGE status">processing</a>
+									<a href="<?=$GLOBALS['cfg']['siteurl']?>/analysis.php?action=viewjob&id=<?=(int)$analysis_qsubid?>" title="Click to view SGE status">processing</a>
 									<?
 								}
 								else {
 									/* an error can happen before a job is submitted (qsubid 0), so don't report it as copying data */
 									if (($analysis_qsubid == 0) && ($analysis_status != 'complete') && ($analysis_status != 'error') && ($analysis_status != 'cancelled')) {
-										echo "[$analysis_status] Copying data?";
+										echo "[" . htmlspecialchars($analysis_status) . "] Copying data?";
 									}
 									else {
 										$tip = "";
@@ -1253,7 +1271,7 @@
 												break;
 										}
 										$statusstyle = ($analysis_status == 'error') ? "font-weight: bold; color: darkred; " : "";
-										?><span style="<?=$statusstyle?>text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=$analysis_status?></span><?
+										?><span style="<?=$statusstyle?>text-decoration: underline; text-decoration-style: dashed; text-decoration-color: #aaa" title="<?=$tip?>"><?=htmlspecialchars($analysis_status ?? '', ENT_QUOTES)?></span><?
 									}
 								}
 								
@@ -1266,16 +1284,16 @@
 						</td>
 						<? if ($analysis_status != "") { ?>
 						<td class="center aligned">
-							<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis information"><i class="large grey info circle icon"></i></a>
+							<a href="viewanalysis.php?action=viewgraph&analysisid=<?=(int)$analysis_id?>&studyid=<?=(int)$study_id?>&pipelineid=<?=(int)$id?>&pipelineversion=<?=(int)$pipeline_version?>" target="_viewgraph" title="View analysis information"><i class="large grey info circle icon"></i></a>
 						</td>
 						<? } else { ?>
 						<td></td>
 						<? } ?>
 						<td class="center aligned">
-							<span <? if ($canmanage) { ?>onClick="GetAnalysisNotes(<?=(int)$id?>, <?=(int)$analysis_id?>);" <? } ?>title="<?=$notestitle?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
+							<span <? if ($canmanage) { ?>onClick="GetAnalysisNotes(<?=(int)$id?>, <?=(int)$analysis_id?>);" <? } ?>title="<?=htmlspecialchars($notestitle ?? '', ENT_QUOTES)?>"><i class="large <?=$notescolor?> pencil alternate icon"></i></span>
 						</td>
 						<td style="font-size:9pt; white-space:nowrap">
-							<? if (strlen($analysis_statusmessage) > 50) { echo "<span title='$analysis_statusmessage'>" . substr($analysis_statusmessage, 0, 50) . "...</span>"; } else { echo $analysis_statusmessage; } ?><br>
+							<? $analysis_statusmessage = (string)($analysis_statusmessage ?? ''); if (strlen($analysis_statusmessage) > 50) { echo "<span title='" . htmlspecialchars($analysis_statusmessage, ENT_QUOTES) . "'>" . htmlspecialchars(substr($analysis_statusmessage, 0, 50)) . "...</span>"; } else { echo htmlspecialchars($analysis_statusmessage); } ?><br>
 							<?
 								/* progress bar for messages like 'Processing step 2 of 5' or 'Processing supplement step 2 of 5' */
 								if (preg_match('/processing .*?step (\d+) of (\d+)/i', $analysis_statusmessage ?? '', $stepmatches) && ((int)$stepmatches[2] > 0)) {
@@ -1284,7 +1302,7 @@
 							?>
 							<img src="ajaxapi.php?action=horizontalchart&b=no&w=150&h=3&v=<?=$stepnum?>,<?=($steptotal-$stepnum)?>&c=666666,DDDDDD" style="margin:2px"><br>
 							<? } ?>
-							<span class="tiny"><?=$analysis_statusdatetime?></span>
+							<span class="tiny"><?=htmlspecialchars($analysis_statusdatetime ?? '', ENT_QUOTES)?></span>
 						</td>
 						<td align="right" style="font-size:8pt; border-bottom: 5px solid <?=$sizecolor?>; margin-bottom:0px; padding-bottom:0px" valign="bottom">
 							<?=number_format($analysis_size,0)?>
@@ -1294,10 +1312,10 @@
 								</tr>
 							</table>
 						</td>
-						<td><?=$analysis_hostname?></td>
-						<td><?=$analysis_time?><br><span class="tiny"><?=$analysis_enddate?></span></td>
-						<td><?=$cluster_time?><br><span class="tiny"><?=$analysis_clusterenddate?></span></td>
-						<td class="allanalyses" style="background-color: Lavender; text-align: center"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+						<td><?=htmlspecialchars($analysis_hostname ?? '', ENT_QUOTES)?></td>
+						<td><?=htmlspecialchars($analysis_time ?? '', ENT_QUOTES)?><br><span class="tiny"><?=htmlspecialchars($analysis_enddate ?? '', ENT_QUOTES)?></span></td>
+						<td><?=htmlspecialchars($cluster_time ?? '', ENT_QUOTES)?><br><span class="tiny"><?=htmlspecialchars($analysis_clusterenddate ?? '', ENT_QUOTES)?></span></td>
+						<td class="allanalyses" style="background-color: Lavender; text-align: center"><input type="checkbox" name="analysisids[]" value="<?=(int)$analysis_id?>"></td>
 					</tr>
 					<? 
 						}
@@ -1313,7 +1331,7 @@
 				?>
 				<script>
 				function GetDestination(){
-					var destination = prompt("Please enter a valid destination for the selected analyses","/home/<?=$GLOBALS['username']?>");
+					var destination = prompt("Please enter a valid destination for the selected analyses",<?=json_encode("/home/" . ($GLOBALS['username'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>);
 					if (destination != null){
 					  document.studieslist.action='analysis.php';
 					  $("#studieslistaction").attr("value", "copyanalyses");
@@ -1322,7 +1340,7 @@
 				   }
 				}
 				function GetDestination2(){
-					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links","/home/<?=$GLOBALS['username']?>");
+					var destination = prompt("Please enter a valid directory in which to create the 'data' directory and links",<?=json_encode("/home/" . ($GLOBALS['username'] ?? ''), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT)?>);
 					if (destination != null){
 					  document.studieslist.action='analysis.php';
 					  $("#studieslistaction").attr("value", "createlinks");
@@ -1364,7 +1382,7 @@
 			});
 		</script>
 		<div class="ui bottom attached menu analysisactions">
-			<div class="item" href="studies.php?studyid=<?=$studyid?>&action=displayfiles">
+			<div class="item" href="studies.php?studyid=<?=(int)($studyid ?? 0)?>&action=displayfiles">
 				<div class="ui action input">
 					<?=CSRFTokenField()?> <!-- groups.php requires the token for addstudiestogroup -->
 					<select name="studygroupid" class="ui selection dropdown">
@@ -1386,7 +1404,7 @@
 			</div>
 			
 			<div class="right menu">
-				<div class="ui icon bottom left pointing dropdown button" style="background-color: lavender">
+				<div class="ui icon floating dropdown button withselected" style="background-color: lavender">
 					<i class="dropdown icon"></i>
 					<span class="text">With Selected...</span>
 					<div class="ui vertical menu">
@@ -1492,11 +1510,13 @@
 		$isenabled = $row['pipeline_enabled'];
 		$isdebug = $row['pipeline_debug'];
 		
-		DisplayPipelineStatus($title, $desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
+		DisplayPipelineStatus($pipeline_name, $desc, $isenabled, $isdebug, $id, "analysis", $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck);
 		
 		/* prep the pagination */
-		if ($numperpage == "") { $numperpage = 1000; }
-		if (($pagenum == "") || ($pagenum < 1)) { $pagenum = 1; }
+		$numperpage = (int)$numperpage;
+		$pagenum = (int)$pagenum;
+		if ($numperpage < 1) { $numperpage = 1000; }
+		if ($pagenum < 1) { $pagenum = 1; }
 		$limitstart = ($pagenum-1)*$numperpage;
 		$limitcount = $numperpage;
 		
@@ -1505,7 +1525,7 @@
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result);
 		$numpages = ceil($numrows/$numperpage);
-		if ($pagenum > $numpages) { $pagenum = $numpages; }
+		if ($pagenum > $numpages) { $pagenum = max(1, (int)$numpages); }
 		?>
 		<script type="text/javascript">
 		$(function() {
@@ -1528,11 +1548,11 @@
 				<td class="label"><?=$numrows?> items</td>
 				<td class="pagenum">Page <?=$pagenum?> of <?=$numpages?> <span class="tiny">(<?=$numperpage?>/page)</span></td>
 				<td class="middle">&nbsp;</td>
-				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=1">&#171;</a></td>
-				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>">&lsaquo;</a></td>
+				<td class="firstpage" title="First page"><a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&numperpage=<?=$numperpage?>&pagenum=1">&#171;</a></td>
+				<td class="previouspage" title="Previous page"><a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum-1)?>">&lsaquo;</a></td>
 				<td title="Refresh page"><a href="" style="margin-left:20px; margin-right:20px; font-size:14pt">&#10227;</a></td>
-				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>">&rsaquo;</a></td>
-				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>">&#187;</a></td>
+				<td class="nextpage" title="Next page"><a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&numperpage=<?=$numperpage?>&pagenum=<?=($pagenum+1)?>">&rsaquo;</a></td>
+				<td class="lastpage" title="Last page"><a href="analysis.php?action=viewanalyses&id=<?=(int)$id?>&numperpage=<?=$numperpage?>&pagenum=<?=$numpages?>">&#187;</a></td>
 			</tr>
 		</table>
 		<form method="post" name="studieslist" action="analysis.php">
@@ -1540,7 +1560,7 @@
 		<input type="hidden" name="destination" value="" id="studieslistdestination">
 		<input type="hidden" name="analysisnotes" value="">
 		<input type="hidden" name="analysisid" value="">
-		<input type="hidden" name="id" value="<?=$id?>">
+		<input type="hidden" name="id" value="<?=(int)$id?>">
 		
 		<table id="analysistable" class="ui very compact small celled grey table">
 			<thead>
@@ -1586,15 +1606,15 @@
 						$pipeline_dep_name = $rowA['pipeline_name'];
 				?>
 				<tr>
-					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=$study_id?>"><a href="studies.php?id=<?=$study_id?>"><?=$uid?><?=$study_num?></a></td>
+					<td class="allstudies" style="text-align:left"><input type="checkbox" name="studyid[]" value="<?=(int)$study_id?>"><a href="studies.php?id=<?=(int)$study_id?>"><?=htmlspecialchars($uid ?? '', ENT_QUOTES)?><?=htmlspecialchars($study_num ?? '', ENT_QUOTES)?></a></td>
 					<? if ($pipeline_level == 1) { ?>
-					<td class="tiny"><?=$study_datetime?></td>
+					<td class="tiny"><?=htmlspecialchars($study_datetime ?? '', ENT_QUOTES)?></td>
 					<? } ?>
-					<td><?=$analysis_status;?></td>
+					<td><?=htmlspecialchars($analysis_status ?? '', ENT_QUOTES)?></td>
 					<td>
-						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=$analysis_id?>&studyid=<?=$study_id?>&pipelineid=<?=$id?>&pipelineversion=<?=$pipeline_version?>" target="_viewgraph" title="View analysis graph">View log</a>
+						<a href="viewanalysis.php?action=viewgraph&analysisid=<?=(int)$analysis_id?>&studyid=<?=(int)$study_id?>&pipelineid=<?=(int)$id?>&pipelineversion=<?=(int)$pipeline_version?>" target="_viewgraph" title="View analysis graph">View log</a>
 					</td>
-					<td class="allanalyses" align="right"><input type="checkbox" name="analysisids[]" value="<?=$analysis_id?>"></td>
+					<td class="allanalyses" align="right"><input type="checkbox" name="analysisids[]" value="<?=(int)$analysis_id?>"></td>
 				</tr>
 				<? 
 					}
@@ -1664,6 +1684,8 @@
 		$pipelinedirectory = $row['pipeline_directory'];
 
 		/* get list of steps for the appropriate version */
+		$commands = array('reg' => array(), 'supp' => array());
+		$descriptions = array('reg' => array(), 'supp' => array());
 		$stmt = mysqli_prepare($GLOBALS['linki'], "select * from pipeline_steps where pipeline_id = ? and pipeline_version = ?");
 		mysqli_stmt_bind_param($stmt, 'ii', $pipelineid, $pipelineversion);
 		$result = MySQLiBoundQuery($stmt,__FILE__,__LINE__);
@@ -1697,7 +1719,7 @@
 		/* check if the path exists */
 		if (file_exists($path)) {
 			?>
-			Showing log files from <b><?=$path?></b>
+			Showing log files from <b><?=htmlspecialchars($path)?></b>
 			<br><br>
 			<?
 			$files = scandir($path);
@@ -1708,30 +1730,28 @@
 				$file = file_get_contents("$path/$log");
 				$size = filesize("$path/$log");
 				$filedate = date ("F d Y H:i:s.", filemtime("$path/$log"));
-				echo "$path/$log<br>";
+				echo htmlspecialchars("$path/$log") . "<br>";
 				$desc = "";
 				if (preg_match('/^step(\d*)\.log/', $log, $matches)) {
 					$step = $matches[1];
-					$command = $commands['reg'][$step];
-					$desc = $descriptions['reg'][$step];
+					$desc = $descriptions['reg'][$step] ?? '';
 				}
 				elseif (preg_match('/^supplement-step(\d*)\.log/', $log, $matches)) {
 					$step = $matches[1];
-					$command = $commands['supp'][$step];
-					$desc = $descriptions['supp'][$step];
+					$desc = $descriptions['supp'][$step] ?? '';
 				}
 				?>
 				<details>
-					<summary><?="<b>$log</b>"?> <span class="tiny"><?=number_format($size)?> bytes - <?=$filedate?></style> &nbsp; <span style="color: darkred;"><?=$desc?></span></span></summary>
+					<summary><b><?=htmlspecialchars($log)?></b> <span class="tiny"><?=number_format((int)$size)?> bytes - <?=$filedate?> &nbsp; <span style="color: darkred;"><?=htmlspecialchars($desc ?? '')?></span></span></summary>
 					<pre style="font-size:9pt; background-color: #EEEEEE">
-<?=$file?>
+<?=htmlspecialchars((string)$file)?>
 					</pre>
 				</details>
 				<?
 			}
 		}
 		else {
-			echo "<b>$path does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline.pl program?<br>";
+			echo "<b>" . htmlspecialchars($path) . " does not exist</b><br><br>Perhaps data is still being downloaded by the pipeline.pl program?<br>";
 		}
 	}
 

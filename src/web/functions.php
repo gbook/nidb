@@ -755,6 +755,109 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- ValidateDicomRequest --------------- */
+	/* -------------------------------------------- */
+	/* Checks the series exists, the current user has View Data on the series' project, and the
+	   series directory is inside the archive. Returns [valid, message, path, seriesid, modality,
+	   httpstatus, viewphi]. viewphi is the user's View PHI on the subject (subject information is global
+	   to the subject). Used by dicom.php and series.php */
+	function ValidateDicomRequest($seriesid, $modality) {
+		$seriesid = (int)$seriesid;
+		$modality = strtolower(trim($modality ?? ''));
+
+		if ($seriesid < 1) {
+			return array(false, "Invalid series ID", "", 0, "", 400, 0);
+		}
+
+		/* the modality is used in a table name, so it must have a <modality>_series table */
+		$tablename = GetSeriesTableName($modality);
+		if ($tablename == '') {
+			return array(false, "Invalid modality", "", 0, "", 400, 0);
+		}
+		$sqlstring = "select table_name from information_schema.tables where table_schema = database() and table_name = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 's', $tablename);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$tablename]);
+		$tableexists = (mysqli_num_rows($result) > 0);
+		mysqli_stmt_close($stmt);
+		if (!$tableexists) {
+			return array(false, "Invalid modality", "", 0, "", 400, 0);
+		}
+
+		$sqlstring = "select a.series_num, a.data_type, b.study_num, c.project_id, d.subject_id, d.uid from $tablename a left join studies b on a.study_id = b.study_id left join enrollment c on b.enrollment_id = c.enrollment_id left join subjects d on c.subject_id = d.subject_id where a.$modality" . "series_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $seriesid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$seriesid]);
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+		mysqli_stmt_close($stmt);
+		if (!$row) {
+			return array(false, "Series not found", "", $seriesid, $modality, 404, 0);
+		}
+
+		/* raw imaging data requires View Data on the series' project. PHI alone does not give access */
+		$projectid = (int)$row['project_id'];
+		$perms = GetCurrentUserProjectPermissions(array($projectid));
+		if (!GetPerm($perms, 'viewdata', $projectid)) {
+			return array(false, "You do not have permissions to view this series", "", $seriesid, $modality, 403, 0);
+		}
+
+		/* subject demographics are global to the subject: View PHI on any of its projects */
+		$sp = GetSubjectPermissions($row['subject_id']);
+		$viewphi = $sp['viewphi'];
+
+		$uid = trim($row['uid'] ?? '');
+		$studynum = trim($row['study_num'] ?? '');
+		$seriesnum = trim($row['series_num'] ?? '');
+		$datatype = $row['data_type'] ?? '';
+		if ($modality == "pr")
+			$datatype = "dicom";
+		if ($datatype == "")
+			$datatype = $modality;
+		if (($uid == '') || ($studynum == '') || ($seriesnum == '')) {
+			return array(false, "DICOM path does not exist for this series", "", $seriesid, $modality, 404, 0);
+		}
+
+		$path = $GLOBALS['cfg']['archivedir'] . "/$uid/$studynum/$seriesnum/$datatype";
+		$realpath = realpath($path);
+		if (($realpath === false) || !is_dir($realpath)) {
+			return array(false, "DICOM path does not exist for this series", "", $seriesid, $modality, 404, 0);
+		}
+
+		$archivepath = realpath($GLOBALS['cfg']['archivedir']);
+		if (($archivepath === false) || (substr($realpath, 0, strlen($archivepath) + 1) !== $archivepath . "/")) {
+			return array(false, "DICOM path is outside the archive directory", "", $seriesid, $modality, 400, 0);
+		}
+
+		return array(true, "", $realpath, $seriesid, $modality, 200, $viewphi);
+	}
+
+	
+	/* -------------------------------------------- */
+	/* ------- ValidatePipelineClusterFields ------ */
+	/* -------------------------------------------- */
+	/* checks a pipeline's submit host, submit host user, cluster user and queue. The backend puts these
+	   on an ssh command line (see SubmitClusterJob() in nidb.cpp), so they are limited to the
+	   characters a hostname, username or queue list needs. Blank values are allowed (the backend falls
+	   back to the config defaults). Returns "" if valid, otherwise an error message (plain text) */
+	function ValidatePipelineClusterFields($submithost, $submithostuser, $clusteruser, $queue) {
+		$submithost = (string)$submithost;
+		$submithostuser = (string)$submithostuser;
+		$clusteruser = (string)$clusteruser;
+		$queue = (string)$queue;
+
+		if (($submithost != "") && ((strlen($submithost) > 255) || !preg_match('/^[A-Za-z0-9][A-Za-z0-9.\-]*$/', $submithost)))
+			return "Invalid submit host. Use letters, numbers, dots and dashes, starting with a letter or number";
+		if (($submithostuser != "") && ((strlen($submithostuser) > 64) || !preg_match('/^[A-Za-z0-9_][A-Za-z0-9_.\-]*$/', $submithostuser)))
+			return "Invalid submit host username. Use letters, numbers, underscores, dots and dashes, not starting with a dot or dash";
+		if (($clusteruser != "") && ((strlen($clusteruser) > 64) || !preg_match('/^[A-Za-z0-9_][A-Za-z0-9_.\-]*$/', $clusteruser)))
+			return "Invalid cluster username. Use letters, numbers, underscores, dots and dashes, not starting with a dot or dash";
+		if (($queue != "") && !preg_match('/^[A-Za-z0-9_][A-Za-z0-9_.,@\-]*$/', $queue))
+			return "Invalid queue. Use letters, numbers, underscores, dots, dashes, commas and @, not starting with a dot, dash, comma or @";
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetDataPathFromSeriesID ------------ */
 	/* -------------------------------------------- */
 	function GetDataPathFromSeriesID($id, $modality) {
@@ -3299,19 +3402,17 @@ function myErrorHandler($errno, $errstr, $errfile, $errline)
 	/* ------- IsViewablePath --------------------- */
 	/* -------------------------------------------- */
 	/* true if $realfile (already passed through realpath()) lives within the
-	   archive, mount, or an analysis directory. Used by viewfile.php and getfile.php */
+	   archive, mount, or an analysis directory. Used by viewfile.php and getfile.php.
+	   Only directories from the config are trusted. pipelines.pipeline_directory used to be added to
+	   the list, but users set that column, so any user could make any directory viewable (N68). A
+	   pipeline's own directory is relative to [mountdir] (see IsValidPipelineDirectory() in
+	   pipelines.php), so its files are already covered by mountdir */
 	function IsViewablePath($realfile) {
 		if (($realfile === false) || ($realfile == '')) { return false; }
 
 		$dirs = array();
 		foreach (array('archivedir', 'mountdir', 'analysisdir', 'analysisdirb', 'groupanalysisdir') as $key) {
 			$dirs[] = $GLOBALS['cfg'][$key] ?? '';
-		}
-
-		/* level-0 pipelines write to their own pipeline_directory */
-		$result = MySQLiQuery("select distinct pipeline_directory from pipelines where pipeline_directory <> ''", __FILE__, __LINE__);
-		while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
-			$dirs[] = $row['pipeline_directory'];
 		}
 
 		foreach ($dirs as $dir) {

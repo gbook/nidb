@@ -219,8 +219,8 @@ window.onload = AreCookiesEnabled;
 		$_SESSION['username'] = $username;
 		$_SESSION['validlogin'] = "true";
 		$_SESSION['userid'] = $userid;
-		if ($isadmin) $_SESSION['isadmin'] = "true";
-		else $_SESSION['isadmin'] = "false";
+		/* admin status is not kept in the session: it was stored as the string "true"/"false" (both truthy, N69),
+		   and it can change while the user is logged in. Use isAdmin() / isSiteAdmin() / IsAdminUser() */
 
 		$sqlstring = "select instance_id from user_instance where user_id = (select user_id from users where username = ?)";
 		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
