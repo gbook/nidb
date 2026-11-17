@@ -36,37 +36,37 @@ Visit [http://localhost/setup.php](http://localhost/setup.php) and follow the pa
 
 **Entry page** - Turning off access to the website and disabling all modules can help prevent errors during the upgrade. Always remember to backup the database! Click **Next** to continue.
 
-![](https://user-images.githubusercontent.com/8302215/137331276-17cd180c-91ec-4220-9c5f-fc55888dfebb.png)
+<img src="https://user-images.githubusercontent.com/8302215/137331276-17cd180c-91ec-4220-9c5f-fc55888dfebb.png" alt="" width="563">
 
 <br>
 
 **Pre-requisites** - This page will check for CentOS packages and display an error if a package is missing or the wrong version. If missing any packages, check the output from the NiDB rpm installation or manually install the missing packages. After packages are installed, then refresh this page. Once all pre-requisities are met, click **Next** to continue.
 
-![](https://user-images.githubusercontent.com/8302215/137331530-3d1f31f3-8f96-480f-a5d7-42be7f382adc.png)
+<img src="https://user-images.githubusercontent.com/8302215/137331530-3d1f31f3-8f96-480f-a5d7-42be7f382adc.png" alt="" width="563">
 
 <br>
 
 **SQL database connection** Enter the root SQL password in this screen. If you want to check what tables will be updated, without updating them, select the Debug checkbox. If you encounter issues upgrading large tables, you can choose to limit the size of the tables that are upgraded and you can then update those manually. This is not recommended however. Click **Configure Database** to continue.
 
-![](https://user-images.githubusercontent.com/8302215/137331692-45946205-1ace-4789-875b-55851b43f440.png)
+<img src="https://user-images.githubusercontent.com/8302215/137331692-45946205-1ace-4789-875b-55851b43f440.png" alt="" width="563">
 
 <br>
 
 **Schema upgrade** The details of the schema upgrade will be displayed. Any errors will be indicated. Click **Next** to continue.
 
-![](https://user-images.githubusercontent.com/8302215/137331838-e4ed780e-52b8-4872-b392-fc4eeed71ac4.png)
+<img src="https://user-images.githubusercontent.com/8302215/137331838-e4ed780e-52b8-4872-b392-fc4eeed71ac4.png" alt="" width="563">
 
 <br>
 
 **Configuration** Any changes (paths, settings, options, etc) can be changed here. Click **Write Config** to continue.
 
-![](https://user-images.githubusercontent.com/8302215/137332401-3d0588f7-3225-49bd-b04a-26fb205f99cc.png)
+<img src="https://user-images.githubusercontent.com/8302215/137332401-3d0588f7-3225-49bd-b04a-26fb205f99cc.png" alt="" width="563">
 
 <br>
 
 All finished! Click **Done** to complete the upgrade.
 
-![](https://user-images.githubusercontent.com/8302215/137332036-d85cc1e9-c669-4777-bb84-47cf0081be12.png)
+<img src="https://user-images.githubusercontent.com/8302215/137332036-d85cc1e9-c669-4777-bb84-47cf0081be12.png" alt="" width="563">
 
 ## Upgrade issues
 
@@ -76,8 +76,12 @@ The database schema upgrade may not display a SQL error if it occurs, but the er
 
 ### Row length errors
 
-In phpMyAdmin, select the table in question. Under the **operations** tab, check the table type. If it is `Innodb`, change this to `Aria`, and click **Go**.
+Change the table's storage engine from `InnoDB` to `Aria`. In [HeidiSQL](../installation/optional-software.md), select the table in question, open the **Options** tab, change **Engine** to `Aria`, and click **Save**. Or run the following SQL
+
+```sql
+ALTER TABLE tablename ENGINE=Aria;
+```
 
 ### Primary key errors
 
-If the primary key error references a TEXT column (if a TEXT column has a primary key) then delete the key for that column. This can be done in phpMyAdmin.
+If the primary key error references a TEXT column (if a TEXT column has a primary key) then delete the key for that column. This can be done in HeidiSQL, on the table's **Indexes** tab.

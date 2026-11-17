@@ -34,8 +34,8 @@ ALTER USER 'nidb'@'%' IDENTIFIED BY 'newpassword';
 ```
 {% endtab %}
 
-{% tab title="phpMyAdmin" %}
-If you have installed [phpMyAdmin](optional-software.md), login to http://localhost/phpMyAdmin using the root MariaDB account and password. Go to the **User Accounts** menu option. Then click **Edit privileges** for the `root` account with the hostname `localhost`, or the `nidb` account with the hostname `%`. Then click **Change password** button at the top of the page. Enter a new password and click **Go**
+{% tab title="HeidiSQL" %}
+If you have installed [HeidiSQL](optional-software.md), connect to the NiDB server over an SSH tunnel using the MariaDB `root` account. Go to **Tools** --> **User manager**. Select the `root` account with the hostname `localhost`, or the `nidb` account with the hostname `%`. Enter a new password in the password field(s) and click **Save**.
 {% endtab %}
 {% endtabs %}
 

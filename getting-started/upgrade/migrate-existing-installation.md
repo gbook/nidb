@@ -16,7 +16,7 @@ Sometimes you need to move your installation to a new server. Maybe you were tes
 4. On the _**new server**_, install NiDB as a new installation
 5. On the _**new server**_, import the new database
    * `mysql -uroot -ppassword nidb < nidb-backup.sql`
-6. Verify that the database table row counts are the same in the new server and old server using phpMyAdmin.
+6. Verify that the database table row counts are the same in the new server and old server using [HeidiSQL](../installation/optional-software.md). The table list shows each table's row count. Counts for InnoDB tables there are estimates, so use `SELECT COUNT(*) FROM tablename` for an exact comparison.
 7. Verify that the /nidb/data directory sizes match between the old server and new server.\
    Example command `du -sb /nidb/data/`
 8. Finish upgrade on the _**new server**_, by going to http://localhost/setup.php . Follow the instructions to continue the upgrade.

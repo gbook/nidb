@@ -207,7 +207,7 @@ Once the build environment is set up, the builds are done by script. All scripts
 | `makeInstallerDebian12.sh`, `makeInstallerDebian13.sh`                     | Build the NiDB `.deb` for a release, from the binaries already built in `./bin`.                                                                                                                                                                                                                  |
 
 {% hint style="info" %}
-The `makeInstallerRHELx.sh` scripts build the .rpm from the git repository they are run from. They export all files tracked by git, **including uncommitted changes**, into a fresh `~/rpmbuild` directory. Files not tracked by git (for example a local `phpMyAdmin` or `vendor` directory under `src/web`) are not included in the .rpm. The script prints the commit it is building from, and whether uncommitted changes are included.
+The `makeInstallerRHELx.sh` scripts build the .rpm from the git repository they are run from. They export all files tracked by git, **including uncommitted changes**, into a fresh `~/rpmbuild` directory. Files not tracked by git (for example a local `vendor` directory under `src/web`) are not included in the .rpm. The script prints the commit it is building from, and whether uncommitted changes are included.
 {% endhint %}
 
 **First time build** on this machine, clone the source code (see [Cloning a new repository with SSH](building-nidb.md#cloning-a-new-repository-with-ssh) below), or download it
