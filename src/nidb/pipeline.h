@@ -40,6 +40,7 @@ public:
     int searchPipelineRowID = -1;
     int searchPipelineVersion = -1;
     bool isValid() const { return valid; }
+    bool HasSafeName() const;
 
     /* pipeline variables */
     QDateTime createDate;

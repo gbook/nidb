@@ -277,7 +277,7 @@ EOF
 # ----- web server / PHP-fpm apache wiring -----
 echo 'Enable apache modules for PHP-FPM...'
 if command -v a2enmod >/dev/null 2>&1; then
-    a2enmod proxy_fcgi setenvif >/dev/null 2>&1
+    a2enmod proxy_fcgi setenvif headers >/dev/null 2>&1
     [[ -n "$PHPVER" ]] && a2enconf "php$PHPVER-fpm" >/dev/null 2>&1
 fi
 
@@ -301,6 +301,16 @@ cat > /etc/apache2/conf-available/nidb.conf <<'EOF'
 <LocationMatch "(?i)^/phpmyadmin">
     Require all denied
 </LocationMatch>
+
+# security headers on every response (P14). SAMEORIGIN, not DENY: NiDB frames its own pages
+# (requeststatus.php, the file uploader). A full script-src CSP is not possible yet because the
+# pages use inline scripts and onclick handlers.
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "same-origin"
+</IfModule>
 EOF
 command -v a2enconf >/dev/null 2>&1 && a2enconf nidb >/dev/null 2>&1
 

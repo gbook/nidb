@@ -194,6 +194,10 @@ bool modulePipelineContainer::PrepareExport(containerRequest &c, QString &msg) {
         msg = QString("Unable to load pipeline [%1]: %2").arg(c.pipelineID).arg(p.msg);
         return false;
     }
+    if (!p.HasSafeName()) {
+        msg = QString("Pipeline [%1] name [%2] may only contain letters, numbers, underscores and dashes. Copy the pipeline to a new name").arg(c.pipelineID).arg(p.name);
+        return false;
+    }
 
     QStringList errors, warnings;
     if (!CheckIfExportable(p, c.pipelineVersion, errors, warnings)) {

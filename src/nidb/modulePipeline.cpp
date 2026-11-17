@@ -23,6 +23,7 @@
 #include "modulePipeline.h"
 #include <QSqlQuery>
 #include <QJsonObject>
+#include <QRegularExpression>
 
 
 /* ---------------------------------------------------------- */
@@ -104,6 +105,12 @@ int modulePipeline::Run() {
         p.Load();
         if (!p.isValid()) {
             m = n->Log(QString("Error starting pipeline [%1]. Pipeline was not valid [" + p.msg + "]").arg(p.name), __FUNCTION__);
+            RecordPipelineEvent(pipelineid, runnum, -1, "pipelineStarted", m);
+            RecordPipelineEvent(pipelineid, runnum, -1, "pipelineFinished", "Pipeline stopped prematurely due to error");
+            continue;
+        }
+        else if (!p.HasSafeName()) {
+            m = n->Log(QString("Error starting pipeline [%1]. The pipeline name may only contain letters, numbers, underscores and dashes. Copy the pipeline to a new name").arg(p.name), __FUNCTION__);
             RecordPipelineEvent(pipelineid, runnum, -1, "pipelineStarted", m);
             RecordPipelineEvent(pipelineid, runnum, -1, "pipelineFinished", "Pipeline stopped prematurely due to error");
             continue;
@@ -263,7 +270,7 @@ int modulePipeline::Run() {
                 continue;
             }
 
-            SystemCommand("chmod -Rf 777 " + analysispath, false);
+            SystemCommand("chmod -Rf 777 " + ShellQuote(analysispath), false);
 
             /* submit the cluster job file */
             QString qm, qresult;
@@ -561,7 +568,7 @@ int modulePipeline::Run() {
                                 n->Log("Created directory [" + analysispath + "/pipeline] - B", __FUNCTION__);
                             }
 
-                            n->Log(SystemCommand("chmod -Rf 777 " + analysispath + "/pipeline", false, true), __FUNCTION__);
+                            n->Log(SystemCommand("chmod -Rf 777 " + ShellQuote(analysispath + "/pipeline"), false, true), __FUNCTION__);
                             if (pipelinedep != -1) {
                                 if (p.depLevel == "subject") {
                                     if (p.dirStructure == "b")
@@ -595,11 +602,11 @@ int modulePipeline::Run() {
                                 else if (p.depLinkType == "softlink") systemstring = "time cp -aus ";
                                 else if (p.depLinkType == "regularcopy") systemstring = "time cp -au ";
                                 if (p.depDir == "subdir") {
-                                    systemstring += deppath + " " + analysispath + "/";
+                                    systemstring += ShellQuote(deppath) + " " + ShellQuote(analysispath) + "/";
                                     setuplog << n->Log("Parent pipeline will be copied to a subdir [" + systemstring + "]", __FUNCTION__);
                                 }
                                 else {
-                                    systemstring += deppath + "/* " + analysispath + "/";
+                                    systemstring += ShellQuote(deppath) + "/* " + ShellQuote(analysispath) + "/";
                                     setuplog << n->Log("Parent pipeline will be copied to the root dir [" + systemstring + "] ", __FUNCTION__);
                                 }
                                 setuplog << n->Log(SystemCommand(systemstring), __FUNCTION__);
@@ -607,10 +614,10 @@ int modulePipeline::Run() {
                                 n->LogAnalysisEvent(analysisRowID, AnalysisEvent::SetupDependencyCopy, LogStatus::success, 0, "Parent pipeline copied by running [" + systemstring + "]", "");
 
                                 /* delete any log files and job files that came with the dependency */
-                                setuplog << n->Log(SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job %1/slurm.job").arg(analysispath)), __FUNCTION__);
+                                setuplog << n->Log(SystemCommand(QString("rm --preserve-root %1/pipeline/* %1/origfiles.log %1/sge.job %1/slurm.job").arg(ShellQuote(analysispath))), __FUNCTION__);
 
                                 /* make sure the whole tree is writeable */
-                                setuplog << n->Log(SystemCommand("chmod -Rf 777 " + analysispath, true, true), __FUNCTION__);
+                                setuplog << n->Log(SystemCommand("chmod -Rf 777 " + ShellQuote(analysispath), true, true), __FUNCTION__);
                             }
                             else {
                                 setuplog << n->Log("This pipeline is not dependent on another pipeline", __FUNCTION__);
@@ -658,7 +665,7 @@ int modulePipeline::Run() {
                             continue;
                         }
 
-                        SystemCommand("chmod -Rf 777 " + analysispath, true, true);
+                        SystemCommand("chmod -Rf 777 " + ShellQuote(analysispath), true, true);
 
                         /* the analysis may have been cancelled from the website while its data was being copied
                            (moduleFileIO::CancelAnalysis marks it 'cancelled' when it has no job yet). If so, don't submit it */
@@ -792,6 +799,34 @@ int modulePipeline::Run() {
         n->Log(QString("Done with pipeline module. No jobs were submitted. Run time %1ms").arg(runTimer.elapsed()));
         return false;
     }
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- ValidateSCPTarget ------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check the user, host and remote path of an scp destination (user@host:path) before GetData()
+ * copies to it. Newer scp (SFTP mode) takes the remote path literally while legacy scp passes it through the
+ * remote shell, so no single quoting works for both; the values are limited to safe characters instead
+ * (host/user rules match ValidateClusterSSHArgs() in nidb.cpp)
+ * @param user Cluster username
+ * @param host Cluster submit hostname
+ * @param path Remote destination path (must be absolute)
+ * @return Empty string if valid, otherwise an error message
+ */
+static QString ValidateSCPTarget(QString user, QString host, QString path) {
+    static const QRegularExpression hostRE("^[A-Za-z0-9][A-Za-z0-9.\\-]*$");
+    static const QRegularExpression userRE("^[A-Za-z0-9_][A-Za-z0-9_.\\-]*$");
+    static const QRegularExpression pathRE("^/[A-Za-z0-9._/\\-]*$");
+
+    if ((host == "") || (host.length() > 255) || !hostRE.match(host).hasMatch())
+        return "Invalid cluster submit host [" + host + "] for scp data copy";
+    if ((user == "") || (user.length() > 64) || !userRE.match(user).hasMatch())
+        return "Invalid cluster username [" + user + "] for scp data copy";
+    if (!pathRE.match(path).hasMatch())
+        return "Analysis path [" + path + "] contains characters that are not allowed for scp data copy (allowed: A-Z a-z 0-9 . _ - /)";
+    return "";
 }
 
 
@@ -1409,16 +1444,23 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         return false;
                     }
 
-                    SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+                    SystemCommand("chmod -Rf 777 " + ShellQuote(newanalysispath), true, true);
 
                     if (!behonly) {
                         /* output the correct file type */
                         if ((dataformat == "dicom") || ((datatype != "dicom") && (datatype != "parrec"))) {
                             QString systemstring;
-                            if ((p.dataCopyMethod == "scp") && !localCopy)
-                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(indir).arg(clusteruser).arg(submithost).arg(newanalysispath);
+                            if ((p.dataCopyMethod == "scp") && !localCopy) {
+                                QString scperr = ValidateSCPTarget(clusteruser, submithost, newanalysispath);
+                                if (scperr != "") {
+                                    dlog << n->Log("Error: " + scperr, __FUNCTION__);
+                                    UpdateAnalysisStatus(analysisRowID, "error", scperr, 0, -1, "", false, true, -1, -1);
+                                    return false;
+                                }
+                                systemstring = QString("scp %1/* %2").arg(ShellQuote(indir)).arg(ShellQuote(clusteruser + "@" + submithost + ":" + newanalysispath));
+                            }
                             else
-                                systemstring = QString("time cp -v %1/* %2").arg(indir).arg(newanalysispath);
+                                systemstring = QString("time cp -v %1/* %2").arg(ShellQuote(indir)).arg(ShellQuote(newanalysispath));
                             n->Debug(SystemCommand(systemstring, true, true));
 
                             dlog << n->Log(QString("Finished copying imaging data from [%1] to [%2]").arg(indir).arg(newanalysispath), __FUNCTION__);
@@ -1453,10 +1495,18 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                             }
 
                             QString systemstring;
-                            if ((p.dataCopyMethod == "scp") && !localCopy)
-                                systemstring = QString("scp %1/* %2\\@%3:%4").arg(tmpdir).arg(clusteruser).arg(submithost).arg(newanalysispath);
+                            if ((p.dataCopyMethod == "scp") && !localCopy) {
+                                QString scperr = ValidateSCPTarget(clusteruser, submithost, newanalysispath);
+                                if (scperr != "") {
+                                    dlog << n->Log("Error: " + scperr, __FUNCTION__);
+                                    UpdateAnalysisStatus(analysisRowID, "error", scperr, 0, -1, "", false, true, -1, -1);
+                                    SafeDeletePath(tmpdir, n->cfg["tmpdir"], m);
+                                    return false;
+                                }
+                                systemstring = QString("scp %1/* %2").arg(ShellQuote(tmpdir)).arg(ShellQuote(clusteruser + "@" + submithost + ":" + newanalysispath));
+                            }
                             else
-                                systemstring = QString("cp -v %1/* %2").arg(tmpdir).arg(newanalysispath);
+                                systemstring = QString("cp -v %1/* %2").arg(ShellQuote(tmpdir)).arg(ShellQuote(newanalysispath));
                             n->Log(SystemCommand(systemstring, true, true));
 
                             dlog << "Removing temp directory [" + tmpdir + "]";
@@ -1488,9 +1538,9 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                         else {
                             dlog << n->Debug("Created behavioral output directory [" + behoutdir + "] - F", __FUNCTION__);
 
-                            QString systemstring = "cp -Rv " + behindir + "/* " + behoutdir;
+                            QString systemstring = "cp -Rv " + ShellQuote(behindir) + "/* " + ShellQuote(behoutdir);
                             n->Debug(SystemCommand(systemstring, true, true));
-                            n->Debug(SystemCommand("chmod -Rf 777 " + behoutdir, true, true));
+                            n->Debug(SystemCommand("chmod -Rf 777 " + ShellQuote(behoutdir), true, true));
                             dlog << QString("Done copying behavioral data from [%1] to [%2]").arg(behindir).arg(behoutdir);
 
                             qint64 c;
@@ -1502,7 +1552,7 @@ bool modulePipeline::GetData(int studyid, QString analysispath, QString uid, qin
                     }
 
                     /* give full read/write permissions to everyone */
-                    SystemCommand("chmod -Rf 777 " + newanalysispath, true, true);
+                    SystemCommand("chmod -Rf 777 " + ShellQuote(newanalysispath), true, true);
                     dlog << n->Debug("Done writing data to [" + newanalysispath + "]", __FUNCTION__);
                 }
             }

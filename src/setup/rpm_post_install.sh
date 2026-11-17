@@ -274,6 +274,16 @@ cat > /etc/httpd/conf.d/nidb.conf <<'EOF'
 <LocationMatch "(?i)^/phpmyadmin">
     Require all denied
 </LocationMatch>
+
+# security headers on every response (P14). SAMEORIGIN, not DENY: NiDB frames its own pages
+# (requeststatus.php, the file uploader). A full script-src CSP is not possible yet because the
+# pages use inline scripts and onclick handlers.
+<IfModule mod_headers.c>
+    Header always set X-Frame-Options "SAMEORIGIN"
+    Header always set Content-Security-Policy "frame-ancestors 'self'; object-src 'none'; base-uri 'self'"
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set Referrer-Policy "same-origin"
+</IfModule>
 EOF
 
 # enable and start services

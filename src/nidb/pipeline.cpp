@@ -257,6 +257,22 @@ void pipeline::LoadPipelineInfo() {
 
 
 /* ---------------------------------------------------------- */
+/* --------- HasSafeName ------------------------------------ */
+/* ---------------------------------------------------------- */
+/**
+ * @brief Check that the pipeline name only contains [A-Za-z0-9_-], the rule pipelines.php applies to new and
+ * copied names. The name becomes part of analysis paths and generated scripts, so a pipeline with any other
+ * name (stored before the web check existed, or imported) is not run. Not checked in Load(), so such a pipeline
+ * can still be cancelled, deleted and exported
+ * @return true if the name is safe
+ */
+bool pipeline::HasSafeName() const {
+    static const QRegularExpression nameRE("^[A-Za-z0-9_\\-]+$");
+    return nameRE.match(name).hasMatch();
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- GetParentList ---------------------------------- */
 /* ---------------------------------------------------------- */
 QStringList pipeline::GetParentList() {
