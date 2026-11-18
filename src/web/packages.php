@@ -2847,15 +2847,17 @@
 			$result = PkgQuery($sqlstring, array_merge(array($packageid), $invalidmodalities), __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$seriesid = (int)$row['series_id'];
-				$msgs[] = "Series with series_id [$seriesid] has an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]";
-				$missingSeries[] = array("id" => (int)$row['packageseries_id'], "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => (string)($row['modality'] ?? ''), "seriesnum" => "series_id $seriesid");
+				/* not a series, so it is left out of the series grid. Prune (Operations) removes it */
+				$msgs[] = "Series with series_id [$seriesid] has an unrecognized modality [" . htmlspecialchars($row['modality'] ?? '') . "]. Use <b>Prune</b> in the Operations section to remove it";
 			}
 		}
 
 		foreach ($modalities as $modality) {
 			/* not every series table has a numfiles column */
 			$numfilescol = (SeriesTableHasColumn($modality, "numfiles") ? "x.numfiles" : "null");
-			$sqlstring = "select ps.packageseries_id, ps.series_id, x.series_num, x.series_size, $numfilescol 'numfiles', st.study_num, st.study_datetime, st.study_modality, st.enrollment_id, s.uid, p.project_name from package_series ps left join $modality" . "_series x on ps.series_id = x.$modality" . "series_id left join studies st on x.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id left join projects p on e.project_id = p.project_id where ps.package_id = ? and ps.modality = ?";
+			$desccol = (SeriesTableHasColumn($modality, "series_desc") ? "x.series_desc" : "null");
+			$datetimecol = (SeriesTableHasColumn($modality, "series_datetime") ? "x.series_datetime" : "null");
+			$sqlstring = "select ps.packageseries_id, ps.series_id, x.series_num, x.series_size, $numfilescol 'numfiles', $desccol 'series_desc', $datetimecol 'series_datetime', st.study_num, st.study_datetime, st.study_modality, st.enrollment_id, s.uid, p.project_name from package_series ps left join $modality" . "_series x on ps.series_id = x.$modality" . "series_id left join studies st on x.study_id = st.study_id left join enrollment e on st.enrollment_id = e.enrollment_id left join subjects s on e.subject_id = s.subject_id left join projects p on e.project_id = p.project_id where ps.package_id = ? and ps.modality = ?";
 			$result = PkgQuery($sqlstring, array($packageid, $modality), __LINE__);
 			while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 				$packageseriesid = (int)$row['packageseries_id'];
@@ -2865,9 +2867,20 @@
 				/* a blank UID means the series (or its study/subject) was deleted */
 				if ($uid == "") {
 					$msgs[] = "Series with series_id [$seriesid] (" . htmlspecialchars($modality) . ") no longer exists";
-					$missingSeries[] = array("id" => $packageseriesid, "uid" => "(missing)", "altuid" => "", "studynum" => "", "studydatetime" => "", "projectname" => "", "modality" => $modality, "seriesnum" => "series_id $seriesid");
+					$missingSeries[] = array("id" => $packageseriesid, "uid" => "(missing)", "studynum" => "", "seriesnum" => "series_id $seriesid", "modality" => strtoupper($modality), "seriesdesc" => "", "seriesdatetime" => "");
 					continue;
 				}
+
+				/* one grid row per package_series row. The modality is the series table's, not the study's */
+				$seriesRowData[] = array(
+					"id" => $packageseriesid,
+					"uid" => $uid,
+					"studynum" => (string)($row['study_num'] ?? ''),
+					"seriesnum" => (string)($row['series_num'] ?? ''),
+					"modality" => strtoupper($modality),
+					"seriesdesc" => (string)($row['series_desc'] ?? ''),
+					"seriesdatetime" => (string)($row['series_datetime'] ?? '')
+				);
 
 				/* the grid shows the study's modality, as it did when this used GetSeriesInfo() */
 				$studynum = $row['study_num'];
@@ -3041,7 +3054,7 @@
 		
 		if (count($msgs) > 0) {
 			?>
-			<div class="ui container">
+			<div class="ui fluid container" style="padding: 0 2%">
 				<div class="ui info message">
 					<i class="close icon"></i>
 					<div class="header">
@@ -3069,7 +3082,38 @@
 
 		<? MarkTime("After including AGgrid"); ?>
 
-		<div class="ui container">
+		<script type="text/javascript">
+			/* adds an "Export as CSV" button above an ag-grid and an "N <objects> selected" count below
+			   it. The CSV holds the visible columns of every row that passes the current filter */
+			function addPackageGridControls(api, gridDiv, singular, plural) {
+				const pkgname = <?=json_encode((string)($pkg['name'] ?? ''), JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP)?>;
+				const filename = (pkgname + "-" + plural).replace(/[^A-Za-z0-9._-]+/g, "_") + ".csv";
+
+				const top = document.createElement("div");
+				top.style.cssText = "display: flex; justify-content: flex-end; margin-bottom: 5px";
+				const button = document.createElement("button");
+				button.type = "button"; /* these grids are inside forms; don't submit them */
+				button.className = "ui tiny basic button";
+				button.innerHTML = '<i class="download icon"></i>Export as CSV';
+				button.addEventListener("click", function () { api.exportDataAsCsv({ fileName: filename }); });
+				top.appendChild(button);
+				gridDiv.parentNode.insertBefore(top, gridDiv);
+
+				const bottom = document.createElement("div");
+				bottom.className = "ui small grey text";
+				bottom.style.cssText = "display: block; margin-top: 4px";
+				gridDiv.parentNode.insertBefore(bottom, gridDiv.nextSibling);
+				function updateCount() {
+					const n = api.getSelectedNodes().length;
+					bottom.textContent = n.toLocaleString() + " " + ((n == 1) ? singular : plural) + " selected";
+				}
+				api.addEventListener("selectionChanged", updateCount);
+				updateCount();
+			}
+		</script>
+
+		<!-- fluid rather than "ui container", so the package fills most of the page width -->
+		<div class="ui fluid container" style="padding: 0 2%">
 			<div class="ui top attached raised segment">
 				<div class="ui header">
 					<img src="images/squirrel-icon-64.png"></img>
@@ -3079,9 +3123,23 @@
 			</div>
 			
 			<script>
+				/* open the tab named in the URL #hash (package map links, or a bookmarked tab) */
+				function showTabFromHash() {
+					var tab = location.hash.substring(1);
+					if ((tab != "") && ($('.tabular.menu .item[data-tab="' + tab + '"]').length > 0))
+						$('.tabular.menu .item').tab('change tab', tab);
+				}
+
 				$(document).ready(function() {
 					$('.menu .item').tab();
-					$('.tabular.menu .item').tab();
+					$('.tabular.menu .item').tab({
+						/* keep the #hash in sync with the visible tab. replaceState doesn't fire
+						   hashchange, so clicking the same map node again still changes the hash
+						   (and switches the tab) after the user changed tabs from the menu */
+						onVisible: function(tabPath) { history.replaceState(null, "", "#" + tabPath); }
+					});
+					$(window).on('hashchange', showTabFromHash);
+					showTabFromHash();
 				});
 			</script>
 			<style>
@@ -3207,6 +3265,16 @@
 								studies-->analysis("<?=$analysistext?>");
 								
 								click root href "packages.php?action=editform&packageid=<?=$packageid?>"
+								%% these switch tabs on this page. showTabFromHash() handles the #hash
+								click data href "#subjects"
+								click subjects href "#subjects"
+								click studies href "#subjects"
+								click series href "#subjects"
+								click observations href "#observations"
+								click interventions href "#interventions"
+								click analysis href "#analysis"
+								click experiments href "#experiments"
+								click pipelines href "#pipelines"
 								
 								style pipelines <?=$pipecolor?>;
 								style experiments <?=$expcolor?>;
@@ -3433,6 +3501,7 @@
 
 							$(document).ready(function () {
 								gridApiSubjects = agGrid.createGrid(document.getElementById("packageSubjectsGrid"), gridOptionsSubjects);
+								addPackageGridControls(gridApiSubjects, document.getElementById("packageSubjectsGrid"), "subject", "subjects");
 								/* the counts are only needed once the list is opened */
 								$("#packageSubjectsTitle").on("click", loadSubjectObservationCounts);
 							});
@@ -3503,120 +3572,100 @@
 				?>
 				</ul> -->
 
-				<script type="text/javascript">
-					$(function() {
-						$("#selectallseries").click(function() {
-							var checked_status = this.checked;
-							$(".allseries").find("input[type='checkbox']").each(function() {
-								this.checked = checked_status;
-							});
-						});
-					});
-				</script>
-				
-				<form method="post" action="packages.php">
-				<input type="hidden" name="action" value="removeobject">
-				<?=CSRFTokenField()?>
-				<input type="hidden" name="objecttype" value="series">
-				<input type="hidden" name="packageid" value="<?=$packageid?>">
 				<?
-				ksort($subjects, SORT_NATURAL);
-				foreach ($subjects as $uid =>$studies) {
-					if ($uid != "") {
-						
-						$altuid = $altIDMapping[$uid] ?? '';
-						
-						ksort($studies, SORT_NATURAL);
-						foreach ($studies as $studynum => $modalities) {
-
-							ksort($modalities, SORT_NATURAL);
-							foreach ($modalities as $modality => $series) {
-								
-								ksort($series, SORT_NATURAL);
-								foreach ($series as $seriesnum => $ser) {
-									$objectid = $ser['objectid'];
-									$seriesid = $ser['seriesid'];
-									$studydatetime = $ser['studydatetime'];
-									$projectname = $ser['projectname'];
-									
-									$seriesRowData[] = array(
-										"id" => (int)$objectid,
-										"uid" => (string)$uid,
-										"altuid" => (string)$altuid,
-										"studynum" => (string)$studynum,
-										"studydatetime" => (string)$studydatetime,
-										"projectname" => (string)$projectname,
-										"modality" => (string)$modality,
-										"seriesnum" => (string)$seriesnum
-									);
-								}
-							}
-						}
+				/* sort by subject, study, series number, then modality */
+				usort($seriesRowData, function ($x, $y) {
+					foreach (array("uid", "studynum", "seriesnum", "modality") as $key) {
+						$c = strnatcmp($x[$key], $y[$key]);
+						if ($c != 0) return $c;
 					}
-				}
+					return 0;
+				});
 
 				/* list missing series last so they can be selected and removed */
 				$seriesRowData = array_merge($seriesRowData, $missingSeries);
-				?>
-				<div id="subjectsGrid" style="height: 50vh"></div>
-				<button type="submit" class="ui orange button" onClick=getSelectedSeries()><i class="trash icon"></i>Remove selected series</button>
-				<input type="hidden" id="selectedSeries" name="objectidstodelete">
-				</form>
-				
-				<?
-					/* json_encode rather than hand-built javascript: project names and IDs are free
-					   text and may contain quotes, backslashes and markup */
-					$seriesData = json_encode($seriesRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
-				?>
 
-				<script type="text/javascript">
-					let gridApiSeries;
+				/* json_encode rather than hand-built javascript: series descriptions are free
+				   text and may contain quotes, backslashes and markup */
+				$seriesData = json_encode($seriesRowData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+				?>
+				<div class="ui accordion">
+					<div class="title">
+						<i class="dropdown icon"></i>
+						<b>Series (<?=count($seriesRowData)?>)</b> &nbsp; <span class="ui grey text">view or remove series</span>
+					</div>
+					<div class="content">
+					<? if (count($seriesRowData) > 0) { ?>
+						<form method="post" action="packages.php">
+						<input type="hidden" name="action" value="removeobject">
+						<?=CSRFTokenField()?>
+						<input type="hidden" name="objecttype" value="series">
+						<input type="hidden" name="packageid" value="<?=$packageid?>">
+						<input type="hidden" id="selectedSeries" name="objectidstodelete">
+						<div id="packageSeriesGrid" style="<?=(count($seriesRowData) > 20) ? 'height: 50vh' : ''?>"></div>
+						<br>
+						<button type="submit" class="ui orange button" onClick=getSelectedSeries()><i class="trash icon"></i>Remove selected series</button>
+						</form>
 
-					/* get the selected series prior to form submission (form to remove series from package) */
-					function getSelectedSeries() {
-						var selectedRows = gridApiSeries.getSelectedRows();
-						var selectedRowsString = "";
-						selectedRows.forEach(function (selectedRow, index) {
-							if (index > 0) {
-								selectedRowsString += ",";
+						<script type="text/javascript">
+							let gridApiSeries;
+
+							/* study and series numbers are strings in the row data; sort them as numbers */
+							function naturalCompare(a, b) {
+								return String(a ?? "").localeCompare(String(b ?? ""), undefined, { numeric: true });
 							}
-							selectedRowsString += selectedRow.id;
-						});
-						document.getElementById("selectedSeries").value = selectedRowsString;
-					}
 
-					// Grid Options are properties passed to the grid
-					const gridOptionsSeries = {
-						// each entry here represents one column
-						columnDefs: [
-							{ field: 'id', hide: true },
-							{ headerName: "UID", field: "uid", editable: false },
-							{ headerName: "ID", field: "altuid", editable: false },
-							{ headerName: "Study Num", field: "studynum", editable: false },
-							{ headerName: "Series Num", field: "seriesnum", editable: false },
-							{ headerName: "Study Date", field: "studydatetime", editable: false },
-							{ headerName: "Modality", field: "modality", editable: false },
-							{ headerName: "Project", field: "projectname", editable: false }
-						],
+							/* get the selected series prior to form submission (form to remove series from package) */
+							function getSelectedSeries() {
+								var selectedRows = gridApiSeries.getSelectedRows();
+								var selectedRowsString = "";
+								selectedRows.forEach(function (selectedRow, index) {
+									if (index > 0) {
+										selectedRowsString += ",";
+									}
+									selectedRowsString += selectedRow.id;
+								});
+								document.getElementById("selectedSeries").value = selectedRowsString;
+							}
 
-						rowData: <?=$seriesData?>,
+							// Grid Options are properties passed to the grid
+							const gridOptionsSeries = {
+								// each entry here represents one column
+								columnDefs: [
+									{ field: 'id', hide: true },
+									{ headerName: "UID", field: "uid", editable: false, width: 130 },
+									{ headerName: "Study", field: "studynum", editable: false, width: 90, comparator: naturalCompare },
+									{ headerName: "Series", field: "seriesnum", editable: false, width: 90, comparator: naturalCompare },
+									{ headerName: "Modality", field: "modality", editable: false, width: 105 },
+									{ headerName: "Series Desc", field: "seriesdesc", editable: false, flex: 1, minWidth: 250, tooltipField: "seriesdesc" },
+									{ headerName: "Series Date", field: "seriesdatetime", editable: false, width: 170 }
+								],
+
+								rowData: <?=$seriesData?>,
 						
-						// default col def properties get applied to all columns
-						defaultColDef: {sortable: true, filter: true, resizable: true},
+								// default col def properties get applied to all columns
+								defaultColDef: {sortable: true, filter: true, resizable: true},
 
-						rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true }, // allow rows to be selected
-						animateRows: false, // have rows animate to new positions when sorted
-						//rowMultiSelectWithClick: true,
-						suppressMovableColumns: true
-					};
+								rowSelection: { mode: 'multiRow', checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true }, // allow rows to be selected
+								<?=(count($seriesRowData) > 20) ? '' : 'domLayout: "autoHeight",'?>
+								animateRows: false, // have rows animate to new positions when sorted
+								//rowMultiSelectWithClick: true,
+								suppressMovableColumns: true
+							};
 
-					$( document ).ready(function() {
-						// get div to host the grid
-						const eGridDiv = document.getElementById("subjectsGrid");
-						// new grid instance, passing in the hosting DIV and Grid Options
-						gridApiSeries = agGrid.createGrid(eGridDiv, gridOptionsSeries);
-					});
-				</script>
+							$( document ).ready(function() {
+								// get div to host the grid
+								const eGridDiv = document.getElementById("packageSeriesGrid");
+								// new grid instance, passing in the hosting DIV and Grid Options
+								gridApiSeries = agGrid.createGrid(eGridDiv, gridOptionsSeries);
+								addPackageGridControls(gridApiSeries, eGridDiv, "series", "series");
+							});
+						</script>
+					<? } else { ?>
+						No series in this package
+					<? } ?>
+					</div>
+				</div>
 				
 			</div>
 
@@ -3723,6 +3772,7 @@
 						const eGridDiv = document.getElementById("observationsGrid");
 						// new grid instance, passing in the hosting DIV and Grid Options
 						gridApiObservations = agGrid.createGrid(eGridDiv, gridOptionsObservations);
+						addPackageGridControls(gridApiObservations, eGridDiv, "observation", "observations");
 					});
 				</script>
 				
@@ -3730,6 +3780,110 @@
 				No observation objects in this package
 				<? } ?>
 			</div>
+
+			<?
+				/* row data for the ag-grid tables on the interventions, analysis, experiments, and
+				   pipelines tabs. "id" is always the package_* row id, which RemoveObject() deletes on */
+				$interventionRowData = array();
+				ksort($interventions, SORT_NATURAL);
+				foreach ($interventions as $uid => $objects) {
+					foreach ($objects as $objectid => $intervention) {
+						$interventionRowData[] = array(
+							"id" => (int)$objectid,
+							"uid" => (string)$uid,
+							"name" => (string)($intervention['name'] ?? ''),
+							"date" => (string)($intervention['startdate'] ?? '')
+						);
+					}
+				}
+
+				$analysisRowData = array();
+				ksort($analyses, SORT_NATURAL);
+				foreach ($analyses as $uid => $objects) {
+					foreach ($objects as $objectid => $analysis) {
+						$analysisRowData[] = array(
+							"id" => (int)$objectid,
+							"exists" => (bool)$analysis['exists'],
+							"uid" => (string)$uid,
+							"studynum" => (string)($analysis['studynum'] ?? ''),
+							"pipeline" => ($analysis['exists'] ? (string)($analysis['name'] ?? '') : "(missing analysis " . (int)$analysis['analysisid'] . ")"),
+							"date" => (string)($analysis['date'] ?? ''),
+							"status" => (string)($analysis['status'] ?? '')
+						);
+					}
+				}
+
+				$experimentRowData = array();
+				foreach ($experiments as $experimentid => $experiment) {
+					$experimentRowData[] = array(
+						"id" => (int)$experiment['objectid'],
+						"exists" => (bool)$experiment['exists'],
+						"name" => ($experiment['exists'] ? (string)($experiment['name'] ?? '') : "(missing experiment " . (int)$experimentid . ")"),
+						"version" => (string)($experiment['version'] ?? ''),
+						"desc" => (string)($experiment['desc'] ?? ''),
+						"createdate" => (string)($experiment['createdate'] ?? ''),
+						"creator" => (string)($experiment['creator'] ?? '')
+					);
+				}
+
+				$pipelineRowData = array();
+				foreach ($pipelines as $pipelineid => $pipeline) {
+					$pipelineRowData[] = array(
+						"id" => (int)$pipeline['objectid'],
+						"exists" => (bool)$pipeline['exists'],
+						"name" => ($pipeline['exists'] ? (string)($pipeline['name'] ?? '') : "(missing pipeline " . (int)$pipelineid . ")"),
+						"version" => (string)($pipeline['version'] ?? ''),
+						"desc" => (string)($pipeline['desc'] ?? ''),
+						"createdate" => (string)($pipeline['createdate'] ?? '')
+					);
+				}
+
+				$jsonflags = JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP;
+			?>
+			<style>
+				/* rows whose underlying object no longer exists in NiDB */
+				.pkg-missing-row { background-color: #fff6f6 !important; color: #9f3a38; }
+			</style>
+			<script type="text/javascript">
+				/* shared setup for the remove-object grids below. Each grid sits in a form with a
+				   hidden objectidstodelete field; on submit the selected row ids are put into it */
+				const packageGrids = {};
+
+				function createPackageGrid(name, singular, plural, columnDefs, rowData) {
+					const autoHeight = (rowData.length <= 20);
+					const div = document.getElementById(name + "Grid");
+					if (!autoHeight)
+						div.style.height = "50vh";
+					packageGrids[name] = agGrid.createGrid(div, {
+						columnDefs: [{ field: "id", hide: true }].concat(columnDefs),
+						rowData: rowData,
+						getRowId: function (p) { return String(p.data.id); },
+						defaultColDef: { sortable: true, filter: true, resizable: true },
+						rowSelection: { mode: "multiRow", checkboxes: true, headerCheckbox: true, enableSelectionWithoutKeys: true },
+						rowClassRules: { "pkg-missing-row": function (p) { return p.data.exists === false; } },
+						domLayout: (autoHeight ? "autoHeight" : "normal"),
+						tooltipShowDelay: 500,
+						animateRows: false,
+						suppressMovableColumns: true
+					});
+					addPackageGridControls(packageGrids[name], div, singular, plural);
+				}
+
+				/* onsubmit handler: label is the plural object name used in the messages */
+				function submitPackageGrid(name, label) {
+					const ids = packageGrids[name].getSelectedRows().map(function (row) { return row.id; });
+					if (ids.length < 1) {
+						alert("No " + label + " selected");
+						return false;
+					}
+					document.getElementById(name + "Selected").value = ids.join(",");
+					return confirm("Remove the " + ids.length + " selected " + label + " from this package?\n\nNothing is deleted from NiDB.");
+				}
+
+				function packageNaturalCompare(a, b) {
+					return String(a ?? "").localeCompare(String(b ?? ""), undefined, { numeric: true });
+				}
+			</script>
 
 			<!-- intervention tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="interventions">
@@ -3740,54 +3894,31 @@
 							Object summary
 						</div>
 						<?=$numinterventions?> intervention records
-					</div>				
+					</div>
 				</div>
-				
-				<? if (count($interventions) > 0) { ?>
-				<script type="text/javascript">
-					$(function() {
-						$("#selectallintervention").click(function() {
-							var checked_status = this.checked;
-							$(".allintervention").find("input[type='checkbox']").each(function() {
-								this.checked = checked_status;
-							});
-						});
-					});
-				</script>
-				
-				<form method="post" action="packages.php">
+
+				<? if (count($interventionRowData) > 0) { ?>
+				<form method="post" action="packages.php" onsubmit="return submitPackageGrid('interventions', 'interventions')">
 				<input type="hidden" name="action" value="removeobject">
 				<?=CSRFTokenField()?>
 				<input type="hidden" name="objecttype" value="intervention">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui basic very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallintervention"></th>
-						<th>UID</th>
-						<th>Intervention</th>
-						<th>Date</th>
-					</thead>
-				<?
-				ksort($interventions, SORT_NATURAL);
-				foreach ($interventions as $uid => $objects) {
-					foreach ($objects as $objectid => $intervention) {
-						$interventionid = $intervention['interventionid'];
-						$interventionname = $intervention['name'];
-						$interventiondate = $intervention['startdate'];
-						?>
-						<tr>
-							<td class="allintervention"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-							<td><?=htmlspecialchars($uid ?? '')?></td>
-							<td><?=htmlspecialchars($interventionname ?? '')?></td>
-							<td><?=htmlspecialchars($interventiondate ?? '')?></td>
-						</tr>
-						<?
-					}
-				}
-				?>
-				</table>
+				<input type="hidden" id="interventionsSelected" name="objectidstodelete">
+				<div id="interventionsGrid"></div>
+				<br>
 				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected interventions</button>
 				</form>
+				<script type="text/javascript">
+					$(document).ready(function () {
+						createPackageGrid("interventions", "intervention", "interventions", [
+							{ headerName: "UID", field: "uid", width: 130 },
+							{ headerName: "Intervention", field: "name", flex: 1, minWidth: 250, tooltipField: "name" },
+							{ headerName: "Date", field: "date", width: 170 }
+						], <?=json_encode($interventionRowData, $jsonflags)?>);
+					});
+				</script>
+				<? } else { ?>
+				No intervention objects in this package
 				<? } ?>
 			</div>
 
@@ -3801,185 +3932,113 @@
 						</div>
 						<?=$numanalysis?> analyses<br>
 						<?=$totalanalysisfiles?> files, <?=HumanReadableFileSize($totalanalysisbytes)?>
-					</div>				
+					</div>
 				</div>
-			
-				<? if (count($analyses) > 0) { ?>
-				<script type="text/javascript">
-					$(function() {
-						$("#selectallanalysis").click(function() {
-							var checked_status = this.checked;
-							$(".allanalysis").find("input[type='checkbox']").each(function() {
-								this.checked = checked_status;
-							});
-						});
-					});
-				</script>
-				
-				<form method="post" action="packages.php">
+
+				<? if (count($analysisRowData) > 0) { ?>
+				<form method="post" action="packages.php" onsubmit="return submitPackageGrid('analysis', 'analyses')">
 				<input type="hidden" name="action" value="removeobject">
 				<?=CSRFTokenField()?>
 				<input type="hidden" name="objecttype" value="analysis">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui basic very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallanalysis"></th>
-						<th>UID</th>
-						<th>StudyNum</th>
-						<th>Pipeline</th>
-						<th>Date</th>
-						<th>Status</th>
-					</thead>
-				<?
-				ksort($analyses, SORT_NATURAL);
-				foreach ($analyses as $uid => $objects) {
-					foreach ($objects as $objectid => $analysis) {
-						$exists = $analysis['exists'];
-						$analysisid = $analysis['analysisid'];
-						
-						if (!$exists) { $trclass = "class='error left red marked'"; }
-						else $trclass = "";
-						?>
-						<tr <?=$trclass?>>
-							<td class="allanalysis"><input type="checkbox" name="objectids[]" value="<?=$objectid?>"></td>
-							<td><?=htmlspecialchars($uid ?? '')?></td>
-							<td><?=htmlspecialchars($analysis['studynum'] ?? '')?></td>
-							<td><?=htmlspecialchars($analysis['name'] ?? '')?></td>
-							<td><?=htmlspecialchars($analysis['date'] ?? '')?></td>
-							<td><?=htmlspecialchars($analysis['status'] ?? '')?></td>
-						</tr>
-						<?
-					}
-				}
-				?>
-				</table>
+				<input type="hidden" id="analysisSelected" name="objectidstodelete">
+				<div id="analysisGrid"></div>
+				<br>
 				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected analyses</button>
 				</form>
+				<script type="text/javascript">
+					$(document).ready(function () {
+						createPackageGrid("analysis", "analysis", "analyses", [
+							{ headerName: "UID", field: "uid", width: 130 },
+							{ headerName: "Study", field: "studynum", width: 90, comparator: packageNaturalCompare },
+							{ headerName: "Pipeline", field: "pipeline", flex: 1, minWidth: 250, tooltipField: "pipeline" },
+							{ headerName: "Date", field: "date", width: 170 },
+							{ headerName: "Status", field: "status", width: 130 }
+						], <?=json_encode($analysisRowData, $jsonflags)?>);
+					});
+				</script>
 				<? } else { ?>
 				No analysis objects in this package
 				<? } ?>
 			</div>
-			
+
 			<!-- experiments tab -->
 			<div class="ui bottom attached tab raised segment" data-tab="experiments">
-			
+
 				<div class="ui message">
 					<div class="content">
 						<div class="header">
 							Object summary
 						</div>
 						<?=$numexperiments?> experiments
-					</div>				
+					</div>
 				</div>
-			
-				<? if (count($experiments) > 0) { ?>
-				<script type="text/javascript">
-					$(function() {
-						$("#selectallexperiment").click(function() {
-							var checked_status = this.checked;
-							$(".allexperiment").find("input[type='checkbox']").each(function() {
-								this.checked = checked_status;
-							});
-						});
-					});
-				</script>
-				
-				<form method="post" action="packages.php">
+
+				<? if (count($experimentRowData) > 0) { ?>
+				<form method="post" action="packages.php" onsubmit="return submitPackageGrid('experiments', 'experiments')">
 				<input type="hidden" name="action" value="removeobject">
 				<?=CSRFTokenField()?>
 				<input type="hidden" name="objecttype" value="experiment">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui basic very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallexperiment"></th>
-						<th>Name</th>
-						<th>Version</th>
-						<th>Description</th>
-						<th>Create date</th>
-						<th>Creator</th>
-					</thead>
-				<?
-				foreach ($experiments as $experimentid => $experiment) {
-					?>
-					<tr <?=($experiment['exists'] ? '' : "class='error left red marked'")?>>
-						<td class="allexperiment"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($experiment['objectid'] ?? '')?>"></td>
-						<td><?=($experiment['exists'] ? htmlspecialchars($experiment['name'] ?? '') : "(missing experiment " . (int)$experimentid . ")")?></td>
-						<td><?=htmlspecialchars($experiment['version'] ?? '')?></td>
-						<td><?=htmlspecialchars($experiment['desc'] ?? '')?></td>
-						<td><?=htmlspecialchars($experiment['createdate'] ?? '')?></td>
-						<td><?=htmlspecialchars($experiment['creator'] ?? '')?></td>
-					</tr>
-					<?
-				}
-				?>
-				</table>
+				<input type="hidden" id="experimentsSelected" name="objectidstodelete">
+				<div id="experimentsGrid"></div>
+				<br>
 				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected experiments</button>
 				</form>
+				<script type="text/javascript">
+					$(document).ready(function () {
+						createPackageGrid("experiments", "experiment", "experiments", [
+							{ headerName: "Name", field: "name", width: 220, tooltipField: "name" },
+							{ headerName: "Version", field: "version", width: 100 },
+							{ headerName: "Description", field: "desc", flex: 1, minWidth: 250, tooltipField: "desc" },
+							{ headerName: "Create date", field: "createdate", width: 170 },
+							{ headerName: "Creator", field: "creator", width: 140 }
+						], <?=json_encode($experimentRowData, $jsonflags)?>);
+					});
+				</script>
 				<? } else { ?>
-				<div class="ui message">
-					No experiment objects in this package
-				</div>
+				No experiment objects in this package
 				<? } ?>
 			</div>
-			
+
 			<!-- ********** pipelines tab ********* -->
 			<div class="ui bottom attached tab raised segment" data-tab="pipelines">
-			
+
 				<div class="ui message">
 					<div class="content">
 						<div class="header">
 							Object summary
 						</div>
 						<?=$numpipelines?> pipelines
-					</div>				
+					</div>
 				</div>
-			
-				<? if (count($pipelines) > 0) { ?>
-				<script type="text/javascript">
-					$(function() {
-						$("#selectallpipeline").click(function() {
-							var checked_status = this.checked;
-							$(".allpipeline").find("input[type='checkbox']").each(function() {
-								this.checked = checked_status;
-							});
-						});
-					});
-				</script>
-				
-				<form method="post" action="packages.php">
+
+				<? if (count($pipelineRowData) > 0) { ?>
+				<form method="post" action="packages.php" onsubmit="return submitPackageGrid('pipelines', 'pipelines')">
 				<input type="hidden" name="action" value="removeobject">
 				<?=CSRFTokenField()?>
 				<input type="hidden" name="objecttype" value="pipeline">
 				<input type="hidden" name="packageid" value="<?=$packageid?>">
-				<table class="ui basic very compact table">
-					<thead>
-						<th><input type="checkbox" id="selectallpipeline"></th>
-						<th>Name</th>
-						<th>Version</th>
-						<th>Description</th>
-						<th>Create date</th>
-					</thead>
-				<?
-				foreach ($pipelines as $pipelineid => $pipeline) {
-					?>
-					<tr <?=($pipeline['exists'] ? '' : "class='error left red marked'")?>>
-						<td class="allpipeline"><input type="checkbox" name="objectids[]" value="<?=htmlspecialchars($pipeline['objectid'] ?? '')?>"></td>
-						<td><?=($pipeline['exists'] ? htmlspecialchars($pipeline['name'] ?? '') : "(missing pipeline " . (int)$pipelineid . ")")?></td>
-						<td><?=htmlspecialchars($pipeline['version'] ?? '')?></td>
-						<td><?=htmlspecialchars($pipeline['desc'] ?? '')?></td>
-						<td><?=htmlspecialchars($pipeline['createdate'] ?? '')?></td>
-					</tr>
-					<?
-				}
-				?>
-				</table>
+				<input type="hidden" id="pipelinesSelected" name="objectidstodelete">
+				<div id="pipelinesGrid"></div>
+				<br>
 				<button type="submit" class="ui orange button"><i class="trash icon"></i>Remove selected pipelines</button>
 				</form>
+				<script type="text/javascript">
+					$(document).ready(function () {
+						createPackageGrid("pipelines", "pipeline", "pipelines", [
+							{ headerName: "Name", field: "name", width: 220, tooltipField: "name" },
+							{ headerName: "Version", field: "version", width: 100 },
+							{ headerName: "Description", field: "desc", flex: 1, minWidth: 250, tooltipField: "desc" },
+							{ headerName: "Create date", field: "createdate", width: 170 }
+						], <?=json_encode($pipelineRowData, $jsonflags)?>);
+					});
+				</script>
 				<? } else { ?>
 				No pipeline objects in this package
 				<? } ?>
 			</div>
-			
+
 			<div class="ui bottom attached tab raised segment" data-tab="datadict">
 			</div>
 		</div>
