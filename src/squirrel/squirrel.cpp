@@ -145,6 +145,10 @@ squirrel::~squirrel()
  * The SQUIRREL_7ZIP_LIB environment variable, if it names an existing file, takes
  * precedence over the system locations. The Python wheel uses this to load the
  * 7z.so it ships, so it does not depend on (or mismatch the ABI of) a system 7-zip.
+ *
+ * The library found here must be the 7-Zip generation bit7z was built for (BIT7Z_USE_LEGACY_IUNKNOWN ON for
+ * p7zip / 7-Zip <= 22.01, OFF for 7-Zip >= 23.01), or writing a package segfaults inside 7z.so. The NiDB build
+ * scripts check these same paths in this order to choose that setting, so keep the two lists in sync.
  * @return true if the library was found, false otherwise
  */
 bool squirrel::Get7zipLibPath() {
@@ -180,6 +184,12 @@ bool squirrel::Get7zipLibPath() {
     else if (QFile::exists("/usr/lib/p7zip/7z.so")) {
         p7zipLibPath = "/usr/lib/p7zip/7z.so";
         Debug("Found 7zip library path /usr/lib/p7zip/7z.so", __FUNCTION__);
+        return true;
+    }
+    /* EPEL 9/10 "7zip" package (7-Zip 23+), which replaces p7zip on RHEL/Alma/Rocky 9 and 10 */
+    else if (QFile::exists("/usr/libexec/7zip/7z.so")) {
+        p7zipLibPath = "/usr/libexec/7zip/7z.so";
+        Debug("Found 7zip library path /usr/libexec/7zip/7z.so", __FUNCTION__);
         return true;
     }
 #endif
