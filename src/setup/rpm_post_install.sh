@@ -66,7 +66,15 @@ backup_database() {
         return 1
     fi
 
-    echo "Backing up database [$dbname] to $backupfile (this may take a while)..."
+    # dnf captures a scriptlet's stdout/stderr into a temp file and only prints it after the scriptlet
+    # exits, so anything echoed during the dump shows up all at once when it's done. If there is a
+    # controlling terminal, write the live progress straight to /dev/tty instead, which dnf doesn't
+    # capture. Without a terminal (automation, PackageKit) fall back to stdout.
+    local tty=""
+    if { : > /dev/tty; } 2>/dev/null; then tty=/dev/tty; fi
+
+    local startmsg="Backing up database [$dbname] to $backupfile (this may take a while)..."
+    if [[ -n "$tty" ]]; then echo "$startmsg" > "$tty" 2>/dev/null; else echo "$startmsg"; fi
     mkdir -p /nidb/data
 
     # pass the credentials in a private defaults file so the password is not visible in the process list
@@ -79,25 +87,33 @@ backup_database() {
     chmod 600 "$credfile" "$tmpfile"
     printf '[client]\nhost=%s\nuser=%s\npassword="%s"\n' "$dbhost" "$dbuser" "$dbpass" > "$credfile"
 
-    # show progress: a pv bar if pv is installed and we have a terminal, otherwise (e.g. when the package
-    # manager captures the script's output) print the dump size every 30 seconds. The final size isn't
-    # known in advance, so this shows the amount dumped and elapsed time, not percent complete.
+    # show progress. With a terminal: a pv bar if pv is installed, otherwise a status line updated every
+    # 2 seconds. Without one: a line on stdout every 30 seconds. The final size isn't known in advance,
+    # so this shows the amount dumped and elapsed time, not percent complete.
     local dumpargs=(--defaults-extra-file="$credfile" --max_allowed_packet=1G --single-transaction --compact "$dbname")
     local rc
-    if command -v pv >/dev/null 2>&1 && [[ -t 2 ]]; then
-        "$dumpbin" "${dumpargs[@]}" | pv -f -t -b -r > "$tmpfile"
+    if [[ -n "$tty" ]] && command -v pv >/dev/null 2>&1; then
+        "$dumpbin" "${dumpargs[@]}" | pv -f -t -b -r 2>"$tty" > "$tmpfile"
         rc=${PIPESTATUS[0]}
         [[ ${PIPESTATUS[1]} -eq 0 ]] || rc=1
     else
         "$dumpbin" "${dumpargs[@]}" > "$tmpfile" &
-        local dumppid=$! start=$SECONDS ticks=0
+        local dumppid=$! start=$SECONDS ticks=0 elapsed status
         while kill -0 "$dumppid" 2>/dev/null; do
             sleep 1
-            if (( ++ticks % 30 == 0 )) && kill -0 "$dumppid" 2>/dev/null; then
-                local elapsed=$(( SECONDS - start ))
-                printf '  ... %s dumped, %dm%02ds elapsed\n' "$(du -h "$tmpfile" | cut -f1)" $(( elapsed / 60 )) $(( elapsed % 60 ))
+            (( ++ticks ))
+            if [[ -n "$tty" ]] && (( ticks % 2 == 0 )) || (( ticks % 30 == 0 )); then
+                kill -0 "$dumppid" 2>/dev/null || break
+                elapsed=$(( SECONDS - start ))
+                status="$(printf '  ... %s dumped, %dm%02ds elapsed' "$(du -h "$tmpfile" | cut -f1)" $(( elapsed / 60 )) $(( elapsed % 60 )))"
+                if [[ -n "$tty" ]]; then
+                    printf '\r%s   ' "$status" > "$tty" 2>/dev/null
+                else
+                    echo "$status"
+                fi
             fi
         done
+        [[ -n "$tty" ]] && echo > "$tty" 2>/dev/null
         wait "$dumppid"
         rc=$?
     fi

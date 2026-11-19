@@ -256,8 +256,22 @@
 			if ($ispost) {
 				ob_start();
 				/* the schema install/upgrade must come from this site's own form (CSRF token) */
-				if (VerifyCSRFToken())
-					SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans);
+				if (VerifyCSRFToken()) {
+					/* anything thrown during the setup must not end the page; show it with the rest of the
+					   results so the admin still gets the results page and the Next button */
+					try {
+						SetupDatabase($rootpassword, $rowlimit, $debugonly, $renameorphans);
+					}
+					catch (Throwable $e) {
+						?>
+						<div class="ui error message">
+							<div class="header"><i class="exclamation circle icon"></i>Database setup stopped with an error</div>
+							<?=htmlspecialchars($e->getMessage())?> (<?=htmlspecialchars(basename($e->getFile()))?> line <?=$e->getLine()?>)<br>
+							Fix the error then run the database setup again
+						</div>
+						<?
+					}
+				}
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("setup.php?step=database2");
 			}
@@ -785,7 +799,11 @@
 			return;
 		}
 		
-		/* PHP 8.1+ mysqli throws mysqli_sql_exception on a failed connect, so catch it explicitly */
+		/* PHP 8.1+ mysqli throws mysqli_sql_exception on any failed query by default. The upgrade expects a
+		   failed query to return false, so MySQLiQuery() can show the error and the upgrade carries on.
+		   Turn exception mode off; otherwise the first SQL error ends the page before the results and the
+		   Next button are shown. A failed connect is still caught below in case this is ever re-enabled */
+		mysqli_report(MYSQLI_REPORT_OFF);
 		try {
 			$GLOBALS['linki'] = mysqli_connect('localhost', 'root', (string)$rootpassword);
 		} catch (Throwable $e) { $GLOBALS['linki'] = false; }
