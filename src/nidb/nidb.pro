@@ -164,8 +164,7 @@ win32: {
     # Location of squirrel Library
     SQUIRRELBIN = ../../bin/squirrel-win
     LIBS += -L$$SQUIRRELBIN/release -lsquirrel
-    INCLUDEPATH += ../squirrel
-    INCLUDEPATH += ../../squirrel
+    INCLUDEPATH += ../squirrel/squirrel
     DEPENDPATH += $$SQUIRRELBIN
     *msvc* { # visual studio spec filter
 	QMAKE_CXXFLAGS += -MP
@@ -173,15 +172,15 @@ win32: {
 }
 unix: {
 
-    # Location of squirrel Library and header
-    INCLUDEPATH += ../squirrel
-    SQUIRRELBIN = $$OUT_PWD/../squirrel   # relative to the build dir, so any BUILDDIR works (bin/, bin/debian12/, rpmbuild)
+    # Location of squirrel library and headers. src/squirrel is a verbatim copy of the squirrel repo's src/
+    # directory, built with CMake by build.sh into $BUILDDIR/squirrel (library in its squirrel/ subdirectory)
+    INCLUDEPATH += ../squirrel/squirrel
+    SQUIRRELBIN = $$OUT_PWD/../squirrel/squirrel   # relative to the build dir, so any BUILDDIR works (bin/, bin/debian12/, rpmbuild)
     LIBS += -L$$SQUIRRELBIN/ -Wl,-Bstatic -lsquirrel -Wl,-Bdynamic
-    INCLUDEPATH += $$SQUIRRELBIN
     DEPENDPATH += $$SQUIRRELBIN
 
-    # bit7z (required by static libsquirrel)
-    BIT7ZBIN = $$OUT_PWD/../bit7z
+    # bit7z (required by static libsquirrel), built by the same CMake project
+    BIT7ZBIN = $$OUT_PWD/../squirrel/bit7z
     LIBS += -L$$BIT7ZBIN -lbit7z64 -ldl
 
     LIBS += -L/usr/local/lib64/

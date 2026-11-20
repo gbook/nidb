@@ -8,8 +8,8 @@ URL:            http://github.com/gbook/nidb
 #Source0:        
 
 BuildArch:	x86_64
-BuildRequires:  gcc, cmake, make, mesa-libGL-devel, 7zip
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, 7zip, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, shellcheck
+BuildRequires:  gcc, cmake, make, mesa-libGL-devel
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, shellcheck
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
@@ -34,7 +34,7 @@ cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
-cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
+cp -f %{_builddir}/bin/squirrel/7zip/7z.so %{_builddir}/bin/squirrel/7zip/7zip-*.txt %{buildroot}/nidb/bin/ # 7-Zip library built with squirrel; libsquirrel loads it from next to the nidb binary
 cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs

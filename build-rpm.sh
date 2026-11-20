@@ -19,88 +19,52 @@ else
 	BUILDDIR=$3
 fi
 
-BIT7ZDIR=$PWD/bit7z
 ORIGDIR=$PWD
 
-# this script requires make, cmake (3), and qmake
+# this script requires make, gcc, cmake (3.16+), and qmake
 command -v make >/dev/null 2>&1 || { echo -e "\nThis script requires make, but it is not installed\n"; exit 1; }
 command -v gcc >/dev/null 2>&1 || { echo -e "\nThis script requires gcc, but it is not installed\n"; exit 1; }
-
-CMAKEBIN=cmake3
-command -v cmake3 >/dev/null 2>&1 || { CMAKEBIN=cmake; }
+command -v cmake >/dev/null 2>&1 || { echo -e "\nThis script requires cmake 3.16 or newer, but it is not installed\n"; exit 1; }
 
 # create the build directory
 echo "Creating build directory"
 mkdir -p $BUILDDIR
 
-# ----- build pre-requisites -----
+# ----- build squirrel library (CMake) -----
+# src/squirrel is a verbatim copy of the squirrel repo's src/ directory. Its top-level CMakeLists.txt builds bit7z,
+# libsquirrel, and the modern 7-Zip library (7z.so) that libsquirrel loads at runtime:
+#   $BUILDDIR/squirrel/squirrel/libsquirrel.a
+#   $BUILDDIR/squirrel/bit7z/libbit7z64.a
+#   $BUILDDIR/squirrel/7zip/7z.so (+ 7zip-*.txt licenses), installed next to the nidb binary
+# BIT7Z_USE_LEGACY_IUNKNOWN must be OFF to match the bundled modern 7-Zip.
+QTDIR=$(dirname "$(dirname "$QMAKEBIN")")
+SQUIRRELBUILDDIR=$BUILDDIR/squirrel
 
-# ----- choose the bit7z IUnknown ABI to match the installed 7-Zip -----
-# bit7z must be built for the same 7-Zip generation that squirrel loads at runtime. 7-Zip 23.01 changed the
-# IUnknown interface on Linux: p7zip and 7-Zip <= 22.01 need BIT7Z_USE_LEGACY_IUNKNOWN=ON, 7-Zip >= 23.01
-# (EPEL 9/10 "7zip", which replaces p7zip; Debian 13; Ubuntu 24) needs OFF. A mismatch segfaults inside 7z.so
-# when a package is written. The paths are checked in the same order as squirrel::Get7zipLibPath(), so this
-# picks the library squirrel will load on a machine like this one. Set BIT7Z_LEGACY_IUNKNOWN=ON|OFF to override.
-if [ -z "$BIT7Z_LEGACY_IUNKNOWN" ]; then
-	for lib in /usr/libexec/p7zip/7z.so /usr/libexec/p7zip/7za.so /usr/lib/7zip/7z.so /usr/lib/p7zip/7z.so /usr/libexec/7zip/7z.so; do
-		[ -f "$lib" ] || continue
-		case "$lib" in
-			*/p7zip/*) ver="16.02" ;; # p7zip's last release
-			*)
-				# version of the package that owns the library, with any epoch and suffix removed (1:23.01+dfsg-1 -> 23.01)
-				if command -v rpm >/dev/null 2>&1 && rpm -qf "$lib" >/dev/null 2>&1; then
-					ver=$(rpm -q --qf '%{VERSION}' -f "$lib")
-				elif command -v dpkg-query >/dev/null 2>&1; then
-					ver=$(dpkg-query -W -f '${Version}' "$(dpkg-query -S "$lib" 2>/dev/null | head -1 | cut -d: -f1)" 2>/dev/null)
-				fi
-				ver=$(echo "$ver" | sed 's/^[0-9]*://; s/[^0-9.].*//')
-				;;
-		esac
-		if [ -z "$ver" ]; then
-			echo "Found 7-Zip library $lib but could not determine its version. Set BIT7Z_LEGACY_IUNKNOWN=ON (7-Zip <= 22.01) or OFF (>= 23.01)"
-			exit 1
-		fi
-		if [ "$(printf '%s\n%s\n' "$ver" 23.01 | sort -V | head -1)" = "23.01" ]; then
-			BIT7Z_LEGACY_IUNKNOWN=OFF
-		else
-			BIT7Z_LEGACY_IUNKNOWN=ON
-		fi
-		echo "Found 7-Zip $ver library $lib. Building bit7z with BIT7Z_USE_LEGACY_IUNKNOWN=$BIT7Z_LEGACY_IUNKNOWN"
-		break
-	done
+# remove output from the old qmake-based squirrel build and the old standalone bit7z build
+if [ -f "$SQUIRRELBUILDDIR/Makefile" ] && [ ! -f "$SQUIRRELBUILDDIR/CMakeCache.txt" ]; then
+	echo "Removing old qmake squirrel build in $SQUIRRELBUILDDIR"
+	rm -rf "$SQUIRRELBUILDDIR"
 fi
-if [ -z "$BIT7Z_LEGACY_IUNKNOWN" ]; then
-	echo "No 7-Zip library found, so bit7z can't be matched to it. Install 7zip (or p7zip-plugins/p7zip-full on older systems), or set BIT7Z_LEGACY_IUNKNOWN=ON|OFF"
-	exit 1
+rm -rf "$BUILDDIR/bit7z"
+
+# CMakeCache.txt stores the absolute source path. makeAllInstallers.sh may reach the same tree through a different
+# path, and cmake aborts if the spelling differs, so drop a cache written for another path
+if [ -f "$SQUIRRELBUILDDIR/CMakeCache.txt" ] && ! grep -qxF "CMAKE_HOME_DIRECTORY:INTERNAL=$SRCDIR/squirrel" "$SQUIRRELBUILDDIR/CMakeCache.txt"; then
+	echo "Removing stale CMake cache in $SQUIRRELBUILDDIR"
+	rm -rf "$SQUIRRELBUILDDIR/CMakeCache.txt" "$SQUIRRELBUILDDIR/CMakeFiles"
 fi
 
-# ----- build bit7z library -----
-echo -e "\n ----- Building bit7z -----\n"
-echo -e "\n ----- Created path $BUILDDIR/bit7z -----\n"
-mkdir -p $BUILDDIR/bit7z
-echo -e "\n ----- Running cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=$BIT7Z_LEGACY_IUNKNOWN -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC -S $SRCDIR/bit7z -B $BUILDDIR/bit7z -----\n"
-cmake -DBIT7Z_AUTO_FORMAT:BOOL=ON -DBIT7Z_USE_LEGACY_IUNKNOWN=$BIT7Z_LEGACY_IUNKNOWN -DBIT7Z_GENERATE_PIC=ON -DCMAKE_CXX_FLAGS:STRING=-fPIC -DCMAKE_C_FLAGS:STRING=-fPIC -S $SRCDIR/bit7z -B $BUILDDIR/bit7z
-echo -e "\n ----- chdir to $BUILDDIR/bit7z -----\n"
-cd $BUILDDIR/bit7z
-echo -e "\n ----- Running cmake --build . --config Release -----\n"
-# bit7z writes its library into the source tree (src/bit7z/lib/x64), which makeAllInstallers.sh shares between
-# distros. Remove it first, so it's always relinked from this build directory's objects, not left from another distro
-rm -f $SRCDIR/bit7z/lib/x64/libbit7z64.a
-cmake --build . --config Release
-cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a $BUILDDIR/bit7z/
-cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a $SRCDIR/bit7z/
-mkdir -p ~/rpmbuild/SOURCES/bin/bit7z/
-cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/bin/bit7z/
-cp -fv $SRCDIR/bit7z/lib/x64/libbit7z64.a ~/rpmbuild/SOURCES/src/bit7z/
-echo -e "\n Built bit7z in $BUILDDIR/bit7z\n"
+echo -e "\n ----- Configuring squirrel library -----\n"
+cmake -S "$SRCDIR/squirrel" -B "$SQUIRRELBUILDDIR" \
+	-DCMAKE_BUILD_TYPE=Release \
+	-DCMAKE_PREFIX_PATH="$QTDIR" \
+	-DBIT7Z_USE_LEGACY_IUNKNOWN=OFF \
+	-DSQUIRREL_BUILD_CLI=OFF \
+	-DSQUIRREL_BUILD_GUI=OFF || { echo "squirrel CMake configure failed"; exit 1; }
 
-# ----- build squirrel library -----
-echo -e "\nBuilding squirrel library\n"
-echo $QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
-$QMAKEBIN -o $BUILDDIR/squirrel/Makefile $SRCDIR/squirrel/squirrellib.pro -spec linux-g++
-cd $BUILDDIR/squirrel
-make -j 16
-echo -e "\n Built squirrel library in $BUILDDIR/squirrel\n"
+echo -e "\n ----- Building squirrel library -----\n"
+cmake --build "$SQUIRRELBUILDDIR" -j 16 || { echo "squirrel build failed"; exit 1; }
+echo -e "\n Built squirrel library in $SQUIRRELBUILDDIR\n"
 
 # ----- build NiDB core -----
 echo -e "\nBuilding NiDB core\n"

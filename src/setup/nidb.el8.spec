@@ -9,8 +9,8 @@ URL:            http://github.com/gbook/nidb
 
 BuildArch:	x86_64
 # 'cmake3' is required by CentOS 8, 'cmake' is required by CentOS 8 Stream. Make sure the right one is used depending on your build OS
-BuildRequires:  gcc, cmake, make, gcc-toolset-10, mesa-libGL-devel, p7zip-plugins
-Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, openssl3, gcc-toolset-10, zip, unzip, p7zip, p7zip-plugins, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, ShellCheck
+BuildRequires:  gcc, cmake, make, gcc-toolset-10, mesa-libGL-devel
+Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-pear, php-mbstring, php-fpm, php-json, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c-devel, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, openssl3, gcc-toolset-10, zip, unzip, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, ShellCheck
 
 %description
 NeuroInformatics Database (NiDB) is a full neuroimaging database system to store, retrieve, analyze, and distribute neuroscience data.
@@ -35,7 +35,7 @@ cp -f %{_builddir}/bin/nidb/nidb %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/tools/* %{buildroot}/nidb/bin/
 cp -rf %{_sourcedir}/src/qcmodules/* %{buildroot}/nidb/qcmodules/
 cp -f %{_sourcedir}/src/setup/* %{buildroot}/nidb/setup/
-cp -f %{_builddir}/bin/bit7z/libbit7z64.a %{buildroot}/usr/lib/ # copy bit7z lib
+cp -f %{_builddir}/bin/squirrel/7zip/7z.so %{_builddir}/bin/squirrel/7zip/7zip-*.txt %{buildroot}/nidb/bin/ # 7-Zip library built with squirrel; libsquirrel loads it from next to the nidb binary
 cp -f /usr/local/lib64/libcmr.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdata.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs
 cp -f /usr/local/lib64/libdcmdsig.so.20.3.7.0 %{buildroot}/usr/lib/ # copy dcmtk libs

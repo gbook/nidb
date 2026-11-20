@@ -39,6 +39,7 @@ mkdir -p "$DEBDIR" "$LIBDIR" "$WEBDIR" "$DCMTKSHARE" \
 # ----- program files (mirrors the RPM %install) -----
 echo 'Copying NiDB binaries, web files, tools, qcmodules, and setup files...'
 cp -f  $BUILDDIR/nidb/nidb  "$NIDBDIR/bin/"
+cp -f  $BUILDDIR/squirrel/7zip/7z.so $BUILDDIR/squirrel/7zip/7zip-*.txt "$NIDBDIR/bin/"   # 7-Zip library built with squirrel; libsquirrel loads it from next to the nidb binary
 cp -rf tools/*                        "$NIDBDIR/bin/"     # bundled helper tools
 cp -rf src/qcmodules/*                "$NIDBDIR/qcmodules/"
 cp -f  src/setup/*                    "$NIDBDIR/setup/"
@@ -56,7 +57,6 @@ chmod 0755 "$DEBDIR/preinst"
 
 # ----- shared libraries -----
 echo 'Copying shared libraries...'
-cp -f $BUILDDIR/bit7z/libbit7z64.a  "$LIBDIR/" 2>/dev/null || true
 # DCMTK (versioned .so files; wildcard tolerates version differences)
 cp -f /usr/local/lib/libcmr*          "$LIBDIR/" 2>/dev/null || true
 cp -f /usr/local/lib/libdcm*          "$LIBDIR/" 2>/dev/null || true
@@ -89,7 +89,7 @@ Section: science
 Priority: optional
 Architecture: amd64
 Maintainer: Greg Book <gregory.a.book@gmail.com>
-Depends: apache2, mariadb-server, mariadb-client, mariadb-backup, libmariadb3, php-fpm, php-cli, php-mysql, php-gd, php-mbstring, php-opcache, php-curl, imagemagick, libimage-exiftool-perl, openssl, zip, unzip, p7zip-full, default-jre, libgl1, libegl1, libx11-6, libxkbcommon0, libfontconfig1, libfreetype6, libglib2.0-0t64, shellcheck
+Depends: apache2, mariadb-server, mariadb-client, mariadb-backup, libmariadb3, php-fpm, php-cli, php-mysql, php-gd, php-mbstring, php-opcache, php-curl, imagemagick, libimage-exiftool-perl, openssl, zip, unzip, default-jre, libgl1, libegl1, libx11-6, libxkbcommon0, libfontconfig1, libfreetype6, libglib2.0-0t64, shellcheck
 Description: NeuroInformatics Database
  NeuroInformatics Database (NiDB) is a full neuroimaging database system to
  store, retrieve, analyze, and distribute neuroscience data.
