@@ -8,6 +8,9 @@ URL:            http://github.com/gbook/nidb
 #Source0:        
 
 BuildArch:	x86_64
+# Don't create /usr/lib/.build-id links for the bundled binaries. The Qt libraries, the Qt SQLite plugin, and 7z.so
+# are also shipped by the squirrel RPM (at other paths), so their identical build-ids would make the two packages conflict
+%define _build_id_links none
 BuildRequires:  gcc, cmake, make, mesa-libGL-devel
 Requires:       php, php-mysqlnd, php-gd, php-cli, php-process, php-mbstring, php-fpm, php-opcache, mariadb, mariadb-common, mariadb-server, mariadb-server-utils, mariadb-connector-c, mariadb-connector-c-config, mariadb-backup, httpd, ImageMagick, perl-Image-ExifTool, openssl, zip, unzip, java, mesa-libGL, mesa-libEGL, libX11, libxkbcommon, fontconfig, freetype, glib2, shellcheck
 
