@@ -1,0 +1,243 @@
+/* ------------------------------------------------------------------------------
+  Squirrel squirrelGroupAnalysis.cpp
+  Copyright (C) 2004 - 2025
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
+#include "squirrelGroupAnalysis.h"
+#include "utils.h"
+#include "squirrelTypes.h"
+
+squirrelGroupAnalysis::squirrelGroupAnalysis(QString dbID)
+{
+    databaseUUID = dbID;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Get -------------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelGroupAnalysis::Get
+ * @return true if successful
+ *
+ * This function will attempt to load the groupanalysis data from
+ * the database. The groupanalysisRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelGroupAnalysis::Get() {
+    if (objectID < 0) {
+        valid = false;
+        err = "objectID is not set";
+        return false;
+    }
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    q.prepare("select * from GroupAnalysis where GroupAnalysisRowID = :id");
+    q.bindValue(":id", objectID);
+    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    if (q.next()) {
+
+        /* get the data */
+        objectID = q.value("GroupAnalysisRowID").toLongLong();
+        GroupAnalysisName = q.value("GroupAnalysisName").toString();
+        FileCount = q.value("FileCount").toLongLong();
+        Size = q.value("Size").toLongLong();
+        Description = q.value("Description").toString();
+        Notes = q.value("Notes").toString();
+        DateTime = q.value("Datetime").toDateTime();
+        virtualPath = q.value("VirtualPath").toString();
+
+        /* get any staged files */
+        stagedFiles = utils::GetStagedFileList(databaseUUID, objectID, GroupAnalysis);
+
+        valid = true;
+        return true;
+    }
+    else {
+        valid = false;
+        err = "objectID not found in database";
+        return false;
+    }
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- Store ------------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelGroupAnalysis::Store
+ * @return true if successful
+ *
+ * This function will attempt to load the groupanalysis data from
+ * the database. The groupanalysisRowID must be set before calling
+ * this function. If the object exists in the DB, it will return true.
+ * Otherwise it will return false.
+ */
+bool squirrelGroupAnalysis::Store() {
+
+    QSqlQuery q(QSqlDatabase::database(databaseUUID));
+    bool isNewObject = (objectID < 0);
+
+    /* insert if the object doesn't exist ... */
+    if (objectID < 0) {
+        q.prepare("insert into GroupAnalysis (GroupAnalysisName, Description, Datetime, Notes, FileCount, Size, VirtualPath) values (:GroupAnalysisName, :Description, :Datetime, :Notes, :FileCount, :Size, :VirtualPath)");
+        q.bindValue(":GroupAnalysisName", GroupAnalysisName);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Notes", Notes);
+        q.bindValue(":Datetime", DateTime);
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
+        q.bindValue(":VirtualPath", VirtualPath());
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        objectID = q.lastInsertId().toLongLong();
+    }
+    /* ... otherwise update */
+    else {
+        q.prepare("update GroupAnalysis set GroupAnalysisName = :GroupAnalysisName, Description = :Description, Datetime = :Datetime, Notes = :Notes, FileCount = :FileCount, Size = :Size, VirtualPath = :VirtualPath where GroupAnalysisRowID = :id");
+        q.bindValue(":id", objectID);
+        q.bindValue(":GroupAnalysisName", GroupAnalysisName);
+        q.bindValue(":Description", Description);
+        q.bindValue(":Notes", Notes);
+        q.bindValue(":Datetime", DateTime);
+        q.bindValue(":FileCount", FileCount);
+        q.bindValue(":Size", Size);
+        q.bindValue(":VirtualPath", VirtualPath());
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+    /* store any staged filepaths */
+    if (!isNewObject || !stagedFiles.isEmpty())
+        utils::StoreStagedFileList(databaseUUID, objectID, GroupAnalysis, stagedFiles);
+
+    return true;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- ToJSON ----------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Return a JSON object representing this group analysis
+ * @return QJsonObject containing all group analysis fields
+ */
+QJsonObject squirrelGroupAnalysis::ToJSON() {
+    QJsonObject json;
+
+    json["GroupAnalysisName"] = GroupAnalysisName;
+    json["Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+    json["Description"] = Description;
+    json["Notes"] = Notes;
+    json["FileCount"] = FileCount;
+    json["Size"] = Size;
+    json["VirtualPath"] = VirtualPath();
+
+    return json;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetData ---------------------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Get the object data as a hash of 'Object.Variable' keys, for printing
+ * @param d the dataset type (ID, basic, or full)
+ * @return hash of the requested variables
+ */
+QHash<QString, QString> squirrelGroupAnalysis::GetData(DatasetType d) {
+    QHash<QString, QString> data;
+
+    data["GroupAnalysis.GroupAnalysisName"] = GroupAnalysisName;
+    if (d == DatasetBasic || d == DatasetFull) {
+        data["GroupAnalysis.Datetime"] = DateTime.toString("yyyy-MM-dd HH:mm:ss");
+        data["GroupAnalysis.Description"] = Description;
+        data["GroupAnalysis.FileCount"] = QString("%1").arg(FileCount);
+        data["GroupAnalysis.Size"] = QString("%1").arg(Size);
+    }
+    if (d == DatasetFull) {
+        data["GroupAnalysis.Notes"] = Notes;
+        data["GroupAnalysis.VirtualPath"] = VirtualPath();
+    }
+
+    return data;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- PrintGroupAnalysis ----------------------------------- */
+/* ------------------------------------------------------------ */
+/**
+ * @brief squirrelGroupAnalysis::PrintGroupAnalysis
+ */
+QString squirrelGroupAnalysis::PrintGroupAnalysis() {
+    QString str;
+
+    str += utils::Print("\t----- GROUPANALYSIS ------");
+    str += utils::Print(QString("\tGroupAnalysisName: %1").arg(GroupAnalysisName));
+    str += utils::Print(QString("\tDatetime: %1").arg(DateTime.toString("yyyy-MM-dd HH:mm:ss")));
+    str += utils::Print(QString("\tDescription: %1").arg(Description));
+    str += utils::Print(QString("\tNotes: %1").arg(Notes));
+    str += utils::Print(QString("\tFileCount: %1").arg(FileCount));
+    str += utils::Print(QString("\tSize: %1").arg(Size));
+    str += utils::Print(QString("\tVirtualPath: %1").arg(virtualPath));
+
+    return str;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- VirtualPath ------------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Return the group analysis' virtual path within the squirrel package
+ * @return virtual path string (e.g. "group-analysis/GroupAnalysisName")
+ */
+QString squirrelGroupAnalysis::VirtualPath() {
+    QString vPath = QString("group-analysis/%1").arg(utils::CleanString(GroupAnalysisName));
+
+    return vPath;
+}
+
+
+/* ------------------------------------------------------------ */
+/* ----- GetStagedFileList ------------------------------------ */
+/* ------------------------------------------------------------ */
+/**
+ * @brief Return all staged files as physical path / virtual path pairs
+ * @return list of pairs where first is the physical disk path and second is the virtual path in the package
+ */
+QList<QPair<QString,QString>> squirrelGroupAnalysis::GetStagedFileList() {
+
+    QList<QPair<QString,QString>> stagedList;
+    QString virtualPath = VirtualPath();
+
+    /* a staged path may have a subdirectory within the group-analysis (eg
+     * 'subjects/fsaverage' from a FreeSurfer derivative); see utils::SetStagedFileSubdir */
+    QHash<QString, QString> subdirs = utils::GetStagedFileSubdirs(databaseUUID, objectID, GroupAnalysis);
+
+    QString path;
+    foreach (path, stagedFiles) {
+        QPair<QString, QString> pair;
+        pair.first = path;
+        pair.second = subdirs.contains(path) ? QString("%1/%2").arg(virtualPath).arg(subdirs.value(path)) : virtualPath;
+        stagedList.append(pair);
+    }
+
+    return stagedList;
+}

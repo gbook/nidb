@@ -1,0 +1,25 @@
+<!--
+  Extra WiX elements merged into the .msi that CPack generates (see windows.cmake).
+
+  CPack names each installed file's component CM_CP_<path> and the file itself
+  CM_FP_<path>, with '/' turned into '.' and other non-identifier characters
+  (such as '-') into '_'. So bin/squirrel-gui.exe -> CM_CP_bin.squirrel_gui.exe.
+  INSTALL_ROOT is CPack's id for the chosen install folder.
+-->
+<CPackWiXPatch>
+  <!-- Double-clicking a .sqrl file opens it in squirrel-gui. -->
+  <CPackWiXFragment Id="CM_CP_bin.squirrel_gui.exe">
+    <ProgId Id="Squirrel.Package" Description="Squirrel package"
+            Icon="CM_FP_bin.squirrel_gui.exe" IconIndex="0" Advertise="no">
+      <Extension Id="sqrl" ContentType="application/x-squirrel">
+        <Verb Id="open" Command="Open" TargetFile="CM_FP_bin.squirrel_gui.exe" Argument="&quot;%1&quot;"/>
+      </Extension>
+    </ProgId>
+  </CPackWiXFragment>
+
+  <!-- Put <install>/bin on the system PATH so 'squirrel' works in any terminal. -->
+  <CPackWiXFragment Id="CM_CP_bin.squirrel.exe">
+    <Environment Id="SquirrelPath" Name="PATH" Value="[INSTALL_ROOT]bin"
+                 Action="set" Part="last" System="yes" Permanent="no"/>
+  </CPackWiXFragment>
+</CPackWiXPatch>

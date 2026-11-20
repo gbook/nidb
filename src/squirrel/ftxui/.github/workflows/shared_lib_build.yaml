@@ -1,0 +1,36 @@
+name: Shared Library Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-shared:
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Configure CMake
+        shell: bash
+        run: |
+          cmake -B build \
+            -DBUILD_SHARED_LIBS=ON \
+            -DFTXUI_BUILD_EXAMPLES=ON \
+            -DFTXUI_BUILD_TESTS=OFF \
+            -DFTXUI_BUILD_DOCS=OFF
+
+      - name: Build one example
+        run: |
+          cmake --build build --target ftxui_example_text

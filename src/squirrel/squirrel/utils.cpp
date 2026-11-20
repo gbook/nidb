@@ -1,0 +1,1472 @@
+/* ------------------------------------------------------------------------------
+  NIDB utils.cpp
+  Copyright (C) 2004 - 2025
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
+#include "utils.h"
+#include "squirrelVersion.h"
+#include "squirrel.h"
+#ifdef Q_OS_UNIX
+#include <sys/resource.h>
+#include <functional>
+#endif
+
+namespace utils {
+
+    /* ---------------------------------------------------------- */
+    /* --------- Print ------------------------------------------ */
+    /* ---------------------------------------------------------- */
+    QString Print(QString s, bool n, bool pad) {
+        QString str;
+        if (n) {
+            if (pad) {
+                printf("%-80s\n", s.toStdString().c_str());
+                str = s + "\n";
+            }
+            else {
+                printf("%s\n", s.toStdString().c_str());
+                str = s + "\n";
+            }
+        }
+        else {
+            if (pad) {
+                printf("%-80s", s.toStdString().c_str());
+                str = s;
+            }
+            else {
+                printf("%s", s.toStdString().c_str());
+                str = s;
+            }
+        }
+        return str;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CreateCurrentDateTime -------------------------- */
+    /* ---------------------------------------------------------- */
+    QString CreateCurrentDateTime(int format) {
+        QString date;
+
+        QDateTime d = QDateTime::currentDateTime();
+        switch (format) {
+            case 1:
+                date = d.toString("yyyy/MM/dd HH:mm:ss"); break;
+            case 2:
+                date = d.toString("yyyy-MM-dd HH:mm:ss"); break;
+            case 3:
+                date = d.toString("yyyy/MM/dd"); break;
+            case 4:
+                date = d.toString("yyyy-MM-dd"); break;
+            case 5:
+                date = d.toString("HH:mm:ss"); break;
+            default:
+                date = d.toString("yyyy/MM/dd HH:mm:ss");
+        }
+
+        return date;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CreateLogDate ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString CreateLogDate() {
+        QString date;
+
+        QDateTime d = QDateTime::currentDateTime();
+        date = d.toString("yyyyMMddHHmmss");
+
+        return date;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- SystemCommand ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString SystemCommand(QString s, bool detail, bool truncate) {
+
+        double starttime = double(QDateTime::currentMSecsSinceEpoch());
+        QString ret;
+        QString output;
+        QString buffer;
+        QProcess *process = new QProcess();
+
+        /* start QProcess and check if it started */
+
+        #ifdef Q_OS_WINDOWS
+            /* Windows is so difficult... cmd.exe must be started, and only then can you pass the command to it, with a newline as if the Enter key was pressed */
+            s = QString(s + "\n");
+            process->start("cmd.exe");
+            if (!process->waitForStarted()) {
+                output = "QProcess failed to start, with error [" + process->errorString() + "]";
+            }
+            process->write(s.toLatin1());
+            process->closeWriteChannel();
+
+            /* collect the output */
+            while(process->waitForReadyRead(-1)) {
+                buffer = QString(process->readAll());
+                output += buffer;
+            }
+            /* check if it finished */
+            process->waitForFinished();
+            output += QString(process->readAll());
+        #else
+            /* Linux is so much easier... */
+            process->start("sh", QStringList() << "-c" << s);
+            if (!process->waitForStarted()) {
+                output = "QProcess failed to start, with error [" + process->errorString() + "]";
+            }
+            /* collect the output */
+            while(process->waitForReadyRead(-1)) {
+                buffer = QString(process->readAll());
+                output += buffer;
+            }
+            /* check if it finished */
+            process->waitForFinished();
+            output += QString(process->readAll());
+        #endif
+
+        delete process;
+
+        double elapsedtime = (double(QDateTime::currentMSecsSinceEpoch()) - starttime + 0.000001)/1000.0; /* add tiny decimal to avoid a divide by zero */
+
+        output = output.trimmed();
+        output.replace("’", "'");
+        output.replace("‘", "'");
+
+        if (truncate)
+            if (output.size() > 20000)
+                output = output.left(10000) + "\n\n     ...\n\n     OUTPUT TRUNCATED. Displaying only first and last 10,000 characters\n\n     ...\n\n" + output.right(10000);
+
+        if (detail)
+            ret = QString("Executed command [%1], Output [%2], elapsed time [%3 sec]").arg(s).arg(output).arg(elapsedtime, 0, 'f', 3);
+        else
+            ret = output;
+
+        return ret;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- MakePath --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool MakePath(QString p, QString &msg, bool perm777) {
+
+        if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p == "/root") || (p == "/home")) {
+            msg = "Path [" + p + "] is not valid";
+            return false;
+        }
+
+        QDir d(p);
+
+        if(!d.exists() && !d.mkpath(p)) {
+            msg = "MakePath() Error creating path [" + p + "]";
+            return false;
+        }
+        else
+            msg = "MakePath() Path already exists or was created successfuly [" + p + "]";
+
+        if (perm777)
+            SystemCommand("chmod 777 " + p);
+
+        return true;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- RemoveDir -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool RemoveDir(QString p, QString &msg) {
+
+        if ((p == "") || (p == ".") || (p == "..") || (p == "/") || (p.contains("//")) || (p.startsWith("/root")) || (p == "/home")) {
+            msg = "Path is not valid [" + p + "]";
+            return false;
+        }
+
+        QDir path(p);
+        if (path.removeRecursively()) {
+            return true;
+        }
+        else {
+            msg = "Unable to delete directory";
+            return false;
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GenerateRandomString --------------------------- */
+    /* ---------------------------------------------------------- */
+    QString GenerateRandomString(int n) {
+
+       const QString chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
+       QString randomString;
+       for(int i=0; i<n; ++i)
+       {
+           QChar nextChar = chars.at(QRandomGenerator::global()->bounded(chars.length()));
+           randomString.append(nextChar);
+       }
+       return randomString;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- FindAllFiles ----------------------------------- */
+    /* ---------------------------------------------------------- */
+    QStringList FindAllFiles(QString dir, QString pattern, bool recursive) {
+        QStringList files;
+        if (recursive) {
+            QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+            while (it.hasNext())
+                files << it.next();
+        }
+        else {
+            QDirIterator it(dir, QStringList() << pattern, QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::NoIteratorFlags);
+            while (it.hasNext())
+                files << it.next();
+        }
+
+        return files;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- FindAllDirs ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    QStringList FindAllDirs(QString dir, QString pattern, bool recursive, bool includepath) {
+
+        if (pattern.trimmed() == "")
+            pattern = "*";
+
+        QStringList dirs;
+
+        if (recursive) {
+            QDirIterator it(dir, QStringList() << pattern, QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+            while (it.hasNext()) {
+                if (includepath)
+                    dirs << it.next();
+                else {
+                    it.next();
+                    dirs << it.fileName();
+                }
+            }
+        }
+        else {
+            QDirIterator it(dir, QStringList() << pattern, QDir::Dirs | QDir::NoDotAndDotDot | QDir::NoSymLinks);
+            while (it.hasNext()) {
+                if (includepath)
+                    dirs << it.next();
+                else {
+                    it.next();
+                    dirs << it.fileName();
+                }
+            }
+        }
+
+        return dirs;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetDirSizeAndFileCount ------------------------- */
+    /* ---------------------------------------------------------- */
+    void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse) {
+        c = 0;
+        b = 0;
+
+        QDir d(dir);
+
+        if (recurse) {
+            QDirIterator it(dir, QStringList() << "*", QDir::Files | QDir::NoDotAndDotDot | QDir::NoSymLinks, QDirIterator::Subdirectories);
+            while (it.hasNext()) {
+                it.next();
+                c++;
+                b += it.fileInfo().size();
+            }
+        }
+        else {
+            QFileInfoList fl = d.entryInfoList(QDir::NoDotAndDotDot | QDir::Files);
+            c = fl.size();
+            for (int i=0; i < fl.size(); i++) {
+                const QFileInfo finfo = fl.at(i);
+                b += finfo.size();
+            }
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ParseDate -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString ParseDate(QString s) {
+        QString d = "0000-01-01";
+        QDate date;
+
+        s.replace(":","-").replace(".","-").replace("/","-").replace("|","-").replace(",","-").replace("\\","-");
+
+        date = QDate::fromString(s, "yyyy-MM-dd");
+        if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+        date = QDate::fromString(s, "yyyy-M-d");
+        if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+        date = QDate::fromString(s, "yyyyMMdd");
+        if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+        date = QDate::fromString(s, "dd-MM-yy");
+        if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+        date = QDate::fromString(s, "MM-yyyy");
+        if (date.isValid()) return date.toString("yyyy-MM-dd");
+
+        return d;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ParseTime -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString ParseTime(QString s) {
+        QString t = "00:00:00";
+        QTime time;
+
+        s.replace("-",":").replace("/",":").replace("|",":").replace(",",":").replace("\\",":");
+
+        time = QTime::fromString(s, "hh:mm:ss");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:m:s");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:m:s");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:mm:s");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:mm:ss");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:m:ss");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:m:ss");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:mm:s");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:mm");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:m");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:mm");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "h:m");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:mm:ss.zzz");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        time = QTime::fromString(s, "hh:mm:ss.z");
+        if (time.isValid()) return time.toString("hh:mm:ss");
+
+        return t;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ParseCSV --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /* this function handles most Excel compatible .csv formats
+     * but it does not handle nested quotes, and must have a header
+     * row */
+    bool ParseCSV(QString csv, indexedHash &table, QStringList &columns, QString &msg) {
+
+        QStringList m;
+        bool ret(true);
+
+        /* get header row */
+        QStringList lines = csv.trimmed().split(QRegularExpression("[\\n\\r]"));
+
+        if (lines.size() > 1) {
+            QString header = lines.takeFirst();
+            QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*,\\s*"));
+            columns = cols;
+
+            m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
+            /* remove the last column if it was blank, because the file contained an extra trailing comma */
+            if (cols.last() == "") {
+                cols.removeLast();
+                m << "Last column was blank, removing";
+            }
+
+            qint64 numcols = cols.size();
+
+            int row = 0;
+            foreach (QString line, lines) {
+                QString buffer = "";
+                int col = 0;
+                bool inQuotes = false;
+                for (int i=0; i<line.size(); i++) {
+                    QChar c = line.at(i);
+
+                    /* determine if we're in quotes or not */
+                    if (c == '"') {
+                        if (inQuotes)
+                            inQuotes = false;
+                        else
+                            inQuotes = true;
+                    }
+
+                    /* check if we've hit the next comma, and therefor should end the previous variable */
+                    else if ((c == ',') && (!inQuotes)) {
+                        table[row][cols[col]] = buffer.trimmed();
+
+                        buffer = "";
+                        col++;
+                    }
+                    else {
+                        buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+                    }
+                }
+                /* acquire the last column */
+                table[row][cols[col]] = buffer.trimmed();
+                buffer = "";
+
+                if ((col+1) != numcols) {
+                    m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);
+                    ret = false;
+                }
+
+                row++;
+            }
+            m << QString("Processed [%1] data rows").arg(row);
+        }
+        else {
+            ret = false;
+            m << ".csv file contained only one row. The csv must contain at least one header row and one data row";
+        }
+
+        msg = m.join("  \n");
+
+        return ret;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ParseTSV --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /* this function handles most .tsv formats but it does not
+     *  handle nested quotes, and must have a header row */
+    bool ParseTSV(QString tsv, indexedHash &table, QStringList &columns, QString &msg) {
+
+        QStringList m;
+        bool ret(true);
+
+        /* get header row */
+        QStringList lines = tsv.trimmed().split(QRegularExpression(R"(\n|\r\n|\r)"));
+
+        m << QString("Found [%1] lines").arg(lines.size());
+        if (lines.size() > 1) {
+            QString header = lines.takeFirst();
+            QStringList cols = header.trimmed().toLower().split(QRegularExpression("\\s*\t\\s*"));
+            columns = cols;
+
+            m << QString("Found [%1] columns [%2]").arg(cols.size()).arg(cols.join(","));
+            /* remove the last column if it was blank, because the file contained an extra trailing comma */
+            if (cols.last() == "") {
+                cols.removeLast();
+                m << QString("Last column was blank, removing. Now [%1] columns").arg(cols.size());
+            }
+
+            qint64 numcols = cols.size();
+
+            int row = 0;
+            foreach (QString line, lines) {
+                QString buffer = "";
+                int col = 0;
+                bool inQuotes = false;
+                for (int i=0; i<line.size(); i++) {
+                    QChar c = line.at(i);
+
+                    /* determine if we're in quotes or not */
+                    if (c == '"') {
+                        if (inQuotes)
+                            inQuotes = false;
+                        else
+                            inQuotes = true;
+                    }
+
+                    /* check if we've hit the next tab, and therefor should end the previous variable */
+                    else if ((c == '\t') && (!inQuotes)) {
+                        table[row][cols[col]] = buffer.trimmed();
+
+                        buffer = "";
+                        col++;
+                    }
+                    else {
+                        buffer = QString("%1%2").arg(buffer).arg(c); /* make sure no null terminators end up in the string */
+                    }
+                }
+                /* acquire the last column */
+                table[row][cols[col]] = buffer.trimmed();
+                buffer = "";
+
+                if ((col+1) != numcols) {
+                    m << QString("Error: row [%1] has [%2] columns, but expecting [%3] columns").arg(row+1).arg(col+1).arg(numcols);
+                    ret = false;
+                }
+
+                row++;
+            }
+            m << QString("Processed [%1] data rows").arg(row);
+        }
+        else {
+            ret = false;
+            m << ".tsv file contained only one row. The tsv must contain at least one header row and one data row";
+        }
+
+        msg = m.join("  \n");
+
+        return ret;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CleanJSON -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString CleanJSON(QString s) {
+        s.replace("\"","");
+        s.replace("\\\"","");
+        s.replace("{","");
+        s.replace("}","");
+        s.replace(":", " : ");
+        s.replace("\\n", "");
+        s.replace("\\t", "");
+        s.replace("\\\\", "");
+        s.replace(QRegularExpression("\\\\n"), "");
+        s.replace(QRegularExpression("\\n"), "");
+        s.replace(QRegularExpression("\\\\t"), "");
+        s.replace(QRegularExpression("\\t"), "");
+
+        return s;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- WriteTextFile ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool WriteTextFile(QString filepath, QString str, bool append) {
+
+        QFile f(filepath);
+        if (append)
+            f.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Append);
+        else
+            f.open(QIODevice::WriteOnly | QIODevice::Text);
+
+        if (f.isOpen()) {
+            QTextStream fs(&f);
+            fs << str.replace("\r\n", "\n");
+            f.close();
+            return true;
+        }
+        else
+            return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ReadTextFileToString --------------------------- */
+    /* ---------------------------------------------------------- */
+    QString ReadTextFileToString(QString filepath) {
+        QString a;
+
+        QFile inputFile(filepath);
+        inputFile.open(QIODevice::ReadOnly);
+        if (inputFile.isOpen()) {
+            QTextStream in(&inputFile);
+
+            QString line;
+            while (in.readLineInto(&line)) {
+                a.append(line + "\n");
+            }
+        }
+
+        a = a.replace("\r\n", "\n");
+
+        return a;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- BatchRenameFiles ------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool BatchRenameFiles(QString dir, QString seriesnum, QString studynum, QString uid, int &numfilesrenamed, QString &msg) {
+
+        QDir d;
+        if (!d.exists(dir)) {
+            msg = "directory [" + dir + "] does not exist";
+            return false;
+        }
+
+        numfilesrenamed = 0;
+        QStringList exts;
+        exts << "*.img" << "*.hdr" << "*.nii" << "*.nii.gz" << "*.json" << "*.json.gz" << "*.bvec" << "*.bval";
+        /* loop through all the extensions we want to rename/renumber */
+        foreach (QString ext, exts) {
+            int i = 1;
+            QFile f;
+            QDirIterator it(dir, QStringList() << ext, QDir::Files);
+            while (it.hasNext()) {
+                QString fname = it.next();
+                f.setFileName(fname);
+                QFileInfo fi(f);
+                QString newName = fi.path() + "/" + QString("%1_%2_%3_%4%5").arg(uid).arg(studynum).arg(seriesnum).arg(i,5,10,QChar('0')).arg(ext.replace("*",""));
+                if (f.rename(newName))
+                    numfilesrenamed++;
+                else
+                    msg += QString("\nError renaming file [" + fname + "] to [" + newName + "]");
+                i++;
+            }
+        }
+
+        return true;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetPatientAge ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    double GetPatientAge(QString PatientAgeStr, QString StudyDate, QString PatientBirthDate) {
+        double PatientAge(0.0);
+
+        /* check if the patient age contains any characters */
+        if (PatientAgeStr.contains('Y')) PatientAge = PatientAgeStr.replace("Y","").toDouble();
+        if (PatientAgeStr.contains('M')) PatientAge = PatientAgeStr.replace("M","").toDouble()/12.0;
+        if (PatientAgeStr.contains('W')) PatientAge = PatientAgeStr.replace("W","").toDouble()/52.0;
+        if (PatientAgeStr.contains('D')) PatientAge = PatientAgeStr.replace("D","").toDouble()/365.25;
+
+        /* fix patient age: calculate from the birthdate and study date if possible */
+        if (PatientAge < 0.001) {
+            QDate studydate = QDate::fromString(StudyDate, "yyyy-MM-dd");
+            QDate dob = QDate::fromString(PatientBirthDate, "yyyy-MM-dd");
+
+            /* ignore invalid or placeholder dates (ex. 0001-01-01) */
+            if (studydate.isValid() && dob.isValid() && (studydate.year() >= 1900) && (dob.year() >= 1900)) {
+                PatientAge = double(dob.daysTo(studydate))/365.25;
+                if (PatientAge < 0.0)
+                    PatientAge = 0.0;
+            }
+        }
+
+        return PatientAge;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- DirectoryExists -------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool DirectoryExists(QString dir) {
+        if (dir.trimmed() == "")
+            return false;
+        if (QFile::exists(dir))
+            return true;
+        else
+            return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- FileExists ------------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool FileExists(QString f) {
+        if (f.trimmed() == "")
+            return false;
+        else if (QFile::exists(f))
+            return true;
+        else
+            return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CopyFileToDir ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    bool CopyFileToDir(QString f, QString dir) {
+        QFileInfo file(f);
+
+        if (QFile::copy(f, QString("%1/%2").arg(dir).arg(file.fileName()))) {
+            Print(QString("Copied file. Old name [%1] to new name [%2/%3]").arg(f).arg(dir).arg(file.fileName()));
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- IsSkippedName ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Version-control/DataLad metadata (.git, .datalad, .gitattributes, .gitmodules)
+     * and operating-system clutter (.DS_Store, ._* AppleDouble files, Thumbs.db,
+     * desktop.ini) are never part of a dataset's content.
+     *
+     * @brief Should a file or directory with this name be left out of a package?
+     * @param name file or directory name (no path)
+     * @return true if it should be skipped
+     */
+    bool IsSkippedName(const QString &name) {
+        static const QStringList skip = {".git", ".datalad", ".gitattributes", ".gitmodules", ".DS_Store"};
+        if (skip.contains(name))
+            return true;
+        if (name.startsWith("._"))
+            return true;
+        if ((name.compare("Thumbs.db", Qt::CaseInsensitive) == 0) || (name.compare("desktop.ini", Qt::CaseInsensitive) == 0))
+            return true;
+        return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- IsMissingContent ------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * DataLad/git-annex datasets store file content in the annex. Until it is fetched
+     * ('datalad get'), a file is either a broken symlink (locked mode) or a small
+     * pointer file whose text is '/annex/objects/<key>' (unlocked/adjusted mode).
+     *
+     * @brief Is this a file whose content is not present?
+     * @param p path to a file
+     * @return true for a broken symlink or a git-annex pointer file
+     */
+    bool IsMissingContent(const QString &p) {
+        QFileInfo fi(p);
+        if (fi.isSymLink() && !fi.exists())
+            return true;
+        if (fi.isFile() && (fi.size() > 0) && (fi.size() < 1024)) {
+            QFile f(p);
+            if (f.open(QIODevice::ReadOnly)) {
+                QByteArray head = f.read(64);
+                f.close();
+                if (head.startsWith("/annex/objects/"))
+                    return true;
+            }
+        }
+        return false;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- WalkTree --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Follows symlinks (to files and directories). A symlinked directory that points to
+     * the directory containing it or one of its ancestors (a cycle) is skipped, and the
+     * canonical paths of visited directories guard against any other repeats. Skipped names
+     * (IsSkippedName) and files with missing content (IsMissingContent) are left out.
+     *
+     * @brief Recursively visit the files and directories under a directory
+     * @param dir directory to walk
+     * @param rel path of dir relative to the walk root ("" for the root)
+     * @param visited canonical paths of directories already visited
+     * @param cb called for each entry with (absolute path, relative path, isDir)
+     */
+    static void WalkTree(const QString &dir, const QString &rel, QSet<QString> &visited, const std::function<void(const QString&, const QString&, bool)> &cb) {
+        QString canon = QFileInfo(dir).canonicalFilePath();
+        if (canon.isEmpty() || visited.contains(canon))
+            return;
+        visited.insert(canon);
+
+        QDir d(dir);
+        foreach (QFileInfo fi, d.entryInfoList(QDir::Files | QDir::Dirs | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System)) {
+            QString name = fi.fileName();
+            if (IsSkippedName(name))
+                continue;
+            QString r = rel.isEmpty() ? name : (rel + "/" + name);
+            if (fi.isDir()) {
+                /* a symlink to this directory or one of its ancestors is a cycle */
+                if (fi.isSymLink()) {
+                    QString target = fi.canonicalFilePath();
+                    if ((target == canon) || canon.startsWith(target + "/"))
+                        continue;
+                }
+                cb(fi.absoluteFilePath(), r, true);
+                WalkTree(fi.absoluteFilePath(), r, visited, cb);
+            }
+            else if (fi.isFile() && !IsMissingContent(fi.absoluteFilePath()))
+                cb(fi.absoluteFilePath(), r, false);
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CopyPathToDir ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * Staged files may be directories (eg a MEG .ds recording, a .zarr store, or a
+     * derivative sub-directory). A file is copied into dir; a directory is copied
+     * recursively to dir/<dirname>, preserving its internal structure. Symlinks are
+     * followed (their target content is copied); see WalkTree for what is skipped.
+     *
+     * @brief Copy a file or a directory tree into a directory
+     * @param p path to a file or directory
+     * @param dir destination directory (must exist)
+     * @return true if everything was copied
+     */
+    bool CopyPathToDir(QString p, QString dir) {
+        QFileInfo fi(p);
+        if (!fi.isDir())
+            return CopyFileToDir(p, dir);
+
+        QString destRoot = QString("%1/%2").arg(dir).arg(fi.fileName());
+        QString m;
+        if (!MakePath(destRoot, m))
+            return false;
+
+        bool ok = true;
+        QSet<QString> visited;
+        WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+            QString dest = QString("%1/%2").arg(destRoot).arg(rel);
+            QString msg;
+            if (isDir) {
+                if (!MakePath(dest, msg))
+                    ok = false;
+            }
+            else {
+                MakePath(QFileInfo(dest).absolutePath(), msg);
+                if (!QFile::copy(abs, dest))
+                    ok = false;
+            }
+        });
+        if (ok)
+            Print(QString("Copied directory [%1] to [%2]").arg(p).arg(destRoot));
+        return ok;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- ExpandStagedPath ------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Expand a staged file or directory into (disk path, archive path) pairs
+     * @param p path to a file or directory on disk
+     * @param virtualDir directory inside the package that p is staged into
+     * @return list of pairs. A file maps to virtualDir/<name>; a directory maps each
+     *         contained file to virtualDir/<dirname>/<relative path>
+     */
+    QList<QPair<QString,QString>> ExpandStagedPath(QString p, QString virtualDir) {
+        QList<QPair<QString,QString>> list;
+        QFileInfo fi(p);
+        if (!fi.isDir()) {
+            list.append(qMakePair(p, QString("%1/%2").arg(virtualDir).arg(fi.fileName())));
+            return list;
+        }
+        QSet<QString> visited;
+        WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+            if (!isDir)
+                list.append(qMakePair(abs, QString("%1/%2/%3").arg(virtualDir).arg(fi.fileName()).arg(rel)));
+        });
+        return list;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetPathSizeAndFileCount ------------------------ */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Get the size and file count of a file, or of a directory tree
+     * @param p path to a file or directory
+     * @param c [out] number of files
+     * @param b [out] total size in bytes
+     */
+    void GetPathSizeAndFileCount(QString p, qint64 &c, qint64 &b) {
+        c = 0; b = 0;
+        QFileInfo fi(p);
+        if (fi.isDir()) {
+            QSet<QString> visited;
+            WalkTree(p, "", visited, [&](const QString &abs, const QString &rel, bool isDir) {
+                Q_UNUSED(rel);
+                if (!isDir) {
+                    c++;
+                    b += QFileInfo(abs).size();
+                }
+            });
+        }
+        else if (fi.exists() && !IsMissingContent(p)) {
+            c = 1;
+            b = fi.size();
+        }
+    }
+
+
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- CleanString ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    QString CleanString(QString s) {
+        s.replace(QRegularExpression("[^a-zA-Z0-9 _-]", QRegularExpression::CaseInsensitiveOption), "");
+        s = s.simplified();
+        s.remove(' ');
+        return s;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- SQLQuery --------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /* QSqlQuery object must already be prepared and bound before */
+    /* being passed in to this function                           */
+    bool SQLQuery(QSqlQuery &q, QString function, QString file, int line, bool d) {
+
+        /* get the SQL string that will be run */
+        QString sql = q.executedQuery();
+        QVariantList list = q.boundValues();
+        for (int i=0; i < list.size(); ++i) {
+            sql += QString(" [" + list.at(i).toString() + "]");
+        }
+
+        if (d)
+            Print(sql);
+
+        /* run the query */
+        if (q.exec())
+            return true;
+        else {
+            /* if we get to this point, there is a SQL error */
+            QString err = QString("SQL ERROR (Function: %1 File: %2 Line: %3)\n\nSQL (1) [%4]\n\nSQL (2) [%5]\n\nDatabase error [%6]\n\nDriver error [%7]").arg(function).arg(file).arg(line).arg(sql).arg(q.executedQuery()).arg(q.lastError().databaseText()).arg(q.lastError().driverText());
+            qDebug() << err;
+            qDebug() << q.lastError();
+
+            return false;
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- AnonymizeParams -------------------------------- */
+    /* ---------------------------------------------------------- */
+    QHash<QString, QString> AnonymizeParams(QHash<QString, QString> params) {
+        QHash<QString, QString> p;
+        QStringList anonFields;
+        anonFields << "AcquisitionDate";
+        anonFields << "AcquisitionTime";
+        anonFields << "CommentsOnThePerformedProcedureSte";
+        anonFields << "ContentDate";
+        anonFields << "ContentTime";
+        anonFields << "Filename";
+        anonFields << "InstanceCreationDate";
+        anonFields << "InstanceCreationTime";
+        anonFields << "InstitutionAddress";
+        anonFields << "InstitutionName";
+        anonFields << "InstitutionalDepartmentName";
+        anonFields << "OperatorsName";
+        anonFields << "ParentDirectory";
+        anonFields << "PatientBirthDate";
+        anonFields << "PatientID";
+        anonFields << "PatientName";
+        anonFields << "PerformedProcedureStepDescription";
+        anonFields << "PerformedProcedureStepID";
+        anonFields << "PerformedProcedureStepStartDate";
+        anonFields << "PerformedProcedureStepStartTime";
+        anonFields << "PerformingPhysicianName";
+        anonFields << "ReferringPhysicianName";
+        anonFields << "RequestedProcedureDescription";
+        anonFields << "RequestingPhysician";
+        anonFields << "SeriesDate";
+        anonFields << "SeriesDateTime";
+        anonFields << "SeriesTime";
+        anonFields << "StationName";
+        anonFields << "StudyDate";
+        anonFields << "StudyDateTime";
+        anonFields << "StudyDescription";
+        anonFields << "StudyTime";
+        anonFields << "UniqueSeriesString";
+
+        for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
+            if (!anonFields.contains(a.key()))
+                p[a.key()] = a.value();
+        }
+
+        return p;
+    }
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintHeader ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    void PrintHeader() {
+        QString bindir = QDir::currentPath();
+
+        Print("+----------------------------------------------------+");
+        Print(QString("|  Squirrel utils version %1.%2\n|\n|  Build date [%3 %4]\n|  C++ [%5]\n|  Qt compiled [%6]\n|  Qt runtime [%7]\n|  Build system [%8]" ).arg(SQUIRREL_VERSION_MAJ).arg(SQUIRREL_VERSION_MIN).arg(__DATE__).arg(__TIME__).arg(__cplusplus).arg(QT_VERSION_STR).arg(qVersion()).arg(QSysInfo::buildAbi()));
+        Print(QString("|\n|  Current working directory is %1").arg(bindir));
+        Print("+----------------------------------------------------+\n");
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetPeakMemoryBytes ----------------------------- */
+    /* ---------------------------------------------------------- */
+    qint64 GetPeakMemoryBytes()
+    {
+#ifdef Q_OS_LINUX
+        struct rusage usage;
+        if (getrusage(RUSAGE_SELF, &usage) == 0)
+            return (qint64)usage.ru_maxrss * 1024;
+        return -1;
+#else
+        return -1;
+#endif
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- RaiseOpenFileLimit ----------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Raise the process's open-file (RLIMIT_NOFILE) soft limit
+     * @param desired the soft limit we would like, in file descriptors
+     * @return the resulting soft limit, or -1 on an unsupported platform
+     *
+     * Writing a large squirrel package opens many files at once (bit7z walks the
+     * staging tree with a recursive_directory_iterator while compressTo() holds
+     * files open), so the default soft limit of 1024 descriptors can be exceeded
+     * on big exports even with no descriptor leak - the command line tools hit
+     * the same ceiling. A process may raise its own soft limit up to the hard
+     * limit without any privileges, so we do that on start-up.
+     *
+     * This never LOWERS the current soft limit, and never asks for more than the
+     * hard limit allows. It is a process-wide setting; when squirrel is embedded
+     * in another application, raising the limit affects that whole process, which
+     * is the intended behavior.
+     */
+    long RaiseOpenFileLimit(long desired)
+    {
+#ifdef Q_OS_UNIX
+        struct rlimit rl;
+        if (getrlimit(RLIMIT_NOFILE, &rl) != 0)
+            return -1;
+
+        rlim_t want = (rlim_t)desired;
+
+        /* never reduce an already-higher soft limit */
+        if (want < rl.rlim_cur)
+            return (long)rl.rlim_cur;
+
+        /* cannot exceed the hard limit without CAP_SYS_RESOURCE */
+        if ((rl.rlim_max != RLIM_INFINITY) && (want > rl.rlim_max))
+            want = rl.rlim_max;
+
+        if (want > rl.rlim_cur) {
+            struct rlimit nl = rl;
+            nl.rlim_cur = want;
+            if (setrlimit(RLIMIT_NOFILE, &nl) == 0)
+                return (long)want;
+        }
+
+        /* setrlimit failed or nothing to do: report the limit still in force */
+        return (long)rl.rlim_cur;
+#else
+        Q_UNUSED(desired);
+        return -1;
+#endif
+    }
+
+
+    /* --------- HumanReadableSize ------------------------------ */
+    /* ---------------------------------------------------------- */
+    QString HumanReadableSize(qint64 bytes)
+    {
+        QStringList units = {"B", "KB", "MB", "GB", "TB"};
+        int i = 0;
+        double sizeD = double(bytes);
+
+        while (sizeD >= 1024 && i < units.size() - 1) {
+            sizeD /= 1024;
+            i++;
+        }
+
+        return QString::number(sizeD, 'f', 2) + " " + units[i];
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintProgress ---------------------------------- */
+    /* ---------------------------------------------------------- */
+    void PrintProgress(double percentage) {
+        int val = (int) (percentage * 100);
+        int lpad = (int) (percentage * PBWIDTH);
+        int rpad = PBWIDTH - lpad;
+        printf("\r%3d%% [%.*s%*s]", val, lpad, PBSTR, rpad, "");
+        fflush(stdout);
+        if (val >= 100)
+            printf("\n");
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- StringToDatetime ------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Parse a datetime string into a local QDateTime, without the cost of
+     * QDateTime::fromString() (this runs once per date field on every
+     * observation/intervention when reading a package).
+     *
+     * Accepts the format the library writes, "yyyy-MM-dd HH:mm:ss", plus:
+     *   "yyyy-MM-ddTHH:mm:ss", with optional ".zzz" and trailing "Z"/offset (ignored)
+     *   "yyyy-MM-dd HH:mm" and "yyyy-MM-dd" (seconds / time default to 0)
+     *   compact "yyyyMMdd", "yyyyMMddTHHmmss", "yyyyMMddTHHmmsszzz"
+     * The time is taken as local time, exactly as written, with no timezone
+     * conversion, so a read/write round trip never shifts it.
+     * @param dt the datetime string
+     * @return the datetime, or an invalid QDateTime if dt is empty or malformed
+     */
+    QDateTime StringToDatetime(QString dt) {
+        const QStringView s = QStringView(dt).trimmed();
+        if (s.isEmpty()) { return QDateTime(); }
+
+        /* fixed-width run of digits at pos, or -1 if out of range / not all digits */
+        auto num = [&s](qsizetype pos, qsizetype len) -> int {
+            if (pos < 0 || pos + len > s.size()) return -1;
+            int v = 0;
+            for (qsizetype i = pos; i < pos + len; i++) {
+                if (!s[i].isDigit()) return -1;
+                v = v * 10 + s[i].digitValue();
+            }
+            return v;
+        };
+
+        const bool dashed = (s.size() >= 10) && (s[4] == u'-') && (s[7] == u'-');
+        const QDate date = dashed ? QDate(num(0, 4), num(5, 2), num(8, 2))
+                                  : QDate(num(0, 4), num(4, 2), num(6, 2));
+        if (!date.isValid()) { return QDateTime(); }
+
+        qsizetype t = dashed ? 10 : 8; /* index of the date/time separator */
+        if (s.size() == t) { return QDateTime(date, QTime(0, 0)); }
+        if ((s[t] != u' ') && (s[t] != u'T')) { return QDateTime(); }
+
+        int h, mi, sec = 0, ms = 0;
+        if ((s.size() >= t + 6) && (s[t + 3] == u':')) {
+            /* HH:mm[:ss[.zzz]] */
+            h = num(t + 1, 2);
+            mi = num(t + 4, 2);
+            if ((s.size() >= t + 9) && (s[t + 6] == u':')) {
+                sec = num(t + 7, 2);
+                if ((s.size() >= t + 13) && (s[t + 9] == u'.'))
+                    ms = num(t + 10, 3);
+            }
+        }
+        else {
+            /* compact HHmmss[zzz] */
+            h = num(t + 1, 2);
+            mi = num(t + 3, 2);
+            sec = num(t + 5, 2);
+            if ((s.size() >= t + 10) && (num(t + 7, 3) >= 0))
+                ms = num(t + 7, 3);
+        }
+
+        const QTime time(h, mi, sec, ms);
+        if (!time.isValid()) { return QDateTime(); }
+
+        return QDateTime(date, time);
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetStagedFileList ------------------------------ */
+    /* ---------------------------------------------------------- */
+    QStringList GetStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QStringList paths;
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select * from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next()) {
+            paths.append(q.value("StagedPath").toString());
+        }
+
+        return paths;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- StoreStagedFileList ---------------------------- */
+    /* ---------------------------------------------------------- */
+    void StoreStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object, QStringList paths) {
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        if (objectID >= 0) {
+            /* keep each path's FinalDirectory (see SetStagedFileSubdir) across the
+             * delete/re-insert, since objects only hold the list of paths */
+            QHash<QString, QString> subdirs = GetStagedFileSubdirs(databaseUUID, objectID, object);
+
+            /* delete previously staged files from the database */
+            q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+            q.bindValue(":id", objectID);
+            q.bindValue(":type", squirrel::ObjectTypeToString(object));
+            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+            q.prepare("insert into StagedFiles (ObjectRowID, ObjectType, StagedPath, FinalDirectory) values (:id, :type, :path, :finaldir)");
+            q.bindValue(":id", objectID);
+            q.bindValue(":type", squirrel::ObjectTypeToString(object));
+            foreach (QString path, paths) {
+                q.bindValue(":path", path);
+                q.bindValue(":finaldir", subdirs.value(path));
+                utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+            }
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- SetStagedFileSubdir ---------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * A staged file or directory is normally placed directly in its object's virtual
+     * directory. Setting a subdirectory (stored in StagedFiles.FinalDirectory) places it
+     * in <virtual directory>/<subdir>/ instead, eg to keep 'subjects/fsaverage' from a
+     * FreeSurfer derivative rather than flattening it to 'fsaverage'.
+     *
+     * @brief Set the subdirectory (within its object's virtual path) for a staged path
+     * @param databaseUUID database connection
+     * @param objectID object row id
+     * @param object object type
+     * @param path the staged path
+     * @param subdir relative subdirectory, no leading or trailing slash ("" = none)
+     */
+    void SetStagedFileSubdir(QString databaseUUID, qint64 objectID, ObjectType object, QString path, QString subdir) {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("update StagedFiles set FinalDirectory = :finaldir where ObjectRowID = :id and ObjectType = :type and StagedPath = :path");
+        q.bindValue(":finaldir", subdir);
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        q.bindValue(":path", path);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetStagedFileSubdirs --------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Get the subdirectories set with SetStagedFileSubdir for an object's staged paths
+     * @param databaseUUID database connection
+     * @param objectID object row id
+     * @param object object type
+     * @return staged path -> subdirectory, for paths that have one
+     */
+    QHash<QString, QString> GetStagedFileSubdirs(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QHash<QString, QString> subdirs;
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select StagedPath, FinalDirectory from StagedFiles where ObjectRowID = :id and ObjectType = :type and FinalDirectory is not null and FinalDirectory != ''");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next())
+            subdirs.insert(q.value("StagedPath").toString(), q.value("FinalDirectory").toString());
+        return subdirs;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- RemoveStagedFileList --------------------------- */
+    /* ---------------------------------------------------------- */
+    void RemoveStagedFileList(QString databaseUUID, qint64 objectID, ObjectType object) {
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("delete from StagedFiles where ObjectRowID = :id and ObjectType = :type");
+        q.bindValue(":id", objectID);
+        q.bindValue(":type", squirrel::ObjectTypeToString(object));
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- GetParams -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QHash<QString, QString> GetParams(QString databaseUUID, qint64 seriesRowID) {
+        QHash<QString, QString> params;
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        q.prepare("select * from Params where SeriesRowID = :id");
+        q.bindValue(":id", seriesRowID);
+        utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+        while (q.next()) {
+            QString key = q.value("ParamKey").toString();
+            QString value = q.value("ParamValue").toString();
+            params[key] = value;
+        }
+
+        return params;
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- StoreParams ------------------------------------ */
+    /* ---------------------------------------------------------- */
+    void StoreParams(QString databaseUUID, qint64 seriesRowID, QHash<QString, QString> params) {
+
+        QSqlQuery q(QSqlDatabase::database(databaseUUID));
+        if (seriesRowID >= 0) {
+            /* delete previously staged files from the database */
+            q.prepare("delete from Params where SeriesRowID = :id");
+            q.bindValue(":id", seriesRowID);
+            utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+
+            q.prepare("insert into Params (SeriesRowID, ParamKey, ParamValue) values (:id, :key, :value)");
+            q.bindValue(":id", seriesRowID);
+            for(QHash<QString, QString>::iterator a = params.begin(); a != params.end(); ++a) {
+                QString key = a.key().trimmed();
+                QString value = a.value().trimmed();
+
+                if (key != "") {
+                    q.bindValue(":key", key);
+                    q.bindValue(":value", value);
+                    utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
+                }
+            }
+        }
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintData -------------------------------------- */
+    /* ---------------------------------------------------------- */
+    QString PrintData(PrintFormat p, QStringList keys, QList <QStringHash> rows) {
+        /* print the data - rows might have different keys, so always print by key */
+        QStringList lines;
+        if (p == CSV)
+            lines += "\"" + keys.join("\",\"") + "\"";
+        else
+            lines += keys.join("\t");
+
+        for(auto row : rows) {
+            QStringList rowData;
+            for(auto key : keys) {
+                rowData.append(row[key]);
+            }
+            if (p == CSV)
+                lines += "\"" + rowData.join("\",\"") + "\"";
+            else
+                lines += rowData.join("\t");
+        }
+
+        return utils::Print(lines.join("\n"));
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- PrintTable ------------------------------------- */
+    /* ---------------------------------------------------------- */
+    /**
+     * @brief Print rows as an aligned table with pinnedKeys as left columns before a │ divider
+     * @param keys all column keys (will be sorted; pinnedKeys are moved to front in order)
+     * @param rows data rows
+     * @param pinnedKeys keys to place before the │ divider, in the order given
+     */
+    QString PrintTable(QStringList keys, QList<QStringHash> rows, QStringList pinnedKeys) {
+        if (keys.isEmpty() || rows.isEmpty())
+            return QString();
+
+        /* move pinnedKeys to front in order, keep remaining keys sorted */
+        for (const QString &pk : pinnedKeys)
+            keys.removeAll(pk);
+        for (int i = pinnedKeys.size() - 1; i >= 0; --i)
+            keys.prepend(pinnedKeys[i]);
+
+        int pinned = pinnedKeys.size();
+
+        /* strip "Object." prefix from keys for display */
+        QStringList headers;
+        for (const QString &key : keys) {
+            int dot = key.indexOf('.');
+            headers.append(dot >= 0 ? key.mid(dot + 1) : key);
+        }
+
+        /* compute per-column widths from headers and data */
+        QVector<int> widths(keys.size());
+        for (int i = 0; i < keys.size(); ++i)
+            widths[i] = headers[i].length();
+        for (const auto &row : rows)
+            for (int i = 0; i < keys.size(); ++i)
+                widths[i] = qMax(widths[i], row.value(keys[i]).length());
+
+        QStringList lines;
+
+        /* header row: pinned cols ... │ remaining cols ... */
+        QString header;
+        for (int i = 0; i < pinned; ++i) {
+            if (i > 0) header += " ";
+            header += headers[i].leftJustified(widths[i]);
+        }
+        header += " │";
+        for (int i = pinned; i < keys.size(); ++i)
+            header += " " + headers[i].leftJustified(widths[i]);
+        lines += header;
+
+        /* separator: ────┼───────────... */
+        int pinnedWidth = 0;
+        for (int i = 0; i < pinned; ++i)
+            pinnedWidth += widths[i] + (i > 0 ? 1 : 0);
+        QString sep = QString("─").repeated(pinnedWidth) + "─┼─";
+        for (int i = pinned; i < keys.size(); ++i) {
+            sep += QString("─").repeated(widths[i]);
+            if (i < keys.size() - 1)
+                sep += "─"; /* accounts for the space before each column */
+        }
+        lines += sep;
+
+        /* data rows */
+        for (const auto &row : rows) {
+            QString line;
+            for (int i = 0; i < pinned; ++i) {
+                if (i > 0) line += " ";
+                line += row.value(keys[i]).leftJustified(widths[i]);
+            }
+            line += " │";
+            for (int i = pinned; i < keys.size(); ++i)
+                line += " " + row.value(keys[i]).leftJustified(widths[i]);
+            lines += line;
+        }
+
+        return utils::Print(lines.join("\n"));
+    }
+
+
+    /* ---------------------------------------------------------- */
+    /* --------- MergeStringHash -------------------------------- */
+    /* ---------------------------------------------------------- */
+    QStringHash MergeStringHash(QStringHash hash1, QStringHash hash2) {
+        for (auto it = hash2.constBegin(); it != hash2.constEnd(); ++it) {
+            hash1.insert(it.key(), it.value());
+        }
+        return hash1;
+    }
+
+}

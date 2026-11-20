@@ -1,0 +1,97 @@
+/* ------------------------------------------------------------------------------
+  Squirrel subject.h
+  Copyright (C) 2004 - 2025
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
+#ifndef SQUIRRELSUBJECT_H
+#define SQUIRRELSUBJECT_H
+
+#include <QtSql>
+#include <QString>
+#include <QDate>
+#include <QJsonObject>
+#include <QJsonArray>
+#include "squirrelTypes.h"
+
+/**
+ * @brief The subject class
+ *
+ * contains details of a subject
+ */
+class squirrelSubject
+{
+public:
+    squirrelSubject(QString dbID);
+    void SetDebug(bool d) { debug = d; }
+
+    /* functions */
+    QHash<QString, QString> GetData(DatasetType d);
+    QJsonObject ToJSON();
+    QList<QPair<QString,QString>> GetStagedFileList();
+    QString CSVLine();
+    QString Error() { return err; }
+    QString GetDatabaseUUID() { return databaseUUID; }
+    QString PrintDetails();
+    QString PrintTree(bool isLast);
+    QString VirtualPath();
+    bool Get();               /* gets the object data from the database */
+    bool Remove();            /* remove the subject (and all child studies and series) from the database */
+    bool Store();             /* saves the object data from this object into the database */
+    bool Store(QSqlQuery &q); /* insert using a pre-prepared query (bulk load) */
+    void Populate(const QSqlQuery &q); /* populate fields from an already-executed SELECT * row */
+    bool Validate();          /* checks the object's fields, and populates msg with the reason(s) it is invalid */
+    bool isValid() { return Validate(); }
+    int GetNextStudyNumber();
+    qint64 GetObjectID() { return objectID; }
+    void SetDatabaseUUID(QString dbID) { databaseUUID = dbID; }
+    void SetDirFormat(QString subject_DirFormat, QString study_DirFormat = "orig", QString series_DirFormat = "orig") {subjectDirFormat = subject_DirFormat; studyDirFormat = study_DirFormat; seriesDirFormat = series_DirFormat; }
+    void SetObjectID(qint64 id) { objectID = id; }
+
+    QString msg;                /*!< reason(s) the object is invalid, set by Validate(). Blank if the object is valid */
+
+    /* JSON elements */
+    QDate DateOfBirth;          /*!< Date of birth. Not required, but can be useful to calculate age during studies. Can also contain only year... or contain only year and month */
+    QString EnrollmentGroup;    /*!< Enrollment group (patient, control, etc) */
+    QString EnrollmentStatus;   /*!< Enrollment status (completed, excluded, etc) */
+    QString Ethnicity1;         /*!< Ethnicity: hispanic, non-hispanic */
+    QString Ethnicity2;         /*!< Race: americanindian, asian, black, hispanic, islander, white */
+    QString GUID;               /*!< globally unique identifier, from NIMH's NDA */
+    QString Gender;             /*!< Gender identity */
+    QString ID;                 /*!< --- Unique identifier --- Must be unique within the squirrel package */
+    QString Notes;
+    QString Sex;                /*!< Sex at birth (biological sex) */
+    QStringList AlternateIDs;   /*!< List of alternate subject IDs */
+    int SequenceNumber;
+
+private:
+    void LogInvalid(QString func);
+
+    bool valid;
+    bool removed; /* true once Remove() has deleted this object from the database */
+    bool debug;
+    QString err;
+    qint64 objectID;
+    QString subjectDirFormat;
+    QString studyDirFormat = "orig";   /*!< passed down to child studies */
+    QString seriesDirFormat = "orig";  /*!< passed down to child series */
+    QString databaseUUID;
+};
+
+#endif // SQUIRRELSUBJECT_H

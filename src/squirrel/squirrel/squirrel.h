@@ -1,0 +1,308 @@
+/* ------------------------------------------------------------------------------
+  Squirrel squirrel.h
+  Copyright (C) 2004 - 2025
+  Gregory A Book <gregory.book@hhchealth.org> <gregory.a.book@gmail.com>
+  Olin Neuropsychiatry Research Center, Hartford Hospital
+  ------------------------------------------------------------------------------
+  GPLv3 License:
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+  ------------------------------------------------------------------------------ */
+
+#ifndef SQUIRREL_H
+#define SQUIRREL_H
+
+#include <QString>
+#include <QByteArray>
+#include <QDate>
+#include <QDateTime>
+#include <QDebug>
+#include <QtSql>
+#include <QMutex>
+#include <QUuid>
+#include <sstream>
+#include "squirrelSubject.h"
+#include "squirrelStudy.h"
+#include "squirrelSeries.h"
+#include "squirrelExperiment.h"
+#include "squirrelPipeline.h"
+#include "squirrelObservation.h"
+#include "squirrelIntervention.h"
+#include "squirrelGroupAnalysis.h"
+#include "squirrelDataDictionary.h"
+#include "squirrelTypes.h"
+
+
+/**
+ * @brief The squirrel class
+ *
+ * provides a complete class to read, write, modify, split, merge, and validate squirrel files
+ */
+class squirrel
+{
+public:
+    /* constructors */
+    squirrel(bool dbg=false, bool q=false);
+    ~squirrel();
+
+    /* user-facing package operations */
+    QString Print(bool detail=false);
+    bool Extract(QString destinationDir, QString &m);
+    bool Read();
+    bool Validate();
+    bool Write();
+    bool WriteUpdate();
+    bool ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m);
+    bool GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m); /*!< list archive entries whose path starts with subDir */
+
+    /* Embed a copy of the in-memory database as "squirrel.db" in the package,
+       so a later Read() can load it directly instead of re-parsing
+       squirrel.json and re-inserting every row. Write() and WriteUpdate() call
+       this automatically after writing squirrel.json. The copy is stamped with
+       a fingerprint of the archive's squirrel.json - its CRC32 and size from the
+       archive index, so checking it extracts nothing (Read() ignores the copy
+       if the JSON has since changed) and with whether this object's data came from a full
+       read (full reads ignore a copy made from a quick read). PHI params and
+       StagedFiles are scrubbed from the copy; the live database is untouched. */
+    bool WriteEmbeddedDatabase(QString &m);
+
+    /* get/set options */
+    QString GetDatabaseUUID() { return databaseUUID; } /*!< get the database UUID */
+    QString GetPackagePath();
+    QString GetSystemTempDir();
+    bool GetDebug() { return debug; } /*!< true if debugging is enabled */
+    bool GetDebugSQL() { return debugSQL; } /*!< true if SQL debugging is enabled */
+    void SetCommandLineExecution(bool c) { cmdLineExec = c; }
+    void SetDebug(bool d);
+    void SetDebugSQL(bool d);
+    void SetFileMode(FileMode m) { fileMode = m; } /*!< Set the file mode to either NewPackage or ExistingPackage */
+    void SetOverwritePackage(bool o);
+    void SetPackagePath(QString p) { packagePath = p; } /*!< Set the package path */
+    void SetQuickRead(bool q);
+    void SetUseEmbeddedDatabase(bool u) { useEmbeddedDb = u; } /*!< false forces Read() to parse squirrel.json, ignoring any squirrel.db */
+    void SetSystemTempDir(QString tmpdir);
+    void SetWriteLog(bool w) { writeLog = w; }
+
+    /* package JSON elements */
+    QDateTime Datetime;         /*!< datetime the package was created */
+    QString Changes;            /*!< any changes since last package release */
+    QString DataFormat;         /*!< orig, anon, anonfull, nift3d, nifti3dgz, nifti4d, nifti4dgz */
+    QString Description;        /*!< detailed description of the package */
+    QString License;            /*!< a data usage license */
+    QString NiDBversion;        /*!< NiDB version that wrote this package */
+    QString Notes;              /*!< JSON string of notes (may contain JSON sub-elements of 'import', 'merge', 'export') */
+    QString PackageFormat;      /*!< 'squirrel' */
+    QString PackageName;        /*!< name of the package */
+    QString Readme;             /*!< a README */
+    QString SeriesDirFormat;    /*!< orig, seq */
+    QString SquirrelBuild;      /*!< squirrel build */
+    QString SquirrelVersion;    /*!< squirrel version */
+    QString StudyDirFormat;     /*!< orig, seq */
+    QString SubjectDirFormat;   /*!< orig, seq */
+
+    /* get list(s) of objects */
+    QList<squirrelAnalysis> GetAnalysisList(qint64 studyRowID);
+    QList<squirrelDataDictionary> GetDataDictionaryList();
+    QList<squirrelExperiment> GetExperimentList();
+    QList<squirrelGroupAnalysis> GetGroupAnalysisList();
+    QList<squirrelIntervention> GetInterventionList(qint64 subjectRowID);
+    QList<squirrelObservation> GetObservationList(qint64 subjectRowID);
+    QList<squirrelPipeline> GetPipelineList();
+    QList<squirrelSeries> GetSeriesList(qint64 studyRowID);
+    QList<squirrelStudy> GetStudyList(qint64 subjectRowID);
+    QList<squirrelSubject> GetSubjectList();
+
+    /* lightweight row counts, for UIs that only need "how many" without
+       paying to construct every row's full object (e.g. explore's tree) */
+    qint64 CountStudies(qint64 subjectRowID);
+    qint64 CountSeries(qint64 studyRowID);
+    qint64 CountObservations(qint64 subjectRowID);
+    qint64 CountInterventions(qint64 subjectRowID);
+
+    /* get individual objects */
+    squirrelAnalysis GetAnalysis(qint64 analysisRowID);
+    squirrelDataDictionary GetDataDictionary(qint64 dataDictionaryRowID);
+    squirrelExperiment GetExperiment(qint64 experimentRowID);
+    squirrelGroupAnalysis GetGroupAnalysis(qint64 groupAnalysisRowID);
+    squirrelIntervention GetIntervention(qint64 interventionRowID);
+    squirrelObservation GetObservation(qint64 observationRowID);
+    squirrelPipeline GetPipeline(qint64 pipelineRowID);
+    squirrelSeries GetSeries(qint64 seriesRowID);
+    squirrelStudy GetStudy(qint64 studyRowID);
+    squirrelSubject GetSubject(qint64 subjectRowID);
+
+    /* find objects, and return rowID */
+    qint64 FindAnalysis(QString subjectID, int studyNum, QString analysisName);
+    qint64 FindDataDictionary(QString dataDictionaryName);
+    qint64 FindExperiment(QString experimentName);
+    qint64 FindGroupAnalysis(QString groupAnalysisName);
+    qint64 FindPipeline(QString pipelineName, int pipelineVersion = -1);
+    qint64 FindSeries(QString subjectID, int studyNum, int seriesNum);
+    qint64 FindSeriesByUID(QString seriesUID);
+    qint64 FindStudy(QString subjectID, int studyNum);
+    qint64 FindStudyByUID(QString studyUID);
+    qint64 FindSubject(QString id);
+    qint64 FindIntervention(QString subjectID, QString interventionName, QDateTime startDate);
+    qint64 FindObservation(QString subjectID, QString observationName, QDateTime startDate);
+
+    /* extract objects */
+    bool ExtractObject(ObjectType object, qint64 objectRowID, QString outDir, QString &m /*, bool recursive=false*/);
+
+    /* remove objects */
+    bool RemoveObject(ObjectType object, qint64 objectRowID);
+
+    bool AddStagedFiles(ObjectType object, qint64 rowid, QStringList files);
+
+    /* requence the subject data */
+    void ResequenceSubjects();
+    void ResequenceStudies(qint64 subjectRowID);
+    void ResequenceSeries(qint64 studyRowID);
+
+    /* package information */
+    bool GetJsonHeader(QJsonDocument &jdoc);
+    bool UpdateJsonHeader(QString json);
+    qint64 GetFileCount();
+    qint64 GetFreeDiskSpace(); /* this is not named GetDiskFreeSpace() because of collision with Windows API */
+    qint64 GetObjectCount(ObjectType object);
+    qint64 GetUnzipSize();
+
+    /* keeping data files at their virtual paths. Snapshot the paths before an
+       operation that can change them (renaming IDs, renumbering, resequencing),
+       then call MoveDataPaths() to move the files in the archive to match */
+    QHash<QString, QString> GetDataPaths();
+    void ResequenceAll();
+    bool MoveDataPaths(const QHash<QString, QString> &before, QString &m);
+
+    /* validation functions */
+    QString GetTempDir();
+    bool IsValid() { return isValid; }
+    /*!< true if ok to delete the object */
+    bool OkToDelete() { return isOkToDelete; }
+    bool IsModified() { return isModified; }
+    void SetModified(bool mod) { isModified = mod; }
+
+    /* functions to read special files */
+    QHash<QString, QString> ReadParamsFile(QString f);
+
+    /* logging */
+    /* All of the log accessors below are safe to call from a different thread
+       than the one running a long operation such as Write(). A parent
+       application can therefore run Write() on a worker thread and poll
+       GetLogBuffer()/GetProgress() from another thread to observe progress
+       while the call is still running. */
+    void Log(QString s);
+    void Debug(QString s, QString func="");
+    QString GetLog();          /*!< Get the entire log (thread-safe) */
+    QString GetLogBuffer();    /*!< Get and clear log accumulated since the last call (thread-safe) */
+    double GetProgress();      /*!< Get progress (0-100) of the current long operation (thread-safe) */
+    bool quiet=false;
+
+    /* printing of information to console */
+    QString PrintAnalyses(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID = -1, qint64 subjectRowID = -1);
+    QString PrintDataDictionary(PrintFormat printFormat=List);
+    QString PrintDataDictionary(DatasetType dataType, PrintFormat printFormat);
+    QString PrintDataDictionaryItems(DatasetType dataType, PrintFormat printFormat);
+    QString PrintExperiments(PrintFormat printFormat=List);
+    QString PrintExperiments(DatasetType dataType, PrintFormat printFormat);
+    QString PrintGroupAnalyses(PrintFormat printFormat=List);
+    QString PrintGroupAnalyses(DatasetType dataType, PrintFormat printFormat);
+    QString PrintInterventions(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
+    QString PrintObservations(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
+    QString PrintPackage();
+    QString PrintParams(PrintFormat printFormat, qint64 studyRowID, qint64 subjectRowID, int seriesNum = -1);
+    QString PrintPipelines(PrintFormat printFormat=List);
+    QString PrintPipelines(DatasetType dataType, PrintFormat printFormat);
+    QString PrintSeries(DatasetType dataType, PrintFormat printFormat, qint64 studyRowID, qint64 subjectRowID = -1);
+    QString PrintStudies(DatasetType dataType, PrintFormat printFormat, qint64 subjectRowID);
+    QString PrintSubjects(DatasetType dataType, PrintFormat printFormat);
+    QString PrintTree();
+
+    /* database and utility functions */
+
+    /* static functions */
+    static QString ObjectTypeToString(ObjectType object);
+    static ObjectType ObjectTypeToEnum(QString object);
+
+private:
+    void ResequenceTable(QString table, QString pkCol, QString parentCol, qint64 parentRowID, QString orderBy);
+
+    /* progress reporting for long operations (compression). SetProgress updates
+       the pollable progress value and appends a throttled progress line to the
+       log; ResetProgress zeroes it at the start of an operation. Both are
+       thread-safe (they take logMutex). */
+    void SetProgress(double pct);
+    void ResetProgress();
+
+    bool DatabaseConnect();
+    bool DeleteTempDir(QString dir);
+    bool InitializeDatabase();
+    bool MakeTempDir(QString &dir);
+
+    /* Read() helper - loads "squirrel.db" (see WriteEmbeddedDatabase()) when
+       the package has one that is current (its JSON hash matches the archive's
+       squirrel.json) and complete enough (made from a full read, if this is a
+       full read), skipping JSON parsing and per-row insertion. Returns false
+       if there is no usable embedded database or loading it fails, so the
+       caller falls back to the normal JSON-based read. */
+    bool ReadEmbeddedDatabase();
+    QString GetArchiveJsonHash(bool legacySha256 = false); /* fingerprint of the archive's squirrel.json (CRC32+size from the archive index), empty if unreadable */
+
+    /* 7zip archive functions */
+    bool AddFilesToArchive(QStringList filePaths, QStringList compressedFilePaths, QString archivePath, QString &m);
+    bool CompressDirectoryToArchive(QString dir, QString archivePath, QString &m);
+    bool ExtractArchiveToDirectory(QString archivePath, QString destinationPath, QString &m);
+    bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QByteArray &fileContents);
+    bool ExtractArchiveFileToMemory(QString archivePath, QString filePath, QString &fileContents);
+    bool Get7zipLibPath();
+    bool PreloadArchiveForRead(QHash<QString, QByteArray> &paramsByPath, QHash<QString, QStringList> &filesBySeriesDir, QString &m);
+    bool RemoveDirectoryFromArchive(QString compressedDirPath, QString archivePath, QString &m);
+    bool RenameDirectoriesInArchive(QList<QStringPair> renames, QString archivePath, QString &m);
+    bool UpdateMemoryFileToArchive(QString file, QString compressedFilePath, QString archivePath, QString &m);
+
+    /* logMutex guards log, logBuffer, progress and lastLoggedProgressPct so the
+       accessors can be called from a different thread than the running operation.
+       It is mutable so it can be locked inside const-like accessors. */
+    mutable QMutex logMutex;
+    QString log;
+    QString logBuffer;
+    double progress = 0.0;          /* 0-100, progress of the current long operation */
+    int lastLoggedProgressPct = -1; /* last whole percent written to the log, to throttle progress lines */
+    QString logfile;
+    QString p7zipLibPath;
+    QString packagePath;
+    QString systemTempDir;
+    QString workingDir;
+    QStringList msgs; /* squirrel messages to be passed back through the squirrel library */
+
+    FileMode fileMode;
+
+    /* database */
+    QSqlDatabase db;
+    QString databaseUUID; /* necessary to create unique DB connections if more than one squirrel package is opened at a time */
+
+    /* flags */
+    bool cmdLineExec; /* true if running from command line, false if running from library */
+    bool debug;
+    bool debugSQL = false;
+    bool isModified = false; /* true if any object in the package has been modified */
+    bool isOkToDelete;
+    bool isValid;
+    bool overwritePackage = false;
+    bool quickRead; /* set true to skip reading of the params.json files */
+    bool useEmbeddedDb = true; /* false to make Read() ignore squirrel.db */
+    bool dbFromFullRead = false; /* true if the live database holds a complete (non-quick) read of the package */
+    bool writeLog;
+};
+
+#endif // SQUIRREL_H
