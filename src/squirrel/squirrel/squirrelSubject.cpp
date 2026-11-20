@@ -609,11 +609,8 @@ QString squirrelSubject::VirtualPath() {
     else
         subjectDir = QString("%1").arg(SequenceNumber);
 
-    #ifdef Q_OS_WINDOWS
-        vPath = QString("data\\%1").arg(subjectDir);
-    #else
-        vPath = QString("data/%1").arg(subjectDir);
-    #endif
+    /* archive paths use '/' on every platform, matching how 7-Zip stores them */
+    vPath = QString("data/%1").arg(subjectDir);
 
     return vPath;
 }

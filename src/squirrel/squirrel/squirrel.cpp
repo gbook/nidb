@@ -34,6 +34,27 @@
 #include <QFileInfo>
 #include <QCoreApplication>
 
+/* ----- archive entry paths ----- */
+/* Paths inside a package are always handled with '/' separators. 7-Zip stores '/'
+   in the archive, but reports item paths with the native separator, so on Windows
+   item.path() comes back with '\'. Every path read from an archive goes through
+   ArchiveItemPath(), and every pattern given to bit7z's wildcard matching (which
+   compares against the native item path) goes through NativeArchivePattern(). */
+static QString ArchiveItemPath(const std::string &p) {
+    QString path = QString::fromStdString(p);
+#ifdef Q_OS_WINDOWS
+    path.replace('\\', '/');
+#endif
+    return path;
+}
+
+static QString NativeArchivePattern(QString pattern) {
+#ifdef Q_OS_WINDOWS
+    pattern.replace('/', '\\');
+#endif
+    return pattern;
+}
+
 /* ----- bit7z progress callbacks ----- */
 qint64 totalbytes(0);
 double blocksize(0.0);
@@ -849,13 +870,9 @@ bool squirrel::Read() {
                     QString parms;
                     QString paramsfilepath;
                     QString seriesPath;
-                    #ifdef Q_OS_WINDOWS
-                        seriesPath = QString("data\\%1\\%2\\%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
-                        paramsfilepath = seriesPath + "\\params.json";
-                    #else
-                        seriesPath = QString("data/%1/%2/%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
-                        paramsfilepath = seriesPath + "/params.json";
-                    #endif
+                    /* archive paths use '/' on every platform (see ArchiveItemPath) */
+                    seriesPath = QString("data/%1/%2/%3").arg(sqrlSubject.ID).arg(sqrlStudy.StudyNumber).arg(sqrlSeries.SeriesNumber);
+                    paramsfilepath = seriesPath + "/params.json";
                     if (preloadedParams.contains(paramsfilepath)) {
                         parms = QString::fromUtf8(preloadedParams.value(paramsfilepath));
                         sqrlSeries.params = ReadParamsFile(parms);
@@ -1005,8 +1022,8 @@ bool squirrel::Read() {
         squirrelExperiment sqrlExperiment(databaseUUID);
 
         sqrlExperiment.ExperimentName = jsonExperiment["ExperimentName"].toString();
-        sqrlExperiment.FileCount = jsonExperiment["FileCount"].toInt();
-        sqrlExperiment.Size = jsonExperiment["Size"].toInt();
+        sqrlExperiment.FileCount = jsonExperiment["FileCount"].toInteger();
+        sqrlExperiment.Size = jsonExperiment["Size"].toInteger();
         sqrlExperiment.Store();
     }
 
@@ -1327,6 +1344,9 @@ bool squirrel::Write() {
 
     QString j = QJsonDocument(root).toJson();
 
+    /* set false if updating an existing package fails, so the caller is told */
+    bool archiveOk = true;
+
     /* write the final .json file */
     if (fileMode == NewPackage) {
 
@@ -1408,8 +1428,10 @@ bool squirrel::Write() {
         }
         Log("Adding/updating files in existing package");
         QString m;
-        if (!AddFilesToArchive(diskPaths, archivePaths, GetPackagePath(), m))
+        if (!diskPaths.isEmpty() && !AddFilesToArchive(diskPaths, archivePaths, GetPackagePath(), m)) {
             Log("Error [" + m + "] adding file(s) to archive");
+            archiveOk = false;
+        }
         if (!scriptDir.isEmpty())
             DeleteTempDir(scriptDir);
 
@@ -1417,22 +1439,27 @@ bool squirrel::Write() {
         Log("Updating existing package");
         if (!UpdateMemoryFileToArchive(j, "squirrel.json", GetPackagePath(), m)) {
             Log("Error [" + m + "] compressing memory file to archive");
+            archiveOk = false;
         }
     }
 
     /* keep the embedded "squirrel.db" read-cache in sync with what was just
        written to squirrel.json above - see WriteEmbeddedDatabase(). This is a
        performance cache, not the package's record of truth, so a failure here
-       is logged but does not fail the write. */
-    QString embedMsg;
-    if (!WriteEmbeddedDatabase(embedMsg))
-        Log("Warning: unable to write embedded database [squirrel.db]. Message [" + embedMsg + "]");
+       is logged but does not fail the write. Skipped if the update above
+       failed: the database would describe changes the package doesn't have,
+       and an out-of-date squirrel.db is ignored by Read() anyway. */
+    if (archiveOk) {
+        QString embedMsg;
+        if (!WriteEmbeddedDatabase(embedMsg))
+            Log("Warning: unable to write embedded database [squirrel.db]. Message [" + embedMsg + "]");
+    }
 
     /* write the log file */
     if (writeLog)
         utils::WriteTextFile(logfile, log);
 
-    return true;
+    return archiveOk;
 }
 
 
@@ -1556,28 +1583,35 @@ bool squirrel::WriteUpdate() {
     QString j = QJsonDocument(root).toJson();
 
     /* update the package in place with the new .json file */
+    bool archiveOk = true;
     Log("Updating existing package");
     if (!UpdateMemoryFileToArchive(j, "squirrel.json", GetPackagePath(), m)) {
         Log("Error [" + m + "] compressing memory file to archive");
+        archiveOk = false;
     }
 
     /* add the pipeline scripts */
-    if (!scriptDiskPaths.isEmpty() && !AddFilesToArchive(scriptDiskPaths, scriptArchivePaths, GetPackagePath(), m))
+    if (!scriptDiskPaths.isEmpty() && !AddFilesToArchive(scriptDiskPaths, scriptArchivePaths, GetPackagePath(), m)) {
         Log("Error [" + m + "] adding pipeline script(s) to archive");
+        archiveOk = false;
+    }
     if (!scriptDir.isEmpty())
         DeleteTempDir(scriptDir);
 
     /* keep the embedded "squirrel.db" read-cache in sync - see Write() and
-       WriteEmbeddedDatabase(). Logged but non-fatal on failure. */
-    QString embedMsg;
-    if (!WriteEmbeddedDatabase(embedMsg))
-        Log("Warning: unable to write embedded database [squirrel.db]. Message [" + embedMsg + "]");
+       WriteEmbeddedDatabase(). Logged but non-fatal on failure, and skipped if
+       the update above failed (see Write()). */
+    if (archiveOk) {
+        QString embedMsg;
+        if (!WriteEmbeddedDatabase(embedMsg))
+            Log("Warning: unable to write embedded database [squirrel.db]. Message [" + embedMsg + "]");
+    }
 
     /* write the log file */
     if (writeLog)
         utils::WriteTextFile(logfile, log);
 
-    return true;
+    return archiveOk;
 }
 
 
@@ -1744,7 +1778,7 @@ QString squirrel::GetArchiveJsonHash(bool legacySha256) {
             const bit7z::BitInOutFormat &fmt = GetPackagePath().endsWith(".zip", Qt::CaseInsensitive) ? BitFormat::Zip : BitFormat::SevenZip;
             BitArchiveReader reader(lib, GetPackagePath().toStdString(), fmt);
             for (const auto &item : reader.items()) {
-                if (QString::fromStdString(item.path()) != "squirrel.json")
+                if (ArchiveItemPath(item.path()) != "squirrel.json")
                     continue;
                 if (item.itemProperty(BitProperty::CRC).isEmpty())
                     break; /* no CRC recorded - fall back to hashing the contents */
@@ -1917,7 +1951,7 @@ QString squirrel::PrintTree() {
         /* get intervention/observation list */
         QList<squirrelObservation> observations = GetObservationList(sub.GetObjectID());
         QList<squirrelIntervention> interventions = GetInterventionList(sub.GetObjectID());
-        str += utils::Print(QString("        %1 interventions   %2 observations").arg(observations.size()).arg(interventions.size()));
+        str += utils::Print(QString("        %1 interventions   %2 observations").arg(interventions.size()).arg(observations.size()));
     }
 
     /* iterate through pipelines */
@@ -2197,7 +2231,7 @@ bool squirrel::AddStagedFiles(ObjectType object, qint64 rowid, QStringList files
         if (s.Get()) {
             foreach (QString f, files) {
                 s.stagedFiles.append(f);
-                Debug(QString("Appended file [%1] of type [%2] to rowID [%3]. Size is now [%4]").arg(files.size()).arg(ObjectTypeToString(object)).arg(rowid).arg(s.stagedFiles.size()), __FUNCTION__);
+                Debug(QString("Appended file [%1] of type [%2] to rowID [%3]. Size is now [%4]").arg(f).arg(ObjectTypeToString(object)).arg(rowid).arg(s.stagedFiles.size()), __FUNCTION__);
             }
             if (s.Store())
                 return true;
@@ -3888,8 +3922,18 @@ bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outD
         squirrelPipeline p = GetPipeline(objectRowID);
         virtualPath = p.VirtualPath();
         jsonPath = outDir + "/pipeline.json";
-        QJsonDocument doc(p.ToJSON(jsonPath));
+        /* ToJSON() also writes the pipeline scripts under the directory it is given.
+           The scripts are extracted from the archive below, so write these copies to
+           a scratch directory and discard it */
+        QString scratchDir;
+        if (!MakeTempDir(scratchDir)) {
+            m = "Unable to create a temporary directory to extract pipeline [" + p.PipelineName + "]";
+            Log(m);
+            return false;
+        }
+        QJsonDocument doc(p.ToJSON(scratchDir));
         j = doc.toJson();
+        DeleteTempDir(scratchDir);
     }
     else if (object == GroupAnalysis) {
         squirrelGroupAnalysis g = GetGroupAnalysis(objectRowID);
@@ -3933,12 +3977,9 @@ bool squirrel::ExtractObject(ObjectType object, qint64 objectRowID, QString outD
         return true;
     }
 
-    /* do the extraction to disk */
-    #ifdef Q_OS_WINDOWS
-        virtualPath += "\\*";
-    #else
-        virtualPath += "/*";
-    #endif
+    /* do the extraction to disk. ExtractArchiveFilesToDirectory() converts the
+       pattern to the native separator */
+    virtualPath += "/*";
 
     if (ExtractArchiveFilesToDirectory(packagePath, virtualPath, outDir, m)) {
         /* write out the JSON to disk for this object as well */
@@ -4321,7 +4362,7 @@ bool squirrel::ExtractArchiveFileToMemory(QString archivePath, QString filePath,
         bool found = false;
         uint32_t index = 0;
         for (const auto &item : reader.items()) {
-            if (QString::fromStdString(item.path()) == filePath) {
+            if (ArchiveItemPath(item.path()) == filePath) {
                 index = item.index();
                 found = true;
                 break;
@@ -4553,7 +4594,7 @@ bool squirrel::RemoveDirectoryFromArchive(QString compressedDirPath, QString arc
             std::vector<uint32_t> indexes;
             BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
             for (const auto& item : reader) {
-                QString archivedPath = QString::fromStdString(item.path());
+                QString archivedPath = ArchiveItemPath(item.path());
                 /* match the directory itself, or anything inside it. A bare prefix match
                    would also remove e.g. data/S10 when removing data/S1 */
                 if ((archivedPath == compressedDirPath) || archivedPath.startsWith(compressedDirPath + "/")) {
@@ -4574,7 +4615,7 @@ bool squirrel::RemoveDirectoryFromArchive(QString compressedDirPath, QString arc
             std::vector<uint32_t> indexes;
             BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::SevenZip);
             for (const auto& item : reader) {
-                QString archivedPath = QString::fromStdString(item.path());
+                QString archivedPath = ArchiveItemPath(item.path());
                 /* match the directory itself, or anything inside it. A bare prefix match
                    would also remove e.g. data/S10 when removing data/S1 */
                 if ((archivedPath == compressedDirPath) || archivedPath.startsWith(compressedDirPath + "/")) {
@@ -4634,7 +4675,7 @@ bool squirrel::RenameDirectoriesInArchive(QList<QStringPair> renames, QString ar
         QList<QPair<uint32_t, QString>> itemRenames;
         BitArchiveReader reader(lib, archivePath.toStdString(), fmt);
         for (const auto& item : reader) {
-            QString archivedPath = QString::fromStdString(item.path()).replace("\\", "/");
+            QString archivedPath = ArchiveItemPath(item.path());
             int bestLength = -1;
             QString newPath;
             for (const QStringPair &r : renames) {
@@ -4933,7 +4974,7 @@ bool squirrel::PreloadArchiveForRead(QHash<QString, QByteArray> &paramsByPath, Q
         for (const auto &item : reader) {
             if (item.isDir())
                 continue;
-            QString path = QString::fromStdString(item.path());
+            QString path = ArchiveItemPath(item.path());
 
             QString seriesDir = SeriesDirOfArchivePath(path);
             if (!seriesDir.isEmpty())
@@ -4974,28 +5015,18 @@ bool squirrel::PreloadArchiveForRead(QHash<QString, QByteArray> &paramsByPath, Q
  * @return true if successful
  */
 bool squirrel::GetArchiveFileListing(QString archivePath, QString subDir, QStringList &files, QString &m) {
+    /* archive paths use '/' (see ArchiveItemPath); accept a prefix written with '\' too */
+    subDir.replace('\\', '/');
     try {
         using namespace bit7z;
         Bit7zLibrary lib(p7zipLibPath.toStdString());
+        const BitInOutFormat &fmt = archivePath.endsWith(".zip", Qt::CaseInsensitive) ? static_cast<const BitInOutFormat&>(BitFormat::Zip) : static_cast<const BitInOutFormat&>(BitFormat::SevenZip);
 
-        if (archivePath.endsWith(".zip", Qt::CaseInsensitive)) {
-            BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::Zip);
-            for (const auto& item : reader) {
-                QString archivedPath = QString::fromStdString(item.path());
-                if (archivedPath.startsWith(subDir)) {
-                    files.append(QString::fromStdString(item.path()));
-                }
-            }
-        }
-        else {
-            /* first, get the index of the directory to remove */
-            BitArchiveReader reader(lib, archivePath.toStdString(), bit7z::BitFormat::SevenZip);
-            for (const auto& item : reader) {
-                QString archivedPath = QString::fromStdString(item.path());
-                if (archivedPath.startsWith(subDir)) {
-                    files.append(QString::fromStdString(item.path()));
-                }
-            }
+        BitArchiveReader reader(lib, archivePath.toStdString(), fmt);
+        for (const auto& item : reader) {
+            QString archivedPath = ArchiveItemPath(item.path());
+            if (archivedPath.startsWith(subDir))
+                files.append(archivedPath);
         }
         return true;
     }
@@ -5161,8 +5192,10 @@ bool squirrel::GetJsonHeader(QJsonDocument &jdoc) {
  */
 bool squirrel::UpdateJsonHeader(QString json) {
     QString m;
-    if (!UpdateMemoryFileToArchive(json, "squirrel.json", GetPackagePath(), m))
+    if (!UpdateMemoryFileToArchive(json, "squirrel.json", GetPackagePath(), m)) {
         Log("Error [" + m + "] compressing memory file to archive");
+        return false;
+    }
 
     return true;
 }
@@ -5180,6 +5213,8 @@ bool squirrel::UpdateJsonHeader(QString json) {
  * @return true if successful
  */
 bool squirrel::ExtractArchiveFilesToDirectory(QString archivePath, QString filePattern, QString outDir, QString &m) {
+    /* bit7z matches the pattern against the native item path (see NativeArchivePattern) */
+    filePattern = NativeArchivePattern(filePattern);
     Log(QString("Attempting to extract files [%1] from archive [%2] to path [%3]").arg(filePattern).arg(archivePath).arg(outDir));
     try {
         using namespace bit7z;
@@ -5224,7 +5259,7 @@ bool squirrel::ExtractArchiveFilesToDirectory(QString archivePath, QString fileP
  */
 qint64 squirrel::GetFreeDiskSpace() {
     QStorageInfo storage = QStorageInfo::root();
-    storage.setPath(systemTempDir);
+    storage.setPath(GetSystemTempDir());
 
     if (storage.isReadOnly())
         return 0;

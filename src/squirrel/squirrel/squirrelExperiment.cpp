@@ -96,7 +96,7 @@ bool squirrelExperiment::Store() {
         q.bindValue(":name", ExperimentName);
         q.bindValue(":size", Size);
         q.bindValue(":FileCount", FileCount);
-        q.bindValue(":virtualPath", VirtualPath());
+        q.bindValue(":virtualpath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
         objectID = q.lastInsertId().toLongLong();
     }
@@ -107,7 +107,7 @@ bool squirrelExperiment::Store() {
         q.bindValue(":name", ExperimentName);
         q.bindValue(":size", Size);
         q.bindValue(":FileCount", FileCount);
-        q.bindValue(":virtualPath", VirtualPath());
+        q.bindValue(":virtualpath", VirtualPath());
         utils::SQLQuery(q, __FUNCTION__, __FILE__, __LINE__);
     }
 
