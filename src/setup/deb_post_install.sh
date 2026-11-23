@@ -306,11 +306,16 @@ cat > /etc/apache2/conf-available/nidb.conf <<'EOF'
 # NiDB Apache settings - written by the NiDB installer, overwritten on upgrade.
 # Put local overrides in a file that sorts after this one (e.g. zz-nidb-local.conf).
 
-# no directory listings anywhere in the docroot (e.g. /download/ holds export zips).
-# FollowSymLinks stays on: /var/www/html/download is a symlink to the data directory.
+# no directory listings anywhere in the docroot
 <Directory "/var/www/html">
     Options -Indexes +FollowSymLinks
 </Directory>
+
+# web export zips live in [downloaddir], outside the docroot, and are served only by exportdownload.php,
+# which checks the user (P1). Block the old public /download path in case a link or directory is still there.
+<LocationMatch "(?i)^/download(/|$)">
+    Require all denied
+</LocationMatch>
 
 # phpMyAdmin is not supported. Any copy left under the docroot is blocked; manage the database
 # with a desktop client such as HeidiSQL (over an SSH tunnel) or the mysql command line instead.
@@ -400,7 +405,7 @@ if ((new_installation)); then
     chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup
     chown nidb:nidb /nidb/*
     chown nidb:nidb /nidb/data
-    chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
+    chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/download /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
     chown -R nidb:nidb /var/www/html
 else
     echo 'Existing installation detected. Ensuring ownership of key directories is nidb'
@@ -408,21 +413,16 @@ else
     chown nidb:nidb /nidb/*
 fi
 
-# create the web download symlink only if it does not already exist. The package no longer ships
-# /var/www/html/download (see makeInstallerDebian*.sh) so that upgrades never clobber a custom
-# download path. When upgrading from an older package that did ship it, dpkg removes the link during
-# unpack, so restore the target saved by deb_pre_install.sh; otherwise use the default
-# /nidb/data/download. A pre-existing link (even one whose target is currently unmounted) is left as-is.
+# the public web download link /var/www/html/download is no longer used (P1): web exports are served by
+# exportdownload.php from [downloaddir]. Point [downloaddir] at the old link target so existing exports keep
+# working, then delete the link. When upgrading from an older package that shipped the link, dpkg has
+# already removed it, so use the target saved by deb_pre_install.sh.
 DOWNLOAD_LINK_STATE=/var/lib/nidb/download_link
-if [[ ! -e /var/www/html/download && ! -L /var/www/html/download ]]; then
-    DOWNLOAD_TARGET=/nidb/data/download
-    if [[ -s "$DOWNLOAD_LINK_STATE" ]]; then
-        DOWNLOAD_TARGET="$(cat "$DOWNLOAD_LINK_STATE")"
-    fi
-    echo "Creating web download link /var/www/html/download -> $DOWNLOAD_TARGET..."
-    ln -s "$DOWNLOAD_TARGET" /var/www/html/download
-    chown -h nidb:nidb /var/www/html/download
+SAVED_DOWNLOAD_TARGET=""
+if [[ -s "$DOWNLOAD_LINK_STATE" ]]; then
+    SAVED_DOWNLOAD_TARGET="$(cat "$DOWNLOAD_LINK_STATE")"
 fi
+bash /nidb/setup/migrate_download_link.sh "$SAVED_DOWNLOAD_TARGET" || true
 rm -f "$DOWNLOAD_LINK_STATE"
 
 # make sure nidb.cfg is owned by and writeable by the nidb account. settings.php (running as the

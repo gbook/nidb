@@ -4605,7 +4605,7 @@
 										<div class="header">
 											Web download
 										</div>
-										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['downloaddir']?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
+										<p>A .zip file will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
 									</div>
 								</div>
 							</div>
@@ -4619,7 +4619,7 @@
 										<div class="header">
 											Public download. Anyone with the link can download the dataset.
 										</div>
-										<p>A .zip file named NIDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['webdownloaddir']?></code>. A shareable download link will be available on the <b>Data &rarr; Exports &rarr; Public Downloads</b> page</p>
+										<p>A .zip file named NIDB-<i>####</i> will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code>. A shareable download link will be available on the <b>Data &rarr; Exports &rarr; Public Downloads</b> page</p>
 									</div>
 								</div>
 								

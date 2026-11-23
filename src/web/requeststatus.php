@@ -85,22 +85,7 @@
 	}
 
 
-	/* --------------------------------------------------- */
-	/* ------- CanAccessExport --------------------------- */
-	/* --------------------------------------------------- */
-	/* true if the export exists and the current user is a site admin or requested it */
-	function CanAccessExport($exportid) {
-		if ($exportid < 1) return false;
-
-		$stmt = mysqli_prepare($GLOBALS['linki'], "select username from exports where export_id = ?");
-		mysqli_stmt_bind_param($stmt, "i", $exportid);
-		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__);
-		mysqli_stmt_close($stmt);
-		if (!$result || (mysqli_num_rows($result) < 1)) return false;
-		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
-
-		return ($GLOBALS['issiteadmin'] || ($row['username'] == $GLOBALS['username']));
-	}
+	/* CanAccessExport() is in functions.php (shared with exportdownload.php) */
 
 
 	/* --------------------------------------------------- */
@@ -409,15 +394,15 @@
 				?><span style="color: gray">Preparing download...</span><?
 				return;
 			}
-			$zipFileName = "NIDB-$exportid.zip";
-			$zipFilePath = $GLOBALS['cfg']['webdir'] . "/download/$zipFileName";
-			$filesize = file_exists($zipFilePath) ? filesize($zipFilePath) : 0;
+			/* the zip lives in [downloaddir], outside the docroot, and is served by exportdownload.php */
+			$zipFilePath = GetExportZipPath($exportid);
+			$filesize = ($zipFilePath != "") ? filesize($zipFilePath) : 0;
 
 			if ($filesize == 0) {
-				?><span style="color: gray" title="<?=htmlspecialchars($zipFilePath)?>"><i class="spinner loading icon"></i> Zipping...</span><?
+				?><span style="color: gray"><i class="spinner loading icon"></i> Zipping...</span><?
 			}
 			else {
-				?><a class="ui mini fluid blue button" href="download/<?=$zipFileName?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-weight: normal"><?=HumanReadableFilesize($filesize)?></span></a><?
+				?><a class="ui mini fluid blue button" href="exportdownload.php?exportid=<?=(int)$exportid?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-weight: normal"><?=HumanReadableFilesize($filesize)?></span></a><?
 			}
 		}
 		elseif (($destinationtype == "ndar") || ($destinationtype == "ndarcsv")) {
@@ -568,16 +553,9 @@
 								<?
 									if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
 										if ($complete) {
-											$filesize = 0;
-											$zipfilename = "";
-											foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.zip") as $f) {
-												$zipfile = $_SERVER['DOCUMENT_ROOT'] . "/download/$f";
-												if (file_exists($zipfile)) {
-													$filesize = filesize($zipfile);
-													$zipfilename = $f;
-													break;
-												}
-											}
+											/* the zip lives in [downloaddir], outside the docroot, and is served by exportdownload.php */
+											$zipfile = GetExportZipPath($exportid);
+											$filesize = ($zipfile != "") ? filesize($zipfile) : 0;
 
 											if ($filesize == 0) {
 												echo "Zipping download...";
@@ -585,7 +563,7 @@
 											else {
 												?>
 													<div class="ui labeled button">
-														<a class="ui blue button" href="download/<?=$zipfilename?>" title="Download zip file"><i class="download icon"></i> Download</a>
+														<a class="ui blue button" href="exportdownload.php?exportid=<?=(int)$exportid?>" title="Download zip file"><i class="download icon"></i> Download</a>
 														<div class="ui basic label" style="font-weight: normal; font-size: smaller"><?=HumanReadableFilesize($filesize)?></div>
 													</div>
 												<?

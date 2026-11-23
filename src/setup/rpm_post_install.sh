@@ -279,11 +279,16 @@ cat > /etc/httpd/conf.d/nidb.conf <<'EOF'
 # NiDB Apache settings - written by the NiDB installer, overwritten on upgrade.
 # Put local overrides in a file that sorts after this one (e.g. zz-nidb-local.conf).
 
-# no directory listings anywhere in the docroot (e.g. /download/ holds export zips).
-# FollowSymLinks stays on: /var/www/html/download is a symlink to the data directory.
+# no directory listings anywhere in the docroot
 <Directory "/var/www/html">
     Options -Indexes +FollowSymLinks
 </Directory>
+
+# web export zips live in [downloaddir], outside the docroot, and are served only by exportdownload.php,
+# which checks the user (P1). Block the old public /download path in case a link or directory is still there.
+<LocationMatch "(?i)^/download(/|$)">
+    Require all denied
+</LocationMatch>
 
 # phpMyAdmin is not supported. Any copy left under the docroot is blocked; manage the database
 # with a desktop client such as HeidiSQL (over an SSH tunnel) or the mysql command line instead.
@@ -371,7 +376,7 @@ if ((new_installation)); then
     chown -R nidb:nidb /nidb/bin /nidb/lock /nidb/logs /nidb/qcmodules /nidb/setup
     chown nidb:nidb /nidb/*
     chown nidb:nidb /nidb/data
-    chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
+    chown nidb:nidb /nidb/data/archive /nidb/data/backup /nidb/data/backupstaging /nidb/data/deleted /nidb/data/dicomincoming /nidb/data/download /nidb/data/ftp /nidb/data/export /nidb/data/problem /nidb/data/tmp /nidb/data/upload /nidb/data/uploaded /nidb/data/uploadstaging
     chown -R nidb:nidb /var/www/html
 else
     echo 'Existing installation detected. RPM changes ownership of key directories to root. Now changing ownership back to nidb'
@@ -379,9 +384,9 @@ else
     chown nidb:nidb /nidb/*
 fi
 
-# NOTE: the web download symlink /var/www/html/download is NOT created here. It is handled by the
-# pre/posttrans scriptlets in the RPM spec, because on an upgrade from an older package that owned the
-# link, RPM erases it AFTER this script runs.
+# NOTE: the old web download link /var/www/html/download is removed (and [downloaddir] pointed at its
+# target) by migrate_download_link.sh from the RPM spec's posttrans scriptlet, not here, because on an
+# upgrade from an older package that owned the link, RPM erases it AFTER this script runs (P1).
 
 # make sure nidb.cfg is owned by and writeable by the nidb account. settings.php (running as the
 # nidb php-fpm user) rewrites this file via WriteConfig(), so it must be nidb-writeable. RPM install

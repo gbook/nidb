@@ -848,16 +848,18 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             /* move the created .zip file to the web download directory */
             QString zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["exportdir"]).arg(exportid);
             QString m;
-            if (NiDBMoveFile(zipfile, n->cfg["webdownloaddir"], m)) {
-                n->Log(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["webdownloaddir"]));
+            /* [downloaddir] is outside the docroot; the web serves it through exportdownload.php (P1) */
+            if (NiDBMoveFile(zipfile, n->cfg["downloaddir"], m)) {
+                n->Log(QString("Success moving [%1] to [%2]").arg(zipfile).arg(n->cfg["downloaddir"]));
+                zipfile = QString("%1/NiDB-Squirrel-%2.zip").arg(n->cfg["downloaddir"]).arg(exportid);
             }
             else {
-                n->Log(QString("Error moving [%1] to [%2]. Message [%3]").arg(zipfile).arg(n->cfg["webdownloaddir"]).arg(m));
+                n->Log(QString("Error moving [%1] to [%2]. Message [%3]").arg(zipfile).arg(n->cfg["downloaddir"]).arg(m));
             }
             SetExportedPath(exportid, zipfile);
         }
         else {
-            QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
+            QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["downloaddir"]).arg(exportid);
             QString outdir;
             n->Log("Final zip file will be [" + zipfile + "]");
             if (filetype == "bids")
@@ -917,7 +919,7 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
             int expiredays = q.value("pd_expiredays").toInt();
 
             QString filename = QString("NiDB-%1.zip").arg(exportid);
-            QString zipfile = n->cfg["webdownloaddir"] + "/" + filename;
+            QString zipfile = n->cfg["downloaddir"] + "/" + filename;
             QString outdir = tmpexportdir;
 
             QString pwd = QDir::currentPath();
@@ -1222,7 +1224,7 @@ bool moduleExport::ExportXNAT(int exportid, QString &exportstatus, QString &msg)
      * sub-commands: upload-raw */
 
     /* extra steps for web download... of XNAT formatted file */
-    QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
+    QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["downloaddir"]).arg(exportid);
     QString outdir;
     n->Log("Final zip file will be [" + zipfile + "]");
     n->Log("tmpexportdir: [" + tmpexportdir + "]");
@@ -1569,7 +1571,7 @@ bool moduleExport::ExportNDA(int exportid, bool csvonly, QStringList ndaflags, Q
 
     /* extra steps for web download */
     if (ndaflags.contains("NDA_WEBDOWNLOAD", Qt::CaseInsensitive)) {
-        QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["webdownloaddir"]).arg(exportid);
+        QString zipfile = QString("%1/NIDB-%2.zip").arg(n->cfg["downloaddir"]).arg(exportid);
         QString outdir;
         n->Log("Final zip file will be [" + zipfile + "]");
         outdir = rootoutdir;

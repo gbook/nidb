@@ -130,10 +130,9 @@
 			return 0;
 		}
 		
-		/* create the download link on the filesystem */
-		$newlink = sha1(time());
-		$systemstring = "ln -s " . $GLOBALS['cfg']['webdownloaddir'] . "/$filename " . $GLOBALS['cfg']['webdownloaddir'] . "/$newlink.zip";
-		`$systemstring`;
+		/* public downloads are disabled until they are rebuilt (P7). They used to be served as symlinks in
+		   the public [webdir]/download directory, which no longer exists (P1): export files now live in
+		   [downloaddir], outside the docroot */
 
 		?>
 		<div class="ui segment">
@@ -165,18 +164,13 @@
 					else {
 						?>
 						<div class="ui labeled button">
-							<a href="download/<?="$newlink.zip";?>" class="ui big orange button"><i class="cloud download alternate icon"></i>Download</a>
-							<div class="ui left pointing basic label">
+							<a class="ui big disabled grey button"><i class="cloud download alternate icon"></i>Download</a>
+							<div class="ui left pointing grey basic label">
 								<?=HumanReadableFilesize($zipsize)?>
 							</div>
 						</div>
+						<br>Public downloads are temporarily unavailable.
 						<?
-						/* increment the numdownload for this download... i know, its not really accurate, but it'll be a ballpark figure. Chances are if they're coming to this page, they're only here to click this download link */
-						$sqlstring = "update public_downloads set pd_numdownloads = pd_numdownloads + 1 where pd_id = ?";
-						$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
-						mysqli_stmt_bind_param($stmt, 'i', $id);
-						MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
-						mysqli_stmt_close($stmt);
 					}
 					?>
 				</div>

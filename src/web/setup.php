@@ -210,7 +210,6 @@
 	$c['problemdir'] = GetVariable("problemdir");
 	$c['publicdownloaddir'] = GetVariable("publicdownloaddir");
 	$c['publicwebdir'] = GetVariable("publicwebdir");
-	$c['webdownloaddir'] = GetVariable("webdownloaddir");
 	$c['downloaddir'] = GetVariable("downloaddir");
 	$c['uploaddir'] = GetVariable("uploaddir");
 	$c['uploadeddir'] = GetVariable("uploadeddir");

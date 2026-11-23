@@ -13,10 +13,10 @@ Reference count of every configuration variable against the PHP and C++ code bas
 
 | Metric | Value |
 |---|---:|
-| Config variables defined in writer | 107 |
-| Total references | 743 (PHP 467 / C++ 276) |
+| Config variables defined in writer | 106 |
+| Total references | 743 (PHP 466 / C++ 277) |
 | Used in both PHP and C++ | 62 |
-| PHP-only | 45 |
+| PHP-only | 44 |
 | C++-only | 0 |
 | Unused in both trees | 0 |
 
@@ -55,7 +55,7 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 | `deleteddir` | 4 | 5 | both |  |
 | `displayrecentstudies` | 2 | 0 | php |  |
 | `displayrecentstudydays` | 2 | 0 | php |  |
-| `downloaddir` | 4 | 0 | php |  |
+| `downloaddir` | 7 | 8 | both | Web export zips. Must be outside the docroot; served by `exportdownload.php` (P1). |
 | `emailfrom` | 3 | 1 | both |  |
 | `emailonerror` | 2 | 0 | php |  |
 | `emailpassword` | 3 | 1 | both |  |
@@ -132,7 +132,6 @@ Sorted alphabetically. Scope: **both** = used in PHP and C++; **php** = PHP only
 | `usecluster` | 1 | 1 | both |  |
 | `version` | 4 | 0 | php |  |
 | `webdir` | 6 | 0 | php |  |
-| `webdownloaddir` | 4 | 7 | both |  |
 
 ## Storage tiers
 

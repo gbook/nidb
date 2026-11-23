@@ -108,35 +108,36 @@
 				$zipfilename = "$uid-$study_num-$series_num-$datatype.zip";
 			}
 			
-			/* create the zip file in the tmp directory .... */
-			$zipfilepath = $GLOBALS['cfg']['downloaddir'] . "/$zipfilename";
-			/* create zip object */
-			$systemstring = "zip -j " . escapeshellarg($zipfilepath) . " " . escapeshellarg($datapath) . "/*";
-			//echo "$systemstring<br><br>";
-			$junk = exec($systemstring);
-			
 			if (!file_exists($datapath)) {
 				Error("The archive path [" . htmlspecialchars($datapath) . "] for this data does not exist");
+				exit(0);
+			}
+
+			/* build the zip under a random name in [tmpdir] (not in a web-reachable or shared directory, and
+			   no collision when two people download the same series at once). The shutdown function
+			   deletes it however the request ends, including a client disconnect mid-download */
+			$tmpdir = rtrim(trim($GLOBALS['cfg']['tmpdir'] ?? ''), "/");
+			if (($tmpdir == '') || !is_dir($tmpdir) || !is_writable($tmpdir)) {
+				Error("The temporary directory [tmpdir] is not set or is not writable");
+				exit(0);
+			}
+			$zipfilepath = "$tmpdir/nidbdownload-" . bin2hex(random_bytes(16)) . ".zip";
+			ignore_user_abort(true);
+			register_shutdown_function(function() use ($zipfilepath) { if (is_file($zipfilepath)) @unlink($zipfilepath); });
+
+			set_time_limit(0);
+			$systemstring = "zip -j -q " . escapeshellarg($zipfilepath) . " " . escapeshellarg($datapath) . "/*";
+			$junk = exec($systemstring);
+
+			if (!file_exists($zipfilepath)) {
+				Error("The archive path [" . htmlspecialchars($datapath) . "] exists, but the server was unable to create a zip file");
+			}
+			elseif (filesize($zipfilepath) == 0) {
+				Error("The archive path [" . htmlspecialchars($datapath) . "] exists and a zip file was created but the file is empty");
 			}
 			else {
-				if (!file_exists($zipfilepath)) {
-					Error("The archive path [" . htmlspecialchars($datapath) . "] exists, but the server was unable to create a zip file [" . htmlspecialchars($zipfilepath) . "]. Zip command [" . htmlspecialchars($systemstring) . "] output [" . htmlspecialchars((string)$junk) . "]");
-				}
-				else {
-					if (filesize($zipfilepath) == 0) {
-						Error("The archive path [" . htmlspecialchars($datapath) . "] exists and a zip file was created [" . htmlspecialchars($zipfilepath) . "] but the file is empty");
-					}
-					else {
-						header("Content-Description: File Transfer");
-						header("Content-Disposition: attachment; filename=$zipfilename");
-						header("Content-Type: application/zip");
-						header("Content-length: " . filesize($zipfilepath) . "\n\n");
-						header("Content-Transfer-Encoding: binary");
-						// output data to the browser
-						readfile($zipfilepath);
-						unlink($zipfilepath);
-					}
-				}
+				/* streams the file (with Range support) and exits; the shutdown function then deletes it */
+				StreamFile($zipfilepath, $zipfilename, "application/zip");
 			}
 		}
 		else {

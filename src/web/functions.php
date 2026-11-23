@@ -3346,6 +3346,146 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- CanAccessExport -------------------- */
+	/* -------------------------------------------- */
+	/* true if the export exists and the current user requested it or is a site admin. Project admins
+	   are deliberately not included. Used by requeststatus.php and exportdownload.php */
+	function CanAccessExport($exportid) {
+		$exportid = (int)$exportid;
+		if ($exportid < 1) return false;
+
+		$sqlstring = "select username from exports where export_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, "i", $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$exportid]);
+		mysqli_stmt_close($stmt);
+		if (!$result || (mysqli_num_rows($result) < 1)) return false;
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+		$username = (string)($GLOBALS['username'] ?? '');
+		if ($username == '') return false;
+
+		return (($GLOBALS['issiteadmin'] ?? 0) || ((string)$row['username'] === $username));
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- GetExportZipPath ------------------- */
+	/* -------------------------------------------- */
+	/* path of the web-download .zip for an export, or "" if none exists. The name is built from the
+	   integer export id only (never from user input or exports.exported_path). moduleExport writes
+	   NIDB-<id>.zip (web, BIDS, XNAT, NDA web download) or NiDB-Squirrel-<id>.zip (squirrel) into
+	   [downloaddir], which must be outside the [webdir] */
+	function GetExportZipPath($exportid) {
+		$exportid = (int)$exportid;
+		$dir = rtrim(trim($GLOBALS['cfg']['downloaddir'] ?? ''), "/");
+		if (($exportid < 1) || ($dir == '')) return "";
+
+		foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.zip") as $f) {
+			if (is_file("$dir/$f")) return "$dir/$f";
+		}
+		return "";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- StreamFile ------------------------- */
+	/* -------------------------------------------- */
+	/* send a file to the browser as an attachment, with HTTP Range support so large downloads can be
+	   resumed. Handles a single range ("bytes=a-b", "bytes=a-", "bytes=-n"); multi-range requests get
+	   the whole file. If-Range is honoured, so a resume against a file that has since changed gets the
+	   whole new file instead of a mix of old and new bytes. The caller must already have checked
+	   permissions. Exits when done */
+	function StreamFile($path, $downloadname, $contenttype = "application/octet-stream") {
+		clearstatcache(true, $path);
+		$size = @filesize($path);
+		$fp = ($size === false) ? false : @fopen($path, 'rb');
+		if ($fp === false) {
+			http_response_code(404);
+			exit('File not found');
+		}
+
+		/* keep going if the client goes away mid-transfer so the cleanup below always runs, and release
+		   the session lock so the user's other pages aren't blocked for the length of the download */
+		ignore_user_abort(true);
+		set_time_limit(0);
+		if (session_status() === PHP_SESSION_ACTIVE) session_write_close();
+		@ini_set('zlib.output_compression', 'Off');
+		while (ob_get_level() > 0) { ob_end_clean(); }
+
+		$mtime = filemtime($path);
+		$etag = '"' . dechex($size) . '-' . dechex($mtime) . '"';
+		$lastmodified = gmdate('D, d M Y H:i:s', $mtime) . ' GMT';
+
+		$start = 0;
+		$end = $size - 1;
+		$partial = false;
+
+		$range = $_SERVER['HTTP_RANGE'] ?? '';
+		$ifrange = trim($_SERVER['HTTP_IF_RANGE'] ?? '');
+		$rangeok = ($ifrange == '') || ($ifrange === $etag) || ($ifrange === $lastmodified);
+		if (($range != '') && $rangeok && ($size > 0) && preg_match('/^bytes=(\d*)-(\d*)$/', trim($range), $m)) {
+			if (($m[1] === '') && ($m[2] !== '')) {
+				/* suffix range: the last n bytes */
+				$n = (int)$m[2];
+				if ($n > 0) {
+					$start = max(0, $size - $n);
+					$partial = true;
+				}
+			}
+			elseif ($m[1] !== '') {
+				$start = (int)$m[1];
+				if ($m[2] !== '') $end = min((int)$m[2], $size - 1);
+				$partial = true;
+			}
+
+			if ($partial && (($start > $end) || ($start >= $size))) {
+				fclose($fp);
+				http_response_code(416);
+				header("Content-Range: bytes */$size");
+				exit;
+			}
+		}
+
+		/* only filename-safe characters in the suggested name */
+		$downloadname = trim(preg_replace('/[^A-Za-z0-9._-]+/', '_', (string)$downloadname), '_.');
+		if ($downloadname == '') $downloadname = "download";
+
+		$length = $end - $start + 1;
+		if ($partial) {
+			http_response_code(206);
+			header("Content-Range: bytes $start-$end/$size");
+		}
+		header("Content-Type: $contenttype");
+		header("Content-Disposition: attachment; filename=\"$downloadname\"");
+		header("Content-Length: $length");
+		header("Accept-Ranges: bytes");
+		header("ETag: $etag");
+		header("Last-Modified: $lastmodified");
+		header("Cache-Control: private, no-store");
+		header("X-Content-Type-Options: nosniff");
+
+		if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'HEAD') {
+			fclose($fp);
+			exit;
+		}
+
+		if ($start > 0) fseek($fp, $start);
+		$remaining = $length;
+		while (($remaining > 0) && !feof($fp)) {
+			$buf = fread($fp, (int)min(1048576, $remaining));
+			if (($buf === false) || ($buf === '')) break;
+			echo $buf;
+			flush();
+			$remaining -= strlen($buf);
+			if (connection_aborted()) break;
+		}
+		fclose($fp);
+		exit;
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- IsViewablePath --------------------- */
 	/* -------------------------------------------- */
 	/* true if $realfile (already passed through realpath()) lives within the
@@ -3660,7 +3800,6 @@
 		if (($GLOBALS['cfg']['uploadeddir'] != "") && (isset($GLOBALS['cfg']['uploadeddir']))) { $uploadeddir = $GLOBALS['cfg']['uploadeddir']; } else { $uploadeddir = "/nidb/data/uploaded"; }
 		if (($GLOBALS['cfg']['uploadstagingdir'] != "") && (isset($GLOBALS['cfg']['uploadstagingdir']))) { $uploadstagingdir = $GLOBALS['cfg']['uploadstagingdir']; } else { $uploadstagingdir = "/nidb/data/uploadstaging"; }
 		if (($GLOBALS['cfg']['webdir'] != "") && (isset($GLOBALS['cfg']['webdir']))) { $webdir = $GLOBALS['cfg']['webdir']; } else { $webdir = "/var/www/html"; }
-		if (($GLOBALS['cfg']['webdownloaddir'] != "") && (isset($GLOBALS['cfg']['webdownloaddir']))) { $webdownloaddir = $GLOBALS['cfg']['webdownloaddir']; } else { $webdownloaddir = "/var/www/html/download"; }
 		
 		?>
 		<div class="ui container">
@@ -4318,12 +4457,6 @@
 							<td>Files which encounter problems during import/archiving are placed here</td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">webdownloaddir</td>
-							<td><input type="text" name="webdownloaddir" value="<?=htmlspecialchars($webdownloaddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['webdownloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Directory within the webdir that will link to the physical download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should point to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
-						</tr>
-						<tr>
 							<td class="right aligned tt">publicwebdir</td>
 							<td><input type="text" name="publicwebdir" value="<?=htmlspecialchars($publicwebdir ?? '')?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicwebdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
@@ -4334,26 +4467,7 @@
 							<td><input type="text" name="downloaddir" value="<?=htmlspecialchars($downloaddir ?? '')?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>
-								Directory which stores downloads available from the website
-								<? if ($returnpage == "settings") { ?>
-								<br><br>
-								<?
-									/* show where the web download link currently points */
-									$weblink = rtrim($webdir, "/") . "/download";
-									$hweblink = htmlspecialchars($weblink);
-									if (is_link($weblink)) {
-										$weblinkstatus = "<code>$hweblink</code> &rarr; <code>" . htmlspecialchars(readlink($weblink)) . "</code>";
-									}
-									elseif (file_exists($weblink)) {
-										$weblinkstatus = "<code>$hweblink</code> is a regular directory/file, not a link";
-									}
-									else {
-										$weblinkstatus = "<code>$hweblink</code> does not exist";
-									}
-								?>
-								Current: <?=$weblinkstatus?><br>
-								<button type="submit" form="downloadlinkform" class="ui compact yellow button" onclick="return confirm('Create (or replace) the link [webdir]/download pointing to the SAVED [downloaddir]?')">Create download symlink</button>
-								<? } ?>
+								Directory which stores web export .zip files. It must <b>not</b> be inside the [webdir]: files here are served only through <code>exportdownload.php</code>, which checks that the user requested the export (or is a site admin). Downloads can be very large, so put this on a filesystem with enough space.
 							</td>
 						</tr>
 						<tr>
@@ -4435,13 +4549,6 @@
 					</div>
 					<? } ?>
 					</form>
-					<? if ($returnpage == "settings") { ?>
-					<!-- standalone form for the downloaddir 'Create download symlink' button (forms cannot be nested inside configform) -->
-					<form id="downloadlinkform" method="post" action="settings.php">
-						<?=CSRFTokenField()?>
-						<input type="hidden" name="action" value="createdownloadlink">
-					</form>
-					<? } ?>
 					<!-- standalone form for the 'Send test email' button (forms cannot be nested inside configform) -->
 					<form id="testemailform" method="post" action="settings.php">
 						<?=CSRFTokenField()?>
@@ -4562,7 +4669,6 @@
 		if ($uploadeddir == "") { $uploadeddir = "/nidb/data/uploaded"; }
 		if ($uploadstagingdir == "") { $uploadstagingdir = "/nidb/data/uploadstaging"; }
 		if ($webdir == "") { $webdir = "/var/www/html"; }
-		if ($webdownloaddir == "") { $webdownloaddir = "/var/www/html/download"; }
 		
 		
 		$year = date("Y");
@@ -4725,7 +4831,6 @@
 [uploadeddir] = $uploadeddir
 [uploadstagingdir] = $uploadstagingdir
 [webdir] = $webdir
-[webdownloaddir] = $webdownloaddir
 ";
 
 		if (($GLOBALS['cfg']['cfgpath'] == null) || ($GLOBALS['cfg']['cfgpath'] == "")) {

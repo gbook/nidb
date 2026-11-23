@@ -3,9 +3,10 @@
 # NiDB Debian pre-install script (DEBIAN/preinst)
 # dpkg runs this before unpacking the package's files.
 #
-# Remember the current web download link target (default or custom). Older
+# Remember the old web download link target (default or custom). Older
 # packages shipped /var/www/html/download; when upgrading from one of those, dpkg
-# removes that link during unpack. deb_post_install.sh restores the saved target.
+# removes that link during unpack. deb_post_install.sh passes the saved target to
+# migrate_download_link.sh, which points [downloaddir] at it and removes the link (P1).
 # ------------------------------------------------------------------------------
 
 # dpkg calls preinst as: preinst install|upgrade <old-version>

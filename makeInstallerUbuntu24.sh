@@ -44,14 +44,14 @@ cp -rf tools/*                        "$NIDBDIR/bin/"     # bundled helper tools
 cp -rf src/qcmodules/*                "$NIDBDIR/qcmodules/"
 cp -f  src/setup/*                    "$NIDBDIR/setup/"
 cp -rf src/web/*                      "$WEBDIR/"
-rm -f  "$WEBDIR/download"             # do NOT package the download symlink; the postinst creates it if absent so upgrades never clobber a custom download path
+rm -f  "$WEBDIR/download"             # never package a download link; the docroot must not expose [downloaddir] (P1)
 
 # the postinst is the Debian equivalent of the RPM %post; ship a copy under
 # /nidb/setup too (parallel to the RPM), but the one that dpkg runs is DEBIAN/postinst
 cp -f  src/setup/deb_post_install.sh  "$DEBDIR/postinst"
 chmod 0755 "$DEBDIR/postinst"
-# the preinst saves the current download link target so the postinst can restore it after dpkg
-# removes a link shipped by an older package
+# the preinst saves the old download link target so the postinst can point [downloaddir] at it (P1),
+# even after dpkg removes a link shipped by an older package
 cp -f  src/setup/deb_pre_install.sh   "$DEBDIR/preinst"
 chmod 0755 "$DEBDIR/preinst"
 
