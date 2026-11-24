@@ -2152,18 +2152,67 @@ static bool HasRecentContent(const QString &dir, const QDateTime &cutoff) {
 
 
 /* ---------------------------------------------------------- */
+/* --------- CountDeletable --------------------------------- */
+/* ---------------------------------------------------------- */
+/* Counts what deleting `p` would remove: regular files and symlinks count as
+   files; bytes are the sizes of the regular files only (a symlink frees no
+   data). Hidden entries are included and symlinked directories are not
+   descended into, matching what SafeDeletePath() actually removes. Nothing
+   is counted if `p` no longer exists. */
+/**
+ * @brief CountDeletable
+ * @param p File, symlink, or directory
+ * @param numFiles Receives the number of files/symlinks
+ * @param numBytes Receives the total size of the regular files
+ */
+static void CountDeletable(const QString &p, qint64 &numFiles, qint64 &numBytes) {
+    numFiles = 0;
+    numBytes = 0;
+
+    QFileInfo fi(p);
+    if (fi.isSymLink()) {
+        numFiles = 1;
+        return;
+    }
+    if (fi.isFile()) {
+        numFiles = 1;
+        numBytes = fi.size();
+        return;
+    }
+    if (!fi.isDir())
+        return;
+
+    QDirIterator it(p, QDir::Files | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        QFileInfo f = it.fileInfo();
+        if (f.isSymLink())
+            numFiles++;
+        else if (f.isFile()) {
+            numFiles++;
+            numBytes += f.size();
+        }
+    }
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- CleanPath -------------------------------------- */
 /* ---------------------------------------------------------- */
 /**
  * @brief CleanPath Cleans a given path of files/directories older than X days
  * @param path Path to clean
  * @param days Days
+ * @param numFiles Receives the number of files (including symlinks) successfully deleted
+ * @param numBytes Receives the total size in bytes of the regular files successfully deleted
  * @param m Messages
  * @return true if successful, false otherwise
  */
-bool CleanPath(const QString &path, int days, QString &m) {
+bool CleanPath(const QString &path, int days, qint64 &numFiles, qint64 &numBytes, QString &m) {
 
     m.clear();
+    numFiles = 0;
+    numBytes = 0;
 
     if (days < 1) {
         m = QString("days [%1] is less than 1").arg(days);
@@ -2216,10 +2265,25 @@ bool CleanPath(const QString &path, int days, QString &m) {
             if (fileInfo.isDir() && HasRecentContent(fileInfo.absoluteFilePath(), cutoffDate))
                 continue;
 
+            /* count before deleting, since the files are gone afterward */
+            qint64 filesBefore(0), bytesBefore(0);
+            CountDeletable(fileInfo.absoluteFilePath(), filesBefore, bytesBefore);
+
             QString m2;
-            if (!SafeDeletePath(fileInfo.absoluteFilePath(), path, m2)) {
+            if (SafeDeletePath(fileInfo.absoluteFilePath(), path, m2)) {
+                numFiles += filesBefore;
+                numBytes += bytesBefore;
+            }
+            else {
                 m += m2 + "\n";
                 ret = false;
+
+                /* a recursive directory delete can fail partway through, so
+                   count only what is no longer there */
+                qint64 filesAfter(0), bytesAfter(0);
+                CountDeletable(fileInfo.absoluteFilePath(), filesAfter, bytesAfter);
+                numFiles += qMax<qint64>(0, filesBefore - filesAfter);
+                numBytes += qMax<qint64>(0, bytesBefore - bytesAfter);
             }
         }
     }
