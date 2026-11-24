@@ -3777,7 +3777,9 @@
 	/* -------------------------------------------- */
 	/* ------- DisplaySettings -------------------- */
 	/* -------------------------------------------- */
-	function DisplaySettings($returnpage) {
+	/* $extratabs: optional array of 'tabid' => array('label' => ..., 'render' => callable) for
+	   page-specific tabs appended after the built-in ones (e.g. settings.php's system message) */
+	function DisplaySettings($returnpage, $extratabs = array()) {
 
 		/* load the actual .cfg file */
 		$GLOBALS['cfg'] = LoadConfig();
@@ -3790,10 +3792,9 @@
 			if ($L) mysqli_close($L);
 		} catch (Throwable $e) { $dbconnect = false; }
 
-		if ($returnpage == "setup") { $active = "active"; } else { $active = ""; }
 		
 		$firstsetup = false;
-		if (($GLOBALS['cfg']['cfgpath'] == "") && ($returnpage == "setup")) {
+		if ((($GLOBALS['cfg']['cfgpath'] ?? '') == "") && ($returnpage == "setup")) {
 			echo "config file does not exist, and return page is setup.php. <b>This is a first time setup</b>";
 			$firstsetup = true;
 			PrintVariable($GLOBALS['cfg']);
@@ -3801,64 +3802,66 @@
 		
 		/* set default values if they're not set in the config */
 
-		if (($GLOBALS['cfg']['moduleauditthreads'] != "") && (isset($GLOBALS['cfg']['moduleauditthreads']))) { $moduleauditthreads = $GLOBALS['cfg']['moduleauditthreads']; } else { $moduleauditthreads = "1"; }
-		if (($GLOBALS['cfg']['modulebackupthreads'] != "") && (isset($GLOBALS['cfg']['modulebackupthreads']))) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
-		if (($GLOBALS['cfg']['moduleexportnonimagingthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportnonimagingthreads']))) { $moduleexportnonimagingthreads = $GLOBALS['cfg']['moduleexportnonimagingthreads']; } else { $moduleexportnonimagingthreads = "1"; }
-		if (($GLOBALS['cfg']['moduleexportthreads'] != "") && (isset($GLOBALS['cfg']['moduleexportthreads']))) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
-		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
-		if (($GLOBALS['cfg']['moduleimportthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportthreads']))) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
-		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
-		if (($GLOBALS['cfg']['modulemaintenancethreads'] != "") && (isset($GLOBALS['cfg']['modulemaintenancethreads']))) { $modulemaintenancethreads = $GLOBALS['cfg']['modulemaintenancethreads']; } else { $modulemaintenancethreads = "1"; }
-		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
-		if (($GLOBALS['cfg']['modulemriqathreads'] != "") && (isset($GLOBALS['cfg']['modulemriqathreads']))) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
-		if (($GLOBALS['cfg']['modulepipelinethreads'] != "") && (isset($GLOBALS['cfg']['modulepipelinethreads']))) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
-		if (($GLOBALS['cfg']['moduleqcthreads'] != "") && (isset($GLOBALS['cfg']['moduleqcthreads']))) { $moduleqcthreads = $GLOBALS['cfg']['moduleqcthreads']; } else { $moduleqcthreads = "2"; }
-		if (($GLOBALS['cfg']['moduleuploadthreads'] != "") && (isset($GLOBALS['cfg']['moduleuploadthreads']))) { $moduleuploadthreads = $GLOBALS['cfg']['moduleuploadthreads']; } else { $moduleuploadthreads = "1"; }
-		if (($GLOBALS['cfg']['mysqldatabase'] != "") && (isset($GLOBALS['cfg']['mysqldatabase']))) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
-		if (($GLOBALS['cfg']['mysqlhost'] != "") && (isset($GLOBALS['cfg']['mysqlhost']))) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
-		if (($GLOBALS['cfg']['mysqlpassword'] != "") && (isset($GLOBALS['cfg']['mysqlpassword']))) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
-		if (($GLOBALS['cfg']['mysqluser'] != "") && (isset($GLOBALS['cfg']['mysqluser']))) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
+		if ((isset($GLOBALS['cfg']['moduleauditthreads'])) && ($GLOBALS['cfg']['moduleauditthreads'] != "")) { $moduleauditthreads = $GLOBALS['cfg']['moduleauditthreads']; } else { $moduleauditthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['modulebackupthreads'])) && ($GLOBALS['cfg']['modulebackupthreads'] != "")) { $modulebackupthreads = $GLOBALS['cfg']['modulebackupthreads']; } else { $modulebackupthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['moduleexportnonimagingthreads'])) && ($GLOBALS['cfg']['moduleexportnonimagingthreads'] != "")) { $moduleexportnonimagingthreads = $GLOBALS['cfg']['moduleexportnonimagingthreads']; } else { $moduleexportnonimagingthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['moduleexportthreads'])) && ($GLOBALS['cfg']['moduleexportthreads'] != "")) { $moduleexportthreads = $GLOBALS['cfg']['moduleexportthreads']; } else { $moduleexportthreads = "2"; }
+		if ((isset($GLOBALS['cfg']['modulefileiothreads'])) && ($GLOBALS['cfg']['modulefileiothreads'] != "")) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
+		if ((isset($GLOBALS['cfg']['moduleimportthreads'])) && ($GLOBALS['cfg']['moduleimportthreads'] != "")) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['moduleimportuploadedthreads'])) && ($GLOBALS['cfg']['moduleimportuploadedthreads'] != "")) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['modulemaintenancethreads'])) && ($GLOBALS['cfg']['modulemaintenancethreads'] != "")) { $modulemaintenancethreads = $GLOBALS['cfg']['modulemaintenancethreads']; } else { $modulemaintenancethreads = "1"; }
+		if ((isset($GLOBALS['cfg']['moduleminipipelinethreads'])) && ($GLOBALS['cfg']['moduleminipipelinethreads'] != "")) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
+		if ((isset($GLOBALS['cfg']['modulemriqathreads'])) && ($GLOBALS['cfg']['modulemriqathreads'] != "")) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
+		if ((isset($GLOBALS['cfg']['modulepipelinethreads'])) && ($GLOBALS['cfg']['modulepipelinethreads'] != "")) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
+		if ((isset($GLOBALS['cfg']['moduleqcthreads'])) && ($GLOBALS['cfg']['moduleqcthreads'] != "")) { $moduleqcthreads = $GLOBALS['cfg']['moduleqcthreads']; } else { $moduleqcthreads = "2"; }
+		if ((isset($GLOBALS['cfg']['moduleuploadthreads'])) && ($GLOBALS['cfg']['moduleuploadthreads'] != "")) { $moduleuploadthreads = $GLOBALS['cfg']['moduleuploadthreads']; } else { $moduleuploadthreads = "1"; }
+		if ((isset($GLOBALS['cfg']['mysqldatabase'])) && ($GLOBALS['cfg']['mysqldatabase'] != "")) { $mysqldatabase = $GLOBALS['cfg']['mysqldatabase']; } else { $mysqldatabase = "nidb"; }
+		if ((isset($GLOBALS['cfg']['mysqlhost'])) && ($GLOBALS['cfg']['mysqlhost'] != "")) { $mysqlhost = $GLOBALS['cfg']['mysqlhost']; } else { $mysqlhost = "localhost"; }
+		if ((isset($GLOBALS['cfg']['mysqlpassword'])) && ($GLOBALS['cfg']['mysqlpassword'] != "")) { $mysqlpassword = $GLOBALS['cfg']['mysqlpassword']; } else { $mysqlpassword = "password"; }
+		if ((isset($GLOBALS['cfg']['mysqluser'])) && ($GLOBALS['cfg']['mysqluser'] != "")) { $mysqluser = $GLOBALS['cfg']['mysqluser']; } else { $mysqluser = "nidb"; }
 
-		if (($GLOBALS['cfg']['analysisdir'] != "") && (isset($GLOBALS['cfg']['analysisdir']))) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
-		if (($GLOBALS['cfg']['analysisdirb'] != "") && (isset($GLOBALS['cfg']['analysisdirb']))) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
-		if (($GLOBALS['cfg']['archivedir'] != "") && (isset($GLOBALS['cfg']['archivedir']))) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
+		if ((isset($GLOBALS['cfg']['analysisdir'])) && ($GLOBALS['cfg']['analysisdir'] != "")) { $analysisdir = $GLOBALS['cfg']['analysisdir']; } else { $analysisdir = "/nidb/data/pipeline"; }
+		if ((isset($GLOBALS['cfg']['analysisdirb'])) && ($GLOBALS['cfg']['analysisdirb'] != "")) { $analysisdirb = $GLOBALS['cfg']['analysisdirb']; } else { $analysisdirb = "/nidb/data/pipelineb"; }
+		if ((isset($GLOBALS['cfg']['archivedir'])) && ($GLOBALS['cfg']['archivedir'] != "")) { $archivedir = $GLOBALS['cfg']['archivedir']; } else { $archivedir = "/nidb/data/archive"; }
 		/* storage tiers (archivedir1..archivedir4): optional, blank when unconfigured */
 		$archivedir1 = $GLOBALS['cfg']['archivedir1'] ?? "";
 		$archivedir2 = $GLOBALS['cfg']['archivedir2'] ?? "";
 		$archivedir3 = $GLOBALS['cfg']['archivedir3'] ?? "";
 		$archivedir4 = $GLOBALS['cfg']['archivedir4'] ?? "";
-		if (($GLOBALS['cfg']['backupdir'] != "") && (isset($GLOBALS['cfg']['backupdir']))) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
-		if (($GLOBALS['cfg']['clusteranalysisdir'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdir']))) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
-		if (($GLOBALS['cfg']['clusteranalysisdirb'] != "") && (isset($GLOBALS['cfg']['clusteranalysisdirb']))) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
-		if (($GLOBALS['cfg']['deleteddir'] != "") && (isset($GLOBALS['cfg']['deleteddir']))) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
-		if (($GLOBALS['cfg']['downloaddir'] != "") && (isset($GLOBALS['cfg']['downloaddir']))) { $downloaddir = $GLOBALS['cfg']['downloaddir']; } else { $downloaddir = "/nidb/data/download"; }
-		if (($GLOBALS['cfg']['exportdir'] != "") && (isset($GLOBALS['cfg']['exportdir']))) { $exportdir = $GLOBALS['cfg']['exportdir']; } else { $exportdir = "/nidb/data/ftp"; }
-		if (($GLOBALS['cfg']['groupanalysisdir'] != "") && (isset($GLOBALS['cfg']['groupanalysisdir']))) { $groupanalysisdir = $GLOBALS['cfg']['groupanalysisdir']; } else { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
-		if (($GLOBALS['cfg']['importdir'] != "") && (isset($GLOBALS['cfg']['importdir']))) { $importdir = $GLOBALS['cfg']['importdir']; } else { $importdir = "/nidb/data/import"; }
-		if (($GLOBALS['cfg']['incoming2dir'] != "") && (isset($GLOBALS['cfg']['incoming2dir']))) { $incoming2dir = $GLOBALS['cfg']['incoming2dir']; } else { $incoming2dir = "/nidb/data/dicomincoming2"; }
-		if (($GLOBALS['cfg']['incomingdir'] != "") && (isset($GLOBALS['cfg']['incomingdir']))) { $incomingdir = $GLOBALS['cfg']['incomingdir']; } else { $incomingdir = "/nidb/data/dicomincoming"; }
-		if (($GLOBALS['cfg']['lockdir'] != "") && (isset($GLOBALS['cfg']['lockdir']))) { $lockdir = $GLOBALS['cfg']['lockdir']; } else { $lockdir = "/nidb/lock"; }
-		if (($GLOBALS['cfg']['logdir'] != "") && (isset($GLOBALS['cfg']['logdir']))) { $logdir = $GLOBALS['cfg']['logdir']; } else { $logdir = "/nidb/logs"; }
-		if (($GLOBALS['cfg']['mountdir'] != "") && (isset($GLOBALS['cfg']['mountdir']))) { $mountdir = $GLOBALS['cfg']['mountdir']; } else { $mountdir = "/nidb/mount"; }
-		if (($GLOBALS['cfg']['nidbdir'] != "") && (isset($GLOBALS['cfg']['nidbdir']))) { $nidbdir = $GLOBALS['cfg']['nidbdir']; } else { $nidbdir = "/nidb"; }
-		if (($GLOBALS['cfg']['packageimportdir'] != "") && (isset($GLOBALS['cfg']['packageimportdir']))) { $packageimportdir = $GLOBALS['cfg']['packageimportdir']; } else { $packageimportdir = "/nidb/data/packageimport"; }
-		if (($GLOBALS['cfg']['problemdir'] != "") && (isset($GLOBALS['cfg']['problemdir']))) { $problemdir = $GLOBALS['cfg']['problemdir']; } else { $problemdir = "/nidb/data/problem"; }
-		if (($GLOBALS['cfg']['qcmoduledir'] != "") && (isset($GLOBALS['cfg']['qcmoduledir']))) { $qcmoduledir = $GLOBALS['cfg']['qcmoduledir']; } else { $qcmoduledir = "/nidb/qcmodules"; }
-		if (($GLOBALS['cfg']['tmpdir'] != "") && (isset($GLOBALS['cfg']['tmpdir']))) { $tmpdir = $GLOBALS['cfg']['tmpdir']; } else { $tmpdir = "/nidb/data/tmp"; }
-		if (($GLOBALS['cfg']['uploaddir'] != "") && (isset($GLOBALS['cfg']['uploaddir']))) { $uploaddir = $GLOBALS['cfg']['uploaddir']; } else { $uploaddir = "/nidb/data/upload"; }
-		if (($GLOBALS['cfg']['uploadeddir'] != "") && (isset($GLOBALS['cfg']['uploadeddir']))) { $uploadeddir = $GLOBALS['cfg']['uploadeddir']; } else { $uploadeddir = "/nidb/data/uploaded"; }
-		if (($GLOBALS['cfg']['uploadstagingdir'] != "") && (isset($GLOBALS['cfg']['uploadstagingdir']))) { $uploadstagingdir = $GLOBALS['cfg']['uploadstagingdir']; } else { $uploadstagingdir = "/nidb/data/uploadstaging"; }
-		if (($GLOBALS['cfg']['webdir'] != "") && (isset($GLOBALS['cfg']['webdir']))) { $webdir = $GLOBALS['cfg']['webdir']; } else { $webdir = "/var/www/html"; }
+		if ((isset($GLOBALS['cfg']['backupdir'])) && ($GLOBALS['cfg']['backupdir'] != "")) { $backupdir = $GLOBALS['cfg']['backupdir']; } else { $backupdir = "/nidb/data/backup"; }
+		if ((isset($GLOBALS['cfg']['clusteranalysisdir'])) && ($GLOBALS['cfg']['clusteranalysisdir'] != "")) { $clusteranalysisdir = $GLOBALS['cfg']['clusteranalysisdir']; } else { $clusteranalysisdir = "/nidb/data/pipeline"; }
+		if ((isset($GLOBALS['cfg']['clusteranalysisdirb'])) && ($GLOBALS['cfg']['clusteranalysisdirb'] != "")) { $clusteranalysisdirb = $GLOBALS['cfg']['clusteranalysisdirb']; } else { $clusteranalysisdirb = "/nidb/data/pipelineb"; }
+		if ((isset($GLOBALS['cfg']['deleteddir'])) && ($GLOBALS['cfg']['deleteddir'] != "")) { $deleteddir = $GLOBALS['cfg']['deleteddir']; } else { $deleteddir = "/nidb/data/deleted"; }
+		if ((isset($GLOBALS['cfg']['downloaddir'])) && ($GLOBALS['cfg']['downloaddir'] != "")) { $downloaddir = $GLOBALS['cfg']['downloaddir']; } else { $downloaddir = "/nidb/data/download"; }
+		if ((isset($GLOBALS['cfg']['exportdir'])) && ($GLOBALS['cfg']['exportdir'] != "")) { $exportdir = $GLOBALS['cfg']['exportdir']; } else { $exportdir = "/nidb/data/ftp"; }
+		if ((isset($GLOBALS['cfg']['groupanalysisdir'])) && ($GLOBALS['cfg']['groupanalysisdir'] != "")) { $groupanalysisdir = $GLOBALS['cfg']['groupanalysisdir']; } else { $groupanalysisdir = "/nidb/data/pipelinegroup"; }
+		if ((isset($GLOBALS['cfg']['importdir'])) && ($GLOBALS['cfg']['importdir'] != "")) { $importdir = $GLOBALS['cfg']['importdir']; } else { $importdir = "/nidb/data/import"; }
+		if ((isset($GLOBALS['cfg']['incoming2dir'])) && ($GLOBALS['cfg']['incoming2dir'] != "")) { $incoming2dir = $GLOBALS['cfg']['incoming2dir']; } else { $incoming2dir = "/nidb/data/dicomincoming2"; }
+		if ((isset($GLOBALS['cfg']['incomingdir'])) && ($GLOBALS['cfg']['incomingdir'] != "")) { $incomingdir = $GLOBALS['cfg']['incomingdir']; } else { $incomingdir = "/nidb/data/dicomincoming"; }
+		if ((isset($GLOBALS['cfg']['lockdir'])) && ($GLOBALS['cfg']['lockdir'] != "")) { $lockdir = $GLOBALS['cfg']['lockdir']; } else { $lockdir = "/nidb/lock"; }
+		if ((isset($GLOBALS['cfg']['logdir'])) && ($GLOBALS['cfg']['logdir'] != "")) { $logdir = $GLOBALS['cfg']['logdir']; } else { $logdir = "/nidb/logs"; }
+		if ((isset($GLOBALS['cfg']['mountdir'])) && ($GLOBALS['cfg']['mountdir'] != "")) { $mountdir = $GLOBALS['cfg']['mountdir']; } else { $mountdir = "/nidb/mount"; }
+		if ((isset($GLOBALS['cfg']['nidbdir'])) && ($GLOBALS['cfg']['nidbdir'] != "")) { $nidbdir = $GLOBALS['cfg']['nidbdir']; } else { $nidbdir = "/nidb"; }
+		if ((isset($GLOBALS['cfg']['packageimportdir'])) && ($GLOBALS['cfg']['packageimportdir'] != "")) { $packageimportdir = $GLOBALS['cfg']['packageimportdir']; } else { $packageimportdir = "/nidb/data/packageimport"; }
+		if ((isset($GLOBALS['cfg']['problemdir'])) && ($GLOBALS['cfg']['problemdir'] != "")) { $problemdir = $GLOBALS['cfg']['problemdir']; } else { $problemdir = "/nidb/data/problem"; }
+		if ((isset($GLOBALS['cfg']['qcmoduledir'])) && ($GLOBALS['cfg']['qcmoduledir'] != "")) { $qcmoduledir = $GLOBALS['cfg']['qcmoduledir']; } else { $qcmoduledir = "/nidb/qcmodules"; }
+		if ((isset($GLOBALS['cfg']['tmpdir'])) && ($GLOBALS['cfg']['tmpdir'] != "")) { $tmpdir = $GLOBALS['cfg']['tmpdir']; } else { $tmpdir = "/nidb/data/tmp"; }
+		if ((isset($GLOBALS['cfg']['uploaddir'])) && ($GLOBALS['cfg']['uploaddir'] != "")) { $uploaddir = $GLOBALS['cfg']['uploaddir']; } else { $uploaddir = "/nidb/data/upload"; }
+		if ((isset($GLOBALS['cfg']['uploadeddir'])) && ($GLOBALS['cfg']['uploadeddir'] != "")) { $uploadeddir = $GLOBALS['cfg']['uploadeddir']; } else { $uploadeddir = "/nidb/data/uploaded"; }
+		if ((isset($GLOBALS['cfg']['uploadstagingdir'])) && ($GLOBALS['cfg']['uploadstagingdir'] != "")) { $uploadstagingdir = $GLOBALS['cfg']['uploadstagingdir']; } else { $uploadstagingdir = "/nidb/data/uploadstaging"; }
+		if ((isset($GLOBALS['cfg']['webdir'])) && ($GLOBALS['cfg']['webdir'] != "")) { $webdir = $GLOBALS['cfg']['webdir']; } else { $webdir = "/var/www/html"; }
 		
 		?>
-		<div class="ui container">
-			<div class="ui fluid styled accordion">
-				<div class="<?=$active?> title">
-					<div class="ui header">
-						<h2><i class="dropdown icon"></i> NiDB Settings <i class="green cogs icon"></i></h2>
-					</div>
-				</div>
-				<div class="<?=$active?> content">
+		<div class="ui fluid container" style="padding: 0 5em"> <!-- fluid: full page width, so the wide settings table has room -->
+			<div class="ui top attached tabular menu" id="settingstabs">
+				<a class="active item" data-tab="settings"><i class="green cogs icon"></i> NiDB Settings</a>
+				<a class="item" data-tab="phpvars">PHP Variables</a>
+				<a class="item" data-tab="cron">Scheduled cron jobs</a>
+				<? foreach ($extratabs as $tabid => $tab) { ?>
+				<a class="item" data-tab="<?=htmlspecialchars($tabid)?>"><?=htmlspecialchars($tab['label'])?></a>
+				<? } ?>
+			</div>
+			<div class="ui bottom attached active tab segment" data-tab="settings">
 					<span style="font-weight: normal">Reading from config file <div class="ui large label"><tt><?=htmlspecialchars($GLOBALS['cfg']['cfgpath'] ?? '')?></tt></div></span>
 			
 					<? if ($returnpage == "settings") { ?>
@@ -3870,7 +3873,11 @@
 					<?=CSRFTokenField()?>
 					<? } ?>
 					<input type="hidden" name="action" value="updateconfig">
-					<table class="ui very compact top attached celled table">
+					<style>
+						/* light purple highlight on the hovered setting; section header rows (td.active) are left alone */
+						#settingstable tbody tr:hover > td:not(.active) { background-color: #ede4f7 !important; }
+					</style>
+					<table class="ui very compact top attached celled table" id="settingstable">
 						<thead>
 							<tr>
 								<th class="ui inverted header" style="background-color: #666">Variable</th>
@@ -3884,13 +3891,13 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">debug</td>
-							<td><input type="checkbox" name="debug" value="1" <? if ($GLOBALS['cfg']['debug']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="debug" value="1" <? if (!empty($GLOBALS['cfg']['debug'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable debugging for the PHP pages. Will display all SQL statements.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">hideerrors</td>
-							<td><input type="checkbox" name="hideerrors" value="1" <? if ($GLOBALS['cfg']['hideerrors']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="hideerrors" value="1" <? if (!empty($GLOBALS['cfg']['hideerrors'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Hide a SQL error if it occurs. Emails are always sent. Always leave checked on production systems for security purposes!</td>
 						</tr>
@@ -4052,7 +4059,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">emailonerror</td>
-							<td><input type="checkbox" name="emailonerror" value="1" <? if ($GLOBALS['cfg']['emailonerror']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="emailonerror" value="1" <? if (!empty($GLOBALS['cfg']['emailonerror'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Send an email for SQL errors. Errors are always stored in the <code>error_log</code> table.</td>
 						</tr>
@@ -4091,7 +4098,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">ispublic</td>
-							<td><input type="checkbox" name="ispublic" value="1" <? if ($GLOBALS['cfg']['ispublic']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="ispublic" value="1" <? if (!empty($GLOBALS['cfg']['ispublic'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Selected if this installation is on a public server and only has port 80 open</td>
 						</tr>
@@ -4103,7 +4110,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">allowphi</td>
-							<td><input type="checkbox" name="allowphi" value="1" <? if ($GLOBALS['cfg']['allowphi']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="allowphi" value="1" <? if (!empty($GLOBALS['cfg']['allowphi'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Checked to allow PHI (name, DOB) on server. Unchecked to remove all PHI by default (replace name with 'Anonymous' and DOB with only year)</td>
 						</tr>
@@ -4120,7 +4127,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">displayrecentstudies</td>
-							<td><input type="checkbox" name="displayrecentstudies" value="1" <? if ($GLOBALS['cfg']['displayrecentstudies']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="displayrecentstudies" value="1" <? if (!empty($GLOBALS['cfg']['displayrecentstudies'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Display recently collected studies on the Home page</td>
 						</tr>
@@ -4136,51 +4143,51 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">enableremoteconn</td>
-							<td><input type="checkbox" name="enableremoteconn" value="1" <? if ($GLOBALS['cfg']['enableremoteconn']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enableremoteconn" value="1" <? if (!empty($GLOBALS['cfg']['enableremoteconn'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Allow this server to send data to remote NiDB servers</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablecalendar</td>
-							<td><input type="checkbox" name="enablecalendar" value="1" <? if ($GLOBALS['cfg']['enablecalendar']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablecalendar" value="1" <? if (!empty($GLOBALS['cfg']['enablecalendar'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable the calendar</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablepipelines</td>
-							<td><input type="checkbox" name="enablepipelines" value="1" <? if ($GLOBALS['cfg']['enablepipelines']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablepipelines" value="1" <? if (!empty($GLOBALS['cfg']['enablepipelines'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable pipelines</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enabledatamenu</td>
-							<td><input type="checkbox" name="enabledatamenu" value="1" <? if ($GLOBALS['cfg']['enabledatamenu']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enabledatamenu" value="1" <? if (!empty($GLOBALS['cfg']['enabledatamenu'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable the main Data menu</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablerdoc</td>
-							<td><input type="checkbox" name="enablerdoc" value="1" <? if ($GLOBALS['cfg']['enablerdoc']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablerdoc" value="1" <? if (!empty($GLOBALS['cfg']['enablerdoc'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable RDoCdb (NIMH Data Archive - NDA) features</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablepublicdownloads</td>
-							<td><input type="checkbox" name="enablepublicdownloads" value="1" <? if ($GLOBALS['cfg']['enablepublicdownloads']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablepublicdownloads" value="1" <? if (!empty($GLOBALS['cfg']['enablepublicdownloads'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable public downloads</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablewebexport</td>
-							<td><input type="checkbox" name="enablewebexport" value="1" <? if ($GLOBALS['cfg']['enablewebexport']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablewebexport" value="1" <? if (!empty($GLOBALS['cfg']['enablewebexport'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Allow this server to export data to downloadable web links</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablebackup</td>
-							<td><input type="checkbox" name="enablebackup" value="1" <? if ($GLOBALS['cfg']['enablebackup']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablebackup" value="1" <? if (!empty($GLOBALS['cfg']['enablebackup'])) { echo "checked"; } ?>></td>
 							<td></td>
-							<td>Enable automatic copying of newly archived data to the backup directory. Backup directory is currently <code><?=$GLOBALS['cfg']['backupdir']?></code>. </td>
+							<td>Enable automatic copying of newly archived data to the backup directory. Backup directory is currently <code><?=htmlspecialchars($GLOBALS['cfg']['backupdir'] ?? '')?></code>. </td>
 						</tr>
 
 						<tr>
@@ -4219,7 +4226,7 @@
 						<tr>
 							<td class="right aligned tt">backupstagingdir</td>
 							<td><input type="text" name="backupstagingdir" value="<?=htmlspecialchars($GLOBALS['cfg']['backupstagingdir'] ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupstagingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupstagingdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Path where data will be staged prior to writing to tape</td>
 						</tr>
 						<tr>
@@ -4240,7 +4247,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablecsa</td>
-							<td><input type="checkbox" name="enablecsa" value="1" <? if ($GLOBALS['cfg']['enablecsa']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablecsa" value="1" <? if (!empty($GLOBALS['cfg']['enablecsa'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Enable reading of Siemens CSA header in DICOM files. This option allows phase encoding direction to be read, but will make archiving SLOW for non-mosaic images.</td>
 						</tr>
@@ -4258,19 +4265,19 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablenfs</td>
-							<td><input type="checkbox" name="enablenfs" value="1" <? if ($GLOBALS['cfg']['enablenfs']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablenfs" value="1" <? if (!empty($GLOBALS['cfg']['enablenfs'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Display the NFS export options. Allow NiDB to write to NFS mount points</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">enableftp</td>
-							<td><input type="checkbox" name="enableftp" value="1" <? if ($GLOBALS['cfg']['enableftp']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enableftp" value="1" <? if (!empty($GLOBALS['cfg']['enableftp'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Display the FTP export options. Uncheck if this site does not have FTP, SCP, or other file transfer services enabled</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">allowrawdicomexport</td>
-							<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if ($GLOBALS['cfg']['allowrawdicomexport']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="allowrawdicomexport"  value="1" <? if (!empty($GLOBALS['cfg']['allowrawdicomexport'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Allow DICOM files to be downloaded from this server without being anonymized first. Unchecking this option removes the Download and 3D viewier icons on the study page</td>
 						</tr>
@@ -4302,7 +4309,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">usecluster</td>
-							<td><input type="checkbox" name="usecluster" value="1" <? if ($GLOBALS['cfg']['usecluster']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="usecluster" value="1" <? if (!empty($GLOBALS['cfg']['usecluster'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Use a cluster to perform QC</td>
 						</tr>
@@ -4351,7 +4358,7 @@
 						<tr>
 							<td class="right aligned tt">qcpath</td>
 							<td><input type="text" name="qcpath" value="<?=htmlspecialchars($GLOBALS['cfg']['qcpath'] ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcpath'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcpath'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Path to be used for QC module processing, as seen by NiDB</td>
 						</tr>
 						<tr>
@@ -4366,7 +4373,7 @@
 						</tr>
 						<tr>
 							<td class="right aligned tt">enablecas</td>
-							<td><input type="checkbox" name="enablecas" value="1" <? if ($GLOBALS['cfg']['enablecas']) { echo "checked"; } ?>></td>
+							<td><input type="checkbox" name="enablecas" value="1" <? if (!empty($GLOBALS['cfg']['enablecas'])) { echo "checked"; } ?>></td>
 							<td></td>
 							<td>Use CAS authentication</td>
 						</tr>
@@ -4417,37 +4424,37 @@
 						<tr>
 							<td class="right aligned tt"><b>nidbdir</b></td>
 							<td><input type="text" name="nidbdir" value="<?=htmlspecialchars($nidbdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['nidbdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['nidbdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td><b>Main NiDB installation directory</b></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt"><b>webdir</b></td>
 							<td><input type="text" name="webdir" value="<?=htmlspecialchars($webdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['webdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['webdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td><b>Root of the website directory (Frontend)</b></td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">lockdir</td>
 							<td><input type="text" name="lockdir" value="<?=htmlspecialchars($lockdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['lockdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['lockdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Lock directory for the programs</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">logdir</td>
 							<td><input type="text" name="logdir" value="<?=htmlspecialchars($logdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['logdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['logdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Log directory for the programs</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">mountdir</td>
 							<td><input type="text" name="mountdir" value="<?=htmlspecialchars($mountdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['mountdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['mountdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory in which user data directories are mounted and any directories which should be accessible from the NFS mount export option of the Search page. For example, if the user enters <code>/home/user1/data/testing</code> the mountdir will be prepended to point to the real mount point of <code>/mount/home/user1/data/testing</code>. This prevents users from writing data to the OS directories.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">qcmoduledir</td>
 							<td><input type="text" name="qcmoduledir" value="<?=htmlspecialchars($qcmoduledir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcmoduledir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['qcmoduledir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory containing QC modules. Usually a subdirectory of the programs directory</td>
 						</tr>
 
@@ -4458,7 +4465,7 @@
 						<tr>
 							<td class="right aligned tt">archivedir</td>
 							<td><input type="text" name="archivedir" value="<?=htmlspecialchars($archivedir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['archivedir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['archivedir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory for archived data. All binary data is stored in this directory.</td>
 						</tr>
 						<? for ($t = 1; $t <= 4; $t++) { $tierdir = ${"archivedir$t"}; ?>
@@ -4472,49 +4479,49 @@
 						<tr>
 							<td class="right aligned tt">backupdir</td>
 							<td><input type="text" name="backupdir" value="<?=htmlspecialchars($backupdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['backupdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>All data is copied to this directory at the same time it is added to the archive directory. This can be useful if you want to use a tape backup and only copy out newer files from this directory to fill up a tape.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">exportdir</td>
 							<td><input type="text" name="exportdir" value="<?=htmlspecialchars($exportdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['exportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['exportdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Temporary exports: web downloads (DICOM, NIfTI, BIDS, squirrel) and local FTP exports. This directory is cleaned periodically by cron, so files here are not permanent. It must <b>not</b> be inside the [webdir]: web downloads are served only through <code>exportdownload.php</code>.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">importdir</td>
 							<td><input type="text" name="importdir" value="<?=htmlspecialchars($importdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['importdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['importdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Old method of importing data. Unused</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">incomingdir</td>
 							<td><input type="text" name="incomingdir" value="<?=htmlspecialchars($incomingdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incomingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incomingdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>All data received from the DICOM receiver is placed in the root of this directory. All non-DICOM data is stored in numbered sub-directories of this directory.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">incoming2dir</td>
 							<td><input type="text" name="incoming2dir" value="<?=htmlspecialchars($incoming2dir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incoming2dir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['incoming2dir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Unused</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">packageimportdir</td>
 							<td><input type="text" name="packageimportdir" value="<?=htmlspecialchars($packageimportdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['packageimportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['packageimportdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>If using the data package export/import feature, packages to be imported should be placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">problemdir</td>
 							<td><input type="text" name="problemdir" value="<?=htmlspecialchars($problemdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['problemdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['problemdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Files which encounter problems during import/archiving are placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">downloaddir</td>
 							<td><input type="text" name="downloaddir" value="<?=htmlspecialchars($downloaddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>
 								Permanent downloads: package exports, NDA exports, public downloads, and public datasets. This directory is not cleaned by cron. It must <b>not</b> be inside the [webdir]: files here are served only through NiDB pages that check permissions. Downloads can be very large, so put this on a filesystem with enough space.
 							</td>
@@ -4522,31 +4529,31 @@
 						<tr>
 							<td class="right aligned tt">uploaddir</td>
 							<td><input type="text" name="uploaddir" value="<?=htmlspecialchars($uploaddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploaddir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Uploaded data is placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploadeddir</td>
 							<td><input type="text" name="uploadeddir" value="<?=htmlspecialchars($uploadeddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadeddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadeddir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data received from the api.php and import pages is placed here</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploadstagingdir</td>
 							<td><input type="text" name="uploadstagingdir" value="<?=htmlspecialchars($uploadstagingdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadstagingdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['uploadstagingdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data being imported into NiDB is copied here for staging and preparation for archiving. Files are unzipped, parsed, and cataloged prior to import into NiDB so that the user can view the upload contents.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">tmpdir</td>
 							<td><input type="text" name="tmpdir" value="<?=htmlspecialchars($tmpdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['tmpdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['tmpdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Directory used for temporary operations. Depending upon data sizes requested or processed, this directory may get very large, and may need to be outside of the OS drive.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">deleteddir</td>
 							<td><input type="text" name="deleteddir" value="<?=htmlspecialchars($deleteddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['deleteddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['deleteddir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Data is not usually deleted. It may be removed from the database and not appear on the website, but the data will end up in this directory.</td>
 						</tr>
 
@@ -4557,31 +4564,31 @@
 						<tr>
 							<td class="right aligned tt">analysisdir</td>
 							<td><input type="text" name="analysisdir" value="<?=htmlspecialchars($analysisdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">analysisdirb</td>
 							<td><input type="text" name="analysisdirb" value="<?=htmlspecialchars($analysisdirb ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdirb'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['analysisdirb'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">clusteranalysisdir</td>
 							<td><input type="text" name="clusteranalysisdir" value="<?=htmlspecialchars($clusteranalysisdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/S1234ABC/<b>PipelineName</b>/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">clusteranalysisdirb</td>
 							<td><input type="text" name="clusteranalysisdirb" value="<?=htmlspecialchars($clusteranalysisdirb ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['clusteranalysisdirb'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline analysis directory as seen from the cluster (full path, including any /mount prefixes specified in [mountdir]) for data stored in the <code>/<b>PipelineName</b>/S1234ABC/1</code> format</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">groupanalysisdir</td>
 							<td><input type="text" name="groupanalysisdir" value="<?=htmlspecialchars($groupanalysisdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
+							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['groupanalysisdir'] ?? '')) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>Pipeline directory for group analyses (full path, including any /mount prefixes specified in [mountdir])</td>
 						</tr>
 					</table>
@@ -4597,15 +4604,9 @@
 						<?=CSRFTokenField()?>
 						<input type="hidden" name="action" value="testemail">
 					</form>
-
-				</div>
 			</div>
-		
-			<div class="ui fluid styled accordion">
-				<div class="title">
-					<i class="dropdown icon"></i> PHP Variables
-				</div>
-				<div class="content">
+
+			<div class="ui bottom attached tab segment" data-tab="phpvars">
 					<table class="ui very compact collapsing celled table">
 						<thead>
 							<tr>
@@ -4630,19 +4631,31 @@
 							<td><?=get_cfg_var('max_file_uploads')?></td>
 						</tr>
 					</table>
-				</div>
 			</div>
-		
-			<div class="ui fluid styled accordion">
-				<div class="title">
-					<i class="dropdown icon"></i> Scheduled cron jobs
-				</div>
-				<div class="content">
+
+			<div class="ui bottom attached tab segment" data-tab="cron">
 					Crontab for <?=system("whoami"); ?><br>
 					<pre><?=system("crontab -l"); ?></pre>
-				</div>
 			</div>
+
+			<? foreach ($extratabs as $tabid => $tab) { ?>
+			<div class="ui bottom attached tab segment" data-tab="<?=htmlspecialchars($tabid)?>">
+				<? call_user_func($tab['render']); ?>
+			</div>
+			<? } ?>
 		</div>
+		<script>
+			$(document).ready(function() {
+				/* keep the selected tab in the URL hash so a reload (or a PRG redirect to settings.php#tab) returns to it */
+				$('#settingstabs .item').tab({
+					onVisible: function(tab) { history.replaceState(null, '', '#' + tab); }
+				});
+				var hash = window.location.hash.substring(1);
+				if (hash && $('#settingstabs .item[data-tab="' + hash.replace(/[^a-z0-9_-]/gi, '') + '"]').length) {
+					$('#settingstabs .item').tab('change tab', hash);
+				}
+			});
+		</script>
 		<?
 	}
 

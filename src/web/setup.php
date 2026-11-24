@@ -322,11 +322,29 @@
 	function DisplayWelcomePage() {
 		
 		$disabled = "";
-		$backupfile = "/nidb/data/nidb-backup-" . date('Y-m-d') . ".sql";
+		/* accept any .sql or .sql.gz file in backupdir that was modified today (includes the maintenance
+		   module's automatic NiDB-*.sql.gz dumps), or the legacy /nidb/data/nidb-backup-YYYY-MM-DD.sql[.gz] */
+		$backupdir = rtrim(trim($GLOBALS['cfg']['backupdir'] ?? ''), '/');
+		if ($backupdir == "") { $backupdir = "/nidb/data/backup"; }
+		$backupbase = "$backupdir/nidb-backup-" . date('Y-m-d');
+		$todaystart = strtotime('today');
+		$candidates = glob("$backupdir/*.{sql,sql.gz}", GLOB_BRACE) ?: array();
+		$legacybase = "/nidb/data/nidb-backup-" . date('Y-m-d');
+		$candidates[] = "$legacybase.sql";
+		$candidates[] = "$legacybase.sql.gz";
+		$backupfile = "";
+		$backupfound = false;
+		foreach ($candidates as $f) {
+			if (is_file($f) && (filesize($f) > 0) && (filemtime($f) >= $todaystart)) {
+				$backupfile = $f;
+				$backupfound = true;
+				break;
+			}
+		}
 		
 		$color1 = "warning";
 			
-		if (file_exists($backupfile)) {
+		if ($backupfound) {
 			$color2 = "success";
 			$icon2 = "check circle";
 		}
@@ -383,9 +401,9 @@
 						
 					<div class="ui <?=$color2?> message" style="text-align: left">
 						<i class="large <?=$icon2?> icon"></i> <b>Backup your database</b>
-						<p style="color: black"> Upgrade cannot continue until the backup <code><?=$backupfile?></code> exists (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
+						<p style="color: black"> <? if ($backupfound) { ?>Found today's backup <code><?=htmlspecialchars($backupfile)?></code>.<? } ?> Upgrade cannot continue until a <code>.sql</code> or <code>.sql.gz</code> backup dated today exists in <code><?=htmlspecialchars($backupdir)?></code> (yes, even during the initial install. This will make sure you are familiar with the database backup process). Use the following command to backup your database. Replace PASSWORD with the <tt>nidb</tt> account password. This will be <tt>password</tt> for the initial install.</p>
 						<div class="ui fluid action input">
-							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=$GLOBALS['cfg']['mysqluser'] ?? 'nidb'?> -pPASSWORD <?=$GLOBALS['cfg']['mysqldatabase'] ?? 'nidb'?> &gt; <?=$backupfile?>" style="font-family: monospace" id="backuptxt">
+							<input type="text" value="mysqldump --max_allowed_packet=1G --single-transaction --compact -u<?=htmlspecialchars($GLOBALS['cfg']['mysqluser'] ?? 'nidb')?> -pPASSWORD <?=htmlspecialchars($GLOBALS['cfg']['mysqldatabase'] ?? 'nidb')?> | gzip &gt; <?=htmlspecialchars($backupbase)?>.sql.gz" style="font-family: monospace" id="backuptxt">
 							<button class="ui button" onClick="CopyToClipboard('backuptxt')" title="Copy only works when HTTPS is enabled :("><i class="copy icon"></i> Copy</button>
 						</div>
 						<p style="color: black">Run the above command, then come back to this page and refresh.</p>

@@ -32,6 +32,8 @@ public:
     int Run();
 
 private:
+    bool DumpSQLDatabase(QString &filename, qint64 &size, QString &m);
+
     nidb *n;
 };
 

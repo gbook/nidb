@@ -37,6 +37,7 @@
 	<div id="wrapper">
 <?
 	/* check if the .cfg file exists */
+	$setup = false;
 	if ( (!file_exists('nidb.cfg')) && (!file_exists('../nidb.cfg')) && (!file_exists('../programs/nidb.cfg')) && (!file_exists('/home/nidb/programs/nidb.cfg')) && (!file_exists('/nidb/programs/nidb.cfg')) && (!file_exists('/nidb/nidb.cfg')) && (!file_exists('/nidb/bin/nidb.cfg')) ) {
 		$setup = true;
 		$nologin = true;
@@ -205,18 +206,17 @@
 			ob_start();
 			SetSystemMessage($systemmessage);
 			$_SESSION['flash'] = ob_get_clean();
-			RedirectTo("settings.php");
+			RedirectTo("settings.php#sysmsg");
 			break;
 		case 'deletesystemmessage':
 			ob_start();
 			DeleteSystemMessage($messageid);
 			$_SESSION['flash'] = ob_get_clean();
-			RedirectTo("settings.php");
+			RedirectTo("settings.php#sysmsg");
 			break;
 		default:
 			ShowFlashMessage();
-			DisplaySettings("settings");
-			DisplayConfig();
+			DisplaySettings("settings", array('sysmsg' => array('label' => 'System Status Message', 'render' => 'DisplaySystemMessages')));
 	}
 	
 	
@@ -261,9 +261,9 @@
 	/* ------- TestEmail -------------------------- */
 	/* -------------------------------------------- */
 	function TestEmail() {
-		$to = $GLOBALS['cfg']['adminemail'];
-		//$from = $GLOBALS['cfg']['adminemail'];
-		$subject = "Testing email send from " . $GLOBALS['cfg']['sitename'] . " (" . $GLOBALS['cfg']['siteurl'] . ")";
+		$to = $GLOBALS['cfg']['adminemail'] ?? '';
+		//$from = $GLOBALS['cfg']['adminemail'] ?? '';
+		$subject = "Testing email send from " . ($GLOBALS['cfg']['sitename'] ?? '') . " (" . ($GLOBALS['cfg']['siteurl'] ?? '') . ")";
 		$body = "If you receive this message, your NiDB email is working";
 		
 		if (trim($to ?? '') == "") { Error("[adminemail] is not set. Save an admin email address first."); return; }
@@ -278,18 +278,12 @@
 	
 	
 	/* -------------------------------------------- */
-	/* ------- DisplayConfig ---------------------- */
+	/* ------- DisplaySystemMessages -------------- */
 	/* -------------------------------------------- */
-	function DisplayConfig() {
+	/* rendered as the 'System Status Message' tab inside DisplaySettings() */
+	function DisplaySystemMessages() {
 
 		?>
-		
-		<div class="ui container">
-			<div class="ui fluid styled accordion">
-				<div class="title">
-					<i class="dropdown icon"></i> System Status Message
-				</div>
-				<div class="content">
 					Current messages:
 					<?
 						$sqlstring = "select * from system_messages where message_status = 'active'";
@@ -320,8 +314,6 @@
 				<textarea name="systemmessage" style="width: 500px; height: 70px"></textarea><br>
 				<input type="submit" value="Set message" class="ui primary button">
 				</form>
-			</div>
-		</div>
 		<?
 	}
 ?>
