@@ -1,6 +1,6 @@
 # NOTE - This crontab is overwritten each time NiDB is upgraded. Any changes will be lost
 
-# NiDB modules - run every minute
+# NiDB modules
 * * * * * cd /nidb/bin; ./nidb modulemanager > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb audit > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb backup > /dev/null 2>&1
@@ -17,6 +17,7 @@
 * * * * * cd /nidb/bin; ./nidb qc > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb remoteimport > /dev/null 2>&1
 * * * * * cd /nidb/bin; ./nidb upload > /dev/null 2>&1
+@daily cd /nidb/bin; ./nidb maintenance > /dev/null 2>&1
 
 # NiDB cleanup - remove log files older than 4 days; tmp files older than 7 days
 @hourly find /nidb/logs/*.log -mtime +4 -exec rm {} \;

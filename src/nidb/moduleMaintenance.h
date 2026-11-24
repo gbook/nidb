@@ -32,7 +32,8 @@ public:
     int Run();
 
 private:
-    bool DumpSQLDatabase(QString &filename, qint64 &size, QString &m);
+    bool DumpSQLDatabase(QString &filename, qint64 &size, bool &skipped, QString &m);
+    bool CleanOldSQLDumps(int days, qint64 &numFiles, qint64 &numBytes, QString &m);
 
     nidb *n;
 };
