@@ -3370,18 +3370,68 @@
 
 
 	/* -------------------------------------------- */
+	/* ------- GetExportDir ----------------------- */
+	/* -------------------------------------------- */
+	/* the directory moduleExport writes an export's output to, chosen by destination and file type.
+	   [exportdir] holds temporary exports and is cleaned periodically by cron; [downloaddir] holds
+	   permanent downloads. Mirrors the table in moduleExport::ExportLocal(). Returns "" for
+	   destinations whose output isn't in either directory (nfs, remotenidb, ...)
+	
+	     destinationtype   filetype   directory
+	     ---------------   --------   -----------
+	     web               package    downloaddir
+	     web               (other)    exportdir
+	     ndar, ndarcsv                downloaddir
+	     localftp                     exportdir
+	     publicdownload               downloaddir
+	     publicdataset                downloaddir
+	*/
+	function GetExportDir($destinationtype, $filetype) {
+		switch ((string)$destinationtype) {
+			case "web":
+				$key = ($filetype == "package") ? "downloaddir" : "exportdir";
+				break;
+			case "localftp":
+				$key = "exportdir";
+				break;
+			case "ndar":
+			case "ndarcsv":
+			case "publicdownload":
+			case "publicdataset":
+				$key = "downloaddir";
+				break;
+			default:
+				return "";
+		}
+		return rtrim(trim($GLOBALS['cfg'][$key] ?? ''), "/");
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- GetExportZipPath ------------------- */
 	/* -------------------------------------------- */
 	/* path of the web-download .zip for an export, or "" if none exists. The name is built from the
 	   integer export id only (never from user input or exports.exported_path). moduleExport writes
-	   NIDB-<id>.zip (web, BIDS, XNAT, NDA web download) or NiDB-Squirrel-<id>.zip (squirrel) into
-	   [downloaddir], which must be outside the [webdir] */
+	   NIDB-<id>.zip (web, BIDS, NDA web download) or NiDB-Squirrel-<id>.sqrl (squirrel; the squirrel
+	   library always gives new packages a .sqrl extension) into the directory given by GetExportDir().
+	   NiDB-Squirrel-<id>.zip is still checked for older exports. Both [exportdir] and [downloaddir]
+	   must be outside the [webdir] */
 	function GetExportZipPath($exportid) {
 		$exportid = (int)$exportid;
-		$dir = rtrim(trim($GLOBALS['cfg']['downloaddir'] ?? ''), "/");
-		if (($exportid < 1) || ($dir == '')) return "";
+		if ($exportid < 1) return "";
 
-		foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.zip") as $f) {
+		$sqlstring = "select destinationtype, filetype from exports where export_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $exportid);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$exportid]);
+		mysqli_stmt_close($stmt);
+		if (!$result || (mysqli_num_rows($result) < 1)) return "";
+		$row = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+		$dir = GetExportDir($row['destinationtype'] ?? '', $row['filetype'] ?? '');
+		if ($dir == '') return "";
+
+		foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.sqrl", "NiDB-Squirrel-$exportid.zip") as $f) {
 			if (is_file("$dir/$f")) return "$dir/$f";
 		}
 		return "";
@@ -3758,6 +3808,7 @@
 		if (($GLOBALS['cfg']['modulefileiothreads'] != "") && (isset($GLOBALS['cfg']['modulefileiothreads']))) { $modulefileiothreads = $GLOBALS['cfg']['modulefileiothreads']; } else { $modulefileiothreads = "1"; }
 		if (($GLOBALS['cfg']['moduleimportthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportthreads']))) { $moduleimportthreads = $GLOBALS['cfg']['moduleimportthreads']; } else { $moduleimportthreads = "1"; }
 		if (($GLOBALS['cfg']['moduleimportuploadedthreads'] != "") && (isset($GLOBALS['cfg']['moduleimportuploadedthreads']))) { $moduleimportuploadedthreads = $GLOBALS['cfg']['moduleimportuploadedthreads']; } else { $moduleimportuploadedthreads = "1"; }
+		if (($GLOBALS['cfg']['modulemaintenancethreads'] != "") && (isset($GLOBALS['cfg']['modulemaintenancethreads']))) { $modulemaintenancethreads = $GLOBALS['cfg']['modulemaintenancethreads']; } else { $modulemaintenancethreads = "1"; }
 		if (($GLOBALS['cfg']['moduleminipipelinethreads'] != "") && (isset($GLOBALS['cfg']['moduleminipipelinethreads']))) { $moduleminipipelinethreads = $GLOBALS['cfg']['moduleminipipelinethreads']; } else { $moduleminipipelinethreads = "4"; }
 		if (($GLOBALS['cfg']['modulemriqathreads'] != "") && (isset($GLOBALS['cfg']['modulemriqathreads']))) { $modulemriqathreads = $GLOBALS['cfg']['modulemriqathreads']; } else { $modulemriqathreads = "4"; }
 		if (($GLOBALS['cfg']['modulepipelinethreads'] != "") && (isset($GLOBALS['cfg']['modulepipelinethreads']))) { $modulepipelinethreads = $GLOBALS['cfg']['modulepipelinethreads']; } else { $modulepipelinethreads = "4"; }
@@ -3792,8 +3843,6 @@
 		if (($GLOBALS['cfg']['nidbdir'] != "") && (isset($GLOBALS['cfg']['nidbdir']))) { $nidbdir = $GLOBALS['cfg']['nidbdir']; } else { $nidbdir = "/nidb"; }
 		if (($GLOBALS['cfg']['packageimportdir'] != "") && (isset($GLOBALS['cfg']['packageimportdir']))) { $packageimportdir = $GLOBALS['cfg']['packageimportdir']; } else { $packageimportdir = "/nidb/data/packageimport"; }
 		if (($GLOBALS['cfg']['problemdir'] != "") && (isset($GLOBALS['cfg']['problemdir']))) { $problemdir = $GLOBALS['cfg']['problemdir']; } else { $problemdir = "/nidb/data/problem"; }
-		if (($GLOBALS['cfg']['publicdownloaddir'] != "") && (isset($GLOBALS['cfg']['publicdownloaddir']))) { $publicdownloaddir = $GLOBALS['cfg']['publicdownloaddir']; } else { $publicdownloaddir = "/nidb/data/publicdownload"; }
-		if (($GLOBALS['cfg']['publicwebdir'] != "") && (isset($GLOBALS['cfg']['publicwebdir']))) { $publicwebdir = $GLOBALS['cfg']['publicwebdir']; } else { $publicwebdir = "/var/www/html/pub"; }
 		if (($GLOBALS['cfg']['qcmoduledir'] != "") && (isset($GLOBALS['cfg']['qcmoduledir']))) { $qcmoduledir = $GLOBALS['cfg']['qcmoduledir']; } else { $qcmoduledir = "/nidb/qcmodules"; }
 		if (($GLOBALS['cfg']['tmpdir'] != "") && (isset($GLOBALS['cfg']['tmpdir']))) { $tmpdir = $GLOBALS['cfg']['tmpdir']; } else { $tmpdir = "/nidb/data/tmp"; }
 		if (($GLOBALS['cfg']['uploaddir'] != "") && (isset($GLOBALS['cfg']['uploaddir']))) { $uploaddir = $GLOBALS['cfg']['uploaddir']; } else { $uploaddir = "/nidb/data/upload"; }
@@ -3960,6 +4009,12 @@
 							<td><input type="number" name="moduleminipipelinethreads" value="<?=htmlspecialchars($moduleminipipelinethreads ?? '')?>"></td>
 							<td></td>
 							<td><b>minipipeline</b> module. Recommended is 4</td>
+						</tr>
+						<tr>
+							<td class="right aligned tt">modulemaintenancethreads</td>
+							<td><input type="number" name="modulemaintenancethreads" value="<?=htmlspecialchars($modulemaintenancethreads ?? '')?>"></td>
+							<td></td>
+							<td><b>maintenance</b> module. Recommended is 1</td>
 						</tr>
 
 						<tr>
@@ -4424,7 +4479,7 @@
 							<td class="right aligned tt">exportdir</td>
 							<td><input type="text" name="exportdir" value="<?=htmlspecialchars($exportdir ?? '')?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['exportdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Downloaded data to be retreived by FTP is stored here</td>
+							<td>Temporary exports: web downloads (DICOM, NIfTI, BIDS, squirrel) and local FTP exports. This directory is cleaned periodically by cron, so files here are not permanent. It must <b>not</b> be inside the [webdir]: web downloads are served only through <code>exportdownload.php</code>.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">importdir</td>
@@ -4457,24 +4512,12 @@
 							<td>Files which encounter problems during import/archiving are placed here</td>
 						</tr>
 						<tr>
-							<td class="right aligned tt">publicwebdir</td>
-							<td><input type="text" name="publicwebdir" value="<?=htmlspecialchars($publicwebdir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicwebdir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Directory within the [webdir] that will link to the physical public download directory. Sometimes the downloads can be HUGE, and the default <code>/var/www/html</code> directory may be on a small partition. This directory should be a link pointing to the real [downloaddir] on a filesystem with enough space to store the large downloads.</td>
-						</tr>
-						<tr>
 							<td class="right aligned tt">downloaddir</td>
 							<td><input type="text" name="downloaddir" value="<?=htmlspecialchars($downloaddir ?? '')?>"></td>
 							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['downloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
 							<td>
-								Directory which stores web export .zip files. It must <b>not</b> be inside the [webdir]: files here are served only through <code>exportdownload.php</code>, which checks that the user requested the export (or is a site admin). Downloads can be very large, so put this on a filesystem with enough space.
+								Permanent downloads: package exports, NDA exports, public downloads, and public datasets. This directory is not cleaned by cron. It must <b>not</b> be inside the [webdir]: files here are served only through NiDB pages that check permissions. Downloads can be very large, so put this on a filesystem with enough space.
 							</td>
-						</tr>
-						<tr>
-							<td class="right aligned tt">publicdownloaddir</td>
-							<td><input type="text" name="publicdownloaddir" value="<?=htmlspecialchars($publicdownloaddir ?? '')?>"></td>
-							<td class="center aligned"><? if (file_exists($GLOBALS['cfg']['publicdownloaddir'])) { ?><i class="large green check circle icon"></i><? } else { ?><i class="large red exclamation circle icon"></i><? } ?></td>
-							<td>Directory which stores public downloads. This directory is not automatically cleaned by cron. Downloads in this directory are expected to be available permanently.</td>
 						</tr>
 						<tr>
 							<td class="right aligned tt">uploaddir</td>
@@ -4636,6 +4679,7 @@
 		if ($modulebackupthreads == "") { $modulebackupthreads = 1; }
 		if ($moduleauditthreads == "") { $moduleauditthreads = 1; }
 		if ($moduleminipipelinethreads == "") { $moduleminipipelinethreads = 4; }
+		if ($modulemaintenancethreads == "") { $modulemaintenancethreads = 1; }
 		
 		if ($analysisdir == "") { $analysisdir = "/nidb/data/pipeline"; }
 		if ($analysisdirb == "") { $analysisdirb = "/nidb/data/pipelineb"; }
@@ -4661,8 +4705,6 @@
 		if ($nidbdir == "") { $nidbdir = "/nidb"; }
 		if ($packageimportdir == "") { $packageimportdir = "/nidb/data/packageimport"; }
 		if ($problemdir == "") { $problemdir = "/nidb/data/problem"; }
-		if ($publicdownloaddir == "") { $publicdownloaddir = "/nidb/data/publicdownload"; }
-		if ($publicwebdir == "") { $publicwebdir = "/var/www/html/pub"; }
 		if ($qcmoduledir == "") { $qcmoduledir = "/nidb/qcmodules"; }
 		if ($tmpdir == "") { $tmpdir = "/nidb/data/tmp"; }
 		if ($uploaddir == "") { $uploaddir = "/nidb/data/upload"; }
@@ -4719,6 +4761,7 @@
 [modulefileiothreads] = $modulefileiothreads
 [moduleimportthreads] = $moduleimportthreads
 [moduleimportuploadedthreads] = $moduleimportuploadedthreads
+[modulemaintenancethreads] = $modulemaintenancethreads
 [moduleminipipelinethreads] = $moduleminipipelinethreads
 [modulemriqathreads] = $modulemriqathreads
 [modulepipelinethreads] = $modulepipelinethreads
@@ -4823,8 +4866,6 @@
 [nidbdir] = $nidbdir
 [packageimportdir] = $packageimportdir
 [problemdir] = $problemdir
-[publicwebdir] = $publicwebdir
-[publicdownloaddir] = $publicdownloaddir
 [qcmoduledir] = $qcmoduledir
 [tmpdir] = $tmpdir
 [uploaddir] = $uploaddir

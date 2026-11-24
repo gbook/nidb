@@ -168,6 +168,7 @@ bool WriteTextFile(QString filepath, QString str, bool append=true);
 bool chmod(QString f, QString perm);
 bool isExecutableInstalled(const QString &executableName);
 void GetDirSizeAndFileCount(QString dir, qint64 &c, qint64 &b, bool recurse=false);
+bool CleanPath(const QString &path, int days, QString &m);
 bool SafeDeletePath(const QString &path, const QString &allowedRoot, QString &m);
 bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QString &glob, QString &m);
 QString GetDirectoryListing(const QString &path, bool showHidden = false);

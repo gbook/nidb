@@ -75,6 +75,7 @@
     $c['modulefileiothreads'] = GetVariable("modulefileiothreads");
     $c['moduleimportthreads'] = GetVariable("moduleimportthreads");
     $c['moduleimportuploadedthreads'] = GetVariable("moduleimportuploadedthreads");
+    $c['modulemaintenancethreads'] = GetVariable("modulemaintenancethreads");
     $c['moduleminipipelinethreads'] = GetVariable("moduleminipipelinethreads");
     $c['modulemriqathreads'] = GetVariable("modulemriqathreads");
     $c['modulepipelinethreads'] = GetVariable("modulepipelinethreads");
@@ -174,8 +175,6 @@
     $c['nidbdir'] = GetVariable("nidbdir");
     $c['packageimportdir'] = GetVariable("packageimportdir");
     $c['problemdir'] = GetVariable("problemdir");
-    $c['publicdownloaddir'] = GetVariable("publicdownloaddir");
-    $c['publicwebdir'] = GetVariable("publicwebdir");
     $c['qcmoduledir'] = GetVariable("qcmoduledir");
     $c['tmpdir'] = GetVariable("tmpdir");
     $c['uploaddir'] = GetVariable("uploaddir");

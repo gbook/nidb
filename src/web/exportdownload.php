@@ -21,7 +21,7 @@
  // along with this program.  If not, see <http://www.gnu.org/licenses/>.
  // ------------------------------------------------------------------------------
 
-/* Serves the .zip file of a web export (moduleExport writes these to [downloaddir], which is outside
+/* Serves the .zip file of a web export (moduleExport writes these to [exportdir] or [downloaddir], see GetExportDir(), both outside
    the docroot). Only the user who requested the export, or a site admin, may download it. Supports
    HTTP Range requests so large downloads can be resumed. */
 
@@ -46,5 +46,6 @@ if ($zipfile == "") {
 	exit('The export file does not exist. It may still be zipping, or it may have been removed');
 }
 
-StreamFile($zipfile, basename($zipfile), "application/zip");
+$contenttype = (substr($zipfile, -5) == ".sqrl") ? "application/octet-stream" : "application/zip";
+StreamFile($zipfile, basename($zipfile), $contenttype);
 ?>

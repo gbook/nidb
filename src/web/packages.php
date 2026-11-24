@@ -3346,9 +3346,9 @@
 											$completeddate = $row['completedate'];
 											$status = $row['status'];
 
-											/* package exports are written to [exportdir]/NiDB-Squirrel-<exportid>.sqrl and
+											/* package exports are written to [downloaddir]/NiDB-Squirrel-<exportid>.sqrl and
 											   served by getfile.php, which checks package ownership */
-											$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
+											$sqrlfile = GetExportDir('web', 'package') . "/NiDB-Squirrel-$exportid.sqrl";
 											?>
 											<li><b>Submitted</b> <?=$submitdate?> - <b>Status</b> <?=htmlspecialchars($status ?? '')?>
 											<?
@@ -4521,15 +4521,16 @@
 	/* -------------------------------------------- */
 	/* ------- DeleteExportPath ------------------- */
 	/* -------------------------------------------- */
-	/* delete a file, symlink, or directory tree that sits directly inside [exportdir]. Refuses
-	   anything whose parent doesn't resolve to exportdir itself. Symlinks are unlinked, never
-	   followed, so a directory tree can't lead the delete outside exportdir. Returns true if the
-	   path no longer exists */
+	/* delete a file, symlink, or directory tree that sits directly inside [downloaddir], where package
+	   exports are written. Refuses anything whose parent doesn't resolve to downloaddir itself.
+	   Symlinks are unlinked, never followed, so a directory tree can't lead the delete outside
+	   downloaddir. Returns true if the path no longer exists */
 	function DeleteExportPath($path) {
-		$exportdir = realpath(rtrim((string)($GLOBALS['cfg']['exportdir'] ?? ''), "/"));
-		if (($exportdir === false) || ($exportdir == '/') || (!is_dir($exportdir)))
+		$dir = GetExportDir('web', 'package');
+		$dir = ($dir == '') ? false : realpath($dir);
+		if (($dir === false) || ($dir == '/') || (!is_dir($dir)))
 			return false;
-		if (realpath(dirname($path)) !== $exportdir)
+		if (realpath(dirname($path)) !== $dir)
 			return false;
 
 		if ((is_link($path)) || (is_file($path)))
@@ -4606,7 +4607,7 @@
 		$numfiles = 0;
 		$failedpaths = array();
 		foreach ($exportids as $exportid) {
-			$base = rtrim((string)$GLOBALS['cfg']['exportdir'], "/") . "/NiDB-Squirrel-$exportid";
+			$base = GetExportDir('web', 'package') . "/NiDB-Squirrel-$exportid";
 			foreach (array("$base.sqrl", $base) as $path) {
 				if ((!file_exists($path)) && (!is_link($path)))
 					continue;

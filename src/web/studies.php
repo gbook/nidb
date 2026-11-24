@@ -1773,7 +1773,6 @@
 		/* everything below is displayed in HTML */
 		$row = array_map(function($v) { return htmlspecialchars($v ?? '', ENT_QUOTES); }, $row);
 		$enrollmentid = $row['enrollment_id'];
-		$equipmentid = $row['equipment_id'];
 		$study_num = $row['study_num'];
 		$study_alternateid = $row['study_alternateid'];
 		$study_datetime = $row['study_datetime'];
@@ -2696,6 +2695,7 @@
 							$gifthumbpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/thumb.gif";
 							$realignpath = $GLOBALS['cfg']['archivedir'] . "/$uid/$study_num/$series_num/MotionCorrection.txt";
 
+							$ps = [];
 							if ($modality == "mr") {
 								$sqlstring2 = "select * from mr_qa where mrseries_id = ?";
 								$stmt2 = mysqli_prepare($GLOBALS['linki'], $sqlstring2);
@@ -2724,9 +2724,10 @@
 								$rangex2 = abs($acc_minx) + abs($acc_maxx);
 								$rangey2 = abs($acc_miny) + abs($acc_maxy);
 								$rangez2 = abs($acc_minz) + abs($acc_maxz);
-								$stdsmotion = 0;
 
 								/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
+								$xindex = $yindex = $zindex = 0;
+								$xindex2 = $yindex2 = $zindex2 = 0;
 								if ($series_spacingx > 0) {
 									$xindex = round(($rangex/$series_spacingx)*100); if ($xindex > 100) { $xindex = 100; }
 									$xindex2 = round(($rangex2/$series_spacingx)*100); if ($xindex2 > 100) { $xindex2 = 100; }
@@ -2740,45 +2741,47 @@
 									$zindex2 = round(($rangez2/$series_spacingz)*100); if ($zindex2 > 100) { $zindex2 = 100; }
 								}
 								
-								/* get standard deviations from the mean for SNR */
-								if ($pstats[$sequence]['stdiosnr'] != 0) {
-									if ($iosnr > $pstats[$sequence]['avgiosnr']) {
+								/* get standard deviations from the mean for SNR (no stats if this sequence has no QA data) */
+								$ps = $pstats[$sequence] ?? [];
+								$stdsiosnr = $stdspvsnr = $stdsmotion = 0;
+								if (($ps['stdiosnr'] ?? 0) != 0) {
+									if ($iosnr > ($ps['avgiosnr'] ?? 0)) {
 										$stdsiosnr = 0;
 									}
 									else {
-										$stdsiosnr = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+										$stdsiosnr = (($iosnr - ($ps['avgiosnr'] ?? 0))/($ps['stdiosnr'] ?? 0));
 									}
 								}
-								if ($pstats[$sequence]['stdpvsnr'] != 0) {
-									if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
+								if (($ps['stdpvsnr'] ?? 0) != 0) {
+									if ($pvsnr > ($ps['avgpvsnr'] ?? 0)) {
 										$stdspvsnr = 0;
 									}
 									else {
-										$stdspvsnr = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+										$stdspvsnr = (($pvsnr - ($ps['avgpvsnr'] ?? 0))/($ps['stdpvsnr'] ?? 0));
 									}
 								}
-								if ($pstats[$sequence]['stdmotion'] != 0) {
-									if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
-										$stdmotion = 0;
+								if (($ps['stdmotion'] ?? 0) != 0) {
+									if ($motion_rsq > ($ps['avgmotion'] ?? 0)) {
+										$stdsmotion = 0;
 									}
 									else {
-										$stdmotion = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+										$stdsmotion = (($motion_rsq - ($ps['avgmotion'] ?? 0))/($ps['stdmotion'] ?? 0));
 									}
 								}
 								
-								if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $pvindex = 100; }
-								else { $pvindex = round(($stdspvsnr/$pstats[$sequence]['maxstdpvsnr'])*100); }
+								if (($ps['maxstdpvsnr'] ?? 0) == 0) { $pvindex = 100; }
+								else { $pvindex = round(($stdspvsnr/($ps['maxstdpvsnr'] ?? 0))*100); }
 								$pvindex = 100 + $pvindex;
 								if ($pvindex > 100) { $pvindex = 100; }
 								
-								if ($pstats[$sequence]['maxstdiosnr'] == 0) { $ioindex = 100; }
-								else { $ioindex = round(($stdsiosnr/$pstats[$sequence]['maxstdiosnr'])*100); }
+								if (($ps['maxstdiosnr'] ?? 0) == 0) { $ioindex = 100; }
+								else { $ioindex = round(($stdsiosnr/($ps['maxstdiosnr'] ?? 0))*100); }
 								$ioindex = 100 + $ioindex;
 								if ($ioindex > 100) { $ioindex = 100; }
 								if ($ioindex < 0) { $ioindex = 0; }
 								
-								if ($pstats[$sequence]['maxstdmotion'] == 0) { $motionindex = 100; }
-								else { $motionindex = round(($stdmotion/$pstats[$sequence]['maxstdmotion'])*100); }
+								if (($ps['maxstdmotion'] ?? 0) == 0) { $motionindex = 100; }
+								else { $motionindex = round(($stdsmotion/($ps['maxstdmotion'] ?? 0))*100); }
 								$motionindex = 100 + $motionindex;
 								if ($motionindex > 100) { $motionindex = 100; }
 								if ($motionindex < 0) { $motionindex = 0; }
@@ -2978,10 +2981,10 @@
 									</table>
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxpvsnrcolor?>; font-size:8pt">
-									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$ps['minpvsnr'] ?? ''?>&max=<?=$ps['maxpvsnr'] ?? ''?>&mean=<?=$ps['avgpvsnr'] ?? ''?>&std=<?=$ps['stdpvsnr'] ?? ''?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 								</td>
 								<td class="seriesrow" align="right" style="background-color: <?=$maxiosnrcolor?>; font-size:8pt">
-									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+									<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$ps['miniosnr'] ?? ''?>&max=<?=$ps['maxiosnr'] ?? ''?>&mean=<?=$ps['avgiosnr'] ?? ''?>&std=<?=$ps['stdiosnr'] ?? ''?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 								</td>
 								<td><?=$sequence_h?></td>
 								<td style="font-size:8pt"><?=$scanlength?></td>

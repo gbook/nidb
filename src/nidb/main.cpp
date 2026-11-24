@@ -39,6 +39,7 @@
 #include "moduleMiniPipeline.h"
 #include "moduleBackup.h"
 #include "moduleAudit.h"
+#include "moduleMaintenance.h"
 #include <iostream>
 #ifdef Q_OS_UNIX
 #include <sys/resource.h>
@@ -88,7 +89,7 @@ int main(int argc, char *argv[])
     p.setOptionsAfterPositionalArgumentsMode(QCommandLineParser::ParseAsOptions);
     p.addHelpOption();
     p.addVersionOption();
-    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  pipelinecontainer  cluster (node monitor)  minipipeline  backup  audit");
+    p.addPositionalArgument("module", "Available modules:  import  remoteimport  export  fileio  mriqa  qc  modulemanager  upload  pipeline  pipelinecontainer  cluster (node monitor)  minipipeline  backup  audit  maintenance");
 
     /* command line flag options */
     QCommandLineOption optDebug(QStringList() << "d" << "debug", "Enable debugging");
@@ -128,6 +129,7 @@ int main(int argc, char *argv[])
         "exportnonimaging",
         "fileio",
         "import",
+        "maintenance",
         "remoteimport",
         "minipipeline",
         "modulemanager",
@@ -252,6 +254,11 @@ int main(int argc, char *argv[])
                     }
                     else if (module == "audit") {
                         moduleAudit *m = new moduleAudit(n);
+                        keepLog = m->Run();
+                        delete m;
+                    }
+                    else if (module == "maintenance") {
+                        moduleMaintenance *m = new moduleMaintenance(n);
                         keepLog = m->Run();
                         delete m;
                     }

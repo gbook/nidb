@@ -51,8 +51,8 @@ if ($exportid > 0) {
 	}
 
 	/* the path is built here from the export id, never from user input. moduleExport writes
-	   package exports to [exportdir]/NiDB-Squirrel-<exportid>.sqrl */
-	$sqrlfile = $GLOBALS['cfg']['exportdir'] . "/NiDB-Squirrel-$exportid.sqrl";
+	   package exports to [downloaddir]/NiDB-Squirrel-<exportid>.sqrl (see GetExportDir()) */
+	$sqrlfile = GetExportDir('web', 'package') . "/NiDB-Squirrel-$exportid.sqrl";
 	if (!is_file($sqrlfile)) {
 		http_response_code(404);
 		exit('The export file no longer exists');

@@ -394,7 +394,7 @@
 				?><span style="color: gray">Preparing download...</span><?
 				return;
 			}
-			/* the zip lives in [downloaddir], outside the docroot, and is served by exportdownload.php */
+			/* the zip lives in [exportdir] or [downloaddir] (see GetExportDir()), outside the docroot, and is served by exportdownload.php */
 			$zipFilePath = GetExportZipPath($exportid);
 			$filesize = ($zipFilePath != "") ? filesize($zipFilePath) : 0;
 
@@ -413,7 +413,7 @@
 				?><span style="font-family: monospace; font-size: smaller; user-select: all">scp://<?=htmlspecialchars(gethostname())?><?=htmlspecialchars($row['exported_path'])?></span><?
 			}
 			else {
-				?><span style="color: gray; font-size: smaller" title="Export path was not recorded for this export">Look in <span style="font-family: monospace"><?=htmlspecialchars($GLOBALS['cfg']['exportdir'])?></span></span><?
+				?><span style="color: gray; font-size: smaller" title="Export path was not recorded for this export">Look in <span style="font-family: monospace"><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></span></span><?
 			}
 		}
 		elseif (($destinationtype == "nfs") && (($row['nfsdir'] ?? "") != "")) {
@@ -551,9 +551,9 @@
 							</div>
 							<div class="right aligned column">
 								<?
-									if (($destinationtype == "web") || ($destinationtype == "xnat") || ($destinationtype == "squirrel")) {
+									if (($destinationtype == "web") || ($destinationtype == "squirrel")) {
 										if ($complete) {
-											/* the zip lives in [downloaddir], outside the docroot, and is served by exportdownload.php */
+											/* the zip lives in [exportdir] or [downloaddir] (see GetExportDir()), outside the docroot, and is served by exportdownload.php */
 											$zipfile = GetExportZipPath($exportid);
 											$filesize = ($zipfile != "") ? filesize($zipfile) : 0;
 

@@ -2127,6 +2127,108 @@ bool SafeDeletePath(const QString &dir, const QString &allowedRoot, const QStrin
 
 
 /* ---------------------------------------------------------- */
+/* --------- HasRecentContent ------------------------------- */
+/* ---------------------------------------------------------- */
+/* Returns true if anything anywhere below `dir` was modified at or after
+   `cutoff`. A directory's own mtime only changes when direct children are
+   added/removed, so files being written deeper in the tree do not update it;
+   this walks the whole tree to catch that. Symlinked directories are not
+   descended into. Stops at the first recent entry found. */
+/**
+ * @brief HasRecentContent
+ * @param dir
+ * @param cutoff
+ * @return
+ */
+static bool HasRecentContent(const QString &dir, const QDateTime &cutoff) {
+    QDirIterator it(dir, QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        it.next();
+        if (it.fileInfo().lastModified() >= cutoff)
+            return true;
+    }
+    return false;
+}
+
+
+/* ---------------------------------------------------------- */
+/* --------- CleanPath -------------------------------------- */
+/* ---------------------------------------------------------- */
+/**
+ * @brief CleanPath Cleans a given path of files/directories older than X days
+ * @param path Path to clean
+ * @param days Days
+ * @param m Messages
+ * @return true if successful, false otherwise
+ */
+bool CleanPath(const QString &path, int days, QString &m) {
+
+    m.clear();
+
+    if (days < 1) {
+        m = QString("days [%1] is less than 1").arg(days);
+        return false;
+    }
+
+    if (path.trimmed() == "") {
+        m = "path was blank";
+        return false;
+    }
+
+    if (!QDir::isAbsolutePath(path)) {
+        m = "["+path+"] must be an absolute path";
+        return false;
+    }
+
+    /* check if the path exists on disk */
+    if (!QFileInfo(path).isDir()) {
+        m = "[" + path + "] does not exist or is not a directory";
+        return false;
+    }
+
+    QDateTime cutoffDate = QDateTime::currentDateTime().addDays(-days);
+    if (!cutoffDate.isValid()) {
+        m = "cutoffdate was invalid";
+        return false;
+    }
+
+    /* find all files/directories in the root that are older than X days.
+       QDir::System is needed so broken symlinks are listed at all */
+    QDirIterator it(path, QDir::Files | QDir::NoDotAndDotDot | QDir::Dirs | QDir::Hidden | QDir::System, QDirIterator::NoIteratorFlags);
+
+    bool ret(true);
+    while (it.hasNext()) {
+        it.next();
+        QFileInfo fileInfo = it.fileInfo();
+
+        bool deleteIt(false);
+        if (fileInfo.isSymLink()) {
+            /* broken symlinks are always removed; valid symlinks are left alone */
+            deleteIt = !fileInfo.exists();
+        }
+        else if (fileInfo.isFile() || fileInfo.isDir()) {
+            /* skip sockets/fifos/devices that QDir::System also lists */
+            deleteIt = (fileInfo.lastModified() < cutoffDate);
+        }
+
+        if (deleteIt) {
+            /* a directory is only old if nothing inside it is recent */
+            if (fileInfo.isDir() && HasRecentContent(fileInfo.absoluteFilePath(), cutoffDate))
+                continue;
+
+            QString m2;
+            if (!SafeDeletePath(fileInfo.absoluteFilePath(), path, m2)) {
+                m += m2 + "\n";
+                ret = false;
+            }
+        }
+    }
+
+    return ret;
+}
+
+
+/* ---------------------------------------------------------- */
 /* --------- modeString ------------------------------------- */
 /* ---------------------------------------------------------- */
 static QString modeString(const QFileInfo &fi) {

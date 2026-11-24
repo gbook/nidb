@@ -1736,6 +1736,7 @@
 		<?
 		
 		/* if its MRI, get the basic QC data */
+		$pstats = [];
 		if (strtolower($s_studymodality) == "mr") {
 			/* get the movement & SNR stats by sequence name */
 			$sqlstring2 = "SELECT b.series_sequencename, max(a.move_maxx) 'maxx', min(a.move_minx) 'minx', max(a.move_maxy) 'maxy', min(a.move_miny) 'miny', max(a.move_maxz) 'maxz', min(a.move_minz) 'minz', avg(a.pv_snr) 'avgpvsnr', avg(a.io_snr) 'avgiosnr', std(a.pv_snr) 'stdpvsnr', std(a.io_snr) 'stdiosnr', min(a.pv_snr) 'minpvsnr', min(a.io_snr) 'miniosnr', max(a.pv_snr) 'maxpvsnr', max(a.io_snr) 'maxiosnr', min(a.motion_rsq) 'minmotion', max(a.motion_rsq) 'maxmotion', avg(a.motion_rsq) 'avgmotion', std(a.motion_rsq) 'stdmotion' FROM mr_qa a left join mr_series b on a.mrseries_id = b.mrseries_id where a.io_snr > 0 group by b.series_sequencename";
@@ -1981,48 +1982,51 @@
 				$rangeYaw = abs($rot_miny) + abs($rot_maxy);
 				
 				/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
+				$xindex = $yindex = $zindex = 0;
 				if ($series_spacingx > 0) { $xindex = round(($rangex/$series_spacingx)*100); if ($xindex > 100) { $xindex = 100; } }
 				if ($series_spacingy > 0) { $yindex = round(($rangey/$series_spacingy)*100); if ($yindex > 100) { $yindex = 100; } }
 				if ($series_spacingz > 0) { $zindex = round(($rangez/$series_spacingz)*100); if ($zindex > 100) { $zindex = 100; } }
 
-				/* get standard deviations from the mean for SNR */
-				if ($pstats[$sequence]['stdiosnr'] != 0) {
-					if ($iosnr > $pstats[$sequence]['avgiosnr']) {
+				/* get standard deviations from the mean for SNR (no stats if this sequence has no QA data) */
+				$ps = $pstats[$sequence] ?? [];
+				$stdsiosnr = $stdspvsnr = $stdsmotion = 0;
+				if (($ps['stdiosnr'] ?? 0) != 0) {
+					if ($iosnr > ($ps['avgiosnr'] ?? 0)) {
 						$stdsiosnr = 0;
 					}
 					else {
-						$stdsiosnr = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+						$stdsiosnr = (($iosnr - ($ps['avgiosnr'] ?? 0))/($ps['stdiosnr'] ?? 0));
 					}
 				}
-				if ($pstats[$sequence]['stdpvsnr'] != 0) {
-					if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
+				if (($ps['stdpvsnr'] ?? 0) != 0) {
+					if ($pvsnr > ($ps['avgpvsnr'] ?? 0)) {
 						$stdspvsnr = 0;
 					}
 					else {
-						$stdspvsnr = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+						$stdspvsnr = (($pvsnr - ($ps['avgpvsnr'] ?? 0))/($ps['stdpvsnr'] ?? 0));
 					}
 				}
-				if ($pstats[$sequence]['stdmotion'] != 0) {
-					if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
+				if (($ps['stdmotion'] ?? 0) != 0) {
+					if ($motion_rsq > ($ps['avgmotion'] ?? 0)) {
 						$stdsmotion = 0;
 					}
 					else {
-						$stdsmotion = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+						$stdsmotion = (($motion_rsq - ($ps['avgmotion'] ?? 0))/($ps['stdmotion'] ?? 0));
 					}
 				}
 				
-				if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $pvindex = 100; }
-				else { $pvindex = round(($stdspvsnr/$pstats[$sequence]['maxstdpvsnr'])*100); }
+				if (($ps['maxstdpvsnr'] ?? 0) == 0) { $pvindex = 100; }
+				else { $pvindex = round(($stdspvsnr/($ps['maxstdpvsnr'] ?? 0))*100); }
 				$pvindex = 100 + $pvindex;
 				if ($pvindex > 100) { $pvindex = 100; }
 				
-				if ($pstats[$sequence]['maxstdiosnr'] == 0) { $ioindex = 100; }
-				else { $ioindex = round(($stdsiosnr/$pstats[$sequence]['maxstdiosnr'])*100); }
+				if (($ps['maxstdiosnr'] ?? 0) == 0) { $ioindex = 100; }
+				else { $ioindex = round(($stdsiosnr/($ps['maxstdiosnr'] ?? 0))*100); }
 				$ioindex = 100 + $ioindex;
 				if ($ioindex > 100) { $ioindex = 100; }
 				
-				if ($pstats[$sequence]['maxstdmotion'] == 0) { $motionindex = 100; }
-				else { $motionindex = round(($stdsmotion/$pstats[$sequence]['maxstdmotion'])*100); }
+				if (($ps['maxstdmotion'] ?? 0) == 0) { $motionindex = 100; }
+				else { $motionindex = round(($stdsmotion/($ps['maxstdmotion'] ?? 0))*100); }
 				$motionindex = 100 + $motionindex;
 				if ($motionindex > 100) { $motionindex = 100; }
 				
@@ -2257,13 +2261,13 @@
 						</td>
 						<? } ?>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxpvsnrcolor?>;">
-							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr']?>&max=<?=$pstats[$sequence]['maxpvsnr']?>&mean=<?=$pstats[$sequence]['avgpvsnr']?>&std=<?=$pstats[$sequence]['stdpvsnr']?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minpvsnr'] ?? ''?>&max=<?=$pstats[$sequence]['maxpvsnr'] ?? ''?>&mean=<?=$pstats[$sequence]['avgpvsnr'] ?? ''?>&std=<?=$pstats[$sequence]['stdpvsnr'] ?? ''?>&i=<?=$pvsnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$pvsnr;?></a> 
 						</td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxiosnrcolor?>;">
-							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr']?>&max=<?=$pstats[$sequence]['maxiosnr']?>&mean=<?=$pstats[$sequence]['avgiosnr']?>&std=<?=$pstats[$sequence]['stdiosnr']?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['miniosnr'] ?? ''?>&max=<?=$pstats[$sequence]['maxiosnr'] ?? ''?>&mean=<?=$pstats[$sequence]['avgiosnr'] ?? ''?>&std=<?=$pstats[$sequence]['stdiosnr'] ?? ''?>&i=<?=$iosnr?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$iosnr;?></a>
 						</td>
 						<td class="<?=$rowstyle?>" align="right" style="background-color: <?=$maxmotioncolor?>; font-size:8pt">
-							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minmotion']?>&max=<?=$pstats[$sequence]['maxmotion']?>&mean=<?=$pstats[$sequence]['avgmotion']?>&std=<?=$pstats[$sequence]['stdmotion']?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
+							<a href="ajaxapi.php?action=stddevchart&h=40&w=450&min=<?=$pstats[$sequence]['minmotion'] ?? ''?>&max=<?=$pstats[$sequence]['maxmotion'] ?? ''?>&mean=<?=$pstats[$sequence]['avgmotion'] ?? ''?>&std=<?=$pstats[$sequence]['stdmotion'] ?? ''?>&i=<?=$motion_rsq?>&b=yes" class="preview" style="color: black; text-decoration: none"><?=$motion_rsq;?></a>
 						</td>
 						<td class="<?=$rowstyle?>"><?=$img_cols?>&times;<?=$img_rows?></td>
 						<td class="<?=$rowstyle?>">
@@ -2377,6 +2381,7 @@
 		}
 		
 		/* if its MRI, get the basic QC data */
+		$pstats = [];
 		if (strtolower($s_studymodality) == "mr") {
 			$pstats = GetMRSequenceQCList();
 		}
@@ -2786,48 +2791,52 @@
 		$range['Yaw'] = abs($min['roty']) + abs($max['roty']);
 		
 		/* calculate color based on voxel size... red (100) means more than 1 voxel displacement in that direction */
+		$colors = GenerateColorGradient();
+		$index = ['x' => 0, 'y' => 0, 'z' => 0, 'pv' => 0, 'io' => 0, 'motion' => 0];
 		if ($spacing['x'] > 0) { $index['x'] = round(($range['x']/$spacing['x'])*100); if ($index['x'] > 100) { $index['x'] = 100; } }
 		if ($spacing['y'] > 0) { $index['y'] = round(($range['y']/$spacing['y'])*100); if ($index['y'] > 100) { $index['y'] = 100; } }
 		if ($spacing['z'] > 0) { $index['z'] = round(($range['z']/$spacing['z'])*100); if ($index['z'] > 100) { $index['z'] = 100; } }
 
-		/* get standard deviations from the mean for SNR */
-		if ($pstats[$sequence]['stdiosnr'] != 0) {
-			if ($iosnr > $pstats[$sequence]['avgiosnr']) {
+		/* get standard deviations from the mean for SNR (no stats if this sequence has no QA data) */
+		$ps = $pstats[$sequence] ?? [];
+		$stds = ['iosnr' => 0, 'pvsnr' => 0, 'motion' => 0];
+		if (($ps['stdiosnr'] ?? 0) != 0) {
+			if ($iosnr > ($ps['avgiosnr'] ?? 0)) {
 				$stds['iosnr'] = 0;
 			}
 			else {
-				$stds['iosnr'] = (($iosnr - $pstats[$sequence]['avgiosnr'])/$pstats[$sequence]['stdiosnr']);
+				$stds['iosnr'] = (($iosnr - ($ps['avgiosnr'] ?? 0))/($ps['stdiosnr'] ?? 0));
 			}
 		}
-		if ($pstats[$sequence]['stdpvsnr'] != 0) {
-			if ($pvsnr > $pstats[$sequence]['avgpvsnr']) {
+		if (($ps['stdpvsnr'] ?? 0) != 0) {
+			if ($pvsnr > ($ps['avgpvsnr'] ?? 0)) {
 				$stds['pvsnr'] = 0;
 			}
 			else {
-				$stds['pvsnr'] = (($pvsnr - $pstats[$sequence]['avgpvsnr'])/$pstats[$sequence]['stdpvsnr']);
+				$stds['pvsnr'] = (($pvsnr - ($ps['avgpvsnr'] ?? 0))/($ps['stdpvsnr'] ?? 0));
 			}
 		}
-		if ($pstats[$sequence]['stdmotion'] != 0) {
-			if ($motion_rsq > $pstats[$sequence]['avgmotion']) {
+		if (($ps['stdmotion'] ?? 0) != 0) {
+			if ($motion_rsq > ($ps['avgmotion'] ?? 0)) {
 				$stds['motion'] = 0;
 			}
 			else {
-				$stds['motion'] = (($motion_rsq - $pstats[$sequence]['avgmotion'])/$pstats[$sequence]['stdmotion']);
+				$stds['motion'] = (($motion_rsq - ($ps['avgmotion'] ?? 0))/($ps['stdmotion'] ?? 0));
 			}
 		}
 		
-		if ($pstats[$sequence]['maxstdpvsnr'] == 0) { $index['pv'] = 100; }
-		else { $pvindex = round(($stds['pvsnr']/$pstats[$sequence]['maxstdpvsnr'])*100); }
+		if (($ps['maxstdpvsnr'] ?? 0) == 0) { $index['pv'] = 100; }
+		else { $index['pv'] = round(($stds['pvsnr']/($ps['maxstdpvsnr'] ?? 0))*100); }
 		$index['pv'] = 100 + $index['pv'];
 		if ($index['pv'] > 100) { $index['pv'] = 100; }
 		
-		if ($pstats[$sequence]['maxstdiosnr'] == 0) { $index['io'] = 100; }
-		else { $index['io'] = round(($stds['iosnr']/$pstats[$sequence]['maxstdiosnr'])*100); }
+		if (($ps['maxstdiosnr'] ?? 0) == 0) { $index['io'] = 100; }
+		else { $index['io'] = round(($stds['iosnr']/($ps['maxstdiosnr'] ?? 0))*100); }
 		$index['io'] = 100 + $index['io'];
 		if ($index['io'] > 100) { $index['io'] = 100; }
 		
-		if ($pstats[$sequence]['maxstdmotion'] == 0) { $index['motion'] = 100; }
-		else { $index['motion'] = round(($stds['motion']/$pstats[$sequence]['maxstdmotion'])*100); }
+		if (($ps['maxstdmotion'] ?? 0) == 0) { $index['motion'] = 100; }
+		else { $index['motion'] = round(($stds['motion']/($ps['maxstdmotion'] ?? 0))*100); }
 		$index['motion'] = 100 + $index['motion'];
 		if ($index['motion'] > 100) { $index['motion'] = 100; }
 		
@@ -2852,7 +2861,7 @@
 		if ($range['z'] <= 0.0001) { $range['z'] = "-"; $color['maxz'] = "#fff"; }
 		else { $range['z'] = number_format($range['z'],2); }
 		
-		return array($range, $index, $color, $snrs, $iosnr, $pvsnr);
+		return array($range, $index, $color, $stds, $iosnr, $pvsnr);
 	}
 
 	
@@ -4605,7 +4614,7 @@
 										<div class="header">
 											Web download
 										</div>
-										<p>A .zip file will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete</p>
+										<p>A .zip file will be written to the temporary export directory <code><?=htmlspecialchars($GLOBALS['cfg']['exportdir'] ?? '')?></code> and will be available to download on the <b>Search</b> &rarr; <b>Export Status</b> page after export is complete. Temporary exports are removed periodically, so download it soon</p>
 									</div>
 								</div>
 							</div>
@@ -4688,7 +4697,7 @@
 										<div class="header">
 											Add this export to an existing public dataset.
 										</div>
-										<p>A .zip file named NiDB-<i>####</i> will be written to <code><?=$GLOBALS['cfg']['publicdownloaddir']?></code>. The download will be available on the <b>Data &rarr; Exports &rarr; Public Datasets</b> page</p>
+										<p>A .zip file named NiDB-<i>####</i> will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code>. The download will be available on the <b>Data &rarr; Exports &rarr; Public Datasets</b> page</p>
 									</div>
 								</div>
 								<br>
@@ -4729,7 +4738,7 @@
 										<div class="header">
 											FTP download
 										</div>
-										<p>A .zip file will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code></p>
+										<p>A .zip file will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['exportdir'] ?? '')?></code></p>
 									</div>
 								</div>
 							</div>
@@ -4741,7 +4750,7 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p><b>FTP</b> A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which contains a complete package ready to upload to the NDA</p>
+										<p><b>FTP</b> A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code> which contains a complete package ready to upload to the NDA</p>
 										<p><b>Web</b> A zipped directory containing all NDA data will be available to download from the <b>Search</b> &rarr; <b>Export Status</b> page. This must be unzipped before it can uploaded to NDA</p>
 									</div>
 								</div>
@@ -4768,7 +4777,7 @@
 										<div class="header">
 											NDA (NIMH data archive) format
 										</div>
-										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=$GLOBALS['cfg']['exportdir']?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
+										<p>A directory named NIDB-NDAR-<i>YYYYMMDDHHMISS</i> will be written to <code><?=htmlspecialchars($GLOBALS['cfg']['downloaddir'] ?? '')?></code> which <u>contains only the .csv file</u>. No imaging data is included in this export.</p>
 									</div>
 								</div>
 							</div>
@@ -4794,11 +4803,6 @@
 									<input type="text" id="nfsdir" name="nfsdir" onKeyUp="CheckNFSPath()" placeholder="NFS path..." onFocus="document.getElementById('radio_nfs').checked=true"><span id="pathcheckresult"></span>
 								</div>
 							</div>
-							
-							<!-- Remote XNAT tab -->
-							<!--<div class="ui tab seamless right attached segment" data-tab="tab-xnat" style="background-color: #EBF5FB">
-								<p style="text-align: center">XNAT transfer settings are taken from the project</p>
-							</div>-->
 							
 							<!-- Remote NiDB tab -->
 							<div class="ui <? if ($activeTab == "remotenidb") { echo "active"; } ?> tab seamless right attached segment" data-tab="tab-remotenidb" style="background-color: #EBF5FB">
@@ -6021,7 +6025,7 @@
 
 		/* the destination types the export module handles (dicomae exports come from studies.php). Remote FTP
 		   was never implemented by the export module, and stored the FTP password in plaintext, so it isn't accepted */
-		if (!in_array($destinationtype, array('web', 'publicdownload', 'publicdataset', 'nfs', 'localftp', 'export', 'ndar', 'ndarcsv', 'xnat', 'remotenidb'), true)) {
+		if (!in_array($destinationtype, array('web', 'publicdownload', 'publicdataset', 'nfs', 'localftp', 'export', 'ndar', 'ndarcsv', 'remotenidb'), true)) {
 			Error("Invalid destination [" . htmlspecialchars($destinationtype) . "]. Export not submitted");
 			return;
 		}

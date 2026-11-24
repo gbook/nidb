@@ -51,7 +51,6 @@ public:
     bool ExportToRemoteFTP(int exportid, QString remoteftpusername, QString remoteftppassword, QString remoteftpserver, int remoteftpport, QString remoteftppath, QString &exportstatus, QString &msg);
     bool ExportSquirrel(int exportid, QString squirreltitle, QString squirreldesc, QStringList downloadflags, QStringList squirrelflags, QString &exportstatus, QString &outdir, QString &msg);
     bool ExportPackage(int exportid, QString &exportstatus, QString &msg);
-    bool ExportXNAT(int exportid, QString &exportstatus, QString &msg);
     bool ExportDicomAE(int exportid, int dicomaeid, QString &exportstatus, QString &msg);
 
     bool WriteNDARHeader(QString headerfile, QString modality, QStringList &log);
