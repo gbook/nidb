@@ -41,21 +41,14 @@
 	require "includes_html.php";
 	require "menu.php";
 
-	/* check if this page is being called from itself */
-	$referringpage = $_SERVER['HTTP_REFERER'];
-	$phpscriptname = pathinfo(__FILE__)['basename'];
-	if (contains($referringpage, $phpscriptname))
-		$selfcall = true;
-	else
-		$selfcall = false;
-
 	//PrintVariable($_POST,'post');
 	if (!isAdmin()) {
 		Error("This account does not have permissions to view this page");
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions require a POST with this session's CSRF token (N89) */
+		$action = GetSafeAction(array('add', 'update', 'delete', 'enable', 'disable', 'resetpassword'));
 		$id = (int)GetVariable("id");
 		$username = GetVariable("username");
 		$password = GetVariable("password");
@@ -113,11 +106,7 @@
 				break;
 			case 'resetpassword':
 				ob_start();
-				/* POST-only and CSRF-checked, since this changes the user's password */
-				if (($_SERVER['REQUEST_METHOD'] == 'POST') && VerifyCSRFToken())
-					ResetUserPassword($id);
-				elseif ($_SERVER['REQUEST_METHOD'] != 'POST')
-					Error("Invalid request");
+				ResetUserPassword($id);
 				$_SESSION['flash'] = ob_get_clean();
 				RedirectTo("adminusers.php");
 				break;
@@ -553,6 +542,7 @@
 			<form method="post" action="adminusers.php" autocomplete="off" class="ui form raised bottom attached segment">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=$id?>">
+			<?=CSRFTokenField()?>
 
 			<h3 class="ui header">User Information</h3>
 			
@@ -859,7 +849,8 @@
 				<div class="column">
 					<? if ($type == 'edit') { ?>
 						<input type="hidden" name="username" value="<?=htmlspecialchars($username)?>">
-						<a class="ui red button" href="adminusers.php?action=delete&id=<?=$id?>" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</a>
+						<!-- submits the separate deleteuserform below (forms can't be nested) -->
+						<button class="ui red button" type="submit" form="deleteuserform" onclick="return confirm('Are you sure you want to delete this user?')"><i class="trash icon"></i>Delete User</button>
 						<? if ($login_type == "Standard") { ?>
 						<!-- submits the separate resetpasswordform below (forms can't be nested) -->
 						<button class="ui orange button" type="submit" form="resetpasswordform" title="Email <?=htmlspecialchars($email)?> a one-time link (valid 1 hour) to choose a new password" onclick="return confirm('Email <?=htmlspecialchars(addslashes($username), ENT_QUOTES)?> a password reset link at <?=htmlspecialchars(addslashes($email), ENT_QUOTES)?>? The link can be used once and expires in 1 hour. Their current password keeps working until it is used.')"><i class="key icon"></i>Email Password Reset Link</button>
@@ -872,6 +863,13 @@
 				</div>
 			</div>
 			</form>
+			<? if ($type == 'edit') { ?>
+			<form method="post" action="adminusers.php" id="deleteuserform">
+				<input type="hidden" name="action" value="delete">
+				<input type="hidden" name="id" value="<?=$id?>">
+				<?=CSRFTokenField()?>
+			</form>
+			<? } ?>
 			<? if (($type == 'edit') && ($login_type == "Standard")) { ?>
 			<form method="post" action="adminusers.php" id="resetpasswordform">
 				<input type="hidden" name="action" value="resetpassword">
@@ -882,6 +880,19 @@
 		</div>
 	<?
 	}
+
+	/* -------------------------------------------- */
+	/* ------- UserEnableToggle ------------------- */
+	/* -------------------------------------------- */
+	/* the enable/disable toggle in the user lists: a POST form with the CSRF token (N89).
+	   Disabling asks for confirmation; enabling is one click */
+	function UserEnableToggle($id, $username, $enabled) {
+		if ($enabled)
+			PostActionButton("adminusers.php", array('action' => 'disable', 'id' => (int)$id), '<i class="large green toggle on icon"></i>', '', "Disable $username?", "Enabled. Click to disable");
+		else
+			PostActionButton("adminusers.php", array('action' => 'enable', 'id' => (int)$id), '<i class="large red toggle off icon"></i>', '', '', "Disabled. Click to enable");
+	}
+
 
 	/* -------------------------------------------- */
 	/* ------- DisplayUserList -------------------- */
@@ -982,14 +993,7 @@
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<?
-							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
-							}
-							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
-							}
-						?>
+						<? UserEnableToggle($id, $username, $enabled); ?>
 					</td>
 				</tr>
 				<? } ?>
@@ -1036,14 +1040,7 @@
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<?
-							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
-							}
-							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
-							}
-						?>
+						<? UserEnableToggle($id, $username, $enabled); ?>
 					</td>
 				</tr>
 				<? } ?>
@@ -1086,14 +1083,7 @@
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<?
-							if ($enabled) {
-								?><a href="adminusers.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
-							}
-							else {
-								?><a href="adminusers.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
-							}
-						?>
+						<? UserEnableToggle($id, $username, $enabled); ?>
 					</td>
 				</tr>
 				<? } ?>

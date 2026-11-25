@@ -42,7 +42,8 @@
 	require "menu.php";
 
 	/* get variables */
-	$action = GetVariable("action");
+	/* mutating actions require a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('resetexport', 'cancelexport', 'retryerrors'));
 	$page = GetVariable("page");
 	$exportid = (int)GetVariable("exportid");
 	$requestid = (int)GetVariable("requestid");
@@ -54,7 +55,7 @@
 		$action = "";
 	}
 
-	/* the mutating actions are GET links; redirect afterwards so a refresh doesn't repeat the action */
+	/* the mutating actions are POST buttons; redirect afterwards so a refresh doesn't repeat the action */
 	switch ($action) {
 		case 'viewdetails':
 			ViewDetails($requestid);
@@ -357,11 +358,11 @@
 				<td class="center aligned" style="white-space: nowrap">
 					<div class="ui mini basic icon buttons">
 						<? if ($exportstatus == "error") { ?>
-						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui button"><i class="sync alternate icon"></i></a>
+						<? PostActionButton("requeststatus.php", array('action' => 'retryerrors', 'exportid' => (int)$exportid), '<i class="sync alternate icon"></i>', 'ui button', '', 'Retry failed series'); ?>
 						<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-						<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui button"><i class="redo icon"></i></a>
+						<? PostActionButton("requeststatus.php", array('action' => 'resetexport', 'exportid' => (int)$exportid), '<i class="redo icon"></i>', 'ui button', '', 'Resend all series'); ?>
 						<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-						<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui button" onClick="return confirm('Cancel this export?')"><i class="red times circle icon"></i></a>
+						<? PostActionButton("requeststatus.php", array('action' => 'cancelexport', 'exportid' => (int)$exportid), '<i class="red times circle icon"></i>', 'ui button', 'Cancel this export?', 'Cancel the remaining series'); ?>
 						<? } ?>
 					</div>
 				</td>
@@ -541,11 +542,11 @@
 								<div class="ui small basic compact button" id="popupbutton<?=$exportid?>"><i class="cog icon"></i> Options</div>
 								<div class="ui popup" id="popupmenu<?=$exportid?>" style="width: 400px">
 									<? if ($exportstatus == "error") { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Retry failed series" class="ui fluid button"><i class="sync alternate icon"></i> Retry</a>
+									<? PostActionButton("requeststatus.php", array('action' => 'retryerrors', 'exportid' => (int)$exportid), '<i class="sync alternate icon"></i> Retry', 'ui fluid button', '', 'Retry failed series'); ?>
 									<? } elseif (($exportstatus == "complete") || ($exportstatus == "cancelled")) { ?>
-									<a href="requeststatus.php?action=resetexport&exportid=<?=$exportid?>" title="Resend all series" class="ui fluid button"><i class="file import icon"></i> Resend</a>
+									<? PostActionButton("requeststatus.php", array('action' => 'resetexport', 'exportid' => (int)$exportid), '<i class="file import icon"></i> Resend', 'ui fluid button', '', 'Resend all series'); ?>
 									<? } elseif (($exportstatus == "submitted") || ($exportstatus == "processing")) { ?>
-									<a href="requeststatus.php?action=cancelexport&exportid=<?=$exportid?>" title="Cancel the remaining series" class="ui fluid red button"><i class="times circle icon"></i> Cancel</a>
+									<? PostActionButton("requeststatus.php", array('action' => 'cancelexport', 'exportid' => (int)$exportid), '<i class="times circle icon"></i> Cancel', 'ui fluid red button', 'Cancel this export?', 'Cancel the remaining series'); ?>
 									<? } ?>
 								</div>
 							</div>

@@ -48,7 +48,8 @@
 	//PrintVariable($_GET, "GET");
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('create', 'cancel'));
 	$id = (int)GetVariable("id"); /* pipeline_id. Named 'id' so menu.php shows the pipeline sub-menu */
 	$referenceanalysisid = (int)GetVariable("referenceanalysisid");
 	$runvalidation = GetMySQLTinyInt(GetVariable("runvalidation"));
@@ -842,6 +843,7 @@
 						<? } else { ?>
 						<form action="pipelinecontainers.php" method="post" style="display: inline" onsubmit="return confirm('Cancel container build <?=$containerid?>? Its cluster job is stopped, and the build directory is kept');">
 							<input type="hidden" name="action" value="cancel">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="id" value="<?=$id?>">
 							<input type="hidden" name="containerid" value="<?=$containerid?>">
 							<button type="submit" class="ui orange button"><i class="ban icon"></i> Cancel build</button>
@@ -1463,6 +1465,7 @@ apptainer inspect <?=htmlspecialchars($siffile)?>     # labels: pipeline name, v
 			<? } else { ?>
 				<form action="pipelinecontainers.php" method="post" class="ui form">
 					<input type="hidden" name="action" value="create">
+					<?=CSRFTokenField()?>
 					<input type="hidden" name="id" value="<?=$id?>">
 					<div class="inline field">
 						<label>Reference analysis</label>

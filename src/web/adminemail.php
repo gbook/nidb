@@ -49,7 +49,8 @@
 	}
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* sending requires a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('sendemail'));
 	$emailbody = GetVariable("emailbody");
 	$emailsubject = GetVariable("emailsubject");
 	
@@ -59,8 +60,12 @@
 		   SendMassEmail() returns a status string, so render it into the flash for the redirect. */
 		case 'sendemail':
 			ob_start();
-			$msg = SendMassEmail($emailbody, $emailsubject);
-			if ($msg != "") Notice($msg);
+			if ((trim($emailsubject) == "") || (trim($emailbody) == ""))
+				Error("The subject and body are both required. No email was sent.");
+			else {
+				$msg = SendMassEmail($emailbody, $emailsubject);
+				if ($msg != "") Notice($msg);
+			}
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("adminemail.php");
 			break;
@@ -76,8 +81,9 @@
 	function DisplayEmailForm() {
 		ShowFlashMessage(); /* show the send result from the PRG redirect */
 		?>
-		<form action="adminemail.php" method="post" name="theform">
+		<form action="adminemail.php" method="post" name="theform" onsubmit="return confirm('Send this email to every enabled user?')">
 		<input type="hidden" name="action" value="sendemail">
+		<?=CSRFTokenField()?>
 		<input type="text" name="emailsubject" size="60" placeholder="Subject">
 		<br><br>
 		<textarea name="emailbody" rows="10" cols="60" placeholder="Body"></textarea>
@@ -91,13 +97,13 @@
 	/* -------------------------------------------- */
 	/* ------- SendMassEmail ---------------------- */
 	/* -------------------------------------------- */
-	/* Sends the message to every user with an email address. Named SendMassEmail because
+	/* Sends the message to every enabled user with an email address. Named SendMassEmail because
 	   functions.php already defines SendEmail(), and redeclaring it is a fatal error. Uses the shared
 	   SendEmail() (the site's configured SMTP server) rather than SendGmail(), which is hard-wired
 	   to Gmail (SSL port 465 with a login) */
 	function SendMassEmail($emailbody, $emailsubject) {
 
-		$sqlstring = "select user_email from users where user_email <> ''";
+		$sqlstring = "select user_email from users where user_email <> '' and user_enabled = 1";
 		$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 		$numrows = mysqli_num_rows($result);
 
