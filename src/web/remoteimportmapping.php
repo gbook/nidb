@@ -593,6 +593,9 @@
 					<input type="text" id="avicennaFilter" placeholder="Search..." oninput="avicennaGridApi.setQuickFilter(this.value)" style="padding:5px 8px;width:250px;border:1px solid #ccc;border-radius:4px">
 				</div>
 				<div class="ui right aligned column">
+					<button class="ui small button" onclick="exportAvicennaCSV()">
+						<i class="file csv icon"></i> Export as csv...
+					</button>
 					<? if ($canedit) { ?>
 					<button class="ui small button" onclick="$('#bulkAddModal').modal('show')">
 						<i class="list icon"></i> Bulk add
@@ -2249,6 +2252,39 @@
 					updateSelectionToolbar(sourceType);
 				})
 				.catch(() => alert('Network error deleting mappings'));
+		}
+
+		/* Download all Avicenna mappings (from the grid, so rows added/edited/deleted on this page are
+		   included) as a CSV in the same column format the Bulk add form accepts, so it can be re-imported */
+		function exportAvicennaCSV() {
+			const cols = ['avicennasurvey', 'avicennadatasource', 'avicennavariable', 'avicennadatatype', 'avicennaquestion', 'nidbinstrument', 'nidbvariable', 'importmeta'];
+			const esc = v => {
+				const s = (v === null || v === undefined) ? '' : String(v);
+				return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+			};
+			const lines = [cols.join(',')];
+			avicennaGridApi.forEachNode(node => {
+				const d = node.data;
+				if (!d) return;
+				lines.push([
+					d.avicenna_survey,
+					d.avicenna_datasource,
+					d.avicenna_variable,
+					d.avicenna_datatype,
+					d.avicenna_question > 0 ? d.avicenna_question : '', /* NULL question is loaded as 0 */
+					d.nidb_instrument,
+					d.nidb_variable,
+					d.flag_import_meta ? 1 : 0
+				].map(esc).join(','));
+			});
+			const blob = new Blob([lines.join('\n') + '\n'], { type: 'text/csv;charset=utf-8' });
+			const a = document.createElement('a');
+			a.href = URL.createObjectURL(blob);
+			a.download = 'avicenna-mappings-project' + projectId + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+			document.body.appendChild(a);
+			a.click();
+			document.body.removeChild(a);
+			setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 		}
 
 		// ── Semantic UI initialization ─────────────────────────────────────
