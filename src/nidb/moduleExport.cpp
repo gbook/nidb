@@ -744,8 +744,11 @@ bool moduleExport::ExportLocal(int exportid, QString exporttype, QString nfsdir,
                                             int numfilesconv(0), numfilesrenamed(0);
                                             QString binpath = n->cfg["nidbdir"] + "/bin";
                                             BIDSMapping mapping;
-                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), "", "", mapping, datatype, QJsonObject(), numfilesconv, numfilesrenamed, m2))
-                                                msgs << "Error converting files [" + m2 + "]";
+                                            if (!img->ConvertDicom(filetype, indir, tmpdir, binpath, gzip, json, uid, QString("%1").arg(studynum), QString("%1").arg(seriesnum), "", "", mapping, datatype, QJsonObject(), numfilesconv, numfilesrenamed, m2)) {
+                                                seriesstatus = exportstatus = "error";
+                                                statusmessage = "Error converting files to " + filetype;
+                                                msgs << n->Log("Error converting files [" + m2 + "]");
+                                            }
                                             else
                                                 n->Log("Converted files successfully [" + m2 + "]");
 

@@ -3431,8 +3431,18 @@
 		$dir = GetExportDir($row['destinationtype'] ?? '', $row['filetype'] ?? '');
 		if ($dir == '') return "";
 
-		foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.sqrl", "NiDB-Squirrel-$exportid.zip") as $f) {
-			if (is_file("$dir/$f")) return "$dir/$f";
+		/* also check the other directory: web exports made before the move to [exportdir] (and any
+		   nidb binary built before that change) wrote NIDB-<id>.zip to [downloaddir] */
+		$dirs = array($dir);
+		foreach (array('exportdir', 'downloaddir') as $key) {
+			$d = rtrim(trim($GLOBALS['cfg'][$key] ?? ''), "/");
+			if (($d != '') && !in_array($d, $dirs)) $dirs[] = $d;
+		}
+
+		foreach ($dirs as $d) {
+			foreach (array("NIDB-$exportid.zip", "NiDB-Squirrel-$exportid.sqrl", "NiDB-Squirrel-$exportid.zip") as $f) {
+				if (is_file("$d/$f")) return "$d/$f";
+			}
 		}
 		return "";
 	}

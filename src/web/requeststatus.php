@@ -381,6 +381,16 @@
 
 
 	/* --------------------------------------------------- */
+	/* ------- ExportStillRunning ------------------------ */
+	/* --------------------------------------------------- */
+	/* true if moduleExport hasn't finished with this export yet. The export's status only becomes
+	   complete/error/cancelled after all post-processing (zipping) is done */
+	function ExportStillRunning($exportstatus) {
+		return in_array((string)$exportstatus, array('submitted', 'pending', 'processing'), true);
+	}
+
+
+	/* --------------------------------------------------- */
 	/* ------- DisplayExportOutput ----------------------- */
 	/* --------------------------------------------------- */
 	/* the 'Output' cell of the export list: download link, NDA location, etc */
@@ -400,7 +410,14 @@
 			$filesize = ($zipFilePath != "") ? filesize($zipFilePath) : 0;
 
 			if ($filesize == 0) {
-				?><span style="color: gray"><i class="spinner loading icon"></i> Zipping...</span><?
+				/* moduleExport only sets the export's final status after the zip is written, so a missing
+				   zip on a finished export means the file is gone (cleaned up, or never created) */
+				if (ExportStillRunning($row['status'] ?? '')) {
+					?><span style="color: gray"><i class="spinner loading icon"></i> Zipping...</span><?
+				}
+				else {
+					?><span style="color: gray" title="The export file was not found. It may have been removed, or was never created">File not available</span><?
+				}
 			}
 			else {
 				?><a class="ui mini fluid blue button" href="exportdownload.php?exportid=<?=(int)$exportid?>" title="Download zip file"><i class="download icon"></i> Download <span style="font-weight: normal"><?=HumanReadableFilesize($filesize)?></span></a><?
@@ -559,7 +576,13 @@
 											$filesize = ($zipfile != "") ? filesize($zipfile) : 0;
 
 											if ($filesize == 0) {
-												echo "Zipping download...";
+												/* see DisplayExportOutput() */
+												if (ExportStillRunning($exportstatus)) {
+													?><i class="spinner loading icon"></i> Zipping download...<?
+												}
+												else {
+													?><span style="color: gray" title="The export file was not found. It may have been removed, or was never created">File not available</span><?
+												}
 											}
 											else {
 												?>

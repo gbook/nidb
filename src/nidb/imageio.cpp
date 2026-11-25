@@ -424,7 +424,7 @@ QMap<QString, CsaElement> imageIO::ParseSiemensCSA(const QByteArray& csa)
  * @param bidsSession **BIDS** BIDS session label
  * @param bidsMapping **BIDS** structure containing mapping of NiDB series desc to BIDS format
  * @param datatype if 'parrec', this function will handle conversion slightly differently
- * @param numfilesconv Number of files converted (doesn't work correctly)
+ * @param numfilesconv Number of files in outdir after conversion
  * @param numfilesrenamed Number of files renamed
  * @param msg Any messages generated during converstion
  * @return `true` if successful, `false` otherwise
@@ -443,7 +443,7 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
     if (json) jsonstr = "y";
     else jsonstr = "n";
 
-    numfilesconv = 0; /* need to fix this to be correct at some point */
+    numfilesconv = 0; /* set to the number of files in outdir after conversion */
 
     msgs << QString("Working on [" + indir + "] and filetype [" + filetype + "]");
 
@@ -547,6 +547,16 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
         return false;
     }
 
+    /* make sure the converter exists. The shell only reports a missing binary on stderr, so without
+       this check the conversion silently produces nothing */
+    QString converter = QString("%1/%2").arg(bindir).arg((filetype == "nifti4dme") ? "dcm2niixme" : "dcm2niix");
+    if (!QFile::exists(converter)) {
+        msgs << "Converter [" + converter + "] not found";
+        msg = msgs.join("\n");
+        QDir::setCurrent(pwd);
+        return false;
+    }
+
     /* create the output directory */
     QString m;
     if (!MakePath(outdir, m)) {
@@ -593,6 +603,14 @@ bool imageIO::ConvertDicom(QString filetype, QString indir, QString outdir, QStr
 
     /* change back to original directory before leaving */
     QDir::setCurrent(pwd);
+
+    /* a conversion that produced no files is a failure, whatever the converter's exit status */
+    numfilesconv = QDir(outdir).entryList(QDir::Files | QDir::NoDotAndDotDot).size();
+    if (numfilesconv < 1) {
+        msgs << "Conversion produced no output files in [" + outdir + "]";
+        msg = msgs.join("\n");
+        return false;
+    }
 
     msg = msgs.join("\n");
     return true;
