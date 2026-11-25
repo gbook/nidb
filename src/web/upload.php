@@ -198,6 +198,14 @@ class qqFileUploader {
 
 
 	
+/* uploads must be a POST carrying this session's CSRF token (C1, N102). fileuploader.js sends the file as the
+   raw request body, so the token comes in the X-CSRF-Token header (studies.php sets it via customHeaders) */
+$csrfheader = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+if (($_SERVER['REQUEST_METHOD'] != 'POST') || empty($_SESSION['csrftoken']) || !is_string($csrfheader) || !hash_equals($_SESSION['csrftoken'], $csrfheader)) {
+	echo htmlspecialchars(json_encode(array('error' => 'This request could not be verified, and was not performed. Your session may have expired - please reload the page and try again.')), ENT_NOQUOTES);
+	exit(0);
+}
+
 /* params are stored in $_GET */
 $modality = strtolower((string)GetVariable("modality"));
 $seriesid = (int)GetVariable("seriesid");

@@ -3050,6 +3050,7 @@
 									element: document.getElementById('uploader<?=$mrseries_id?>'),
 									action: 'upload.php',
 									params: {modality: 'MRBEH', studyid: '<?=$studyid?>', seriesid: <?=$mrseries_id?>},
+									customHeaders: {'X-CSRF-Token': <?=json_encode($_SESSION['csrftoken'] ?? '')?>},
 									debug: true
 								});
 								<?
@@ -3647,6 +3648,7 @@
 										element: document.getElementById('uploader<?=$series_id?>'),
 										action: 'upload.php',
 										params: {modality: '<?=strtoupper($modality)?>', studyid: '<?=$id?>', seriesid: <?=$series_id?>},
+										customHeaders: {'X-CSRF-Token': <?=json_encode($_SESSION['csrftoken'] ?? '')?>},
 										debug: true
 									});
 								<?

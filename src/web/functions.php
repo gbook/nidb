@@ -3536,32 +3536,81 @@
 
 
 	/* -------------------------------------------- */
-	/* ------- IsViewablePath --------------------- */
+	/* ------- ViewablePathError ------------------ */
 	/* -------------------------------------------- */
-	/* true if $realfile (already passed through realpath()) lives within the
-	   archive, mount, or an analysis directory. Used by viewfile.php and getfile.php.
+	/* returns '' if the current user may view $realfile (already passed through realpath()), otherwise
+	   the reason it can't be viewed. Used by viewfile.php, viewimagefile.php, getfile.php, preview.php
+	   and pipelinecontainers.php (via IsViewablePath()).
+	   - [archivedir]: the file must belong to a real subject/study (<archivedir>/<UID>/<study #>/...), and
+	     the user needs View Data on the study's project. Raw DICOM (a 'dicom' directory below the study,
+	     or a .dcm file) also needs View PHI on the subject, since its headers hold PatientName/BirthDate (N88).
+	     The archive is checked first, so this applies even if [archivedir] is inside another listed directory.
+	   - [mountdir], [analysisdir], [analysisdirb], [groupanalysisdir]: any logged-in user (decision 2026-11-25:
+	     users need to view their analysis files; analyzed data is readable by every user, doc/permissions.md).
 	   Only directories from the config are trusted. pipelines.pipeline_directory used to be added to
 	   the list, but users set that column, so any user could make any directory viewable (N68). A
 	   pipeline's own directory is relative to [mountdir] (see IsValidPipelineDirectory() in
 	   pipelines.php), so its files are already covered by mountdir */
-	function IsViewablePath($realfile) {
-		if (($realfile === false) || ($realfile == '')) { return false; }
+	function ViewablePathError($realfile) {
+		if (($realfile === false) || ($realfile == '')) { return "File does not exist"; }
 
-		$dirs = array();
-		foreach (array('archivedir', 'mountdir', 'analysisdir', 'analysisdirb', 'groupanalysisdir') as $key) {
-			$dirs[] = $GLOBALS['cfg'][$key] ?? '';
+		/* archive files: permission on the subject/study the file belongs to */
+		$realarchive = realpath(trim($GLOBALS['cfg']['archivedir'] ?? ''));
+		if (($realarchive !== false) && ($realarchive != '/') && (substr($realfile, 0, strlen($realarchive) + 1) === $realarchive . '/')) {
+			$parts = explode('/', substr($realfile, strlen($realarchive) + 1));
+			if ((count($parts) < 3) || ($parts[0] == '') || !ctype_digit($parts[1])) {
+				return "This file is not part of a subject's study in the archive";
+			}
+			$uid = $parts[0];
+			$studynum = (int)$parts[1];
+
+			$sqlstring = "select c.project_id, a.subject_id from subjects a join enrollment c on c.subject_id = a.subject_id join studies b on b.enrollment_id = c.enrollment_id where a.uid = ? and b.study_num = ? limit 1";
+			$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+			mysqli_stmt_bind_param($stmt, 'si', $uid, $studynum);
+			$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$uid, $studynum]);
+			$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+			mysqli_stmt_close($stmt);
+			if (!$row) {
+				return "This file is not part of a subject's study in the archive";
+			}
+
+			$projectid = (int)$row['project_id'];
+			$perms = GetCurrentUserProjectPermissions(array($projectid));
+			if (!GetPerm($perms, 'viewdata', $projectid)) {
+				return "You do not have permission to view this file (View Data is required on the study's project)";
+			}
+
+			/* raw DICOM headers hold PHI: View PHI on the subject (global to the subject, as in ValidateDicomRequest()) */
+			$dirs = array_map('strtolower', array_slice($parts, 2, -1));
+			$isdicom = in_array('dicom', $dirs, true) || (strtolower(pathinfo($realfile, PATHINFO_EXTENSION)) == 'dcm');
+			if ($isdicom) {
+				$sp = GetSubjectPermissions($row['subject_id']);
+				if (!$sp['viewphi']) {
+					return "You do not have permission to view this file (raw DICOM files also require View PHI on the subject)";
+				}
+			}
+			return '';
 		}
 
-		foreach ($dirs as $dir) {
-			$realdir = realpath(trim($dir));
+		foreach (array('mountdir', 'analysisdir', 'analysisdirb', 'groupanalysisdir') as $key) {
+			$realdir = realpath(trim($GLOBALS['cfg'][$key] ?? ''));
 			/* skip unset/missing dirs, and never allow the filesystem root */
 			if (($realdir === false) || ($realdir == '/')) { continue; }
 
 			if (substr($realfile, 0, strlen($realdir) + 1) === $realdir . '/') {
-				return true;
+				return '';
 			}
 		}
-		return false;
+		return "This file is not within an archive, mount, or analysis directory";
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- IsViewablePath --------------------- */
+	/* -------------------------------------------- */
+	/* true if the current user may view $realfile (see ViewablePathError()) */
+	function IsViewablePath($realfile) {
+		return (ViewablePathError($realfile) == '');
 	}
 
 

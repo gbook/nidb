@@ -1734,7 +1734,7 @@
 								<?
 									if (count($parents) > 0) {
 										foreach ($parents as $parentid => $info) {
-											?><a href="pipelines.php?action=editpipeline&id=<?=$parentid?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a><?
+											?><a href="pipelines.php?action=editpipeline&id=<?=(int)$parentid?>" title="<?=htmlspecialchars(trim(($info['desc'] ?? '') . "\n\n" . ($info['notes'] ?? '')), ENT_QUOTES)?>"><?=htmlspecialchars((string)($info['name'] ?? ''))?></a><?
 										}
 									}
 									else {
@@ -1760,7 +1760,7 @@
 									if (count($children) > 0) {
 										foreach ($children as $child => $info) {
 											?>
-												&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=$child?>" title="<?=$info['desc']?><br><br><?=$info['notes']?>"><?=$info['name']?></a>
+												&rdsh; <a href="pipelines.php?action=editpipeline&id=<?=(int)$child?>" title="<?=htmlspecialchars(trim(($info['desc'] ?? '') . "\n\n" . ($info['notes'] ?? '')), ENT_QUOTES)?>"><?=htmlspecialchars((string)($info['name'] ?? ''))?></a>
 												<br>
 											<?
 										}
@@ -2044,8 +2044,8 @@
 							<i class="dropdown icon"></i>
 							<div class="default text">Directory...</div>
 							<div class="scrollhint menu">
-								<div class="item" data-value="a"><tt><?=$GLOBALS['cfg']['analysisdir']?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
-								<div class="item" data-value="b"><tt><?=$GLOBALS['cfg']['analysisdirb']?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
+								<div class="item" data-value="a"><tt><?=htmlspecialchars($GLOBALS['cfg']['analysisdir'] ?? '')?></tt> <div class="ui label">/S1234ABC/1/<b>ThePipeline</b></div></div>
+								<div class="item" data-value="b"><tt><?=htmlspecialchars($GLOBALS['cfg']['analysisdirb'] ?? '')?></tt> <div class="ui label">/<b>ThePipeline</b>/S1234ABC/1</div></div>
 								<?
 									$sqlstring = "select * from analysisdirs order by shortname";
 									$result = MySQLiQuery($sqlstring, __FILE__, __LINE__);
@@ -2062,7 +2062,7 @@
 											$dispformat = "/<b>ThePipeline</b>/S1234ABC/1";
 										}
 										?>
-										<div class="item" data-value="<?=$analysisdirid?>"><tt><?=$clusterpath?></tt> <div class="ui label"><?=$dispformat?></div></div>
+										<div class="item" data-value="<?=(int)$analysisdirid?>"><tt><?=htmlspecialchars((string)($clusterpath ?? ''))?></tt> <div class="ui label"><?=$dispformat?></div></div>
 										<?
 									}
 								?>
@@ -2083,7 +2083,7 @@
 							$result = MySQLiQuery($sqlstring,__FILE__,__LINE__);
 							while ($row = mysqli_fetch_array($result, MYSQLI_ASSOC)) {
 								$pgroup = $row['pipeline_group'];
-								echo "<option value='$pgroup'>";
+								echo "<option value='" . htmlspecialchars((string)($pgroup ?? ''), ENT_QUOTES) . "'>";
 							}
 						?>
 					</datalist>
@@ -2312,7 +2312,7 @@
 														
 														if ($id != $d_id) {
 															?>
-															<option value="<?=$d_id?>" <?=$selected?>><?=$d_name?></option>
+															<option value="<?=(int)$d_id?>" <?=$selected?>><?=htmlspecialchars($d_name)?></option>
 															<?
 														}
 													}
@@ -2396,7 +2396,7 @@
 										if (in_array($g_id, explode(",",$groupid))) { $selected = "selected"; }
 										else { $selected = ""; }
 										?>
-										<option value="<?=$g_id?>" <?=$selected?>><?=$g_name?>  [<?=$nummembers?>]</option>
+										<option value="<?=$g_id?>" <?=$selected?>><?=htmlspecialchars((string)($g_name ?? ''))?>  [<?=(int)$nummembers?>]</option>
 										<?
 									}
 								?>
@@ -2419,7 +2419,7 @@
 										if (in_array($p_id, explode(",",$projectid))) { $selected = "selected"; }
 										else { $selected = ""; }
 										?>
-										<option value="<?=$p_id?>" <?=$selected?>><?=$p_name?></option>
+										<option value="<?=(int)$p_id?>" <?=$selected?>><?=htmlspecialchars((string)($p_name ?? ''))?></option>
 										<?
 									}
 								?>
@@ -2637,7 +2637,7 @@
 											$selected = "";
 										}
 										?>
-										<option value="<?=$mod_code?>" <?=$selected?>><?=$mod_code?></option>
+										<option value="<?=htmlspecialchars($mod_code, ENT_QUOTES)?>" <?=$selected?>><?=htmlspecialchars($mod_code)?></option>
 										<?
 									}
 								}
@@ -2879,7 +2879,7 @@
 									}
 									if ($numtables > 0) {
 										?>
-										<option value="<?=$mod_code?>"><?=$mod_code?></option>
+										<option value="<?=htmlspecialchars($mod_code, ENT_QUOTES)?>"><?=htmlspecialchars($mod_code)?></option>
 										<?
 									}
 								}
@@ -3842,11 +3842,11 @@
 								?>
 								<tr>
 									<td><?=$startDate?></td>
-									<td title="<?=$exportStatusMessage?>"><?=$exportStatus?></td>
+									<td title="<?=htmlspecialchars((string)($exportStatusMessage ?? ''), ENT_QUOTES)?>"><?=$exportStatus?></td>
 									<td><?=$exportSize?></td>
 									<td>
 										<? if ($exportFilePath != "") { ?>
-										<a href="getfile.php?action=download&file=<?=$exportFilePath?>"><i class="arrow alternate circle down icon"></i></a>
+										<a href="getfile.php?action=download&file=<?=urlencode($exportFilePath)?>"><i class="arrow alternate circle down icon"></i></a>
 										<? } ?>
 									</td>
 								</tr>
@@ -5142,7 +5142,7 @@
 		foreach ($dependencies as $depname) {
 			?>
 			<tr>
-				<td><?=$depname?></td>
+				<td><?=htmlspecialchars((string)$depname)?></td>
 			</tr>
 			<?
 		}
@@ -5155,7 +5155,7 @@
 		?>
 		<table width="50%" style="background-color: #93a9d6; border: 4px solid orange; box-shadow: 5px 5px 10px orange" cellpadding="8" cellspacing="0" title="This is the study that will be the primary focus of the analysis">
 			<tr>
-				<td align="center" style="background-color: #3b5998; color: #fff"><b>This study - <?=$data['modality']?></b></td>
+				<td align="center" style="background-color: #3b5998; color: #fff"><b>This study - <?=htmlspecialchars((string)($data['modality'] ?? ''))?></b></td>
 			</tr>
 			<?
 			foreach ($study as $step => $data) {
@@ -5168,7 +5168,7 @@
 				
 				?>
 				<tr>
-					<td style="font-size: smaller; color: <?=$color?>; background-color: <?=$bgcolor?>"><?=$data['protocol']?></td>
+					<td style="font-size: smaller; color: <?=$color?>; background-color: <?=$bgcolor?>"><?=htmlspecialchars((string)($data['protocol'] ?? ''))?></td>
 				</tr>
 				<?
 			}
@@ -5186,10 +5186,10 @@
 							?>
 							<table cellspacing="0" cellpadding="5" class="start" style="background-color: #9bc193; box-shadow: 5px 5px 10px #333" width="100%" >
 								<tr>
-									<td style="color: #fff"><b><?=$data['modality']?></b> study</td>
+									<td style="color: #fff"><b><?=htmlspecialchars((string)($data['modality'] ?? ''))?></b> study</td>
 								</tr>
 								<tr>
-									<td style="background-color: #fff"><?=$data['protocol']?></td>
+									<td style="background-color: #fff"><?=htmlspecialchars((string)($data['protocol'] ?? ''))?></td>
 								</tr>
 							</table>
 							<span style="font-size: 20pt; font-weight: bold">&darr;</span>

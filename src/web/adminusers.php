@@ -70,6 +70,14 @@
 		$viewphi = GetVariable("viewphi");
 		if (!is_array($viewphi)) $viewphi = array();
 		
+		/* only a site admin can change a site-admin account; admins may manage other admins (N90, decision 2026-11-25) */
+		if (in_array($action, array('update', 'delete', 'enable', 'disable', 'resetpassword', 'editform')) && !CanManageUser($id)) {
+			ob_start();
+			Error("Only a site admin can view or change a site admin account");
+			$_SESSION['flash'] = ob_get_clean();
+			RedirectTo("adminusers.php");
+		}
+
 		/* determine action */
 		switch ($action) {
 			case 'editform':
@@ -882,11 +890,44 @@
 	}
 
 	/* -------------------------------------------- */
+	/* ------- IsSiteAdminAccount ---------------- */
+	/* -------------------------------------------- */
+	function IsSiteAdminAccount($id) {
+		$id = (int)$id;
+		$sqlstring = "select user_issiteadmin from users where user_id = ?";
+		$stmt = mysqli_prepare($GLOBALS['linki'], $sqlstring);
+		mysqli_stmt_bind_param($stmt, 'i', $id);
+		$result = MySQLiBoundQuery($stmt, __FILE__, __LINE__, $sqlstring, [$id]);
+		$row = ($result) ? mysqli_fetch_array($result, MYSQLI_ASSOC) : null;
+		mysqli_stmt_close($stmt);
+		return (($row['user_issiteadmin'] ?? 0) == 1);
+	}
+
+
+	/* -------------------------------------------- */
+	/* ------- CanManageUser ---------------------- */
+	/* -------------------------------------------- */
+	/* site admins can manage every account; admins can manage every account except site admins (N90) */
+	function CanManageUser($id) {
+		return (isSiteAdmin() || !IsSiteAdminAccount($id));
+	}
+
+
+	/* -------------------------------------------- */
 	/* ------- UserEnableToggle ------------------- */
 	/* -------------------------------------------- */
 	/* the enable/disable toggle in the user lists: a POST form with the CSRF token (N89).
 	   Disabling asks for confirmation; enabling is one click */
-	function UserEnableToggle($id, $username, $enabled) {
+	function UserEnableToggle($id, $username, $enabled, $protected = false) {
+		/* site-admin accounts are read-only for admins: show the state without a button (N90) */
+		if ($protected) {
+			if ($enabled)
+				echo '<i class="large grey toggle on icon" title="Enabled. Only a site admin can change this account"></i>';
+			else
+				echo '<i class="large grey toggle off icon" title="Disabled. Only a site admin can change this account"></i>';
+			return;
+		}
+
 		if ($enabled)
 			PostActionButton("adminusers.php", array('action' => 'disable', 'id' => (int)$id), '<i class="large green toggle on icon"></i>', '', "Disable $username?", "Enabled. Click to disable");
 		else
@@ -899,6 +940,7 @@
 	/* -------------------------------------------- */
 	function DisplayUserList() {
 		ShowFlashMessage(); /* show any message from a mutating action that redirected here (PRG) */
+		$viewerissiteadmin = isSiteAdmin();
 	?>
 
 	<script>
@@ -981,19 +1023,20 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
+						$protected = (!$viewerissiteadmin && (($row['user_issiteadmin'] ?? 0) == 1)); /* N90 */
 
 						if ($username == "")
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><? if ($protected) { ?><?=htmlspecialchars($username)?> <span class="ui tiny label" title="Only a site admin can change this account">Site admin</span><? } else { ?><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a><? } ?></td>
 					<td><?=htmlspecialchars($fullname)?></td>
 					<td><?=htmlspecialchars($email)?></td>
 					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<? UserEnableToggle($id, $username, $enabled); ?>
+						<? UserEnableToggle($id, $username, $enabled, $protected); ?>
 					</td>
 				</tr>
 				<? } ?>
@@ -1028,19 +1071,20 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
+						$protected = (!$viewerissiteadmin && (($row['user_issiteadmin'] ?? 0) == 1)); /* N90 */
 
 						if ($username == "")
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><? if ($protected) { ?><?=htmlspecialchars($username)?> <span class="ui tiny label" title="Only a site admin can change this account">Site admin</span><? } else { ?><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a><? } ?></td>
 					<td><?=htmlspecialchars($fullname)?></td>
 					<td><?=htmlspecialchars($email)?></td>
 					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<? UserEnableToggle($id, $username, $enabled); ?>
+						<? UserEnableToggle($id, $username, $enabled, $protected); ?>
 					</td>
 				</tr>
 				<? } ?>
@@ -1071,19 +1115,20 @@
 						$lastlogin = $row['user_lastlogin'];
 						$logincount = $row['user_logincount'];
 						$enabled = $row['user_enabled'];
+						$protected = (!$viewerissiteadmin && (($row['user_issiteadmin'] ?? 0) == 1)); /* N90 */
 
 						if ($username == "")
 							$username = "(blank)";
 				?>
 				<tr data-username="<?=htmlspecialchars($username)?>" data-fullname="<?=htmlspecialchars($fullname)?>" data-email="<?=htmlspecialchars($email)?>">
-					<td><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a></td>
+					<td><? if ($protected) { ?><?=htmlspecialchars($username)?> <span class="ui tiny label" title="Only a site admin can change this account">Site admin</span><? } else { ?><a href="adminusers.php?action=editform&id=<?=$id?>"><?=htmlspecialchars($username)?></a><? } ?></td>
 					<td><?=htmlspecialchars($fullname)?></td>
 					<td><?=htmlspecialchars($email)?></td>
 					<td><?=htmlspecialchars($login_type ?? '')?></td>
 					<td><?=$lastlogin?></td>
 					<td><?=$logincount?></td>
 					<td>
-						<? UserEnableToggle($id, $username, $enabled); ?>
+						<? UserEnableToggle($id, $username, $enabled, $protected); ?>
 					</td>
 				</tr>
 				<? } ?>

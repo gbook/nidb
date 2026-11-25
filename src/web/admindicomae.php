@@ -46,7 +46,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions require a POST with this session's CSRF token (C1) */
+		$action = GetSafeAction(array('update', 'add', 'delete'));
 		$id = (int)GetVariable("id");
 		$aetitle = trim(GetVariable("aetitle") ?? '');
 		$aehostname = trim(GetVariable("aehostname") ?? '');
@@ -65,19 +66,19 @@
 		elseif ($action == "test") {
 			TestAE($id);
 		}
-		elseif (($action == "update") && ($_SERVER['REQUEST_METHOD'] == 'POST')) {
+		elseif ($action == "update") {
 			ob_start();
 			UpdateAE($id, $aetitle, $aehostname, $aeip, $aeport, $aetls);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("admindicomae.php");
 		}
-		elseif (($action == "add") && ($_SERVER['REQUEST_METHOD'] == 'POST')) {
+		elseif ($action == "add") {
 			ob_start();
 			AddAE($aetitle, $aehostname, $aeip, $aeport, $aetls);
 			$_SESSION['flash'] = ob_get_clean();
 			RedirectTo("admindicomae.php");
 		}
-		elseif (($action == "delete") && ($_SERVER['REQUEST_METHOD'] == 'POST')) {
+		elseif ($action == "delete") {
 			ob_start();
 			DeleteAE($id);
 			$_SESSION['flash'] = ob_get_clean();
@@ -356,6 +357,7 @@
 			<form method="post" action="admindicomae.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
 				<input type="hidden" name="id" value="<?=$id?>">
+				<?=CSRFTokenField()?>
 
 				<div class="two fields">
 					<div class="required field">
@@ -393,9 +395,10 @@
 
 			<? if ($type == 'edit') { ?>
 			<br>
-			<form method="post" action="admindicomae.php" onSubmit="return confirm('Delete DICOM AE end point <?=htmlspecialchars(addslashes($aetitle))?>?')">
+			<form method="post" action="admindicomae.php" onSubmit="return confirm(<?=htmlspecialchars(json_encode("Delete DICOM AE end point $aetitle?"), ENT_QUOTES)?>)">
 				<input type="hidden" name="action" value="delete">
 				<input type="hidden" name="id" value="<?=$id?>">
+				<?=CSRFTokenField()?>
 				<a href="admindicomae.php?action=test&id=<?=$id?>" class="ui basic button"><i class="plug icon"></i>Test connectivity</a>
 				<button type="submit" class="ui red basic button"><i class="trash icon"></i>Delete</button>
 			</form>

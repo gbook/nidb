@@ -49,7 +49,8 @@
 	}
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('addmodule', 'updatemodule', 'disable', 'enable'));
 	$id = (int)GetVariable("id");
 	$modulename = GetVariable("modulename");
 	$modality = GetVariable("modality");
@@ -186,6 +187,7 @@
 	<div class="ui text container">
 		<form method="post" action="adminqc.php">
 		<input type="hidden" name="action" value="<?=$formaction?>">
+		<?=CSRFTokenField()?>
 		<input type="hidden" name="id" value="<?=(int)$id?>">
 		<table class="ui top attached table" width="100%">
 			<tr>
@@ -285,6 +287,7 @@
 			<tbody>
 				<form action="adminqc.php" method="post">
 				<input type="hidden" name="action" value="addmodule">
+				<?=CSRFTokenField()?>
 				<tr>
 					<td>
 						<div class="ui input">
@@ -324,10 +327,10 @@
 							<td>
 								<?
 									if ($enabled) {
-										?><a href="adminqc.php?action=disable&id=<?=(int)$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+										PostActionButton("adminqc.php", array('action' => 'disable', 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', "Disable QC module $name?", 'Enabled. Click to disable');
 									}
 									else {
-										?><a href="adminqc.php?action=enable&id=<?=(int)$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+										PostActionButton("adminqc.php", array('action' => 'enable', 'id' => (int)$id), '<i class="big grey horizontally flipped toggle on icon"></i>', '', '', 'Disabled. Click to enable');
 									}
 								?>
 							</td>

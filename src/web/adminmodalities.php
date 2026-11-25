@@ -47,7 +47,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions require a POST with this session's CSRF token (C1) */
+		$action = GetSafeAction(array('add', 'disable', 'enable'));
 		$id = (int)GetVariable("id");
 		$modcode = GetVariable("modcode");
 		$moddesc = GetVariable("moddesc");
@@ -73,7 +74,7 @@
 				break;
 			/* mutating actions use POST/Redirect/GET so a refresh/Back doesn't re-run them */
 			case 'add':
-				if (!isSiteAdmin() || ($_SERVER['REQUEST_METHOD'] != 'POST')) { Error("This account does not have permissions to perform this action"); break; }
+				if (!isSiteAdmin()) { Error("This account does not have permissions to perform this action"); break; }
 				ob_start();
 				$newid = AddModality($modcode, $moddesc);
 				$_SESSION['flash'] = ob_get_clean();
@@ -468,6 +469,7 @@
 			<h2 class="ui header">Add modality</h2>
 			<form method="post" action="adminmodalities.php" class="ui form raised segment">
 				<input type="hidden" name="action" value="add">
+				<?=CSRFTokenField()?>
 				<div class="field">
 					<label>Modality code</label>
 					<input type="text" name="modcode" maxlength="15" pattern="[A-Za-z][A-Za-z0-9]{0,14}" required placeholder="e.g. FNIRS" title="1 to 15 letters and digits, starting with a letter">
@@ -736,10 +738,10 @@
 						<td>
 							<?
 								if ($enabled) {
-									?><a href="adminmodalities.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="large green toggle on icon"></i></a><?
+									PostActionButton("adminmodalities.php", array('action' => 'disable', 'id' => (int)$id), '<i class="large green toggle on icon"></i>', '', "Disable modality $name?", 'Enabled. Click to disable');
 								}
 								else {
-									?><a href="adminmodalities.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="large red toggle off icon"></i></a><?
+									PostActionButton("adminmodalities.php", array('action' => 'enable', 'id' => (int)$id), '<i class="large red toggle off icon"></i>', '', '', 'Disabled. Click to enable');
 								}
 							?>
 						</td>

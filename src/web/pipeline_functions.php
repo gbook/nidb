@@ -168,6 +168,15 @@
 	/* -------------------------------------------- */
 	function DisplayPipelineStatus($pipelinename, $pipelinedesc, $isenabled, $isdebug, $id, $returnpage, $pipeline_status, $pipeline_statusmessage, $pipeline_laststart, $pipeline_lastfinish, $pipeline_lastcheck) {
 		if (!ValidID($id,'Pipeline ID - M')) { return; }
+		$id = (int)$id;
+
+		/* every caller passes raw DB values; escape them here so all callers are covered (N91) */
+		$pipelinename = htmlspecialchars((string)($pipelinename ?? ''));
+		$pipelinedesc = htmlspecialchars((string)($pipelinedesc ?? ''));
+		$pipeline_statusmessage = htmlspecialchars((string)($pipeline_statusmessage ?? ''));
+		$pipeline_laststart = htmlspecialchars((string)($pipeline_laststart ?? ''));
+		$pipeline_lastfinish = htmlspecialchars((string)($pipeline_lastfinish ?? ''));
+		$pipeline_lastcheck = htmlspecialchars((string)($pipeline_lastcheck ?? ''));
 
 		?>
 		<div class="ui container">

@@ -120,10 +120,11 @@ if ($fileid > 0) {
 
 if ($file != "") {
 
-	/* file must live within the archive, mount, or an analysis directory.
+	/* file must live within the archive (with View Data on its study's project, N88), mount, or an analysis directory.
 	   realpath() resolves symlinks and ../ so traversal like archivedir/../../etc/passwd is rejected */
 	$realFile = realpath($file);
-	if (IsViewablePath($realFile)) {
+	$patherror = ViewablePathError($realFile);
+	if ($patherror == '') {
 		$file = $realFile;
 		if (is_file($file)) {
 			if ($action == "download") {
@@ -183,7 +184,7 @@ if ($file != "") {
 	}
 	else {
 		http_response_code(403);
-		echo htmlspecialchars($file) . " is not within an archive, mount, or analysis directory";
+		echo htmlspecialchars($patherror) . " [" . htmlspecialchars($file) . "]";
 	}
 }
 else { echo "filename was blank"; }

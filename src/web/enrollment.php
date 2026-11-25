@@ -77,7 +77,8 @@
 	require "menu.php";
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require a POST with this session's CSRF token (C1, N93) */
+	$action = GetSafeAction(array('update', 'setitemcomplete', 'setitemincomplete', 'deleteenrollment'));
 	$id = GetVariable("id");
 	$enrollmentid = GetVariable("enrollmentid");
 	$checklistitemid = GetVariable("checklistitemid");
@@ -305,8 +306,7 @@
 		if ((int)$id < 1) { Error("Enrollment ID blank"); return 0; }
 		$id = (int)$id;
 
-		if ($_SERVER['REQUEST_METHOD'] != 'POST') { Error("Invalid request"); return 0; }
-		if (!VerifyCSRFToken()) { return 0; }
+		/* POST + CSRF token are checked by GetSafeAction() at the top of the page */
 
 		$enrollment = GetEnrollment($id);
 		if ($enrollment == null) {
@@ -542,6 +542,7 @@
 			<? if ($canedit) { ?>
 			<form method="post" action="enrollment.php" class="ui form" enctype="multipart/form-data">
 			<input type="hidden" name="action" value="update">
+			<?=CSRFTokenField()?>
 			<input type="hidden" name="id" value="<?=$enrollmentid?>">
 			<? } ?>
 			<table class="ui basic celled attached table">
@@ -736,6 +737,7 @@
 		$title = $isComplete ? "Mark as incomplete" : "Mark as complete";
 		return "<form method='post' action='enrollment.php' style='display: inline; margin: 0px'>
 			<input type='hidden' name='action' value='$action'>
+			" . CSRFTokenField() . "
 			<input type='hidden' name='enrollmentid' value='" . (int)$item['enrollmentRowID'] . "'>
 			<input type='hidden' name='checklistitemid' value='" . (int)$item['itemRowID'] . "'>
 			<button type='submit' title='$title' style='background: none; border: none; padding: 0px; cursor: pointer'><i class='$icon icon'></i></button>

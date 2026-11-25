@@ -46,8 +46,8 @@ else {
 	if (($realfile === false) || (!is_file($realfile))) {
 		echo "File [" . htmlspecialchars($file) . "] does not exist";
 	}
-	elseif (!IsViewablePath($realfile)) {
-		echo htmlspecialchars($file) . " is not within an archive, mount, or analysis directory";
+	elseif (($patherror = ViewablePathError($realfile)) != '') {
+		echo htmlspecialchars($patherror) . " [" . htmlspecialchars($file) . "]";
 	}
 	elseif (!isset($mimetypes[$ext])) {
 		echo htmlspecialchars($file) . " is not an image file";

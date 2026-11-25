@@ -53,8 +53,8 @@ define("LEGIT_REQUEST", true);
 		if (($realfile === false) || (!is_file($realfile))) {
 			Error("File [" . htmlspecialchars($file) . "] does not exist");
 		}
-		elseif (!IsViewablePath($realfile)) {
-			Error(htmlspecialchars($file) . " is not within an archive, mount, or analysis directory");
+		elseif (($patherror = ViewablePathError($realfile)) != '') {
+			Error(htmlspecialchars($patherror) . " [" . htmlspecialchars($file) . "]");
 		}
 		else {
 			DisplayFile($file, $realfile);

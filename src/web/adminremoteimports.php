@@ -47,7 +47,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions require a POST with this session's CSRF token (C1) */
+		$action = GetSafeAction(array('update', 'add'));
 		$id = (int)GetVariable("id");
 		$projectid = (int)GetVariable("projectid");
 		$importname = GetVariable("importname");
@@ -243,6 +244,7 @@
 			<form method="post" action="adminremoteimports.php" class="ui form attached fluid segment">
 				<input type="hidden" name="action" value="<?=$formaction?>">
 				<input type="hidden" name="id" value="<?=(int)$id?>">
+				<?=CSRFTokenField()?>
 
 				<div class="field">
 					<label>Import Name</label>
@@ -289,7 +291,7 @@
 
 				<div class="field">
 					<label>Remote Token</label>
-					<input type="password" name="remote_token" value="<?=$remote_token?>" placeholder="Leave blank to keep current token">
+					<input type="password" name="remote_token" value="" placeholder="Leave blank to keep current token">
 				</div>
 
 				<div class="three fields">

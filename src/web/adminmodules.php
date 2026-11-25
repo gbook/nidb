@@ -48,7 +48,8 @@
 	}
 
 	/* ----- setup variables ----- */
-	$action = GetVariable("action");
+	/* mutating actions require a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('disable', 'enable', 'debug', 'nodebug', 'keeplog', 'nokeeplog', 'reset'));
 	$id = (int)GetVariable("id");
 	$modulename = GetVariable("modulename");
 	
@@ -137,9 +138,9 @@
 					<?=htmlspecialchars($module_name ?? '')?>
 					<div class="sub header">
 					<? if ($module_isactive) {?>
-					<a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Module is currently enabled.</b> Click to disable">Disable</a>
+					<? PostActionButton("adminmodules.php", array('action' => 'disable', 'id' => (int)$id), 'Disable', '', "Disable module $module_name?", 'Module is currently enabled. Click to disable'); ?>
 					<? } else { ?>
-					<a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Module is currently disabled.</b> Click to enable">Enable</a>
+					<? PostActionButton("adminmodules.php", array('action' => 'enable', 'id' => (int)$id), 'Enable', '', '', 'Module is currently disabled. Click to enable'); ?>
 					<? } ?>
 					</div>
 				</div>
@@ -416,7 +417,7 @@
 					<td class="<?=$rowclass?>"><h3 class="header"><?=htmlspecialchars($module_name ?? '')?></h3></td>
 					<td><a href="adminmodules.php?action=viewlogs&modulename=<?=urlencode($module_name ?? '')?>" class="ui button"><i class="file alternate outline icon"></i> View logs</a></td>
 					<td style="color: <?=$color?>">
-						<?=htmlspecialchars($module_status ?? '')?> <? if (($module_status != "stopped") || ($module_numrunning != 0) || ($numlockfiles > 0)) { ?> <a href="adminmodules.php?action=reset&id=<?=$id?>" class="ui small yellow button">reset</a> <? } ?>
+						<?=htmlspecialchars($module_status ?? '')?> <? if (($module_status != "stopped") || ($module_numrunning != 0) || ($numlockfiles > 0)) { ?> <? PostActionButton("adminmodules.php", array('action' => 'reset', 'id' => (int)$id), 'reset', 'ui small yellow button', "Reset module $module_name? This deletes its lock files and marks it stopped, even if a process is still running."); ?> <? } ?>
 					</td>
 					<td><?=$module_numrunning?></td>
 					<td><?=$module_laststop?></td>
@@ -424,30 +425,30 @@
 					<td>
 						<?
 							if ($module_isactive) {
-								?><a href="adminmodules.php?action=disable&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'disable', 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', "Disable module $module_name?", 'Enabled. Click to disable');
 							}
 							else {
-								?><a href="adminmodules.php?action=enable&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'enable', 'id' => (int)$id), '<i class="big grey horizontally flipped toggle on icon"></i>', '', '', 'Disabled. Click to enable');
 							}
 						?>
 					</td>
 					<td>
 						<?
 							if ($module_debug) {
-								?><a href="adminmodules.php?action=nodebug&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'nodebug', 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', '', 'Enabled. Click to disable');
 							}
 							else {
-								?><a href="adminmodules.php?action=debug&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'debug', 'id' => (int)$id), '<i class="big grey horizontally flipped toggle on icon"></i>', '', '', 'Disabled. Click to enable');
 							}
 						?>
 					</td>
 					<td>
 						<?
 							if ($module_keeplog) {
-								?><a href="adminmodules.php?action=nokeeplog&id=<?=$id?>" title="<b>Enabled.</b> Click to disable"><i class="big green toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'nokeeplog', 'id' => (int)$id), '<i class="big green toggle on icon"></i>', '', '', 'Enabled. Click to disable');
 							}
 							else {
-								?><a href="adminmodules.php?action=keeplog&id=<?=$id?>" title="<b>Disabled.</b> Click to enable"><i class="big grey horizontally flipped toggle on icon"></i></a><?
+								PostActionButton("adminmodules.php", array('action' => 'keeplog', 'id' => (int)$id), '<i class="big grey horizontally flipped toggle on icon"></i>', '', '', 'Disabled. Click to enable');
 							}
 						?>
 					</td>

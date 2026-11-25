@@ -47,7 +47,8 @@
 	}
 	else {
 		/* ----- setup variables ----- */
-		$action = GetVariable("action");
+		/* mutating actions require a POST with this session's CSRF token (C1) */
+		$action = GetSafeAction(array('update', 'add', 'setdefaultinstance', 'acceptjoin', 'rejectjoin', 'delete'));
 		$id = (int)GetVariable("id");
 		$defaultinstanceid = (int)GetVariable("defaultinstanceid");
 		$instancename = GetVariable("instancename");
@@ -260,6 +261,7 @@
 			<form method="post" action="admininstances.php">
 			<input type="hidden" name="action" value="<?=$formaction?>">
 			<input type="hidden" name="id" value="<?=(int)$id?>">
+			<?=CSRFTokenField()?>
 			<tr>
 				<td colspan="2" align="center">
 					<b><?=htmlspecialchars($formtitle ?? '')?></b>
@@ -380,6 +382,7 @@
 		</thead>
 		<form method="post" action="admininstances.php">
 		<input type="hidden" name="action" value="setdefaultinstance">
+		<?=CSRFTokenField()?>
 		<tbody>
 			<?
 				$sqlstring = "select * from instance a left join users b on a.instance_ownerid = b.user_id order by a.instance_name";
@@ -438,8 +441,8 @@
 			<tr>
 				<td><?=htmlspecialchars($name ?? '')?></td>
 				<td><?=htmlspecialchars($userfullname ?? '')?> &lt;<?=htmlspecialchars($useremail ?? '')?>&gt;</td>
-				<td><a href="admininstances.php?action=acceptjoin&userinstanceid=<?=(int)$id?>">Accept</a></td>
-				<td><a href="admininstances.php?action=rejectjoin&userinstanceid=<?=(int)$id?>">Reject</a></td>
+				<td><? PostActionButton("admininstances.php", array('action' => 'acceptjoin', 'userinstanceid' => (int)$id), 'Accept', 'ui small green button'); ?></td>
+				<td><? PostActionButton("admininstances.php", array('action' => 'rejectjoin', 'userinstanceid' => (int)$id), 'Reject', 'ui small button', "Reject the join request from $username to $name?"); ?></td>
 			</tr>
 			<? 
 				}

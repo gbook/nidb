@@ -108,6 +108,9 @@
 	require "includes_html.php";
 	require "menu.php";
 
+	/* the read-only JSON/HTML handlers above have exited; mutating actions require a POST with this session's CSRF token (C1) */
+	$action = GetSafeAction(array('startaudit', 'stopaudit', 'deleteaudit'));
+
 	if (!isSiteAdmin()) {
 		Error("This account does not have permissions to view this page");
 	}
@@ -564,6 +567,7 @@
 			</h3>
 			<form class="ui form" method="post" action="adminaudits.php" onSubmit="return ValidateAuditForm()">
 				<input type="hidden" name="action" value="startaudit">
+				<?=CSRFTokenField()?>
 				<div class="field">
 					<label>Audit type</label>
 					<select name="audittype" id="audittype" class="ui dropdown" required>
@@ -669,11 +673,13 @@
 					<td class="auditactions" style="white-space: nowrap">
 						<form class="stopform" method="post" action="adminaudits.php" style="margin: 0; display: <?=(in_array($status, $GLOBALS['activestatuses']) ? 'inline-block' : 'none')?>">
 							<input type="hidden" name="action" value="stopaudit">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="auditid" value="<?=$id?>">
 							<button class="ui mini basic orange button" type="submit" title="Stop this audit" onClick="return confirm('Stop audit #<?=$id?>?')"><i class="stop icon"></i>Stop</button>
 						</form>
 						<form class="deleteform" method="post" action="adminaudits.php" style="margin: 0; display: <?=(in_array($status, array('auditing', 'finishing')) ? 'none' : 'inline-block')?>">
 							<input type="hidden" name="action" value="deleteaudit">
+							<?=CSRFTokenField()?>
 							<input type="hidden" name="auditid" value="<?=$id?>">
 							<button class="ui mini basic red icon button" type="submit" title="Delete audit and its log" onClick="return confirm('Delete audit #<?=$id?> and its log?')"><i class="trash alternate icon"></i></button>
 						</form>
